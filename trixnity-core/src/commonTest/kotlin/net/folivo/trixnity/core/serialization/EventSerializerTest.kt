@@ -1,7 +1,6 @@
 package net.folivo.trixnity.core.serialization
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.events.UnknownEvent

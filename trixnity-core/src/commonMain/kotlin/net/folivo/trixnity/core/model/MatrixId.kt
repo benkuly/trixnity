@@ -33,13 +33,13 @@ sealed class MatrixId {
     }
 
     companion object {
-        fun of(full: String): MatrixId {
+        fun of(full: String): net.folivo.trixnity.core.model.MatrixId {
             if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
             return when (full.first()) {
-                '@'  -> UserId(full)
-                '!'  -> RoomId(full)
-                '#'  -> RoomAliasId(full)
-                '$'  -> EventId(full)
+                '@'  -> net.folivo.trixnity.core.model.MatrixId.UserId(full)
+                '!'  -> net.folivo.trixnity.core.model.MatrixId.RoomId(full)
+                '#'  -> net.folivo.trixnity.core.model.MatrixId.RoomAliasId(full)
+                '$'  -> net.folivo.trixnity.core.model.MatrixId.EventId(full)
                 else -> throw IllegalArgumentException("not a valid matrix identifier")
             }
         }
@@ -51,7 +51,7 @@ sealed class MatrixId {
         // null check
         if (other == null) return false
 
-        return if (other is MatrixId) {
+        return if (other is net.folivo.trixnity.core.model.MatrixId) {
             other.full == this.full
         } else return false
     }
@@ -65,25 +65,25 @@ sealed class MatrixId {
     }
 
     @Serializable(with = MatrixIdSerializer::class)
-    class UserId : MatrixId {
+    class UserId : net.folivo.trixnity.core.model.MatrixId {
         constructor(full: String) : super(full, '@')
         constructor(localpart: String, domain: String) : super(localpart, domain, '@')
     }
 
     @Serializable(with = MatrixIdSerializer::class)
-    class RoomId : MatrixId {
+    class RoomId : net.folivo.trixnity.core.model.MatrixId {
         constructor(full: String) : super(full, '!')
         constructor(localpart: String, domain: String) : super(localpart, domain, '!')
     }
 
     @Serializable(with = MatrixIdSerializer::class)
-    class RoomAliasId : MatrixId {
+    class RoomAliasId : net.folivo.trixnity.core.model.MatrixId {
         constructor(full: String) : super(full, '#')
         constructor(localpart: String, domain: String) : super(localpart, domain, '#')
     }
 
     @Serializable(with = MatrixIdSerializer::class)
-    class EventId : MatrixId {
+    class EventId : net.folivo.trixnity.core.model.MatrixId {
         constructor(full: String) : super(full, '$')
         constructor(localpart: String, domain: String) : super(localpart, domain, '$')
     }
