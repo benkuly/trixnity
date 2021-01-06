@@ -1,8 +1,8 @@
-package net.folivo.matrix.restclient.api.user
+package net.folivo.trixnity.client.rest.api.user
 
 import io.ktor.client.*
 import io.ktor.client.request.*
-import net.folivo.trixnity.client.rest.api.user.AccountType
+import net.folivo.trixnity.client.rest.api.user.RegisterRequest.Auth
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
 class UserApiClient(private val httpClient: HttpClient) {
@@ -23,16 +23,13 @@ class UserApiClient(private val httpClient: HttpClient) {
         return httpClient.post {
             url("/r0/register")
             parameter("kind", accountType?.value)
-            body = mapOf(
-                "auth" to mapOf(
-                    "type" to authenticationType,
-                    "session" to authenticationSession
-                ),
-                "username" to username,
-                "password" to password,
-                "device_id" to deviceId,
-                "initial_device_display_name" to initialDeviceDisplayName,
-                "inhibit_login" to inhibitLogin
+            body = RegisterRequest(
+                Auth(authenticationType, authenticationSession),
+                username,
+                password,
+                deviceId,
+                initialDeviceDisplayName,
+                inhibitLogin
             )
         }
     }
@@ -56,9 +53,9 @@ class UserApiClient(private val httpClient: HttpClient) {
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-account-whoami">matrix spec</a>
      */
     suspend fun whoAmI(asUserId: UserId? = null): UserId {
-        return httpClient.get {
+        return httpClient.get<WhoAmIResponse> {
             url("/r0/account/whoami")
             parameter("user_id", asUserId?.full)
-        }
+        }.userId
     }
 }

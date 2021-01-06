@@ -13,10 +13,10 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.serializersModuleOf
-import net.folivo.matrix.restclient.api.server.ServerApiClient
-import net.folivo.matrix.restclient.api.user.UserApiClient
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
+import net.folivo.trixnity.client.rest.api.server.ServerApiClient
+import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.EventSerializer
 

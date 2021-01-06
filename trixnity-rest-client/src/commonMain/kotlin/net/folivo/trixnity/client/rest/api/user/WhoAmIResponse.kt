@@ -1,4 +1,4 @@
-package net.folivo.matrix.restclient.api.user
+package net.folivo.trixnity.client.rest.api.user
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

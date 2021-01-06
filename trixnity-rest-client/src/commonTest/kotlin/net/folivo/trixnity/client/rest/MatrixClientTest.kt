@@ -7,6 +7,7 @@ import io.ktor.http.ContentType.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.MatrixServerException
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -24,12 +25,12 @@ class MatrixClientTest {
             httpClientEngineFactory = MockEngine,
         ) {
             addHandler { request ->
-                assertEquals(request.url.fullPath, "/_matrix/client/path?param=dino")
+                assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
                 assertEquals("matrix.host", request.url.host)
                 assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
                 assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                assertEquals("POST", request.method.value)
-                assertEquals(request.body.toByteArray().decodeToString(), """{"help":"me"}""")
+                assertEquals(HttpMethod.Get, request.method)
+                assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
                 respond(
                     """{"status":"ok"}""",
                     HttpStatusCode.OK,
@@ -45,6 +46,7 @@ class MatrixClientTest {
     }
 
     @Test
+    @Ignore // FIXME as soon as https://youtrack.jetbrains.com/issue/KTOR-1616 is fixed
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val matrixClient = MatrixClient(
