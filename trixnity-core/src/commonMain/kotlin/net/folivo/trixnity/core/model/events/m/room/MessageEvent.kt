@@ -33,8 +33,8 @@ data class MessageEvent<C : MessageEventContent>(
         @Serializable
         data class NoticeMessageEventContent(
             @SerialName("body") override val body: String,
-            @SerialName("format") val format: String?,
-            @SerialName("formatted_body") val formattedBody: String?,
+            @SerialName("format") val format: String? = null,
+            @SerialName("formatted_body") val formattedBody: String? = null,
             @SerialName("msgtype") override val messageType: String = "m.notice"
         ) : MessageEventContent()
 
@@ -44,8 +44,8 @@ data class MessageEvent<C : MessageEventContent>(
         @Serializable
         data class TextMessageEventContent(
             @SerialName("body") override val body: String,
-            @SerialName("format") val format: String?,
-            @SerialName("formatted_body") val formattedBody: String?,
+            @SerialName("format") val format: String? = null,
+            @SerialName("formatted_body") val formattedBody: String? = null,
             @SerialName("msgtype") override val messageType: String = "m.text"
         ) : MessageEventContent()
 

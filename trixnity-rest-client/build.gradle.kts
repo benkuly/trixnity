@@ -36,15 +36,32 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-core"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
-                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:${Versions.ktor}")
+            }
+        }
+        val nativeMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
+                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
             }
         }
         val jvmTest by getting {
