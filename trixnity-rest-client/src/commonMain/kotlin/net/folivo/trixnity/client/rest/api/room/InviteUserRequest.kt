@@ -1,10 +1,10 @@
-package net.folivo.trixnity.client.rest.api.user
+package net.folivo.trixnity.client.rest.api.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
 @Serializable
-internal data class WhoAmIResponse(
-    @SerialName("user_id") val userId: UserId
+data class InviteUserRequest(
+    @SerialName("user_id") val userId: UserId,
 )

@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RegisterRequest(
+internal data class RegisterRequest(
     @SerialName("auth") val auth: Auth,
     @SerialName("username") val username: String?,
     @SerialName("password") val password: String?,

@@ -9,7 +9,9 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.capturedKClass
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.serializersModuleOf
@@ -19,6 +21,7 @@ import net.folivo.trixnity.client.rest.api.server.ServerApiClient
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.EventSerializer
+import kotlin.reflect.KClass
 
 class MatrixClient<T : HttpClientEngineConfig>(
     private val properties: MatrixClientProperties,
@@ -27,6 +30,14 @@ class MatrixClient<T : HttpClientEngineConfig>(
     httpClientEngineFactory: HttpClientEngineFactory<T>,
     httpClientEngineConfig: T.() -> Unit = {},
 ) {
+
+    @ExperimentalSerializationApi
+    val registeredEvents: Map<KClass<out Event<*>>, String> =
+        (customSerializers + EventSerializer.defaultSerializers)
+            .mapNotNull { entry ->
+                val kclass = entry.value.descriptor.capturedKClass as KClass<out Event<*>>?
+                kclass?.let { Pair(kclass, entry.key) }
+            }.toMap()
 
     private val httpClientConfig: HttpClientConfig<T>.() -> Unit = {
         engine(httpClientEngineConfig)

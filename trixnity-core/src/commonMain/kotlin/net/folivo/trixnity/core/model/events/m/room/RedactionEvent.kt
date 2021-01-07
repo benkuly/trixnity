@@ -12,8 +12,7 @@ import net.folivo.trixnity.core.model.events.StandardUnsignedData
 @Serializable
 data class RedactionEvent(
     @SerialName("content") override val content: RedactionEventContent,
-    @SerialName("redacts")
-    val redacts: EventId,
+    @SerialName("redacts") val redacts: EventId,
     @SerialName("event_id") override val id: EventId,
     @SerialName("sender") override val sender: UserId,
     @SerialName("origin_server_ts") override val originTimestamp: Long,

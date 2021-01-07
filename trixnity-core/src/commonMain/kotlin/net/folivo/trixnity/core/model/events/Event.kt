@@ -6,4 +6,5 @@ package net.folivo.trixnity.core.model.events
 interface Event<C> {
     val type: String
     val content: C
+
 }

@@ -40,6 +40,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
+                implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
         val jvmMain by getting {
