@@ -18,20 +18,22 @@ data class MemberEvent(
     @SerialName("content") override val content: MemberEventContent,
     @SerialName("event_id") override val id: EventId,
     @SerialName("sender") override val sender: UserId,
+    @SerialName("state_key") val relatedUser: UserId,
     @SerialName("origin_server_ts") override val originTimestamp: Long,
     @SerialName("room_id") override val roomId: RoomId? = null,
     @SerialName("unsigned") override val unsigned: MemberUnsignedData,
     @SerialName("prev_content") override val previousContent: MemberEventContent? = null,
-    @SerialName("state_key") override val stateKey: String,
     @SerialName("type") override val type: String = "m.room.member"
 ) : StateEvent<MemberEvent.MemberEventContent> {
+
+    override val stateKey: String = relatedUser.full
 
     @Serializable
     data class MemberUnsignedData(
         @SerialName("age") override val age: Long? = null,
         @SerialName("redactedBecause") override val redactedBecause: Event<@Polymorphic Any>? = null,
-        @SerialName("transaction_id") override val transactionId: String?,
-        @SerialName("invite_room_state") val inviteRoomState: List<StrippedStateEvent>
+        @SerialName("transaction_id") override val transactionId: String? = null,
+        @SerialName("invite_room_state") val inviteRoomState: List<StrippedStateEvent>? = null
     ) : UnsignedData
 
     @Serializable

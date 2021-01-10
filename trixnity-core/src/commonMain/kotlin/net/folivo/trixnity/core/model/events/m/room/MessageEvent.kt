@@ -12,8 +12,8 @@ import net.folivo.trixnity.core.serialization.MessageEventContentSerializer
  * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-message">matrix spec</a>
  */
 @Serializable
-data class MessageEvent<C : MessageEventContent>(
-    @SerialName("content") override val content: C,
+data class MessageEvent(
+    @SerialName("content") override val content: MessageEventContent,
     @SerialName("event_id") override val id: EventId,
     @SerialName("sender") override val sender: UserId,
     @SerialName("origin_server_ts") override val originTimestamp: Long,

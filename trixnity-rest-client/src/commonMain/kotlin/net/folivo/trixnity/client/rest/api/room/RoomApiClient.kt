@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEvent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEvent.RedactionEventContent
 import kotlin.reflect.KClass
 
-class RoomsApiClient(
+class RoomApiClient(
     val httpClient: HttpClient,
     val registeredEvents: Map<KClass<out Event<*>>, String>
 ) {
@@ -45,7 +45,8 @@ class RoomsApiClient(
         stateKey: String = "",
         asUserId: UserId? = null
     ): C {
-        val eventType = registeredEvents[T::class]
+        val eventType =
+            registeredEvents[T::class] ?: throw IllegalArgumentException("event type seems to be not supported")
         return httpClient.get {
             url("/r0/rooms/$roomId/state/$eventType/$stateKey")
             parameter("user_id", asUserId)

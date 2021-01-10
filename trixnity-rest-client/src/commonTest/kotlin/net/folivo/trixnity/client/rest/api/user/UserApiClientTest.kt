@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.rest.api.user
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
@@ -82,8 +81,6 @@ class UserApiClientTest {
     @Test
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"))
-        println(Json.encodeToString(response))
-        println(Json.decodeFromString<WhoAmIResponse>(Json.encodeToString(response)))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,

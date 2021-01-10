@@ -9,47 +9,48 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.capturedKClass
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.serializersModuleOf
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
+import net.folivo.trixnity.client.rest.api.room.RoomApiClient
 import net.folivo.trixnity.client.rest.api.server.ServerApiClient
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.EventSerializer
+import net.folivo.trixnity.core.serialization.EventSerializer.EventSerializerDescriptor
 import kotlin.reflect.KClass
 
 class MatrixClient<T : HttpClientEngineConfig>(
     private val properties: MatrixClientProperties,
-    private val customSerializers: Map<String, KSerializer<out Event<*>>> = mapOf(),
+    private val customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
     private val customModule: SerializersModule? = null,
     httpClientEngineFactory: HttpClientEngineFactory<T>,
     httpClientEngineConfig: T.() -> Unit = {},
 ) {
+    private val eventSerializer = EventSerializer(customSerializers)
 
-    @ExperimentalSerializationApi
-    val registeredEvents: Map<KClass<out Event<*>>, String> =
+    private val registeredEvents: Map<KClass<out Event<*>>, String> =
         (customSerializers + EventSerializer.defaultSerializers)
-            .mapNotNull { entry ->
-                val kclass = entry.value.descriptor.capturedKClass as KClass<out Event<*>>?
-                kclass?.let { Pair(kclass, entry.key) }
-            }.toMap()
+            .map { Pair(it.value.kclass, it.key) }.toMap()
 
     private val httpClientConfig: HttpClientConfig<T>.() -> Unit = {
         engine(httpClientEngineConfig)
         install(JsonFeature) {
             serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
                 ignoreUnknownKeys = true
-                serializersModule = serializersModuleOf(EventSerializer(customSerializers)).let {
-                    if (customModule != null) it + customModule else it
-                }
+                // TODO although we don't want null values to be encoded, this flag is needed to encode the "type" of an event because of its default value type-field
+                encodeDefaults = true
+                serializersModule =
+                    (serializersModuleOf(eventSerializer)
+                            + serializersModuleOf(ListSerializer(eventSerializer))
+                            ).let {
+                            if (customModule != null) it + customModule else it
+                        }
             })
         }
-        expectSuccess = false
         install(HttpCallValidator) {
             validateResponse { response ->
                 val statusCode = response.status.value
@@ -77,5 +78,6 @@ class MatrixClient<T : HttpClientEngineConfig>(
 
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)
+    val room = RoomApiClient(httpClient, registeredEvents)
 
 }
