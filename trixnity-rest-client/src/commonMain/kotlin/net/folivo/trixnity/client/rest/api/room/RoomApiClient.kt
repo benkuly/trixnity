@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
 import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.RoomEvent
 import net.folivo.trixnity.core.model.events.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent
@@ -22,6 +23,13 @@ class RoomApiClient(
     val httpClient: HttpClient,
     val registeredEvents: Map<KClass<out Event<*>>, String>
 ) {
+
+    companion object {
+        const val unsupportedEventType =
+            "Event type is not supported. If it is a custom type, you should register it in MatrixClient. " +
+                    "If not, ensure, that you use the generic fields (e. g. sendStateEvent<NameEvent, NameEventContent>(...)) " +
+                    "so that we can determine the right event type."
+    }
 
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-event-eventid">matrix spec</a>
@@ -46,7 +54,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): C {
         val eventType =
-            registeredEvents[T::class] ?: throw IllegalArgumentException("event type seems to be not supported")
+            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.get {
             url("/r0/rooms/$roomId/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -121,13 +129,14 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
-    suspend inline fun <reified T : StateEvent<C>, C : Any> sendStateEvent(
+    suspend inline fun <reified T : StateEvent<in C>, C : Any> sendStateEvent(
         roomId: RoomId,
         eventContent: C,
         stateKey: String? = "",
         asUserId: UserId? = null
     ): EventId {
-        val eventType = registeredEvents[T::class]
+        val eventType =
+            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/$roomId/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -138,13 +147,14 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-send-eventtype-txnid">matrix spec</a>
      */
-    suspend inline fun <reified T : StateEvent<C>, C : Any> sendRoomEvent(
+    suspend inline fun <reified T : RoomEvent<in C>, C : Any> sendRoomEvent(
         roomId: RoomId,
         eventContent: C,
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        val eventType = registeredEvents[T::class]
+        val eventType =
+            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/$roomId/send/$eventType/$txnId")
             parameter("user_id", asUserId)

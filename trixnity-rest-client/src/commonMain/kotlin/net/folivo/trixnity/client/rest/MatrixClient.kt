@@ -7,6 +7,7 @@ import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.serialization.builtins.ListSerializer
@@ -52,15 +53,20 @@ class MatrixClient<T : HttpClientEngineConfig>(
             })
         }
         install(HttpCallValidator) {
-            validateResponse { response ->
-                val statusCode = response.status.value
-                if (statusCode >= 300) {
-                    val errorResponse = response.receive<ErrorResponse>()
-                    throw MatrixServerException(response.status, errorResponse)
-                }
+            handleResponseException { responseException ->
+                if (responseException !is ResponseException) return@handleResponseException
+                val response = responseException.response
+                val errorResponse =
+                    try {
+                        response.receive<ErrorResponse>()
+                    } catch (error: Throwable) {
+                        throw MatrixServerException(response.status, ErrorResponse("UNKNOWN", response.readText()))
+                    }
+                throw MatrixServerException(response.status, errorResponse)
             }
         }
-        install(DefaultRequest) {
+        install(DefaultRequest)
+        {
             host = properties.homeServer.hostname
             port = properties.homeServer.port
             url.encodedPath = "/_matrix/client/" + url.encodedPath
@@ -68,7 +74,8 @@ class MatrixClient<T : HttpClientEngineConfig>(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout) {
+        install(HttpTimeout)
+        {
             requestTimeoutMillis = 35000
         }
     }

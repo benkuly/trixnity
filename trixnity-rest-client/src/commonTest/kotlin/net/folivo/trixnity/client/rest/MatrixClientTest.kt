@@ -7,7 +7,6 @@ import io.ktor.http.ContentType.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.MatrixServerException
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -29,7 +28,7 @@ class MatrixClientTest {
                 assertEquals("matrix.host", request.url.host)
                 assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
                 assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                assertEquals(HttpMethod.Get, request.method)
+                assertEquals(HttpMethod.Post, request.method)
                 assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
                 respond(
                     """{"status":"ok"}""",
@@ -46,7 +45,6 @@ class MatrixClientTest {
     }
 
     @Test
-    @Ignore // FIXME as soon as https://youtrack.jetbrains.com/issue/KTOR-1616 is fixed
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val matrixClient = MatrixClient(
@@ -72,6 +70,32 @@ class MatrixClientTest {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
             assertEquals("NO_UNICORN", error.errorResponse.errorCode)
             assertEquals("Only unicorns accepted", error.errorResponse.errorMessage)
+        }
+    }
+
+    @Test
+    fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
+        try {
+            val matrixClient = MatrixClient(
+                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+                httpClientEngineFactory = MockEngine,
+            ) {
+                addHandler {
+                    respond(
+                        "NO_UNICORN",
+                        HttpStatusCode.NotFound,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+            matrixClient.httpClient.post<OkResponse> {
+                url("/path")
+            }
+            fail("should throw ${MatrixServerException::class.simpleName}")
+        } catch (error: MatrixServerException) {
+            assertEquals(HttpStatusCode.NotFound, error.statusCode)
+            assertEquals("UNKNOWN", error.errorResponse.errorCode)
+            assertEquals("NO_UNICORN", error.errorResponse.errorMessage)
         }
     }
 

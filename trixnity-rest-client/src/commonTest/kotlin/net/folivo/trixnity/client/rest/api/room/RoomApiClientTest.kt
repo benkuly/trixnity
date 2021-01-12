@@ -17,11 +17,14 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberUnsignedData
+import net.folivo.trixnity.core.model.events.m.room.MessageEvent
+import net.folivo.trixnity.core.model.events.m.room.MessageEvent.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent.NameEventContent
 import net.folivo.trixnity.core.serialization.EventSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class RoomApiClientTest {
 
@@ -237,140 +240,145 @@ class RoomApiClientTest {
         )
         assertEquals(response, result)
     }
-//
-//    @Test
-//    fun `should send state event`() {
-//        val response = SendEventResponse(EventId("event", "server"))
-//        mockWebServer.enqueue(
-//            MockResponse()
-//                .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-//                .setBody(objectMapper.writeValueAsString(response))
-//        )
-//
-//        val eventContent = NameEventContent("name")
-//        val result = runBlocking {
-//            matrixClient.roomsApi.sendStateEvent(
-//                roomId = RoomId("room", "server"),
-//                eventContent = eventContent,
-//                stateKey = "someStateKey"
-//            )
-//        }
-//
-//        result.shouldBe(EventId("event", "server"))
-//
-//        val request = mockWebServer.takeRequest()
-//        assertThat(request.path).isEqualTo("/_matrix/client/r0/rooms/%21room%3Aserver/state/m.room.name/someStateKey")
-//        assertThat(request.body.readUtf8()).isEqualTo(objectMapper.writeValueAsString(eventContent))
-//        assertThat(request.method).isEqualTo(HttpMethod.PUT.toString())
-//    }
-//
-//    @Test
-//    fun `should have error when no eventType found on sending state event`() {
-//        val response = SendEventResponse(EventId("event", "server"))
-//        mockWebServer.enqueue(
-//            MockResponse()
-//                .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-//                .setBody(objectMapper.writeValueAsString(response))
-//        )
-//
-//        val eventContent = object : StateEventContent {
-//            val banana: String = "yeah"
-//        }
-//
-//        try {
-//            runBlocking {
-//                matrixClient.roomsApi.sendStateEvent(
-//                    roomId = RoomId("room", "server"),
-//                    eventContent = eventContent,
-//                    stateKey = "someStateKey"
-//                )
-//            }
-//            fail<Unit>("error has error")
-//        } catch (error: Throwable) {
-//            if (error !is IllegalArgumentException) {
-//                fail<Unit>("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
-//            }
-//        }
-//    }
-//
-//    @Test
-//    fun `should send room event`() {
-//        val response = SendEventResponse(EventId("event", "server"))
-//        mockWebServer.enqueue(
-//            MockResponse()
-//                .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-//                .setBody(objectMapper.writeValueAsString(response))
-//        )
-//
-//        val eventContent = TextMessageEventContent("someBody")
-//        val result = runBlocking {
-//            matrixClient.roomsApi.sendRoomEvent(
-//                roomId = RoomId("room", "server"),
-//                eventContent = eventContent,
-//                txnId = "someTxnId"
-//            )
-//        }
-//
-//        result.shouldBe(EventId("event", "server"))
-//
-//        val request = mockWebServer.takeRequest()
-//        assertThat(request.path).isEqualTo("/_matrix/client/r0/rooms/%21room%3Aserver/send/m.room.message/someTxnId")
-//        assertThat(request.body.readUtf8()).isEqualTo(objectMapper.writeValueAsString(eventContent))
-//        assertThat(request.method).isEqualTo(HttpMethod.PUT.toString())
-//    }
-//
-//    @Test
-//    fun `should have error when no eventType found on sending room event`() {
-//        val response = SendEventResponse(EventId("event", "server"))
-//        mockWebServer.enqueue(
-//            MockResponse()
-//                .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-//                .setBody(objectMapper.writeValueAsString(response))
-//        )
-//
-//        val eventContent = object : RoomEventContent {
-//            val banana: String = "yeah"
-//        }
-//        try {
-//            runBlocking {
-//                matrixClient.roomsApi.sendRoomEvent(
-//                    roomId = RoomId("room", "server"),
-//                    eventContent = eventContent
-//                )
-//            }
-//            fail<Unit>("error has error")
-//        } catch (error: Throwable) {
-//            if (error !is IllegalArgumentException) {
-//                fail<Unit>("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
-//            }
-//        }
-//    }
-//
-//    @Test
-//    fun `should send redact event`() {
-//        val response = SendEventResponse(EventId("event", "server"))
-//        mockWebServer.enqueue(
-//            MockResponse()
-//                .setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-//                .setBody(objectMapper.writeValueAsString(response))
-//        )
-//
-//        val result = runBlocking {
-//            matrixClient.roomsApi.sendRedactEvent(
-//                roomId = RoomId("room", "server"),
-//                eventId = EventId("eventToRedact", "server"),
-//                reason = "someReason",
-//                txnId = "someTxnId"
-//            )
-//        }
-//
-//        result.shouldBe(EventId("event", "server"))
-//
-//        val request = mockWebServer.takeRequest()
-//        assertThat(request.path).isEqualTo("/_matrix/client/r0/rooms/%21room%3Aserver/redact/%24eventToRedact%3Aserver/someTxnId")
-//        assertThat(request.body.readUtf8()).isEqualTo("""{"reason":"someReason"}""")
-//        assertThat(request.method).isEqualTo(HttpMethod.PUT.toString())
-//    }
+
+    @Test
+    fun shouldSendStateEvent() = runBlockingTest {
+        val response = SendEventResponse(EventId("event", "server"))
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                assertEquals(
+                    "/_matrix/client/r0/rooms/!room:server/state/m.room.name/someStateKey",
+                    request.url.fullPath
+                )
+                assertEquals(HttpMethod.Put, request.method)
+                assertEquals("""{"name":"name"}""", request.body.toByteArray().decodeToString())
+                respond(
+                    json.encodeToString(response),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
+            }
+        }
+        val eventContent = NameEventContent("name")
+
+        val result = matrixClient.room.sendStateEvent<NameEvent, NameEventContent>(
+            roomId = RoomId("room", "server"),
+            eventContent = eventContent,
+            stateKey = "someStateKey"
+        )
+        assertEquals(EventId("event", "server"), result)
+    }
+
+    @Test
+    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingStateEvent() = runBlockingTest {
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) { addHandler { respondOk() } }
+        val eventContent = object {
+            val banana: String = "yeah"
+        }
+
+        try {
+            matrixClient.room.sendStateEvent(
+                roomId = RoomId("room", "server"),
+                eventContent = eventContent,
+                stateKey = "someStateKey"
+            )
+        } catch (error: Throwable) {
+            if (error !is IllegalArgumentException) {
+                fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
+            }
+        }
+    }
+
+    @Test
+    fun shouldSendRoomEvent() = runBlockingTest {
+        val response = SendEventResponse(EventId("event", "server"))
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                assertEquals(
+                    "/_matrix/client/r0/rooms/!room:server/send/m.room.message/someTxnId",
+                    request.url.fullPath
+                )
+                assertEquals(HttpMethod.Put, request.method)
+                assertEquals(
+                    """{"body":"someBody","format":null,"formatted_body":null,"msgtype":"m.text"}""",
+                    request.body.toByteArray().decodeToString()
+                )
+                respond(
+                    json.encodeToString(response),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
+            }
+        }
+        val eventContent = TextMessageEventContent("someBody")
+        val result = matrixClient.room.sendRoomEvent<MessageEvent, TextMessageEventContent>(
+            roomId = RoomId("room", "server"),
+            eventContent = eventContent,
+            txnId = "someTxnId"
+        )
+        assertEquals(EventId("event", "server"), result)
+    }
+
+    @Test
+    fun shouldHaveErrorWhenNoEventTypeFoundOnSendingRoomEvent() = runBlockingTest {
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) { addHandler { respondOk() } }
+        val eventContent = object {
+            val banana: String = "yeah"
+        }
+
+        try {
+            matrixClient.room.sendRoomEvent(
+                roomId = RoomId("room", "server"),
+                eventContent = eventContent
+            )
+        } catch (error: Throwable) {
+            if (error !is IllegalArgumentException) {
+                fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
+            }
+        }
+    }
+
+    @Test
+    fun shouldSendRedactEvent() = runBlockingTest {
+        val response = SendEventResponse(EventId("event", "server"))
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                assertEquals(
+                    "/_matrix/client/r0/rooms/!room:server/redact/\$eventToRedact:server/someTxnId",
+                    request.url.fullPath
+                )
+                assertEquals(HttpMethod.Put, request.method)
+                assertEquals("""{"reason":"someReason"}""", request.body.toByteArray().decodeToString())
+                respond(
+                    json.encodeToString(response),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
+            }
+        }
+        val result = matrixClient.room.sendRedactEvent(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("eventToRedact", "server"),
+            reason = "someReason",
+            txnId = "someTxnId"
+        )
+        assertEquals(EventId("event", "server"), result)
+    }
 //
 //    @Test
 //    fun `should create room`() {
