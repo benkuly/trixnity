@@ -18,6 +18,9 @@ import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.room.RoomApiClient
 import net.folivo.trixnity.client.rest.api.server.ServerApiClient
+import net.folivo.trixnity.client.rest.api.sync.InMemorySyncBatchTokenService
+import net.folivo.trixnity.client.rest.api.sync.SyncApiClient
+import net.folivo.trixnity.client.rest.api.sync.SyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.EventSerializer
@@ -26,7 +29,8 @@ import kotlin.reflect.KClass
 
 class MatrixClient<T : HttpClientEngineConfig>(
     private val properties: MatrixClientProperties,
-    private val customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
+    syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService(),
+    customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
     private val customModule: SerializersModule? = null,
     httpClientEngineFactory: HttpClientEngineFactory<T>,
     httpClientEngineConfig: T.() -> Unit = {},
@@ -82,9 +86,9 @@ class MatrixClient<T : HttpClientEngineConfig>(
 
     internal val httpClient = HttpClient(httpClientEngineFactory, httpClientConfig)
 
-
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)
     val room = RoomApiClient(httpClient, registeredEvents)
+    val sync = SyncApiClient(httpClient, syncBatchTokenService)
 
 }

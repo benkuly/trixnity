@@ -41,6 +41,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
             }
         }
         val jvmMain by getting {
@@ -63,6 +64,7 @@ kotlin {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
         val jvmTest by getting {

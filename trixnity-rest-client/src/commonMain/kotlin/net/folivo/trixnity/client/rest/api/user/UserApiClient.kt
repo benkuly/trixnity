@@ -44,7 +44,7 @@ class UserApiClient(private val httpClient: HttpClient) {
     ) {
         return httpClient.put {
             url("/r0/profile/${userId.full}/displayname")
-            parameter("user_id", asUserId?.full)
+            parameter("user_id", asUserId)
             body = mapOf("displayname" to displayName)
         }
     }
@@ -55,7 +55,7 @@ class UserApiClient(private val httpClient: HttpClient) {
     suspend fun whoAmI(asUserId: UserId? = null): UserId {
         return httpClient.get<WhoAmIResponse> {
             url("/r0/account/whoami")
-            parameter("user_id", asUserId?.full)
+            parameter("user_id", asUserId)
         }.userId
     }
 }
