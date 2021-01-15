@@ -36,7 +36,40 @@ class RoomApiClientTest {
     }
 
     @Test
-    fun shouldGetSomeRoomEvent() = runBlockingTest {
+    fun shouldEncodeUrlParameter() = runBlockingTest {
+        val response = NameEvent(
+            id = EventId("event", "server"),
+            roomId = RoomId("room", "server"),
+            unsigned = StandardUnsignedData(),
+            originTimestamp = 1234,
+            sender = UserId("sender", "server"),
+            content = NameEventContent()
+        )
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                assertEquals(
+                    "/_matrix/client/r0/rooms/%21room%3Aserver/event/%24event%3Aserver?user_id=%40user%3Aserver",
+                    request.url.fullPath
+                )
+                respond(
+                    json.encodeToString(response),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
+            }
+        }
+        matrixClient.room.getEvent(
+            RoomId("room", "server"),
+            EventId("event", "server"),
+            asUserId = UserId("user", "server")
+        )
+    }
+
+    @Test
+    fun shouldGetRoomEvent() = runBlockingTest {
         val response = NameEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
@@ -67,7 +100,7 @@ class RoomApiClientTest {
     }
 
     @Test
-    fun shouldGetSomeStateEvent() = runBlockingTest {
+    fun shouldGetStateEvent() = runBlockingTest {
         val response = NameEventContent("name")
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
@@ -568,7 +601,7 @@ class RoomApiClientTest {
         ) {
             addHandler { request ->
                 assertEquals(
-                    "/_matrix/client/r0/join/%21room%3Aserver?server_name=server",
+                    "/_matrix/client/r0/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
                     request.url.fullPath
                 )
                 assertEquals(HttpMethod.Post, request.method)
@@ -597,7 +630,7 @@ class RoomApiClientTest {
         }
         val result = matrixClient.room.joinRoom(
             roomId = RoomId("room", "server"),
-            serverNames = setOf("server"),
+            serverNames = setOf("server1.com", "server2.com"),
             thirdPartySigned = ThirdPartySigned(
                 sender = UserId("alice", "server"),
                 mxid = UserId("bob", "server"),
@@ -620,7 +653,7 @@ class RoomApiClientTest {
         ) {
             addHandler { request ->
                 assertEquals(
-                    "/_matrix/client/r0/join/%23alias%3Aserver?server_name=server",
+                    "/_matrix/client/r0/join/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
                     request.url.fullPath
                 )
                 assertEquals(HttpMethod.Post, request.method)
@@ -649,7 +682,7 @@ class RoomApiClientTest {
         }
         val result = matrixClient.room.joinRoom(
             roomAliasId = RoomAliasId("alias", "server"),
-            serverNames = setOf("server"),
+            serverNames = setOf("server1.com", "server2.com"),
             thirdPartySigned = ThirdPartySigned(
                 sender = UserId("alice", "server"),
                 mxid = UserId("bob", "server"),

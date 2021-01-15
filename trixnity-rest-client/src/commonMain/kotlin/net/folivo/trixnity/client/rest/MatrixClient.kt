@@ -22,6 +22,7 @@ import net.folivo.trixnity.client.rest.api.sync.InMemorySyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.sync.SyncApiClient
 import net.folivo.trixnity.client.rest.api.sync.SyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
+import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.EventSerializer
 import net.folivo.trixnity.core.serialization.EventSerializer.EventSerializerDescriptor
@@ -90,5 +91,8 @@ class MatrixClient<T : HttpClientEngineConfig>(
     val user = UserApiClient(httpClient)
     val room = RoomApiClient(httpClient, registeredEvents)
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
+}
 
+fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
+    return full.encodeURLQueryComponent(true)
 }

@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.rest.api.user
 import io.ktor.client.*
 import io.ktor.client.request.*
 import net.folivo.trixnity.client.rest.api.user.RegisterRequest.Auth
+import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
 class UserApiClient(private val httpClient: HttpClient) {
@@ -43,7 +44,7 @@ class UserApiClient(private val httpClient: HttpClient) {
         asUserId: UserId? = null
     ) {
         return httpClient.put {
-            url("/r0/profile/${userId.full}/displayname")
+            url("/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
             body = mapOf("displayname" to displayName)
         }

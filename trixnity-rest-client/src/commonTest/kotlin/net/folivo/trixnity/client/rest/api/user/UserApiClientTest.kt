@@ -65,7 +65,7 @@ class UserApiClientTest {
             httpClientEngineFactory = MockEngine,
         ) {
             addHandler { request ->
-                assertEquals("/_matrix/client/r0/profile/@user:server/displayname", request.url.fullPath)
+                assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
                 assertEquals(HttpMethod.Put, request.method)
                 assertEquals("""{"displayname":"someDisplayName"}""", request.body.toByteArray().decodeToString())
                 respond(

@@ -9,6 +9,7 @@ import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Preset
 import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
 import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
+import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomEvent
@@ -40,7 +41,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): Event<*> {
         return httpClient.get {
-            url("/r0/rooms/$roomId/event/$eventId")
+            url("/r0/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -56,7 +57,7 @@ class RoomApiClient(
         val eventType =
             registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.get {
-            url("/r0/rooms/$roomId/state/$eventType/$stateKey")
+            url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
         }
     }
@@ -66,7 +67,7 @@ class RoomApiClient(
      */
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
         return httpClient.get {
-            url("/r0/rooms/$roomId/state")
+            url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
     }
@@ -82,7 +83,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): List<MemberEvent> {
         return httpClient.get<GetMembersResponse> {
-            url("/r0/rooms/$roomId/members")
+            url("/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
@@ -98,7 +99,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): GetJoinedMembersResponse {
         return httpClient.get {
-            url("/r0/rooms/$roomId/joined_members")
+            url("/r0/rooms/${roomId.e()}/joined_members")
             parameter("user_id", asUserId)
         }
     }
@@ -116,7 +117,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): GetEventsResponse {
         return httpClient.get {
-            url("/r0/rooms/$roomId/messages")
+            url("/r0/rooms/${roomId.e()}/messages")
             parameter("from", from)
             parameter("to", to)
             parameter("dir", dir.value)
@@ -138,7 +139,7 @@ class RoomApiClient(
         val eventType =
             registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/$roomId/state/$eventType/$stateKey")
+            url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -156,7 +157,7 @@ class RoomApiClient(
         val eventType =
             registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/$roomId/send/$eventType/$txnId")
+            url("/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -173,7 +174,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): EventId {
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/$roomId/redact/$eventId/$txnId")
+            url("/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
             body = RedactionEventContent(reason)
         }.eventId
@@ -226,7 +227,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.put {
-            url("/r0/directory/room/$roomAliasId")
+            url("/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
             body = SetRoomAliasRequest(roomId)
         }
@@ -240,7 +241,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): GetRoomAliasResponse {
         return httpClient.get {
-            url("/r0/directory/room/$roomAliasId")
+            url("/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -253,7 +254,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.delete {
-            url("/r0/directory/room/$roomAliasId")
+            url("/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -277,7 +278,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.post {
-            url("/r0/rooms/$roomId/invite")
+            url("/r0/rooms/${roomId.e()}/invite")
             parameter("user_id", asUserId)
             body = InviteUserRequest(userId)
         }
@@ -293,8 +294,8 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<JoinRoomResponse> {
-            url("/r0/join/$roomId")
-            parameter("server_name", serverNames)
+            url("/r0/join/${roomId.e()}")
+            serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(thirdPartySigned)
         }.roomId
@@ -310,8 +311,8 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<JoinRoomResponse> {
-            url("/r0/join/$roomAliasId")
-            parameter("server_name", serverNames)
+            url("/r0/join/${roomAliasId.e()}")
+            serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(thirdPartySigned)
         }.roomId
@@ -325,7 +326,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.post {
-            url("/r0/rooms/$roomId/leave")
+            url("/r0/rooms/${roomId.e()}/leave")
             parameter("user_id", asUserId)
         }
     }
