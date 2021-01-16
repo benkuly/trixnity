@@ -129,7 +129,7 @@ class EventSerializerTest {
     """.trimIndent()
         val result = Json.decodeFromString(EventSerializer(), content)
         val resultContent = result.content
-        if (result is MessageEvent<*> && resultContent is TextMessageEventContent) {
+        if (result is MessageEvent && resultContent is TextMessageEventContent) {
             assertEquals("org.matrix.custom.html", resultContent.format)
             assertEquals("m.room.message", result.type)
         } else {
@@ -159,7 +159,7 @@ class EventSerializerTest {
     """.trimIndent()
         val result = Json { ignoreUnknownKeys = true }.decodeFromString(EventSerializer(), content)
         val resultContent = result.content
-        if (result is MessageEvent<*> && resultContent is UnknownMessageEventContent) {
+        if (result is MessageEvent && resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
             assertEquals("m.unknown", resultContent.messageType)
             assertEquals("m.room.message", result.type)
@@ -190,7 +190,7 @@ class EventSerializerTest {
     """.trimIndent()
         val result = Json { ignoreUnknownKeys = true }.decodeFromString(EventSerializer(), content)
         val resultContent = result.content
-        if (result is MessageEvent<*> && resultContent is UnknownMessageEventContent) {
+        if (result is MessageEvent && resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
             assertEquals("dino", resultContent.messageType)
             assertEquals("m.room.message", result.type)

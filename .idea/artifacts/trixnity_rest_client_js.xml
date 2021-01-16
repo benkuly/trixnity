@@ -1,8 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="trixnity-rest-client-js">
     <output-path>$PROJECT_DIR$/trixnity-rest-client/build/libs</output-path>
-    <root id="archive" name="trixnity-rest-client-js.jar">
-      <element id="module-output" name="trixnity.trixnity-rest-client.jsMain" />
-    </root>
+    <root id="archive" name="trixnity-rest-client-js.jar" />
   </artifact>
 </component>

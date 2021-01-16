@@ -26,7 +26,12 @@ data class MemberEvent(
     @SerialName("type") override val type: String = "m.room.member"
 ) : StateEvent<MemberEvent.MemberEventContent> {
 
-    override val stateKey: String = relatedUser.full
+    override val stateKey: String
+
+    init {
+        stateKey = relatedUser.full
+    }
+//    override val stateKey: String = relatedUser.full
 
     @Serializable
     data class MemberUnsignedData(

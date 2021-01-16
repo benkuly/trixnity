@@ -1,8 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="trixnity-core-jvm">
     <output-path>$PROJECT_DIR$/trixnity-core/build/libs</output-path>
-    <root id="archive" name="trixnity-core-jvm.jar">
-      <element id="module-output" name="trixnity.trixnity-core.jvmMain" />
-    </root>
+    <root id="archive" name="trixnity-core-jvm.jar" />
   </artifact>
 </component>
