@@ -28,21 +28,30 @@ import net.folivo.trixnity.core.serialization.EventSerializer
 import net.folivo.trixnity.core.serialization.EventSerializer.EventSerializerDescriptor
 import kotlin.reflect.KClass
 
-class MatrixClient<T : HttpClientEngineConfig>(
-    private val properties: MatrixClientProperties,
-    syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService(),
+class MatrixClient(
+    internal val httpClient: HttpClient,
+    syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
     customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
-    private val customModule: SerializersModule? = null,
-    httpClientEngineFactory: HttpClientEngineFactory<T>,
-    httpClientEngineConfig: T.() -> Unit = {},
 ) {
-    private val eventSerializer = EventSerializer(customSerializers)
-
     private val registeredEvents: Map<KClass<out Event<*>>, String> =
         (customSerializers + EventSerializer.defaultSerializers)
             .map { Pair(it.value.kclass, it.key) }.toMap()
 
-    private val httpClientConfig: HttpClientConfig<T>.() -> Unit = {
+    val server = ServerApiClient(httpClient)
+    val user = UserApiClient(httpClient)
+    val room = RoomApiClient(httpClient, registeredEvents)
+    val sync = SyncApiClient(httpClient, syncBatchTokenService)
+}
+
+fun <T : HttpClientEngineConfig> makeClient(
+    properties: MatrixClientProperties,
+    httpClientEngineFactory: HttpClientEngineFactory<T>,
+    customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
+    customModule: SerializersModule? = null,
+    httpClientEngineConfig: T.() -> Unit = {},
+): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
+    val eventSerializer = EventSerializer(customSerializers)
+    return HttpClient(httpClientEngineFactory) {
         engine(httpClientEngineConfig)
         install(JsonFeature) {
             serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
@@ -70,8 +79,7 @@ class MatrixClient<T : HttpClientEngineConfig>(
                 throw MatrixServerException(response.status, errorResponse)
             }
         }
-        install(DefaultRequest)
-        {
+        install(DefaultRequest) {
             host = properties.homeServer.hostname
             port = properties.homeServer.port
             url.encodedPath = "/_matrix/client/" + url.encodedPath
@@ -79,18 +87,10 @@ class MatrixClient<T : HttpClientEngineConfig>(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout)
-        {
-            requestTimeoutMillis = 35000
+        install(HttpTimeout) {
+            requestTimeoutMillis = 35000 //FIXME only for the one sync request
         }
     }
-
-    internal val httpClient = HttpClient(httpClientEngineFactory, httpClientConfig)
-
-    val server = ServerApiClient(httpClient)
-    val user = UserApiClient(httpClient)
-    val room = RoomApiClient(httpClient, registeredEvents)
-    val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed

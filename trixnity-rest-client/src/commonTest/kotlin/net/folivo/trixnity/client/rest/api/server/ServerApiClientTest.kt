@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.makeClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ class ServerApiClientTest {
             versions = emptyList(),
             unstable_features = mapOf()
         )
-        val matrixClient = MatrixClient(
+        val matrixClient = MatrixClient(makeClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -32,7 +33,7 @@ class ServerApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        }
+        })
         val result = matrixClient.server.getVersions()
         assertEquals(response, result)
     }
@@ -48,7 +49,7 @@ class ServerApiClientTest {
                 )
             )
         )
-        val matrixClient = MatrixClient(
+        val matrixClient = MatrixClient(makeClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -61,7 +62,7 @@ class ServerApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        }
+        })
         val result = matrixClient.server.getCapabilities()
         assertEquals(response, result)
     }

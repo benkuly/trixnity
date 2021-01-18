@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="trixnity-rest-client-jvm-1.0.0-snapshot">
-    <output-path>$PROJECT_DIR$/trixnity-rest-client/build/libs</output-path>
-    <root id="archive" name="trixnity-rest-client-jvm-1.0.0-snapshot.jar">
-      <element id="module-output" name="trixnity.trixnity-rest-client.jvmMain" />
-    </root>
-  </artifact>
-</component>

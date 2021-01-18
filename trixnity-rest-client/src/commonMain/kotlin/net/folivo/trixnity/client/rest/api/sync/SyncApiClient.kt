@@ -29,6 +29,7 @@ class SyncApiClient(
         timeout: Long = 0,
         asUserId: UserId? = null
     ): SyncResponse {
+        println(4)
         return httpClient.get {
             url("/r0/sync")
             parameter("filter", filter)
@@ -48,6 +49,7 @@ class SyncApiClient(
         return flow {
             while (true) {
                 val batchToken = syncBatchTokenService.getBatchToken(asUserId)
+                println(batchToken)
                 val response = try {
                     if (batchToken != null) {
                         syncOnce(

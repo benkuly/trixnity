@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.makeClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.Test
@@ -30,7 +31,7 @@ class UserApiClientTest {
               "inhibit_login":true
             }
         """.trimIndent().lines().joinToString("") { it.trim() }
-        val matrixClient = MatrixClient(
+        val matrixClient = MatrixClient(makeClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -44,7 +45,7 @@ class UserApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        }
+        })
         val result = matrixClient.user.register(
             authenticationType = "someAuthenticationType",
             authenticationSession = "someAuthenticationSession",
@@ -60,7 +61,7 @@ class UserApiClientTest {
 
     @Test
     fun shouldSetDisplayName() = runBlockingTest {
-        val matrixClient = MatrixClient(
+        val matrixClient = MatrixClient(makeClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -74,14 +75,14 @@ class UserApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        }
+        })
         matrixClient.user.setDisplayName(UserId("user", "server"), "someDisplayName")
     }
 
     @Test
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"))
-        val matrixClient = MatrixClient(
+        val matrixClient = MatrixClient(makeClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -94,7 +95,7 @@ class UserApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        }
+        })
         val result = matrixClient.user.whoAmI()
         assertEquals(UserId("user", "server"), result)
     }

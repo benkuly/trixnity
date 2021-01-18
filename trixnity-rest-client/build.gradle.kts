@@ -36,7 +36,10 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
+                    version { strictly("${Versions.kotlinxCoroutines}-native-mt") }
+                }
+                implementation("co.touchlab:stately-concurrency:${Versions.stately}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
@@ -56,7 +59,7 @@ kotlin {
         }
         val nativeMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
+//                implementation("io.ktor:ktor-client-curl:${Versions.ktor}") //FIXME
             }
         }
         val commonTest by getting {
