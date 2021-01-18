@@ -51,16 +51,16 @@ subprojects {
         name = "OSSRH"
         url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
         credentials {
-            username = System.getenv("MAVEN_USERNAME")
-            password = System.getenv("MAVEN_PASSWORD")
+            username = System.getenv("OSSRH_USERNAME")
+            password = System.getenv("OSSRH_PASSWORD")
         }
     }
 
     signing {
         isRequired = isRelease
         useInMemoryPgpKeys(
-            System.getenv("MAVEN_SIGN_KEY"),
-            System.getenv("MAVEN_SIGN_PASSWORD")
+            System.getenv("OSSRH_GPG_KEY"),
+            System.getenv("OSSRH_GPG_PASSWORD")
         )
         sign(mavenPublication)
     }
