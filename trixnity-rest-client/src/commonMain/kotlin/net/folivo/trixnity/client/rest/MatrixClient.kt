@@ -88,7 +88,7 @@ fun <T : HttpClientEngineConfig> makeClient(
             accept(Application.Json)
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 35000 //FIXME only for the one sync request
+            requestTimeoutMillis = 35000
         }
     }
 }

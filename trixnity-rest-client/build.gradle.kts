@@ -59,7 +59,7 @@ kotlin {
         }
         val nativeMain by getting {
             dependencies {
-//                implementation("io.ktor:ktor-client-curl:${Versions.ktor}") //FIXME
+                implementation("io.ktor:ktor-client-curl:${Versions.ktor}")
             }
         }
         val commonTest by getting {

@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.rest.api.sync
 
 import com.soywiz.klogger.Logger
 import io.ktor.client.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,7 @@ class SyncApiClient(
             parameter("since", since)
             parameter("timeout", timeout)
             parameter("user_id", asUserId)
+            timeout { requestTimeoutMillis = timeout }
         }
     }
 
