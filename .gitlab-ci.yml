@@ -3,7 +3,7 @@ stages:
   - test
   - publish
 
-image: gradle:alpine
+image: gradle:jre11
 
 # Disable the Gradle daemon for Continuous Integration servers as correctness
 # is usually a priority over speed in CI environments. Using a fresh
@@ -29,6 +29,8 @@ build:
 
 test:
   stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
   script: gradle check
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -39,6 +41,8 @@ test:
 
 publish:
   stage: publish
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
   script: gradle publish
   cache:
     key: "$CI_COMMIT_REF_NAME"
