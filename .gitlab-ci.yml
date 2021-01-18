@@ -1,6 +1,4 @@
 stages:
-  - build
-  - test
   - publish
 
 image: gradle:jdk11
@@ -15,33 +13,12 @@ variables:
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
-cache:
-  key: "$CI_COMMIT_REF_NAME"
-  paths:
-    - build
-    - .gradle
-    - .konan
-
-build:
-  stage: build
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-  script: gradle --build-cache assemble
-
-test_install_firefox:
-  stage: test
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-  script: apt-get update && apt-get install -y firefox libncurses6
-
-test:
-  stage: test
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-  script: gradle check
-
 publish:
   stage: publish
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-  script: gradle publish
+  script:
+    - gradle build
+    - apt-get update && apt-get install -y firefox libncurses6
+    - gradle check
+    - gradle publish
