@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "1.0.0-snapshot"
+    version = "1.0.0"
 }
 
 inline val Project.isRelease
