@@ -12,13 +12,12 @@ variables:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
+  - apt-get update && apt-get install -y firefox libncurses6
 
 publish:
   stage: publish
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
   script:
-    - gradle build
-    - apt-get update && apt-get install -y firefox libncurses6
     - gradle check
     - gradle publish
