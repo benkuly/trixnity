@@ -3,7 +3,7 @@ stages:
   - test
   - publish
 
-image: gradle:jre11
+image: gradle:jdk11
 
 # Disable the Gradle daemon for Continuous Integration servers as correctness
 # is usually a priority over speed in CI environments. Using a fresh
