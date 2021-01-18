@@ -1,7 +1,7 @@
 stages:
   - build
   - test
-  - pubish
+  - publish
 
 image: gradle:alpine
 
