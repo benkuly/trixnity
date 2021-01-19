@@ -7,6 +7,11 @@ plugins {
 allprojects {
     group = "net.folivo"
     version = "1.0.0"
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
 }
 
 inline val Project.isRelease
@@ -17,10 +22,12 @@ subprojects {
     apply(plugin = "signing")
     apply(plugin = "org.jetbrains.dokka")
 
-    repositories {
-        mavenCentral()
-        jcenter()
+    val dokkaJavadocJar by tasks.creating(Jar::class) {
+        dependsOn(tasks.dokkaJavadoc)
+        from(tasks.dokkaJavadoc.get().outputDirectory.get())
+        archiveClassifier.set("javadoc")
     }
+
     publishing {
         publications.configureEach {
             if (this is MavenPublication) {
@@ -42,6 +49,8 @@ subprojects {
                     scm {
                         url.set("https://gitlab.folivo.net/benkuly/trixnity")
                     }
+
+                    artifact(dokkaJavadocJar)
                 }
             }
         }
