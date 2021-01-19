@@ -59,8 +59,8 @@ subprojects {
     signing {
         isRequired = isRelease
         useInMemoryPgpKeys(
-            System.getenv("OSSRH_GPG_KEY"),
-            System.getenv("OSSRH_GPG_PASSWORD")
+            System.getenv("OSSRH_PGP_KEY"),
+            System.getenv("OSSRH_PGP_PASSWORD")
         )
         sign(mavenPublication)
     }
