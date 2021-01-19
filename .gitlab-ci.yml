@@ -16,8 +16,5 @@ before_script:
 
 publish:
   stage: publish
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
   script:
-    - gradle check
-    - gradle publish
+    - echo "$OSSRH_PGP_KEY"
