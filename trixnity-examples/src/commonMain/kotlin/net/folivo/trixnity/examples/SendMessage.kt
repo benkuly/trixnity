@@ -13,15 +13,15 @@ class SendMessage {
     private val matrixClient = MatrixClient(
         makeHttpClient(
             MatrixClientProperties(
-                MatrixHomeServerProperties("matrix.imbitbu.de"),
-                """MDAxOGxvY2F0aW9uIGltYml0YnUuZGUKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDIyY2lkIHVzZXJfaWQgPSBAdnZvOmltYml0YnUuZGUKMDAxNmNpZCB0eXBlID0gYWNjZXNzCjAwMjFjaWQgbm9uY2UgPSA9eGlUSFRWU28qbn5ILX5HCjAwMmZzaWduYXR1cmUgQxkQoQm2x98tuTURH4bEhxtueITicRVGugZgVbJq2E0K"""
+                MatrixHomeServerProperties("matrix.org"),
+                """CHANGEME"""
             )
         )
     )
 
     suspend fun sendMessage() {
         matrixClient.room.sendRoomEvent<MessageEvent, MessageEventContent>(
-            RoomId("zqCKMizNPeocxLJFNF", "imbitbu.de"),
+            RoomId("CHANGEME", "matrix.org"),
             TextMessageEventContent("hello from platform $Platform")
         )
     }
