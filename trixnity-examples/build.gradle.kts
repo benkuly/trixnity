@@ -35,16 +35,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                api(project(":trixnity-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
-                    version { strictly("${Versions.kotlinxCoroutines}-native-mt") }
-                }
-                implementation("co.touchlab:stately-concurrency:${Versions.stately}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
-                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
-                implementation("com.benasher44:uuid:${Versions.uuid}")
-                implementation("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
+                implementation(project(":trixnity-rest-client"))
             }
         }
         val jvmMain by getting {
@@ -66,8 +57,6 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
         val jvmTest by getting {

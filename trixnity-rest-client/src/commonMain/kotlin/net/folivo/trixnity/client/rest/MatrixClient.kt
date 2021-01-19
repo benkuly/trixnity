@@ -10,6 +10,8 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import io.ktor.http.URLProtocol.Companion.HTTP
+import io.ktor.http.URLProtocol.Companion.HTTPS
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -43,16 +45,13 @@ class MatrixClient(
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
-fun <T : HttpClientEngineConfig> makeClient(
+private fun makeHttpClientConfig(
     properties: MatrixClientProperties,
-    httpClientEngineFactory: HttpClientEngineFactory<T>,
     customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
-    customModule: SerializersModule? = null,
-    httpClientEngineConfig: T.() -> Unit = {},
-): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
+    customModule: SerializersModule? = null
+): HttpClientConfig<*>.() -> Unit { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
     val eventSerializer = EventSerializer(customSerializers)
-    return HttpClient(httpClientEngineFactory) {
-        engine(httpClientEngineConfig)
+    return {
         install(JsonFeature) {
             serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
                 ignoreUnknownKeys = true
@@ -82,14 +81,35 @@ fun <T : HttpClientEngineConfig> makeClient(
         install(DefaultRequest) {
             host = properties.homeServer.hostname
             port = properties.homeServer.port
+            url.protocol = if (properties.homeServer.secure) HTTPS else HTTP
             url.encodedPath = "/_matrix/client/" + url.encodedPath
             header(HttpHeaders.Authorization, "Bearer ${properties.token}")
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 35000
-        }
+    }
+}
+
+fun makeHttpClient(
+    properties: MatrixClientProperties,
+    customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
+    customModule: SerializersModule? = null,
+): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
+    return HttpClient {
+        makeHttpClientConfig(properties, customSerializers, customModule)(this)
+    }
+}
+
+fun <T : HttpClientEngineConfig> makeHttpClient(
+    properties: MatrixClientProperties,
+    httpClientEngineFactory: HttpClientEngineFactory<T>,
+    customSerializers: Map<String, EventSerializerDescriptor<out Event<*>>> = mapOf(),
+    customModule: SerializersModule? = null,
+    httpClientEngineConfig: T.() -> Unit = {},
+): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
+    return HttpClient(httpClientEngineFactory) {
+        engine(httpClientEngineConfig)
+        makeHttpClientConfig(properties, customSerializers, customModule)(this)
     }
 }
 

@@ -20,7 +20,7 @@ class MatrixClientTest {
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
         val matrixClient = MatrixClient(
-            makeClient(
+            makeHttpClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 httpClientEngineFactory = MockEngine,
             ) {
@@ -49,7 +49,7 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(makeClient(
+            val matrixClient = MatrixClient(makeHttpClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 httpClientEngineFactory = MockEngine,
             ) {
@@ -78,7 +78,7 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(makeClient(
+            val matrixClient = MatrixClient(makeHttpClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 httpClientEngineFactory = MockEngine,
             ) {

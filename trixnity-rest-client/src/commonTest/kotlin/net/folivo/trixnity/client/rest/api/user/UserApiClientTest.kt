@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
-import net.folivo.trixnity.client.rest.makeClient
+import net.folivo.trixnity.client.rest.makeHttpClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.Test
@@ -31,7 +31,7 @@ class UserApiClientTest {
               "inhibit_login":true
             }
         """.trimIndent().lines().joinToString("") { it.trim() }
-        val matrixClient = MatrixClient(makeClient(
+        val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -61,7 +61,7 @@ class UserApiClientTest {
 
     @Test
     fun shouldSetDisplayName() = runBlockingTest {
-        val matrixClient = MatrixClient(makeClient(
+        val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -82,7 +82,7 @@ class UserApiClientTest {
     @Test
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"))
-        val matrixClient = MatrixClient(makeClient(
+        val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
