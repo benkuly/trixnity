@@ -87,6 +87,9 @@ private fun makeHttpClientConfig(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
+        install(HttpTimeout) {
+            
+        }
     }
 }
 

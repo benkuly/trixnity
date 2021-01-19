@@ -1,6 +1,7 @@
 plugins {
     `maven-publish`
     signing
+    id("org.jetbrains.dokka") version Versions.dokka
 }
 
 allprojects {
@@ -14,6 +15,7 @@ inline val Project.isRelease
 subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "signing")
+    apply(plugin = "org.jetbrains.dokka")
 
     repositories {
         mavenCentral()
