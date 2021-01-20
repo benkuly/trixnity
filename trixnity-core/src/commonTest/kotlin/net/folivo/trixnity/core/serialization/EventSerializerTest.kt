@@ -3,7 +3,6 @@ package net.folivo.trixnity.core.serialization
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.modules.serializersModuleOf
 import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -18,6 +17,11 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class EventSerializerTest {
+
+    val json = Json {
+        ignoreUnknownKeys = true
+        serializersModule = createEventSerializersModule()
+    }
 
     @Test
     fun shouldCreateSubtypeFromStateEvent() {
@@ -37,16 +41,12 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json.decodeFromString(EventSerializer(), content)
-        if (result is CanonicalAliasEvent) {
-            assertEquals(
-                RoomAliasId("somewhere", "example.org"), result.content.alias
-            )
-            assertEquals(1234, result.unsigned.age)
-            assertEquals("m.room.canonical_alias", result.type)
-        } else {
-            fail("result should be of type ${CanonicalAliasEvent::class} but was ${result::class}")
-        }
+        val result = json.decodeFromString<CanonicalAliasEvent>(content)
+        assertEquals(
+            RoomAliasId("somewhere", "example.org"), result.content.alias
+        )
+        assertEquals(1234, result.unsigned.age)
+        assertEquals("m.room.canonical_alias", result.type)
     }
 
     @Test
@@ -74,14 +74,10 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json.decodeFromString(EventSerializer(), content)
-        if (result is CreateEvent) {
-            assertEquals(UserId("example", "example.org"), result.content.creator)
-            assertEquals(1234, result.unsigned.age)
-            assertEquals("m.room.create", result.type)
-        } else {
-            fail("result should be of type ${MessageEvent::class} but was ${result::class}")
-        }
+        val result = json.decodeFromString<CreateEvent>(content)
+        assertEquals(UserId("example", "example.org"), result.content.creator)
+        assertEquals(1234, result.unsigned.age)
+        assertEquals("m.room.create", result.type)
     }
 
     @Test
@@ -101,7 +97,7 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json { ignoreUnknownKeys = true }.decodeFromString(EventSerializer(), content)
+        val result: Event<*> = json.decodeFromString<Event<Any>>(content)
         if (result is UnknownEvent) {
             assertEquals("unknownEventType", result.type)
             assertEquals("unicorn", result.content["something"]?.jsonPrimitive?.content)
@@ -130,7 +126,7 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json.decodeFromString(EventSerializer(), content)
+        val result: Event<*> = json.decodeFromString<Event<Any>>(content)
         val resultContent = result.content
         if (result is MessageEvent && resultContent is TextMessageEventContent) {
             assertEquals("org.matrix.custom.html", resultContent.format)
@@ -160,7 +156,7 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json { ignoreUnknownKeys = true }.decodeFromString(EventSerializer(), content)
+        val result: Event<*> = json.decodeFromString<Event<Any>>(content)
         val resultContent = result.content
         if (result is MessageEvent && resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
@@ -191,7 +187,7 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json { ignoreUnknownKeys = true }.decodeFromString(EventSerializer(), content)
+        val result: Event<*> = json.decodeFromString<Event<Any>>(content)
         val resultContent = result.content
         if (result is MessageEvent && resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
@@ -204,7 +200,7 @@ class EventSerializerTest {
 
     @Test
     fun shouldCreateValidMatrixJsonFromMessageEventContent() {
-        val result = Json.encodeToString(NoticeMessageEventContent("test"))
+        val result = json.encodeToString(NoticeMessageEventContent("test"))
         assertEquals("""{"body":"test"}""", result)
     }
 
@@ -235,10 +231,7 @@ class EventSerializerTest {
             }
         }
     """.trimIndent()
-        val result = Json {
-            ignoreUnknownKeys = true
-            serializersModule = serializersModuleOf(EventSerializer())
-        }.decodeFromString<CustomResponse>(content)
+        val result = json.decodeFromString<CustomResponse>(content)
         val resultContent = result.event.content
         if (result.event as Event<*> is MessageEvent && resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)

@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.rest.api.room
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.matrix.restclient.api.rooms.Membership
@@ -15,6 +14,7 @@ import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.makeHttpClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StandardUnsignedData
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberEventContent
@@ -24,7 +24,6 @@ import net.folivo.trixnity.core.model.events.m.room.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.MessageEvent.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent.NameEventContent
-import net.folivo.trixnity.core.serialization.EventSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -96,11 +95,11 @@ class RoomApiClientTest {
                 )
             }
         })
-        val result = matrixClient.room.getEvent(
+        val result: Event<*> = matrixClient.room.getEvent(
             RoomId("room", "server"),
             EventId("event", "server")
         )
-        assertEquals(NameEvent::class, result::class)
+        assertTrue(result is NameEvent)
     }
 
     @Test
@@ -155,7 +154,7 @@ class RoomApiClientTest {
                 assertEquals("/_matrix/client/r0/rooms/%21room%3Aserver/state", request.url.fullPath)
                 assertEquals(HttpMethod.Get, request.method)
                 respond(
-                    json.encodeToString(ListSerializer(EventSerializer()), response),
+                    json.encodeToString(response),
                     HttpStatusCode.OK,
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )

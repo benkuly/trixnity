@@ -18,12 +18,17 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEvent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEvent.RedactionEventContent
-import kotlin.reflect.KClass
+import net.folivo.trixnity.core.serialization.EventSerializerDescriptor
 
 class RoomApiClient(
     val httpClient: HttpClient,
-    val registeredEvents: Map<KClass<out Event<*>>, String>
+    roomEventSerializers: Set<EventSerializerDescriptor<out RoomEvent<*>, *>>,
+    stateEventSerializers: Set<EventSerializerDescriptor<out StateEvent<*>, *>>
 ) {
+
+    val roomEventLookup = roomEventSerializers.map { Pair(it.eventClass, it.type) }.toMap()
+    val stateEventLookup = stateEventSerializers.map { Pair(it.eventClass, it.type) }.toMap()
+
 
     companion object {
         const val unsupportedEventType =
@@ -39,7 +44,7 @@ class RoomApiClient(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
-    ): Event<*> {
+    ): Event<Any> {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
@@ -54,8 +59,7 @@ class RoomApiClient(
         stateKey: String = "",
         asUserId: UserId? = null
     ): C {
-        val eventType =
-            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType = stateEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -65,7 +69,7 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
+    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<Any>> {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
@@ -136,8 +140,7 @@ class RoomApiClient(
         stateKey: String? = "",
         asUserId: UserId? = null
     ): EventId {
-        val eventType =
-            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType = stateEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -154,8 +157,7 @@ class RoomApiClient(
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        val eventType =
-            registeredEvents[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType = roomEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)

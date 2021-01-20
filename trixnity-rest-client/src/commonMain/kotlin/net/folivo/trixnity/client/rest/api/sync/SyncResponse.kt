@@ -1,6 +1,6 @@
 package net.folivo.matrix.restclient.api.sync
 
-import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.MatrixId.RoomId
@@ -43,7 +43,7 @@ data class SyncResponse(
 
             @Serializable
             data class Ephemeral(
-                @SerialName("events") val events: List<Event<@Polymorphic Any>>
+                @SerialName("events") val events: List<Event<@Contextual Any>>
             )
 
             @Serializable
@@ -72,12 +72,12 @@ data class SyncResponse(
 
         @Serializable
         data class State(
-            @SerialName("events") val events: List<StateEvent<@Polymorphic Any>>
+            @SerialName("events") val events: List<StateEvent<@Contextual Any>>
         )
 
         @Serializable
         data class Timeline(
-            @SerialName("events") val events: List<RoomEvent<@Polymorphic Any>>,
+            @SerialName("events") val events: List<RoomEvent<@Contextual Any>>,
             @SerialName("limited") val limited: Boolean,
             @SerialName("prev_batch") val previousBatch: String
         )
@@ -85,12 +85,12 @@ data class SyncResponse(
 
     @Serializable
     data class Presence(
-        @SerialName("events") val events: List<Event<@Polymorphic Any>>
+        @SerialName("events") val events: List<Event<@Contextual Any>>
     )
 
     @Serializable
     data class AccountData(
-        @SerialName("events") val events: List<Event<@Polymorphic Any>>
+        @SerialName("events") val events: List<Event<@Contextual Any>>
     )
 
     @Serializable
@@ -101,6 +101,6 @@ data class SyncResponse(
 
     @Serializable
     data class ToDevice(
-        @SerialName("events") val events: List<Event<@Polymorphic Any>>
+        @SerialName("events") val events: List<Event<@Contextual Any>>
     )
 }

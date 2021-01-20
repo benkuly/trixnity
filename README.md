@@ -44,3 +44,7 @@ suspend fun sendMessage() {
 or retrieve messages:
 
 The `MatrixClient` also allows you to register custom event types.
+
+### Customize
+
+Coming soon (allows to register custom event types).
