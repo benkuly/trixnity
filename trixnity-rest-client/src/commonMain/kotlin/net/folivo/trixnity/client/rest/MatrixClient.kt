@@ -12,6 +12,7 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import net.folivo.trixnity.client.rest.api.ErrorResponse
@@ -45,10 +46,15 @@ class MatrixClient(
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
+@ExperimentalSerializationApi
 private fun makeHttpClientConfig(
     properties: MatrixClientProperties,
     customModule: SerializersModule? = null
 ): HttpClientConfig<*>.() -> Unit { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
+    val eventSerializerModule = createEventSerializersModule()
+//    val eventListSerializerModule = // I know it's hacky.
+//        serializersModuleOf(ListSerializer(eventSerializerModule.getContextual(Event::class)!!))
+
     return {
         install(JsonFeature) {
             serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
@@ -56,7 +62,7 @@ private fun makeHttpClientConfig(
                 // TODO although we don't want null values to be encoded, this flag is needed to encode the "type" of an event because of its default value type-field
                 encodeDefaults = true
                 serializersModule =
-                    createEventSerializersModule().let {
+                    eventSerializerModule.let {
                         if (customModule != null) it + customModule else it
                     }
             })
@@ -69,7 +75,10 @@ private fun makeHttpClientConfig(
                     try {
                         response.receive<ErrorResponse>()
                     } catch (error: Throwable) {
-                        throw MatrixServerException(response.status, ErrorResponse("UNKNOWN", response.readText()))
+                        throw MatrixServerException(
+                            response.status,
+                            ErrorResponse("UNKNOWN", response.readText())
+                        )
                     }
                 throw MatrixServerException(response.status, errorResponse)
             }

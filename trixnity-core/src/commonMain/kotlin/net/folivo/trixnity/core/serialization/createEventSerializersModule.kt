@@ -1,12 +1,18 @@
 package net.folivo.trixnity.core.serialization
 
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonContentPolymorphicSerializer
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
 import net.folivo.trixnity.core.model.events.*
 
 fun createEventSerializersModule(
@@ -28,14 +34,32 @@ fun createEventSerializersModule(
             override fun deserialize(decoder: Decoder): Any = throw exception
             override fun serialize(encoder: Encoder, value: Any) = throw exception
         })
-        polymorphicDefault(Event::class) {
-            eventsLookup[it] ?: UnknownEvent.serializer()
+        contextual(Event::class, object : JsonContentPolymorphicSerializer<Event<*>>(Event::class) {
+            override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out Event<*>> {
+                val type = element.jsonObject["type"]?.jsonPrimitive?.content
+                return eventsLookup[type] ?: UnknownEvent.serializer()
+            }
+        })
+        contextual(RoomEvent::class, object : JsonContentPolymorphicSerializer<RoomEvent<*>>(RoomEvent::class) {
+            override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out RoomEvent<*>> {
+                val type = element.jsonObject["type"]?.jsonPrimitive?.content
+                return roomEventsLookup[type] ?: UnknownRoomEvent.serializer()
+            }
+        })
+        contextual(StateEvent::class, object : JsonContentPolymorphicSerializer<StateEvent<*>>(StateEvent::class) {
+            override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out StateEvent<*>> {
+                val type = element.jsonObject["type"]?.jsonPrimitive?.content
+                return stateEventsLookup[type] ?: UnknownStateEvent.serializer()
+            }
+        })
+        polymorphic(Event::class) {
+            default { eventsLookup[it] ?: UnknownEvent.serializer() }
         }
-        polymorphicDefault(RoomEvent::class) {
-            roomEventsLookup[it] ?: UnknownRoomEvent.serializer()
+        polymorphic(RoomEvent::class) {
+            default { roomEventsLookup[it] ?: UnknownRoomEvent.serializer() }
         }
-        polymorphicDefault(StateEvent::class) {
-            stateEventsLookup[it] ?: UnknownStateEvent.serializer()
+        polymorphic(StateEvent::class) {
+            default { stateEventsLookup[it] ?: UnknownStateEvent.serializer() }
         }
     }
 }

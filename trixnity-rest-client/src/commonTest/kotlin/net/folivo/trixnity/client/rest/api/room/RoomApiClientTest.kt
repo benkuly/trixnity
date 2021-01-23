@@ -24,6 +24,7 @@ import net.folivo.trixnity.core.model.events.m.room.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.MessageEvent.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent.NameEventContent
+import net.folivo.trixnity.core.serialization.createEventSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -33,6 +34,7 @@ class RoomApiClientTest {
 
     private val json = Json {
         encodeDefaults = true
+        serializersModule = createEventSerializersModule()
     }
 
     @Test
@@ -146,6 +148,7 @@ class RoomApiClientTest {
                 content = MemberEventContent(membership = INVITE)
             )
         )
+        println(json.encodeToString(response))
         val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -173,7 +176,7 @@ class RoomApiClientTest {
                 MemberEvent(
                     id = EventId("event1", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = MemberEvent.MemberUnsignedData(),
+                    unsigned = MemberUnsignedData(),
                     originTimestamp = 12341,
                     sender = UserId("sender", "server"),
                     relatedUser = UserId("user1", "server"),
@@ -182,7 +185,7 @@ class RoomApiClientTest {
                 MemberEvent(
                     id = EventId("event2", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = MemberEvent.MemberUnsignedData(),
+                    unsigned = MemberUnsignedData(),
                     originTimestamp = 12342,
                     sender = UserId("sender", "server"),
                     relatedUser = UserId("user2", "server"),

@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEvent.CanonicalAliasEventContent
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-aliases">matrix spec</a>
+ * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-canonical-alias">matrix spec</a>
  */
 @Serializable
 data class CanonicalAliasEvent(
@@ -20,7 +20,7 @@ data class CanonicalAliasEvent(
     @SerialName("room_id") override val roomId: RoomId? = null,
     @SerialName("prev_content") override val previousContent: CanonicalAliasEventContent? = null,
     @SerialName("state_key") override val stateKey: String = "",
-    @SerialName("type") override val type: String = "m.room.aliases",
+    @SerialName("type") override val type: String = "m.room.canonical_alias",
 ) : StateEvent<CanonicalAliasEventContent> {
 
     @Serializable

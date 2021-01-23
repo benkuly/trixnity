@@ -44,7 +44,7 @@ class RoomApiClient(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
-    ): Event<Any> {
+    ): Event<*> {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
@@ -69,7 +69,7 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<Any>> {
+    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
