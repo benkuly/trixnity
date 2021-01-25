@@ -26,19 +26,20 @@ import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.RoomEvent
 import net.folivo.trixnity.core.model.events.StateEvent
-import net.folivo.trixnity.core.serialization.EventSerializerDescriptor
-import net.folivo.trixnity.core.serialization.createEventSerializersModule
-import net.folivo.trixnity.core.serialization.defaultRoomEventSerializers
-import net.folivo.trixnity.core.serialization.defaultStateEventSerializers
+import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
+import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
+import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
+import net.folivo.trixnity.core.serialization.event.createEventSerializersModule
 
 class MatrixClient(
     internal val httpClient: HttpClient,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
 ) {
     // TODO allow customization (needs https://youtrack.jetbrains.com/issue/KTOR-1628 to be fixed)
-    private val roomEventSerializers: Set<EventSerializerDescriptor<out RoomEvent<*>, *>> = defaultRoomEventSerializers
-    private val stateEventSerializers: Set<EventSerializerDescriptor<out StateEvent<*>, *>> =
-        defaultStateEventSerializers
+    private val roomEventSerializers: Set<EventContentSerializerMapping<out RoomEvent<*>, *>> =
+        DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
+    private val stateEventSerializers: Set<EventContentSerializerMapping<out StateEvent<*>, *>> =
+        DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)

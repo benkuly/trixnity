@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.m.room.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.MessageEvent.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent
 import net.folivo.trixnity.core.model.events.m.room.NameEvent.NameEventContent
-import net.folivo.trixnity.core.serialization.createEventSerializersModule
+import net.folivo.trixnity.core.serialization.event.createEventSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

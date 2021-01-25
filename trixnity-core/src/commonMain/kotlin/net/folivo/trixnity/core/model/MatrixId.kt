@@ -3,7 +3,6 @@ package net.folivo.trixnity.core.model
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.serialization.MatrixIdSerializer
 
-//TODO do we need validation?
 @Serializable(with = MatrixIdSerializer::class)
 sealed class MatrixId {
 
@@ -36,10 +35,10 @@ sealed class MatrixId {
         fun of(full: String): MatrixId {
             if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
             return when (full.first()) {
-                '@'  -> MatrixId.UserId(full)
-                '!'  -> MatrixId.RoomId(full)
-                '#'  -> MatrixId.RoomAliasId(full)
-                '$'  -> MatrixId.EventId(full)
+                '@'  -> UserId(full)
+                '!'  -> RoomId(full)
+                '#'  -> RoomAliasId(full)
+                '$'  -> EventId(full)
                 else -> throw IllegalArgumentException("not a valid matrix identifier")
             }
         }

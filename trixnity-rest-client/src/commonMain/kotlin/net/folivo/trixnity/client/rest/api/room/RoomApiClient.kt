@@ -4,7 +4,6 @@ import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
 import net.folivo.matrix.restclient.api.rooms.Membership
-import net.folivo.trixnity.client.rest.api.room.*
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Preset
 import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
@@ -18,12 +17,12 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEvent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEvent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEvent.RedactionEventContent
-import net.folivo.trixnity.core.serialization.EventSerializerDescriptor
+import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
 class RoomApiClient(
     val httpClient: HttpClient,
-    roomEventSerializers: Set<EventSerializerDescriptor<out RoomEvent<*>, *>>,
-    stateEventSerializers: Set<EventSerializerDescriptor<out StateEvent<*>, *>>
+    roomEventSerializers: Set<EventContentSerializerMapping<out RoomEvent<*>, *>>,
+    stateEventSerializers: Set<EventContentSerializerMapping<out StateEvent<*>, *>>
 ) {
 
     val roomEventLookup = roomEventSerializers.map { Pair(it.eventClass, it.type) }.toMap()
