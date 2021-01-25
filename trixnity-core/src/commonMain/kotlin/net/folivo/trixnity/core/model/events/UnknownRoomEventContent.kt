@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.model.events
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
-class UnknownRoomEventContent : RoomEventContent // TODO make wrapper with JsonObject for content
+data class UnknownRoomEventContent(val raw: JsonObject, val eventType: String) : RoomEventContent

@@ -26,7 +26,8 @@ class RoomEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val contentSerializer = eventsContentLookupByType[type] ?: UnknownRoomEventContent.serializer()
+        val contentSerializer =
+            eventsContentLookupByType[type] ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
             HideDiscriminatorSerializer(
                 RoomEvent.serializer(contentSerializer),
@@ -37,6 +38,7 @@ class RoomEventSerializer(
     }
 
     override fun serialize(encoder: Encoder, value: RoomEvent<*>) {
+        if (value.content is UnknownRoomEventContent) throw IllegalArgumentException("${UnknownRoomEventContent::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentDescriptor = roomEventContentSerializers.find { it.kClass.isInstance(value.content) }
         requireNotNull(contentDescriptor, { "event content type ${value.content::class} must be registered" })

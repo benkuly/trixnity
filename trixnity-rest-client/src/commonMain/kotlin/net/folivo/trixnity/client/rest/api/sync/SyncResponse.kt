@@ -1,13 +1,10 @@
 package net.folivo.matrix.restclient.api.sync
 
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.RoomEvent
-import net.folivo.trixnity.core.model.events.StateEvent
-import net.folivo.trixnity.core.model.events.StrippedStateEvent
+import net.folivo.trixnity.core.model.events.Event.*
 
 @Serializable
 data class SyncResponse(
@@ -43,7 +40,7 @@ data class SyncResponse(
 
             @Serializable
             data class Ephemeral(
-                @SerialName("events") val events: List<Event<@Contextual Any>>
+                @SerialName("events") val events: List<Event<*>>
             )
 
             @Serializable
@@ -59,7 +56,7 @@ data class SyncResponse(
         ) {
             @Serializable
             data class InviteState(
-                @SerialName("events") val events: List<StrippedStateEvent>
+                @SerialName("events") val events: List<StrippedStateEvent<*>>
             )
         }
 
@@ -72,12 +69,12 @@ data class SyncResponse(
 
         @Serializable
         data class State(
-            @SerialName("events") val events: List<StateEvent<@Contextual Any>>
+            @SerialName("events") val events: List<StateEvent<*>>
         )
 
         @Serializable
         data class Timeline(
-            @SerialName("events") val events: List<RoomEvent<@Contextual Any>>,
+            @SerialName("events") val events: List<RoomEvent<*>>,
             @SerialName("limited") val limited: Boolean,
             @SerialName("prev_batch") val previousBatch: String
         )
@@ -85,12 +82,12 @@ data class SyncResponse(
 
     @Serializable
     data class Presence(
-        @SerialName("events") val events: List<Event<@Contextual Any>>
+        @SerialName("events") val events: List<Event<*>>
     )
 
     @Serializable
     data class AccountData(
-        @SerialName("events") val events: List<Event<@Contextual Any>>
+        @SerialName("events") val events: List<Event<*>>
     )
 
     @Serializable
@@ -101,6 +98,6 @@ data class SyncResponse(
 
     @Serializable
     data class ToDevice(
-        @SerialName("events") val events: List<Event<@Contextual Any>>
+        @SerialName("events") val events: List<Event<*>>
     )
 }

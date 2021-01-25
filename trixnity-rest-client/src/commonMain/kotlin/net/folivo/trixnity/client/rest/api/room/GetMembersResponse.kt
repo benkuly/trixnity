@@ -2,9 +2,10 @@ package net.folivo.trixnity.client.rest.api.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 
 @Serializable
 internal data class GetMembersResponse(
-    @SerialName("chunk") val chunk: List<MemberEvent>
+    @SerialName("chunk") val chunk: List<StateEvent<MemberEventContent>>
 )

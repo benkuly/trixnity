@@ -12,9 +12,7 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.plus
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.room.RoomApiClient
@@ -24,49 +22,36 @@ import net.folivo.trixnity.client.rest.api.sync.SyncApiClient
 import net.folivo.trixnity.client.rest.api.sync.SyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.events.RoomEvent
-import net.folivo.trixnity.core.model.events.StateEvent
+import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.serialization.createJson
 import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
-import net.folivo.trixnity.core.serialization.event.createEventSerializersModule
 
 class MatrixClient(
     internal val httpClient: HttpClient,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
 ) {
     // TODO allow customization (needs https://youtrack.jetbrains.com/issue/KTOR-1628 to be fixed)
-    private val roomEventSerializers: Set<EventContentSerializerMapping<out RoomEvent<*>, *>> =
+    private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> =
         DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
-    private val stateEventSerializers: Set<EventContentSerializerMapping<out StateEvent<*>, *>> =
+    private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> =
         DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)
-    val room = RoomApiClient(httpClient, roomEventSerializers, stateEventSerializers)
+    val room = RoomApiClient(httpClient, roomEventContentSerializers, stateEventContentSerializers)
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
-@ExperimentalSerializationApi
 private fun makeHttpClientConfig(
     properties: MatrixClientProperties,
     customModule: SerializersModule? = null
 ): HttpClientConfig<*>.() -> Unit { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
-    val eventSerializerModule = createEventSerializersModule()
-//    val eventListSerializerModule = // I know it's hacky.
-//        serializersModuleOf(ListSerializer(eventSerializerModule.getContextual(Event::class)!!))
-
     return {
         install(JsonFeature) {
-            serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
-                ignoreUnknownKeys = true
-                // TODO although we don't want null values to be encoded, this flag is needed to encode the "type" of an event because of its default value type-field
-                encodeDefaults = true
-                serializersModule =
-                    eventSerializerModule.let {
-                        if (customModule != null) it + customModule else it
-                    }
-            })
+            serializer = KotlinxSerializer(createJson())
         }
         install(HttpCallValidator) {
             handleResponseException { responseException ->

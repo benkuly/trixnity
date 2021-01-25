@@ -17,9 +17,10 @@ fun createJson(
     return Json {
         classDiscriminator = "neverUsed"
         ignoreUnknownKeys = true
-        serializersModule = createEventSerializersModule(
-            DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS,
-            DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
-        ) + createMessageEventContentSerializersModule()
+        serializersModule =
+            createEventSerializersModule(
+                roomEventContentSerializers,
+                stateEventContentSerializers
+            ) + createMessageEventContentSerializersModule()
     }
 }

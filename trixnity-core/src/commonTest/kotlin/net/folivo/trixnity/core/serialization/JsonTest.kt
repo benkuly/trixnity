@@ -1,21 +1,19 @@
 package net.folivo.trixnity.core.serialization
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import net.folivo.trixnity.core.model.MatrixId.*
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.UnknownEventContent
-import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.DefaultMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,9 +43,11 @@ class JsonTest {
         }
     """.trimIndent()
         val result = json.decodeFromString<Event<EventContent>>(content)
-        val resultContent = result.content
-        if (result is RoomEvent && resultContent is TextMessageEventContent) {
-            assertEquals("org.matrix.custom.html", resultContent.format)
+        if (result is RoomEvent<*>) {
+            val resultContent = result.content
+            if (resultContent is TextMessageEventContent)
+                assertEquals("org.matrix.custom.html", resultContent.format)
+            else fail("resultContent should be of type ${TextMessageEventContent::class}")
         } else {
             fail("resultContent should be of type ${TextMessageEventContent::class}")
         }
@@ -73,55 +73,15 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val result = json.decodeFromString<Event<*>>(content)
-        val resultContent = result.content
-        if (result is RoomEvent && resultContent is DefaultMessageEventContent) {
-            assertEquals("This is an example text message", resultContent.body)
+        val result = json.decodeFromString<Event<EventContent>>(content)
+        if (result is RoomEvent<*>) {
+            val resultContent = result.content
+            if (resultContent is UnknownMessageEventContent)
+                assertEquals("This is an example text message", resultContent.body)
+            else fail("resultContent should be of type ${UnknownMessageEventContent::class}")
         } else {
-            fail("resultContent should be of type ${DefaultMessageEventContent::class}")
+            fail("result should be of type ${RoomEvent::class}")
         }
-    }
-
-    @Test
-    fun shouldSerializeEventList() {
-        val content = listOf(
-            StateEvent(
-                id = EventId("event1", "server"),
-                roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
-                originTimestamp = 12341,
-                sender = UserId("sender", "server"),
-                content = NameEventContent(),
-                stateKey = ""
-            ),
-            StateEvent(
-                id = EventId("event2", "server"),
-                roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
-                originTimestamp = 12342,
-                sender = UserId("sender", "server"),
-                stateKey = UserId("user", "server").full,
-                content = MemberEventContent(membership = INVITE)
-            )
-        )
-        val expectedResult = """
-        {
-            "content":{
-                "alias":"#somewhere:example.org",
-                "alt_aliases":[]
-            },
-            "sender":"@example:example.org",
-            "event_id":"$143273582443PhrSn:example.org",
-            "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234,"redactedBecause":null,"transaction_id":null},
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
-            "prev_content":null,
-            "state_key":"",
-            "type":"m.room.canonical_alias"
-        }
-    """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(listOf(content, content))
-        assertEquals(expectedResult, result)
     }
 
     @Test
@@ -187,12 +147,13 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val result = json.decodeFromString<Event<*>>(content)
-        if (result is UnknownEvent) {
-            assertEquals("unknownEventType", result.type)
-            assertEquals(UnknownEventContent(), result.content)
+        val result = json.decodeFromString<Event<EventContent>>(content)
+        val resultContent = result.content
+        if (result is BasicEvent && resultContent is UnknownBasicEventContent) {
+            assertEquals("unknownEventType", resultContent.eventType)
+            assertEquals("unicorn", resultContent.raw.jsonObject["something"]?.jsonPrimitive?.content)
         } else {
-            fail("result should be of type ${UnknownEvent::class}")
+            fail("result should be of type ${BasicEvent::class}")
         }
     }
 
@@ -228,22 +189,24 @@ class JsonTest {
                 }
         ]
     """.trimIndent()
-        val result = json.decodeFromString<List<Event<out EventContent>>>(content)
+        val result = json.decodeFromString<List<Event<EventContent>>>(content)
         val result1 = result[0]
         val result2 = result[1]
-        if (result1 is UnknownEvent && result2 is UnknownEvent) {
-            assertEquals("unknownEventType1", result1.type)
-            assertEquals("unknownEventType2", result2.type)
-            assertEquals(UnknownEventContent(), result1.content)
-            assertEquals(UnknownEventContent(), result2.content)
+        val resultContent1 = result1.content
+        val resultContent2 = result2.content
+        if (result1 is BasicEvent && result2 is BasicEvent && resultContent1 is UnknownBasicEventContent && resultContent2 is UnknownBasicEventContent) {
+            assertEquals("unknownEventType1", resultContent1.eventType)
+            assertEquals("unknownEventType2", resultContent2.eventType)
+            assertEquals("unicorn", resultContent1.raw.jsonObject["something"]?.jsonPrimitive?.content)
+            assertEquals("unicorn", resultContent2.raw.jsonObject["something"]?.jsonPrimitive?.content)
         } else {
-            fail("result should be of type ${UnknownEvent::class}")
+            fail("result should be of type ${BasicEvent::class}")
         }
     }
 
     @Serializable
     data class CustomResponse(
-        @SerialName("event") val event: RoomEvent<*>
+        @Contextual @SerialName("event") val event: RoomEvent<*>
     )
 
     @Test
@@ -270,11 +233,11 @@ class JsonTest {
     """.trimIndent()
         val result = json.decodeFromString<CustomResponse>(content)
         val resultContent = result.event.content
-        if (resultContent is DefaultMessageEventContent) {
+        if (resultContent is UnknownMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
             assertEquals("dino", resultContent.type)
         } else {
-            fail("resultContent should be of type ${DefaultMessageEventContent::class}")
+            fail("resultContent should be of type ${UnknownMessageEventContent::class} but was ${resultContent::class}")
         }
     }
 }

@@ -4,8 +4,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import net.folivo.matrix.restclient.api.rooms.Membership
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
@@ -15,16 +13,15 @@ import net.folivo.trixnity.client.rest.makeHttpClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.StandardUnsignedData
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberEventContent.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent.MemberUnsignedData
-import net.folivo.trixnity.core.model.events.m.room.MessageEvent
-import net.folivo.trixnity.core.model.events.m.room.MessageEvent.MessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.NameEvent
-import net.folivo.trixnity.core.model.events.m.room.NameEvent.NameEventContent
-import net.folivo.trixnity.core.serialization.event.createEventSerializersModule
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.serialization.createJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -32,20 +29,18 @@ import kotlin.test.fail
 
 class RoomApiClientTest {
 
-    private val json = Json {
-        encodeDefaults = true
-        serializersModule = createEventSerializersModule()
-    }
+    private val json = createJson()
 
     @Test
     fun shouldEncodeUrlParameter() = runBlockingTest {
-        val response = NameEvent(
+        val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
-            unsigned = StandardUnsignedData(),
+            unsigned = UnsignedData(),
             originTimestamp = 1234,
             sender = UserId("sender", "server"),
-            content = NameEventContent()
+            content = NameEventContent(),
+            stateKey = ""
         )
         val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
@@ -72,13 +67,14 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetRoomEvent() = runBlockingTest {
-        val response = NameEvent(
+        val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
-            unsigned = StandardUnsignedData(),
+            unsigned = UnsignedData(),
             originTimestamp = 1234,
             sender = UserId("sender", "server"),
-            content = NameEventContent()
+            content = NameEventContent(),
+            stateKey = ""
         )
         val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
@@ -101,7 +97,7 @@ class RoomApiClientTest {
             RoomId("room", "server"),
             EventId("event", "server")
         )
-        assertTrue(result is NameEvent)
+        assertTrue(result is StateEvent && result.content is NameEventContent)
     }
 
     @Test
@@ -121,7 +117,7 @@ class RoomApiClientTest {
                 )
             }
         })
-        val result = matrixClient.room.getStateEvent<NameEvent, NameEventContent>(
+        val result = matrixClient.room.getStateEvent<NameEventContent>(
             roomId = RoomId("room", "server"),
         )
         assertEquals(NameEventContent::class, result::class)
@@ -130,21 +126,22 @@ class RoomApiClientTest {
     @Test
     fun shouldGetCompleteState() = runBlockingTest {
         val response = listOf(
-            NameEvent(
+            StateEvent(
                 id = EventId("event1", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = StandardUnsignedData(),
+                unsigned = UnsignedData(),
                 originTimestamp = 12341,
                 sender = UserId("sender", "server"),
-                content = NameEventContent()
+                content = NameEventContent(),
+                stateKey = ""
             ),
-            MemberEvent(
+            StateEvent(
                 id = EventId("event2", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = MemberUnsignedData(),
+                unsigned = UnsignedData(),
                 originTimestamp = 12342,
                 sender = UserId("sender", "server"),
-                relatedUser = UserId("user", "server"),
+                stateKey = UserId("user", "server").full,
                 content = MemberEventContent(membership = INVITE)
             )
         )
@@ -165,30 +162,30 @@ class RoomApiClientTest {
         })
         val result = matrixClient.room.getState(RoomId("room", "server"))
         assertEquals(2, result.size)
-        assertEquals(NameEvent::class, result[0]::class)
-        assertEquals(MemberEvent::class, result[1]::class)
+        assertEquals(NameEventContent::class, result[0].content::class)
+        assertEquals(MemberEventContent::class, result[1].content::class)
     }
 
     @Test
     fun shouldGetMembers() = runBlockingTest {
         val response = GetMembersResponse(
             listOf(
-                MemberEvent(
+                StateEvent(
                     id = EventId("event1", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = MemberUnsignedData(),
+                    unsigned = UnsignedData(),
                     originTimestamp = 12341,
                     sender = UserId("sender", "server"),
-                    relatedUser = UserId("user1", "server"),
+                    stateKey = UserId("user1", "server").full,
                     content = MemberEventContent(membership = INVITE)
                 ),
-                MemberEvent(
+                StateEvent(
                     id = EventId("event2", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = MemberUnsignedData(),
+                    unsigned = UnsignedData(),
                     originTimestamp = 12342,
                     sender = UserId("sender", "server"),
-                    relatedUser = UserId("user2", "server"),
+                    stateKey = UserId("user2", "server").full,
                     content = MemberEventContent(membership = INVITE)
                 )
             )
@@ -216,8 +213,8 @@ class RoomApiClientTest {
             membership = Membership.JOIN
         )
         assertEquals(2, result.size)
-        assertEquals(MemberEvent::class, result[0]::class)
-        assertEquals(MemberEvent::class, result[1]::class)
+        assertEquals(MemberEventContent::class, result[0].content::class)
+        assertEquals(MemberEventContent::class, result[1].content::class)
         assertEquals(EventId("event2", "server"), result[1].id)
     }
 
@@ -306,7 +303,7 @@ class RoomApiClientTest {
         })
         val eventContent = NameEventContent("name")
 
-        val result = matrixClient.room.sendStateEvent<NameEvent, NameEventContent>(
+        val result = matrixClient.room.sendStateEvent(
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             stateKey = "someStateKey"
@@ -320,7 +317,7 @@ class RoomApiClientTest {
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) { addHandler { respondOk() } })
-        val eventContent = object {
+        val eventContent = object : StateEventContent {
             val banana: String = "yeah"
         }
 
@@ -362,7 +359,7 @@ class RoomApiClientTest {
             }
         })
         val eventContent = TextMessageEventContent("someBody")
-        val result = matrixClient.room.sendRoomEvent<MessageEvent, TextMessageEventContent>(
+        val result = matrixClient.room.sendRoomEvent(
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             txnId = "someTxnId"
@@ -376,7 +373,7 @@ class RoomApiClientTest {
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) { addHandler { respondOk() } })
-        val eventContent = object {
+        val eventContent = object : RoomEventContent {
             val banana: String = "yeah"
         }
 

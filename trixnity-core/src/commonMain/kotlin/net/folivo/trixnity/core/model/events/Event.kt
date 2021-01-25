@@ -12,14 +12,13 @@ import net.folivo.trixnity.core.model.events.Event.*
  * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#event-fields">matrix spec</a>
  */
 @Serializable
-sealed class Event<C : EventContent> {
+abstract class Event<C : EventContent> {
     abstract val content: C
 
     @Serializable
-    data class UnknownEvent(
-        @SerialName("type") val type: String,
-        @SerialName("content") override val content: UnknownEventContent
-    ) : Event<UnknownEventContent>()
+    data class BasicEvent<C : EventContent>(
+        @SerialName("content") override val content: C
+    ) : Event<C>()
 
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#room-event-fields">matrix spec</a>

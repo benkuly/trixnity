@@ -26,7 +26,8 @@ class StrippedStateEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val contentSerializer = eventsContentLookupByType[type] ?: UnknownStateEventContent.serializer()
+        val contentSerializer = eventsContentLookupByType[type]
+            ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
             HideDiscriminatorSerializer(
                 StrippedStateEvent.serializer(contentSerializer),
@@ -36,8 +37,8 @@ class StrippedStateEventSerializer(
         )
     }
 
-    @ExperimentalStdlibApi
     override fun serialize(encoder: Encoder, value: StrippedStateEvent<*>) {
+        if (value.content is UnknownStateEventContent) throw IllegalArgumentException("${UnknownStateEventContent::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(value.content) }
         requireNotNull(contentDescriptor, { "event content type ${value.content::class} must be registered" })

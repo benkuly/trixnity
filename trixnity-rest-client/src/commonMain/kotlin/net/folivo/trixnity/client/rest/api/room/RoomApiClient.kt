@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.rest.api.room
 import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
-import net.folivo.matrix.restclient.api.rooms.Membership
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Preset
 import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
@@ -11,23 +10,20 @@ import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.RoomEvent
-import net.folivo.trixnity.core.model.events.StateEvent
-import net.folivo.trixnity.core.model.events.m.room.CreateEvent
-import net.folivo.trixnity.core.model.events.m.room.MemberEvent
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEvent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEvent.RedactionEventContent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
 class RoomApiClient(
     val httpClient: HttpClient,
-    roomEventSerializers: Set<EventContentSerializerMapping<out RoomEvent<*>, *>>,
-    stateEventSerializers: Set<EventContentSerializerMapping<out StateEvent<*>, *>>
+    private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
+    val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>
 ) {
-
-    val roomEventLookup = roomEventSerializers.map { Pair(it.eventClass, it.type) }.toMap()
-    val stateEventLookup = stateEventSerializers.map { Pair(it.eventClass, it.type) }.toMap()
-
 
     companion object {
         const val unsupportedEventType =
@@ -53,12 +49,14 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
-    suspend inline fun <reified T : StateEvent<C>, reified C> getStateEvent(
+    suspend inline fun <reified C : StateEventContent> getStateEvent(
         roomId: RoomId,
         stateKey: String = "",
         asUserId: UserId? = null
     ): C {
-        val eventType = stateEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType =
+            stateEventContentSerializers.find { it.kClass.isInstance(C::class) }?.type // FIXME does this work?
+                ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -84,7 +82,7 @@ class RoomApiClient(
         membership: Membership? = null,
         notMembership: Membership? = null,
         asUserId: UserId? = null
-    ): List<MemberEvent> {
+    ): List<StateEvent<MemberEventContent>> {
         return httpClient.get<GetMembersResponse> {
             url("/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
@@ -133,13 +131,14 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
-    suspend inline fun <reified T : StateEvent<in C>, C : Any> sendStateEvent(
+    suspend fun sendStateEvent(
         roomId: RoomId,
-        eventContent: C,
+        eventContent: StateEventContent,
         stateKey: String? = "",
         asUserId: UserId? = null
     ): EventId {
-        val eventType = stateEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType = stateEventContentSerializers.find { it.kClass.isInstance(eventContent) }?.type
+            ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -150,13 +149,14 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-send-eventtype-txnid">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomEvent<in C>, C : Any> sendRoomEvent(
+    suspend fun sendRoomEvent(
         roomId: RoomId,
-        eventContent: C,
+        eventContent: RoomEventContent,
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        val eventType = roomEventLookup[T::class] ?: throw IllegalArgumentException(unsupportedEventType)
+        val eventType = roomEventContentSerializers.find { it.kClass.isInstance(eventContent) }?.type
+            ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
@@ -192,11 +192,11 @@ class RoomApiClient(
         invite: Set<UserId>? = null,
         invite3Pid: Set<Invite3Pid>? = null,
         roomVersion: String? = null,
-        creationContent: CreateEvent.CreateEventContent? = null,
-        initialState: List<StateEvent<Any>>? = null,
+        creationContent: CreateEventContent? = null,
+        initialState: List<StateEvent<*>>? = null,
         preset: Preset? = null,
         isDirect: Boolean? = null,
-        powerLevelContentOverride: PowerLevelsEvent.PowerLevelsEventContent? = null,
+        powerLevelContentOverride: PowerLevelsEventContent? = null,
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<CreateRoomResponse> {
