@@ -8,7 +8,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.model.MatrixId
 
-class MatrixIdSerializer : KSerializer<MatrixId> {
+object MatrixIdSerializer : KSerializer<MatrixId> {
     override fun deserialize(decoder: Decoder): MatrixId {
         return MatrixId.of(decoder.decodeString())
     }

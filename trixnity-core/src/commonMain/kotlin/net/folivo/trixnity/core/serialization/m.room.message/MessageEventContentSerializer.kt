@@ -27,7 +27,7 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
             TextMessageEventContent.type   ->
                 decoder.json.decodeFromJsonElement(TextMessageEventContentSerializer, jsonObj)
             else                           ->
-                decoder.json.decodeFromJsonElement(DefaultMessageEventContent.serializer(), jsonObj)
+                decoder.json.decodeFromJsonElement(UnknownMessageEventContent.serializer(), jsonObj)
         }
     }
 
@@ -39,8 +39,8 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
                 encoder.json.encodeToJsonElement(NoticeMessageEventContentSerializer, value)
             is TextMessageEventContent    ->
                 encoder.json.encodeToJsonElement(TextMessageEventContentSerializer, value)
-            is DefaultMessageEventContent ->
-                encoder.json.encodeToJsonElement(DefaultMessageEventContent.serializer(), value)
+            is UnknownMessageEventContent ->
+                encoder.json.encodeToJsonElement(UnknownMessageEventContent.serializer(), value)
         }
         encoder.encodeJsonElement(jsonElement)
     }

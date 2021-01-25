@@ -5,19 +5,19 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.DefaultMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
 
 fun createMessageEventContentSerializersModule(): SerializersModule {
     return SerializersModule {
         contextual(MessageEventContentSerializer)
         contextual(TextMessageEventContentSerializer)
         contextual(NoticeMessageEventContentSerializer)
-        contextual(DefaultMessageEventContent.serializer())
+        contextual(UnknownMessageEventContent.serializer())
 
         polymorphic(MessageEventContent::class, MessageEventContentSerializer) {
             subclass(TextMessageEventContentSerializer)
             subclass(NoticeMessageEventContentSerializer)
-            subclass(DefaultMessageEventContent.serializer())
+            subclass(UnknownMessageEventContent.serializer())
         }
     }
 }
