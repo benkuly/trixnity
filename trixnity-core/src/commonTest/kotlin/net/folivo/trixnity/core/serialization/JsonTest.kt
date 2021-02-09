@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
@@ -42,7 +43,7 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val result = json.decodeFromString<Event<EventContent>>(content)
+        val result = json.decodeFromString<RoomEvent<RoomEventContent>>(content)
         if (result is RoomEvent<*>) {
             val resultContent = result.content
             if (resultContent is TextMessageEventContent)

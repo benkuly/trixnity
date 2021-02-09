@@ -1,18 +1,14 @@
-@file:UseContextualSerialization(Event::class, RoomEvent::class, StateEvent::class, StrippedStateEvent::class)
-
 package net.folivo.trixnity.core.model.events
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseContextualSerialization
 import net.folivo.trixnity.core.model.MatrixId.*
-import net.folivo.trixnity.core.model.events.Event.*
 
 /**
  * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#event-fields">matrix spec</a>
  */
 @Serializable
-abstract class Event<C : EventContent> {
+sealed class Event<C : EventContent> {
     abstract val content: C
 
     @Serializable

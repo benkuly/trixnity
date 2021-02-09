@@ -55,7 +55,7 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): C {
         val eventType =
-            stateEventContentSerializers.find { it.kClass.isInstance(C::class) }?.type // FIXME does this work?
+            stateEventContentSerializers.find { it.kClass == C::class }?.type
                 ?: throw IllegalArgumentException(unsupportedEventType)
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
@@ -66,7 +66,7 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
+    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<out StateEventContent>> {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)

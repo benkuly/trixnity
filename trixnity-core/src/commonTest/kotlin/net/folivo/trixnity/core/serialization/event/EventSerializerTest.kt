@@ -2,8 +2,8 @@ package net.folivo.trixnity.core.serialization.event
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -14,31 +14,17 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.serialization.createJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EventSerializerTest {
 
-    private val roomEventSerializer = RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS)
-    private val stateEventSerializer = StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS)
-    private val strippedStateEventSerializer = StrippedStateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS)
-    private val eventSerializer = EventSerializer(
-        BasicEventSerializer(),
-        roomEventSerializer,
-        stateEventSerializer,
-        strippedStateEventSerializer
-    )
-    private val json = Json {
-        ignoreUnknownKeys = true
-        serializersModule = createEventSerializersModule(
-            DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS,
-            DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
-        )
-    }
+    private val json = createJson()
 
     @Test
     fun shouldSerializeStateEvent() {
-        val content = StateEvent(
+        val content: Event<StateEventContent> = StateEvent(
             CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),

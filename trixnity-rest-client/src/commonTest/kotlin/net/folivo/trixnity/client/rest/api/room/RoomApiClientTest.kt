@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.rest.api.room
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
@@ -33,7 +35,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldEncodeUrlParameter() = runBlockingTest {
-        val response = StateEvent(
+        val response: Event<StateEventContent> = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
             unsigned = UnsignedData(),
@@ -67,7 +69,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetRoomEvent() = runBlockingTest {
-        val response = StateEvent(
+        val response: Event<StateEventContent> = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
             unsigned = UnsignedData(),
@@ -123,9 +125,10 @@ class RoomApiClientTest {
         assertEquals(NameEventContent::class, result::class)
     }
 
+    @ExperimentalSerializationApi
     @Test
     fun shouldGetCompleteState() = runBlockingTest {
-        val response = listOf(
+        val response: List<StateEvent<StateEventContent>> = listOf(
             StateEvent(
                 id = EventId("event1", "server"),
                 roomId = RoomId("room", "server"),
@@ -145,7 +148,8 @@ class RoomApiClientTest {
                 content = MemberEventContent(membership = INVITE)
             )
         )
-        println(json.encodeToString(response))
+        val serializer = json.serializersModule.getContextual(StateEvent::class)
+        requireNotNull(serializer)
         val matrixClient = MatrixClient(makeHttpClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -154,7 +158,7 @@ class RoomApiClientTest {
                 assertEquals("/_matrix/client/r0/rooms/%21room%3Aserver/state", request.url.fullPath)
                 assertEquals(HttpMethod.Get, request.method)
                 respond(
-                    json.encodeToString(response),
+                    json.encodeToString(ListSerializer(serializer), response), // FIXME do we still need serializer?
                     HttpStatusCode.OK,
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
@@ -348,7 +352,7 @@ class RoomApiClientTest {
                 )
                 assertEquals(HttpMethod.Put, request.method)
                 assertEquals(
-                    """{"body":"someBody","format":null,"formatted_body":null,"msgtype":"m.text"}""",
+                    """{"body":"someBody","msgtype":"m.text"}""",
                     request.body.toByteArray().decodeToString()
                 )
                 respond(

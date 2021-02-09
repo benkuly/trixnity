@@ -3,10 +3,6 @@ package net.folivo.trixnity.core.serialization.event
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
@@ -32,12 +28,12 @@ fun createEventSerializersModule(
         contextual(stateEventSerializer)
         contextual(stateEventSerializer)
 
-        polymorphic(Event::class, eventSerializer) {
-            subclass(basicEventSerializer)
-            subclass(roomEventSerializer)
-            subclass(stateEventSerializer)
-            subclass(strippedStateEventSerializer)
-        }
+//        polymorphic(Event::class, eventSerializer) {
+//            subclass(basicEventSerializer)
+//            subclass(roomEventSerializer)
+//            subclass(stateEventSerializer)
+//            subclass(strippedStateEventSerializer)
+//        }
 
         roomEventContentSerializers.forEach {
             contextual(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
@@ -46,22 +42,20 @@ fun createEventSerializersModule(
             contextual(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
         }
 
-        polymorphic(EventContent::class) {
-            (roomEventContentSerializers + stateEventContentSerializers).forEach {
-                subclass(it.kClass as KClass<EventContent>, it.serializer as KSerializer<EventContent>)
-            }
-        }
-        polymorphic(RoomEventContent::class) {
-            roomEventContentSerializers.forEach {
-                subclass(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
-            }
-        }
-        polymorphic(StateEventContent::class) {
-            stateEventContentSerializers.forEach {
-                subclass(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
-            }
-        }
-
-
+//        polymorphic(EventContent::class) {
+//            (roomEventContentSerializers + stateEventContentSerializers).forEach {
+//                subclass(it.kClass as KClass<EventContent>, it.serializer as KSerializer<EventContent>)
+//            }
+//        }
+//        polymorphic(RoomEventContent::class) {
+//            roomEventContentSerializers.forEach {
+//                subclass(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
+//            }
+//        }
+//        polymorphic(StateEventContent::class) {
+//            stateEventContentSerializers.forEach {
+//                subclass(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
+//            }
+//        }
     }
 }

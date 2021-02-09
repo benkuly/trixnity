@@ -42,7 +42,6 @@ class EventSerializer(
             is StateEvent<*>         -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
             is StrippedStateEvent<*> -> encoder.json.encodeToJsonElement(strippedStateEventSerializer, value)
             is BasicEvent            -> encoder.json.encodeToJsonElement(basicEventSerializer, value)
-            else                     -> throw IllegalArgumentException("unsupported event type ${value::class}")
         }
         encoder.encodeJsonElement(jsonElement)
     }
