@@ -1,6 +1,6 @@
-# trixnity
+# Trixnity
 
-Trixnity is a cross-plattform (JVM, JS, Native) matrix-client sdk written in kotlin.
+Trixnity is a cross-plattform (JVM, JS, Native) matrix-client sdk written in Kotlin.
 
 ## Installation
 
@@ -21,30 +21,31 @@ contains some information to connect to the homeserver.
 
 ```kotlin
 private val matrixClient = MatrixClient(
-    makeHttpClient( // this will change in future and is only needed because of a bug in ktor
-        MatrixClientProperties(
-            MatrixHomeServerProperties("you.home.server"),
-            "superSecretToken"
-        )
-    )
+    MatrixClientProperties(
+        MatrixHomeServerProperties("you.home.server"),
+        "superSecretToken"
+    ),
+    CIO // choose an engine from here 
 )
 ```
 
-You can now use `MatrixClient` to e. g. send messages:
+The `MatrixClient` also allows you to register custom event types in its constructor.
+
+#### send messages
+
+You can use `MatrixClient` to send messages:
 
 ```kotlin
 suspend fun sendMessage() {
-    matrixClient.room.sendRoomEvent<MessageEvent, MessageEventContent>(
-        RoomId("awoun3w8fqo3bfq92a", "you.home.server"),
+    matrixClient.room.sendRoomEvent(
+        RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
         TextMessageEventContent("hello from platform $Platform")
     )
 }
 ```
 
-or retrieve messages:
+#### retrieve messages
 
-The `MatrixClient` also allows you to register custom event types.
+You can use `MatrixClient` to retrieve messages:
 
-### Customize
-
-Coming soon (allows to register custom event types).
+TODO

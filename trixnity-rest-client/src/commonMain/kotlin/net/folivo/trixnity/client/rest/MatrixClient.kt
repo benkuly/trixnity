@@ -31,10 +31,10 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 //FIXME test
 class MatrixClient<T : HttpClientEngineConfig>(
     properties: MatrixClientProperties,
+    httpClientEngineFactory: HttpClientEngineFactory<T>,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
     customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet(),
-    httpClientEngineFactory: HttpClientEngineFactory<T>,
     httpClientEngineConfig: T.() -> Unit = {},
 ) {
     // this looks so strange because of https://youtrack.jetbrains.com/issue/KTOR-1628
