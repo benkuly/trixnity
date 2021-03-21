@@ -25,7 +25,7 @@ private val matrixClient = MatrixClient(
         MatrixHomeServerProperties("you.home.server"),
         "superSecretToken"
     ),
-    CIO // choose an engine from here 
+    CIO // choose an engine from here https://ktor.io/docs/http-client-engines.html
 )
 ```
 
