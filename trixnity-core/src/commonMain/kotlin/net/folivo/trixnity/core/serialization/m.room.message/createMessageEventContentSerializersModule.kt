@@ -10,11 +10,5 @@ fun createMessageEventContentSerializersModule(): SerializersModule {
         contextual(TextMessageEventContentSerializer)
         contextual(NoticeMessageEventContentSerializer)
         contextual(UnknownMessageEventContent.serializer())
-
-//        polymorphic(MessageEventContent::class, MessageEventContentSerializer) {
-//            subclass(TextMessageEventContentSerializer)
-//            subclass(NoticeMessageEventContentSerializer)
-//            subclass(UnknownMessageEventContent.serializer())
-//        }
     }
 }

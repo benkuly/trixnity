@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.RoomEventContent
 
 /**
@@ -10,5 +11,7 @@ import net.folivo.trixnity.core.model.events.RoomEventContent
 @Serializable
 data class RedactionEventContent(
     @SerialName("reason")
-    val reason: String?
+    val reason: String?,
+    @SerialName("redacts")
+    val redacts: MatrixId.EventId
 ) : RoomEventContent

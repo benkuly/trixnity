@@ -5,11 +5,9 @@ import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedData
-import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -82,7 +80,7 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeRoomEvent() {
         val content = RoomEvent(
-            UnknownMessageEventContent("m.dino", "hello"),
+            MessageEventContent.TextMessageEventContent("hello"),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
             1432735824653,
@@ -92,8 +90,8 @@ class EventSerializerTest {
         val expectedResult = """
         {
             "content":{
-                "msgtype":"m.dino",
-                "body":"hello"
+                "body":"hello",
+                "msgtype":"m.text"
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
@@ -184,6 +182,36 @@ class EventSerializerTest {
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result =
             json.encodeToString(ListSerializer(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS)), content)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldSerializeRedactsEvent() {
+        val content = RoomEvent(
+            RedactionEventContent("spam", EventId("123", "example.org")),
+            EventId("143273582443PhrSn", "example.org"),
+            UserId("example", "example.org"),
+            1432735824653,
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            UnsignedData(1234)
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "reason":"spam"
+            },
+            "event_id":"$143273582443PhrSn:example.org",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{
+                "age":1234
+            },
+            "type":"m.room.redaction",
+            "redacts":"$123:example.org"
+        }
+    """.trimIndent().lines().joinToString("") { it.trim() }
+        val result = json.encodeToString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), content)
         assertEquals(expectedResult, result)
     }
 }

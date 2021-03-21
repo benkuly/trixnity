@@ -19,7 +19,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
 class RoomApiClient(
@@ -179,14 +178,14 @@ class RoomApiClient(
     suspend fun sendRedactEvent(
         roomId: RoomId,
         eventId: EventId,
-        reason: String,
+        reason: String? = null,
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
         return httpClient.put<SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
-            body = RedactionEventContent(reason)
+            body = if (reason != null) mapOf("reason" to reason) else mapOf()
         }.eventId
     }
 

@@ -1,11 +1,10 @@
 package net.folivo.trixnity.core.serialization.m.room.message
 
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.HideDiscriminatorSerializer
+import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 object TextMessageEventContentSerializer :
-    HideDiscriminatorSerializer<TextMessageEventContent>(
+    AddFieldsSerializer<TextMessageEventContent>(
         TextMessageEventContent.serializer(),
-        "msgtype",
-        TextMessageEventContent.type
+        "msgtype" to TextMessageEventContent.type
     )

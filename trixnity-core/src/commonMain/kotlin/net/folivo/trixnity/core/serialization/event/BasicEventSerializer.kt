@@ -10,7 +10,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.BasicEvent
 import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
-import net.folivo.trixnity.core.serialization.HideDiscriminatorSerializer
 
 class BasicEventSerializer : KSerializer<BasicEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BasicEventSerializer")
@@ -22,11 +21,7 @@ class BasicEventSerializer : KSerializer<BasicEvent<*>> {
         requireNotNull(type)
         val contentSerializer = UnknownEventContentSerializer(UnknownBasicEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
-            HideDiscriminatorSerializer(
-                BasicEvent.serializer(contentSerializer),
-                "type",
-                type
-            ), jsonObj
+            BasicEvent.serializer(contentSerializer), jsonObj
         )
     }
 

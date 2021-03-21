@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
-import net.folivo.trixnity.core.serialization.HideDiscriminatorSerializer
+import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 class StateEventSerializer(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
@@ -29,11 +29,7 @@ class StateEventSerializer(
         val contentSerializer = eventsContentLookupByType[type]
             ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
-            HideDiscriminatorSerializer(
-                StateEvent.serializer(contentSerializer),
-                "type",
-                type
-            ), jsonObj
+            StateEvent.serializer(contentSerializer), jsonObj
         )
     }
 
@@ -44,10 +40,9 @@ class StateEventSerializer(
         requireNotNull(contentDescriptor, { "event content type ${value.content::class} must be registered" })
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            HideDiscriminatorSerializer(
+            AddFieldsSerializer(
                 StateEvent.serializer(contentDescriptor.serializer) as KSerializer<StateEvent<*>>,
-                "type",
-                contentDescriptor.type
+                "type" to contentDescriptor.type
             ), value
         )
         encoder.encodeJsonElement(jsonElement)

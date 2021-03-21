@@ -4,6 +4,7 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import io.ktor.util.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.MatrixServerException
@@ -11,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
+@KtorExperimentalAPI
 class MatrixClientTest {
     @Serializable
     data class OkResponse(

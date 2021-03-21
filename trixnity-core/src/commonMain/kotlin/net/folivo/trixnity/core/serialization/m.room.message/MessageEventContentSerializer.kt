@@ -24,9 +24,9 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
         return when (jsonObj["msgtype"]?.jsonPrimitive?.content) {
             NoticeMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(NoticeMessageEventContentSerializer, jsonObj)
-            TextMessageEventContent.type   ->
+            TextMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(TextMessageEventContentSerializer, jsonObj)
-            else                           ->
+            else ->
                 decoder.json.decodeFromJsonElement(UnknownMessageEventContent.serializer(), jsonObj)
         }
     }
@@ -35,12 +35,11 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
     override fun serialize(encoder: Encoder, value: MessageEventContent) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
-            is NoticeMessageEventContent  ->
+            is NoticeMessageEventContent ->
                 encoder.json.encodeToJsonElement(NoticeMessageEventContentSerializer, value)
-            is TextMessageEventContent    ->
+            is TextMessageEventContent ->
                 encoder.json.encodeToJsonElement(TextMessageEventContentSerializer, value)
-            is UnknownMessageEventContent ->
-                encoder.json.encodeToJsonElement(UnknownMessageEventContent.serializer(), value)
+            is UnknownMessageEventContent -> throw IllegalArgumentException("${UnknownMessageEventContent::class.simpleName} should never be serialized")
         }
         encoder.encodeJsonElement(jsonElement)
     }

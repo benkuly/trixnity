@@ -3,29 +3,29 @@ package net.folivo.trixnity.core.serialization
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonTransformingSerializer
 
-open class HideDiscriminatorSerializer<T : Any>(
+open class HideFieldsSerializer<T : Any>(
     baseSerializer: KSerializer<T>,
-    private val discriminatorField: String,
-    private val discriminatorValue: String
+    private vararg val hideFields: String,
 ) : JsonTransformingSerializer<T>(baseSerializer) {
+
     @ExperimentalStdlibApi
     override fun transformDeserialize(element: JsonElement): JsonElement {
-        require(element is JsonObject)
-        return JsonObject(buildMap {
-            putAll(element)
-            remove(discriminatorField)
-        })
+        return hideField(element)
     }
 
     @ExperimentalStdlibApi
     override fun transformSerialize(element: JsonElement): JsonElement {
+        return hideField(element)
+    }
+
+    @ExperimentalStdlibApi
+    private fun hideField(element: JsonElement): JsonElement {
         require(element is JsonObject)
         return JsonObject(buildMap {
             putAll(element)
-            put(discriminatorField, JsonPrimitive(discriminatorValue))
+            hideFields.forEach { remove(it) }
         })
     }
 }
