@@ -1,13 +1,9 @@
 package net.folivo.trixnity.core.serialization.event
 
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.builtins.ListSerializer
 import net.folivo.trixnity.core.model.MatrixId.*
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedData
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -24,7 +20,7 @@ class EventSerializerTest {
 
     @Test
     fun shouldSerializeStateEvent() {
-        val content: Event<StateEventContent> = StateEvent(
+        val content = StateEvent(
             CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
@@ -47,7 +43,7 @@ class EventSerializerTest {
             "type":"m.room.canonical_alias"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(content)
+        val result = json.encodeToString(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS), content)
         assertEquals(expectedResult, result)
     }
 
@@ -69,7 +65,7 @@ class EventSerializerTest {
             "prev_content":null
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.decodeFromString<StateEvent<out StateEventContent>>(input)
+        val result = json.decodeFromString(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS), input)
         assertEquals(
             StateEvent(
                 CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
@@ -107,7 +103,7 @@ class EventSerializerTest {
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(content)
+        val result = json.encodeToString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), content)
         assertEquals(expectedResult, result)
     }
 
@@ -127,7 +123,7 @@ class EventSerializerTest {
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.decodeFromString<RoomEvent<out RoomEventContent>>(input)
+        val result = json.decodeFromString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), input)
         assertEquals(
             RoomEvent(
                 UnknownMessageEventContent("m.dino", "hello"),
@@ -186,7 +182,8 @@ class EventSerializerTest {
             "type":"m.room.member"
         }]
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(content)
+        val result =
+            json.encodeToString(ListSerializer(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS)), content)
         assertEquals(expectedResult, result)
     }
 }
