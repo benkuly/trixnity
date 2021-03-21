@@ -12,7 +12,6 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
-import kotlinx.serialization.modules.SerializersModule
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.room.RoomApiClient
@@ -32,20 +31,23 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 //FIXME test
 class MatrixClient<T : HttpClientEngineConfig>(
     properties: MatrixClientProperties,
-    customModule: SerializersModule? = null, // FIXME
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
+    customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
+    customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet(),
     httpClientEngineFactory: HttpClientEngineFactory<T>,
     httpClientEngineConfig: T.() -> Unit = {},
 ) {
-    // TODO allow customization (needs https://youtrack.jetbrains.com/issue/KTOR-1628 to be fixed)
+    // this looks so strange because of https://youtrack.jetbrains.com/issue/KTOR-1628
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> =
-        DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
+        DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS + customRoomEventContentSerializers
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> =
-        DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
+        DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS + customStateEventContentSerializers
+
+    val json = createJson(roomEventContentSerializers, stateEventContentSerializers)
 
     private val httpClientConfig: HttpClientConfig<*>.() -> Unit = {
         install(JsonFeature) {
-            serializer = KotlinxSerializer(createJson())
+            serializer = KotlinxSerializer(json)
         }
         install(HttpCallValidator) {
             handleResponseException { responseException ->
@@ -82,7 +84,7 @@ class MatrixClient<T : HttpClientEngineConfig>(
 
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)
-    val room = RoomApiClient(httpClient, roomEventContentSerializers, stateEventContentSerializers)
+    val room = RoomApiClient(httpClient, json, roomEventContentSerializers, stateEventContentSerializers)
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 

@@ -8,13 +8,12 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.matrix.restclient.api.sync.SyncResponse
-import net.folivo.matrix.restclient.api.sync.SyncResponse.*
-import net.folivo.matrix.restclient.api.sync.SyncResponse.Presence
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
+import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
+import net.folivo.trixnity.client.rest.api.sync.SyncResponse.Presence
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -204,7 +203,7 @@ class SyncApiClientTest {
                 }
             }
         }
-        
+
         val result = matrixClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = ONLINE

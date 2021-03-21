@@ -7,7 +7,6 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import net.folivo.matrix.restclient.api.sync.SyncResponse
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
 class SyncApiClient(

@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.rest.api.room
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import io.ktor.util.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -28,13 +29,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
+@ExperimentalSerializationApi
+@KtorExperimentalAPI
 class RoomApiClientTest {
 
     private val json = createJson()
 
     @Test
     fun shouldEncodeUrlParameter() = runBlockingTest {
-        val response: Event<StateEventContent> = StateEvent(
+        val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
             unsigned = UnsignedData(),
@@ -43,6 +46,8 @@ class RoomApiClientTest {
             content = NameEventContent(),
             stateKey = ""
         )
+        val serializer = json.serializersModule.getContextual(StateEvent::class)
+        requireNotNull(serializer)
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -53,7 +58,7 @@ class RoomApiClientTest {
                     request.url.fullPath
                 )
                 respond(
-                    json.encodeToString(response),
+                    json.encodeToString(serializer, response),
                     HttpStatusCode.OK,
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
@@ -68,7 +73,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetRoomEvent() = runBlockingTest {
-        val response: Event<StateEventContent> = StateEvent(
+        val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
             unsigned = UnsignedData(),
@@ -77,6 +82,8 @@ class RoomApiClientTest {
             content = NameEventContent(),
             stateKey = ""
         )
+        val serializer = json.serializersModule.getContextual(StateEvent::class)
+        requireNotNull(serializer)
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -88,7 +95,7 @@ class RoomApiClientTest {
                 )
                 assertEquals(HttpMethod.Get, request.method)
                 respond(
-                    json.encodeToString(response),
+                    json.encodeToString(serializer, response),
                     HttpStatusCode.OK,
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )

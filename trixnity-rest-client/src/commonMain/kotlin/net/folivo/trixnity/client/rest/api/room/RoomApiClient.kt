@@ -3,6 +3,9 @@ package net.folivo.trixnity.client.rest.api.room
 import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Preset
 import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
@@ -21,6 +24,7 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 
 class RoomApiClient(
     val httpClient: HttpClient,
+    val json: Json,
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
     val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>
 ) {
@@ -35,6 +39,7 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-event-eventid">matrix spec</a>
      */
+    @ExperimentalSerializationApi
     suspend fun getEvent(
         roomId: RoomId,
         eventId: EventId,
@@ -66,11 +71,15 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<out StateEventContent>> {
-        return httpClient.get {
+    @ExperimentalSerializationApi
+    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
+        val responseBody = httpClient.get<String> {
             url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
+        val serializer = json.serializersModule.getContextual(StateEvent::class)
+        requireNotNull(serializer)
+        return json.decodeFromString(ListSerializer(serializer), responseBody)
     }
 
     /**
