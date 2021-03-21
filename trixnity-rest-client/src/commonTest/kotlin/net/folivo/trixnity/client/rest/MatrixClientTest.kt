@@ -20,25 +20,25 @@ class MatrixClientTest {
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
         val matrixClient = MatrixClient(
-            makeHttpClient(
-                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClientEngineFactory = MockEngine,
-            ) {
-                addHandler { request ->
-                    assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
-                    assertEquals("matrix.host", request.url.host)
-                    assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
-                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                    assertEquals(HttpMethod.Post, request.method)
-                    assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
-                    respond(
-                        """{"status":"ok"}""",
-                        HttpStatusCode.OK,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
+
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
+                assertEquals("matrix.host", request.url.host)
+                assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
+                assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
+                assertEquals(HttpMethod.Post, request.method)
+                assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
+                respond(
+                    """{"status":"ok"}""",
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
             }
-        )
+        }
+
         matrixClient.httpClient.post<OkResponse> {
             url("/path")
             parameter("param", "dino")
@@ -49,7 +49,7 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(makeHttpClient(
+            val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 httpClientEngineFactory = MockEngine,
             ) {
@@ -63,7 +63,7 @@ class MatrixClientTest {
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
-            })
+            }
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
@@ -78,7 +78,7 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(makeHttpClient(
+            val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 httpClientEngineFactory = MockEngine,
             ) {
@@ -89,7 +89,7 @@ class MatrixClientTest {
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
-            })
+            }
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }

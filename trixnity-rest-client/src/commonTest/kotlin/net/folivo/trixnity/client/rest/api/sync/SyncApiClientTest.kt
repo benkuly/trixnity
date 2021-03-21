@@ -15,7 +15,6 @@ import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
-import net.folivo.trixnity.client.rest.makeHttpClient
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -42,7 +41,7 @@ class SyncApiClientTest {
             room = Rooms(emptyMap(), emptyMap(), emptyMap()),
             toDevice = ToDevice(emptyList())
         )
-        val matrixClient = MatrixClient(makeHttpClient(
+        val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
         ) {
@@ -58,7 +57,7 @@ class SyncApiClientTest {
                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                 )
             }
-        })
+        }
         val result = matrixClient.sync.syncOnce(
             filter = "someFilter",
             fullState = true,
@@ -91,39 +90,39 @@ class SyncApiClientTest {
         )
         val requestCount = AtomicInt(1)
         val matrixClient = MatrixClient(
-            makeHttpClient(
-                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClientEngineFactory = MockEngine,
-            ) {
-                addHandler { request ->
-                    if (requestCount.get() == 1) {
-                        assertEquals(
-                            "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
-                            request.url.fullPath
-                        )
-                        assertEquals(HttpMethod.Get, request.method)
-                        requestCount.incrementAndGet()
-                        respond(
-                            json.encodeToString(response1),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-                    } else {
-                        assertEquals(
-                            "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
-                            request.url.fullPath
-                        )
-                        assertEquals(HttpMethod.Get, request.method)
-                        requestCount.incrementAndGet()
-                        respond(
-                            json.encodeToString(response2),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-                    }
+
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                if (requestCount.get() == 1) {
+                    assertEquals(
+                        "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    requestCount.incrementAndGet()
+                    respond(
+                        json.encodeToString(response1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                } else {
+                    assertEquals(
+                        "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    requestCount.incrementAndGet()
+                    respond(
+                        json.encodeToString(response2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
                 }
             }
-        )
+        }
+
         val result = matrixClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = ONLINE
@@ -157,55 +156,55 @@ class SyncApiClientTest {
         )
         val requestCount = AtomicInt(1)
         val matrixClient = MatrixClient(
-            makeHttpClient(
-                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClientEngineFactory = MockEngine,
-            ) {
-                addHandler { request ->
-                    when (requestCount.get()) {
-                        1 -> {
-                            assertEquals(
-                                "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
-                                request.url.fullPath
-                            )
-                            assertEquals(HttpMethod.Get, request.method)
-                            requestCount.incrementAndGet()
-                            respond(
-                                json.encodeToString(response1),
-                                HttpStatusCode.OK,
-                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                            )
-                        }
-                        2 -> {
-                            assertEquals(
-                                "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
-                                request.url.fullPath
-                            )
-                            assertEquals(HttpMethod.Get, request.method)
-                            requestCount.incrementAndGet()
-                            respond(
-                                "",
-                                HttpStatusCode.NotFound,
-                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                            )
-                        }
-                        else -> {
-                            assertEquals(
-                                "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
-                                request.url.fullPath
-                            )
-                            assertEquals(HttpMethod.Get, request.method)
-                            requestCount.incrementAndGet()
-                            respond(
-                                json.encodeToString(response2),
-                                HttpStatusCode.OK,
-                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                            )
-                        }
+
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClientEngineFactory = MockEngine,
+        ) {
+            addHandler { request ->
+                when (requestCount.get()) {
+                    1 -> {
+                        assertEquals(
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        requestCount.incrementAndGet()
+                        respond(
+                            json.encodeToString(response1),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                    2 -> {
+                        assertEquals(
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        requestCount.incrementAndGet()
+                        respond(
+                            "",
+                            HttpStatusCode.NotFound,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                    else -> {
+                        assertEquals(
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        requestCount.incrementAndGet()
+                        respond(
+                            json.encodeToString(response2),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
                     }
                 }
             }
-        )
+        }
+        
         val result = matrixClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = ONLINE

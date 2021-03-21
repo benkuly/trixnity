@@ -29,9 +29,13 @@ import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_S
 import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
-class MatrixClient(
-    internal val httpClient: HttpClient,
+//FIXME test
+class MatrixClient<T : HttpClientEngineConfig>(
+    properties: MatrixClientProperties,
+    customModule: SerializersModule? = null, // FIXME
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
+    httpClientEngineFactory: HttpClientEngineFactory<T>,
+    httpClientEngineConfig: T.() -> Unit = {},
 ) {
     // TODO allow customization (needs https://youtrack.jetbrains.com/issue/KTOR-1628 to be fixed)
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> =
@@ -39,17 +43,7 @@ class MatrixClient(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> =
         DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 
-    val server = ServerApiClient(httpClient)
-    val user = UserApiClient(httpClient)
-    val room = RoomApiClient(httpClient, roomEventContentSerializers, stateEventContentSerializers)
-    val sync = SyncApiClient(httpClient, syncBatchTokenService)
-}
-
-private fun makeHttpClientConfig(
-    properties: MatrixClientProperties,
-    customModule: SerializersModule? = null
-): HttpClientConfig<*>.() -> Unit { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
-    return {
+    private val httpClientConfig: HttpClientConfig<*>.() -> Unit = {
         install(JsonFeature) {
             serializer = KotlinxSerializer(createJson())
         }
@@ -78,31 +72,18 @@ private fun makeHttpClientConfig(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout) {
-
-        }
+        install(HttpTimeout) { }
     }
-}
 
-fun makeHttpClient(
-    properties: MatrixClientProperties,
-    customModule: SerializersModule? = null,
-): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
-    return HttpClient {
-        makeHttpClientConfig(properties, customModule)(this)
-    }
-}
-
-fun <T : HttpClientEngineConfig> makeHttpClient(
-    properties: MatrixClientProperties,
-    httpClientEngineFactory: HttpClientEngineFactory<T>,
-    customModule: SerializersModule? = null,
-    httpClientEngineConfig: T.() -> Unit = {},
-): HttpClient { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1628 is fixed
-    return HttpClient(httpClientEngineFactory) {
+    val httpClient: HttpClient = HttpClient(httpClientEngineFactory) {
         engine(httpClientEngineConfig)
-        makeHttpClientConfig(properties, customModule)(this)
+        httpClientConfig(this)
     }
+
+    val server = ServerApiClient(httpClient)
+    val user = UserApiClient(httpClient)
+    val room = RoomApiClient(httpClient, roomEventContentSerializers, stateEventContentSerializers)
+    val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
