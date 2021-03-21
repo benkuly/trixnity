@@ -28,34 +28,11 @@ fun createEventSerializersModule(
         contextual(stateEventSerializer)
         contextual(stateEventSerializer)
 
-//        polymorphic(Event::class, eventSerializer) {
-//            subclass(basicEventSerializer)
-//            subclass(roomEventSerializer)
-//            subclass(stateEventSerializer)
-//            subclass(strippedStateEventSerializer)
-//        }
-
         roomEventContentSerializers.forEach {
             contextual(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
         }
         stateEventContentSerializers.forEach {
             contextual(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
         }
-
-//        polymorphic(EventContent::class) {
-//            (roomEventContentSerializers + stateEventContentSerializers).forEach {
-//                subclass(it.kClass as KClass<EventContent>, it.serializer as KSerializer<EventContent>)
-//            }
-//        }
-//        polymorphic(RoomEventContent::class) {
-//            roomEventContentSerializers.forEach {
-//                subclass(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
-//            }
-//        }
-//        polymorphic(StateEventContent::class) {
-//            stateEventContentSerializers.forEach {
-//                subclass(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
-//            }
-//        }
     }
 }
