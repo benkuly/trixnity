@@ -10,6 +10,13 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven("https://kotlin.bintray.com/kotlinx")
+    }
+
+    apply(plugin = "org.jetbrains.dokka")
+
+    dependencies {
+        dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
     }
 }
 
@@ -19,7 +26,6 @@ inline val Project.isRelease
 subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "signing")
-    apply(plugin = "org.jetbrains.dokka")
 
     val dokkaJavadocJar by tasks.creating(Jar::class) {
         dependsOn(tasks.dokkaJavadoc)
@@ -73,4 +79,8 @@ subprojects {
         )
         sign(publishing.publications)
     }
+}
+
+tasks.dokkaHtmlMultiModule.configure {
+    outputDirectory.set(buildDir.resolve("dokkaCustomMultiModuleOutput"))
 }
