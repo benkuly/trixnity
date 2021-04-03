@@ -25,7 +25,7 @@ sealed class Event<C : EventContent> {
         @SerialName("event_id") val id: EventId,
         @SerialName("sender") val sender: UserId,
         @SerialName("origin_server_ts") val originTimestamp: Long,
-        @SerialName("room_id") val roomId: RoomId?,
+        @SerialName("room_id") val roomId: RoomId,
         @SerialName("unsigned") val unsigned: UnsignedData? = null,
     ) : Event<C>()
 
@@ -38,7 +38,7 @@ sealed class Event<C : EventContent> {
         @SerialName("event_id") val id: EventId,
         @SerialName("sender") val sender: UserId,
         @SerialName("origin_server_ts") val originTimestamp: Long,
-        @SerialName("room_id") val roomId: RoomId?,
+        @SerialName("room_id") val roomId: RoomId,
         @SerialName("unsigned") val unsigned: UnsignedData? = null,
         @SerialName("state_key") val stateKey: String,
         @SerialName("prev_content") val previousContent: C? = null
