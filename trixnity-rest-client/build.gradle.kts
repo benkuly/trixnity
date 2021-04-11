@@ -46,21 +46,6 @@ kotlin {
                 implementation("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
-            }
-        }
-        val jsMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:${Versions.ktor}")
-            }
-        }
-        val nativeMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-curl:${Versions.ktor}")
-            }
-        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test-common"))

@@ -1,11 +1,9 @@
-package net.folivo.trixnity.client.rest.api.sync
+package net.folivo.trixnity.appservice.rest.api.sync
 
 import co.touchlab.stately.concurrency.AtomicInt
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
@@ -13,7 +11,6 @@ import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
-import net.folivo.trixnity.client.rest.api.sync.SyncResponse.Presence
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

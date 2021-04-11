@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.room
+package net.folivo.trixnity.appservice.rest.api.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,16 +9,16 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
 @Serializable
 data class CreateRoomRequest(
-    @SerialName("visibility") val visibility: Visibility,
+    @SerialName("visibility") val visibility: net.folivo.trixnity.appservice.rest.api.room.Visibility,
     @SerialName("room_alias_name") val roomAliasLocalpart: String?,
     @SerialName("name") val name: String?,
     @SerialName("topic") val topic: String?,
     @SerialName("invite") val invite: Set<UserId>?,
-    @SerialName("invite_3pid") val invite3Pid: Set<Invite3Pid>?,
+    @SerialName("invite_3pid") val invite3Pid: Set<net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest.Invite3Pid>?,
     @SerialName("room_version") val roomVersion: String?,
     @SerialName("creation_content") val creationContent: CreateEventContent?,
     @SerialName("initial_state") val initialState: List<StateEvent<*>>?,
-    @SerialName("preset") val preset: Preset?,
+    @SerialName("preset") val preset: net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest.Preset?,
     @SerialName("is_direct") val isDirect: Boolean?,
     @SerialName("power_level_content_override") val powerLevelContentOverride: PowerLevelsEventContent?,
 ) {

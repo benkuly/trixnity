@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.user
+package net.folivo.trixnity.appservice.rest.api.user
 
 import io.ktor.client.*
 import io.ktor.client.request.*

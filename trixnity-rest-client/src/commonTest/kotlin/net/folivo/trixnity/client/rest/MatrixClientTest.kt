@@ -7,7 +7,6 @@ import io.ktor.http.ContentType.*
 import io.ktor.util.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
-import net.folivo.trixnity.client.rest.api.MatrixServerException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -69,8 +68,8 @@ class MatrixClientTest {
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
-            fail("should throw ${MatrixServerException::class.simpleName}")
-        } catch (error: MatrixServerException) {
+            fail("should throw ${net.folivo.trixnity.appservice.rest.api.MatrixServerException::class.simpleName}")
+        } catch (error: net.folivo.trixnity.appservice.rest.api.MatrixServerException) {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
             assertEquals("NO_UNICORN", error.errorResponse.errorCode)
             assertEquals("Only unicorns accepted", error.errorResponse.errorMessage)
@@ -95,8 +94,8 @@ class MatrixClientTest {
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
-            fail("should throw ${MatrixServerException::class.simpleName}")
-        } catch (error: MatrixServerException) {
+            fail("should throw ${net.folivo.trixnity.appservice.rest.api.MatrixServerException::class.simpleName}")
+        } catch (error: net.folivo.trixnity.appservice.rest.api.MatrixServerException) {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
             assertEquals("UNKNOWN", error.errorResponse.errorCode)
             assertEquals("NO_UNICORN", error.errorResponse.errorMessage)

@@ -12,14 +12,11 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
-import net.folivo.trixnity.client.rest.api.ErrorResponse
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.client.rest.api.room.RoomApiClient
-import net.folivo.trixnity.client.rest.api.server.ServerApiClient
-import net.folivo.trixnity.client.rest.api.sync.InMemorySyncBatchTokenService
-import net.folivo.trixnity.client.rest.api.sync.SyncApiClient
-import net.folivo.trixnity.client.rest.api.sync.SyncBatchTokenService
-import net.folivo.trixnity.client.rest.api.user.UserApiClient
+import net.folivo.trixnity.appservice.rest.api.server.ServerApiClient
+import net.folivo.trixnity.appservice.rest.api.sync.InMemorySyncBatchTokenService
+import net.folivo.trixnity.appservice.rest.api.sync.SyncApiClient
+import net.folivo.trixnity.appservice.rest.api.sync.SyncBatchTokenService
+import net.folivo.trixnity.appservice.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -37,7 +34,7 @@ class MatrixClient<T : HttpClientEngineConfig>(
     customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet(),
     httpClientEngineConfig: T.() -> Unit = {},
 ) {
-    // this looks so strange because of https://youtrack.jetbrains.com/issue/KTOR-1628
+    // FIXME this looks so strange because of https://youtrack.jetbrains.com/issue/KTOR-1628
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> =
         DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS + customRoomEventContentSerializers
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> =
@@ -55,14 +52,14 @@ class MatrixClient<T : HttpClientEngineConfig>(
                 val response = responseException.response
                 val errorResponse =
                     try {
-                        response.receive<ErrorResponse>()
+                        response.receive<net.folivo.trixnity.appservice.rest.api.ErrorResponse>()
                     } catch (error: Throwable) {
-                        throw MatrixServerException(
+                        throw net.folivo.trixnity.appservice.rest.api.MatrixServerException(
                             response.status,
-                            ErrorResponse("UNKNOWN", response.readText())
+                            net.folivo.trixnity.appservice.rest.api.ErrorResponse("UNKNOWN", response.readText())
                         )
                     }
-                throw MatrixServerException(response.status, errorResponse)
+                throw net.folivo.trixnity.appservice.rest.api.MatrixServerException(response.status, errorResponse)
             }
         }
         install(DefaultRequest) {
@@ -84,7 +81,12 @@ class MatrixClient<T : HttpClientEngineConfig>(
 
     val server = ServerApiClient(httpClient)
     val user = UserApiClient(httpClient)
-    val room = RoomApiClient(httpClient, json, roomEventContentSerializers, stateEventContentSerializers)
+    val room = net.folivo.trixnity.appservice.rest.api.room.RoomApiClient(
+        httpClient,
+        json,
+        roomEventContentSerializers,
+        stateEventContentSerializers
+    )
     val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 

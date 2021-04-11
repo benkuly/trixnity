@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.server
+package net.folivo.trixnity.appservice.rest.api.server
 
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*

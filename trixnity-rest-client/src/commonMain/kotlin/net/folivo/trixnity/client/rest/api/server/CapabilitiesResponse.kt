@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.server
+package net.folivo.trixnity.appservice.rest.api.server
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,6 +27,7 @@ data class CapabilitiesResponse(
         enum class RoomVersionStability {
             @SerialName("stable")
             STABLE,
+
             @SerialName("unstable")
             UNSTABLE
         }

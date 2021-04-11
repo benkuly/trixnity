@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.room
+package net.folivo.trixnity.appservice.rest.api.room
 
 import com.benasher44.uuid.uuid4
 import io.ktor.client.*
@@ -6,10 +6,10 @@ import io.ktor.client.request.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
-import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Preset
-import net.folivo.trixnity.client.rest.api.room.Direction.FORWARD
-import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
+import net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest.Invite3Pid
+import net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest.Preset
+import net.folivo.trixnity.appservice.rest.api.room.Direction.FORWARD
+import net.folivo.trixnity.appservice.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
@@ -60,7 +60,7 @@ class RoomApiClient(
     ): C {
         val eventType =
             stateEventContentSerializers.find { it.kClass == C::class }?.type
-                ?: throw IllegalArgumentException(unsupportedEventType)
+                ?: throw IllegalArgumentException(net.folivo.trixnity.appservice.rest.api.room.RoomApiClient.Companion.unsupportedEventType)
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
@@ -87,11 +87,11 @@ class RoomApiClient(
     suspend fun getMembers(
         roomId: RoomId,
         at: String? = null,
-        membership: Membership? = null,
-        notMembership: Membership? = null,
+        membership: net.folivo.trixnity.appservice.rest.api.room.Membership? = null,
+        notMembership: net.folivo.trixnity.appservice.rest.api.room.Membership? = null,
         asUserId: UserId? = null
     ): List<StateEvent<MemberEventContent>> {
-        return httpClient.get<GetMembersResponse> {
+        return httpClient.get<net.folivo.trixnity.appservice.rest.api.room.GetMembersResponse> {
             url("/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
@@ -106,7 +106,7 @@ class RoomApiClient(
     suspend fun getJoinedMembers(
         roomId: RoomId,
         asUserId: UserId? = null
-    ): GetJoinedMembersResponse {
+    ): net.folivo.trixnity.appservice.rest.api.room.GetJoinedMembersResponse {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/joined_members")
             parameter("user_id", asUserId)
@@ -119,12 +119,12 @@ class RoomApiClient(
     suspend fun getEvents(
         roomId: RoomId,
         from: String,
-        dir: Direction = FORWARD,
+        dir: net.folivo.trixnity.appservice.rest.api.room.Direction = FORWARD,
         to: String? = null,
         limit: Long = 10,
         filter: String? = null,
         asUserId: UserId? = null
-    ): GetEventsResponse {
+    ): net.folivo.trixnity.appservice.rest.api.room.GetEventsResponse {
         return httpClient.get {
             url("/r0/rooms/${roomId.e()}/messages")
             parameter("from", from)
@@ -146,8 +146,8 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): EventId {
         val eventType = stateEventContentSerializers.find { it.kClass.isInstance(eventContent) }?.type
-            ?: throw IllegalArgumentException(unsupportedEventType)
-        return httpClient.put<SendEventResponse> {
+            ?: throw IllegalArgumentException(net.folivo.trixnity.appservice.rest.api.room.RoomApiClient.Companion.unsupportedEventType)
+        return httpClient.put<net.folivo.trixnity.appservice.rest.api.room.SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
             body = eventContent
@@ -164,8 +164,8 @@ class RoomApiClient(
         asUserId: UserId? = null
     ): EventId {
         val eventType = roomEventContentSerializers.find { it.kClass.isInstance(eventContent) }?.type
-            ?: throw IllegalArgumentException(unsupportedEventType)
-        return httpClient.put<SendEventResponse> {
+            ?: throw IllegalArgumentException(net.folivo.trixnity.appservice.rest.api.room.RoomApiClient.Companion.unsupportedEventType)
+        return httpClient.put<net.folivo.trixnity.appservice.rest.api.room.SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
             body = eventContent
@@ -182,7 +182,7 @@ class RoomApiClient(
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        return httpClient.put<SendEventResponse> {
+        return httpClient.put<net.folivo.trixnity.appservice.rest.api.room.SendEventResponse> {
             url("/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
             body = if (reason != null) mapOf("reason" to reason) else mapOf()
@@ -193,7 +193,7 @@ class RoomApiClient(
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-createroom">matrix spec</a>
      */
     suspend fun createRoom(
-        visibility: Visibility = Visibility.PRIVATE,
+        visibility: net.folivo.trixnity.appservice.rest.api.room.Visibility = net.folivo.trixnity.appservice.rest.api.room.Visibility.PRIVATE,
         roomAliasId: RoomAliasId? = null,
         name: String? = null,
         topic: String? = null,
@@ -207,10 +207,10 @@ class RoomApiClient(
         powerLevelContentOverride: PowerLevelsEventContent? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<CreateRoomResponse> {
+        return httpClient.post<net.folivo.trixnity.appservice.rest.api.room.CreateRoomResponse> {
             url("/r0/createRoom")
             parameter("user_id", asUserId)
-            body = CreateRoomRequest(
+            body = net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest(
                 visibility,
                 roomAliasId?.localpart,
                 name,
@@ -238,7 +238,7 @@ class RoomApiClient(
         return httpClient.put {
             url("/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
-            body = SetRoomAliasRequest(roomId)
+            body = net.folivo.trixnity.appservice.rest.api.room.SetRoomAliasRequest(roomId)
         }
     }
 
@@ -248,7 +248,7 @@ class RoomApiClient(
     suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
         asUserId: UserId? = null
-    ): GetRoomAliasResponse {
+    ): net.folivo.trixnity.appservice.rest.api.room.GetRoomAliasResponse {
         return httpClient.get {
             url("/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
@@ -272,7 +272,7 @@ class RoomApiClient(
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-joined-rooms">matrix spec</a>
      */
     suspend fun getJoinedRooms(asUserId: UserId? = null): Set<RoomId> {
-        return httpClient.get<GetJoinedRoomsResponse> {
+        return httpClient.get<net.folivo.trixnity.appservice.rest.api.room.GetJoinedRoomsResponse> {
             url("/r0/joined_rooms")
             parameter("user_id", asUserId)
         }.joinedRooms
@@ -289,7 +289,7 @@ class RoomApiClient(
         return httpClient.post {
             url("/r0/rooms/${roomId.e()}/invite")
             parameter("user_id", asUserId)
-            body = InviteUserRequest(userId)
+            body = net.folivo.trixnity.appservice.rest.api.room.InviteUserRequest(userId)
         }
     }
 
@@ -302,11 +302,11 @@ class RoomApiClient(
         thirdPartySigned: ThirdPartySigned? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<JoinRoomResponse> {
+        return httpClient.post<net.folivo.trixnity.appservice.rest.api.room.JoinRoomResponse> {
             url("/r0/join/${roomId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
-            body = JoinRoomRequest(thirdPartySigned)
+            body = net.folivo.trixnity.appservice.rest.api.room.JoinRoomRequest(thirdPartySigned)
         }.roomId
     }
 
@@ -319,11 +319,11 @@ class RoomApiClient(
         thirdPartySigned: ThirdPartySigned? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<JoinRoomResponse> {
+        return httpClient.post<net.folivo.trixnity.appservice.rest.api.room.JoinRoomResponse> {
             url("/r0/join/${roomAliasId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
-            body = JoinRoomRequest(thirdPartySigned)
+            body = net.folivo.trixnity.appservice.rest.api.room.JoinRoomRequest(thirdPartySigned)
         }.roomId
     }
 

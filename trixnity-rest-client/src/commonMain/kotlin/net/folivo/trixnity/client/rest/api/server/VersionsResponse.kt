@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.rest.api.server
+package net.folivo.trixnity.appservice.rest.api.server
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
