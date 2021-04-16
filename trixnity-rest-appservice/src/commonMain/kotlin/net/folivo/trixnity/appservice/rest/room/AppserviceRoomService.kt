@@ -5,7 +5,7 @@ import net.folivo.trixnity.core.model.MatrixId
 
 interface AppserviceRoomService {
 
-    val matrixClient: MatrixClient<*>
+    val matrixClient: MatrixClient
 
     enum class RoomExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED

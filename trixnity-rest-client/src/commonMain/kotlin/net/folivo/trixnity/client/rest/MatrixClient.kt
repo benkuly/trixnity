@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.rest
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.*
 import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
@@ -28,14 +27,12 @@ import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_S
 import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
-//FIXME test
-class MatrixClient<T : HttpClientEngineConfig>(
+class MatrixClient(
+    httpClient: HttpClient,
     properties: MatrixClientProperties,
-    httpClientEngineFactory: HttpClientEngineFactory<T>,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
     customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet(),
-    httpClientEngineConfig: T.() -> Unit = {},
 ) {
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> =
         DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS + customRoomEventContentSerializers
@@ -76,8 +73,7 @@ class MatrixClient<T : HttpClientEngineConfig>(
         install(HttpTimeout) { }
     }
 
-    val httpClient: HttpClient = HttpClient(httpClientEngineFactory) {
-        engine(httpClientEngineConfig)
+    val httpClient: HttpClient = httpClient.config {
         httpClientConfig(this)
     }
 

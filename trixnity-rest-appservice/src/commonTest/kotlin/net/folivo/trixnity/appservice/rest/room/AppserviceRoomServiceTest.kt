@@ -14,7 +14,7 @@ import kotlin.test.fail
 
 class AppserviceRoomServiceTest {
 
-    class TestAppserviceRoomService(override val matrixClient: MatrixClient<*>) : AppserviceRoomService {
+    class TestAppserviceRoomService(override val matrixClient: MatrixClient) : AppserviceRoomService {
         override suspend fun roomExistingState(roomAlias: MatrixId.RoomAliasId): AppserviceRoomService.RoomExistingState {
             throw RuntimeException("this is not tested")
         }
@@ -29,7 +29,7 @@ class AppserviceRoomServiceTest {
 
     }
 
-    private val matrixClientMock: MatrixClient<*> = mockk()
+    private val matrixClientMock: MatrixClient = mockk()
     private val cut = spyk(TestAppserviceRoomService(matrixClientMock))
 
     @BeforeTest

@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.MatrixId
 
 interface AppserviceUserService {
 
-    val matrixClient: MatrixClient<*>
+    val matrixClient: MatrixClient
 
     enum class UserExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED

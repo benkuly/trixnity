@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.rest
 
+import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -24,22 +25,23 @@ class MatrixClientTest {
         val matrixClient = MatrixClient(
 
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
-                assertEquals("matrix.host", request.url.host)
-                assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
-                assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                assertEquals(HttpMethod.Post, request.method)
-                assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
-                respond(
-                    """{"status":"ok"}""",
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
+                        assertEquals("matrix.host", request.url.host)
+                        assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
+                        assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals("""{"help":"me"}""", request.body.toByteArray().decodeToString())
+                        respond(
+                            """{"status":"ok"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
 
         matrixClient.httpClient.post<OkResponse> {
             url("/path")
@@ -53,19 +55,20 @@ class MatrixClientTest {
         try {
             val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClientEngineFactory = MockEngine,
-            ) {
-                addHandler {
-                    respond(
-                        """{
+                httpClient = HttpClient(MockEngine) {
+                    engine {
+                        addHandler {
+                            respond(
+                                """{
                             "errcode": "NO_UNICORN",
                             "error": "Only unicorns accepted"
                        }""".trimIndent(),
-                        HttpStatusCode.NotFound,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
-            }
+                                HttpStatusCode.NotFound,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                })
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
@@ -82,16 +85,17 @@ class MatrixClientTest {
         try {
             val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClientEngineFactory = MockEngine,
-            ) {
-                addHandler {
-                    respond(
-                        "NO_UNICORN",
-                        HttpStatusCode.NotFound,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
-            }
+                httpClient = HttpClient(MockEngine) {
+                    engine {
+                        addHandler {
+                            respond(
+                                "NO_UNICORN",
+                                HttpStatusCode.NotFound,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                })
             matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }

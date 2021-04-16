@@ -1,5 +1,6 @@
 package net.folivo.trixnity.appservice.rest.api.user
 
+import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
@@ -37,19 +38,20 @@ class UserApiClientTest {
         """.trimIndent().lines().joinToString("") { it.trim() }
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
-                assertEquals(HttpMethod.Post, request.method)
-                assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
-                respond(
-                    Json.encodeToString(response),
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
+                        respond(
+                            Json.encodeToString(response),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
         val result = matrixClient.user.register(
             authenticationType = "someAuthenticationType",
             authenticationSession = "someAuthenticationSession",
@@ -67,19 +69,23 @@ class UserApiClientTest {
     fun shouldSetDisplayName() = runBlockingTest {
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
-                assertEquals(HttpMethod.Put, request.method)
-                assertEquals("""{"displayname":"someDisplayName"}""", request.body.toByteArray().decodeToString())
-                respond(
-                    "{}",
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"displayname":"someDisplayName"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
         matrixClient.user.setDisplayName(UserId("user", "server"), "someDisplayName")
     }
 
@@ -88,18 +94,19 @@ class UserApiClientTest {
         val response = WhoAmIResponse(UserId("user", "server"))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/r0/account/whoami", request.url.fullPath)
-                assertEquals(HttpMethod.Get, request.method)
-                respond(
-                    Json.encodeToString(response),
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/account/whoami", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            Json.encodeToString(response),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
         val result = matrixClient.user.whoAmI()
         assertEquals(UserId("user", "server"), result)
     }

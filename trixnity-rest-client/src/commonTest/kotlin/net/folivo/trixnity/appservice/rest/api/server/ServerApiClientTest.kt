@@ -1,5 +1,6 @@
 package net.folivo.trixnity.appservice.rest.api.server
 
+import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
@@ -23,18 +24,19 @@ class ServerApiClientTest {
         )
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/versions", request.url.fullPath)
-                assertEquals(HttpMethod.Get, request.method)
-                respond(
-                    Json.encodeToString(response),
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/versions", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            Json.encodeToString(response),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
         val result = matrixClient.server.getVersions()
         assertEquals(response, result)
     }
@@ -52,18 +54,19 @@ class ServerApiClientTest {
         )
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClientEngineFactory = MockEngine,
-        ) {
-            addHandler { request ->
-                assertEquals("/_matrix/client/r0/capabilities", request.url.fullPath)
-                assertEquals(HttpMethod.Get, request.method)
-                respond(
-                    Json.encodeToString(response),
-                    HttpStatusCode.OK,
-                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                )
-            }
-        }
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/capabilities", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            Json.encodeToString(response),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
         val result = matrixClient.server.getCapabilities()
         assertEquals(response, result)
     }
