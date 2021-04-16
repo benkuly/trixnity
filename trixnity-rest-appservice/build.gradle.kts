@@ -33,6 +33,9 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.mockk:mockk:${Versions.mockk}")
             }
         }
