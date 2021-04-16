@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.user
+package net.folivo.trixnity.client.rest.api.user
 
 enum class AccountType(val value: String) {
     GUEST("guest"),

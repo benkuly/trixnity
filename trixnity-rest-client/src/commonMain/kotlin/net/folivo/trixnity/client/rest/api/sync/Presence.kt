@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.sync
+package net.folivo.trixnity.client.rest.api.sync
 
 enum class Presence(val value: String) {
     OFFLINE("offline"),

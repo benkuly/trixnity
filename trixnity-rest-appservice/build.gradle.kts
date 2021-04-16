@@ -24,18 +24,23 @@ kotlin {
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
 
+                implementation("io.ktor:ktor-auth:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization:${Versions.ktor}")
+
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
-                implementation("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
             }
         }
         val commonTest by getting {
             dependencies {
+                implementation("io.mockk:mockk:${Versions.mockk}")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
+                implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
     }

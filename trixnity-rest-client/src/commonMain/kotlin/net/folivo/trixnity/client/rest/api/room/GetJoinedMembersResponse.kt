@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.room
+package net.folivo.trixnity.client.rest.api.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.MatrixId.UserId
 
 @Serializable
 data class GetJoinedMembersResponse(
-    @SerialName("joined") val joined: Map<UserId, net.folivo.trixnity.appservice.rest.api.room.GetJoinedMembersResponse.RoomMember>
+    @SerialName("joined") val joined: Map<UserId, RoomMember>
 ) {
     @Serializable
     data class RoomMember(

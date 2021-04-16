@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.sync
+package net.folivo.trixnity.client.rest.api.sync
 
 import net.folivo.trixnity.core.model.MatrixId.UserId
 

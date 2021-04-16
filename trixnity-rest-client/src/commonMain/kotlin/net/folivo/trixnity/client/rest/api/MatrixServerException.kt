@@ -1,9 +1,8 @@
-package net.folivo.trixnity.appservice.rest.api
+package net.folivo.trixnity.client.rest.api
 
 import io.ktor.http.*
 
-
 open class MatrixServerException(
     val statusCode: HttpStatusCode,
-    val errorResponse: net.folivo.trixnity.appservice.rest.api.ErrorResponse
+    val errorResponse: ErrorResponse
 ) : Exception("status: $statusCode; errorCode: ${errorResponse.errorCode}; errorMessage: ${errorResponse.errorMessage}")

@@ -1,22 +1,18 @@
 package net.folivo.trixnity.appservice.rest.api
 
-import com.soywiz.klogger.Logger
+import net.folivo.trixnity.appservice.rest.api.room.AppserviceRoomService
 import net.folivo.trixnity.appservice.rest.api.user.AppserviceUserService
 import net.folivo.trixnity.client.rest.MatrixClient
+import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.core.model.MatrixId
 
 class AppserviceHandlerHelper(
     private val matrixClient: MatrixClient<*>,
     private val appserviceUserService: AppserviceUserService,
-    private val appserviceRoomService: net.folivo.trixnity.appservice.rest.api.room.AppserviceRoomService
+    private val appserviceRoomService: AppserviceRoomService
 ) {
 
-    companion object {
-        private val LOG = Logger()
-    }
-
     suspend fun registerManagedUser(userId: MatrixId.UserId) {
-        LOG.debug { "try to register user" }
         try {
             matrixClient.user.register(
                 authenticationType = "m.login.application_service",
@@ -24,7 +20,6 @@ class AppserviceHandlerHelper(
             )
         } catch (error: MatrixServerException) {
             if (error.errorResponse.errorCode == "M_USER_IN_USE") {
-                LOG.warn { "user $userId has already been created" }
             } else throw error
         }
         val displayName = appserviceUserService.getRegisterUserParameter(userId).displayName
@@ -35,12 +30,10 @@ class AppserviceHandlerHelper(
                 asUserId = userId
             )
         }
-        LOG.debug { "registered user" }
         appserviceUserService.onRegisteredUser(userId)
     }
 
     suspend fun createManagedRoom(roomAlias: MatrixId.RoomAliasId) {
-        LOG.debug { "try to create room" }
         val createRoomParameter = appserviceRoomService.getCreateRoomParameter(roomAlias)
         val roomId = matrixClient.room
             .createRoom(
@@ -58,7 +51,6 @@ class AppserviceHandlerHelper(
                 powerLevelContentOverride = createRoomParameter.powerLevelContentOverride,
                 preset = createRoomParameter.preset
             )
-        LOG.debug { "created room" }
         appserviceRoomService.onCreatedRoom(roomAlias, roomId)
     }
 }

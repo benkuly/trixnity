@@ -1,7 +1,9 @@
 package net.folivo.trixnity.appservice.rest.api.room
 
+import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest
+import net.folivo.trixnity.client.rest.api.room.Visibility
 import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
@@ -13,7 +15,7 @@ data class CreateRoomParameter(
     val invite3Pid: Set<CreateRoomRequest.Invite3Pid>? = null,
     val roomVersion: String? = null,
     val creationContent: CreateEventContent? = null,
-    val initialState: List<Event.StateEvent<*>>? = null,
+    val initialState: List<StateEvent<*>>? = null,
     val preset: CreateRoomRequest.Preset? = null,
     val isDirect: Boolean? = null,
     val powerLevelContentOverride: PowerLevelsEventContent? = null,

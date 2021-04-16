@@ -1,8 +1,11 @@
-package net.folivo.trixnity.appservice.rest.api.user
+package net.folivo.trixnity.client.rest.api.user
 
 import io.ktor.client.*
 import io.ktor.client.request.*
-import net.folivo.trixnity.client.rest.api.user.RegisterRequest.Auth
+import net.folivo.trixnity.client.rest.api.user.AccountType
+import net.folivo.trixnity.client.rest.api.user.RegisterRequest
+import net.folivo.trixnity.client.rest.api.user.RegisterResponse
+import net.folivo.trixnity.client.rest.api.user.WhoAmIResponse
 import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
@@ -25,7 +28,7 @@ class UserApiClient(private val httpClient: HttpClient) {
             url("/r0/register")
             parameter("kind", accountType?.value)
             body = RegisterRequest(
-                Auth(authenticationType, authenticationSession),
+                RegisterRequest.Auth(authenticationType, authenticationSession),
                 username,
                 password,
                 deviceId,

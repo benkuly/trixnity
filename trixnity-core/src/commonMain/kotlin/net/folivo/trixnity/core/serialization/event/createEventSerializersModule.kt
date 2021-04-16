@@ -26,7 +26,7 @@ fun createEventSerializersModule(
         contextual(eventSerializer)
         contextual(roomEventSerializer)
         contextual(stateEventSerializer)
-        contextual(stateEventSerializer)
+        contextual(strippedStateEventSerializer)
 
         roomEventContentSerializers.forEach {
             contextual(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)

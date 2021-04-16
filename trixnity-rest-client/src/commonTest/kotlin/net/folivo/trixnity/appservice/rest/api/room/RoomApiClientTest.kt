@@ -7,20 +7,23 @@ import io.ktor.util.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
-import net.folivo.trixnity.appservice.rest.api.room.CreateRoomRequest.Invite3Pid
-import net.folivo.trixnity.appservice.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.api.room.*
+import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
+import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedData
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createJson
@@ -178,7 +181,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetMembers() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.GetMembersResponse(
+        val response = GetMembersResponse(
             listOf(
                 StateEvent(
                     id = EventId("event1", "server"),
@@ -220,7 +223,7 @@ class RoomApiClientTest {
         val result = matrixClient.room.getMembers(
             roomId = RoomId("room", "server"),
             at = "someAt",
-            membership = net.folivo.trixnity.appservice.rest.api.room.Membership.JOIN
+            membership = Membership.JOIN
         )
         assertEquals(2, result.size)
         assertEquals(MemberEventContent::class, result[0].content::class)
@@ -230,16 +233,16 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetJoinedMembers() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.GetJoinedMembersResponse(
+        val response = GetJoinedMembersResponse(
             joined = mapOf(
                 UserId(
                     "user1",
                     "server"
-                ) to net.folivo.trixnity.appservice.rest.api.room.GetJoinedMembersResponse.RoomMember("Unicorn"),
+                ) to GetJoinedMembersResponse.RoomMember("Unicorn"),
                 UserId(
                     "user2",
                     "server"
-                ) to net.folivo.trixnity.appservice.rest.api.room.GetJoinedMembersResponse.RoomMember("Dino")
+                ) to GetJoinedMembersResponse.RoomMember("Dino")
             )
         )
         val matrixClient = MatrixClient(
@@ -265,11 +268,22 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetEvents() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.GetEventsResponse(
+        val response = GetEventsResponse(
             start = "start",
             end = "end",
-            chunk = listOf(),
-            state = listOf()
+            chunk = listOf(
+                RoomEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("event", "server"), UserId
+                        ("user", "server"), 1234L, RoomId("room", "server")
+                )
+            ),
+            state = listOf(
+                StateEvent(
+                    MemberEventContent(membership = JOIN), EventId("event", "server"), UserId
+                        ("user", "server"), 1234L, RoomId("room", "server"), stateKey = UserId("dino", "server").full
+                )
+            )
         )
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
@@ -291,7 +305,7 @@ class RoomApiClientTest {
         val result = matrixClient.room.getEvents(
             roomId = RoomId("room", "server"),
             from = "from",
-            dir = net.folivo.trixnity.appservice.rest.api.room.Direction.FORWARD
+            dir = Direction.FORWARD
         )
         assertEquals(response, result)
     }
@@ -437,7 +451,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldCreateRoom() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.CreateRoomResponse(RoomId("room", "server"))
+        val response = CreateRoomResponse(RoomId("room", "server"))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -513,7 +527,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetRoomAlias() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.GetRoomAliasResponse(
+        val response = GetRoomAliasResponse(
             roomId = RoomId("room", "server"),
             servers = listOf("server1", "server2")
         )
@@ -562,7 +576,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldGetJoinedRooms() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.GetJoinedRoomsResponse(
+        val response = GetJoinedRoomsResponse(
             setOf(
                 RoomId("room1", "server"), RoomId("room2", "server")
             )
@@ -613,7 +627,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldJoinRoomByRoomId() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.JoinRoomResponse(RoomId("room", "server"))
+        val response = JoinRoomResponse(RoomId("room", "server"))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,
@@ -665,7 +679,7 @@ class RoomApiClientTest {
 
     @Test
     fun shouldJoinRoomByRoomAlias() = runBlockingTest {
-        val response = net.folivo.trixnity.appservice.rest.api.room.JoinRoomResponse(RoomId("room", "server"))
+        val response = JoinRoomResponse(RoomId("room", "server"))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClientEngineFactory = MockEngine,

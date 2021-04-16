@@ -26,11 +26,13 @@ class EventSerializer(
         val hasStateKey = "state_key" in jsonObj
         val hasEventId = "event_id" in jsonObj
         val hasRoomId = "room_id" in jsonObj
+        val hasSenderId = "sender" in jsonObj
         val serializer = when {
-            hasStateKey && hasEventId  -> stateEventSerializer
-            hasStateKey && !hasEventId -> strippedStateEventSerializer
-            hasRoomId                  -> roomEventSerializer
-            else                       -> basicEventSerializer
+            hasRoomId && hasStateKey && hasEventId -> stateEventSerializer
+            hasRoomId && hasStateKey && !hasEventId -> strippedStateEventSerializer
+            hasRoomId && hasSenderId -> roomEventSerializer
+            // hasRoomId -> // TODO Ephemeral-Events (maybe also presence-event?)
+            else -> basicEventSerializer
         }
         return decoder.json.decodeFromJsonElement(serializer, jsonObj)
     }
@@ -38,10 +40,10 @@ class EventSerializer(
     override fun serialize(encoder: Encoder, value: Event<*>) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
-            is RoomEvent<*>          -> encoder.json.encodeToJsonElement(roomEventSerializer, value)
-            is StateEvent<*>         -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
+            is RoomEvent<*> -> encoder.json.encodeToJsonElement(roomEventSerializer, value)
+            is StateEvent<*> -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
             is StrippedStateEvent<*> -> encoder.json.encodeToJsonElement(strippedStateEventSerializer, value)
-            is BasicEvent            -> encoder.json.encodeToJsonElement(basicEventSerializer, value)
+            is BasicEvent -> encoder.json.encodeToJsonElement(basicEventSerializer, value)
         }
         encoder.encodeJsonElement(jsonElement)
     }

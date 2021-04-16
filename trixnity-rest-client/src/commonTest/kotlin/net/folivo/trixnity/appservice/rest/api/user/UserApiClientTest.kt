@@ -9,6 +9,9 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.api.user.AccountType
+import net.folivo.trixnity.client.rest.api.user.RegisterResponse
+import net.folivo.trixnity.client.rest.api.user.WhoAmIResponse
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.Test
