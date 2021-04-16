@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.room
+package net.folivo.trixnity.appservice.rest.room
 
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest
 import net.folivo.trixnity.client.rest.api.room.Visibility

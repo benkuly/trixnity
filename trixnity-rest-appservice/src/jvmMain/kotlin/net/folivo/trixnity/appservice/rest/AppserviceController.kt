@@ -6,21 +6,18 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import kotlinx.coroutines.flow.asFlow
-import net.folivo.trixnity.appservice.rest.api.AppserviceHandler
-import net.folivo.trixnity.appservice.rest.api.MatrixBadRequestException
-import net.folivo.trixnity.appservice.rest.api.MatrixNotFoundException
-import net.folivo.trixnity.appservice.rest.api.event.EventRequest
+import net.folivo.trixnity.appservice.rest.event.EventRequest
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.core.model.MatrixId
 
-fun Route.controller(appserviceHandler: AppserviceHandler) {
-    v1(appserviceHandler)
+fun Route.controller(appserviceService: AppserviceService) {
+    v1(appserviceService)
     route("/_matrix/app/v1") {
-        v1(appserviceHandler)
+        v1(appserviceService)
     }
 }
 
-fun Route.v1(appserviceHandler: AppserviceHandler) {
+fun Route.v1(appserviceService: AppserviceService) {
     /**
      * @see <a href="https://matrix.org/docs/spec/application_service/r0.1.2#put-matrix-app-v1-transactions-txnid">matrix spec</a>
      */
@@ -28,7 +25,7 @@ fun Route.v1(appserviceHandler: AppserviceHandler) {
         val tnxId = call.parameters["tnxId"] ?: throw MatrixBadRequestException("txnId path parameter was missing")
         val eventRequest = call.receive<EventRequest>()
 
-        appserviceHandler.addTransactions(tnxId, eventRequest.events.asFlow())
+        appserviceService.addTransactions(tnxId, eventRequest.events.asFlow())
 
         call.respond(HttpStatusCode.OK, "{}")
     }
@@ -40,7 +37,7 @@ fun Route.v1(appserviceHandler: AppserviceHandler) {
         val userId = call.parameters["userId"] ?: throw MatrixBadRequestException("userId path parameter was missing")
 
         try {
-            val hasUser = appserviceHandler.hasUser(MatrixId.UserId(userId))
+            val hasUser = appserviceService.hasUser(MatrixId.UserId(userId))
             if (hasUser) call.respond(
                 HttpStatusCode.OK,
                 "{}"
@@ -61,7 +58,7 @@ fun Route.v1(appserviceHandler: AppserviceHandler) {
         val roomAlias =
             call.parameters["roomAlias"] ?: throw MatrixBadRequestException("roomAlias path parameter was missing")
         try {
-            val hasRoomAlias = appserviceHandler.hasRoomAlias(MatrixId.RoomAliasId(roomAlias))
+            val hasRoomAlias = appserviceService.hasRoomAlias(MatrixId.RoomAliasId(roomAlias))
             if (hasRoomAlias) call.respond(
                 HttpStatusCode.OK,
                 "{}"

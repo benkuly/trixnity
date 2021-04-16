@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.event
+package net.folivo.trixnity.appservice.rest.event
 
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event

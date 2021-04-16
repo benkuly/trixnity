@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.event
+package net.folivo.trixnity.appservice.rest.event
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName

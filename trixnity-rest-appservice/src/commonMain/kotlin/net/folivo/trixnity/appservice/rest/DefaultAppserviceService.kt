@@ -1,20 +1,20 @@
-package net.folivo.trixnity.appservice.rest.api
+package net.folivo.trixnity.appservice.rest
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
-import net.folivo.trixnity.appservice.rest.api.event.AppserviceEventService
-import net.folivo.trixnity.appservice.rest.api.room.AppserviceRoomService.RoomExistingState
-import net.folivo.trixnity.appservice.rest.api.user.AppserviceUserService
-import net.folivo.trixnity.appservice.rest.api.user.AppserviceUserService.UserExistingState
+import net.folivo.trixnity.appservice.rest.event.AppserviceEventService
+import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService
+import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService.RoomExistingState
+import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
+import net.folivo.trixnity.appservice.rest.user.AppserviceUserService.UserExistingState
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 
-class DefaultAppserviceHandler(
+class DefaultAppserviceService(
     private val appserviceEventService: AppserviceEventService,
     private val appserviceUserService: AppserviceUserService,
-    private val appserviceRoomService: net.folivo.trixnity.appservice.rest.api.room.AppserviceRoomService,
-    private val helper: AppserviceHandlerHelper
-) : AppserviceHandler {
+    private val appserviceRoomService: AppserviceRoomService,
+) : AppserviceService {
 
     override suspend fun addTransactions(tnxId: String, events: Flow<Event<*>>) {
         try {
@@ -48,7 +48,7 @@ class DefaultAppserviceHandler(
             UserExistingState.EXISTS -> true
             UserExistingState.DOES_NOT_EXISTS -> false
             UserExistingState.CAN_BE_CREATED -> {
-                helper.registerManagedUser(userId)
+                appserviceUserService.registerManagedUser(userId)
                 true
             }
         }
@@ -59,7 +59,7 @@ class DefaultAppserviceHandler(
             RoomExistingState.EXISTS -> true
             RoomExistingState.DOES_NOT_EXISTS -> false
             RoomExistingState.CAN_BE_CREATED -> {
-                helper.createManagedRoom(roomAlias)
+                appserviceRoomService.createManagedRoom(roomAlias)
                 true
             }
         }

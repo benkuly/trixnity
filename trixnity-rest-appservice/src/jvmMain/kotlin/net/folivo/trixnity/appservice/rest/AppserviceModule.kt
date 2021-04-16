@@ -7,7 +7,6 @@ import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
-import net.folivo.trixnity.appservice.rest.api.AppserviceHandler
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -19,7 +18,7 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 
 fun Application.appserviceModule(
     properties: AppserviceProperties,
-    appserviceHandler: AppserviceHandler,
+    appserviceService: AppserviceService,
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
     customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet()
 ) {
@@ -46,7 +45,7 @@ fun Application.appserviceModule(
 
     install(Routing) {
         authenticate("default") {
-            controller(appserviceHandler)
+            controller(appserviceService)
         }
     }
 }

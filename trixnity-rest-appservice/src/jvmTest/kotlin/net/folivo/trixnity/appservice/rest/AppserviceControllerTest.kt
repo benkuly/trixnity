@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.appservice.rest.api.AppserviceHandler
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
@@ -22,16 +21,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 
-fun Application.testAppAppserviceController(appserviceHandler: AppserviceHandler) {
+fun Application.testAppAppserviceController(appserviceService: AppserviceService) {
     install(CallLogging)
-    appserviceModule(AppserviceProperties("validToken"), appserviceHandler)
+    appserviceModule(AppserviceProperties("validToken"), appserviceService)
 }
 
 class AppserviceControllerTest {
 
     @Test
     fun `transactions should return 200 and delegate events to handler`() {
-        val appserviceHandlerMock = mockk<AppserviceHandler>()
+        val appserviceHandlerMock = mockk<AppserviceService>()
         val slot = slot<Flow<Event<*>>>()
         coEvery { appserviceHandlerMock.addTransactions("1", capture(slot)) } just Runs
 
@@ -95,7 +94,7 @@ class AppserviceControllerTest {
 
     @Test
     fun `users should return 200 when handler is true`() {
-        val appserviceHandlerMock = mockk<AppserviceHandler>()
+        val appserviceHandlerMock = mockk<AppserviceService>()
         coEvery { appserviceHandlerMock.hasUser(MatrixId.UserId("user", "server")) } returns true
 
         withTestApplication(moduleFunction = { testAppAppserviceController(appserviceHandlerMock) }) {
@@ -111,7 +110,7 @@ class AppserviceControllerTest {
 
     @Test
     fun `users should return 404 when handler is false`() {
-        val appserviceHandlerMock = mockk<AppserviceHandler>()
+        val appserviceHandlerMock = mockk<AppserviceService>()
         coEvery { appserviceHandlerMock.hasUser(MatrixId.UserId("user", "server")) } returns false
 
         withTestApplication(moduleFunction = { testAppAppserviceController(appserviceHandlerMock) }) {
@@ -134,7 +133,7 @@ class AppserviceControllerTest {
 
     @Test
     fun `rooms should return 200 when handler is true`() {
-        val appserviceHandlerMock = mockk<AppserviceHandler>()
+        val appserviceHandlerMock = mockk<AppserviceService>()
         coEvery { appserviceHandlerMock.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) } returns true
 
         withTestApplication(moduleFunction = { testAppAppserviceController(appserviceHandlerMock) }) {
@@ -150,7 +149,7 @@ class AppserviceControllerTest {
 
     @Test
     fun `rooms should return 404 when handler is false`() {
-        val appserviceHandlerMock = mockk<AppserviceHandler>()
+        val appserviceHandlerMock = mockk<AppserviceService>()
         coEvery { appserviceHandlerMock.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) } returns false
 
         withTestApplication(moduleFunction = { testAppAppserviceController(appserviceHandlerMock) }) {

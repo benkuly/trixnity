@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api
+package net.folivo.trixnity.appservice.rest
 
 import io.ktor.http.*
 import net.folivo.trixnity.client.rest.api.ErrorResponse
