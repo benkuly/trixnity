@@ -43,7 +43,7 @@ class MatrixClientTest {
                 }
             })
 
-        matrixClient.httpClient.post<OkResponse> {
+        matrixClient.configuredHttpClient.post<OkResponse> {
             url("/path")
             parameter("param", "dino")
             body = mapOf("help" to "me")
@@ -69,7 +69,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.httpClient.post<OkResponse> {
+            matrixClient.configuredHttpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")
@@ -96,7 +96,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.httpClient.post<OkResponse> {
+            matrixClient.configuredHttpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")

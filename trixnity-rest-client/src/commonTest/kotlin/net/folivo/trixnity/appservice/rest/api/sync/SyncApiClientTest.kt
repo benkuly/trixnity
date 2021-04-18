@@ -316,11 +316,11 @@ class SyncApiClientTest {
         )
         val requestCount = AtomicInt(1)
         val matrixClient = MatrixClient(
-
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             httpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
+                        println(requestCount.get())
                         when (requestCount.get()) {
                             1 -> {
                                 assertEquals(

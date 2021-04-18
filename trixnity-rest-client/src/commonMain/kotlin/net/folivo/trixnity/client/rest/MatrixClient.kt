@@ -41,7 +41,7 @@ class MatrixClient(
 
     val json = createJson(roomEventContentSerializers, stateEventContentSerializers)
 
-    private val httpClientConfig: HttpClientConfig<*>.() -> Unit = {
+    val configuredHttpClient: HttpClient = httpClient.config {
         install(JsonFeature) {
             serializer = KotlinxSerializer(json)
         }
@@ -70,22 +70,18 @@ class MatrixClient(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout) { }
+        install(HttpTimeout)
     }
 
-    val httpClient: HttpClient = httpClient.config {
-        httpClientConfig(this)
-    }
-
-    val server = ServerApiClient(httpClient)
-    val user = UserApiClient(httpClient)
+    val server = ServerApiClient(configuredHttpClient)
+    val user = UserApiClient(configuredHttpClient)
     val room = RoomApiClient(
-        httpClient,
+        configuredHttpClient,
         json,
         roomEventContentSerializers,
         stateEventContentSerializers
     )
-    val sync = SyncApiClient(httpClient, syncBatchTokenService)
+    val sync = SyncApiClient(configuredHttpClient, syncBatchTokenService)
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
