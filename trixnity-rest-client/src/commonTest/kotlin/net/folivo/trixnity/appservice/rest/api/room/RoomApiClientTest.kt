@@ -179,7 +179,7 @@ class RoomApiClientTest {
                             json.encodeToString(
                                 ListSerializer(serializer),
                                 response
-                            ), // FIXME do we still need serializer?
+                            ),
                             HttpStatusCode.OK,
                             headersOf(HttpHeaders.ContentType, Application.Json.toString())
                         )

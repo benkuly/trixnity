@@ -16,7 +16,7 @@ import java.nio.charset.Charset
 import kotlin.test.assertEquals
 
 fun Application.testAppAppserviceModule() {
-    appserviceModule(AppserviceProperties("token"), mockk())
+    matrixAppserviceModule(MatrixAppserviceProperties("token"), mockk())
     routing {
         get("/error") {
             throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse("OH", "no"))

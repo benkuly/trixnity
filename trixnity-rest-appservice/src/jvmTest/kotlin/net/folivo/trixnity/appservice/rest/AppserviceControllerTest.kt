@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 
 fun Application.testAppAppserviceController(appserviceService: AppserviceService) {
     install(CallLogging)
-    appserviceModule(AppserviceProperties("validToken"), appserviceService)
+    matrixAppserviceModule(MatrixAppserviceProperties("validToken"), appserviceService)
 }
 
 class AppserviceControllerTest {

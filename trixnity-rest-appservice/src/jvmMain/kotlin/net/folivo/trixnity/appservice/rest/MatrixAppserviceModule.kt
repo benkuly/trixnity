@@ -16,8 +16,8 @@ import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_S
 import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
-fun Application.appserviceModule(
-    properties: AppserviceProperties,
+fun Application.matrixAppserviceModule(
+    properties: MatrixAppserviceProperties,
     appserviceService: AppserviceService,
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
     customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet()
