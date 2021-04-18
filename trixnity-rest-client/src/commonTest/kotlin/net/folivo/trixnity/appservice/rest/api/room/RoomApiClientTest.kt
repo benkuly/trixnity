@@ -5,6 +5,8 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.util.*
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.toSet
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -186,7 +188,7 @@ class RoomApiClientTest {
                     }
                 }
             })
-        val result = matrixClient.room.getState(RoomId("room", "server"))
+        val result = matrixClient.room.getState(RoomId("room", "server")).toList()
         assertEquals(2, result.size)
         assertEquals(NameEventContent::class, result[0].content::class)
         assertEquals(MemberEventContent::class, result[1].content::class)
@@ -238,7 +240,7 @@ class RoomApiClientTest {
             roomId = RoomId("room", "server"),
             at = "someAt",
             membership = Membership.JOIN
-        )
+        ).toList()
         assertEquals(2, result.size)
         assertEquals(MemberEventContent::class, result[0].content::class)
         assertEquals(MemberEventContent::class, result[1].content::class)

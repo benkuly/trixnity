@@ -35,10 +35,10 @@ sealed class MatrixId {
         fun of(full: String): MatrixId {
             if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
             return when (full.first()) {
-                '@'  -> UserId(full)
-                '!'  -> RoomId(full)
-                '#'  -> RoomAliasId(full)
-                '$'  -> EventId(full)
+                '@' -> UserId(full)
+                '!' -> RoomId(full)
+                '#' -> RoomAliasId(full)
+                '$' -> EventId(full)
                 else -> throw IllegalArgumentException("not a valid matrix identifier")
             }
         }

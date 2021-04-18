@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.rest.api.room
 import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -71,14 +73,14 @@ class RoomApiClient(
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
     @ExperimentalSerializationApi
-    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): List<StateEvent<*>> {
+    suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Flow<StateEvent<*>> {
         val responseBody = httpClient.get<String> {
             url("/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
         val serializer = json.serializersModule.getContextual(StateEvent::class)
         requireNotNull(serializer)
-        return json.decodeFromString(ListSerializer(serializer), responseBody)
+        return json.decodeFromString(ListSerializer(serializer), responseBody).asFlow()
     }
 
     /**
@@ -90,14 +92,14 @@ class RoomApiClient(
         membership: Membership? = null,
         notMembership: Membership? = null,
         asUserId: UserId? = null
-    ): List<StateEvent<MemberEventContent>> {
+    ): Flow<StateEvent<MemberEventContent>> {
         return httpClient.get<GetMembersResponse> {
             url("/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
             parameter("user_id", asUserId)
-        }.chunk
+        }.chunk.asFlow()
     }
 
     /**
@@ -271,11 +273,11 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-joined-rooms">matrix spec</a>
      */
-    suspend fun getJoinedRooms(asUserId: UserId? = null): Set<RoomId> {
+    suspend fun getJoinedRooms(asUserId: UserId? = null): Flow<RoomId> {
         return httpClient.get<GetJoinedRoomsResponse> {
             url("/r0/joined_rooms")
             parameter("user_id", asUserId)
-        }.joinedRooms
+        }.joinedRooms.asFlow()
     }
 
     /**
