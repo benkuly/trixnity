@@ -1,14 +1,17 @@
 package net.folivo.trixnity.appservice.rest.api.sync
 
 import co.touchlab.stately.concurrency.AtomicInt
+import com.soywiz.klogger.Logger
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
@@ -17,18 +20,22 @@ import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
 import net.folivo.trixnity.client.rest.runBlockingTest
+import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
+import net.folivo.trixnity.core.serialization.createJson
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class SyncApiClientTest {
-    private val json = Json {
-        encodeDefaults = true
-    }
+    private val json = createJson()
 
     @BeforeTest
     fun reset() {
+        Logger.defaultLevel = Logger.Level.DEBUG
         InMemorySyncBatchTokenService.reset()
     }
 
@@ -94,7 +101,6 @@ class SyncApiClientTest {
                                       },
                                       "type": "m.room.member",
                                       "event_id": "$143273582443PhrSn:example.org",
-                                      "room_id": "!726s6s6q:example.com",
                                       "sender": "@example:example.org",
                                       "origin_server_ts": 1432735824653,
                                       "unsigned": {
@@ -114,7 +120,6 @@ class SyncApiClientTest {
                                       },
                                       "type": "m.room.member",
                                       "event_id": "$143273582443PhrSn:example.org",
-                                      "room_id": "!726s6s6q:example.com",
                                       "sender": "@example:example.org",
                                       "origin_server_ts": 1432735824653,
                                       "unsigned": {
@@ -131,7 +136,6 @@ class SyncApiClientTest {
                                       },
                                       "type": "m.room.message",
                                       "event_id": "$143273582443PhrSn:example.org",
-                                      "room_id": "!726s6s6q:example.com",
                                       "sender": "@example:example.org",
                                       "origin_server_ts": 1432735824653,
                                       "unsigned": {
@@ -151,8 +155,7 @@ class SyncApiClientTest {
                                           "@bob:example.com"
                                         ]
                                       },
-                                      "type": "m.typing",
-                                      "room_id": "!jEsUZKDJdhlrceRyVU:example.org"
+                                      "type": "m.typing"
                                     }
                                   ]
                                 },
@@ -220,11 +223,11 @@ class SyncApiClientTest {
             timeout = 1234
         )
         assertEquals("s72595_4483_1934", result.nextBatch)
-        assertTrue { result.presence?.events?.size == 1 }
-        assertTrue { result.accountData?.events?.size == 1 }
-        assertTrue { result.room?.join?.size == 1 }
-        assertTrue { result.room?.invite?.size == 1 }
-        assertTrue { result.room?.leave?.size == 0 }
+        assertEquals(1, result.presence?.events?.size)
+        assertEquals(1, result.accountData?.events?.size)
+        assertEquals(1, result.room?.join?.size)
+        assertEquals(1, result.room?.invite?.size)
+        assertEquals(0, result.room?.leave?.size)
     }
 
     @Test
@@ -320,7 +323,6 @@ class SyncApiClientTest {
             httpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        println(requestCount.get())
                         when (requestCount.get()) {
                             1 -> {
                                 assertEquals(
@@ -375,5 +377,192 @@ class SyncApiClientTest {
         assertEquals(response1, result[0])
         assertEquals(response2, result[1])
         assertEquals("nextBatch2", InMemorySyncBatchTokenService.getBatchToken())
+    }
+
+    @Test
+    fun shouldEmitEvents() = runBlockingTest {
+        val response = SyncResponse(
+            nextBatch = "nextBatch1",
+            accountData = AccountData(emptyList()),
+            deviceLists = DeviceLists(emptyList(), emptyList()),
+            deviceOneTimeKeysCount = emptyMap(),
+            presence = Presence(emptyList()), //TODO
+            room = Rooms(
+                join = mapOf(
+                    MatrixId.RoomId("room1", "Server") to Rooms.JoinedRoom(
+                        timeline = Rooms.Timeline(
+                            listOf(
+                                Event.RoomEvent(
+                                    MessageEventContent.TextMessageEventContent("hi"),
+                                    MatrixId.EventId("event1", "server"),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room1", "server"),
+                                    1234L
+                                )
+                            )
+                        ),
+                        state = Rooms.State(
+                            listOf(
+                                Event.StateEvent(
+                                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                                    MatrixId.EventId("event2", "server"),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room1", "server"),
+                                    1235L,
+                                    stateKey = MatrixId.UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        ),
+                        ephemeral = Rooms.JoinedRoom.Ephemeral(
+                            listOf() // TODO
+                        )
+                    )
+                ),
+                leave = mapOf(
+                    MatrixId.RoomId("room2", "Server") to Rooms.LeftRoom(
+                        timeline = Rooms.Timeline(
+                            listOf(
+                                Event.RoomEvent(
+                                    MessageEventContent.NoticeMessageEventContent("hi"),
+                                    MatrixId.EventId("event4", "server"),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room2", "server"),
+                                    1234L
+                                )
+                            )
+                        ),
+                        state = Rooms.State(
+                            listOf(
+                                Event.StateEvent(
+                                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                                    MatrixId.EventId("event5", "server"),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room2", "server"),
+                                    1235L,
+                                    stateKey = MatrixId.UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        )
+                    )
+                ),
+                invite = mapOf(
+                    MatrixId.RoomId("room3", "Server") to Rooms.InvitedRoom(
+                        Rooms.InvitedRoom.InviteState(
+                            listOf(
+                                Event.StrippedStateEvent(
+                                    MemberEventContent(membership = MemberEventContent.Membership.INVITE),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room3", "server"),
+                                    stateKey = MatrixId.UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            toDevice = ToDevice(emptyList()) // TODO
+        )
+        val inChannel = Channel<SyncResponse>()
+
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler {
+                        respond(
+                            json.encodeToString(inChannel.receive()),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+
+        val allEvents = GlobalScope.async {
+            matrixClient.sync.events<EventContent>().take(5).toList()
+        }
+        val messageEvents = GlobalScope.async {
+            matrixClient.sync.events<MessageEventContent>().take(2).toList()
+
+        }
+        val memberEvents = GlobalScope.async {
+            matrixClient.sync.events<MemberEventContent>().take(3).toList()
+        }
+
+        matrixClient.sync.start()
+
+        inChannel.send(response)
+
+        assertEquals(5, allEvents.await().count())
+        assertEquals(
+            listOf("event1", "event4"),
+            allEvents.await().filterIsInstance<Event.RoomEvent<*>>().map { it.id.localpart })
+        assertEquals(
+            listOf("event2", "event5"),
+            allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.localpart })
+        assertEquals(
+            listOf("room3"),
+            allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
+        assertEquals(2, messageEvents.await().count())
+        assertEquals(3, memberEvents.await().count())
+        matrixClient.sync.stop()
+    }
+
+    @Test
+    fun shouldDealWithMultipleStartsAndStops() = runBlockingTest {
+        val response = SyncResponse(
+            nextBatch = "nextBatch1",
+            accountData = AccountData(emptyList()),
+            deviceLists = DeviceLists(emptyList(), emptyList()),
+            deviceOneTimeKeysCount = emptyMap(),
+            presence = Presence(emptyList()),
+            room = Rooms(
+                mapOf(
+                    MatrixId.RoomId("room", "Server") to Rooms.JoinedRoom(
+                        timeline = Rooms.Timeline(
+                            listOf(
+                                Event.RoomEvent(
+                                    MessageEventContent.TextMessageEventContent("hi"),
+                                    MatrixId.EventId("event", "server"),
+                                    MatrixId.UserId("user", "server"),
+                                    MatrixId.RoomId("room", "server"),
+                                    1234L
+                                )
+                            )
+                        )
+                    )
+                ), emptyMap(), emptyMap()
+            ),
+            toDevice = ToDevice(emptyList())
+        )
+        val inChannel = Channel<SyncResponse>()
+
+        val matrixClient = MatrixClient(
+            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            httpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler {
+                        respond(
+                            json.encodeToString(inChannel.receive()),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+
+        val events = GlobalScope.async {
+            matrixClient.sync.events<EventContent>().take(2).toList()
+        }
+
+        matrixClient.sync.start()
+        matrixClient.sync.start()
+
+        inChannel.send(response)
+        inChannel.send(response)
+
+        assertEquals(2, events.await().count())
+        matrixClient.sync.stop()
+        matrixClient.sync.stop()
     }
 }

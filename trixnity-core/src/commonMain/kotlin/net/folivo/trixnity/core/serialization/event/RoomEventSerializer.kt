@@ -44,7 +44,7 @@ class RoomEventSerializer(
         if (content is UnknownRoomEventContent) throw IllegalArgumentException("${UnknownRoomEventContent::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentSerializerMapping = roomEventContentSerializers.find { it.kClass.isInstance(value.content) }
-        requireNotNull(contentSerializerMapping, { "event content type ${value.content::class} must be registered" })
+        requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
 
         val addFields = mutableListOf("type" to contentSerializerMapping.type)
         if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
@@ -53,7 +53,6 @@ class RoomEventSerializer(
                 HideFieldsSerializer(contentSerializerMapping.serializer, "redacts")
             else contentSerializerMapping.serializer
 
-        println(contentSerializerMapping.serializer)
         val jsonElement = encoder.json.encodeToJsonElement(
             AddFieldsSerializer(
                 RoomEvent.serializer(contentSerializer) as KSerializer<RoomEvent<*>>,

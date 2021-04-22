@@ -11,6 +11,8 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.room.RoomApiClient
@@ -18,6 +20,7 @@ import net.folivo.trixnity.client.rest.api.server.ServerApiClient
 import net.folivo.trixnity.client.rest.api.sync.InMemorySyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.sync.SyncApiClient
 import net.folivo.trixnity.client.rest.api.sync.SyncBatchTokenService
+import net.folivo.trixnity.client.rest.api.sync.SyncResponseSerializer
 import net.folivo.trixnity.client.rest.api.user.UserApiClient
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -39,7 +42,9 @@ class MatrixClient(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> =
         DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS + customStateEventContentSerializers
 
-    val json = createJson(roomEventContentSerializers, stateEventContentSerializers)
+    val json = createJson(roomEventContentSerializers, stateEventContentSerializers, SerializersModule {
+        contextual(SyncResponseSerializer)
+    })
 
     val configuredHttpClient: HttpClient = httpClient.config {
         install(JsonFeature) {

@@ -35,13 +35,13 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-core"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
                     version { strictly("${Versions.kotlinxCoroutines}-native-mt") }
                 }
                 implementation("co.touchlab:stately-concurrency:${Versions.stately}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
-                api("io.ktor:ktor-client-core:${Versions.ktor}")
-                api("io.ktor:ktor-client-serialization:${Versions.ktor}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 implementation("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
             }

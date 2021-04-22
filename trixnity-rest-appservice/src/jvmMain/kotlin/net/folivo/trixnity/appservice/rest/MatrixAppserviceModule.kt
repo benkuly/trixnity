@@ -35,7 +35,7 @@ fun Application.matrixAppserviceModule(
     }
     install(StatusPages) {
         exception<Throwable> { cause ->
-            println(cause.stackTraceToString()) // TODO use logger
+            println(cause.stackTraceToString()) // FIXME use logger
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse("M_UNKNOWN", cause.message))
         }
         exception<MatrixServerException> { cause ->

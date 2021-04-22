@@ -291,18 +291,19 @@ class RoomApiClientTest {
             chunk = listOf(
                 RoomEvent(
                     TextMessageEventContent("hi"),
-                    EventId("event", "server"), UserId
-                        ("user", "server"), 1234L, RoomId("room", "server")
+                    EventId("event", "server"),
+                    UserId("user", "server"),
+                    RoomId("room", "server"),
+                    1234L
                 )
             ),
             state = listOf(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
                     EventId("event", "server"),
-                    UserId
-                        ("user", "server"),
-                    1234L,
+                    UserId("user", "server"),
                     RoomId("room", "server"),
+                    1234L,
                     stateKey = UserId("dino", "server").full
                 )
             )
