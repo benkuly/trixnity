@@ -38,7 +38,7 @@ class UserApiClientTest {
         """.trimIndent().lines().joinToString("") { it.trim() }
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
@@ -69,7 +69,7 @@ class UserApiClientTest {
     fun shouldSetDisplayName() = runBlockingTest {
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
@@ -94,7 +94,7 @@ class UserApiClientTest {
         val response = WhoAmIResponse(UserId("user", "server"))
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/r0/account/whoami", request.url.fullPath)

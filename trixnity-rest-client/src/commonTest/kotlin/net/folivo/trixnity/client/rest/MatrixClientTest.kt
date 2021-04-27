@@ -25,7 +25,7 @@ class MatrixClientTest {
         val matrixClient = MatrixClient(
 
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
@@ -43,7 +43,7 @@ class MatrixClientTest {
                 }
             })
 
-        matrixClient.configuredHttpClient.post<OkResponse> {
+        matrixClient.httpClient.post<OkResponse> {
             url("/path")
             parameter("param", "dino")
             body = mapOf("help" to "me")
@@ -55,7 +55,7 @@ class MatrixClientTest {
         try {
             val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClient = HttpClient(MockEngine) {
+                baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
                             respond(
@@ -69,7 +69,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.configuredHttpClient.post<OkResponse> {
+            matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")
@@ -85,7 +85,7 @@ class MatrixClientTest {
         try {
             val matrixClient = MatrixClient(
                 properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-                httpClient = HttpClient(MockEngine) {
+                baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
                             respond(
@@ -96,7 +96,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.configuredHttpClient.post<OkResponse> {
+            matrixClient.httpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")

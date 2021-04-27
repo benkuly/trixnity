@@ -43,7 +43,7 @@ class SyncApiClientTest {
     fun shouldSyncOnce() = runBlockingTest {
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
@@ -254,7 +254,7 @@ class SyncApiClientTest {
         val matrixClient = MatrixClient(
 
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         if (requestCount.get() == 1) {
@@ -320,7 +320,7 @@ class SyncApiClientTest {
         val requestCount = AtomicInt(1)
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.get()) {
@@ -466,7 +466,7 @@ class SyncApiClientTest {
 
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
                         respond(
@@ -539,7 +539,7 @@ class SyncApiClientTest {
 
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
                         respond(

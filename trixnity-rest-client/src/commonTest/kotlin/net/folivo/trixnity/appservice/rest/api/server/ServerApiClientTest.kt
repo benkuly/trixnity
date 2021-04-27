@@ -24,7 +24,7 @@ class ServerApiClientTest {
         )
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/versions", request.url.fullPath)
@@ -54,7 +54,7 @@ class ServerApiClientTest {
         )
         val matrixClient = MatrixClient(
             properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
-            httpClient = HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals("/_matrix/client/r0/capabilities", request.url.fullPath)

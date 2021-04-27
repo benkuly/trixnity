@@ -2,10 +2,6 @@ package net.folivo.trixnity.client.rest.api.user
 
 import io.ktor.client.*
 import io.ktor.client.request.*
-import net.folivo.trixnity.client.rest.api.user.AccountType
-import net.folivo.trixnity.client.rest.api.user.RegisterRequest
-import net.folivo.trixnity.client.rest.api.user.RegisterResponse
-import net.folivo.trixnity.client.rest.api.user.WhoAmIResponse
 import net.folivo.trixnity.client.rest.e
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
@@ -15,14 +11,15 @@ class UserApiClient(private val httpClient: HttpClient) {
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-register">matrix spec</a>
      */
     suspend fun register(
-        authenticationType: String,
+        authenticationType: String? = null, // TODO in client spec mandatory
         authenticationSession: String? = null,
         username: String? = null,
         password: String? = null,
         accountType: AccountType? = null,
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null,
-        inhibitLogin: Boolean? = null
+        inhibitLogin: Boolean? = null,
+        isAppservice: Boolean = false // TODO why is the spec so inconsistent?
     ): RegisterResponse {
         return httpClient.post {
             url("/r0/register")
@@ -33,7 +30,8 @@ class UserApiClient(private val httpClient: HttpClient) {
                 password,
                 deviceId,
                 initialDeviceDisplayName,
-                inhibitLogin
+                inhibitLogin,
+                if (isAppservice) "m.login.application_service" else null
             )
         }
     }

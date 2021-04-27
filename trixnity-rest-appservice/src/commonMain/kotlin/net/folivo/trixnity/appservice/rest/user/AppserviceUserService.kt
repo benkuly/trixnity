@@ -19,7 +19,7 @@ interface AppserviceUserService {
     suspend fun registerManagedUser(userId: MatrixId.UserId) {
         try {
             matrixClient.user.register(
-                authenticationType = "m.login.application_service",
+                isAppservice = true,
                 username = userId.localpart
             )
         } catch (error: MatrixServerException) {

@@ -84,7 +84,7 @@ class SyncApiClient(
 
     private var syncJob: Job? = null
 
-    suspend fun start( // FIXME test
+    suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
         asUserId: UserId? = null

@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
 class MatrixClient(
-    httpClient: HttpClient,
+    baseHttpClient: HttpClient,
     properties: MatrixClientProperties,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
@@ -46,7 +46,7 @@ class MatrixClient(
         contextual(SyncResponseSerializer)
     })
 
-    val configuredHttpClient: HttpClient = httpClient.config {
+    val httpClient: HttpClient = baseHttpClient.config {
         install(JsonFeature) {
             serializer = KotlinxSerializer(json)
         }
@@ -78,15 +78,15 @@ class MatrixClient(
         install(HttpTimeout)
     }
 
-    val server = ServerApiClient(configuredHttpClient)
-    val user = UserApiClient(configuredHttpClient)
+    val server = ServerApiClient(httpClient)
+    val user = UserApiClient(httpClient)
     val room = RoomApiClient(
-        configuredHttpClient,
+        httpClient,
         json,
         roomEventContentSerializers,
         stateEventContentSerializers
     )
-    val sync = SyncApiClient(configuredHttpClient, syncBatchTokenService)
+    val sync = SyncApiClient(httpClient, syncBatchTokenService)
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed

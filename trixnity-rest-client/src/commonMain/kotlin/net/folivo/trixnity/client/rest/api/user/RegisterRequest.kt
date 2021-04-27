@@ -10,11 +10,12 @@ internal data class RegisterRequest(
     @SerialName("password") val password: String?,
     @SerialName("device_id") val deviceId: String?,
     @SerialName("initial_device_display_name") val initialDeviceDisplayName: String?,
-    @SerialName("inhibit_login") val inhibitLogin: Boolean?
+    @SerialName("inhibit_login") val inhibitLogin: Boolean?,
+    @SerialName("type") val type: String?
 ) {
     @Serializable
     data class Auth(
-        @SerialName("type") val type: String,
+        @SerialName("type") val type: String?, // TODO in client spec mandatory
         @SerialName("session") val session: String?,
     )
 }
