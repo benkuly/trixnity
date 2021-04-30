@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
+import kotlin.reflect.KClass
 
 class RoomApiClient(
     val httpClient: HttpClient,
@@ -55,24 +56,42 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
+    @ExperimentalSerializationApi
     suspend inline fun <reified C : StateEventContent> getStateEvent(
         roomId: RoomId,
         stateKey: String = "",
         asUserId: UserId? = null
     ): C {
+        return getStateEvent(C::class, roomId, stateKey, asUserId)
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
+     */
+    @OptIn(ExperimentalSerializationApi::class)
+    suspend fun <C : StateEventContent> getStateEvent(
+        stateEventContentClass: KClass<C>,
+        roomId: RoomId,
+        stateKey: String = "",
+        asUserId: UserId? = null
+    ): C {
         val eventType =
-            stateEventContentSerializers.find { it.kClass == C::class }?.type
+            stateEventContentSerializers.find { it.kClass == stateEventContentClass }?.type
                 ?: throw IllegalArgumentException(unsupportedEventType)
-        return httpClient.get {
+        val responseBody = httpClient.get<String> {
             url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
         }
+        val serializer = json.serializersModule.getContextual(stateEventContentClass)
+        requireNotNull(serializer)
+        return json.decodeFromString(serializer, responseBody)
+
     }
 
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
      */
-    @ExperimentalSerializationApi
+    @OptIn(ExperimentalSerializationApi::class)
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Flow<StateEvent<*>> {
         val responseBody = httpClient.get<String> {
             url("/r0/rooms/${roomId.e()}/state")
