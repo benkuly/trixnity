@@ -61,6 +61,6 @@ kotlin {
                 implementation(kotlin("test-js"))
             }
         }
-        val nativeTest by getting
+//        val nativeTest by getting
     }
 }
