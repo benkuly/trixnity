@@ -138,6 +138,7 @@ class SyncApiClient(
     }
 
     fun <T : EventContent> events(clazz: KClass<T>): SharedFlow<Event<T>> {
+        @Suppress("UNCHECKED_CAST") // TODO unchecked cast
         return (eventHandler.getOrPut(clazz) { MutableSharedFlow() } as MutableSharedFlow<Event<T>>)
             .asSharedFlow()
     }

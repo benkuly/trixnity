@@ -54,6 +54,7 @@ class RoomEventSerializer(
             else contentSerializerMapping.serializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             AddFieldsSerializer(
                 RoomEvent.serializer(contentSerializer) as KSerializer<RoomEvent<*>>,
                 *addFields.toTypedArray()
