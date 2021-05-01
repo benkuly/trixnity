@@ -53,7 +53,7 @@ class AppserviceUserServiceTest {
 
         coVerify {
             matrixClientMock.user.register(
-                authenticationType = "m.login.application_service",
+                isAppservice = true,
                 username = "user"
             )
             matrixClientMock.user.setDisplayName(
@@ -110,7 +110,7 @@ class AppserviceUserServiceTest {
 
         coVerify {
             matrixClientMock.user.register(
-                authenticationType = "m.login.application_service",
+                isAppservice = true,
                 username = "user"
             )
             matrixClientMock.user.setDisplayName(

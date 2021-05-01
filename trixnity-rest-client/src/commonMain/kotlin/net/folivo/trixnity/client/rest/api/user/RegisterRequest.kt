@@ -11,7 +11,7 @@ internal data class RegisterRequest(
     @SerialName("device_id") val deviceId: String?,
     @SerialName("initial_device_display_name") val initialDeviceDisplayName: String?,
     @SerialName("inhibit_login") val inhibitLogin: Boolean?,
-    @SerialName("type") val type: String?
+    @SerialName("type") val type: String? = null
 ) {
     @Serializable
     data class Auth(

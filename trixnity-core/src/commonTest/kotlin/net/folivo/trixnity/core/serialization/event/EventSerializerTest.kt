@@ -22,8 +22,8 @@ class EventSerializerTest {
             CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
-            1432735824653,
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
             UnsignedData(1234),
             ""
         )
@@ -34,8 +34,8 @@ class EventSerializerTest {
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
-            "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "origin_server_ts":1432735824653,
             "unsigned":{"age":1234},
             "state_key":"",
             "type":"m.room.canonical_alias"
@@ -69,8 +69,8 @@ class EventSerializerTest {
                 CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
-                1432735824653,
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
                 UnsignedData(1234),
                 ""
             ), result
@@ -83,8 +83,8 @@ class EventSerializerTest {
             MessageEventContent.TextMessageEventContent("hello"),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
-            1432735824653,
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
             UnsignedData(1234)
         )
         val expectedResult = """
@@ -95,8 +95,8 @@ class EventSerializerTest {
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
-            "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "origin_server_ts":1432735824653,
             "unsigned":{"age":1234},
             "type":"m.room.message"
         }
@@ -127,8 +127,8 @@ class EventSerializerTest {
                 UnknownMessageEventContent("m.dino", "hello"),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
-                1432735824653,
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
                 UnsignedData(1234)
             ), result
         )
@@ -161,8 +161,8 @@ class EventSerializerTest {
             "content":{},
             "event_id":"$143273582443PhrSn:server",
             "sender":"@sender:server",
-            "origin_server_ts":1234,
             "room_id":"!room:server",
+            "origin_server_ts":1234,
             "unsigned":{},
             "state_key":"",
             "type":"m.room.name"
@@ -173,8 +173,8 @@ class EventSerializerTest {
             },
             "event_id":"$143273584443PhrSn:server",
             "sender":"@sender:server",
-            "origin_server_ts":1234,
             "room_id":"!room:server",
+            "origin_server_ts":1234,
             "unsigned":{},
             "state_key":"@user:server",
             "type":"m.room.member"
@@ -191,8 +191,8 @@ class EventSerializerTest {
             RedactionEventContent("spam", EventId("123", "example.org")),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
-            1432735824653,
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
             UnsignedData(1234)
         )
         val expectedResult = """
@@ -202,8 +202,8 @@ class EventSerializerTest {
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
-            "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "origin_server_ts":1432735824653,
             "unsigned":{
                 "age":1234
             },

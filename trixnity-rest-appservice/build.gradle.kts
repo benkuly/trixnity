@@ -18,9 +18,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-rest-client"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
-                    version { strictly("${Versions.kotlinxCoroutines}-native-mt") }
-                }
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
 
@@ -43,7 +41,6 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-junit"))
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
     }

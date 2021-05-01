@@ -35,9 +35,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt") {
-                    version { strictly("${Versions.kotlinxCoroutines}-native-mt") }
-                }
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
                 implementation("co.touchlab:stately-concurrency:${Versions.stately}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 api("io.ktor:ktor-client-core:${Versions.ktor}")
@@ -51,7 +49,6 @@ kotlin {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
         val jvmTest by getting {

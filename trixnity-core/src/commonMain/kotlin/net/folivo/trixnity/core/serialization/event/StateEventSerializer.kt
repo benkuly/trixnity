@@ -37,9 +37,10 @@ class StateEventSerializer(
         if (value.content is UnknownStateEventContent) throw IllegalArgumentException("${UnknownStateEventContent::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(value.content) }
-        requireNotNull(contentDescriptor, { "event content type ${value.content::class} must be registered" })
+        requireNotNull(contentDescriptor) { "event content type ${value.content::class} must be registered" }
 
         val jsonElement = encoder.json.encodeToJsonElement(
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             AddFieldsSerializer(
                 StateEvent.serializer(contentDescriptor.serializer) as KSerializer<StateEvent<*>>,
                 "type" to contentDescriptor.type

@@ -1,39 +1,56 @@
 # Trixnity
 
-Trixnity is a cross-plattform (JVM, JS, Native) matrix-client sdk written in Kotlin.
+Trixnity is a cross-plattform [[Matrix]](matrix.org) client SDK written in Kotlin. This SDK supports JS and JVM (native
+not working yet) as targets.
 
-## Installation
+If you want to use Trixnity in combination with Spring Boot, have a look
+at [matrix-spring-boot-sdk](https://github.com/benkuly/matrix-spring-boot-sdk)
 
-### Kotlin or Java
+## Client
+
+### Installation
+
+#### Java/Kotlin
 
 Add `net.folivo:triynity-rest-client` to your project.
 
-### Javascript
+You also need to add an engine to your project. Find out more [in this chapter](#usage).
+
+#### Javascript
 
 Coming soon.
 
-## Usage
+### Usage
 
-### MatrixClient
+#### Create `MatrixClient`
 
-The most important class of this library is `MatrixClient`. It's constructor needs `MatrixClientProperties`, which
-contains some information to connect to the homeserver.
+The most important class of this library is `MatrixClient`. It's constructor needs some parameters:
+
+- `HttpClient` with an engine, that you can find [here](https://ktor.io/docs/http-client-engines.html)
+- `MatrixClientProperties`, which contains some information to connect to the homeserver.
+- (optional) `SyncBatchTokenService`, which saves the sync token. You should implement it with a database backend for
+  example, so that the client knows, which was the last sync batch token.
+- (optional) `Set<EventContentSerializerMapping<out RoomEventContent>>` allows you to add custom room events
+- (optional) `Set<EventContentSerializerMapping<out StateEventContent>>` allows you to add custom state events
+
+Here is a typical example, how to create a `MatrixClient`:
 
 ```kotlin
 private val matrixClient = MatrixClient(
+    HttpClient(Java),
     MatrixClientProperties(
         MatrixHomeServerProperties("you.home.server"),
         "superSecretToken"
-    ),
-    CIO // choose an engine from here https://ktor.io/docs/http-client-engines.html
+    )
 )
 ```
 
-The `MatrixClient` also allows you to register custom event types in its constructor.
+#### Use Matrix Client-Server API
 
-#### send messages
+You have access to the Matrix Client-Server API via `MatrixClient`. Currently not all endpoints are implemented. If you
+need more, feel free to contribute or open an issue.
 
-You can use `MatrixClient` to send messages:
+Example 1: You can send messages.
 
 ```kotlin
 suspend fun sendMessage() {
@@ -44,8 +61,13 @@ suspend fun sendMessage() {
 }
 ```
 
-#### retrieve messages
+Example 2: You can receive messages.
 
-You can use `MatrixClient` to retrieve messages:
-
-TODO
+```kotlin
+matrixClient.sync.start() // you need to start the sync to receive messages
+matrixClient.sync.events<TextMessageEventContent>()
+    .collect {
+        println(it.content.body)
+    }
+matrixClient.sync.stop()
+```

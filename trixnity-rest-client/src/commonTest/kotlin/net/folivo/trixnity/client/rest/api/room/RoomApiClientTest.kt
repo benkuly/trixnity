@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.room
+package net.folivo.trixnity.client.rest.api.room
 
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
@@ -13,7 +13,6 @@ import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
-import net.folivo.trixnity.client.rest.api.room.*
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.runBlockingTest

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.server
+package net.folivo.trixnity.client.rest.api.server
 
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
@@ -9,8 +9,6 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
-import net.folivo.trixnity.client.rest.api.server.CapabilitiesResponse
-import net.folivo.trixnity.client.rest.api.server.VersionsResponse
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

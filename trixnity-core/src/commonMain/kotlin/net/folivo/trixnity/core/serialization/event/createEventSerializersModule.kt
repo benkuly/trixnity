@@ -29,9 +29,11 @@ fun createEventSerializersModule(
         contextual(strippedStateEventSerializer)
 
         roomEventContentSerializers.forEach {
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             contextual(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
         }
         stateEventContentSerializers.forEach {
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             contextual(it.kClass as KClass<StateEventContent>, it.serializer as KSerializer<StateEventContent>)
         }
     }

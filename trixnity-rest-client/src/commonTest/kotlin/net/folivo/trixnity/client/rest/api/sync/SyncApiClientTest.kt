@@ -1,4 +1,4 @@
-package net.folivo.trixnity.appservice.rest.api.sync
+package net.folivo.trixnity.client.rest.api.sync
 
 import co.touchlab.stately.concurrency.AtomicInt
 import com.soywiz.klogger.Logger
@@ -11,14 +11,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
-import net.folivo.trixnity.client.rest.api.sync.InMemorySyncBatchTokenService
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
-import net.folivo.trixnity.client.rest.api.sync.SyncResponse
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
+import net.folivo.trixnity.client.rest.api.sync.SyncResponse.Presence
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
@@ -483,13 +483,14 @@ class SyncApiClientTest {
         }
         val messageEvents = GlobalScope.async {
             matrixClient.sync.events<MessageEventContent>().take(2).toList()
-
         }
         val memberEvents = GlobalScope.async {
             matrixClient.sync.events<MemberEventContent>().take(3).toList()
         }
 
-        matrixClient.sync.start()
+        GlobalScope.launch {
+            matrixClient.sync.start()
+        }
 
         inChannel.send(response)
 
@@ -555,8 +556,10 @@ class SyncApiClientTest {
             matrixClient.sync.events<EventContent>().take(2).toList()
         }
 
-        matrixClient.sync.start()
-        matrixClient.sync.start()
+        GlobalScope.launch {
+            matrixClient.sync.start()
+            matrixClient.sync.start()
+        }
 
         inChannel.send(response)
         inChannel.send(response)
