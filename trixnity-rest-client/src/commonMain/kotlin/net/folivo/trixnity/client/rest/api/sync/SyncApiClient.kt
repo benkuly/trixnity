@@ -88,9 +88,9 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         asUserId: UserId? = null
-    ) {
+    ) = coroutineScope {
         stop()
-        syncJob = GlobalScope.launch {
+        syncJob = launch {
             LOG.info { "started syncLoop" }
             try {
                 syncLoop(filter, setPresence, asUserId)
