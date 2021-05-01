@@ -4,6 +4,11 @@ plugins {
 }
 
 kotlin {
+    sourceSets {
+        all {
+            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        }
+    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "11"
