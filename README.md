@@ -21,7 +21,7 @@ The client module of Trixnity gives you access to the Matrix Client-Server API.
 
 Add `net.folivo:triynity-rest-client` to your project.
 
-You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html)
+You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html).
 
 #### Javascript
 
@@ -33,7 +33,7 @@ Coming soon.
 
 The most important class of this library is `MatrixClient`. It's constructor needs some parameters:
 
-- `HttpClient` with an engine
+- `HttpClient` with an engine.
 - `MatrixClientProperties`, which contains some information to connect to the homeserver.
 - (optional) `SyncBatchTokenService`, which saves the sync token. You should implement it with a database backend for
   example, so that the client knows, which was the last sync batch token.
@@ -60,12 +60,10 @@ need more, feel free to contribute or open an issue.
 Example 1: You can send messages.
 
 ```kotlin
-suspend fun sendMessage() {
-    matrixClient.room.sendRoomEvent(
-        RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
-        TextMessageEventContent("hello from platform $Platform")
-    )
-}
+matrixClient.room.sendRoomEvent(
+    RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
+    TextMessageEventContent("hello from platform $Platform")
+)
 ```
 
 Example 2: You can receive messages.
@@ -75,6 +73,17 @@ matrixClient.sync.start() // you need to start the sync to receive messages
 matrixClient.sync.events<TextMessageEventContent>()
     .collect {
         println(it.content.body)
+    }
+matrixClient.sync.stop()
+```
+
+Example 3: You can receive all member events.
+
+```kotlin
+matrixClient.sync.start() // you need to start the sync to receive messages
+matrixClient.sync.events<MemberEventContent>()
+    .collect {
+        println("${it.content.displayName} did ${it.content.membership}")
     }
 matrixClient.sync.stop()
 ```
@@ -117,5 +126,5 @@ engine.start(wait = true)
 #### Use `DefaultAppserviceService`
 
 The `DefaultAppserviceService` implements `AppserviceService`. It makes the implementation of a Matrix Appservice more
-abstract. For that it uses `AppserviceEventService`, `AppserviceUserService` and `AppserviceRoomService`, which you need
-to implement.
+abstract and easier. For that it uses `AppserviceEventService`, `AppserviceUserService` and `AppserviceRoomService`,
+which you need to implement.
