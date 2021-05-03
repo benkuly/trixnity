@@ -1,3 +1,5 @@
+![Version](https://maven-badges.herokuapp.com/maven-central/net.folivo/trixnity-core/badge.svg)
+
 # Trixnity
 
 Trixnity is a cross-plattform [[Matrix]](matrix.org) client SDK written in Kotlin. This SDK supports JS and JVM (native
@@ -6,6 +8,8 @@ not working yet) as targets. [Ktor](https://github.com/ktorio/ktor) is used for 
 
 If you want to use Trixnity in combination with Spring Boot, have a look
 at [matrix-spring-boot-sdk](https://github.com/benkuly/matrix-spring-boot-sdk)
+
+You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).
 
 ## Client
 
