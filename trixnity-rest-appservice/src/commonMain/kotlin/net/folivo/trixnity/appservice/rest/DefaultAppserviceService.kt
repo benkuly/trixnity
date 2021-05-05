@@ -2,44 +2,29 @@ package net.folivo.trixnity.appservice.rest
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
-import net.folivo.trixnity.appservice.rest.event.AppserviceEventService
+import net.folivo.trixnity.appservice.rest.event.AppserviceEventTnxService
 import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService
 import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService.RoomExistingState
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService.UserExistingState
+import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 
 class DefaultAppserviceService(
-    private val appserviceEventService: AppserviceEventService,
+    private val appserviceEventTnxService: AppserviceEventTnxService,
     private val appserviceUserService: AppserviceUserService,
     private val appserviceRoomService: AppserviceRoomService,
-) : AppserviceService {
+) : AppserviceService, EventEmitter() {
 
     override suspend fun addTransactions(tnxId: String, events: Flow<Event<*>>) {
-        try {
-            events.collect { event ->
-                val eventId = when (event) {
-                    is Event.RoomEvent -> event.id
-                    is Event.StateEvent -> event.id
-                    else -> null
-                }
-                if (eventId == null) {
-                    appserviceEventService.processEvent(event)
-                } else when (appserviceEventService.eventProcessingState(tnxId, eventId)) {
-                    AppserviceEventService.EventProcessingState.NOT_PROCESSED -> {
-                        appserviceEventService.processEvent(event)
-                        appserviceEventService.onEventProcessed(
-                            tnxId,
-                            eventId
-                        )
-                    }
-                    AppserviceEventService.EventProcessingState.PROCESSED -> {
-                    }
-                }
+        when (appserviceEventTnxService.eventTnxProcessingState(tnxId)) {
+            AppserviceEventTnxService.EventTnxProcessingState.NOT_PROCESSED -> {
+                events.collect { emitEvent(it) }
+                appserviceEventTnxService.onEventTnxProcessed(tnxId)
             }
-        } catch (error: Throwable) {
-            throw error
+            AppserviceEventTnxService.EventTnxProcessingState.PROCESSED -> {
+            }
         }
     }
 

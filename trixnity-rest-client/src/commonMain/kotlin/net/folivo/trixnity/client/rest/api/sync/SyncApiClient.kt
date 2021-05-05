@@ -5,16 +5,16 @@ import io.ktor.client.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.MatrixId.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.EventContent
-import kotlin.reflect.KClass
 
 class SyncApiClient(
     private val httpClient: HttpClient,
     private val syncBatchTokenService: SyncBatchTokenService
-) {
+) : EventEmitter() {
     companion object {
         private val LOG = Logger("SyncApiClient")
     }
@@ -90,7 +90,7 @@ class SyncApiClient(
         asUserId: UserId? = null
     ) = coroutineScope {
         stop()
-        syncJob = launch {
+        syncJob = launch(Dispatchers.Default) {
             LOG.info { "started syncLoop" }
             try {
                 syncLoop(filter, setPresence, asUserId)
@@ -127,24 +127,4 @@ class SyncApiClient(
     suspend fun stop() {
         syncJob?.cancelAndJoin()
     }
-
-    private val eventHandler: MutableMap<KClass<out EventContent>, MutableSharedFlow<Event<*>>> =
-        mutableMapOf()
-
-    private suspend fun emitEvent(event: Event<*>) {
-        eventHandler
-            .filterKeys { it.isInstance(event.content) }
-            .forEach { it.value.emit(event) }
-    }
-
-    fun <T : EventContent> events(clazz: KClass<T>): SharedFlow<Event<T>> {
-        @Suppress("UNCHECKED_CAST") // TODO unchecked cast
-        return (eventHandler.getOrPut(clazz) { MutableSharedFlow() } as MutableSharedFlow<Event<T>>)
-            .asSharedFlow()
-    }
-
-    inline fun <reified T : EventContent> events(): SharedFlow<Event<T>> {
-        return events(T::class)
-    }
-
 }

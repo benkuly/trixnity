@@ -46,18 +46,18 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common"))
+                implementation(kotlin("test-common")) // FIXME change to test in kotlin 1.5
                 implementation(kotlin("test-annotations-common"))
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(kotlin("test-junit")) // FIXME remove in kotlin 1.5
             }
         }
         val jsTest by getting {
             dependencies {
-                implementation(kotlin("test-js"))
+                implementation(kotlin("test-js")) // FIXME remove in kotlin 1.5
             }
         }
 //        val nativeTest by getting

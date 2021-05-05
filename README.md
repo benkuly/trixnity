@@ -66,25 +66,31 @@ matrixClient.room.sendRoomEvent(
 )
 ```
 
-Example 2: You can receive messages.
+Example 2: You can receive different type of events.
 
 ```kotlin
-matrixClient.sync.start() // you need to start the sync to receive messages
-matrixClient.sync.events<TextMessageEventContent>()
-    .collect {
-        println(it.content.body)
-    }
-matrixClient.sync.stop()
-```
+// first register your event handlers
+val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
+val memberEventFlow = matrixClient.sync.events<MemberEventContent>()
+val allEventsFlow = matrixClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
 
-Example 3: You can receive all member events.
+// you need to start the sync to receive messages
+matrixClient.sync.start()
 
-```kotlin
-matrixClient.sync.start() // you need to start the sync to receive messages
-matrixClient.sync.events<MemberEventContent>()
-    .collect {
-        println("${it.content.displayName} did ${it.content.membership}")
-    }
+// wait for events in separate coroutines and print to console
+launch {
+    textMessageEventFlow.collect { println(it.content.body) }
+}
+launch {
+    memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
+}
+launch {
+    allEventsFlow.collect { println(it) }
+}
+
+delay(60000) // wait a minute
+
+// stop the client
 matrixClient.sync.stop()
 ```
 
@@ -128,3 +134,12 @@ engine.start(wait = true)
 The `DefaultAppserviceService` implements `AppserviceService`. It makes the implementation of a Matrix Appservice more
 abstract and easier. For that it uses `AppserviceEventService`, `AppserviceUserService` and `AppserviceRoomService`,
 which you need to implement.
+
+It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api). For example:
+
+```kotlin
+val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
+launch {
+    textMessageEventFlow.collect { println(it.content.body) }
+}
+```

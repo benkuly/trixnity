@@ -37,7 +37,7 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common"))
+                implementation(kotlin("test-common")) // FIXME change to test in kotlin 1.5
                 implementation(kotlin("test-annotations-common"))
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.mockk:mockk:${Versions.mockk}")
@@ -45,7 +45,7 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(kotlin("test-junit")) // FIXME remove in kotlin 1.5
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
             }
         }

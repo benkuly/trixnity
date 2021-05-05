@@ -478,14 +478,17 @@ class SyncApiClientTest {
                 }
             })
 
+        val allEventsFlow = matrixClient.sync.allEvents()
         val allEvents = GlobalScope.async {
-            matrixClient.sync.events<EventContent>().take(5).toList()
+            allEventsFlow.take(5).toList()
         }
+        val messageEventsFlow = matrixClient.sync.events<MessageEventContent>()
         val messageEvents = GlobalScope.async {
-            matrixClient.sync.events<MessageEventContent>().take(2).toList()
+            messageEventsFlow.take(2).toList()
         }
+        val memberEventsFlow = matrixClient.sync.events<MemberEventContent>()
         val memberEvents = GlobalScope.async {
-            matrixClient.sync.events<MemberEventContent>().take(3).toList()
+            memberEventsFlow.take(3).toList()
         }
 
         GlobalScope.launch {

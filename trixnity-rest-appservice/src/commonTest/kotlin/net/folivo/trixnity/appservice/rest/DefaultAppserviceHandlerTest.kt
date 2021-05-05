@@ -2,27 +2,33 @@ package net.folivo.trixnity.appservice.rest
 
 import io.kotest.matchers.shouldBe
 import io.mockk.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.appservice.rest.event.AppserviceEventService
+import net.folivo.trixnity.appservice.rest.event.AppserviceEventTnxService
 import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService
 import net.folivo.trixnity.appservice.rest.room.CreateRoomParameter
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
 import net.folivo.trixnity.appservice.rest.user.RegisterUserParameter
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail
 
 class DefaultAppserviceHandlerTest {
 
-    private val appserviceEventServiceMock: AppserviceEventService = mockk()
+    private val appserviceEventTnxServiceMock: AppserviceEventTnxService = mockk()
     private val appserviceUserServiceMock: AppserviceUserService = mockk()
     private val appserviceRoomServiceMock: AppserviceRoomService = mockk()
 
     private val cut =
-        DefaultAppserviceService(appserviceEventServiceMock, appserviceUserServiceMock, appserviceRoomServiceMock)
+        DefaultAppserviceService(appserviceEventTnxServiceMock, appserviceUserServiceMock, appserviceRoomServiceMock)
 
     @BeforeTest
     fun beforeEach() {
@@ -36,76 +42,31 @@ class DefaultAppserviceHandlerTest {
     }
 
     @Test
-    fun `should process one event and ignore other`() {
-        coEvery { appserviceEventServiceMock.eventProcessingState("someTnxId", MatrixId.EventId("event1", "server")) }
-            .returns(AppserviceEventService.EventProcessingState.NOT_PROCESSED)
-        coEvery { appserviceEventServiceMock.eventProcessingState("someTnxId", MatrixId.EventId("event2", "server")) }
-            .returns(AppserviceEventService.EventProcessingState.PROCESSED)
-        coEvery { appserviceEventServiceMock.processEvent(any()) } just Runs
-        coEvery { appserviceEventServiceMock.onEventProcessed(any(), any()) } just Runs
+    fun `should process events`() = runBlocking {
+        coEvery { appserviceEventTnxServiceMock.eventTnxProcessingState("someTnxId1") }
+            .returns(AppserviceEventTnxService.EventTnxProcessingState.PROCESSED)
+        coEvery { appserviceEventTnxServiceMock.eventTnxProcessingState("someTnxId2") }
+            .returns(AppserviceEventTnxService.EventTnxProcessingState.NOT_PROCESSED)
+        coEvery { appserviceEventTnxServiceMock.onEventTnxProcessed(any()) } just Runs
 
-        val events = arrayOf<Event.RoomEvent<*>>(
-            mockk {
-                every { id } returns MatrixId.EventId("event1", "server")
-            },
-            mockk {
-                every { id } returns MatrixId.EventId("event2", "server")
-            }
+        val event = Event.RoomEvent(
+            MessageEventContent.NoticeMessageEventContent("hi"),
+            MatrixId.EventId("event4", "server"),
+            MatrixId.UserId("user", "server"),
+            MatrixId.RoomId("room2", "server"),
+            1234L
         )
 
-        runBlocking { cut.addTransactions("someTnxId", flowOf(*events)) }
-
-        coVerify(exactly = 1) { appserviceEventServiceMock.processEvent(events[0]) }
-        coVerify(exactly = 1) {
-            appserviceEventServiceMock.onEventProcessed(
-                "someTnxId",
-                MatrixId.EventId("event1", "server")
-            )
+        val emittedEventsFlow = cut.allEvents()
+        val emittedEvents = GlobalScope.async { emittedEventsFlow.take(1).toList() }
+        GlobalScope.launch {
+            cut.addTransactions("someTnxId1", flowOf(event))
+            cut.addTransactions("someTnxId2", flowOf(event))
         }
+
+        emittedEvents.await().count().shouldBe(1)
+        coVerify { appserviceEventTnxServiceMock.onEventTnxProcessed("someTnxId2") }
     }
-
-    @Test
-    fun `should process event without id`() {
-        coEvery { appserviceEventServiceMock.processEvent(any()) } just Runs
-        coEvery { appserviceEventServiceMock.onEventProcessed(any(), any()) } just Runs
-
-        val events = arrayOf(
-            mockk<Event.BasicEvent<*>>()
-        )
-
-        runBlocking { cut.addTransactions("someTnxId", flowOf(*events)) }
-
-        coVerify(exactly = 1) { appserviceEventServiceMock.processEvent(events[0]) }
-        coVerify(exactly = 0) { appserviceEventServiceMock.eventProcessingState(any(), any()) }
-        coVerify(exactly = 0) { appserviceEventServiceMock.onEventProcessed(any(), any()) }
-    }
-
-    @Test
-    fun `should not process other events on error`() {
-        val event1 = mockk<Event.RoomEvent<*>> {
-            every { id } returns MatrixId.EventId("event1", "server")
-        }
-        val event2 = mockk<Event.RoomEvent<*>> {
-            every { id } returns MatrixId.EventId("event2", "server")
-        }
-
-        coEvery { appserviceEventServiceMock.eventProcessingState(any(), any()) }
-            .returns(AppserviceEventService.EventProcessingState.NOT_PROCESSED)
-        coEvery { appserviceEventServiceMock.processEvent(any()) }
-            .throws(RuntimeException())
-        coEvery { appserviceEventServiceMock.onEventProcessed(any(), any()) } just Runs
-
-        try {
-            runBlocking { cut.addTransactions("someTnxId", flowOf(event1, event2)) }
-            fail("should have error")
-        } catch (error: Throwable) {
-        }
-
-        coVerify(exactly = 1) { appserviceEventServiceMock.processEvent(event1) }
-        coVerify(exactly = 0) { appserviceEventServiceMock.processEvent(event2) }
-        coVerify(exactly = 0) { appserviceEventServiceMock.onEventProcessed("someTnxId", any()) }
-    }
-
 
     @Test
     fun `should hasUser when delegated service says it exists`() {
