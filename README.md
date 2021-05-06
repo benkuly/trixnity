@@ -138,7 +138,7 @@ which you need to implement.
 It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api). For example:
 
 ```kotlin
-val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
+val textMessageEventFlow = defaultAppserviceService.events<TextMessageEventContent>()
 launch {
     textMessageEventFlow.collect { println(it.content.body) }
 }
