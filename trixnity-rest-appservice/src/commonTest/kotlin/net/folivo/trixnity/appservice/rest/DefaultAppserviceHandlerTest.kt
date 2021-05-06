@@ -2,7 +2,6 @@ package net.folivo.trixnity.appservice.rest
 
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
@@ -58,8 +57,8 @@ class DefaultAppserviceHandlerTest {
         )
 
         val emittedEventsFlow = cut.allEvents()
-        val emittedEvents = GlobalScope.async { emittedEventsFlow.take(1).toList() }
-        GlobalScope.launch {
+        val emittedEvents = async { emittedEventsFlow.take(1).toList() }
+        launch {
             cut.addTransactions("someTnxId1", flowOf(event))
             cut.addTransactions("someTnxId2", flowOf(event))
         }

@@ -76,9 +76,6 @@ val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
 val memberEventFlow = matrixClient.sync.events<MemberEventContent>()
 val allEventsFlow = matrixClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
 
-// you need to start the sync to receive messages
-matrixClient.sync.start()
-
 // wait for events in separate coroutines and print to console
 launch {
     textMessageEventFlow.collect { println(it.content.body) }
@@ -90,10 +87,11 @@ launch {
     allEventsFlow.collect { println(it) }
 }
 
+matrixClient.sync.start() // you need to start the sync to receive messages
+
 delay(30000) // wait a minute
 
-// stop the client
-matrixClient.sync.stop()
+matrixClient.sync.stop() // stop the client
 ```
 
 ## Appservice
