@@ -82,15 +82,16 @@ class SyncApiClient(
         }
     }
 
+    private val scope = CoroutineScope(Dispatchers.Default)
     private var syncJob: Job? = null
 
     suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
         asUserId: UserId? = null
-    ) = coroutineScope {
+    ) {
         stop()
-        syncJob = launch(Dispatchers.Default) {
+        syncJob = scope.launch {
             LOG.info { "started syncLoop" }
             try {
                 syncLoop(filter, setPresence, asUserId)

@@ -15,6 +15,8 @@ You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/
 
 The client module of Trixnity gives you access to the Matrix Client-Server API.
 
+There is a working example, which runs on JVM and NodeJS in the `trixnity-examples` directory.
+
 ### Installation
 
 #### Java/Kotlin
@@ -88,7 +90,7 @@ launch {
     allEventsFlow.collect { println(it) }
 }
 
-delay(60000) // wait a minute
+delay(30000) // wait a minute
 
 // stop the client
 matrixClient.sync.stop()
