@@ -89,7 +89,7 @@ launch {
 
 matrixClient.sync.start() // you need to start the sync to receive messages
 
-delay(30000) // wait a minute
+delay(30000) // wait some time
 
 matrixClient.sync.stop() // stop the client
 ```
