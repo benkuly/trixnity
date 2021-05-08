@@ -21,7 +21,7 @@ There is a working example, which runs on JVM and NodeJS in the `trixnity-exampl
 
 #### Java/Kotlin
 
-Add `net.folivo:triynity-rest-client` to your project.
+Add `net.folivo:trixnity-rest-client` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html).
 
