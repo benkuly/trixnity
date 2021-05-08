@@ -42,8 +42,8 @@ sealed class MessageEventContent : RoomEventContent {
 
     @Serializable
     data class UnknownMessageEventContent(
-        @SerialName("msgtype") val type: String,
-        @SerialName("body") override val body: String
+        @SerialName("msgtype") val type: String? = null,
+        @SerialName("body") override val body: String = ""
     ) : MessageEventContent()
 }
 
