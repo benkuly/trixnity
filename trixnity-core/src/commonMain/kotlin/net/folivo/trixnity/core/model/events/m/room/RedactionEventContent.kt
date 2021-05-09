@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.RoomEventContent
 @Serializable
 data class RedactionEventContent(
     @SerialName("reason")
-    val reason: String?,
+    val reason: String? = null,
     @SerialName("redacts")
     val redacts: MatrixId.EventId
 ) : RoomEventContent

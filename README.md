@@ -77,13 +77,13 @@ val memberEventFlow = matrixClient.sync.events<MemberEventContent>()
 val allEventsFlow = matrixClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
 
 // wait for events in separate coroutines and print to console
-launch {
+val job1 = launch {
     textMessageEventFlow.collect { println(it.content.body) }
 }
-launch {
+val job2 = launch {
     memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
 }
-launch {
+val job3 = launch {
     allEventsFlow.collect { println(it) }
 }
 
@@ -92,6 +92,9 @@ matrixClient.sync.start() // you need to start the sync to receive messages
 delay(30000) // wait some time
 
 matrixClient.sync.stop() // stop the client
+job1.cancelAndJoin()
+job2.cancelAndJoin()
+job3.cancelAndJoin()
 ```
 
 ## Appservice
@@ -102,7 +105,7 @@ The appservice module of Trixnity contains a webserver, which hosts the Matrix A
 
 #### Java/Kotlin
 
-Add `net.folivo:triynity-rest-appservice` to your project.
+Add `net.folivo:trixnity-rest-appservice` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
 
