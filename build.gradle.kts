@@ -34,7 +34,8 @@ subprojects {
         archiveClassifier.set("javadoc")
     }
 
-    if (!project.name.startsWith("trixnity-examples")) {
+    val projectParent = parent
+    if (project.name != "examples" && (projectParent == null || projectParent.name != "examples")) {
         apply(plugin = "maven-publish")
         apply(plugin = "signing")
 
