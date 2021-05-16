@@ -146,3 +146,12 @@ launch {
     textMessageEventFlow.collect { println(it.content.body) }
 }
 ```
+
+#### Logging
+
+To debug your application, Trixnity can log exceptions and other informations. The easyiest way to enable it, is to
+add `com.soywiz.korlibs.klogger:klogger` to your dependencies and enable global logging:
+
+```kotlin
+Logger.defaultLevel = Logger.Level.DEBUG
+```
