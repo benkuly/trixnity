@@ -37,7 +37,18 @@ subprojects {
     val projectParent = parent
     if (project.name != "examples" && (projectParent == null || projectParent.name != "examples")) {
         apply(plugin = "maven-publish")
-        apply(plugin = "signing")
+        if (System.getenv("OSSRH_PGP_KEY") != null && System.getenv("OSSRH_PGP_PASSWORD") != null) {
+            apply(plugin = "signing")
+
+            signing {
+                isRequired = isRelease
+                useInMemoryPgpKeys(
+                    System.getenv("OSSRH_PGP_KEY"),
+                    System.getenv("OSSRH_PGP_PASSWORD")
+                )
+                sign(publishing.publications)
+            }
+        }
 
         publishing {
             publications.configureEach {
@@ -76,15 +87,6 @@ subprojects {
                     }
                 }
             }
-        }
-
-        signing {
-            isRequired = isRelease
-            useInMemoryPgpKeys(
-                System.getenv("OSSRH_PGP_KEY"),
-                System.getenv("OSSRH_PGP_PASSWORD")
-            )
-            sign(publishing.publications)
         }
     }
 }
