@@ -24,7 +24,7 @@ class BasicEventSerializer : KSerializer<BasicEvent<*>> {
         val contentSerializer =
             if (content != null && content.jsonObject.isNotEmpty())
                 UnknownEventContentSerializer(UnknownBasicEventContent.serializer(), type)
-            else RedactedBasicEventContent.serializer()
+            else RedactedEventContentSerializer(RedactedBasicEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
             BasicEvent.serializer(contentSerializer), jsonObj
         )

@@ -35,7 +35,7 @@ class RoomEventSerializer(
             if (content != null && content.jsonObject.isNotEmpty())
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
-            else RedactedRoomEventContent.serializer()
+            else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
             RoomEvent.serializer(
                 if (redacts == null) contentSerializer

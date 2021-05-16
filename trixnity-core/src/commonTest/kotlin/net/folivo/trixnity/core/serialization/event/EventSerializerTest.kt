@@ -232,7 +232,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), input)
         assertEquals(
             RoomEvent(
-                RedactedRoomEventContent,
+                RedactedRoomEventContent("m.room.message"),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),

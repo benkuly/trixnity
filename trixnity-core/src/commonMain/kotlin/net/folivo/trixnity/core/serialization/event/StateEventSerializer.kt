@@ -32,7 +32,7 @@ class StateEventSerializer(
             if (content != null && content.jsonObject.isNotEmpty())
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
-            else RedactedStateEventContent.serializer()
+            else RedactedEventContentSerializer(RedactedStateEventContent.serializer(), type)
         return decoder.json.decodeFromJsonElement(
             StateEvent.serializer(contentSerializer), jsonObj
         )

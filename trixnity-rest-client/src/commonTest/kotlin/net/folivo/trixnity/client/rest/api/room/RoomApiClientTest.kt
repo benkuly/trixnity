@@ -86,7 +86,7 @@ class RoomApiClientTest {
             unsigned = UnsignedData(),
             originTimestamp = 1234,
             sender = UserId("sender", "server"),
-            content = NameEventContent(),
+            content = NameEventContent("a"),
             stateKey = ""
         )
         val serializer = json.serializersModule.getContextual(StateEvent::class)
@@ -154,7 +154,7 @@ class RoomApiClientTest {
                 unsigned = UnsignedData(),
                 originTimestamp = 12341,
                 sender = UserId("sender", "server"),
-                content = NameEventContent(),
+                content = NameEventContent("a"),
                 stateKey = ""
             ),
             StateEvent(
