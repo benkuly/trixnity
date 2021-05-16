@@ -75,7 +75,6 @@ class MatrixClient(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
-        install(HttpTimeout)
     }
 
     val server = ServerApiClient(httpClient)

@@ -56,7 +56,7 @@ class RoomApiClient(
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
-    @ExperimentalSerializationApi
+    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified C : StateEventContent> getStateEvent(
         roomId: RoomId,
         stateKey: String = "",

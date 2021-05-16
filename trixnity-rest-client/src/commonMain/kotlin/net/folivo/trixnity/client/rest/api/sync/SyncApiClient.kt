@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.rest.api.sync
 
 import com.soywiz.klogger.Logger
 import io.ktor.client.*
-import io.ktor.client.features.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -38,7 +37,6 @@ class SyncApiClient(
             parameter("since", since)
             parameter("timeout", timeout)
             parameter("user_id", asUserId)
-            timeout { requestTimeoutMillis = timeout }
         }
     }
 
@@ -48,7 +46,7 @@ class SyncApiClient(
         asUserId: UserId? = null
     ): Flow<SyncResponse> {
         return flow {
-            while (true) {
+            while (currentCoroutineContext().isActive) {
                 try {
                     val batchToken = syncBatchTokenService.getBatchToken(asUserId)
                     val response = if (batchToken != null) {
@@ -119,8 +117,9 @@ class SyncApiClient(
                             throw error
                         }
                     }
-            } catch (error: CancellationException) {
+            } catch (error: Throwable) {
                 LOG.info { "stopped syncLoop" }
+                LOG.debug { "reason: ${error.stackTraceToString()}" }
             }
         }
     }
