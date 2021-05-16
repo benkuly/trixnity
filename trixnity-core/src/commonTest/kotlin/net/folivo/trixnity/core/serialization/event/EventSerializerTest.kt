@@ -4,6 +4,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
 import net.folivo.trixnity.core.model.events.UnsignedData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
@@ -213,5 +214,31 @@ class EventSerializerTest {
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), content)
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldDeserializeRedactedRoomEvent() {
+        val input = """
+        {
+            "content":{},
+            "event_id":"$143273582443PhrSn:example.org",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{"age":1234},
+            "type":"m.room.message"
+        }
+    """.trimIndent().lines().joinToString("") { it.trim() }
+        val result = json.decodeFromString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), input)
+        assertEquals(
+            RoomEvent(
+                RedactedRoomEventContent,
+                EventId("143273582443PhrSn", "example.org"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedData(1234)
+            ), result
+        )
     }
 }

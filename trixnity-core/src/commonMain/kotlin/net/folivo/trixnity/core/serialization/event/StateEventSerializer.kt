@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
@@ -26,18 +27,24 @@ class StateEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val contentSerializer = eventsContentLookupByType[type]
-            ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
+        val content = jsonObj["content"]
+        val contentSerializer =
+            if (content != null && content.jsonObject.isNotEmpty())
+                eventsContentLookupByType[type]
+                    ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
+            else RedactedStateEventContent.serializer()
         return decoder.json.decodeFromJsonElement(
             StateEvent.serializer(contentSerializer), jsonObj
         )
     }
 
     override fun serialize(encoder: Encoder, value: StateEvent<*>) {
-        if (value.content is UnknownStateEventContent) throw IllegalArgumentException("${UnknownStateEventContent::class.simpleName} should never be serialized")
+        val content = value.content
+        if (content is UnknownStateEventContent || value.content is RedactedStateEventContent)
+            throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
-        val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(value.content) }
-        requireNotNull(contentDescriptor) { "event content type ${value.content::class} must be registered" }
+        val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(content) }
+        requireNotNull(contentDescriptor) { "event content type ${content::class} must be registered" }
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast

@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "0.1.3"
+    version = "0.1.4"
 
     repositories {
         mavenCentral()
@@ -43,10 +43,9 @@ subprojects {
             publications.configureEach {
                 if (this is MavenPublication) {
                     pom {
-                        println("sub " + project.name)
                         name.set(project.name)
                         description.set("Multiplatform Kotlin SDK for matrix-protocol")
-                        url.set("https://gitlab.folivo.net/benkuly/trixnity")
+                        url.set("https://gitlab.com/benkuly/trixnity")
                         licenses {
                             license {
                                 name.set("GNU Affero General Public License, Version 3.0")
@@ -59,7 +58,7 @@ subprojects {
                             }
                         }
                         scm {
-                            url.set("https://gitlab.folivo.net/benkuly/trixnity")
+                            url.set("https://gitlab.com/benkuly/trixnity")
                         }
 
                         artifact(dokkaJavadocJar)

@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.UnknownRoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
@@ -29,8 +30,12 @@ class RoomEventSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
         requireNotNull(type)
+        val content = jsonObj["content"]
         val contentSerializer =
-            eventsContentLookupByType[type] ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
+            if (content != null && content.jsonObject.isNotEmpty())
+                eventsContentLookupByType[type]
+                    ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
+            else RedactedRoomEventContent.serializer()
         return decoder.json.decodeFromJsonElement(
             RoomEvent.serializer(
                 if (redacts == null) contentSerializer
@@ -41,7 +46,7 @@ class RoomEventSerializer(
 
     override fun serialize(encoder: Encoder, value: RoomEvent<*>) {
         val content = value.content
-        if (content is UnknownRoomEventContent) throw IllegalArgumentException("${UnknownRoomEventContent::class.simpleName} should never be serialized")
+        if (content is UnknownRoomEventContent || content is RedactedRoomEventContent) throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentSerializerMapping = roomEventContentSerializers.find { it.kClass.isInstance(value.content) }
         requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
