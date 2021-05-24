@@ -86,7 +86,8 @@ class SyncApiClient(
     suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
-        asUserId: UserId? = null
+        asUserId: UserId? = null,
+        wait: Boolean = false,
     ) {
         stop()
         syncJob = scope.launch {
@@ -122,6 +123,7 @@ class SyncApiClient(
                 LOG.debug { "reason: ${error.stackTraceToString()}" }
             }
         }
+        if (wait) syncJob?.join()
     }
 
     suspend fun stop() {
