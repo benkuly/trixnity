@@ -10,12 +10,12 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
+        withJava()
     }
-//    js(IR) {
-//        nodejs {
-//        }
-//        binaries.executable()
-//    }
+    js(IR) {
+        nodejs { }
+        binaries.executable()
+    }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
     val nativeTarget = when {
@@ -39,11 +39,11 @@ kotlin {
                 implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
             }
         }
-//        val jsMain by getting {
-//            dependencies {
-//                implementation("io.ktor:ktor-client-js:${Versions.ktor}")
-//            }
-//        }
+        val jsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:${Versions.ktor}")
+            }
+        }
         val nativeMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-curl:${Versions.ktor}")

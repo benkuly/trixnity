@@ -4,7 +4,6 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import io.ktor.util.*
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.toSet
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -34,8 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-@ExperimentalSerializationApi
-@KtorExperimentalAPI
+@OptIn(ExperimentalSerializationApi::class)
 class RoomApiClientTest {
 
     private val json = createJson()

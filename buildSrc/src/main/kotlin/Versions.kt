@@ -1,5 +1,5 @@
 object Versions {
-    const val kotlin = "1.5.10" // https://kotlinlang.org/
+    const val kotlin = "1.5.20" // https://kotlinlang.org/
     const val kotlinxCoroutines = "1.5.0" // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val dokka = "1.4.32" // https://github.com/Kotlin/dokka/releases
     const val stately = "1.1.7" // https://github.com/touchlab/Stately/releases

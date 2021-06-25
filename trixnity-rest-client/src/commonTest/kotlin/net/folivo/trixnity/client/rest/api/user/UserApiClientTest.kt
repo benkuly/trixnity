@@ -4,7 +4,6 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import io.ktor.util.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixClient
@@ -15,7 +14,6 @@ import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@KtorExperimentalAPI
 class UserApiClientTest {
     @Test
     fun shouldRegister() = runBlockingTest {

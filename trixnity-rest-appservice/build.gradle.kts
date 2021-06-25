@@ -4,12 +4,6 @@ plugins {
 }
 
 kotlin {
-    sourceSets {
-        all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
-        }
-    }
-
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "11"
@@ -17,9 +11,13 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
+        withJava()
     }
 
     sourceSets {
+        all {
+            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        }
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
@@ -37,15 +35,13 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common")) // FIXME change to test in kotlin 1.5
-                implementation(kotlin("test-annotations-common"))
+                implementation(kotlin("test"))
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.mockk:mockk:${Versions.mockk}")
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation(kotlin("test-junit")) // FIXME remove in kotlin 1.5
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
             }
         }

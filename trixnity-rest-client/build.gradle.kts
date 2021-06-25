@@ -4,11 +4,6 @@ plugins {
 }
 
 kotlin {
-    sourceSets {
-        all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
-        }
-    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "11"
@@ -16,16 +11,17 @@ kotlin {
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
+        withJava()
     }
-//    js(IR) {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                }
-//            }
-//        }
-//    }
+    js(IR) {
+        browser {
+            testTask {
+                useKarma {
+                    useFirefoxHeadless()
+                }
+            }
+        }
+    }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
     val nativeTarget = when {
@@ -36,6 +32,9 @@ kotlin {
     }
 
     sourceSets {
+        all {
+            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        }
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
@@ -51,21 +50,12 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common")) // FIXME change to test in kotlin 1.5
-                implementation(kotlin("test-annotations-common"))
+                implementation(kotlin("test"))
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
             }
         }
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))// FIXME remove in kotlin 1.5
-            }
-        }
-//        val jsTest by getting {
-//            dependencies {
-//                implementation(kotlin("test-js"))// FIXME remove in kotlin 1.5
-//            }
-//        }
+        val jvmTest by getting
+        val jsTest by getting
         val nativeTest by getting
     }
 }
