@@ -13,11 +13,8 @@ import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerPr
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 
 suspend fun example() = coroutineScope {
-    val log = newLogger(LoggerFactory.default)
     val matrixClient =
         MatrixClient(
             HttpClient(), MatrixClientProperties(
