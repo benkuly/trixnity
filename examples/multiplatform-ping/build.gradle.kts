@@ -12,7 +12,7 @@ kotlin {
         }
         withJava()
     }
-    js(IR) {
+    js {
         nodejs { }
         binaries.executable()
     }
@@ -31,7 +31,6 @@ kotlin {
                 implementation(kotlin("stdlib-common"))
                 implementation(project(":trixnity-rest-client"))
                 implementation("com.soywiz.korlibs.klock:klock:2.1.0")
-                api("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
             }
         }
         val jvmMain by getting {

@@ -1,7 +1,6 @@
 package net.folivo.trixnity.examples.multiplatform
 
 import com.soywiz.klock.DateTime
-import com.soywiz.klogger.Logger
 import io.ktor.client.*
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -11,13 +10,14 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.rest.MatrixClient
 import net.folivo.trixnity.client.rest.MatrixClientProperties
 import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.NoticeMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 suspend fun example() = coroutineScope {
-    Logger.defaultLevel = Logger.Level.INFO
-    val log = Logger("example")
+    val log = newLogger(LoggerFactory.default)
     val matrixClient =
         MatrixClient(
             HttpClient(), MatrixClientProperties(
@@ -35,11 +35,9 @@ suspend fun example() = coroutineScope {
     val job = launch {
         textMessageEventFlow.collect { event ->
             require(event is Event.RoomEvent)
-            if (DateTime.fromUnix(event.originTimestamp) > startTime) {
-                val body = event.content.body
-                if (body.contains("ping")) {
-                    log.info { "received message containing ping" }
-                    matrixClient.room.sendRoomEvent(event.roomId, NoticeMessageEventContent("pong"))
+            if (event.roomId == MatrixId.RoomId("!zqCKMizNPeocxLJFNF:imbitbu.de")) {
+                if (DateTime.fromUnix(event.originTimestamp) > startTime) {
+                    val body = event.content.body
                 }
             }
         }

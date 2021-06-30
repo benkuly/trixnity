@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.rest.api.sync
 
 import co.touchlab.stately.concurrency.AtomicInt
-import com.soywiz.klogger.Logger
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -35,7 +34,6 @@ class SyncApiClientTest {
 
     @BeforeTest
     fun reset() {
-        Logger.defaultLevel = Logger.Level.DEBUG
         InMemorySyncBatchTokenService.reset()
     }
 

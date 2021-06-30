@@ -13,7 +13,7 @@ kotlin {
         }
         withJava()
     }
-    js(IR) {
+    js {
         browser {
             testTask {
                 useKarma {

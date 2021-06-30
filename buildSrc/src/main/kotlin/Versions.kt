@@ -7,6 +7,6 @@ object Versions {
     const val ktor = "1.6.0" // https://github.com/ktorio/ktor/releases
     const val mockk = "1.11.0" // https://github.com/mockk/mockk/releases
     const val uuid = "0.3.0" // https://github.com/benasher44/uuid/releases
-    const val klogger = "2.1.1" // https://github.com/korlibs/klogger/releases
     const val kotest = "4.6.0" // https://github.com/kotest/kotest/releases
+    const val kodeinLog = "0.11.1" // https://github.com/Kodein-Framework/Kodein-Log/releases
 }

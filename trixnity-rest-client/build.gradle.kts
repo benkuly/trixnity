@@ -13,7 +13,7 @@ kotlin {
         }
         withJava()
     }
-    js(IR) {
+    js {
         browser {
             testTask {
                 useKarma {
@@ -45,7 +45,7 @@ kotlin {
                 api("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
-                api("com.soywiz.korlibs.klogger:klogger:${Versions.klogger}")
+                api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
         }
         val commonTest by getting {

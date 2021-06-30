@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.rest.api.sync
 
-import com.soywiz.klogger.Logger
 import io.ktor.client.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
@@ -9,13 +8,15 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.MatrixId.UserId
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 class SyncApiClient(
     private val httpClient: HttpClient,
     private val syncBatchTokenService: SyncBatchTokenService
 ) : EventEmitter() {
     companion object {
-        private val LOG = Logger("SyncApiClient")
+        private val logger = newLogger(LoggerFactory.default)
     }
 
     /**
@@ -71,8 +72,7 @@ class SyncApiClient(
                     emit(response)
                 } catch (error: Exception) {
                     if (error is CancellationException) throw error
-                    LOG.error { "error while sync to server: ${error.message}" }
-                    LOG.debug { error.stackTraceToString() }
+                    logger.error(error) { "error while sync to server: ${error.message}" }
                     delay(5000)// FIXME better retry policy!
                     continue
                 }
@@ -91,7 +91,7 @@ class SyncApiClient(
     ) {
         stop()
         syncJob = scope.launch {
-            LOG.info { "started syncLoop" }
+            logger.info { "started syncLoop" }
             try {
                 syncLoop(filter, setPresence, asUserId)
                     .collect { syncResponse ->
@@ -111,16 +111,15 @@ class SyncApiClient(
                             }
                             syncResponse.presence?.events?.forEach { emitEvent(it) }
                             syncResponse.toDevice?.events?.forEach { emitEvent(it) }
-                            LOG.debug { "processed sync response" }
+                            logger.debug { "processed sync response" }
                         } catch (error: Throwable) {
-                            LOG.error { "some error while processing response: ${error.message}" }
-                            LOG.debug { error.stackTraceToString() }
+                            logger.error(error) { "some error while processing response: ${error.message}" }
                             throw error
                         }
                     }
             } catch (error: Throwable) {
-                LOG.info { "stopped syncLoop" }
-                LOG.debug { "reason: ${error.stackTraceToString()}" }
+                logger.info { "stopped syncLoop" }
+                logger.debug { "reason: ${error.stackTraceToString()}" }
             }
         }
         if (wait) syncJob?.join()
