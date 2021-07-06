@@ -46,11 +46,11 @@ Here is a typical example, how to create a `MatrixRestClient`:
 
 ```kotlin
 private val matrixRestClient = MatrixRestClient(
-  HttpClient(Java),
-  MatrixRestClientProperties(
-    MatrixHomeServerProperties("you.home.server"),
-    "superSecretToken"
-  )
+    HttpClient(Java),
+    MatrixRestClientProperties(
+        HomeServerProperties("you.home.server"),
+        "superSecretToken"
+    )
 )
 ```
 
@@ -63,8 +63,8 @@ Example 1: You can send messages.
 
 ```kotlin
 matrixRestClient.room.sendRoomEvent(
-  RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
-  TextMessageEventContent("hello from platform $Platform")
+    RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
+    TextMessageEventContent("hello from platform $Platform")
 )
 ```
 
@@ -78,13 +78,13 @@ val allEventsFlow = matrixRestClient.sync.allEvents() // this is a shortcut for 
 
 // wait for events in separate coroutines and print to console
 val job1 = launch {
-  textMessageEventFlow.collect { println(it.content.body) }
+    textMessageEventFlow.collect { println(it.content.body) }
 }
 val job2 = launch {
-  memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
+    memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
 }
 val job3 = launch {
-  allEventsFlow.collect { println(it) }
+    allEventsFlow.collect { println(it) }
 }
 
 matrixRestClient.sync.start() // you need to start the sync to receive messages
@@ -127,7 +127,7 @@ extension needs some parameters:
 
 ```kotlin
 val engine: ApplicationEngine = embeddedServer(CIO, port = properties.port) {
-  matrixAppserviceModule(MatrixAppserviceProperties("asToken"), appserviceService)
+    matrixAppserviceModule(MatrixAppserviceProperties("asToken"), appserviceService)
 }
 engine.start(wait = true)
 ```
@@ -143,7 +143,7 @@ It also allows you to retrieve events in the same way as described [here](#use-m
 ```kotlin
 val textMessageEventFlow = defaultAppserviceService.events<TextMessageEventContent>()
 launch {
-  textMessageEventFlow.collect { println(it.content.body) }
+    textMessageEventFlow.collect { println(it.content.body) }
 }
 ```
 

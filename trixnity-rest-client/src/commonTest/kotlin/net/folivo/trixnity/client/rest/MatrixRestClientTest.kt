@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +22,7 @@ class MatrixRestClientTest {
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
 
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -52,7 +52,7 @@ class MatrixRestClientTest {
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val matrixRestClient = MatrixRestClient(
-                properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+                properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
@@ -82,7 +82,7 @@ class MatrixRestClientTest {
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val matrixRestClient = MatrixRestClient(
-                properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+                properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {

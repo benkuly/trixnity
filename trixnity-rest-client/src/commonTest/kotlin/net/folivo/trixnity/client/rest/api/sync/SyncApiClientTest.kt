@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.MatrixRestClientProperties
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.Presence
@@ -40,7 +40,7 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncOnce() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -251,7 +251,7 @@ class SyncApiClientTest {
         val requestCount = AtomicInt(1)
         val matrixRestClient = MatrixRestClient(
 
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -317,7 +317,7 @@ class SyncApiClientTest {
         )
         val requestCount = AtomicInt(1)
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -463,7 +463,7 @@ class SyncApiClientTest {
         val inChannel = Channel<SyncResponse>()
 
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
@@ -540,7 +540,7 @@ class SyncApiClientTest {
         val inChannel = Channel<SyncResponse>()
 
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {

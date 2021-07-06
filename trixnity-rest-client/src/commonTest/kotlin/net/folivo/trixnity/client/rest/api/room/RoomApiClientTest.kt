@@ -11,7 +11,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.MatrixRestClientProperties
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.client.rest.api.room.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.rest.api.room.JoinRoomRequest.ThirdPartySigned
 import net.folivo.trixnity.client.rest.runBlockingTest
@@ -67,7 +67,7 @@ class RoomApiClientTest {
                     }
                 }
             },
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
         )
         matrixRestClient.room.getEvent(
             RoomId("room", "server"),
@@ -90,7 +90,7 @@ class RoomApiClientTest {
         val serializer = json.serializersModule.getContextual(StateEvent::class)
         requireNotNull(serializer)
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -119,7 +119,7 @@ class RoomApiClientTest {
     fun shouldGetStateEvent() = runBlockingTest {
         val response = NameEventContent("name")
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -168,7 +168,7 @@ class RoomApiClientTest {
         val serializer = json.serializersModule.getContextual(StateEvent::class)
         requireNotNull(serializer)
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -216,7 +216,7 @@ class RoomApiClientTest {
             )
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -259,7 +259,7 @@ class RoomApiClientTest {
             )
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -306,7 +306,7 @@ class RoomApiClientTest {
             )
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -335,7 +335,7 @@ class RoomApiClientTest {
     fun shouldSendStateEvent() = runBlockingTest {
         val response = SendEventResponse(EventId("event", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -366,7 +366,7 @@ class RoomApiClientTest {
     @Test
     fun shouldHaveErrorWhenNoEventTypeFoundOnSendingStateEvent() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) { engine { addHandler { respondOk() } } })
         val eventContent = object : StateEventContent {
             val banana: String = "yeah"
@@ -389,7 +389,7 @@ class RoomApiClientTest {
     fun shouldSendRoomEvent() = runBlockingTest {
         val response = SendEventResponse(EventId("event", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -422,7 +422,7 @@ class RoomApiClientTest {
     @Test
     fun shouldHaveErrorWhenNoEventTypeFoundOnSendingRoomEvent() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) { engine { addHandler { respondOk() } } })
         val eventContent = object : RoomEventContent {
             val banana: String = "yeah"
@@ -444,7 +444,7 @@ class RoomApiClientTest {
     fun shouldSendRedactEvent() = runBlockingTest {
         val response = SendEventResponse(EventId("event", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -475,7 +475,7 @@ class RoomApiClientTest {
     fun shouldCreateRoom() = runBlockingTest {
         val response = CreateRoomResponse(RoomId("room", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -525,7 +525,7 @@ class RoomApiClientTest {
     @Test
     fun shouldSetRoomAlias() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -556,7 +556,7 @@ class RoomApiClientTest {
             servers = listOf("server1", "server2")
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -580,7 +580,7 @@ class RoomApiClientTest {
     @Test
     fun shouldDeleteRoomAlias() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -608,7 +608,7 @@ class RoomApiClientTest {
             )
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -632,7 +632,7 @@ class RoomApiClientTest {
     @Test
     fun shouldInviteUser() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -657,7 +657,7 @@ class RoomApiClientTest {
     fun shouldJoinRoomByRoomId() = runBlockingTest {
         val response = JoinRoomResponse(RoomId("room", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -710,7 +710,7 @@ class RoomApiClientTest {
     fun shouldJoinRoomByRoomAlias() = runBlockingTest {
         val response = JoinRoomResponse(RoomId("room", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -762,7 +762,7 @@ class RoomApiClientTest {
     @Test
     fun shouldLeaveRoom() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->

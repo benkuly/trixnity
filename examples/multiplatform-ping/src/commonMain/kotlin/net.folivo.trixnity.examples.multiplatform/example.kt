@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.MatrixRestClientProperties
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
@@ -17,7 +17,7 @@ suspend fun example() = coroutineScope {
     val matrixRestClient =
         MatrixRestClient(
             MatrixRestClientProperties(
-                MatrixHomeServerProperties(
+                HomeServerProperties(
                     "matrix.imbitbu.de"
                 ),
                 "someToken"

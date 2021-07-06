@@ -8,7 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.MatrixRestClientProperties
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,7 +21,7 @@ class ServerApiClientTest {
             unstable_features = mapOf()
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -51,7 +51,7 @@ class ServerApiClientTest {
             )
         )
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->

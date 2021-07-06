@@ -8,7 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.MatrixRestClientProperties
-import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.HomeServerProperties
 import net.folivo.trixnity.client.rest.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.Test
@@ -32,7 +32,7 @@ class UserApiClientTest {
             }
         """.trimIndent().lines().joinToString("") { it.trim() }
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -63,7 +63,7 @@ class UserApiClientTest {
     @Test
     fun shouldSetDisplayName() = runBlockingTest {
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -88,7 +88,7 @@ class UserApiClientTest {
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"))
         val matrixRestClient = MatrixRestClient(
-            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(HomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
