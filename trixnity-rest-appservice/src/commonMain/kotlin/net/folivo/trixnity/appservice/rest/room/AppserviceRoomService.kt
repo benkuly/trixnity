@@ -1,11 +1,11 @@
 package net.folivo.trixnity.appservice.rest.room
 
-import net.folivo.trixnity.client.rest.MatrixClient
+import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.core.model.MatrixId
 
 interface AppserviceRoomService {
 
-    val matrixClient: MatrixClient
+    val matrixRestClient: MatrixRestClient
 
     enum class RoomExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED
@@ -17,7 +17,7 @@ interface AppserviceRoomService {
 
     suspend fun createManagedRoom(roomAlias: MatrixId.RoomAliasId) {
         val createRoomParameter = getCreateRoomParameter(roomAlias)
-        val roomId = matrixClient.room
+        val roomId = matrixRestClient.room
             .createRoom(
                 roomAliasId = roomAlias,
                 visibility = createRoomParameter.visibility,

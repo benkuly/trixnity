@@ -6,9 +6,9 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.rest.MatrixClient
-import net.folivo.trixnity.client.rest.MatrixClientProperties
-import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClient
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,8 +20,8 @@ class ServerApiClientTest {
             versions = emptyList(),
             unstable_features = mapOf()
         )
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -35,7 +35,7 @@ class ServerApiClientTest {
                     }
                 }
             })
-        val result = matrixClient.server.getVersions()
+        val result = matrixRestClient.server.getVersions()
         assertEquals(response, result)
     }
 
@@ -50,8 +50,8 @@ class ServerApiClientTest {
                 )
             )
         )
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -65,7 +65,7 @@ class ServerApiClientTest {
                     }
                 }
             })
-        val result = matrixClient.server.getCapabilities()
+        val result = matrixRestClient.server.getCapabilities()
         assertEquals(response, result)
     }
 }

@@ -30,8 +30,8 @@ import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_S
 import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
 
-class MatrixClient(
-    properties: MatrixClientProperties,
+class MatrixRestClient(
+    properties: MatrixRestClientProperties,
     syncBatchTokenService: SyncBatchTokenService = InMemorySyncBatchTokenService,
     baseHttpClient: HttpClient = HttpClient(),
     customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),

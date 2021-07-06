@@ -6,17 +6,17 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.rest.MatrixClient
-import net.folivo.trixnity.client.rest.MatrixClientProperties
-import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClient
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 
 suspend fun example() = coroutineScope {
-    val matrixClient =
-        MatrixClient(
-            MatrixClientProperties(
+    val matrixRestClient =
+        MatrixRestClient(
+            MatrixRestClientProperties(
                 MatrixHomeServerProperties(
                     "matrix.imbitbu.de"
                 ),
@@ -24,7 +24,7 @@ suspend fun example() = coroutineScope {
             )
         )
 
-    val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
+    val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
 
     val startTime = DateTime.now()
 
@@ -39,10 +39,10 @@ suspend fun example() = coroutineScope {
         }
     }
 
-    matrixClient.sync.start()
+    matrixRestClient.sync.start()
 
     delay(30000)
 
-    matrixClient.sync.stop()
+    matrixRestClient.sync.stop()
     job.cancelAndJoin()
 }

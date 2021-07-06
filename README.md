@@ -31,40 +31,40 @@ Coming soon.
 
 ### Usage
 
-#### Create `MatrixClient`
+#### Create `MatrixRestClient`
 
-The most important class of this library is `MatrixClient`. It's constructor needs some parameters:
+The most important class of this library is `MatrixRestClient`. It's constructor needs some parameters:
 
 - `HttpClient` with an engine.
-- `MatrixClientProperties`, which contains some information to connect to the homeserver.
+- `MatrixRestClientProperties`, which contains some information to connect to the homeserver.
 - (optional) `SyncBatchTokenService`, which saves the sync token. You should implement it with a database backend for
   example, so that the client knows, which was the last sync batch token.
 - (optional) `Set<EventContentSerializerMapping<out RoomEventContent>>` allows you to add custom room events.
 - (optional) `Set<EventContentSerializerMapping<out StateEventContent>>` allows you to add custom state events.
 
-Here is a typical example, how to create a `MatrixClient`:
+Here is a typical example, how to create a `MatrixRestClient`:
 
 ```kotlin
-private val matrixClient = MatrixClient(
-    HttpClient(Java),
-    MatrixClientProperties(
-        MatrixHomeServerProperties("you.home.server"),
-        "superSecretToken"
-    )
+private val matrixRestClient = MatrixRestClient(
+  HttpClient(Java),
+  MatrixRestClientProperties(
+    MatrixHomeServerProperties("you.home.server"),
+    "superSecretToken"
+  )
 )
 ```
 
 #### Use Matrix Client-Server API
 
-You have access to the Matrix Client-Server API via `MatrixClient`. Currently not all endpoints are implemented. If you
-need more, feel free to contribute or open an issue.
+You have access to the Matrix Client-Server API via `MatrixRestClient`. Currently not all endpoints are implemented. If
+you need more, feel free to contribute or open an issue.
 
 Example 1: You can send messages.
 
 ```kotlin
-matrixClient.room.sendRoomEvent(
-    RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
-    TextMessageEventContent("hello from platform $Platform")
+matrixRestClient.room.sendRoomEvent(
+  RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
+  TextMessageEventContent("hello from platform $Platform")
 )
 ```
 
@@ -72,26 +72,26 @@ Example 2: You can receive different type of events.
 
 ```kotlin
 // first register your event handlers
-val textMessageEventFlow = matrixClient.sync.events<TextMessageEventContent>()
-val memberEventFlow = matrixClient.sync.events<MemberEventContent>()
-val allEventsFlow = matrixClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
+val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
+val memberEventFlow = matrixRestClient.sync.events<MemberEventContent>()
+val allEventsFlow = matrixRestClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
 
 // wait for events in separate coroutines and print to console
 val job1 = launch {
-    textMessageEventFlow.collect { println(it.content.body) }
+  textMessageEventFlow.collect { println(it.content.body) }
 }
 val job2 = launch {
-    memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
+  memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
 }
 val job3 = launch {
-    allEventsFlow.collect { println(it) }
+  allEventsFlow.collect { println(it) }
 }
 
-matrixClient.sync.start() // you need to start the sync to receive messages
+matrixRestClient.sync.start() // you need to start the sync to receive messages
 
 delay(30000) // wait some time
 
-matrixClient.sync.stop() // stop the client
+matrixRestClient.sync.stop() // stop the client
 job1.cancelAndJoin()
 job2.cancelAndJoin()
 job3.cancelAndJoin()
@@ -127,7 +127,7 @@ extension needs some parameters:
 
 ```kotlin
 val engine: ApplicationEngine = embeddedServer(CIO, port = properties.port) {
-    matrixAppserviceModule(MatrixAppserviceProperties("asToken"), appserviceService)
+  matrixAppserviceModule(MatrixAppserviceProperties("asToken"), appserviceService)
 }
 engine.start(wait = true)
 ```
@@ -143,7 +143,7 @@ It also allows you to retrieve events in the same way as described [here](#use-m
 ```kotlin
 val textMessageEventFlow = defaultAppserviceService.events<TextMessageEventContent>()
 launch {
-    textMessageEventFlow.collect { println(it.content.body) }
+  textMessageEventFlow.collect { println(it.content.body) }
 }
 ```
 

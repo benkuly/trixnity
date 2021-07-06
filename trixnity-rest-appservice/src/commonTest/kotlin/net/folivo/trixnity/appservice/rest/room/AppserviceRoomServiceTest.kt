@@ -3,7 +3,7 @@ package net.folivo.trixnity.appservice.rest.room
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.rest.MatrixClient
+import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.room.Visibility
@@ -14,7 +14,7 @@ import kotlin.test.fail
 
 class AppserviceRoomServiceTest {
 
-    class TestAppserviceRoomService(override val matrixClient: MatrixClient) : AppserviceRoomService {
+    class TestAppserviceRoomService(override val matrixRestClient: MatrixRestClient) : AppserviceRoomService {
         override suspend fun roomExistingState(roomAlias: MatrixId.RoomAliasId): AppserviceRoomService.RoomExistingState {
             throw RuntimeException("this is not tested")
         }
@@ -29,8 +29,8 @@ class AppserviceRoomServiceTest {
 
     }
 
-    private val matrixClientMock: MatrixClient = mockk()
-    private val cut = spyk(TestAppserviceRoomService(matrixClientMock))
+    private val matrixRestClientMock: MatrixRestClient = mockk()
+    private val cut = spyk(TestAppserviceRoomService(matrixRestClientMock))
 
     @BeforeTest
     fun beforeEach() {
@@ -44,13 +44,13 @@ class AppserviceRoomServiceTest {
         coEvery { cut.getCreateRoomParameter(MatrixId.RoomAliasId("alias", "server")) }
             .returns(CreateRoomParameter(name = "someName"))
 
-        coEvery { matrixClientMock.room.createRoom(allAny()) }
+        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
             .returns(MatrixId.RoomId("room", "server"))
 
         runBlocking { cut.createManagedRoom(MatrixId.RoomAliasId("alias", "server")) }
 
         coVerify {
-            matrixClientMock.room.createRoom(
+            matrixRestClientMock.room.createRoom(
                 roomAliasId = MatrixId.RoomAliasId("alias", "server"),
                 visibility = Visibility.PUBLIC,
                 name = "someName"
@@ -61,7 +61,7 @@ class AppserviceRoomServiceTest {
 
     @Test
     fun `should have error when creation fails`() {
-        coEvery { matrixClientMock.room.createRoom(allAny()) }
+        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
@@ -84,7 +84,7 @@ class AppserviceRoomServiceTest {
         coEvery { cut.onCreatedRoom(MatrixId.RoomAliasId("alias", "server"), any()) }
             .throws(RuntimeException())
 
-        coEvery { matrixClientMock.room.createRoom(allAny()) }
+        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
             .returns(MatrixId.RoomId("room", "server"))
 
         try {

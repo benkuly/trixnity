@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import net.folivo.trixnity.client.rest.MatrixClient
-import net.folivo.trixnity.client.rest.MatrixClientProperties
-import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClient
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.sync.Presence.ONLINE
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.*
 import net.folivo.trixnity.client.rest.api.sync.SyncResponse.Presence
@@ -39,8 +39,8 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncOnce() = runBlockingTest {
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -213,7 +213,7 @@ class SyncApiClientTest {
                     }
                 }
             })
-        val result = matrixClient.sync.syncOnce(
+        val result = matrixRestClient.sync.syncOnce(
             filter = "someFilter",
             fullState = true,
             setPresence = ONLINE,
@@ -249,9 +249,9 @@ class SyncApiClientTest {
             toDevice = ToDevice(emptyList())
         )
         val requestCount = AtomicInt(1)
-        val matrixClient = MatrixClient(
+        val matrixRestClient = MatrixRestClient(
 
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -284,7 +284,7 @@ class SyncApiClientTest {
                 }
             })
 
-        val result = matrixClient.sync.syncLoop(
+        val result = matrixRestClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = ONLINE
         ).take(2).toList()
@@ -316,8 +316,8 @@ class SyncApiClientTest {
             toDevice = ToDevice(emptyList())
         )
         val requestCount = AtomicInt(1)
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -366,7 +366,7 @@ class SyncApiClientTest {
                 }
             })
 
-        val result = matrixClient.sync.syncLoop(
+        val result = matrixRestClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = ONLINE
         ).take(2).toList()
@@ -462,8 +462,8 @@ class SyncApiClientTest {
         )
         val inChannel = Channel<SyncResponse>()
 
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
@@ -476,21 +476,21 @@ class SyncApiClientTest {
                 }
             })
 
-        val allEventsFlow = matrixClient.sync.allEvents()
+        val allEventsFlow = matrixRestClient.sync.allEvents()
         val allEvents = GlobalScope.async {
             allEventsFlow.take(5).toList()
         }
-        val messageEventsFlow = matrixClient.sync.events<MessageEventContent>()
+        val messageEventsFlow = matrixRestClient.sync.events<MessageEventContent>()
         val messageEvents = GlobalScope.async {
             messageEventsFlow.take(2).toList()
         }
-        val memberEventsFlow = matrixClient.sync.events<MemberEventContent>()
+        val memberEventsFlow = matrixRestClient.sync.events<MemberEventContent>()
         val memberEvents = GlobalScope.async {
             memberEventsFlow.take(3).toList()
         }
 
         GlobalScope.launch {
-            matrixClient.sync.start()
+            matrixRestClient.sync.start()
         }
 
         inChannel.send(response)
@@ -507,7 +507,7 @@ class SyncApiClientTest {
             allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
         assertEquals(2, messageEvents.await().count())
         assertEquals(3, memberEvents.await().count())
-        matrixClient.sync.stop()
+        matrixRestClient.sync.stop()
     }
 
     @Test
@@ -539,8 +539,8 @@ class SyncApiClientTest {
         )
         val inChannel = Channel<SyncResponse>()
 
-        val matrixClient = MatrixClient(
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+        val matrixRestClient = MatrixRestClient(
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
@@ -554,19 +554,19 @@ class SyncApiClientTest {
             })
 
         val events = GlobalScope.async {
-            matrixClient.sync.events<EventContent>().take(2).toList()
+            matrixRestClient.sync.events<EventContent>().take(2).toList()
         }
 
         GlobalScope.launch {
-            matrixClient.sync.start()
-            matrixClient.sync.start()
+            matrixRestClient.sync.start()
+            matrixRestClient.sync.start()
         }
 
         inChannel.send(response)
         inChannel.send(response)
 
         assertEquals(2, events.await().count())
-        matrixClient.sync.stop()
-        matrixClient.sync.stop()
+        matrixRestClient.sync.stop()
+        matrixRestClient.sync.stop()
     }
 }

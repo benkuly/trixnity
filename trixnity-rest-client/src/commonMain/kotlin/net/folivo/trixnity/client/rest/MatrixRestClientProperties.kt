@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.rest
 
-data class MatrixClientProperties(
+data class MatrixRestClientProperties(
     val homeServer: MatrixHomeServerProperties,
     val token: String?
 ) {

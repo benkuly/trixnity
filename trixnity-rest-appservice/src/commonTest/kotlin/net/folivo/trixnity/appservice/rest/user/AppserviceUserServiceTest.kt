@@ -3,7 +3,7 @@ package net.folivo.trixnity.appservice.rest.user
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.rest.MatrixClient
+import net.folivo.trixnity.client.rest.MatrixRestClient
 import net.folivo.trixnity.client.rest.api.ErrorResponse
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import net.folivo.trixnity.client.rest.api.user.RegisterResponse
@@ -14,7 +14,7 @@ import kotlin.test.fail
 
 class AppserviceUserServiceTest {
 
-    class TestAppserviceUserService(override val matrixClient: MatrixClient) : AppserviceUserService {
+    class TestAppserviceUserService(override val matrixRestClient: MatrixRestClient) : AppserviceUserService {
 
         override suspend fun userExistingState(userId: MatrixId.UserId): AppserviceUserService.UserExistingState {
             throw RuntimeException("this is not tested")
@@ -29,8 +29,8 @@ class AppserviceUserServiceTest {
         }
     }
 
-    private val matrixClientMock: MatrixClient = mockk()
-    private val cut = spyk(TestAppserviceUserService(matrixClientMock))
+    private val matrixRestClientMock: MatrixRestClient = mockk()
+    private val cut = spyk(TestAppserviceUserService(matrixRestClientMock))
 
     @BeforeTest
     fun beforeEach() {
@@ -45,18 +45,18 @@ class AppserviceUserServiceTest {
     fun `should create and save user`() {
         coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .returns(RegisterResponse(MatrixId.UserId("user", "server")))
-        coEvery { matrixClientMock.user.setDisplayName(allAny()) } just Runs
+        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
 
         runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
 
         coVerify {
-            matrixClientMock.user.register(
+            matrixRestClientMock.user.register(
                 isAppservice = true,
                 username = "user"
             )
-            matrixClientMock.user.setDisplayName(
+            matrixRestClientMock.user.setDisplayName(
                 MatrixId.UserId("user", "server"),
                 "someDisplayName",
                 MatrixId.UserId("user", "server")
@@ -70,7 +70,7 @@ class AppserviceUserServiceTest {
         coEvery { cut.userExistingState(MatrixId.UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.CAN_BE_CREATED)
 
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
@@ -92,11 +92,11 @@ class AppserviceUserServiceTest {
     fun `should catch error when register fails due to already existing id`() {
         coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .returns(RegisterResponse(MatrixId.UserId("user", "server")))
-        coEvery { matrixClientMock.user.setDisplayName(allAny()) } just Runs
+        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
 
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.BadRequest,
@@ -109,11 +109,11 @@ class AppserviceUserServiceTest {
         }
 
         coVerify {
-            matrixClientMock.user.register(
+            matrixRestClientMock.user.register(
                 isAppservice = true,
                 username = "user"
             )
-            matrixClientMock.user.setDisplayName(
+            matrixRestClientMock.user.setDisplayName(
                 MatrixId.UserId("user", "server"),
                 "someDisplayName",
                 MatrixId.UserId("user", "server")
@@ -129,8 +129,8 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
             .returns(RegisterUserParameter(displayName = "someDisplayName"))
 
-        coEvery { matrixClientMock.user.setDisplayName(allAny()) } just Runs
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .returns(RegisterResponse(MatrixId.UserId("user", "server")))
 
         try {
@@ -140,7 +140,7 @@ class AppserviceUserServiceTest {
         }
 
         coVerify {
-            matrixClientMock.user.setDisplayName(
+            matrixRestClientMock.user.setDisplayName(
                 MatrixId.UserId("user", "server"),
                 displayName = "someDisplayName",
                 asUserId = MatrixId.UserId("user", "server")
@@ -152,20 +152,20 @@ class AppserviceUserServiceTest {
     fun `should not set displayName if null`() {
         coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
             .returns(RegisterUserParameter())
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .returns(RegisterResponse(MatrixId.UserId("user", "server")))
 
         runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
 
-        val user = matrixClientMock.user
+        val user = matrixRestClientMock.user
         coVerify(exactly = 0) { user.setDisplayName(allAny()) }
     }
 
     @Test
     fun `should not have error when setting displayName fails`() {
-        coEvery { matrixClientMock.user.setDisplayName(allAny()) }
+        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) }
             .throws(MatrixServerException(HttpStatusCode.BadRequest, ErrorResponse("M_UNKNOWN")))
-        coEvery { matrixClientMock.user.register(allAny()) }
+        coEvery { matrixRestClientMock.user.register(allAny()) }
             .returns(RegisterResponse(MatrixId.UserId("user", "server")))
 
         runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }

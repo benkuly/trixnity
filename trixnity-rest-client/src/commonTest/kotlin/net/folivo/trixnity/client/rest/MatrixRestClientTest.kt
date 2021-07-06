@@ -6,13 +6,13 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.client.rest.MatrixClientProperties.MatrixHomeServerProperties
+import net.folivo.trixnity.client.rest.MatrixRestClientProperties.MatrixHomeServerProperties
 import net.folivo.trixnity.client.rest.api.MatrixServerException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class MatrixClientTest {
+class MatrixRestClientTest {
     @Serializable
     data class OkResponse(
         val status: String = "default"
@@ -20,9 +20,9 @@ class MatrixClientTest {
 
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
-        val matrixClient = MatrixClient(
+        val matrixRestClient = MatrixRestClient(
 
-            properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -41,7 +41,7 @@ class MatrixClientTest {
                 }
             })
 
-        matrixClient.httpClient.post<OkResponse> {
+        matrixRestClient.httpClient.post<OkResponse> {
             url("/path")
             parameter("param", "dino")
             body = mapOf("help" to "me")
@@ -51,8 +51,8 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(
-                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            val matrixRestClient = MatrixRestClient(
+                properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
@@ -67,7 +67,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.httpClient.post<OkResponse> {
+            matrixRestClient.httpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")
@@ -81,8 +81,8 @@ class MatrixClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
-            val matrixClient = MatrixClient(
-                properties = MatrixClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
+            val matrixRestClient = MatrixRestClient(
+                properties = MatrixRestClientProperties(MatrixHomeServerProperties("matrix.host"), "token"),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
@@ -94,7 +94,7 @@ class MatrixClientTest {
                         }
                     }
                 })
-            matrixClient.httpClient.post<OkResponse> {
+            matrixRestClient.httpClient.post<OkResponse> {
                 url("/path")
             }
             fail("should throw ${MatrixServerException::class.simpleName}")
