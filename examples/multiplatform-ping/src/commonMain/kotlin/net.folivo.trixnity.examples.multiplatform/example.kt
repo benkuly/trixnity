@@ -1,7 +1,6 @@
 package net.folivo.trixnity.examples.multiplatform
 
 import com.soywiz.klock.DateTime
-import io.ktor.client.*
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -17,7 +16,7 @@ import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMess
 suspend fun example() = coroutineScope {
     val matrixClient =
         MatrixClient(
-            HttpClient(), MatrixClientProperties(
+            MatrixClientProperties(
                 MatrixHomeServerProperties(
                     "matrix.imbitbu.de"
                 ),

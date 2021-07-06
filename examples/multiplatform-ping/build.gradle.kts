@@ -14,7 +14,6 @@ kotlin {
     }
     js {
         nodejs { }
-        binaries.executable()
     }
 //    val hostOs = System.getProperty("os.name")
 //    val isMingwX64 = hostOs.startsWith("Windows")
@@ -35,7 +34,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-java:${Versions.ktor}")
             }
         }
         val jsMain by getting {

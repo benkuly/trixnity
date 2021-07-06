@@ -22,7 +22,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 api(project(":trixnity-rest-client"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
 
