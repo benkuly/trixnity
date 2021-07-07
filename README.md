@@ -21,7 +21,7 @@ There is a working example, which runs on JVM and NodeJS in the `trixnity-exampl
 
 #### Java/Kotlin
 
-Add `net.folivo:trixnity-rest-client` to your project.
+Add `net.folivo:trixnity-client` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html).
 
@@ -105,7 +105,7 @@ The appservice module of Trixnity contains a webserver, which hosts the Matrix A
 
 #### Java/Kotlin
 
-Add `net.folivo:trixnity-rest-appservice` to your project.
+Add `net.folivo:trixnity-appservice` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
 

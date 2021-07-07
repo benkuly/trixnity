@@ -28,7 +28,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation(project(":trixnity-rest-client"))
+                implementation(project(":trixnity-client"))
                 implementation("com.soywiz.korlibs.klock:klock:2.1.0")
             }
         }
