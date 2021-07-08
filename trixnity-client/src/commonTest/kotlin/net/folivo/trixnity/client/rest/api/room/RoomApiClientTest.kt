@@ -52,7 +52,7 @@ class RoomApiClientTest {
         val serializer = json.serializersModule.getContextual(StateEvent::class)
         requireNotNull(serializer)
         val matrixRestClient = MatrixRestClient(
-            HttpClient(MockEngine) {
+            baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(

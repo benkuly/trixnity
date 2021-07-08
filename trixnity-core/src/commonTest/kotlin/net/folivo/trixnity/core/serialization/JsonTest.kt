@@ -54,6 +54,54 @@ class JsonTest {
     }
 
     @Test
+    fun shouldHandleUnsignedDateRedactedBecause() {
+        val content = """
+        {
+            "content": {
+                "body": "This is an example text message",
+                "format": "org.matrix.custom.html",
+                "formatted_body": "<b>This is an example text message</b>",
+                "msgtype": "m.text"
+            },
+            "event_id": "$143273582443PhrSn:example.org",
+            "origin_server_ts": 1432735824653,
+            "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+            "sender": "@example:example.org",
+            "type": "m.room.message",
+            "unsigned": {
+                "age": 1234,
+                "redactedBecause": {
+                    "content": {
+                        "reason": "Spamming"
+                    },
+                    "event_id": "${'$'}143273582443PhrSn:example.org",
+                    "origin_server_ts": 1432735824653,
+                    "redacts": "${'$'}123:example.org",
+                    "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+                    "sender": "@example:example.org",
+                    "type": "m.room.redaction",
+                    "unsigned": {
+                        "age": 1234
+                    }
+                }
+            }
+        }
+    """.trimIndent()
+        val serializer = json.serializersModule.getContextual(Event::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, content)
+        if (result is RoomEvent<*>) {
+            val redactedBecauseEventContent = result.unsigned?.redactedBecause?.content
+            println(redactedBecauseEventContent)
+            if (redactedBecauseEventContent is RedactionEventContent)
+                assertEquals("Spamming", redactedBecauseEventContent.reason)
+            else fail("resultContent should be of type ${RedactionEventContent::class}")
+        } else {
+            fail("resultContent should be of type ${RoomEvent::class}")
+        }
+    }
+
+    @Test
     fun shouldCreateSubtypeFromMessageEventEvenIfItsTypeIsUnknown() {
         val content = """
         {

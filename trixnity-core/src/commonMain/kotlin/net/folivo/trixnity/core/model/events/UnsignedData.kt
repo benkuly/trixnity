@@ -7,6 +7,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UnsignedData(
     @SerialName("age") val age: Long? = null,
-    @SerialName("redactedBecause") val redactedBecause: @Contextual Event<*>? = null,
+    @SerialName("redactedBecause") @Contextual val redactedBecause: Event<*>? = null,
     @SerialName("transaction_id") val transactionId: String? = null
 )
