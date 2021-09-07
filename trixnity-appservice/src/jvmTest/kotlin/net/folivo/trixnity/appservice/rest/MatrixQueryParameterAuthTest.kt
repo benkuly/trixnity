@@ -10,7 +10,7 @@ import io.ktor.serialization.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.rest.api.ErrorResponse
+import net.folivo.trixnity.client.api.ErrorResponse
 import org.junit.Test
 import java.nio.charset.Charset
 import kotlin.test.assertEquals

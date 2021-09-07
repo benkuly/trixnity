@@ -16,12 +16,12 @@ sealed class MatrixId {
         this.sigilCharacter = sigilCharacter
         val s = full.trimStart(sigilCharacter)
         localpart = s.substringBefore(':')
-        domain = s.substringAfter(':')
+        domain = s.substringAfter(':', "")
 
         if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
         if (sigilCharacter != full.first()) throw IllegalArgumentException("given sigil character $sigilCharacter does not match with full string $full")
         if (localpart.isEmpty()) throw IllegalArgumentException("localpart must not be empty")
-        if (domain.isEmpty()) throw IllegalArgumentException("domain must not be empty")
+        if (domain.isEmpty() && sigilCharacter != '$') throw IllegalArgumentException("domain must not be empty")
     }
 
     constructor(localpart: String, domain: String, sigilCharacter: Char) {

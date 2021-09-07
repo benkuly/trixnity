@@ -1,3 +1,5 @@
+import de.undercouch.gradle.tasks.download.Download
+
 plugins {
     `maven-publish`
     signing
@@ -10,22 +12,44 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "0.1.5"
+    version = "1.0.0-SNAPSHOT"
 
     repositories {
         mavenCentral()
-        maven("https://kotlin.bintray.com/kotlinx")
     }
 
     apply(plugin = "org.jetbrains.dokka")
 
     dependencies {
-        dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
+        dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:1.5.0")
     }
 }
 
-inline val Project.isRelease
-    get() = !version.toString().contains('-')
+val downloadOlm by tasks.registering(Download::class) {
+    group = "olm"
+    src("https://gitlab.matrix.org/matrix-org/olm/-/archive/${Versions.olm}/olm-${Versions.olm}.zip")
+    dest(olm.zip)
+    overwrite(false)
+}
+
+val extractOlm by tasks.registering(Copy::class) {
+    group = "olm"
+    from(zipTree(olm.zip)) {
+        include("olm-${Versions.olm}/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+    }
+    into(olm.root)
+    dependsOn(downloadOlm)
+}
+
+val buildOlm by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olm.root)
+    commandLine("make")
+    dependsOn(extractOlm)
+}
 
 subprojects {
     val dokkaJavadocJar by tasks.creating(Jar::class) {

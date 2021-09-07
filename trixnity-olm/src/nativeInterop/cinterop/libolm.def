@@ -1,0 +1,3 @@
+package = org.matrix.olm
+headers = olm/olm.h olm/outbound_group_session.h olm/inbound_group_session.h olm/pk.h olm/sas.h
+headerFilter = olm/*

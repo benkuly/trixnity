@@ -13,5 +13,5 @@ data class CanonicalAliasEventContent(
     @SerialName("alias")
     val alias: RoomAliasId? = null,
     @SerialName("alt_aliases")
-    val aliases: List<RoomAliasId> = listOf()
+    val aliases: Set<RoomAliasId> = setOf()
 ) : StateEventContent

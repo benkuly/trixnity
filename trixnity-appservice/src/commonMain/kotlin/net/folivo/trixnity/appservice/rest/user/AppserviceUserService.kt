@@ -1,24 +1,24 @@
 package net.folivo.trixnity.appservice.rest.user
 
-import net.folivo.trixnity.client.rest.MatrixRestClient
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.MatrixServerException
+import net.folivo.trixnity.core.model.MatrixId.UserId
 
 interface AppserviceUserService {
 
-    val matrixRestClient: MatrixRestClient
+    val matrixApiClient: MatrixApiClient
 
     enum class UserExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED
     }
 
-    suspend fun userExistingState(userId: MatrixId.UserId): UserExistingState
-    suspend fun getRegisterUserParameter(userId: MatrixId.UserId): RegisterUserParameter
-    suspend fun onRegisteredUser(userId: MatrixId.UserId)
+    suspend fun userExistingState(userId: UserId): UserExistingState
+    suspend fun getRegisterUserParameter(userId: UserId): RegisterUserParameter
+    suspend fun onRegisteredUser(userId: UserId)
 
-    suspend fun registerManagedUser(userId: MatrixId.UserId) {
+    suspend fun registerManagedUser(userId: UserId) {
         try {
-            matrixRestClient.user.register(
+            matrixApiClient.authentication.register(
                 isAppservice = true,
                 username = userId.localpart
             )
@@ -29,7 +29,7 @@ interface AppserviceUserService {
         }
         val displayName = getRegisterUserParameter(userId).displayName
         if (displayName != null) {
-            matrixRestClient.user.setDisplayName(
+            matrixApiClient.users.setDisplayName(
                 userId,
                 displayName,
                 asUserId = userId

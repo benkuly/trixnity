@@ -2,8 +2,8 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 /**
@@ -45,14 +45,12 @@ data class MemberEventContent(
         @SerialName("display_name")
         val displayName: String,
         @SerialName("signed")
-        val signed: Signed
+        val signed: Signed<UserInfo, String>
     ) {
         @Serializable
-        data class Signed(
+        data class UserInfo(
             @SerialName("mxid")
             val mxid: UserId,
-            @SerialName("signatures")
-            val signatures: JsonObject, // TODO signatures
             @SerialName("token")
             val token: String
         )

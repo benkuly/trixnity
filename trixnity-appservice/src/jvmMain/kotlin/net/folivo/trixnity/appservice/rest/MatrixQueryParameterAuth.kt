@@ -4,7 +4,7 @@ import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.http.*
 import io.ktor.response.*
-import net.folivo.trixnity.client.rest.api.ErrorResponse
+import net.folivo.trixnity.client.api.ErrorResponse
 
 class MatrixQueryParameterAuthenticationProvider internal constructor(
     configuration: Configuration

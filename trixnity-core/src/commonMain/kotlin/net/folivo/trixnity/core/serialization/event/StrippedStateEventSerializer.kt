@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.event
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -15,10 +16,14 @@ import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 class StrippedStateEventSerializer(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
+    loggerFactory: LoggerFactory
 ) : KSerializer<StrippedStateEvent<*>> {
+    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StrippedStateEventSerializer")
 
     private val eventsContentLookupByType = stateEventContentSerializers.map { Pair(it.type, it.serializer) }.toMap()
@@ -34,10 +39,23 @@ class StrippedStateEventSerializer(
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
             else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)
-        return decoder.json.decodeFromJsonElement(
-            StrippedStateEvent.serializer(contentSerializer),
-            jsonObj
-        )
+        return try {
+            decoder.json.decodeFromJsonElement(
+                StrippedStateEvent.serializer(contentSerializer),
+                jsonObj
+            )
+        } catch (error: SerializationException) {
+            log.warning(error) { "could not deserialize event" }
+            decoder.json.decodeFromJsonElement(
+                StrippedStateEvent.serializer(
+                    UnknownEventContentSerializer(
+                        UnknownStateEventContent.serializer(),
+                        type
+                    )
+                ),
+                jsonObj
+            )
+        }
     }
 
     override fun serialize(encoder: Encoder, value: StrippedStateEvent<*>) {

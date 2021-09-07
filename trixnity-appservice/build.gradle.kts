@@ -5,11 +5,8 @@ plugins {
 
 kotlin {
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "11"
-        }
         testRuns["test"].executionTask.configure {
-            useJUnit()
+            useJUnitPlatform()
         }
         withJava()
     }
@@ -20,8 +17,8 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib-common"))
-                api(project(":trixnity-client"))
+                implementation(kotlin("stdlib"))
+                api(project(":trixnity-client-api"))
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
@@ -31,6 +28,8 @@ kotlin {
 
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
+
+                implementation("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
         }
         val commonTest by getting {

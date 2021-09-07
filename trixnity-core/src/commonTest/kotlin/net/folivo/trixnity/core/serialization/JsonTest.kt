@@ -8,6 +8,7 @@ import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
@@ -18,7 +19,7 @@ import kotlin.test.fail
 
 @ExperimentalSerializationApi
 class JsonTest {
-    private val json = createJson()
+    private val json = createMatrixJson()
 
     @Test
     fun shouldCreateSubtypeFromMessageEvent() {
@@ -92,7 +93,6 @@ class JsonTest {
         val result = json.decodeFromString(serializer, content)
         if (result is RoomEvent<*>) {
             val redactedBecauseEventContent = result.unsigned?.redactedBecause?.content
-            println(redactedBecauseEventContent)
             if (redactedBecauseEventContent is RedactionEventContent)
                 assertEquals("Spamming", redactedBecauseEventContent.reason)
             else fail("resultContent should be of type ${RedactionEventContent::class}")
@@ -266,6 +266,27 @@ class JsonTest {
         }
     }
 
+    @Test
+    fun shouldCreateSubtypeFromEphemeralEvent() {
+        val content = """
+        {
+            "content": {
+                "avatar_url": "mxc://localhost:wefuiwegh8742w",
+                "currently_active": false,
+                "last_active_ago": 2478593,
+                "presence": "online",
+                "status_msg": "Making cupcakes"
+            },
+            "sender": "@example:localhost",
+            "type": "m.presence"
+        }
+    """.trimIndent()
+        val serializer = json.serializersModule.getContextual(EphemeralEvent::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, content)
+        val eventContent = result.content
+        assertEquals(PresenceEventContent::class, eventContent::class)
+    }
 
     @Serializable
     data class CustomResponse(

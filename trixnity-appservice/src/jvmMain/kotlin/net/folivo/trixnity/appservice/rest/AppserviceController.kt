@@ -7,8 +7,9 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import kotlinx.coroutines.flow.asFlow
 import net.folivo.trixnity.appservice.rest.event.EventRequest
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.client.api.MatrixServerException
+import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
+import net.folivo.trixnity.core.model.MatrixId.UserId
 
 fun Route.controller(appserviceService: AppserviceService) {
     v1(appserviceService)
@@ -37,7 +38,7 @@ fun Route.v1(appserviceService: AppserviceService) {
         val userId = call.parameters["userId"] ?: throw MatrixBadRequestException("userId path parameter was missing")
 
         try {
-            val hasUser = appserviceService.hasUser(MatrixId.UserId(userId))
+            val hasUser = appserviceService.hasUser(UserId(userId))
             if (hasUser) call.respond(
                 HttpStatusCode.OK,
                 "{}"
@@ -58,7 +59,7 @@ fun Route.v1(appserviceService: AppserviceService) {
         val roomAlias =
             call.parameters["roomAlias"] ?: throw MatrixBadRequestException("roomAlias path parameter was missing")
         try {
-            val hasRoomAlias = appserviceService.hasRoomAlias(MatrixId.RoomAliasId(roomAlias))
+            val hasRoomAlias = appserviceService.hasRoomAlias(RoomAliasId(roomAlias))
             if (hasRoomAlias) call.respond(
                 HttpStatusCode.OK,
                 "{}"

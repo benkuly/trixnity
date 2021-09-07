@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.event
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -16,13 +17,17 @@ import net.folivo.trixnity.core.model.events.UnknownRoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 class RoomEventSerializer(
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
+    loggerFactory: LoggerFactory
 ) : KSerializer<RoomEvent<*>> {
+    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
 
-    private val eventsContentLookupByType = roomEventContentSerializers.map { Pair(it.type, it.serializer) }.toMap()
+    private val eventsContentLookupByType = roomEventContentSerializers.associate { it.type to it.serializer }
 
     override fun deserialize(decoder: Decoder): RoomEvent<*> {
         require(decoder is JsonDecoder)
@@ -36,12 +41,24 @@ class RoomEventSerializer(
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
             else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)
-        return decoder.json.decodeFromJsonElement(
-            RoomEvent.serializer(
-                if (redacts == null) contentSerializer
-                else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-            ), jsonObj
-        )
+        return try {
+            decoder.json.decodeFromJsonElement(
+                RoomEvent.serializer(
+                    if (redacts == null) contentSerializer
+                    else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
+                ), jsonObj
+            )
+        } catch (error: SerializationException) {
+            log.warning(error) { "could not deserialize event" }
+            decoder.json.decodeFromJsonElement(
+                RoomEvent.serializer(
+                    UnknownEventContentSerializer(
+                        UnknownRoomEventContent.serializer(),
+                        type
+                    )
+                ), jsonObj
+            )
+        }
     }
 
     override fun serialize(encoder: Encoder, value: RoomEvent<*>) {

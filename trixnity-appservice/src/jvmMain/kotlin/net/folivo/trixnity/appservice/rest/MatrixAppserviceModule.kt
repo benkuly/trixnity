@@ -7,35 +7,30 @@ import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
-import net.folivo.trixnity.client.rest.api.ErrorResponse
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.serialization.createJson
-import net.folivo.trixnity.core.serialization.event.DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS
-import net.folivo.trixnity.core.serialization.event.DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping
+import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.MatrixServerException
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 fun Application.matrixAppserviceModule(
     properties: MatrixAppserviceProperties,
     appserviceService: AppserviceService,
-    customRoomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>> = emptySet(),
-    customStateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>> = emptySet()
+    loggerFactory: LoggerFactory = LoggerFactory.default,
+    customMappings: EventContentSerializerMappings? = null
 ) {
+    val log = newLogger(loggerFactory)
     install(ContentNegotiation) {
-        json(
-            createJson(
-                DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS + customRoomEventContentSerializers,
-                DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS + customStateEventContentSerializers
-            )
-        )
+        json(createMatrixJson(loggerFactory, DefaultEventContentSerializerMappings + customMappings))
     }
     install(Authentication) {
         matrixQueryParameter("default", "access_token", properties.hsToken)
     }
     install(StatusPages) {
         exception<Throwable> { cause ->
-            println(cause.stackTraceToString()) // FIXME use logger
+            log.error(cause)
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse("M_UNKNOWN", cause.message))
         }
         exception<MatrixServerException> { cause ->
