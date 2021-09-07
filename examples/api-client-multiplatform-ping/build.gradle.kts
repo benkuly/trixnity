@@ -5,7 +5,7 @@ plugins {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
