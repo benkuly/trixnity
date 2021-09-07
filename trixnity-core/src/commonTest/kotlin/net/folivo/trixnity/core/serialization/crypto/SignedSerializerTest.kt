@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.crypto
 
-import io.kotest.assertions.json.shouldEqualJson
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -31,25 +30,25 @@ class SignedSerializerTest {
 
         val expectedResult = """
             {
-              "user_id": "@alice:example.com",
-              "device_id": "ALICEDEVICE",
-              "algorithms": [
+              "user_id":"@alice:example.com",
+              "device_id":"ALICEDEVICE",
+              "algorithms":[
                 "m.olm.v1.curve25519-aes-sha2",
                 "m.megolm.v1.aes-sha2"
               ],
-              "keys": {
-                "ed25519:ABC": "keyValue",
-                "curve25519:DEF": "keyValue"
+              "keys":{
+                "ed25519:ABC":"keyValue",
+                "curve25519:DEF":"keyValue"
               },
-              "signatures": {
-                "@alice:example.com": {
-                  "ed25519:JLAFKJWSCS": "aKey"
+              "signatures":{
+                "@alice:example.com":{
+                  "ed25519:JLAFKJWSCS":"aKey"
                 }
               }
             }
-    """.trimIndent()
+    """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(content)
-        result.shouldEqualJson(expectedResult)
+        assertEquals(expectedResult, result)
     }
 
     @Test

@@ -47,7 +47,6 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.kotest:kotest-assertions-json:${Versions.kotest}")
             }
         }
         val jvmTest by getting {

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.crypto
 
-import io.kotest.assertions.json.shouldEqualJson
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -26,17 +25,17 @@ class SignaturesSerializerTest {
         )
         val expectedResult = """
             {
-              "@alice:example.com": {
-                "ed25519:JLAFKJWSCS": "aKey"
+              "@alice:example.com":{
+                "ed25519:JLAFKJWSCS":"aKey"
               },
-              "example.org": {
-                "ed25519:0": "some9signature",
-                "ed25519:1": "some10signature"
+              "example.org":{
+                "ed25519:0":"some9signature",
+                "ed25519:1":"some10signature"
               }
             }
-    """.trimIndent()
+    """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(content)
-        result.shouldEqualJson(expectedResult)
+        assertEquals(expectedResult, result)
     }
 
     @Test
@@ -72,13 +71,13 @@ class SignaturesSerializerTest {
 
         val expectedResult = """
             {
-              "@alice:example.com": {
-                "ed25519:JLAFKJWSCS": "aKey"
+              "@alice:example.com":{
+                "ed25519:JLAFKJWSCS":"aKey"
               }
             }
-    """.trimIndent()
+    """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(content)
-        result.shouldEqualJson(expectedResult)
+        assertEquals(expectedResult, result)
     }
 
     @Test

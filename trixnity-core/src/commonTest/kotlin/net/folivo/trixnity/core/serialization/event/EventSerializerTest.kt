@@ -1,6 +1,6 @@
 package net.folivo.trixnity.core.serialization.event
 
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
@@ -61,8 +61,7 @@ class EventSerializerTest {
         {
             "type":"m.room.canonical_alias",
             "content":{
-                "alias":"#somewhere:example.org",
-                "alt_aliases":[]
+                "alias":"#somewhere:example.org"
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
@@ -166,7 +165,7 @@ class EventSerializerTest {
                 unsigned = UnsignedData(),
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
-                content = NameEventContent(),
+                content = NameEventContent("test"),
                 stateKey = ""
             ),
             StateEvent(
@@ -181,7 +180,9 @@ class EventSerializerTest {
         )
         val expectedResult = """
         [{
-            "content":{},
+            "content":{
+                "name":"test"
+            },
             "event_id":"$143273582443PhrSn:server",
             "sender":"@sender:server",
             "room_id":"!room:server",
@@ -302,8 +303,8 @@ class EventSerializerTest {
         val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
-        assertEquals(StateEvent::class.qualifiedName, result::class.qualifiedName)
+        assertEquals(StateEvent::class.simpleName, result::class.simpleName)
         require(result is StateEvent<*>)
-        assertEquals(UnknownStateEventContent::class.qualifiedName, result.content::class.qualifiedName)
+        assertEquals(UnknownStateEventContent::class.simpleName, result.content::class.simpleName)
     }
 }

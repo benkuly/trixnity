@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.m.room.encrypted
 
-import io.kotest.assertions.json.shouldEqualJson
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -33,17 +32,16 @@ class EncryptedEventContentSerializerTest {
                 algorithm = Megolm
             )
         )
-        result.shouldEqualJson(
-            """
+        val expectedResult = """
           {
-            "algorithm": "m.megolm.v1.aes-sha2",
-            "sender_key": "<sender_curve25519_key>",
-            "device_id": "<sender_device_id>",
-            "session_id": "<outbound_group_session_id>",
-            "ciphertext": "<encrypted_payload_base_64>"
+            "ciphertext":"<encrypted_payload_base_64>",
+            "sender_key":"<sender_curve25519_key>",
+            "device_id":"<sender_device_id>",
+            "session_id":"<outbound_group_session_id>",
+            "algorithm":"m.megolm.v1.aes-sha2"
           }
-        """.trimIndent()
-        )
+        """.trimIndent().lines().joinToString("") { it.trim() }
+        assertEquals(expectedResult, result)
     }
 
     @Test
@@ -81,20 +79,19 @@ class EncryptedEventContentSerializerTest {
                 algorithm = Olm
             )
         )
-        result.shouldEqualJson(
-            """
+        val expectedResult = """
             {
-                "algorithm": "m.olm.v1.curve25519-aes-sha2",
-                "sender_key": "<sender_curve25519_key>",
-                "ciphertext": {
-                  "<device_curve25519_key>": {
-                    "type": 0,
-                    "body": "<encrypted_payload_base_64>"
+                "ciphertext":{
+                  "<device_curve25519_key>":{
+                    "body":"<encrypted_payload_base_64>",
+                    "type":0
                   }
-                }
+                },
+                "sender_key":"<sender_curve25519_key>",
+                "algorithm":"m.olm.v1.curve25519-aes-sha2"
             }
-        """.trimIndent()
-        )
+        """.trimIndent().lines().joinToString("") { it.trim() }
+        assertEquals(expectedResult, result)
     }
 
     @Test

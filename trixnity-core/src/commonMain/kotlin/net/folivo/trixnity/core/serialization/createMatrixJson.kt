@@ -22,6 +22,8 @@ fun createMatrixJson(
     return Json {
         classDiscriminator = "neverUsed"
         ignoreUnknownKeys = true
+        encodeDefaults = true
+        explicitNulls = false
         serializersModule =
             if (customModule != null) modules + customModule else modules
     }
