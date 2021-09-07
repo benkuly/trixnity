@@ -1,21 +1,25 @@
 package net.folivo.trixnity.core.serialization.event
 
+import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
+import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
-import net.folivo.trixnity.core.serialization.createJson
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import org.kodein.log.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EventSerializerTest {
 
-    private val json = createJson()
+    private val json = createMatrixJson()
 
     @Test
     fun shouldSerializeStateEvent() {
@@ -42,7 +46,12 @@ class EventSerializerTest {
             "type":"m.room.canonical_alias"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS), content)
+        val result = json.encodeToString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+                LoggerFactory.default
+            ), content
+        )
         assertEquals(expectedResult, result)
     }
 
@@ -64,7 +73,12 @@ class EventSerializerTest {
             "prev_content":null
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.decodeFromString(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS), input)
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+                LoggerFactory.default
+            ), input
+        )
         assertEquals(
             StateEvent(
                 CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
@@ -102,7 +116,10 @@ class EventSerializerTest {
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), content)
+        val result = json.encodeToString(
+            RoomEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
+            content
+        )
         assertEquals(expectedResult, result)
     }
 
@@ -122,7 +139,12 @@ class EventSerializerTest {
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.decodeFromString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), input)
+        val result = json.decodeFromString(
+            RoomEventSerializer(
+                DefaultEventContentSerializerMappings.room,
+                LoggerFactory.default
+            ), input
+        )
         assertEquals(
             RoomEvent(
                 UnknownMessageEventContent("m.dino", "hello"),
@@ -182,7 +204,15 @@ class EventSerializerTest {
         }]
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result =
-            json.encodeToString(ListSerializer(StateEventSerializer(DEFAULT_STATE_EVENT_CONTENT_SERIALIZERS)), content)
+            json.encodeToString(
+                ListSerializer(
+                    StateEventSerializer(
+                        DefaultEventContentSerializerMappings.state,
+                        LoggerFactory.default
+                    )
+                ),
+                content
+            )
         assertEquals(expectedResult, result)
     }
 
@@ -212,7 +242,10 @@ class EventSerializerTest {
             "redacts":"$123:example.org"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.encodeToString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), content)
+        val result = json.encodeToString(
+            RoomEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
+            content
+        )
         assertEquals(expectedResult, result)
     }
 
@@ -229,7 +262,12 @@ class EventSerializerTest {
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
-        val result = json.decodeFromString(RoomEventSerializer(DEFAULT_ROOM_EVENT_CONTENT_SERIALIZERS), input)
+        val result = json.decodeFromString(
+            RoomEventSerializer(
+                DefaultEventContentSerializerMappings.room,
+                LoggerFactory.default
+            ), input
+        )
         assertEquals(
             RoomEvent(
                 RedactedRoomEventContent("m.room.message"),
@@ -240,5 +278,32 @@ class EventSerializerTest {
                 UnsignedData(1234)
             ), result
         )
+    }
+
+    @Test
+    @ExperimentalSerializationApi
+    fun shouldSerializeMalformedEvent() {
+        val input = """
+        {
+            "type":"m.room.canonical_alias",
+            "content":{
+                "alias":"dino",
+                "unicorns":[]
+            },
+            "event_id":"$143273582443PhrSn:example.org",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{"age":1234,"redactedBecause":null,"transaction_id":null},
+            "state_key":"",
+            "prev_content":null
+        }
+    """.trimIndent()
+        val serializer = json.serializersModule.getContextual(Event::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, input)
+        assertEquals(StateEvent::class.qualifiedName, result::class.qualifiedName)
+        require(result is StateEvent<*>)
+        assertEquals(UnknownStateEventContent::class.qualifiedName, result.content::class.qualifiedName)
     }
 }

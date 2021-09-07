@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.event
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.model.events.EventContent
 import kotlin.reflect.KClass
 
@@ -15,6 +16,12 @@ data class EventContentSerializerMapping<C : EventContent>(
             serializer: KSerializer<C>
         ): EventContentSerializerMapping<C> {
             return EventContentSerializerMapping(type, C::class, serializer)
+        }
+
+        inline fun <reified C : EventContent> of(
+            type: String
+        ): EventContentSerializerMapping<C> {
+            return EventContentSerializerMapping(type, C::class, serializer())
         }
     }
 }

@@ -3,34 +3,35 @@ package net.folivo.trixnity.appservice.rest.room
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.rest.MatrixRestClient
-import net.folivo.trixnity.client.rest.api.ErrorResponse
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.client.rest.api.room.Visibility
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.MatrixServerException
+import net.folivo.trixnity.client.api.rooms.Visibility
+import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
+import net.folivo.trixnity.core.model.MatrixId.RoomId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail
 
 class AppserviceRoomServiceTest {
 
-    class TestAppserviceRoomService(override val matrixRestClient: MatrixRestClient) : AppserviceRoomService {
-        override suspend fun roomExistingState(roomAlias: MatrixId.RoomAliasId): AppserviceRoomService.RoomExistingState {
+    class TestAppserviceRoomService(override val matrixApiClient: MatrixApiClient) : AppserviceRoomService {
+        override suspend fun roomExistingState(roomAlias: RoomAliasId): AppserviceRoomService.RoomExistingState {
             throw RuntimeException("this is not tested")
         }
 
-        override suspend fun getCreateRoomParameter(roomAlias: MatrixId.RoomAliasId): CreateRoomParameter {
+        override suspend fun getCreateRoomParameter(roomAlias: RoomAliasId): CreateRoomParameter {
             throw RuntimeException("this is not tested")
         }
 
-        override suspend fun onCreatedRoom(roomAlias: MatrixId.RoomAliasId, roomId: MatrixId.RoomId) {
+        override suspend fun onCreatedRoom(roomAlias: RoomAliasId, roomId: RoomId) {
             throw RuntimeException("this is not tested")
         }
 
     }
 
-    private val matrixRestClientMock: MatrixRestClient = mockk()
-    private val cut = spyk(TestAppserviceRoomService(matrixRestClientMock))
+    private val matrixApiClientMock: MatrixApiClient = mockk()
+    private val cut = spyk(TestAppserviceRoomService(matrixApiClientMock))
 
     @BeforeTest
     fun beforeEach() {
@@ -41,27 +42,27 @@ class AppserviceRoomServiceTest {
 
     @Test
     fun `should create and save room`() {
-        coEvery { cut.getCreateRoomParameter(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { cut.getCreateRoomParameter(RoomAliasId("alias", "server")) }
             .returns(CreateRoomParameter(name = "someName"))
 
-        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
-            .returns(MatrixId.RoomId("room", "server"))
+        coEvery { matrixApiClientMock.rooms.createRoom(allAny()) }
+            .returns(RoomId("room", "server"))
 
-        runBlocking { cut.createManagedRoom(MatrixId.RoomAliasId("alias", "server")) }
+        runBlocking { cut.createManagedRoom(RoomAliasId("alias", "server")) }
 
         coVerify {
-            matrixRestClientMock.room.createRoom(
-                roomAliasId = MatrixId.RoomAliasId("alias", "server"),
+            matrixApiClientMock.rooms.createRoom(
+                roomAliasId = RoomAliasId("alias", "server"),
                 visibility = Visibility.PUBLIC,
                 name = "someName"
             )
-            cut.onCreatedRoom(MatrixId.RoomAliasId("alias", "server"), any())
+            cut.onCreatedRoom(RoomAliasId("alias", "server"), any())
         }
     }
 
     @Test
     fun `should have error when creation fails`() {
-        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
+        coEvery { matrixApiClientMock.rooms.createRoom(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
@@ -70,7 +71,7 @@ class AppserviceRoomServiceTest {
             )
 
         try {
-            runBlocking { cut.createManagedRoom(MatrixId.RoomAliasId("alias", "server")) }
+            runBlocking { cut.createManagedRoom(RoomAliasId("alias", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
 
@@ -81,14 +82,14 @@ class AppserviceRoomServiceTest {
 
     @Test
     fun `should have error when saving by room service fails`() {
-        coEvery { cut.onCreatedRoom(MatrixId.RoomAliasId("alias", "server"), any()) }
+        coEvery { cut.onCreatedRoom(RoomAliasId("alias", "server"), any()) }
             .throws(RuntimeException())
 
-        coEvery { matrixRestClientMock.room.createRoom(allAny()) }
-            .returns(MatrixId.RoomId("room", "server"))
+        coEvery { matrixApiClientMock.rooms.createRoom(allAny()) }
+            .returns(RoomId("room", "server"))
 
         try {
-            runBlocking { cut.createManagedRoom(MatrixId.RoomAliasId("alias", "server")) }
+            runBlocking { cut.createManagedRoom(RoomAliasId("alias", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
         }

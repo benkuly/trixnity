@@ -5,23 +5,24 @@ plugins {
 
 kotlin {
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "11"
-        }
         testRuns["test"].executionTask.configure {
-            useJUnit()
+            useJUnitPlatform()
+            systemProperty("java.library.path", olm.build.canonicalPath)
+            systemProperty("jna.library.path", olm.build.canonicalPath)
+            dependsOn(":buildOlm")
         }
         withJava()
     }
-    js {
-        browser {
-            testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                }
-            }
-        }
-    }
+//    js {
+//        browser {
+//            testTask {
+//                useKarma {
+//                    useFirefoxHeadless()
+//                }
+//            }
+//        }
+//        binaries.executable()
+//    }
 //    val hostOs = System.getProperty("os.name")
 //    val isMingwX64 = hostOs.startsWith("Windows")
 //    val nativeTarget = when {
@@ -37,13 +38,13 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib-common"))
-                api(project(":trixnity-core"))
+                implementation(kotlin("stdlib"))
+                api(project(":trixnity-client-api"))
+                implementation(project(":trixnity-olm"))
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
-                implementation("co.touchlab:stately-concurrency:${Versions.stately}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
-                api("io.ktor:ktor-client-core:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
@@ -51,11 +52,19 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                implementation("io.mockk:mockk:${Versions.mockk}")
+                implementation("io.kotest:kotest-common:${Versions.kotest}")
+                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation("io.kotest:kotest-framework-datatest:${Versions.kotest}")
             }
         }
-        val jvmTest by getting
-        val jsTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
+            }
+        }
+//        val jsTest by getting
 //        val nativeTest by getting
     }
 }

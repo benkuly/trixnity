@@ -3,34 +3,34 @@ package net.folivo.trixnity.appservice.rest.user
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.rest.MatrixRestClient
-import net.folivo.trixnity.client.rest.api.ErrorResponse
-import net.folivo.trixnity.client.rest.api.MatrixServerException
-import net.folivo.trixnity.client.rest.api.user.RegisterResponse
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.MatrixServerException
+import net.folivo.trixnity.client.api.authentication.RegisterResponse
+import net.folivo.trixnity.core.model.MatrixId.UserId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail
 
 class AppserviceUserServiceTest {
 
-    class TestAppserviceUserService(override val matrixRestClient: MatrixRestClient) : AppserviceUserService {
+    class TestAppserviceUserService(override val matrixApiClient: MatrixApiClient) : AppserviceUserService {
 
-        override suspend fun userExistingState(userId: MatrixId.UserId): AppserviceUserService.UserExistingState {
+        override suspend fun userExistingState(userId: UserId): AppserviceUserService.UserExistingState {
             throw RuntimeException("this is not tested")
         }
 
-        override suspend fun getRegisterUserParameter(userId: MatrixId.UserId): RegisterUserParameter {
+        override suspend fun getRegisterUserParameter(userId: UserId): RegisterUserParameter {
             throw RuntimeException("this is not tested")
         }
 
-        override suspend fun onRegisteredUser(userId: MatrixId.UserId) {
+        override suspend fun onRegisteredUser(userId: UserId) {
             throw RuntimeException("this is not tested")
         }
     }
 
-    private val matrixRestClientMock: MatrixRestClient = mockk()
-    private val cut = spyk(TestAppserviceUserService(matrixRestClientMock))
+    private val matrixApiClientMock: MatrixApiClient = mockk()
+    private val cut = spyk(TestAppserviceUserService(matrixApiClientMock))
 
     @BeforeTest
     fun beforeEach() {
@@ -43,34 +43,34 @@ class AppserviceUserServiceTest {
 
     @Test
     fun `should create and save user`() {
-        coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
+        coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
-        coEvery { matrixRestClientMock.user.register(allAny()) }
-            .returns(RegisterResponse(MatrixId.UserId("user", "server")))
-        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
+            .returns(RegisterResponse(UserId("user", "server")))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
-        runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
+        runBlocking { cut.registerManagedUser(UserId("user", "server")) }
 
         coVerify {
-            matrixRestClientMock.user.register(
+            matrixApiClientMock.authentication.register(
                 isAppservice = true,
                 username = "user"
             )
-            matrixRestClientMock.user.setDisplayName(
-                MatrixId.UserId("user", "server"),
+            matrixApiClientMock.users.setDisplayName(
+                UserId("user", "server"),
                 "someDisplayName",
-                MatrixId.UserId("user", "server")
+                UserId("user", "server")
             )
-            cut.onRegisteredUser(MatrixId.UserId("user", "server"))
+            cut.onRegisteredUser(UserId("user", "server"))
         }
     }
 
     @Test
     fun `should have error when register fails`() {
-        coEvery { cut.userExistingState(MatrixId.UserId("user", "server")) }
+        coEvery { cut.userExistingState(UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.CAN_BE_CREATED)
 
-        coEvery { matrixRestClientMock.user.register(allAny()) }
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
@@ -79,7 +79,7 @@ class AppserviceUserServiceTest {
             )
 
         try {
-            runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
+            runBlocking { cut.registerManagedUser(UserId("user", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
 
@@ -90,13 +90,13 @@ class AppserviceUserServiceTest {
 
     @Test
     fun `should catch error when register fails due to already existing id`() {
-        coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
+        coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
-        coEvery { matrixRestClientMock.user.register(allAny()) }
-            .returns(RegisterResponse(MatrixId.UserId("user", "server")))
-        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
+            .returns(RegisterResponse(UserId("user", "server")))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
-        coEvery { matrixRestClientMock.user.register(allAny()) }
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.BadRequest,
@@ -105,69 +105,70 @@ class AppserviceUserServiceTest {
             )
 
         runBlocking {
-            cut.registerManagedUser(MatrixId.UserId("user", "server"))
+            cut.registerManagedUser(UserId("user", "server"))
         }
 
         coVerify {
-            matrixRestClientMock.user.register(
+            matrixApiClientMock.authentication.register(
                 isAppservice = true,
                 username = "user"
             )
-            matrixRestClientMock.user.setDisplayName(
-                MatrixId.UserId("user", "server"),
+            matrixApiClientMock.users.setDisplayName(
+                UserId("user", "server"),
                 "someDisplayName",
-                MatrixId.UserId("user", "server")
+                UserId("user", "server")
             )
-            cut.onRegisteredUser(MatrixId.UserId("user", "server"))
+            cut.onRegisteredUser(UserId("user", "server"))
         }
     }
 
     @Test
     fun `should have error when saving by user service fails`() {
-        coEvery { cut.onRegisteredUser(MatrixId.UserId("user", "server")) }
+        coEvery { cut.onRegisteredUser(UserId("user", "server")) }
             .throws(RuntimeException())
-        coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
+        coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter(displayName = "someDisplayName"))
 
-        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) } just Runs
-        coEvery { matrixRestClientMock.user.register(allAny()) }
-            .returns(RegisterResponse(MatrixId.UserId("user", "server")))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
+            .returns(RegisterResponse(UserId("user", "server")))
 
         try {
-            runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
+            runBlocking { cut.registerManagedUser(UserId("user", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
         }
 
         coVerify {
-            matrixRestClientMock.user.setDisplayName(
-                MatrixId.UserId("user", "server"),
+            matrixApiClientMock.users.setDisplayName(
+                UserId("user", "server"),
                 displayName = "someDisplayName",
-                asUserId = MatrixId.UserId("user", "server")
+                asUserId = UserId("user", "server")
             )
         }
     }
 
     @Test
     fun `should not set displayName if null`() {
-        coEvery { cut.getRegisterUserParameter(MatrixId.UserId("user", "server")) }
+        coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter())
-        coEvery { matrixRestClientMock.user.register(allAny()) }
-            .returns(RegisterResponse(MatrixId.UserId("user", "server")))
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
+            .returns(RegisterResponse(UserId("user", "server")))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
-        runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
+        runBlocking { cut.registerManagedUser(UserId("user", "server")) }
 
-        val user = matrixRestClientMock.user
+        val user = matrixApiClientMock.users
         coVerify(exactly = 0) { user.setDisplayName(allAny()) }
     }
 
     @Test
     fun `should not have error when setting displayName fails`() {
-        coEvery { matrixRestClientMock.user.setDisplayName(allAny()) }
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) }
             .throws(MatrixServerException(HttpStatusCode.BadRequest, ErrorResponse("M_UNKNOWN")))
-        coEvery { matrixRestClientMock.user.register(allAny()) }
-            .returns(RegisterResponse(MatrixId.UserId("user", "server")))
+        coEvery { matrixApiClientMock.authentication.register(allAny()) }
+            .returns(RegisterResponse(UserId("user", "server")))
 
-        runBlocking { cut.registerManagedUser(MatrixId.UserId("user", "server")) }
+        runBlocking { cut.registerManagedUser(UserId("user", "server")) }
     }
 }

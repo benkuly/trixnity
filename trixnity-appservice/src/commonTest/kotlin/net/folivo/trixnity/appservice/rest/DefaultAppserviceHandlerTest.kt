@@ -14,6 +14,7 @@ import net.folivo.trixnity.appservice.rest.room.CreateRoomParameter
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
 import net.folivo.trixnity.appservice.rest.user.RegisterUserParameter
 import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
 import kotlin.test.BeforeTest
@@ -50,9 +51,9 @@ class DefaultAppserviceHandlerTest {
 
         val event = Event.RoomEvent(
             MessageEventContent.NoticeMessageEventContent("hi"),
-            MatrixId.EventId("event4", "server"),
-            MatrixId.UserId("user", "server"),
-            MatrixId.RoomId("room2", "server"),
+            EventId("event4", "server"),
+            UserId("user", "server"),
+            RoomId("room2", "server"),
             1234L
         )
 
@@ -69,33 +70,33 @@ class DefaultAppserviceHandlerTest {
 
     @Test
     fun `should hasUser when delegated service says it exists`() {
-        coEvery { appserviceUserServiceMock.userExistingState(MatrixId.UserId("user", "server")) }
+        coEvery { appserviceUserServiceMock.userExistingState(UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.EXISTS)
 
-        val hasUser = runBlocking { cut.hasUser(MatrixId.UserId("user", "server")) }
+        val hasUser = runBlocking { cut.hasUser(UserId("user", "server")) }
         hasUser shouldBe true
     }
 
     @Test
     fun `should hasUser and create it when delegated service want to`() {
-        coEvery { appserviceUserServiceMock.userExistingState(MatrixId.UserId("user", "server")) }
+        coEvery { appserviceUserServiceMock.userExistingState(UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.CAN_BE_CREATED)
 
-        val hasUser = runBlocking { cut.hasUser(MatrixId.UserId("user", "server")) }
+        val hasUser = runBlocking { cut.hasUser(UserId("user", "server")) }
         hasUser shouldBe true
 
-        coVerify { appserviceUserServiceMock.registerManagedUser(MatrixId.UserId("user", "server")) }
+        coVerify { appserviceUserServiceMock.registerManagedUser(UserId("user", "server")) }
     }
 
     @Test
     fun `should have error when helper fails`() {
-        coEvery { appserviceUserServiceMock.userExistingState(MatrixId.UserId("user", "server")) }
+        coEvery { appserviceUserServiceMock.userExistingState(UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.CAN_BE_CREATED)
         coEvery { appserviceUserServiceMock.registerManagedUser(any()) }
             .throws(RuntimeException())
 
         try {
-            runBlocking { cut.hasUser(MatrixId.UserId("user", "server")) }
+            runBlocking { cut.hasUser(UserId("user", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
 
@@ -104,10 +105,10 @@ class DefaultAppserviceHandlerTest {
 
     @Test
     fun `should not hasUser when delegated service says it does not exists and should not be created`() {
-        coEvery { appserviceUserServiceMock.userExistingState(MatrixId.UserId("user", "server")) }
+        coEvery { appserviceUserServiceMock.userExistingState(UserId("user", "server")) }
             .returns(AppserviceUserService.UserExistingState.DOES_NOT_EXISTS)
 
-        val hasUser = runBlocking { cut.hasUser(MatrixId.UserId("user", "server")) }
+        val hasUser = runBlocking { cut.hasUser(UserId("user", "server")) }
         hasUser shouldBe false
 
         coVerify(exactly = 0) { appserviceUserServiceMock.registerManagedUser(any()) }

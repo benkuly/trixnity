@@ -8,7 +8,8 @@ import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService.RoomExisti
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService.UserExistingState
 import net.folivo.trixnity.core.EventEmitter
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
+import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.events.Event
 
 class DefaultAppserviceService(
@@ -28,7 +29,7 @@ class DefaultAppserviceService(
         }
     }
 
-    override suspend fun hasUser(userId: MatrixId.UserId): Boolean {
+    override suspend fun hasUser(userId: UserId): Boolean {
         return when (appserviceUserService.userExistingState(userId)) {
             UserExistingState.EXISTS -> true
             UserExistingState.DOES_NOT_EXISTS -> false
@@ -39,7 +40,7 @@ class DefaultAppserviceService(
         }
     }
 
-    override suspend fun hasRoomAlias(roomAlias: MatrixId.RoomAliasId): Boolean {
+    override suspend fun hasRoomAlias(roomAlias: RoomAliasId): Boolean {
         return when (appserviceRoomService.roomExistingState(roomAlias)) {
             RoomExistingState.EXISTS -> true
             RoomExistingState.DOES_NOT_EXISTS -> false

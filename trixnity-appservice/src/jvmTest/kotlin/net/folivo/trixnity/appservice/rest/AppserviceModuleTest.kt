@@ -9,8 +9,8 @@ import io.ktor.server.testing.*
 import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.rest.api.ErrorResponse
-import net.folivo.trixnity.client.rest.api.MatrixServerException
+import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.MatrixServerException
 import org.junit.Test
 import java.nio.charset.Charset
 import kotlin.test.assertEquals

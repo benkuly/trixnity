@@ -37,7 +37,7 @@ The most important class of this library is `MatrixRestClient`. It's constructor
 
 - `HttpClient` with an engine.
 - `MatrixRestClientProperties`, which contains some information to connect to the homeserver.
-- (optional) `SyncBatchTokenService`, which saves the sync token. You should implement it with a database backend for
+- (optional) `SyncBatchTokenStore`, which saves the sync token. You should implement it with a database backend for
   example, so that the client knows, which was the last sync batch token.
 - (optional) `Set<EventContentSerializerMapping<out RoomEventContent>>` allows you to add custom room events.
 - (optional) `Set<EventContentSerializerMapping<out StateEventContent>>` allows you to add custom state events.
