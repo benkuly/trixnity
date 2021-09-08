@@ -486,7 +486,9 @@ class RoomsApiClientTest {
                             """
                     {
                         "visibility":"private",
+                        "room_alias_name":null,
                         "name":"someRoomName",
+                        "topic":null,
                         "invite":["@user1:server"],
                         "invite_3pid":[{
                             "id_server":"identityServer",
@@ -494,7 +496,12 @@ class RoomsApiClientTest {
                             "medium":"email",
                             "address":"user2@example.org"
                         }],
-                        "is_direct":true
+                        "room_version":null,
+                        "creation_content":null,
+                        "initial_state":null,
+                        "preset":null,
+                        "is_direct":true,
+                        "power_level_content_override":null
                     }
                     """.trimIndent().lines().joinToString("") { it.trim() }, request.body.toByteArray().decodeToString()
                         )
