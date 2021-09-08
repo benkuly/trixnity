@@ -31,7 +31,5 @@ data class TimelineEvent(
         data class GapAfter(
             override val batch: String,
         ) : Gap
-
-
     }
 }

@@ -20,7 +20,6 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib"))
                 api(project(":trixnity-client-api"))
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
 

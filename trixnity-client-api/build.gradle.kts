@@ -38,7 +38,6 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib"))
                 api(project(":trixnity-core"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")

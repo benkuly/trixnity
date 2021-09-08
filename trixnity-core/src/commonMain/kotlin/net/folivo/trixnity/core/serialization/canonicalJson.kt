@@ -16,5 +16,5 @@ private fun sortJsonObject(jsonObject: JsonObject): JsonObject {
             is JsonArray -> JsonArray(value.map { entry -> if (entry is JsonObject) sortJsonObject(entry) else entry })
             else -> value
         }
-    }.toSortedMap())
+    }.entries.sortedBy { it.key }.associateBy({ it.key }, { it.value }))
 }

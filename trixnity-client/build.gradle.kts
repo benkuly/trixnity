@@ -41,7 +41,6 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib"))
                 api(project(":trixnity-client-api"))
                 implementation(project(":trixnity-olm"))
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
