@@ -10,6 +10,6 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 data class GetEventsResponse(
     @SerialName("start") val start: String,
     @SerialName("end") val end: String,
-    @SerialName("chunk") val chunk: List<@Contextual RoomEvent<*>>,
-    @SerialName("state") val state: List<@Contextual StateEvent<*>>
+    @SerialName("chunk") val chunk: List<@Contextual RoomEvent<*>>?,
+    @SerialName("state") val state: List<@Contextual StateEvent<*>>?
 )
