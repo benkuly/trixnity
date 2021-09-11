@@ -53,7 +53,7 @@ class MatrixClient private constructor(
             store.account.accessToken.value = accessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
-            val roomManager = RoomManager(store, api)
+            val roomManager = RoomManager(store, api,loggerFactory)
             val olm = OlmManager(
                 store = store,
                 api = api,
@@ -83,7 +83,7 @@ class MatrixClient private constructor(
             val deviceId = store.account.deviceId.value
 
             return if (accessToken != null && userId != null && deviceId != null) {
-                val roomManager = RoomManager(store, api)
+                val roomManager = RoomManager(store, api,loggerFactory)
                 val olm = OlmManager(
                     store = store,
                     api = api,

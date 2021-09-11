@@ -8,6 +8,7 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Instant
@@ -26,9 +27,17 @@ import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.MegolmEvent
+import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.UnsignedData
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import org.kodein.log.LoggerFactory
 
 class RoomManagerTest : ShouldSpec({
     val alice = UserId("alice", "server")
@@ -36,7 +45,11 @@ class RoomManagerTest : ShouldSpec({
     val room = MatrixId.RoomId("room", "server")
     val store = InMemoryStore()
     val api = mockk<MatrixApiClient>()
-    val cut = RoomManager(store, api)
+    val cut = RoomManager(store, api, LoggerFactory.default)
+
+    beforeTest {
+        every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
+    }
 
     afterTest {
         clearMocks(api)
@@ -50,6 +63,17 @@ class RoomManagerTest : ShouldSpec({
             UserId("sender", "server"),
             room,
             i
+        )
+    }
+
+    fun nameEvent(i: Long = 60): Event.StateEvent<NameEventContent> {
+        return Event.StateEvent(
+            NameEventContent("The room name"),
+            EventId("\$event$i"),
+            UserId("sender", "server"),
+            room,
+            i,
+            stateKey = ""
         )
     }
 
@@ -70,6 +94,187 @@ class RoomManagerTest : ShouldSpec({
                 )
             )
             store.rooms.byId(room).value?.lastEventAt shouldBe Instant.fromEpochMilliseconds(25)
+        }
+    }
+
+    context(RoomManager::redactTimelineEvent.name) {
+
+        context("with existent event") {
+            should("redact room event") {
+                val event1 = textEvent(1)
+                val event2 = textEvent(2)
+                val event3 = textEvent(3)
+                store.rooms.timeline.updateAll(
+                    listOf(
+                        TimelineEvent(
+                            event = event1,
+                            decryptedEvent = null,
+                            decryptionError = null,
+                            roomId = room,
+                            eventId = event1.id,
+                            previousEventId = null,
+                            nextEventId = event2.id,
+                            gap = null
+                        ),
+                        TimelineEvent(
+                            event = event2,
+                            decryptedEvent = MegolmEvent(TextMessageEventContent("hi"), room),
+                            decryptionError = "error message",
+                            roomId = room,
+                            eventId = event2.id,
+                            previousEventId = event1.id,
+                            nextEventId = event3.id,
+                            gap = null
+                        ),
+                        TimelineEvent(
+                            event = event3,
+                            decryptedEvent = null,
+                            decryptionError = null,
+                            roomId = room,
+                            eventId = event3.id,
+                            previousEventId = event3.id,
+                            nextEventId = null,
+                            gap = null
+                        )
+                    )
+                )
+                val redactionEvent = Event.RoomEvent(
+                    content = RedactionEventContent(reason = "Spamming", redacts = event2.id),
+                    id = EventId("\$redact"),
+                    sender = alice,
+                    roomId = room,
+                    originTimestamp = 3
+                )
+                cut.redactTimelineEvent(redactionEvent)
+                assertSoftly(store.rooms.timeline.byId(event2.id, room).value!!) {
+                    event shouldBe Event.RoomEvent(
+                        RedactedRoomEventContent("m.room.message"),
+                        event2.id,
+                        UserId("sender", "server"),
+                        room,
+                        2,
+                        UnsignedData(
+                            redactedBecause = redactionEvent
+                        )
+                    )
+                    decryptedEvent shouldBe null
+                    decryptionError shouldBe null
+                    roomId shouldBe room
+                    eventId shouldBe event2.id
+                    previousEventId shouldBe event1.id
+                    nextEventId shouldBe event3.id
+                }
+            }
+            should("redact state event") {
+                val event1 = nameEvent(1)
+                val event2 = nameEvent(2)
+                val event3 = nameEvent(3)
+                store.rooms.timeline.updateAll(
+                    listOf(
+                        TimelineEvent(
+                            event = event1,
+                            decryptedEvent = null,
+                            decryptionError = null,
+                            roomId = room,
+                            eventId = event1.id,
+                            previousEventId = null,
+                            nextEventId = event2.id,
+                            gap = null
+                        ),
+                        TimelineEvent(
+                            event = event2,
+                            decryptedEvent = null,
+                            decryptionError = "error message",
+                            roomId = room,
+                            eventId = event2.id,
+                            previousEventId = event1.id,
+                            nextEventId = event3.id,
+                            gap = null
+                        ),
+                        TimelineEvent(
+                            event = event3,
+                            decryptedEvent = null,
+                            decryptionError = null,
+                            roomId = room,
+                            eventId = event3.id,
+                            previousEventId = event3.id,
+                            nextEventId = null,
+                            gap = null
+                        )
+                    )
+                )
+                val redactionEvent = Event.RoomEvent(
+                    content = RedactionEventContent(reason = "Spamming", redacts = event2.id),
+                    id = EventId("\$redact"),
+                    sender = alice,
+                    roomId = room,
+                    originTimestamp = 3
+                )
+                cut.redactTimelineEvent(redactionEvent)
+                assertSoftly(store.rooms.timeline.byId(event2.id, room).value!!) {
+                    event shouldBe Event.StateEvent(
+                        RedactedStateEventContent("m.room.name"),
+                        event2.id,
+                        UserId("sender", "server"),
+                        room,
+                        2,
+                        UnsignedData(
+                            redactedBecause = redactionEvent
+                        ),
+                        ""
+                    )
+                    decryptedEvent shouldBe null
+                    decryptionError shouldBe null
+                    roomId shouldBe room
+                    eventId shouldBe event2.id
+                    previousEventId shouldBe event1.id
+                    nextEventId shouldBe event3.id
+                }
+            }
+        }
+        context("with nonexistent event") {
+            should("do nothing") {
+                val event1 = nameEvent(1)
+                val event2 = nameEvent(2)
+                val timelineEvent1 = TimelineEvent(
+                    event = event1,
+                    decryptedEvent = null,
+                    decryptionError = null,
+                    roomId = room,
+                    eventId = event1.id,
+                    previousEventId = null,
+                    nextEventId = event2.id,
+                    gap = null
+                )
+                val timelineEvent2 = TimelineEvent(
+                    event = event2,
+                    decryptedEvent = null,
+                    decryptionError = "error message",
+                    roomId = room,
+                    eventId = event2.id,
+                    previousEventId = event1.id,
+                    nextEventId = null,
+                    gap = null
+                )
+                store.rooms.timeline.updateAll(
+                    listOf(
+                        timelineEvent1,
+                        timelineEvent2,
+                    )
+                )
+
+                val redactionEvent = Event.RoomEvent(
+                    content = RedactionEventContent(reason = "Spamming", redacts = EventId("\$incorrectlyEvent")),
+                    id = EventId("\$redact"),
+                    sender = alice,
+                    roomId = room,
+                    originTimestamp = 3
+                )
+                cut.redactTimelineEvent(redactionEvent)
+                store.rooms.timeline.byId(EventId("\$incorrectlyEvent"), room).value shouldBe null
+                store.rooms.timeline.byId(timelineEvent1.eventId, room).value shouldBe timelineEvent1
+                store.rooms.timeline.byId(timelineEvent2.eventId, room).value shouldBe timelineEvent2
+            }
         }
     }
 
