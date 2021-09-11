@@ -15,19 +15,27 @@ import net.folivo.trixnity.client.getRoomIdAndStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import org.kodein.log.LoggerFactory
+import org.kodein.log.newLogger
 
 class RoomManager(
     private val store: Store,
-    private val api: MatrixApiClient
+    private val api: MatrixApiClient,
+    loggerFactory: LoggerFactory
 ) {
+    private val log = newLogger(loggerFactory)
+
     suspend fun startEventHandling() = coroutineScope {
         launch { api.sync.events<StateEventContent>().collect { store.rooms.state.update(it) } }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
+        launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
         launch {
             api.sync.syncResponses.collect { syncResponse ->
                 syncResponse.room?.join?.entries?.forEach { room ->
@@ -61,8 +69,8 @@ class RoomManager(
 
     internal suspend fun setLastEventAt(event: Event<*>) {
         val (roomId, eventTime) = when (event) {
-            is Event.RoomEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
-            is Event.StateEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
+            is RoomEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
+            is StateEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
             else -> null to null
         }
         val eventId = event.getEventId()
@@ -74,7 +82,7 @@ class RoomManager(
     }
 
     internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {
-        if (event is Event.StateEvent) {
+        if (event is StateEvent) {
             store.rooms.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
                     encryptionAlgorithm = event.content.algorithm
@@ -109,6 +117,62 @@ class RoomManager(
             oldRoom?.copy(
                 unreadMessageCount = count
             )
+        }
+    }
+
+    internal suspend fun redactTimelineEvent(event: Event<RedactionEventContent>) {
+        if (event is RoomEvent) {
+            val roomId = event.roomId
+            log.debug { "redact event with id ${event.content.redacts} in room $roomId" }
+            store.rooms.timeline.update(event.content.redacts, roomId) { oldTimelineEvent ->
+                if (oldTimelineEvent != null) {
+                    when (val oldEvent = oldTimelineEvent.event) {
+                        is RoomEvent -> {
+                            val eventType =
+                                api.eventContentSerializerMappings.room
+                                    .find { it.kClass.isInstance(oldEvent.content) }?.type
+                                    ?: "UNKNOWN"
+                            oldTimelineEvent.copy(
+                                event = RoomEvent(
+                                    RedactedRoomEventContent(eventType),
+                                    oldEvent.id,
+                                    oldEvent.sender,
+                                    oldEvent.roomId,
+                                    oldEvent.originTimestamp,
+                                    UnsignedData(
+                                        redactedBecause = event
+                                    )
+                                ),
+                                decryptedEvent = null,
+                                decryptionError = null
+                            )
+                        }
+                        is StateEvent -> {
+                            val eventType =
+                                api.eventContentSerializerMappings.state
+                                    .find { it.kClass.isInstance(oldEvent.content) }?.type
+                                    ?: "UNKNOWN"
+                            oldTimelineEvent.copy(
+                                event = StateEvent(
+                                    RedactedStateEventContent(eventType),
+                                    oldEvent.id,
+                                    oldEvent.sender,
+                                    oldEvent.roomId,
+                                    oldEvent.originTimestamp,
+                                    UnsignedData(
+                                        redactedBecause = event
+                                    ),
+                                    oldEvent.stateKey,
+                                    null
+                                ),
+                                decryptedEvent = null,
+                                decryptionError = null
+                            )
+                        }
+                        else -> null
+                    }
+                } else null
+            }
         }
     }
 

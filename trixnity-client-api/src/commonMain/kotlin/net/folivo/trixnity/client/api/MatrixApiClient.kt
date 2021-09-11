@@ -37,7 +37,7 @@ class MatrixApiClient(
     loggerFactory: LoggerFactory = LoggerFactory.default
 ) {
 
-    private val eventContentSerializerMappings = DefaultEventContentSerializerMappings + customMappings
+    val eventContentSerializerMappings = DefaultEventContentSerializerMappings + customMappings
     val json =
         createMatrixJson(
             loggerFactory,

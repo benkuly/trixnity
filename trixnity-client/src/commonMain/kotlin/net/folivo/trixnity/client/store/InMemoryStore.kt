@@ -154,7 +154,6 @@ class InMemoryStore(
             override suspend fun byId(eventId: MatrixId.EventId, roomId: RoomId): StateFlow<TimelineEvent?> {
                 return timelineEvents.getOrPut(eventId + roomId) { MutableStateFlow(null) }
             }
-
         }
     }
 
