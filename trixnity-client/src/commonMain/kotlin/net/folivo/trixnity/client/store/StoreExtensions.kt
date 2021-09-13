@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -39,3 +41,10 @@ suspend inline fun Store.RoomsStore.RoomTimelineStore.getPrevious(event: Timelin
 suspend inline fun Store.DeviceKeysStores.isTracked(userId: MatrixId.UserId): Boolean =
     byUserId(userId).value.isNullOrEmpty()
 
+suspend inline fun Store.OlmStore.waitForInboundMegolmSession(
+    roomId: MatrixId.RoomId,
+    sessionId: String,
+    senderKey: Key.Curve25519Key
+) {
+    inboundMegolmSession(roomId, sessionId, senderKey).first { it != null }
+}

@@ -10,9 +10,11 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.getPrevious
+import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
 import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
 import org.kodein.log.Logger
@@ -44,7 +46,7 @@ suspend fun example() = coroutineScope {
 
     val job1 = launch {
         encrytpedEventFlow.collect { event ->
-            require(event is Event.RoomEvent<MegolmEncryptedEventContent>)
+            require(event is RoomEvent<MegolmEncryptedEventContent>)
             if (event.roomId == roomId) {
                 if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                     delay(500)
@@ -73,40 +75,44 @@ suspend fun example() = coroutineScope {
         }
     }
     val job3 = launch {
-        store.rooms.all()
-            .mapNotNull { rooms -> rooms.find { it.roomId == roomId } }
-            .stateIn(this)
-            .collect { room ->
-                println("-----------------------------------")
-                println(room)
-                val lastEventId = room.lastEventId
-                if (lastEventId != null) {
-                    var currentTimelineEvent = store.rooms.timeline.byId(lastEventId, room.roomId).value
-                    flow {
-                        emit(currentTimelineEvent)
-                        while (currentTimelineEvent != null) {
-                            currentTimelineEvent =
-                                currentTimelineEvent?.let { store.rooms.timeline.getPrevious(it)?.value }
-                            emit(currentTimelineEvent)
+        matrixClient.rooms.getLastTimelineEvent(roomId).filterNotNull().collect { lastEvent ->
+            matrixClient.rooms.loadMembers(roomId)
+            println("-------------------------")
+            flow {
+                var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
+                emit(lastEvent)
+                while (currentTimelineEvent?.value != null) {
+                    val currentTimelineEventValue = currentTimelineEvent.value
+                    if (currentTimelineEventValue?.gap is GapBefore) {
+                        matrixClient.rooms.fetchMissingEvents(currentTimelineEventValue)
+                    }
+                    currentTimelineEvent =
+                        currentTimelineEvent.value?.let { matrixClient.rooms.getPreviousTimelineEvent(it) }
+                    emit(currentTimelineEvent)
+                }
+            }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
+                val event = timelineEvent.value?.event
+                val content = event?.content
+                when {
+                    event is RoomEvent && content is MessageEventContent ->
+                        println("${event.sender}: ${content.body}")
+                    event is RoomEvent && content is MegolmEncryptedEventContent -> {
+                        val decryptedEvent = timelineEvent.value?.decryptedEvent
+                        val decryptedEventContent = decryptedEvent?.content
+                        val decryptionException = timelineEvent.value?.decryptionException
+                        when {
+                            decryptionException != null -> println("${event.sender}: cannot decrypt (${decryptionException.message})")
+                            decryptedEvent == null -> println("${event.sender}: not yet decrypted")
+                            decryptedEventContent is MessageEventContent -> println("${event.sender}: ${decryptedEventContent.body}")
                         }
-                    }.filterNotNull().toList().reversed().forEach {
-                        val event = it.event
-                        val content = event.content
-                        if (event is Event.RoomEvent && content is MegolmEncryptedEventContent) {
-                            try {
-                                val decryptedEvent =
-                                    matrixClient.olm.events.decryptMegolm(event as Event.RoomEvent<MegolmEncryptedEventContent>)
-                                val content = decryptedEvent.content
-                                if (content is MessageEventContent.TextMessageEventContent) {
-                                    println("${event.sender}: ${content.body}")
-                                }
-                            } catch (e: Exception) {
-                                println("${event.sender}: cannot be decrypted (${e.message})")
-                            }
-                        }
+                    }
+                    event is RoomEvent -> println("${event.sender}: $content")
+                    event is StateEvent -> println("${event.sender}: $content")
+                    else -> {
                     }
                 }
             }
+        }
     }
 
     matrixClient.startSync()

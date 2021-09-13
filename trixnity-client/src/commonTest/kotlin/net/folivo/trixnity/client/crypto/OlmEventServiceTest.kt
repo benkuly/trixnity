@@ -66,7 +66,7 @@ class OlmEventServiceTest : ShouldSpec({
     val signService = mockk<OlmSignService>()
     val roomManager = mockk<RoomManager>()
 
-    val cut = OlmEventService(json, aliceAccount, store, api, signService, roomManager, LoggerFactory.default)
+    val cut = OlmEventService(json, aliceAccount, store, api, signService, LoggerFactory.default)
 
     val aliceCurveKey = Curve25519Key(aliceDeviceId, aliceAccount.identityKeys.curve25519)
     val aliceEdKey = Ed25519Key(aliceDeviceId, aliceAccount.identityKeys.ed25519)
@@ -101,7 +101,7 @@ class OlmEventServiceTest : ShouldSpec({
             mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
         )
         bobAccount.markOneTimeKeysAsPublished()
-        coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerifyState.Valid
+        coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } just Runs
         coEvery { roomManager.loadMembers(any()) } just Runs
     }
@@ -149,7 +149,7 @@ class OlmEventServiceTest : ShouldSpec({
                 store.olm.olmSessions(bobCurveKey).value shouldHaveSize 1
             }
             should("throw exception when one time key is invalid") {
-                coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerifyState.Invalid("dino")
+                coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Invalid("dino")
 
                 shouldThrow<KeyException.KeyVerificationFailedException> {
                     cut.encryptOlm(eventContent, bob, bobDeviceId).ciphertext.entries.first().value
@@ -274,7 +274,7 @@ class OlmEventServiceTest : ShouldSpec({
                         store.olm.olmSessions(bobCurveKey).value = setOf(storedOlmSession)
                     }
                 }
-                shouldThrow<DecryptionException> {
+                shouldThrow<SessionException.PreventToManySessions> {
                     cut.decryptOlm(
                         OlmEncryptedEventContent(
                             ciphertext = mapOf(
@@ -295,7 +295,7 @@ class OlmEventServiceTest : ShouldSpec({
                 ) { bobSession ->
                     bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
                 }
-                shouldThrow<DecryptionException> {
+                shouldThrow<SessionException.CouldNotDecrypt> {
                     cut.decryptOlm(
                         OlmEncryptedEventContent(
                             ciphertext = mapOf(
@@ -580,8 +580,6 @@ class OlmEventServiceTest : ShouldSpec({
                             megolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
                         ) shouldBe megolmEvent
                     }
-
-                    if (shouldLoadMembers) coVerify { roomManager.loadMembers(room) }
                 }
             }
         }

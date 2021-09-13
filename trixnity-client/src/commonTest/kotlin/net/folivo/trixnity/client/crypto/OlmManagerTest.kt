@@ -57,7 +57,7 @@ class OlmManagerTest : ShouldSpec({
     val json = createMatrixJson()
     store.account.userId.value = alice
     store.account.deviceId.value = aliceDevice
-    val cut = OlmManager(store, api, roomManager, json, LoggerFactory.default)
+    val cut = OlmManager(store, api, json, LoggerFactory.default)
 
     beforeTest {
         store.account.userId.value = alice
@@ -308,13 +308,13 @@ class OlmManagerTest : ShouldSpec({
                 val bobStore = InMemoryStore()
                 bobStore.account.userId.value = bob
                 bobStore.account.deviceId.value = bobDevice
-                val bobOlmManager = OlmManager(bobStore, api, roomManager, json, LoggerFactory.default)
+                val bobOlmManager = OlmManager(bobStore, api, json, LoggerFactory.default)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount)
-                    val cutWithAccount = OlmManager(store, api, roomManager, json, LoggerFactory.default)
+                    val cutWithAccount = OlmManager(store, api, json, LoggerFactory.default)
                     store.deviceKeys.byUserId(bob).value = mapOf(
                         bobDevice to DeviceKeys(
                             userId = bob,

@@ -139,10 +139,10 @@ class InMemoryStore(
                 eventId: MatrixId.EventId,
                 roomId: RoomId,
                 updater: suspend (oldRoom: TimelineEvent?) -> TimelineEvent?
-            ): StateFlow<TimelineEvent?> {
+            ): TimelineEvent? {
                 val event = timelineEvents.getOrPut(eventId + roomId) { MutableStateFlow(null) }
                 event.update { updater(it) }
-                return event
+                return event.value
             }
 
             override suspend fun updateAll(events: List<TimelineEvent>) {

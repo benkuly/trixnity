@@ -10,6 +10,8 @@ import kotlinx.serialization.serializer
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
@@ -54,7 +56,7 @@ class OlmSignService internal constructor(
         )
     }
 
-    suspend inline fun <reified T> verify(signedObject: Signed<T, MatrixId.UserId>): KeyVerifyState {
+    suspend inline fun <reified T> verify(signedObject: Signed<T, MatrixId.UserId>): KeyVerificationState {
         return verify(signedObject, serializer())
     }
 
@@ -63,7 +65,7 @@ class OlmSignService internal constructor(
         val key: String
     )
 
-    suspend fun <T> verify(signedObject: Signed<T, MatrixId.UserId>, serializer: KSerializer<T>): KeyVerifyState {
+    suspend fun <T> verify(signedObject: Signed<T, MatrixId.UserId>, serializer: KSerializer<T>): KeyVerificationState {
         val signed = signedObject.signed
         return if (signedObject is Key.SignedCurve25519Key) verify(
             Signed(
@@ -84,33 +86,40 @@ class OlmSignService internal constructor(
                             signedJson,
                             signatureKey.value
                         )
-                        KeyVerifyState.Valid
+                        KeyVerificationState.Valid
                     } catch (exception: Exception) {
-                        KeyVerifyState.Invalid(exception.message ?: "unknown: $exception")
+                        KeyVerificationState.Invalid(exception.message ?: "unknown: $exception")
                     }
                 }
-            }.firstOrNull { it is KeyVerifyState.Invalid } ?: KeyVerifyState.Valid
+            }.firstOrNull { it is KeyVerificationState.Invalid } ?: KeyVerificationState.Valid
         }
     }
 
-    private fun verifyDeviceKeys(deviceKeys: Signed<DeviceKeys, MatrixId.UserId>): KeyVerifyState {
+    private fun verifyDeviceKeys(deviceKeys: Signed<DeviceKeys, MatrixId.UserId>): KeyVerificationState {
         val jsonObject = json.encodeToJsonElement(deviceKeys.signed)
         require(jsonObject is JsonObject)
         val signedJson = canonicalFilteredJson(jsonObject)
         try {
             utility.verifyEd25519(
                 deviceKeys.get<Key.Ed25519Key>()?.value
-                    ?: return KeyVerifyState.Invalid("no ed25591 key found"),
+                    ?: return KeyVerificationState.Invalid("no ed25591 key found"),
                 signedJson,
                 deviceKeys.signatures[deviceKeys.signed.userId]?.get<Key.Ed25519Key>()?.value
-                    ?: return KeyVerifyState.Invalid("no signature key found"),
+                    ?: return KeyVerificationState.Invalid("no signature key found"),
             )
-            return KeyVerifyState.Valid
+            return KeyVerificationState.Valid
         } catch (exception: Exception) {
-            return KeyVerifyState.Invalid(exception.message ?: "unknown: $exception")
+            return KeyVerificationState.Invalid(exception.message ?: "unknown: $exception")
         }
     }
 
     private fun canonicalFilteredJson(input: JsonObject): String =
         canonicalJson(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
+
+    suspend fun verifyEncryptedMegolm(encryptedEvent: Event.RoomEvent<MegolmEncryptedEventContent>): VerificationState {
+        return if (store.deviceKeys.getKeysFromUser<Key.Curve25519Key>(encryptedEvent.sender)
+                .find { it.value == encryptedEvent.content.senderKey.value } == null
+        ) VerificationState.Invalid("the sender key of the event is not known for this device")
+        else VerificationState.Valid
+    }
 }

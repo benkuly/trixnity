@@ -159,7 +159,7 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerifyState.Valid
+            cut.verify(signedObject) shouldBe KeyVerificationState.Valid
         }
         should("verify SignedCurve25519Key") {
             val signedObject = signingAccountSignService.signCurve25519Key(
@@ -168,7 +168,7 @@ class OlmSignServiceTest : ShouldSpec({
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerifyState.Valid
+            cut.verify(signedObject) shouldBe KeyVerificationState.Valid
         }
         should("return invalid") {
             val signedObject = Signed(
@@ -190,7 +190,7 @@ class OlmSignServiceTest : ShouldSpec({
                     )
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerifyState.Invalid("BAD_MESSAGE_MAC")
+            cut.verify(signedObject) shouldBe KeyVerificationState.Invalid("BAD_MESSAGE_MAC")
         }
         context("device keys") {
             should("return valid") {
@@ -209,7 +209,7 @@ class OlmSignServiceTest : ShouldSpec({
                 val signed = cut.sign(toBeSigned)
                 cut.verify(
                     Signed(signed.signed.copy(unsigned = DeviceKeys.UnsignedDeviceInfo("dev")), signed.signatures)
-                ) shouldBe KeyVerifyState.Valid
+                ) shouldBe KeyVerificationState.Valid
             }
             should("return invalid") {
                 cut.verify(
@@ -235,7 +235,7 @@ class OlmSignServiceTest : ShouldSpec({
                             )
                         )
                     )
-                ) shouldBe KeyVerifyState.Invalid("BAD_MESSAGE_MAC")
+                ) shouldBe KeyVerificationState.Invalid("BAD_MESSAGE_MAC")
             }
         }
     }
