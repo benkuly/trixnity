@@ -24,7 +24,7 @@ class MatrixClient private constructor(
     val api: MatrixApiClient,
     val olm: OlmManager,
     val rooms: RoomManager,
-    private val loggerFactory: LoggerFactory
+    loggerFactory: LoggerFactory
 ) {
 
     private val log = newLogger(loggerFactory)
@@ -53,14 +53,13 @@ class MatrixClient private constructor(
             store.account.accessToken.value = accessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
-            val roomManager = RoomManager(store, api,loggerFactory)
             val olm = OlmManager(
                 store = store,
                 api = api,
                 json = api.json,
-                roomManager = roomManager,
                 loggerFactory = loggerFactory
             )
+            val roomManager = RoomManager(store, api, olm, loggerFactory)
             store.deviceKeys.byUserId(userId).value = mapOf(deviceId to olm.myDeviceKeys.signed)
             api.keys.uploadKeys(deviceKeys = olm.myDeviceKeys)
 
@@ -83,14 +82,13 @@ class MatrixClient private constructor(
             val deviceId = store.account.deviceId.value
 
             return if (accessToken != null && userId != null && deviceId != null) {
-                val roomManager = RoomManager(store, api,loggerFactory)
                 val olm = OlmManager(
                     store = store,
                     api = api,
                     json = api.json,
-                    roomManager = roomManager,
                     loggerFactory = loggerFactory
                 )
+                val roomManager = RoomManager(store, api, olm, loggerFactory)
                 MatrixClient(store, api, olm, roomManager, loggerFactory)
             } else null
         }

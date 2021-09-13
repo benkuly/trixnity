@@ -59,8 +59,8 @@ interface Store {
             suspend fun update(
                 eventId: EventId,
                 roomId: RoomId,
-                updater: suspend (oldRoom: TimelineEvent?) -> TimelineEvent?
-            ): StateFlow<TimelineEvent?>
+                updater: suspend (oldTimelineEvent: TimelineEvent?) -> TimelineEvent?
+            ): TimelineEvent?
 
             suspend fun updateAll(events: List<TimelineEvent>)
             suspend fun byId(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?>

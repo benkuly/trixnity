@@ -12,7 +12,6 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.api.sync.SyncResponse
-import net.folivo.trixnity.client.room.RoomManager
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.*
@@ -38,7 +37,6 @@ import org.kodein.log.newLogger
 class OlmManager(
     private val store: Store,
     private val api: MatrixApiClient,
-    roomManager: RoomManager,
     val json: Json,
     loggerFactory: LoggerFactory
 ) {
@@ -82,7 +80,6 @@ class OlmManager(
         store = store,
         api = api,
         signService = sign,
-        roomManager = roomManager,
         loggerFactory = loggerFactory
     )
 
@@ -141,7 +138,7 @@ class OlmManager(
                 val keys = devices.filter { (deviceId, deviceKeys) ->
                     // this prevents attacks from a malicious or compromised homeserver
                     userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
-                            && sign.verify(deviceKeys) == KeyVerifyState.Valid
+                            && sign.verify(deviceKeys) == KeyVerificationState.Valid
                 }.map { it.key to it.value.signed }.toMap()
                 store.deviceKeys.byUserId(userId).update { oldDevices ->
                     // we must check that the Ed25519 key hasn't changed and otherwise ignore device (use old value)

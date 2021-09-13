@@ -1,32 +1,37 @@
 package net.folivo.trixnity.client.room
 
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.rooms.Membership
+import net.folivo.trixnity.client.crypto.DecryptionException
+import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getOriginTimestamp
 import net.folivo.trixnity.client.getRoomIdAndStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.MatrixId.EventId
+import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import kotlin.coroutines.coroutineContext
 
 class RoomManager(
     private val store: Store,
     private val api: MatrixApiClient,
+    private val olm: OlmManager,
     loggerFactory: LoggerFactory
 ) {
     private val log = newLogger(loggerFactory)
@@ -39,10 +44,20 @@ class RoomManager(
         launch {
             api.sync.syncResponses.collect { syncResponse ->
                 syncResponse.room?.join?.entries?.forEach { room ->
-                    room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(room.key, it) }
+                    val roomId = room.key
+                    // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
+                    store.rooms.update(roomId) { oldRoom ->
+                        oldRoom ?: Room(
+                            roomId = roomId,
+                            ownMembership = JOIN,
+                            lastEventAt = fromEpochMilliseconds(0),
+                            lastEventId = null
+                        )
+                    }
+                    room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
                     room.value.timeline?.also {
                         addEventsToTimelineAtEnd(
-                            roomId = room.key,
+                            roomId = roomId,
                             events = it.events,
                             previousBatch = it.previousBatch,
                             hasGapBefore = it.limited ?: false
@@ -112,7 +127,7 @@ class RoomManager(
         }
     }
 
-    internal suspend fun setUnreadMessageCount(roomId: MatrixId.RoomId, count: Int) {
+    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
         store.rooms.update(roomId) { oldRoom ->
             oldRoom?.copy(
                 unreadMessageCount = count
@@ -144,7 +159,7 @@ class RoomManager(
                                     )
                                 ),
                                 decryptedEvent = null,
-                                decryptionError = null
+                                decryptionException = null
                             )
                         }
                         is StateEvent -> {
@@ -166,7 +181,7 @@ class RoomManager(
                                     null
                                 ),
                                 decryptedEvent = null,
-                                decryptionError = null
+                                decryptionException = null
                             )
                         }
                         else -> null
@@ -177,7 +192,7 @@ class RoomManager(
     }
 
     internal suspend fun addEventsToTimelineAtEnd(
-        roomId: MatrixId.RoomId,
+        roomId: RoomId,
         events: List<Event<*>>?,
         previousBatch: String?,
         hasGapBefore: Boolean
@@ -199,7 +214,7 @@ class RoomManager(
                                 gap = if (gap is GapBoth) GapBefore(gap.batch) else null
                             )
                         }
-                    }.value
+                    }
                 }
             val timelineEvents = events.mapIndexed { index, event ->
                 val eventId = event.getEventId()
@@ -252,6 +267,8 @@ class RoomManager(
         if (startGap != null) {
             val roomId = startEvent.roomId
             if (startGap is GapBefore || startGap is GapBoth) {
+                log.debug { "fetch missing events before ${startEvent.eventId}" }
+
                 val previousEvent = store.rooms.timeline.getPrevious(startEvent)?.value
                 val destinationBatch = previousEvent?.gap?.batch
                 val response = api.rooms.getEvents(
@@ -337,6 +354,8 @@ class RoomManager(
             }
             val nextEvent = store.rooms.timeline.getNext(startEvent)?.value
             if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
+                log.debug { "fetch missing events after ${startEvent.eventId}" }
+
                 val destinationBatch = nextEvent.gap?.batch
 
                 val response = api.rooms.getEvents(
@@ -421,7 +440,7 @@ class RoomManager(
         }
     }
 
-    suspend fun loadMembers(roomId: MatrixId.RoomId) {
+    suspend fun loadMembers(roomId: RoomId) {
         store.rooms.update(roomId) { oldRoom ->
             requireNotNull(oldRoom) { "cannot load members of a room, that we don't know yet ($roomId)" }
             if (!oldRoom.membersLoaded) {
@@ -435,5 +454,57 @@ class RoomManager(
                 oldRoom.copy(membersLoaded = true)
             } else oldRoom
         }
+    }
+
+    private val decryptionScope = CoroutineScope(Dispatchers.Default)
+
+    private fun TimelineEvent.canBeDecrypted(): Boolean =
+        this.event is RoomEvent
+                && this.event.content is MegolmEncryptedEventContent
+                && this.decryptedEvent == null
+                && this.decryptionException == null
+
+    @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
+    suspend fun getTimelineEvent(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?> {
+        return store.rooms.timeline.byId(eventId, roomId).also {
+            val timelineEvent = it.value
+            val content = timelineEvent?.event?.content
+            if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
+                decryptionScope.launch(coroutineContext) {
+                    log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
+                    store.olm.waitForInboundMegolmSession(roomId, content.sessionId, content.senderKey)
+                    store.rooms.timeline.update(eventId, roomId) { oldEvent ->
+                        if (oldEvent?.canBeDecrypted() == true) {
+                            log.debug { "try to decrypt event $eventId in $roomId" }
+                            @Suppress("UNCHECKED_CAST")
+                            val encryptedEvent = oldEvent.event as RoomEvent<MegolmEncryptedEventContent>
+                            try {
+                                timelineEvent.copy(decryptedEvent = olm.events.decryptMegolm(encryptedEvent))
+                            } catch (error: DecryptionException) {
+                                timelineEvent.copy(decryptionException = error)
+                            }
+                        } else oldEvent
+                    }
+                }
+            }
+        }
+    }
+
+    private val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
+        store.rooms.byId(roomId).transformLatest { room ->
+            if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId))
+            else emit(null)
+        }.stateIn(lastTimelineEventScope)
+    }
+
+    suspend fun getPreviousTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
+        return event.previousEventId?.let { getTimelineEvent(it, event.roomId) }
+    }
+
+    suspend fun getNextTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
+        return event.nextEventId?.let { getTimelineEvent(it, event.roomId) }
     }
 }

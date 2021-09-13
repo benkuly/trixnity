@@ -9,7 +9,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.KeyException.*
-import net.folivo.trixnity.client.room.RoomManager
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredMegolmMessageIndex
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
@@ -45,7 +44,6 @@ class OlmEventService internal constructor(
     private val store: Store,
     private val api: MatrixApiClient,
     private val signService: OlmSignService,
-    private val roomManager: RoomManager,
     loggerFactory: LoggerFactory
 ) {
 
@@ -70,10 +68,10 @@ class OlmEventService internal constructor(
             val response = api.keys.claimKeys(mapOf(receiverId to mapOf(deviceId to KeyAlgorithm.SignedCurve25519)))
             if (response.failures.isNotEmpty()) throw CouldNotReachRemoteServersException(response.failures.keys)
             val oneTimeKey = response.oneTimeKeys[receiverId]?.get(deviceId)?.keys?.firstOrNull()
-                ?: throw OneTimeKeyNotFoundException
+                ?: throw OneTimeKeyNotFoundException(receiverId, deviceId)
             require(oneTimeKey is SignedCurve25519Key)
             val keyVerifyState = signService.verify(oneTimeKey)
-            if (keyVerifyState is KeyVerifyState.Invalid)
+            if (keyVerifyState is KeyVerificationState.Invalid)
                 throw KeyVerificationFailedException(keyVerifyState.reason)
             freeAfter(
                 OlmSession.createOutbound(
@@ -128,11 +126,11 @@ class OlmEventService internal constructor(
     suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): OlmEvent<*> {
         log.debug { "start decrypt olm event $encryptedContent" }
         val ciphertext = encryptedContent.ciphertext[myCurve25519Key.value]
-            ?: throw SenderDidNotEncryptForThisDeviceException
+            ?: throw SessionException.SenderDidNotEncryptForThisDeviceException
         val senderIdentityKey =
             store.deviceKeys.getKeysFromUser<Curve25519Key>(senderId).find {
                 it.value == encryptedContent.senderKey.value
-            } ?: throw DecryptionException("the sender key of the event is not known for this device")
+            } ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
         val storedSessions = store.olm.olmSessions(senderIdentityKey).value
         val decryptedContent = storedSessions.sortedByDescending { it.lastUsedAt }
             .mapNotNull { storedSession ->
@@ -164,18 +162,18 @@ class OlmEventService internal constructor(
                         store.olm.storeOlmSession(olmSession, senderIdentityKey)
                         decrypted
                     }
-                } else throw DecryptionException("the last created session is less then an hour old, so we do not create one again")
+                } else throw SessionException.PreventToManySessions
             } else {
                 val senderDeviceId =
                     store.deviceKeys.byUserId(senderId).value?.entries
                         ?.find { it.value.keys.contains(senderIdentityKey) }?.key
-                        ?: throw DecryptionException("the sender key of the event is not known for this device")
+                        ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
                 api.users.sendToDevice(
                     mapOf(
                         senderId to mapOf(senderDeviceId to encryptOlm(DummyEventContent, senderId, senderDeviceId))
                     )
                 )
-                throw DecryptionException("could not decrypt with any olm session, but try to create new session")
+                throw SessionException.CouldNotDecrypt
             }
 
         val serializer = json.serializersModule.getContextual(OlmEvent::class)
@@ -187,7 +185,7 @@ class OlmEventService internal constructor(
             || decryptedEvent.recipientKeys.get<Ed25519Key>()?.value != myEd25519Key.value
             || !store.deviceKeys.getKeysFromUser<Ed25519Key>(senderId).map { it.value }
                 .contains(decryptedEvent.senderKeys.get<Ed25519Key>()?.value)
-        ) throw DecryptionException("validation of decryption failed")
+        ) throw SessionException.ValidationFailed
 
         return decryptedEvent.also { log.debug { "decrypted event: $it" } }
     }
@@ -207,7 +205,6 @@ class OlmEventService internal constructor(
             || rotationPeriodMsgs != null && (storedSession.encryptedMessageCount >= rotationPeriodMsgs)
         ) {
             log.debug { "encrypt megolm event with new session" }
-            if (storedSession == null) roomManager.loadMembers(roomId)
             val members = store.rooms.state.members(roomId, JOIN, INVITE)
             store.deviceKeys.waitForUpdateOutdatedKey(*members.toTypedArray())
             val deviceKeys =
@@ -245,9 +242,14 @@ class OlmEventService internal constructor(
             api.users.sendToDevice(
                 newUserDevices.mapValues { (user, devices) ->
                     devices.filterNot { user == myUserId && it == myDeviceId }
-                        .associateWith { deviceName ->
-                            encryptOlm(roomKeyEventContent, user, deviceName)
-                        }
+                        .mapNotNull { deviceName ->
+                            try {
+                                deviceName to encryptOlm(roomKeyEventContent, user, deviceName)
+                            } catch (e: Throwable) {
+                                log.warning(e) { "could not encrypt olm" }
+                                null
+                            }
+                        }.toMap()
                 }
             )
         }
@@ -282,15 +284,12 @@ class OlmEventService internal constructor(
         val sessionId = encryptedContent.sessionId
         val senderKey = encryptedContent.senderKey
 
-        store.deviceKeys.getKeysFromUser<Curve25519Key>(encryptedEvent.sender).find { it.value == senderKey.value }
-            ?: throw DecryptionException("the sender key of the event is not known for this device")
-
         // TODO request keys from other devices. Maybe track corrupted olm sessions like described here:
         //  https://matrix.org/docs/spec/client_server/r0.6.1#recovering-from-undecryptable-messages
         val storedSession = store.olm.inboundMegolmSession(roomId, sessionId, senderKey).value
-            ?: throw DecryptionException("the sender did not send us the keys")
+            ?: throw DecryptionException.SenderDidNotSendMegolmKeysToUs
 
-        val (decryptedContent, index) =
+        val (decryptedContent, index) = try {
             freeAfter(OlmInboundGroupSession.unpickle(pickleKey, storedSession.pickle)) { session ->
                 session.decrypt(encryptedContent.ciphertext).also {
                     store.olm.inboundMegolmSession(roomId, sessionId, senderKey).update { oldStoredSession ->
@@ -298,6 +297,9 @@ class OlmEventService internal constructor(
                     }
                 }
             }
+        } catch (e: OlmLibraryException) {
+            throw DecryptionException.SessionException(e)
+        }
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)
         requireNotNull(serializer)
@@ -306,7 +308,7 @@ class OlmEventService internal constructor(
         store.olm.inboundMegolmMessageIndex(roomId, sessionId, senderKey, index).update { storedIndex ->
             if (encryptedEvent.roomId != decryptedEvent.roomId
                 || storedIndex?.let { it.eventId != encryptedEvent.id || it.originTimestamp != encryptedEvent.originTimestamp } == true
-            ) throw DecryptionException("validation of encryption failed")
+            ) throw DecryptionException.ValidationFailed
 
             storedIndex ?: StoredMegolmMessageIndex(
                 roomId, sessionId, senderKey, index, encryptedEvent.id, encryptedEvent.originTimestamp
