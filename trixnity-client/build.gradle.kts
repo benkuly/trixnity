@@ -14,7 +14,6 @@ kotlin {
             systemProperty("jna.library.path", olm.build.canonicalPath)
             dependsOn(":buildOlm")
         }
-        withJava()
     }
 //    js {
 //        browser {

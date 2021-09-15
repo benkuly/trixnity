@@ -520,8 +520,7 @@ class OlmEventServiceTest : ShouldSpec({
         }
         suspend fun ShouldSpecContainerContext.testEncryption(
             settings: EncryptionEventContent,
-            expectedMessageCount: Int,
-            shouldLoadMembers: Boolean
+            expectedMessageCount: Int
         ) {
             should("encrypt message") {
                 store.deviceKeys.outdatedKeys.value = setOf(bob)
@@ -585,7 +584,7 @@ class OlmEventServiceTest : ShouldSpec({
         }
 
         context("without stored session") {
-            testEncryption(EncryptionEventContent(), 1, true)
+            testEncryption(EncryptionEventContent(), 1)
         }
         context("with stored session") {
             context("send sessions to new devices and encrypt") {
@@ -605,7 +604,7 @@ class OlmEventServiceTest : ShouldSpec({
                         )
                     }
                 }
-                testEncryption(EncryptionEventContent(), 24, false)
+                testEncryption(EncryptionEventContent(), 24)
             }
             context("when rotation period passed") {
                 beforeTest {
@@ -615,7 +614,7 @@ class OlmEventServiceTest : ShouldSpec({
                         pickle = "is irrelevant"
                     )
                 }
-                testEncryption(EncryptionEventContent(rotationPeriodMs = 24), 2, false)
+                testEncryption(EncryptionEventContent(rotationPeriodMs = 24), 2)
             }
             context("when message count passed") {
                 beforeTest {
@@ -625,7 +624,7 @@ class OlmEventServiceTest : ShouldSpec({
                         pickle = "is irrelevant"
                     )
                 }
-                testEncryption(EncryptionEventContent(rotationPeriodMsgs = 24), 25, false)
+                testEncryption(EncryptionEventContent(rotationPeriodMsgs = 24), 25)
             }
         }
     }

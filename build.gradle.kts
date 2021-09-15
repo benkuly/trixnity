@@ -1,5 +1,11 @@
 import de.undercouch.gradle.tasks.download.Download
 
+buildscript {
+    dependencies {
+        classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
+    }
+}
+
 plugins {
     `maven-publish`
     signing
@@ -16,6 +22,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        google()
     }
 
     apply(plugin = "org.jetbrains.dokka")

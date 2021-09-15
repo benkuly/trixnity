@@ -2,18 +2,26 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     kotlin("plugin.serialization")
+    id("com.android.library")
     kotlin("multiplatform")
-    id("de.undercouch.download")
 }
 
-//repositories { TODO for android
-//    maven {
-//        url = URI("https://jitpack.io")
-//        content {
-//            includeGroupByRegex("org\\.matrix\\.gitlab\\.matrix-org")
-//        }
-//    }
-//}
+android {
+    compileSdk = 30
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 30
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets.getByName("main") {
+        manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    }
+    externalNativeBuild {
+        cmake {
+            path = file(olm.cMakeLists)
+        }
+    }
+}
 
 kotlin {
     jvm {
@@ -26,7 +34,12 @@ kotlin {
             systemProperty("jna.library.path", olm.build.canonicalPath)
             dependsOn(":buildOlm")
         }
-        withJava()
+    }
+    android {
+        compilations.all {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+        }
+        publishLibraryVariants("release", "debug")
     }
 //    js(IR) { // FIXME enable on kotlin >= 1.5.30
 //        browser {
@@ -69,6 +82,13 @@ kotlin {
                 implementation("net.java.dev.jna:jna:${Versions.jna}")
             }
         }
+        val androidMain by getting {
+            dependsOn(olmLibraryMain)
+            kotlin.srcDirs("src/jvmMain/kotlin")
+            dependencies {
+                api("net.java.dev.jna:jna:${Versions.jna}@aar")
+            }
+        }
         val nativeMain by getting {
             dependsOn(olmLibraryMain)
         }
@@ -84,6 +104,12 @@ kotlin {
             }
         }
         val jvmTest by getting
+        val androidTest by getting {
+            kotlin.srcDirs("src/jvmTest/kotlin")
+            dependencies {
+                implementation("androidx.test:runner:1.4.0")
+            }
+        }
 //        val jsTest by getting
         val nativeTest by getting
     }
