@@ -146,3 +146,19 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile> {
         freeCompilerArgs += "-Xir-property-lazy-initialization"
     }
 }
+
+tasks.withType<com.android.build.gradle.tasks.ExternalNativeCleanTask> {
+    dependsOn(":extractOlm")
+}
+
+tasks.withType<com.android.build.gradle.tasks.ExternalNativeBuildTask> {
+    dependsOn(":extractOlm")
+}
+
+project.afterEvaluate {
+    val testTasks =
+        project.getTasksByName("testReleaseUnitTest", false) + project.getTasksByName("testDebugUnitTest", false)
+    testTasks.forEach {
+        it.onlyIf { false }
+    }
+}
