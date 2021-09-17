@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.api.sync
 
 import io.ktor.client.*
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -32,11 +33,14 @@ class SyncApiClient(
         return httpClient.get {
             url("/r0/sync")
             parameter("filter", filter)
-            parameter("full_state", fullState)
+            if (fullState) parameter("full_state", true)
             parameter("set_presence", setPresence?.value)
             parameter("since", since)
-            parameter("timeout", timeout)
+            if (timeout > 0) parameter("timeout", timeout)
             parameter("user_id", asUserId)
+            timeout {
+                requestTimeoutMillis = timeout + 5000
+            }
         }
     }
 
@@ -44,38 +48,31 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
         asUserId: UserId? = null
     ): Flow<SyncResponse> {
         return flow {
             while (currentCoroutineContext().isActive && _currentSyncState.value != SyncState.STOPPING) {
                 try {
                     val batchToken = currentBatchToken.value
-                    val response = if (batchToken != null) {
-                        syncOnce(
-                            filter = filter,
-                            setPresence = setPresence,
-                            fullState = false,
-                            since = batchToken,
-                            timeout = 30000,
-                            asUserId = asUserId
-                        )
-                    } else {
-                        syncOnce(
-                            filter = filter,
-                            setPresence = setPresence,
-                            fullState = false,
-                            timeout = 30000,
-                            asUserId = asUserId
-                        )
-                    }
+                    val response = syncOnce(
+                        filter = filter,
+                        setPresence = setPresence,
+                        fullState = false,
+                        since = batchToken,
+                        timeout = timeout,
+                        asUserId = asUserId
+                    )
                     _currentSyncState.value = SyncState.RUNNING
                     emit(response)
                     // we want to be sure, that the next batch is only set, when we finished the processing of the response
                     currentBatchToken.value = response.nextBatch
-                } catch (error: Exception) {
-                    // TODO we should only catch network exceptions and change state to NO_NETWORK or something else
-                    if (error is CancellationException) throw error
-                    _currentSyncState.value = SyncState.ERROR
+                } catch (error: Throwable) {
+                    when (error) {
+                        is HttpRequestTimeoutException -> _currentSyncState.value = SyncState.TIMEOUT
+                        is CancellationException -> throw error
+                        else -> _currentSyncState.value = SyncState.ERROR
+                    }
                     log.error(error) { "error while sync to server: ${error.message}" }
                     delay(5000)// TODO better retry policy!
                     continue
@@ -97,14 +94,16 @@ class SyncApiClient(
         STARTED,
         RUNNING,
         ERROR,
+        TIMEOUT,
         STOPPING,
-        STOPPED
+        STOPPED,
     }
 
     suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
     ) {
@@ -113,7 +112,7 @@ class SyncApiClient(
             log.info { "started syncLoop" }
             _currentSyncState.value = SyncState.STARTED
             try {
-                syncLoop(filter, setPresence, currentBatchToken, asUserId)
+                syncLoop(filter, setPresence, currentBatchToken, timeout, asUserId)
                     .collect { response ->
                         // do it at first, to be able to decrypt stuff
                         response.toDevice?.events?.forEach { emitEvent(it) }

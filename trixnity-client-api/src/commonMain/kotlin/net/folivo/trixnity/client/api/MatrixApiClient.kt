@@ -73,6 +73,9 @@ class MatrixApiClient(
             header(HttpHeaders.ContentType, Application.Json)
             accept(Application.Json)
         }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30000
+        }
     }
 
     val authentication = AuthenticationApiClient(httpClient)
