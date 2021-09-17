@@ -25,7 +25,7 @@ class MatrixApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/path?param=dino", request.url.fullPath)
+                        assertEquals("/path?param=dino", request.url.fullPath)
                         assertEquals("matrix.host", request.url.host)
                         assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
                         assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])

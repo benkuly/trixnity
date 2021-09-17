@@ -22,7 +22,7 @@ class AuthenticationApiClient(
         isAppservice: Boolean = false // TODO why is the spec so inconsistent?
     ): RegisterResponse {
         return httpClient.post {
-            url("/r0/register")
+            url("/_matrix/client/r0/register")
             parameter("kind", accountType?.value)
             body = RegisterRequest(
                 RegisterRequest.Auth(authenticationType, authenticationSession),
@@ -41,7 +41,7 @@ class AuthenticationApiClient(
      */
     suspend fun getLoginTypes(): Set<LoginType> {
         return httpClient.get<GetLoginTypesResponse> {
-            url("/r0/login")
+            url("/_matrix/client/r0/login")
         }.flows
     }
 
@@ -56,7 +56,7 @@ class AuthenticationApiClient(
         initialDeviceDisplayName: String? = null
     ): LoginResponse {
         return httpClient.post {
-            url("/r0/login")
+            url("/_matrix/client/r0/login")
             body = LoginRequest(
                 type.name,
                 identifier,
@@ -73,7 +73,7 @@ class AuthenticationApiClient(
      */
     suspend fun logout() {
         return httpClient.get {
-            url("/r0/logout")
+            url("/_matrix/client/r0/logout")
         }
     }
 
@@ -82,7 +82,7 @@ class AuthenticationApiClient(
      */
     suspend fun logoutAll() {
         return httpClient.get {
-            url("/r0/logout/all")
+            url("/_matrix/client/r0/logout/all")
         }
     }
 }

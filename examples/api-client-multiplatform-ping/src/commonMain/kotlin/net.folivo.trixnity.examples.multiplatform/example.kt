@@ -9,16 +9,21 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.ImageInfo
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 
 suspend fun example() = coroutineScope {
     val matrixRestClient =
         MatrixApiClient(
-            hostname = "server",
+            hostname = "host",
             accessToken = MutableStateFlow("token")
         )
+    val roomId = RoomId("!room:server")
 
     val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
 
@@ -27,9 +32,46 @@ suspend fun example() = coroutineScope {
     val job = launch {
         textMessageEventFlow.collect { event ->
             require(event is Event.RoomEvent)
-            if (event.roomId == RoomId("!someRoom:server")) {
+            if (event.roomId == roomId) {
                 if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                     val body = event.content.body
+                    when {
+                        body.startsWith("ping") -> {
+                            matrixRestClient.rooms.sendRoomEvent(
+                                roomId, TextMessageEventContent(body = "pong")
+                            )
+                        }
+                        body.startsWith("me") -> {
+                            val senderAvatar =
+                                matrixRestClient.rooms.getStateEvent<MemberEventContent>(
+                                    roomId,
+                                    event.sender.full
+                                ).avatarUrl
+                            if (senderAvatar != null) {
+                                val senderAvatarDownload = matrixRestClient.media.downloadThumbnail(
+                                    senderAvatar,
+                                    64,
+                                    64,
+                                    ThumbnailResizingMethod.CROP
+                                )
+                                val contentLength = senderAvatarDownload.contentLength
+                                requireNotNull(contentLength)
+                                val uploadedUrl = matrixRestClient.media.upload(
+                                    senderAvatarDownload.content,
+                                    contentLength,
+                                    senderAvatarDownload.contentType
+                                ).contentUri
+                                matrixRestClient.rooms.sendRoomEvent(
+                                    roomId, ImageMessageEventContent(
+                                        body = "avatar image of ${event.sender}",
+                                        format = ImageInfo(),
+                                        url = uploadedUrl
+                                    )
+                                )
+                            }
+
+                        }
+                    }
                 }
             }
         }

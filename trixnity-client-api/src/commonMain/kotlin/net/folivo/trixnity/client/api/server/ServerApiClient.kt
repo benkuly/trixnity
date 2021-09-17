@@ -6,11 +6,11 @@ import io.ktor.client.request.*
 class ServerApiClient(private val httpClient: HttpClient) {
 
     suspend fun getVersions(): VersionsResponse {
-        return httpClient.get("/versions")
+        return httpClient.get("/_matrix/client/versions")
     }
 
     suspend fun getCapabilities(): CapabilitiesResponse {
-        return httpClient.get("/r0/capabilities")
+        return httpClient.get("/_matrix/client/r0/capabilities")
     }
 
 }
