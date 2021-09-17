@@ -30,7 +30,7 @@ class SyncApiClient(
         asUserId: UserId? = null
     ): SyncResponse {
         return httpClient.get {
-            url("/r0/sync")
+            url("/_matrix/client/r0/sync")
             parameter("filter", filter)
             parameter("full_state", fullState)
             parameter("set_presence", setPresence?.value)

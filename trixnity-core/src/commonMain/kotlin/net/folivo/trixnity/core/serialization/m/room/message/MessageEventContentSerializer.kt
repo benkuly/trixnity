@@ -27,6 +27,16 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
                 decoder.json.decodeFromJsonElement(NoticeMessageEventContentSerializer, jsonObj)
             TextMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(TextMessageEventContentSerializer, jsonObj)
+            EmoteMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(EmoteMessageEventContentSerializer, jsonObj)
+            ImageMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(ImageMessageEventContentSerializer, jsonObj)
+            FileMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(FileMessageEventContentSerializer, jsonObj)
+            AudioMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(AudioMessageEventContentSerializer, jsonObj)
+            VideoMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(VideoMessageEventContentSerializer, jsonObj)
             else ->
                 decoder.json.decodeFromJsonElement(UnknownMessageEventContent.serializer(), jsonObj)
         }
@@ -40,6 +50,16 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
                 encoder.json.encodeToJsonElement(NoticeMessageEventContentSerializer, value)
             is TextMessageEventContent ->
                 encoder.json.encodeToJsonElement(TextMessageEventContentSerializer, value)
+            is EmoteMessageEventContent ->
+                encoder.json.encodeToJsonElement(EmoteMessageEventContentSerializer, value)
+            is ImageMessageEventContent ->
+                encoder.json.encodeToJsonElement(ImageMessageEventContentSerializer, value)
+            is FileMessageEventContent ->
+                encoder.json.encodeToJsonElement(FileMessageEventContentSerializer, value)
+            is AudioMessageEventContent ->
+                encoder.json.encodeToJsonElement(AudioMessageEventContentSerializer, value)
+            is VideoMessageEventContent ->
+                encoder.json.encodeToJsonElement(VideoMessageEventContentSerializer, value)
             is UnknownMessageEventContent -> throw IllegalArgumentException("${UnknownMessageEventContent::class.simpleName} should never be serialized")
         }
         encoder.encodeJsonElement(jsonElement)
@@ -56,4 +76,34 @@ object TextMessageEventContentSerializer :
     AddFieldsSerializer<TextMessageEventContent>(
         TextMessageEventContent.serializer(),
         "msgtype" to TextMessageEventContent.type
+    )
+
+object EmoteMessageEventContentSerializer :
+    AddFieldsSerializer<EmoteMessageEventContent>(
+        EmoteMessageEventContent.serializer(),
+        "msgtype" to EmoteMessageEventContent.type
+    )
+
+object ImageMessageEventContentSerializer :
+    AddFieldsSerializer<ImageMessageEventContent>(
+        ImageMessageEventContent.serializer(),
+        "msgtype" to ImageMessageEventContent.type
+    )
+
+object FileMessageEventContentSerializer :
+    AddFieldsSerializer<FileMessageEventContent>(
+        FileMessageEventContent.serializer(),
+        "msgtype" to FileMessageEventContent.type
+    )
+
+object AudioMessageEventContentSerializer :
+    AddFieldsSerializer<AudioMessageEventContent>(
+        AudioMessageEventContent.serializer(),
+        "msgtype" to AudioMessageEventContent.type
+    )
+
+object VideoMessageEventContentSerializer :
+    AddFieldsSerializer<VideoMessageEventContent>(
+        VideoMessageEventContent.serializer(),
+        "msgtype" to VideoMessageEventContent.type
     )

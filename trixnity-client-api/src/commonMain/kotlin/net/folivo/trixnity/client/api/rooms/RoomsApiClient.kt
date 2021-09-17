@@ -42,7 +42,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): Event<*> {
         return httpClient.get {
-            url("/r0/rooms/${roomId.e()}/event/${eventId.e()}")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -73,7 +73,7 @@ class RoomsApiClient(
             contentMappings.state.find { it.kClass == stateEventContentClass }?.type
                 ?: throw IllegalArgumentException(unsupportedEventType(stateEventContentClass))
         val responseBody = httpClient.get<String> {
-            url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
         }
         val serializer = json.serializersModule.getContextual(stateEventContentClass)
@@ -88,7 +88,7 @@ class RoomsApiClient(
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Flow<StateEvent<*>> {
         val responseBody = httpClient.get<String> {
-            url("/r0/rooms/${roomId.e()}/state")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
         val serializer = json.serializersModule.getContextual(StateEvent::class)
@@ -107,7 +107,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): Flow<StateEvent<MemberEventContent>> {
         return httpClient.get<GetMembersResponse> {
-            url("/r0/rooms/${roomId.e()}/members")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
@@ -123,7 +123,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): GetJoinedMembersResponse {
         return httpClient.get {
-            url("/r0/rooms/${roomId.e()}/joined_members")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/joined_members")
             parameter("user_id", asUserId)
         }
     }
@@ -141,7 +141,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): GetEventsResponse {
         return httpClient.get {
-            url("/r0/rooms/${roomId.e()}/messages")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/messages")
             parameter("from", from)
             parameter("to", to)
             parameter("dir", dir.value)
@@ -163,7 +163,7 @@ class RoomsApiClient(
         val eventType = contentMappings.state.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -181,7 +181,7 @@ class RoomsApiClient(
         val eventType = contentMappings.room.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -198,7 +198,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): EventId {
         return httpClient.put<SendEventResponse> {
-            url("/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
             body = if (reason != null) mapOf("reason" to reason) else mapOf()
         }.eventId
@@ -223,7 +223,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<CreateRoomResponse> {
-            url("/r0/createRoom")
+            url("/_matrix/client/r0/createRoom")
             parameter("user_id", asUserId)
             body = CreateRoomRequest(
                 visibility,
@@ -251,7 +251,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.put {
-            url("/r0/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
             body = SetRoomAliasRequest(roomId)
         }
@@ -265,7 +265,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): GetRoomAliasResponse {
         return httpClient.get {
-            url("/r0/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -278,7 +278,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.delete {
-            url("/r0/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -288,7 +288,7 @@ class RoomsApiClient(
      */
     suspend fun getJoinedRooms(asUserId: UserId? = null): Flow<RoomId> {
         return httpClient.get<GetJoinedRoomsResponse> {
-            url("/r0/joined_rooms")
+            url("/_matrix/client/r0/joined_rooms")
             parameter("user_id", asUserId)
         }.joinedRooms.asFlow()
     }
@@ -302,7 +302,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.post {
-            url("/r0/rooms/${roomId.e()}/invite")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/invite")
             parameter("user_id", asUserId)
             body = InviteUserRequest(userId)
         }
@@ -318,7 +318,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<JoinRoomResponse> {
-            url("/r0/join/${roomId.e()}")
+            url("/_matrix/client/r0/join/${roomId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(thirdPartySigned)
@@ -335,7 +335,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ): RoomId {
         return httpClient.post<JoinRoomResponse> {
-            url("/r0/join/${roomAliasId.e()}")
+            url("/_matrix/client/r0/join/${roomAliasId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(thirdPartySigned)
@@ -350,7 +350,7 @@ class RoomsApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.post {
-            url("/r0/rooms/${roomId.e()}/leave")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/leave")
             parameter("user_id", asUserId)
         }
     }

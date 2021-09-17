@@ -9,6 +9,10 @@ fun createMessageEventContentSerializersModule(): SerializersModule {
         contextual(MessageEventContentSerializer)
         contextual(TextMessageEventContentSerializer)
         contextual(NoticeMessageEventContentSerializer)
+        contextual(ImageMessageEventContentSerializer)
+        contextual(FileMessageEventContentSerializer)
+        contextual(AudioMessageEventContentSerializer)
+        contextual(VideoMessageEventContentSerializer)
         contextual(UnknownMessageEventContent.serializer())
     }
 }

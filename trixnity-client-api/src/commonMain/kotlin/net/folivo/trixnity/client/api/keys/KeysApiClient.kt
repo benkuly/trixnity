@@ -18,7 +18,7 @@ class KeysApiClient(val httpClient: HttpClient) {
         asUserId: MatrixId.UserId? = null
     ): Map<KeyAlgorithm, Int> {
         return httpClient.post<UploadKeysResponse> {
-            url("/r0/keys/upload")
+            url("/_matrix/client/r0/keys/upload")
             parameter("user_id", asUserId)
             body = UploadKeysRequest(deviceKeys, oneTimeKeys)
         }.oneTimeKeyCounts
@@ -34,7 +34,7 @@ class KeysApiClient(val httpClient: HttpClient) {
         asUserId: MatrixId.UserId? = null
     ): QueryKeysResponse {
         return httpClient.post {
-            url("/r0/keys/query")
+            url("/_matrix/client/r0/keys/query")
             parameter("user_id", asUserId)
             body = QueryKeysRequest(deviceKeys, token, timeout)
         }
@@ -49,7 +49,7 @@ class KeysApiClient(val httpClient: HttpClient) {
         asUserId: MatrixId.UserId? = null
     ): ClaimKeysResponse {
         return httpClient.post {
-            url("/r0/keys/claim")
+            url("/_matrix/client/r0/keys/claim")
             parameter("user_id", asUserId)
             body = ClaimKeysRequest(oneTimeKeys, timeout)
         }
@@ -64,7 +64,7 @@ class KeysApiClient(val httpClient: HttpClient) {
         asUserId: MatrixId.UserId? = null
     ): GetKeyChangesResponse {
         return httpClient.get {
-            url("/r0/keys/changes")
+            url("/_matrix/client/r0/keys/changes")
             parameter("from", from)
             parameter("to", to)
             parameter("user_id", asUserId)

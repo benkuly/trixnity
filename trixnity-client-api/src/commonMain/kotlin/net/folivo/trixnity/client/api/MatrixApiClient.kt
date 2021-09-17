@@ -16,6 +16,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.api.authentication.AuthenticationApiClient
 import net.folivo.trixnity.client.api.keys.KeysApiClient
+import net.folivo.trixnity.client.api.media.MediaApiClient
 import net.folivo.trixnity.client.api.rooms.RoomsApiClient
 import net.folivo.trixnity.client.api.server.ServerApiClient
 import net.folivo.trixnity.client.api.sync.SyncApiClient
@@ -68,10 +69,11 @@ class MatrixApiClient(
             host = hostname
             port = hostport
             url.protocol = if (secure) HTTPS else HTTP
-            url.encodedPath = "/_matrix/client/" + url.encodedPath
             accessToken.value?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-            header(HttpHeaders.ContentType, Application.Json)
-            accept(Application.Json)
+            if (!url.encodedPath.startsWith("_matrix/media")) {
+                header(HttpHeaders.ContentType, Application.Json)
+                accept(Application.Json)
+            }
         }
     }
 
@@ -81,6 +83,7 @@ class MatrixApiClient(
     val rooms = RoomsApiClient(httpClient, json, eventContentSerializerMappings)
     val sync = SyncApiClient(httpClient, loggerFactory)
     val keys = KeysApiClient(httpClient)
+    val media = MediaApiClient(httpClient)
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed

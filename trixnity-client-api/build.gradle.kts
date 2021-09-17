@@ -52,6 +52,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-json:${Versions.kotest}")
             }
         }

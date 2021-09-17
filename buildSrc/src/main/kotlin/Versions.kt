@@ -10,6 +10,7 @@ object Versions {
     const val mockk = "1.12.0" // https://github.com/mockk/mockk/releases
     const val uuid = "0.3.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "4.6.2" // https://github.com/kotest/kotest/releases
+    const val okio = "3.0.0-alpha.10" // https://github.com/square/okio/releases
     const val kodeinLog = "0.11.1" // https://github.com/Kodein-Framework/Kodein-Log/releases
     const val androidGradle = "4.2.2" // https://developer.android.com/reference/tools/gradle-api
 }

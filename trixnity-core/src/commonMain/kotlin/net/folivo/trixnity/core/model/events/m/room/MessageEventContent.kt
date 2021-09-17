@@ -40,6 +40,81 @@ sealed class MessageEventContent : RoomEventContent {
         }
     }
 
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-emote">matrix spec</a>
+     */
+    @Serializable
+    data class EmoteMessageEventContent(
+        @SerialName("body") override val body: String,
+        @SerialName("format") val format: String? = null,
+        @SerialName("formatted_body") val formattedBody: String? = null,
+    ) : MessageEventContent() {
+        companion object {
+            const val type = "m.emote"
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-image">matrix spec</a>
+     */
+    @Serializable
+    data class ImageMessageEventContent(
+        @SerialName("body") override val body: String,
+        @SerialName("info") val format: ImageInfo? = null,
+        @SerialName("url") val url: String? = null,
+        @SerialName("file") val file: EncryptedFile? = null
+    ) : MessageEventContent() {
+        companion object {
+            const val type = "m.image"
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-file">matrix spec</a>
+     */
+    @Serializable
+    data class FileMessageEventContent(
+        @SerialName("body") override val body: String,
+        @SerialName("filename") val fileName: String? = null,
+        @SerialName("info") val format: FileInfo? = null,
+        @SerialName("url") val url: String? = null,
+        @SerialName("file") val file: EncryptedFile? = null
+    ) : MessageEventContent() {
+        companion object {
+            const val type = "m.image"
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-audio">matrix spec</a>
+     */
+    @Serializable
+    data class AudioMessageEventContent(
+        @SerialName("body") override val body: String,
+        @SerialName("info") val format: AudioInfo? = null,
+        @SerialName("url") val url: String? = null,
+        @SerialName("file") val file: EncryptedFile? = null
+    ) : MessageEventContent() {
+        companion object {
+            const val type = "m.image"
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-video">matrix spec</a>
+     */
+    @Serializable
+    data class VideoMessageEventContent(
+        @SerialName("body") override val body: String,
+        @SerialName("info") val format: VideoInfo? = null,
+        @SerialName("url") val url: String? = null,
+        @SerialName("file") val file: EncryptedFile? = null
+    ) : MessageEventContent() {
+        companion object {
+            const val type = "m.image"
+        }
+    }
+
     @Serializable
     data class UnknownMessageEventContent(
         @SerialName("msgtype") val type: String,

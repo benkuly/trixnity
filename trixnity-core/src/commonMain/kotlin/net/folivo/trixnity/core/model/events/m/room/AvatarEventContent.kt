@@ -13,34 +13,4 @@ data class AvatarEventContent(
     val url: String,
     @SerialName("info")
     val info: ImageInfo? = null
-) : StateEventContent {
-    @Serializable
-    data class ImageInfo(
-        @SerialName("h")
-        val h: Int? = null,
-        @SerialName("w")
-        val w: Int? = null,
-        @SerialName("mimetype")
-        val mimeType: String? = null,
-        @SerialName("size")
-        val size: Int? = null,
-        @SerialName("thumbnail_url")
-        val thumbnailUrl: String? = null,
-//                @JsonProperty("thumbnail_file") //TODO encryption
-//                val thumbnailFile: EncryptedFile? = null,
-        @SerialName("thumbnail_info")
-        val thumbnailUnfo: ThumbnailInfo? = null
-    ) {
-        @Serializable
-        data class ThumbnailInfo(
-            @SerialName("h")
-            val h: Int? = null,
-            @SerialName("w")
-            val w: Int? = null,
-            @SerialName("mimetype")
-            val mimeType: String? = null,
-            @SerialName("size")
-            val size: Int? = null
-        )
-    }
-}
+) : StateEventContent

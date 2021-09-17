@@ -24,7 +24,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ): String {
         return httpClient.get<GetDisplayNameResponse> {
-            url("/r0/profile/${userId.e()}/displayname")
+            url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
         }.displayName
     }
@@ -38,7 +38,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.put {
-            url("/r0/profile/${userId.e()}/displayname")
+            url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
             body = mapOf("displayname" to displayName)
         }
@@ -49,7 +49,7 @@ class UsersApiClient(
      */
     suspend fun whoAmI(asUserId: UserId? = null): UserId {
         return httpClient.get<WhoAmIResponse> {
-            url("/r0/account/whoami")
+            url("/_matrix/client/r0/account/whoami")
             parameter("user_id", asUserId)
         }.userId
     }
@@ -64,7 +64,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ) {
         return httpClient.put {
-            url("/r0/presence/${userId.e()}/status")
+            url("/_matrix/client/r0/presence/${userId.e()}/status")
             parameter("user_id", asUserId)
             body = mapOf("presence" to presence.value, "status_msg" to statusMessage)
         }
@@ -78,7 +78,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ): PresenceEventContent {
         return httpClient.get {
-            url("/r0/presence/${userId.e()}/status")
+            url("/_matrix/client/r0/presence/${userId.e()}/status")
             parameter("user_id", asUserId)
         }
     }
@@ -96,7 +96,7 @@ class UsersApiClient(
         val eventType = contentMappings.toDevice.find { it.kClass.isInstance(firstEventForType) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(firstEventForType::class))
         return httpClient.put {
-            url("/r0/sendToDevice/$eventType/$transactionId")
+            url("/_matrix/client/r0/sendToDevice/$eventType/$transactionId")
             parameter("user_id", asUserId)
             body = mapOf("messages" to events)
         }
@@ -111,7 +111,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ): String {
         return httpClient.post<SetFilterResponse> {
-            url("/r0/user/${userId.e()}/filter")
+            url("/_matrix/client/r0/user/${userId.e()}/filter")
             parameter("user_id", asUserId)
             body = filters
         }.filterId
@@ -126,7 +126,7 @@ class UsersApiClient(
         asUserId: UserId? = null
     ): Filters {
         return httpClient.get {
-            url("/r0/user/${userId.e()}/filter/$filterId")
+            url("/_matrix/client/r0/user/${userId.e()}/filter/$filterId")
             parameter("user_id", asUserId)
         }
     }
