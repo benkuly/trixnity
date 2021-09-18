@@ -1,12 +1,15 @@
 package net.folivo.trixnity.client.api.sync
 
+import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
+import io.ktor.client.features.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -224,6 +227,43 @@ class SyncApiClientTest {
     }
 
     @Test
+    fun shouldSyncOnceAndHandleLongTimeout() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                install(HttpTimeout) {
+                    requestTimeoutMillis = 100
+                }
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        delay(300)
+                        respond(
+                            """
+                              {
+                                "next_batch": "s72595_4483_1934"
+                              }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.sync.syncOnce(
+            filter = "someFilter",
+            fullState = true,
+            setPresence = PresenceEventContent.Presence.ONLINE,
+            since = "someSince",
+            timeout = 200
+        )
+    }
+
+    @Test
     fun shouldSyncLoop() = runBlockingTest {
         val response1 = SyncResponse(
             nextBatch = "nextBatch1",
@@ -299,6 +339,64 @@ class SyncApiClientTest {
         assertEquals(response1, result[0])
         assertEquals(response2, result[1])
         assertEquals("nextBatch2", currentBatchToken.value)
+    }
+
+    @Test
+    fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
+        val response = SyncResponse(
+            nextBatch = "nextBatch1",
+            accountData = AccountData(emptyList()),
+            deviceLists = DeviceLists(emptySet(), emptySet()),
+            deviceOneTimeKeysCount = emptyMap(),
+            presence = Presence(emptyList()),
+            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
+            toDevice = ToDevice(emptyList())
+        )
+        val requestCount = RequestCounter(1)
+        val matrixRestClient = MatrixApiClient(
+            "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                install(HttpTimeout) {
+                    requestTimeoutMillis = 100
+                }
+                engine {
+                    addHandler { request ->
+                        when (requestCount.value) {
+                            1 -> {
+                                assertEquals(
+                                    "/_matrix/client/r0/sync?timeout=100",
+                                    request.url.fullPath
+                                )
+                                assertEquals(HttpMethod.Get, request.method)
+                                requestCount.value++
+                                delay(6000)
+                                respond(
+                                    json.encodeToString(response),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                            else -> {
+                                assertEquals(
+                                    "/_matrix/client/r0/sync?timeout=100",
+                                    request.url.fullPath
+                                )
+                                assertEquals(HttpMethod.Get, request.method)
+                                requestCount.value++
+                                delay(100)
+                                respond(
+                                    json.encodeToString(response),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+
+        matrixRestClient.sync.syncLoop(timeout = 100).take(1).toList()
+        requestCount.value shouldBe 3 // is 3 because flow will stop, when he tries to emit
     }
 
     @Test
