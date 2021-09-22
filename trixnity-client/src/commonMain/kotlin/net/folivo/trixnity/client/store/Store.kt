@@ -42,14 +42,14 @@ interface Store {
         suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?): StateFlow<Room?>
 
         interface RoomStateStore {
-            suspend fun update(event: Event<StateEventContent>)
-            suspend fun updateAll(events: List<Event<StateEventContent>>)
-            suspend fun <C : StateEventContent> byId(
+            suspend fun update(event: Event<out StateEventContent>)
+            suspend fun updateAll(events: List<Event.StateEvent<out StateEventContent>>)
+            suspend fun <C : StateEventContent> allById(
                 roomId: RoomId,
                 eventContentClass: KClass<C>
             ): StateFlow<Map<String, Event<C>>>
 
-            suspend fun <C : StateEventContent> byId(
+            suspend fun <C : StateEventContent> allById(
                 roomId: RoomId,
                 stateKey: String,
                 eventContentClass: KClass<C>

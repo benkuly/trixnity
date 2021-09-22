@@ -13,9 +13,7 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
@@ -23,11 +21,9 @@ import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import kotlin.coroutines.coroutineContext
@@ -68,6 +64,15 @@ class RoomManager(
                         )
                         it.events?.lastOrNull()?.also { event -> setLastEventAt(event) }
                     }
+
+                    room.value.summary?.also {
+                        setRoomDisplayName(
+                            roomId,
+                            it.heroes,
+                            it.joinedMemberCount,
+                            it.invitedMemberCount,
+                        )
+                    }
                 }
                 syncResponse.room?.leave?.entries?.forEach { room ->
                     room.value.timeline?.also {
@@ -79,12 +84,105 @@ class RoomManager(
                         )
                         it.events?.lastOrNull()?.let { event -> setLastEventAt(event) }
                     }
-
                 }
             }
         }
         // TODO reaction and edit (also in fetchMissingEvents!)
     }
+
+    //TODO add hash table mapping from displayname to a list of room members using that name, see https://matrix.org/docs/spec/client_server/latest#calculating-the-display-name-for-a-user
+    suspend fun getUserDisplayName(roomId: RoomId, userId: UserId): String {
+        val userDisplayName = store.rooms.state.byId<MemberEventContent>(
+            roomId,
+            userId.full
+        ).value?.content?.displayName
+
+        if (userDisplayName.isNullOrEmpty()) return userId.full
+
+        val containsUserWithSameDisplayName =
+            store.rooms.state.allById<MemberEventContent>(roomId).value.asSequence()
+                .filter { it.key != userId.full }
+                .filter { it.value.content.membership == JOIN || it.value.content.membership == INVITE }
+                .find { it.value.content.displayName == userDisplayName } != null
+
+        if (containsUserWithSameDisplayName) return "$userDisplayName ($userId)"
+
+        return userDisplayName
+    }
+
+    internal suspend fun setRoomDisplayName(
+        roomId: RoomId,
+        heroes: List<String>?,
+        joinedMemberCountFromSync: Int?,
+        invitedMemberCountFromSync: Int?,
+    ) {
+        val nameFromNameEvent = store.rooms.state.byId<NameEventContent>(roomId).value?.content?.name
+        val nameFromCanonicalAliasEvent =
+            store.rooms.state.byId<CanonicalAliasEventContent>(roomId).value?.content?.alias
+
+        val roomName = when {
+            !nameFromNameEvent.isNullOrEmpty() -> RoomDisplayName(explicitName = nameFromNameEvent)
+            nameFromCanonicalAliasEvent != null -> RoomDisplayName(explicitName = nameFromCanonicalAliasEvent.full)
+            else -> {
+                val joinedMemberCount = joinedMemberCountFromSync ?: store.rooms.state.membersCount(roomId, JOIN)
+                val invitedMemberCount = invitedMemberCountFromSync ?: store.rooms.state.membersCount(roomId, INVITE)
+                val us = 1
+
+                if (joinedMemberCount + invitedMemberCount <= 1) {
+                    // the room contains us or nobody
+                    when {
+                        heroes.isNullOrEmpty() -> RoomDisplayName(isEmpty = true)
+                        else -> {
+                            val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
+                            val leftMembersCount =
+                                store.rooms.state.membersCount(roomId, LEAVE, BAN) - if (isCompletelyEmpty) us else 0
+                            val heroesDisplayName = heroes.map { getUserDisplayName(roomId, UserId(it)) }
+                            when {
+                                leftMembersCount <= heroes.size ->
+                                    RoomDisplayName(
+                                        isEmpty = true,
+                                        heroesDisplayname = heroesDisplayName
+                                    )
+                                else -> {
+                                    RoomDisplayName(
+                                        isEmpty = true,
+                                        heroesDisplayname = heroesDisplayName,
+                                        otherUsersCount = leftMembersCount - heroes.size
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    when {
+                        //case ist not specified in the Spec, so this catches server misbehavior
+                        heroes.isNullOrEmpty() ->
+                            RoomDisplayName(
+                                otherUsersCount = joinedMemberCount + invitedMemberCount - us
+                            )
+                        else -> {
+                            val heroesDisplayName = heroes.map { getUserDisplayName(roomId, UserId(it)) }
+                            when {
+                                joinedMemberCount + invitedMemberCount - us <= heroes.size ->
+                                    RoomDisplayName(
+                                        heroesDisplayname = heroesDisplayName
+                                    )
+                                else ->
+                                    RoomDisplayName(
+                                        heroesDisplayname = heroesDisplayName,
+                                        otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us
+                                    )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        store.rooms.update(roomId) { oldRoom ->
+            oldRoom?.copy(name = roomName)
+        }
+    }
+
 
     internal suspend fun setLastEventAt(event: Event<*>) {
         val (roomId, eventTime) = when (event) {
@@ -100,7 +198,9 @@ class RoomManager(
             }
     }
 
-    internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {
+    internal suspend fun setEncryptionAlgorithm(
+        event: Event<EncryptionEventContent>
+    ) {
         if (event is StateEvent) {
             store.rooms.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
@@ -261,7 +361,10 @@ class RoomManager(
         }
     }
 
-    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20) {
+    suspend fun fetchMissingEvents(
+        startEvent: TimelineEvent, limit: Long =
+            20
+    ) {
         val startGap = startEvent.gap
         if (startGap != null) {
             val roomId = startEvent.roomId
@@ -444,8 +547,8 @@ class RoomManager(
                     at = store.account.syncBatchToken.value,
                     membership = Membership.JOIN
                 ).toList()
-                store.rooms.state.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
-                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> MatrixId.UserId(event.stateKey) } }
+                store.rooms.state.updateAll(memberEvents.filterIsInstance<StateEvent<StateEventContent>>())
+                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                 oldRoom.copy(membersLoaded = true)
             } else oldRoom
         }
@@ -481,21 +584,27 @@ class RoomManager(
         }
     }
 
-    private val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
+    private
+    val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
+    suspend fun getLastTimelineEvent(roomId: RoomId)
+            : StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
         store.rooms.byId(roomId).transformLatest { room ->
             if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId))
             else emit(null)
         }.stateIn(lastTimelineEventScope)
     }
 
-    suspend fun getPreviousTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
+    suspend fun getPreviousTimelineEvent(event: TimelineEvent)
+            : StateFlow<TimelineEvent?>
+    ? {
         return event.previousEventId?.let { getTimelineEvent(it, event.roomId) }
     }
 
-    suspend fun getNextTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
+    suspend fun getNextTimelineEvent(event: TimelineEvent)
+            : StateFlow<TimelineEvent?>
+    ? {
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId) }
     }
 }

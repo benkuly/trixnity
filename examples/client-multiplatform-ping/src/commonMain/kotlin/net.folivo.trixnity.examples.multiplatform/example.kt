@@ -77,7 +77,8 @@ suspend fun example() = coroutineScope {
     val job3 = launch {
         matrixClient.rooms.getLastTimelineEvent(roomId).filterNotNull().collect { lastEvent ->
             matrixClient.rooms.loadMembers(roomId)
-            println("-------------------------")
+            val roomName = store.rooms.byId(roomId).value?.name
+            println("------------------------- $roomName")
             flow {
                 var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
                 emit(lastEvent)
@@ -93,21 +94,22 @@ suspend fun example() = coroutineScope {
             }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
                 val event = timelineEvent.value?.event
                 val content = event?.content
+                val sender = event?.sender?.let { matrixClient.rooms.getUserDisplayName(roomId, it) }
                 when {
                     event is MessageEvent && content is RoomMessageEventContent ->
-                        println("${event.sender}: ${content.body}")
+                        println("${sender}: ${content.body}")
                     event is MessageEvent && content is MegolmEncryptedEventContent -> {
                         val decryptedEvent = timelineEvent.value?.decryptedEvent
                         val decryptedEventContent = decryptedEvent?.getOrNull()?.content
                         val decryptionException = timelineEvent.value?.decryptedEvent?.exceptionOrNull()
                         when {
-                            decryptionException != null -> println("${event.sender}: cannot decrypt (${decryptionException.message})")
-                            decryptedEvent == null -> println("${event.sender}: not yet decrypted")
-                            decryptedEventContent is RoomMessageEventContent -> println("${event.sender}: ${decryptedEventContent.body}")
+                            decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
+                            decryptedEvent == null -> println("${sender}: not yet decrypted")
+                            decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
                         }
                     }
-                    event is MessageEvent -> println("${event.sender}: $event")
-                    event is StateEvent -> println("${event.sender}: $event")
+                    event is MessageEvent -> println("${sender}: $event")
+                    event is StateEvent -> println("${sender}: $event")
                     else -> {
                     }
                 }

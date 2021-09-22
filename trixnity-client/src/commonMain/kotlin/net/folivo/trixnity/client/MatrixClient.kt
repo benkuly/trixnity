@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.api.authentication.LoginType
+import net.folivo.trixnity.client.api.users.Filters
+import net.folivo.trixnity.client.api.users.RoomFilter
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.media.MediaManager
 import net.folivo.trixnity.client.room.RoomManager
@@ -126,6 +128,15 @@ class MatrixClient private constructor(
                 rooms.startEventHandling()
             }
         }
+
+        val myUserId = store.account.userId.value
+        requireNotNull(myUserId)
+        val filterId = store.account.filterId.value
+        if (filterId == null)
+            store.account.filterId.value = api.users.setFilter(
+                myUserId,
+                Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
+            )
 
         api.sync.start(
             filter = store.account.filterId.value,
