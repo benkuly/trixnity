@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -89,7 +89,7 @@ class AppserviceControllerTest {
             val events = slot.captured.toList()
             assertEquals(2, events.size)
             assertTrue { events[0].content is MemberEventContent }
-            assertTrue { events[1].content is MessageEventContent }
+            assertTrue { events[1].content is RoomMessageEventContent }
         }
     }
 

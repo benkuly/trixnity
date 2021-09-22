@@ -18,16 +18,16 @@ import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.crypto.keysOf
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,7 +44,7 @@ class RoomsApiClientTest {
         val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
-            unsigned = UnsignedData(),
+            unsigned = UnsignedStateEventData(),
             originTimestamp = 1234,
             sender = UserId("sender", "server"),
             content = NameEventContent("name"),
@@ -82,7 +82,7 @@ class RoomsApiClientTest {
         val response = StateEvent(
             id = EventId("event", "server"),
             roomId = RoomId("room", "server"),
-            unsigned = UnsignedData(),
+            unsigned = UnsignedStateEventData(),
             originTimestamp = 1234,
             sender = UserId("sender", "server"),
             content = NameEventContent("a"),
@@ -150,7 +150,7 @@ class RoomsApiClientTest {
             StateEvent(
                 id = EventId("event1", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
+                unsigned = UnsignedStateEventData(),
                 originTimestamp = 12341,
                 sender = UserId("sender", "server"),
                 content = NameEventContent("a"),
@@ -159,7 +159,7 @@ class RoomsApiClientTest {
             StateEvent(
                 id = EventId("event2", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
+                unsigned = UnsignedStateEventData(),
                 originTimestamp = 12342,
                 sender = UserId("sender", "server"),
                 stateKey = UserId("user", "server").full,
@@ -199,7 +199,7 @@ class RoomsApiClientTest {
                 StateEvent(
                     id = EventId("event1", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = UnsignedData(),
+                    unsigned = UnsignedStateEventData(),
                     originTimestamp = 12341,
                     sender = UserId("sender", "server"),
                     stateKey = UserId("user1", "server").full,
@@ -208,7 +208,7 @@ class RoomsApiClientTest {
                 StateEvent(
                     id = EventId("event2", "server"),
                     roomId = RoomId("room", "server"),
-                    unsigned = UnsignedData(),
+                    unsigned = UnsignedStateEventData(),
                     originTimestamp = 12342,
                     sender = UserId("sender", "server"),
                     stateKey = UserId("user2", "server").full,
@@ -287,7 +287,7 @@ class RoomsApiClientTest {
             start = "start",
             end = "end",
             chunk = listOf(
-                RoomEvent(
+                MessageEvent(
                     TextMessageEventContent("hi"),
                     EventId("event", "server"),
                     UserId("user", "server"),
@@ -425,7 +425,7 @@ class RoomsApiClientTest {
         val matrixRestClient = MatrixApiClient(
             hostname = "matrix.host",
             baseHttpClient = HttpClient(MockEngine) { engine { addHandler { respondOk() } } })
-        val eventContent = object : RoomEventContent {
+        val eventContent = object : MessageEventContent {
             val banana: String = "yeah"
         }
 

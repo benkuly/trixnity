@@ -9,15 +9,15 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.*
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
-object MessageEventContentSerializer : KSerializer<MessageEventContent> {
+object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventContentSerializer")
 
-    override fun deserialize(decoder: Decoder): MessageEventContent {
+    override fun deserialize(decoder: Decoder): RoomMessageEventContent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return when (jsonObj["msgtype"]?.jsonPrimitive?.content) {
@@ -40,7 +40,7 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
         }
     }
 
-    override fun serialize(encoder: Encoder, value: MessageEventContent) {
+    override fun serialize(encoder: Encoder, value: RoomMessageEventContent) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
             is NoticeMessageEventContent ->

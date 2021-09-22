@@ -25,7 +25,7 @@ import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -511,8 +511,8 @@ class SyncApiClientTest {
                     RoomId("room1", "Server") to Rooms.JoinedRoom(
                         timeline = Rooms.Timeline(
                             listOf(
-                                Event.RoomEvent(
-                                    MessageEventContent.TextMessageEventContent("hi"),
+                                Event.MessageEvent(
+                                    RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event1", "server"),
                                     UserId("user", "server"),
                                     RoomId("room1", "server"),
@@ -539,8 +539,8 @@ class SyncApiClientTest {
                     RoomId("room2", "Server") to Rooms.LeftRoom(
                         timeline = Rooms.Timeline(
                             listOf(
-                                Event.RoomEvent(
-                                    MessageEventContent.NoticeMessageEventContent("hi"),
+                                Event.MessageEvent(
+                                    RoomMessageEventContent.NoticeMessageEventContent("hi"),
                                     EventId("event4", "server"),
                                     UserId("user", "server"),
                                     RoomId("room2", "server"),
@@ -606,7 +606,7 @@ class SyncApiClientTest {
         val allEvents = GlobalScope.async {
             allEventsFlow.take(7).toList()
         }
-        val messageEventsFlow = matrixRestClient.sync.events<MessageEventContent>()
+        val messageEventsFlow = matrixRestClient.sync.events<RoomMessageEventContent>()
         val messageEvents = GlobalScope.async {
             messageEventsFlow.take(2).toList()
         }
@@ -632,7 +632,7 @@ class SyncApiClientTest {
         assertEquals(7, allEvents.await().count())
         assertEquals(
             listOf("event1", "event4"),
-            allEvents.await().filterIsInstance<Event.RoomEvent<*>>().map { it.id.localpart })
+            allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.localpart })
         assertEquals(
             listOf("event2", "event5"),
             allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.localpart })
@@ -660,8 +660,8 @@ class SyncApiClientTest {
                     RoomId("room", "Server") to Rooms.JoinedRoom(
                         timeline = Rooms.Timeline(
                             listOf(
-                                Event.RoomEvent(
-                                    MessageEventContent.TextMessageEventContent("hi"),
+                                Event.MessageEvent(
+                                    RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event", "server"),
                                     UserId("user", "server"),
                                     RoomId("room", "server"),

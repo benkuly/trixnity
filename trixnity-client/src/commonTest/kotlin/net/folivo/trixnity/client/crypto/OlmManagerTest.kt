@@ -33,6 +33,7 @@ import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -514,7 +515,9 @@ class OlmManagerTest : ShouldSpec({
                     room,
                     1234,
                     stateKey = alice.full,
-                    previousContent = MemberEventContent(membership = JOIN)
+                    unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                        previousContent = MemberEventContent(membership = JOIN)
+                    )
                 )
             )
             store.deviceKeys.outdatedKeys.value shouldHaveSize 0

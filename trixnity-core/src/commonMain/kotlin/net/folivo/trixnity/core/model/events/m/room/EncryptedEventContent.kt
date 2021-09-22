@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonElement
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.*
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.m.room.encrypted.EncryptedEventContentSerializer
 import net.folivo.trixnity.core.serialization.m.room.encrypted.OlmMessageTypeSerializer
@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.serialization.m.room.encrypted.OlmMessageTypeSer
  * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-encrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
-sealed interface EncryptedEventContent : RoomEventContent, ToDeviceEventContent {
+sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
     val senderKey: Curve25519Key
     val deviceId: String?
     val sessionId: String?

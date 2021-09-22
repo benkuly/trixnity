@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -174,7 +174,7 @@ class RoomsApiClient(
      */
     suspend fun sendRoomEvent(
         roomId: RoomId,
-        eventContent: RoomEventContent,
+        eventContent: MessageEventContent,
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {

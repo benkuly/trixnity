@@ -4,7 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import org.kodein.log.LoggerFactory
@@ -15,8 +15,9 @@ fun createEventSerializersModule(
     loggerFactory: LoggerFactory
 ): SerializersModule {
     val basicEventSerializer = BasicEventSerializer()
-    val roomEventSerializer = RoomEventSerializer(mappings.room, loggerFactory)
+    val messageEventSerializer = MessageEventSerializer(mappings.room, loggerFactory)
     val stateEventSerializer = StateEventSerializer(mappings.state, loggerFactory)
+    val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer, loggerFactory)
     val strippedStateEventSerializer = StrippedStateEventSerializer(mappings.state, loggerFactory)
     val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral, loggerFactory)
     val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice, loggerFactory)
@@ -26,7 +27,6 @@ fun createEventSerializersModule(
     val eventSerializer = EventSerializer(
         basicEventSerializer,
         roomEventSerializer,
-        stateEventSerializer,
         strippedStateEventSerializer,
         ephemeralEventSerializer,
         toDeviceEventSerializer,
@@ -38,6 +38,7 @@ fun createEventSerializersModule(
         contextual(basicEventSerializer)
         contextual(eventSerializer)
         contextual(roomEventSerializer)
+        contextual(messageEventSerializer)
         contextual(stateEventSerializer)
         contextual(strippedStateEventSerializer)
         contextual(ephemeralEventSerializer)
@@ -47,7 +48,7 @@ fun createEventSerializersModule(
 
         mappings.room.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
-            contextual(it.kClass as KClass<RoomEventContent>, it.serializer as KSerializer<RoomEventContent>)
+            contextual(it.kClass as KClass<MessageEventContent>, it.serializer as KSerializer<MessageEventContent>)
         }
         mappings.state.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast

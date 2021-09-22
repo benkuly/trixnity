@@ -3,9 +3,9 @@ package net.folivo.trixnity.core.serialization.m.room.message
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.NoticeMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,7 +19,7 @@ class MessageEventContentSerializerTest {
     @Test
     fun shouldSerialize() {
         val result = json.encodeToString(
-            MessageEventContentSerializer,
+            RoomMessageEventContentSerializer,
             NoticeMessageEventContent("test")
         )
         assertEquals("""{"body":"test","msgtype":"m.notice"}""", result)
@@ -28,13 +28,13 @@ class MessageEventContentSerializerTest {
     @Test
     fun shouldDeserialize() {
         val input = """{"body":"test","format":null,"formatted_body":null,"msgtype":"m.text"}"""
-        val result = json.decodeFromString(MessageEventContentSerializer, input)
+        val result = json.decodeFromString(RoomMessageEventContentSerializer, input)
         assertEquals(TextMessageEventContent("test"), result)
     }
 
     @Test
     fun shouldSerializeSubtype() {
-        val result = json.encodeToString<MessageEventContent>(NoticeMessageEventContent("test"))
+        val result = json.encodeToString<RoomMessageEventContent>(NoticeMessageEventContent("test"))
         assertEquals("""{"body":"test","msgtype":"m.notice"}""", result)
     }
 

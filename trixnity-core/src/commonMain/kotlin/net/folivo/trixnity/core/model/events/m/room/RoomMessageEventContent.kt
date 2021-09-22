@@ -2,15 +2,15 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.serialization.m.room.message.MessageEventContentSerializer
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventContentSerializer
 
 /**
  * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-message">matrix spec</a>
  */
-@Serializable(with = MessageEventContentSerializer::class)
-sealed class MessageEventContent : RoomEventContent {
-    abstract val body: String
+@Serializable(with = RoomMessageEventContentSerializer::class)
+sealed interface RoomMessageEventContent : MessageEventContent {
+    val body: String
 
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-notice">matrix spec</a>
@@ -20,7 +20,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.notice"
         }
@@ -34,7 +34,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.text"
         }
@@ -48,7 +48,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.emote"
         }
@@ -63,7 +63,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("info") val format: ImageInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.image"
         }
@@ -79,7 +79,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("info") val format: FileInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.file"
         }
@@ -94,7 +94,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("info") val format: AudioInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.audio"
         }
@@ -109,7 +109,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("info") val format: VideoInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : MessageEventContent() {
+    ) : RoomMessageEventContent {
         companion object {
             const val type = "m.video"
         }
@@ -119,6 +119,6 @@ sealed class MessageEventContent : RoomEventContent {
     data class UnknownMessageEventContent(
         @SerialName("msgtype") val type: String,
         @SerialName("body") override val body: String
-    ) : MessageEventContent()
+    ) : RoomMessageEventContent
 }
 

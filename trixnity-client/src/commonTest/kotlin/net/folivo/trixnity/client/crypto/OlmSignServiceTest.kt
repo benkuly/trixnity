@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
@@ -128,7 +128,7 @@ class OlmSignServiceTest : ShouldSpec({
                 UserId("their", "server"),
                 RoomId("room", "server"),
                 originTimestamp = 24,
-                unsigned = UnsignedData(1234),
+                unsigned = UnsignedStateEventData(1234),
                 stateKey = ""
             )
             val result1 = cut.sign(event1)
@@ -155,7 +155,7 @@ class OlmSignServiceTest : ShouldSpec({
                     UserId("their", "server"),
                     RoomId("room", "server"),
                     originTimestamp = 24,
-                    unsigned = UnsignedData(1234),
+                    unsigned = UnsignedStateEventData(1234),
                     stateKey = ""
                 )
             )
@@ -178,7 +178,7 @@ class OlmSignServiceTest : ShouldSpec({
                     UserId("their", "server"),
                     RoomId("room", "server"),
                     originTimestamp = 24,
-                    unsigned = UnsignedData(1234),
+                    unsigned = UnsignedStateEventData(1234),
                     stateKey = ""
                 ),
                 mapOf(

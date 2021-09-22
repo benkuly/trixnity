@@ -15,8 +15,8 @@ import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.ImageMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 
 suspend fun example() = coroutineScope {
     val matrixRestClient =
@@ -32,7 +32,7 @@ suspend fun example() = coroutineScope {
 
     val job = launch {
         textMessageEventFlow.collect { event ->
-            require(event is Event.RoomEvent)
+            require(event is Event.MessageEvent)
             if (event.roomId == roomId) {
                 if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                     val body = event.content.body

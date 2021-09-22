@@ -78,7 +78,7 @@ data class SyncResponse(
 
         @Serializable
         data class Timeline(
-            @SerialName("events") val events: List<@Contextual Event<*>>? = null,
+            @SerialName("events") val events: List<@Contextual RoomEvent<*>>? = null,
             @SerialName("limited") val limited: Boolean? = null,
             @SerialName("prev_batch") val previousBatch: String? = null
         )

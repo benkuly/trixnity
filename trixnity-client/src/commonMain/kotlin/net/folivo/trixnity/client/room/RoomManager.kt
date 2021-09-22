@@ -9,15 +9,20 @@ import net.folivo.trixnity.client.api.rooms.Membership
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getOriginTimestamp
-import net.folivo.trixnity.client.getRoomIdAndStateKey
+import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -83,7 +88,7 @@ class RoomManager(
 
     internal suspend fun setLastEventAt(event: Event<*>) {
         val (roomId, eventTime) = when (event) {
-            is RoomEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
+            is MessageEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
             is StateEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
             else -> null to null
         }
@@ -111,7 +116,8 @@ class RoomManager(
     }
 
     internal suspend fun setOwnMembership(event: Event<MemberEventContent>) {
-        val (roomId, stateKey) = event.getRoomIdAndStateKey()
+        val roomId = event.getRoomId()
+        val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null && stateKey == store.account.userId.value?.full) {
             store.rooms.update(roomId) { oldRoom ->
                 oldRoom?.copy(
@@ -134,27 +140,27 @@ class RoomManager(
         }
     }
 
-    internal suspend fun redactTimelineEvent(event: Event<RedactionEventContent>) {
-        if (event is RoomEvent) {
-            val roomId = event.roomId
-            log.debug { "redact event with id ${event.content.redacts} in room $roomId" }
-            store.rooms.timeline.update(event.content.redacts, roomId) { oldTimelineEvent ->
+    internal suspend fun redactTimelineEvent(redactionEvent: Event<RedactionEventContent>) {
+        if (redactionEvent is MessageEvent) {
+            val roomId = redactionEvent.roomId
+            log.debug { "redact event with id ${redactionEvent.content.redacts} in room $roomId" }
+            store.rooms.timeline.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
                 if (oldTimelineEvent != null) {
                     when (val oldEvent = oldTimelineEvent.event) {
-                        is RoomEvent -> {
+                        is MessageEvent -> {
                             val eventType =
                                 api.eventContentSerializerMappings.room
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
                             oldTimelineEvent.copy(
-                                event = RoomEvent(
-                                    RedactedRoomEventContent(eventType),
+                                event = MessageEvent(
+                                    RedactedMessageEventContent(eventType),
                                     oldEvent.id,
                                     oldEvent.sender,
                                     oldEvent.roomId,
                                     oldEvent.originTimestamp,
-                                    UnsignedData(
-                                        redactedBecause = event
+                                    UnsignedMessageEventData(
+                                        redactedBecause = redactionEvent
                                     )
                                 ),
                                 decryptedEvent = null,
@@ -172,11 +178,10 @@ class RoomManager(
                                     oldEvent.sender,
                                     oldEvent.roomId,
                                     oldEvent.originTimestamp,
-                                    UnsignedData(
-                                        redactedBecause = event
+                                    UnsignedStateEventData(
+                                        redactedBecause = redactionEvent
                                     ),
                                     oldEvent.stateKey,
-                                    null
                                 ),
                                 decryptedEvent = null,
                             )
@@ -190,14 +195,13 @@ class RoomManager(
 
     internal suspend fun addEventsToTimelineAtEnd(
         roomId: RoomId,
-        events: List<Event<*>>?,
+        events: List<RoomEvent<*>>?,
         previousBatch: String?,
         hasGapBefore: Boolean
     ) {
         if (!events.isNullOrEmpty()) {
-            val nextEventIdForPreviousEvent = events[0].getEventId()
+            val nextEventIdForPreviousEvent = events[0].id
             val room = store.rooms.byId(roomId).value
-            requireNotNull(nextEventIdForPreviousEvent)
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             val previousEvent =
                 room.lastEventId?.let {
@@ -214,17 +218,15 @@ class RoomManager(
                     }
                 }
             val timelineEvents = events.mapIndexed { index, event ->
-                val eventId = event.getEventId()
-                requireNotNull(eventId)
                 when (index) {
                     events.lastIndex -> {
                         requireNotNull(previousBatch)
                         TimelineEvent(
                             event = event,
                             roomId = roomId,
-                            eventId = eventId,
+                            eventId = event.id,
                             previousEventId = if (index == 0) previousEvent?.eventId
-                            else events.getOrNull(index - 1).getEventId(),
+                            else events.getOrNull(index - 1)?.id,
                             nextEventId = null,
                             gap = if (index == 0 && hasGapBefore)
                                 GapBoth(previousBatch)
@@ -235,9 +237,9 @@ class RoomManager(
                         TimelineEvent(
                             event = event,
                             roomId = roomId,
-                            eventId = eventId,
+                            eventId = event.id,
                             previousEventId = previousEvent?.eventId,
-                            nextEventId = events.getOrNull(index + 1).getEventId(),
+                            nextEventId = events.getOrNull(index + 1)?.id,
                             gap = if (hasGapBefore && previousBatch != null)
                                 GapBefore(previousBatch)
                             else null
@@ -247,9 +249,9 @@ class RoomManager(
                         TimelineEvent(
                             event = event,
                             roomId = roomId,
-                            eventId = eventId,
-                            previousEventId = events.getOrNull(index - 1).getEventId(),
-                            nextEventId = events.getOrNull(index + 1).getEventId(),
+                            eventId = event.id,
+                            previousEventId = events.getOrNull(index - 1)?.id,
+                            nextEventId = events.getOrNull(index + 1)?.id,
                             gap = null
                         )
                     }
@@ -279,22 +281,20 @@ class RoomManager(
                 val chunk = response.chunk
                 if (!chunk.isNullOrEmpty()) {
                     val previousEventIndex =
-                        previousEvent?.let { chunk.indexOfFirst { event -> event.getEventId() == it.eventId } }
+                        previousEvent?.let { chunk.indexOfFirst { event -> event.id == it.eventId } }
                             ?: -1
                     val events = if (previousEventIndex < 0) chunk else chunk.take(previousEventIndex)
                     val filledGap = previousEventIndex >= 0 || response.end == destinationBatch
                     val timelineEvents = events.mapIndexed { index, event ->
-                        val eventId = event.getEventId()
-                        requireNotNull(eventId)
                         val timelineEvent = when (index) {
                             events.lastIndex -> {
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
+                                    eventId = event.id,
                                     previousEventId = previousEvent?.eventId,
                                     nextEventId = if (index == 0) startEvent.eventId
-                                    else events.getOrNull(index - 1).getEventId(),
+                                    else events.getOrNull(index - 1)?.id,
                                     gap = if (filledGap) null else GapBefore(response.end)
                                 )
                             }
@@ -302,8 +302,8 @@ class RoomManager(
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
-                                    previousEventId = events.getOrNull(index + 1).getEventId(),
+                                    eventId = event.id,
+                                    previousEventId = events.getOrNull(index + 1)?.id,
                                     nextEventId = startEvent.eventId,
                                     gap = null
                                 )
@@ -312,9 +312,9 @@ class RoomManager(
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
-                                    previousEventId = events.getOrNull(index + 1).getEventId(),
-                                    nextEventId = events.getOrNull(index - 1).getEventId(),
+                                    eventId = event.id,
+                                    previousEventId = events.getOrNull(index + 1)?.id,
+                                    nextEventId = events.getOrNull(index - 1)?.id,
                                     gap = null
                                 )
                             }
@@ -323,7 +323,7 @@ class RoomManager(
                             store.rooms.timeline.update(startEvent.eventId, roomId) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
-                                    previousEventId = eventId,
+                                    previousEventId = event.id,
                                     gap = when (oldGap) {
                                         is GapAfter -> oldGap
                                         is GapBoth -> GapAfter(oldGap.batch)
@@ -335,7 +335,7 @@ class RoomManager(
                             store.rooms.timeline.update(previousEvent.eventId, roomId) { oldPreviousEvent ->
                                 val oldGap = oldPreviousEvent?.gap
                                 oldPreviousEvent?.copy(
-                                    nextEventId = eventId,
+                                    nextEventId = event.id,
                                     gap = when {
                                         filledGap && oldGap is GapBoth ->
                                             GapBefore(oldGap.batch)
@@ -365,20 +365,18 @@ class RoomManager(
                 )
                 val chunk = response.chunk
                 if (!chunk.isNullOrEmpty()) {
-                    val nextEventIndex = chunk.indexOfFirst { it.getEventId() == nextEvent.eventId }
+                    val nextEventIndex = chunk.indexOfFirst { it.id == nextEvent.eventId }
                     val events = if (nextEventIndex < 0) chunk else chunk.take(nextEventIndex)
                     val filledGap = nextEventIndex >= 0 || response.end == destinationBatch
                     val timelineEvents = events.mapIndexed { index, event ->
-                        val eventId = event.getEventId()
-                        requireNotNull(eventId)
                         val timelineEvent = when (index) {
                             events.lastIndex -> {
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
+                                    eventId = event.id,
                                     previousEventId = if (index == 0) startEvent.eventId
-                                    else events.getOrNull(index - 1).getEventId(),
+                                    else events.getOrNull(index - 1)?.id,
                                     nextEventId = nextEvent.eventId,
                                     gap = if (filledGap) null else GapAfter(response.end),
                                 )
@@ -387,9 +385,9 @@ class RoomManager(
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
+                                    eventId = event.id,
                                     previousEventId = startEvent.eventId,
-                                    nextEventId = events.getOrNull(index + 1).getEventId(),
+                                    nextEventId = events.getOrNull(index + 1)?.id,
                                     gap = null
                                 )
                             }
@@ -397,9 +395,9 @@ class RoomManager(
                                 TimelineEvent(
                                     event = event,
                                     roomId = roomId,
-                                    eventId = eventId,
-                                    previousEventId = events.getOrNull(index - 1).getEventId(),
-                                    nextEventId = events.getOrNull(index + 1).getEventId(),
+                                    eventId = event.id,
+                                    previousEventId = events.getOrNull(index - 1)?.id,
+                                    nextEventId = events.getOrNull(index + 1)?.id,
                                     gap = null
                                 )
                             }
@@ -408,7 +406,7 @@ class RoomManager(
                             store.rooms.timeline.update(startEvent.eventId, roomId) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
-                                    nextEventId = eventId,
+                                    nextEventId = event.id,
                                     gap = when (oldGap) {
                                         is GapBefore -> oldGap
                                         is GapBoth -> GapBefore(oldGap.batch)
@@ -420,7 +418,7 @@ class RoomManager(
                             store.rooms.timeline.update(nextEvent.eventId, roomId) { oldNextEvent ->
                                 val oldGap = oldNextEvent?.gap
                                 oldNextEvent?.copy(
-                                    previousEventId = eventId,
+                                    previousEventId = event.id,
                                     gap = when {
                                         filledGap && oldGap is GapBoth ->
                                             GapAfter(oldGap.batch)
@@ -456,7 +454,7 @@ class RoomManager(
     private val decryptionScope = CoroutineScope(Dispatchers.Default)
 
     private fun TimelineEvent.canBeDecrypted(): Boolean =
-        this.event is RoomEvent
+        this.event is MessageEvent
                 && this.event.content is MegolmEncryptedEventContent
                 && this.decryptedEvent == null
 
@@ -473,7 +471,7 @@ class RoomManager(
                         if (oldEvent?.canBeDecrypted() == true) {
                             log.debug { "try to decrypt event $eventId in $roomId" }
                             @Suppress("UNCHECKED_CAST")
-                            val encryptedEvent = oldEvent.event as RoomEvent<MegolmEncryptedEventContent>
+                            val encryptedEvent = oldEvent.event as MessageEvent<MegolmEncryptedEventContent>
                             timelineEvent.copy(
                                 decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) })
                         } else oldEvent

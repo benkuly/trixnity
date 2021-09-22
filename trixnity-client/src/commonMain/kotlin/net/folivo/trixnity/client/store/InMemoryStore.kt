@@ -3,7 +3,8 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.getRoomIdAndStateKey
+import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
@@ -79,7 +80,8 @@ class InMemoryStore(
                 mutableMapOf()
 
             override suspend fun update(event: Event<StateEventContent>) {
-                val (roomId, stateKey) = event.getRoomIdAndStateKey()
+                val roomId = event.getRoomId()
+                val stateKey = event.getStateKey()
                 if (roomId != null && stateKey != null) {
                     val eventContentClass = event.content::class
                     val roomState = states[roomId]

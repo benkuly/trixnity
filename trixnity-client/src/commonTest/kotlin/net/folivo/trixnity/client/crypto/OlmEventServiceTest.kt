@@ -41,7 +41,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.ORDINARY
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
@@ -642,7 +642,7 @@ class OlmEventServiceTest : ShouldSpec({
                 )
                 val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
                 cut.decryptMegolm(
-                    RoomEvent(
+                    MessageEvent(
                         MegolmEncryptedEventContent(
                             ciphertext,
                             bobCurveKey,
@@ -670,7 +670,7 @@ class OlmEventServiceTest : ShouldSpec({
                 val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
                 shouldThrow<DecryptionException> {
                     cut.decryptMegolm(
-                        RoomEvent(
+                        MessageEvent(
                             MegolmEncryptedEventContent(
                                 ciphertext,
                                 bobCurveKey,
@@ -703,7 +703,7 @@ class OlmEventServiceTest : ShouldSpec({
                     )
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
-                            RoomEvent(
+                            MessageEvent(
                                 MegolmEncryptedEventContent(
                                     ciphertext,
                                     bobCurveKey,
@@ -738,7 +738,7 @@ class OlmEventServiceTest : ShouldSpec({
                     )
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
-                            RoomEvent(
+                            MessageEvent(
                                 MegolmEncryptedEventContent(
                                     ciphertext,
                                     bobCurveKey,
@@ -762,7 +762,7 @@ class OlmEventServiceTest : ShouldSpec({
                     )
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
-                            RoomEvent(
+                            MessageEvent(
                                 MegolmEncryptedEventContent(
                                     ciphertext,
                                     bobCurveKey,
@@ -789,7 +789,7 @@ class OlmEventServiceTest : ShouldSpec({
                     val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
-                            RoomEvent(
+                            MessageEvent(
                                 MegolmEncryptedEventContent(
                                     ciphertext,
                                     bobCurveKey,
