@@ -1,12 +1,12 @@
 package net.folivo.trixnity.core.serialization.event
 
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 
 interface EventContentSerializerMappings {
-    val room: Set<EventContentSerializerMapping<out RoomEventContent>>
+    val room: Set<EventContentSerializerMapping<out MessageEventContent>>
     val state: Set<EventContentSerializerMapping<out StateEventContent>>
     val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>>
     val toDevice: Set<EventContentSerializerMapping<out ToDeviceEventContent>>

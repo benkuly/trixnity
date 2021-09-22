@@ -10,78 +10,44 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
-import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import net.folivo.trixnity.core.serialization.HideFieldsSerializer
+import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
 class RoomEventSerializer(
-    private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
+    private val messageEventSerializer: KSerializer<MessageEvent<*>>,
+    private val stateEventSerializer: KSerializer<StateEvent<*>>,
     loggerFactory: LoggerFactory
 ) : KSerializer<RoomEvent<*>> {
     private val log = newLogger(loggerFactory)
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
-
-    private val eventsContentLookupByType = roomEventContentSerializers.associate { it.type to it.serializer }
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("RoomEventSerializer")
 
     override fun deserialize(decoder: Decoder): RoomEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
-        val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        requireNotNull(type)
-        val contentSerializer =
-            if (!isRedacted)
-                eventsContentLookupByType[type]
-                    ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
-            else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)
+        val hasStateKey = "state_key" in jsonObj
+        val serializer = if (hasStateKey) stateEventSerializer else messageEventSerializer
         return try {
-            decoder.json.decodeFromJsonElement(
-                RoomEvent.serializer(
-                    if (redacts == null) contentSerializer
-                    else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-                ), jsonObj
-            )
+            decoder.json.decodeFromJsonElement(serializer, jsonObj)
         } catch (error: SerializationException) {
             log.warning(error) { "could not deserialize event" }
+            val type = jsonObj["type"]?.jsonPrimitive?.content
+            requireNotNull(type)
             decoder.json.decodeFromJsonElement(
-                RoomEvent.serializer(
-                    UnknownEventContentSerializer(
-                        UnknownRoomEventContent.serializer(),
-                        type
-                    )
-                ), jsonObj
+                StateEvent.serializer(UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)),
+                jsonObj
             )
         }
     }
 
     override fun serialize(encoder: Encoder, value: RoomEvent<*>) {
-        val content = value.content
-        if (content is UnknownRoomEventContent || content is RedactedRoomEventContent) throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
-        val contentSerializerMapping = roomEventContentSerializers.find { it.kClass.isInstance(value.content) }
-        requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
-
-        val addFields = mutableListOf("type" to contentSerializerMapping.type)
-        if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
-        val contentSerializer =
-            if (content is RedactionEventContent)
-                HideFieldsSerializer(contentSerializerMapping.serializer, "redacts")
-            else contentSerializerMapping.serializer
-
-        val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
-            AddFieldsSerializer(
-                RoomEvent.serializer(contentSerializer) as KSerializer<RoomEvent<*>>,
-                *addFields.toTypedArray()
-            ), value
-        )
+        val jsonElement = when (value) {
+            is MessageEvent -> encoder.json.encodeToJsonElement(messageEventSerializer, value)
+            is StateEvent -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
+        }
         encoder.encodeJsonElement(jsonElement)
     }
 }

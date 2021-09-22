@@ -4,14 +4,15 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
-import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import org.kodein.log.LoggerFactory
 import kotlin.test.Test
@@ -29,7 +30,7 @@ class EventSerializerTest {
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
-            UnsignedData(1234),
+            UnsignedStateEventData(1234),
             ""
         )
         val expectedResult = """
@@ -85,7 +86,7 @@ class EventSerializerTest {
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
-                UnsignedData(1234),
+                UnsignedStateEventData(1234),
                 ""
             ), result
         )
@@ -93,13 +94,13 @@ class EventSerializerTest {
 
     @Test
     fun shouldSerializeRoomEvent() {
-        val content = RoomEvent(
-            MessageEventContent.TextMessageEventContent("hello"),
+        val content = MessageEvent(
+            RoomMessageEventContent.TextMessageEventContent("hello"),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
-            UnsignedData(1234)
+            UnsignedMessageEventData(1234)
         )
         val expectedResult = """
         {
@@ -116,7 +117,7 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
-            RoomEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
+            MessageEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
             content
         )
         assertEquals(expectedResult, result)
@@ -139,19 +140,19 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.decodeFromString(
-            RoomEventSerializer(
+            MessageEventSerializer(
                 DefaultEventContentSerializerMappings.room,
                 LoggerFactory.default
             ), input
         )
         assertEquals(
-            RoomEvent(
+            MessageEvent(
                 UnknownMessageEventContent("m.dino", "hello"),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
-                UnsignedData(1234)
+                UnsignedMessageEventData(1234)
             ), result
         )
     }
@@ -162,7 +163,7 @@ class EventSerializerTest {
             StateEvent(
                 id = EventId("143273582443PhrSn", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
+                unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
                 content = NameEventContent("test"),
@@ -171,7 +172,7 @@ class EventSerializerTest {
             StateEvent(
                 id = EventId("143273584443PhrSn", "server"),
                 roomId = RoomId("room", "server"),
-                unsigned = UnsignedData(),
+                unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
                 stateKey = UserId("user", "server").full,
@@ -219,13 +220,13 @@ class EventSerializerTest {
 
     @Test
     fun shouldSerializeRedactsEvent() {
-        val content = RoomEvent(
+        val content = MessageEvent(
             RedactionEventContent("spam", EventId("123", "example.org")),
             EventId("143273582443PhrSn", "example.org"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
-            UnsignedData(1234)
+            UnsignedMessageEventData(1234)
         )
         val expectedResult = """
         {
@@ -244,7 +245,7 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
-            RoomEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
+            MessageEventSerializer(DefaultEventContentSerializerMappings.room, LoggerFactory.default),
             content
         )
         assertEquals(expectedResult, result)
@@ -280,19 +281,19 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.decodeFromString(
-            RoomEventSerializer(
+            MessageEventSerializer(
                 DefaultEventContentSerializerMappings.room,
                 LoggerFactory.default
             ), input
         )
         assertEquals(
-            RoomEvent(
-                RedactedRoomEventContent("m.room.message"),
+            MessageEvent(
+                RedactedMessageEventContent("m.room.message"),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
-                UnsignedData(1234)
+                UnsignedMessageEventData(1234)
             ), result
         )
     }

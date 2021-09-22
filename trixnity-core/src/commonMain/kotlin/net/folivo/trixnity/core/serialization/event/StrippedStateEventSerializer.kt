@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.StrippedStateEvent
-import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
@@ -38,7 +38,7 @@ class StrippedStateEventSerializer(
             if (!isRedacted)
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
-            else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)
+            else RedactedEventContentSerializer(RedactedMessageEventContent.serializer(), type)
         return try {
             decoder.json.decodeFromJsonElement(
                 StrippedStateEvent.serializer(contentSerializer),

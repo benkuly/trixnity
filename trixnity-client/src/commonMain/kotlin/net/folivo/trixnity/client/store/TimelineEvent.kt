@@ -2,11 +2,11 @@ package net.folivo.trixnity.client.store
 
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
+import net.folivo.trixnity.core.model.events.Event.RoomEvent
 
 data class TimelineEvent(
-    val event: Event<*>,
+    val event: RoomEvent<*>,
     val decryptedEvent: Result<MegolmEvent<*>>? = null,
 
     val roomId: RoomId,

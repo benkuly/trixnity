@@ -2,11 +2,11 @@ package net.folivo.trixnity.core.serialization.m.room.message
 
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
 
 fun createMessageEventContentSerializersModule(): SerializersModule {
     return SerializersModule {
-        contextual(MessageEventContentSerializer)
+        contextual(RoomMessageEventContentSerializer)
         contextual(TextMessageEventContentSerializer)
         contextual(NoticeMessageEventContentSerializer)
         contextual(ImageMessageEventContentSerializer)

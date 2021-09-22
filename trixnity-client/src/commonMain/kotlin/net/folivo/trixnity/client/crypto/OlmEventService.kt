@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
 import net.folivo.trixnity.core.model.crypto.keysOf
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -191,7 +191,7 @@ class OlmEventService internal constructor(
     }
 
     suspend fun encryptMegolm(
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): MegolmEncryptedEventContent {
@@ -228,7 +228,7 @@ class OlmEventService internal constructor(
 
     private suspend fun encryptWithMegolmSession(
         session: OlmOutboundGroupSession,
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         newUserDevices: Map<UserId, Set<String>>
     ): MegolmEncryptedEventContent {
@@ -278,7 +278,7 @@ class OlmEventService internal constructor(
         ).also { log.debug { "encrypted event: $it" } }
     }
 
-    suspend fun decryptMegolm(encryptedEvent: RoomEvent<MegolmEncryptedEventContent>): MegolmEvent<*> {
+    suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): MegolmEvent<*> {
         val roomId = encryptedEvent.roomId
         val encryptedContent = encryptedEvent.content
         val sessionId = encryptedContent.sessionId

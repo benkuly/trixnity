@@ -116,7 +116,7 @@ class OlmSignService internal constructor(
     private fun canonicalFilteredJson(input: JsonObject): String =
         canonicalJson(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 
-    suspend fun verifyEncryptedMegolm(encryptedEvent: Event.RoomEvent<MegolmEncryptedEventContent>): VerificationState {
+    suspend fun verifyEncryptedMegolm(encryptedEvent: Event.MessageEvent<MegolmEncryptedEventContent>): VerificationState {
         return if (store.deviceKeys.getKeysFromUser<Key.Curve25519Key>(encryptedEvent.sender)
                 .find { it.value == encryptedEvent.content.senderKey.value } == null
         ) VerificationState.Invalid("the sender key of the event is not known for this device")

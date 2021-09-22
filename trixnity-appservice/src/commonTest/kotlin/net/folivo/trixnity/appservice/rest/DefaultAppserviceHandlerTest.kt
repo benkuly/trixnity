@@ -16,7 +16,7 @@ import net.folivo.trixnity.appservice.rest.user.RegisterUserParameter
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail
@@ -49,8 +49,8 @@ class DefaultAppserviceHandlerTest {
             .returns(AppserviceEventTnxService.EventTnxProcessingState.NOT_PROCESSED)
         coEvery { appserviceEventTnxServiceMock.onEventTnxProcessed(any()) } just Runs
 
-        val event = Event.RoomEvent(
-            MessageEventContent.NoticeMessageEventContent("hi"),
+        val event = Event.MessageEvent(
+            RoomMessageEventContent.NoticeMessageEventContent("hi"),
             EventId("event4", "server"),
             UserId("user", "server"),
             RoomId("room2", "server"),

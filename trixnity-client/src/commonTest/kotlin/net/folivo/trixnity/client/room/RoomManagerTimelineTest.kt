@@ -21,8 +21,8 @@ import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.UserId
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import org.kodein.log.LoggerFactory
 
 class RoomManagerTimelineTest : ShouldSpec({
@@ -37,8 +37,8 @@ class RoomManagerTimelineTest : ShouldSpec({
         store.clear()
     }
 
-    fun textEvent(i: Long = 24): RoomEvent<TextMessageEventContent> {
-        return RoomEvent(
+    fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
+        return MessageEvent(
             TextMessageEventContent("message $i"),
             EventId("\$event$i"),
             UserId("sender", "server"),

@@ -33,16 +33,17 @@ import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
-import net.folivo.trixnity.core.model.events.RedactedRoomEventContent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
-import net.folivo.trixnity.core.model.events.UnsignedData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
@@ -67,8 +68,8 @@ class RoomManagerTest : ShouldSpec({
         store.clear()
     }
 
-    fun textEvent(i: Long = 24): RoomEvent<TextMessageEventContent> {
-        return RoomEvent(
+    fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
+        return MessageEvent(
             TextMessageEventContent("message $i"),
             EventId("\$event$i"),
             UserId("sender", "server"),
@@ -146,7 +147,7 @@ class RoomManagerTest : ShouldSpec({
                         )
                     )
                 )
-                val redactionEvent = RoomEvent(
+                val redactionEvent = MessageEvent(
                     content = RedactionEventContent(reason = "Spamming", redacts = event2.id),
                     id = EventId("\$redact"),
                     sender = alice,
@@ -155,13 +156,13 @@ class RoomManagerTest : ShouldSpec({
                 )
                 cut.redactTimelineEvent(redactionEvent)
                 assertSoftly(store.rooms.timeline.byId(event2.id, room).value!!) {
-                    event shouldBe RoomEvent(
-                        RedactedRoomEventContent("m.room.message"),
+                    event shouldBe MessageEvent(
+                        RedactedMessageEventContent("m.room.message"),
                         event2.id,
                         UserId("sender", "server"),
                         room,
                         2,
-                        UnsignedData(
+                        UnsignedMessageEventData(
                             redactedBecause = redactionEvent
                         )
                     )
@@ -207,7 +208,7 @@ class RoomManagerTest : ShouldSpec({
                         )
                     )
                 )
-                val redactionEvent = RoomEvent(
+                val redactionEvent = MessageEvent(
                     content = RedactionEventContent(reason = "Spamming", redacts = event2.id),
                     id = EventId("\$redact"),
                     sender = alice,
@@ -222,7 +223,7 @@ class RoomManagerTest : ShouldSpec({
                         UserId("sender", "server"),
                         room,
                         2,
-                        UnsignedData(
+                        UnsignedStateEventData(
                             redactedBecause = redactionEvent
                         ),
                         ""
@@ -264,7 +265,7 @@ class RoomManagerTest : ShouldSpec({
                     )
                 )
 
-                val redactionEvent = RoomEvent(
+                val redactionEvent = MessageEvent(
                     content = RedactionEventContent(reason = "Spamming", redacts = EventId("\$incorrectlyEvent")),
                     id = EventId("\$redact"),
                     sender = alice,
@@ -367,7 +368,7 @@ class RoomManagerTest : ShouldSpec({
             "ciphertext", senderKey, "SENDER", session
         )
         val encryptedTimelineEvent = TimelineEvent(
-            event = RoomEvent(
+            event = MessageEvent(
                 encryptedEventContent,
                 EventId("\$event1"),
                 UserId("sender", "server"),

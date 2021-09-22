@@ -1,7 +1,7 @@
 package net.folivo.trixnity.core.serialization.event
 
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.*
@@ -11,11 +11,11 @@ import net.folivo.trixnity.core.model.events.m.key.verification.StartEventConten
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMapping.Companion.of
 import net.folivo.trixnity.core.serialization.m.room.encrypted.EncryptedEventContentSerializer
-import net.folivo.trixnity.core.serialization.m.room.message.MessageEventContentSerializer
+import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventContentSerializer
 
 object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
-    override val room: Set<EventContentSerializerMapping<out RoomEventContent>> = setOf(
-        of("m.room.message", MessageEventContentSerializer),
+    override val room: Set<EventContentSerializerMapping<out MessageEventContent>> = setOf(
+        of("m.room.message", RoomMessageEventContentSerializer),
         of<RedactionEventContent>("m.room.redaction"),
         of("m.room.encrypted", EncryptedEventContentSerializer),
     )

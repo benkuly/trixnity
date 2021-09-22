@@ -208,7 +208,7 @@ class OlmManager(
                         } == null) store.deviceKeys.byUserId(UserId(event.stateKey)).value = null
                 }
                 JOIN, INVITE -> {
-                    if (event.previousContent?.membership != event.content.membership
+                    if (event.unsigned?.previousContent?.membership != event.content.membership
                         && store.deviceKeys.isTracked(UserId(event.stateKey))
                     ) store.deviceKeys.outdatedKeys.update { it + UserId(event.stateKey) }
                 }

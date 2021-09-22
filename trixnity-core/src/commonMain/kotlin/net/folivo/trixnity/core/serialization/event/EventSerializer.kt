@@ -17,7 +17,6 @@ import org.kodein.log.newLogger
 class EventSerializer(
     private val basicEventSerializer: KSerializer<BasicEvent<*>>,
     private val roomEventSerializer: KSerializer<RoomEvent<*>>,
-    private val stateEventSerializer: KSerializer<StateEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
     private val ephemeralEventSerializer: KSerializer<EphemeralEvent<*>>,
     private val toDeviceEventSerializer: KSerializer<ToDeviceEvent<*>>,
@@ -37,9 +36,8 @@ class EventSerializer(
         val hasRoomId = "room_id" in jsonObj
         val hasSenderId = "sender" in jsonObj
         val serializer = when {
-            hasEventId && hasStateKey && hasRoomId && hasSenderId -> stateEventSerializer
+            hasEventId && hasRoomId && hasSenderId -> roomEventSerializer
             !hasEventId && hasStateKey && hasRoomId && hasSenderId -> strippedStateEventSerializer
-            hasEventId && !hasStateKey && hasRoomId && hasSenderId -> roomEventSerializer
             // it is hard to detect if an event is e. g. an MegolmEvent or an EphemeralEvent and we don't need it
             else -> basicEventSerializer
         }
@@ -55,7 +53,6 @@ class EventSerializer(
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
             is RoomEvent -> encoder.json.encodeToJsonElement(roomEventSerializer, value)
-            is StateEvent -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
             is StrippedStateEvent -> encoder.json.encodeToJsonElement(strippedStateEventSerializer, value)
             is EphemeralEvent -> encoder.json.encodeToJsonElement(ephemeralEventSerializer, value)
             is ToDeviceEvent -> encoder.json.encodeToJsonElement(toDeviceEventSerializer, value)

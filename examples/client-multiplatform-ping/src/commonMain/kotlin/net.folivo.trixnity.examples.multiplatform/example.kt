@@ -13,10 +13,10 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
 import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 import org.kodein.log.filter.entry.minimumLevel
@@ -46,14 +46,14 @@ suspend fun example() = coroutineScope {
 
     val job1 = launch {
         encrytpedEventFlow.collect { event ->
-            require(event is RoomEvent<MegolmEncryptedEventContent>)
+            require(event is MessageEvent<MegolmEncryptedEventContent>)
             if (event.roomId == roomId) {
                 if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                     delay(500)
                     try {
                         val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
                         val content = decryptedEvent.content
-                        if (content is MessageEventContent.TextMessageEventContent && content.body.startsWith("ping")) {
+                        if (content is RoomMessageEventContent.TextMessageEventContent && content.body.startsWith("ping")) {
                             answers.emit("pong to ${content.body}")
                         }
                     } catch (_: Exception) {
@@ -67,7 +67,7 @@ suspend fun example() = coroutineScope {
         answers.collect {
             delay(500)
             val pongEvent = matrixClient.olm.events.encryptMegolm(
-                MessageEventContent.TextMessageEventContent(it),
+                RoomMessageEventContent.TextMessageEventContent(it),
                 roomId,
                 matrixClient.api.rooms.getStateEvent(roomId)
             )
@@ -94,20 +94,20 @@ suspend fun example() = coroutineScope {
                 val event = timelineEvent.value?.event
                 val content = event?.content
                 when {
-                    event is RoomEvent && content is MessageEventContent ->
+                    event is MessageEvent && content is RoomMessageEventContent ->
                         println("${event.sender}: ${content.body}")
-                    event is RoomEvent && content is MegolmEncryptedEventContent -> {
+                    event is MessageEvent && content is MegolmEncryptedEventContent -> {
                         val decryptedEvent = timelineEvent.value?.decryptedEvent
                         val decryptedEventContent = decryptedEvent?.getOrNull()?.content
                         val decryptionException = timelineEvent.value?.decryptedEvent?.exceptionOrNull()
                         when {
                             decryptionException != null -> println("${event.sender}: cannot decrypt (${decryptionException.message})")
                             decryptedEvent == null -> println("${event.sender}: not yet decrypted")
-                            decryptedEventContent is MessageEventContent -> println("${event.sender}: ${decryptedEventContent.body}")
+                            decryptedEventContent is RoomMessageEventContent -> println("${event.sender}: ${decryptedEventContent.body}")
                         }
                     }
-                    event is RoomEvent -> println("${event.sender}: $content")
-                    event is StateEvent -> println("${event.sender}: $content")
+                    event is MessageEvent -> println("${event.sender}: $event")
+                    event is StateEvent -> println("${event.sender}: $event")
                     else -> {
                     }
                 }

@@ -4,4 +4,4 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class UnknownRoomEventContent(val raw: JsonObject, val eventType: String) : RoomEventContent
+data class UnknownMessageEventContent(val raw: JsonObject, val eventType: String) : MessageEventContent
