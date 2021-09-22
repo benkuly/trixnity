@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomEventContent
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
@@ -36,7 +36,7 @@ class RoomEventSerializer(
             val type = jsonObj["type"]?.jsonPrimitive?.content
             requireNotNull(type)
             decoder.json.decodeFromJsonElement(
-                StateEvent.serializer(UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)),
+                StateEvent.serializer(UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)),
                 jsonObj
             )
         }
