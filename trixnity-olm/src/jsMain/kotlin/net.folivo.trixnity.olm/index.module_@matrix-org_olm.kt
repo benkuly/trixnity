@@ -46,7 +46,7 @@ external class Session {
 
 external class Utility {
     fun free()
-    fun sha256(input: String): String
+    fun sha256(input: Uint8Array): String
     fun ed25519_verify(key: String, message: String, signature: String)
 }
 

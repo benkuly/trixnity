@@ -23,6 +23,7 @@ class InMemoryStore(
         rooms = InMemoryRoomsStore()
         deviceKeys = InMemoryDeviceKeysStore()
         olm = InMemoryOlmStore()
+        media = InMemoryMediaStore()
     }
 
     override var server = InMemoryServerStore(hostname, port, secure)
@@ -34,6 +35,8 @@ class InMemoryStore(
     override var deviceKeys = InMemoryDeviceKeysStore()
         private set
     override var olm = InMemoryOlmStore()
+        private set
+    override var media = InMemoryMediaStore()
         private set
 
     class InMemoryServerStore(override val hostname: String, override val port: Int, override val secure: Boolean) :
@@ -205,6 +208,19 @@ class InMemoryStore(
 
         override suspend fun outboundMegolmSession(roomId: RoomId): MutableStateFlow<StoredOutboundMegolmSession?> {
             return outboundMegolmSession.getOrPut(roomId) { MutableStateFlow(null) }
+        }
+    }
+
+    class InMemoryMediaStore : Store.MediaStore {
+
+        private val media = mutableMapOf<String, ByteArray>()
+
+        override suspend fun add(uri: String, media: ByteArray) {
+            this.media[uri] = media
+        }
+
+        override suspend fun byUri(uri: String): ByteArray? {
+            return this.media[uri]
         }
     }
 }

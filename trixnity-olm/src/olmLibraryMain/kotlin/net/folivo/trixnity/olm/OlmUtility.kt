@@ -18,9 +18,9 @@ actual class OlmUtility private constructor() : WantsToBeFree {
         ptr.free()
     }
 
-    actual fun sha256(input: String): String {
+    actual fun sha256(input: ByteArray): String {
         val output = ByteArray(sha256_length(ptr).toInt())
-        val size = checkResult { sha256(ptr, input.encodeToByteArray(), output) }
+        val size = checkResult { sha256(ptr, input, output) }
         return output.decodeToString(endIndex = size.toInt())
     }
 

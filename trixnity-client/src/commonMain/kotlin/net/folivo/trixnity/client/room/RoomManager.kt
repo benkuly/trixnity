@@ -6,7 +6,6 @@ import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.rooms.Membership
-import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getOriginTimestamp
@@ -79,7 +78,7 @@ class RoomManager(
                 }
             }
         }
-        // TODO redaction, reaction and edit (also in fetchMissingEvents!)
+        // TODO reaction and edit (also in fetchMissingEvents!)
     }
 
     internal suspend fun setLastEventAt(event: Event<*>) {
@@ -159,7 +158,6 @@ class RoomManager(
                                     )
                                 ),
                                 decryptedEvent = null,
-                                decryptionException = null
                             )
                         }
                         is StateEvent -> {
@@ -181,7 +179,6 @@ class RoomManager(
                                     null
                                 ),
                                 decryptedEvent = null,
-                                decryptionException = null
                             )
                         }
                         else -> null
@@ -462,7 +459,6 @@ class RoomManager(
         this.event is RoomEvent
                 && this.event.content is MegolmEncryptedEventContent
                 && this.decryptedEvent == null
-                && this.decryptionException == null
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
     suspend fun getTimelineEvent(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?> {
@@ -478,11 +474,8 @@ class RoomManager(
                             log.debug { "try to decrypt event $eventId in $roomId" }
                             @Suppress("UNCHECKED_CAST")
                             val encryptedEvent = oldEvent.event as RoomEvent<MegolmEncryptedEventContent>
-                            try {
-                                timelineEvent.copy(decryptedEvent = olm.events.decryptMegolm(encryptedEvent))
-                            } catch (error: DecryptionException) {
-                                timelineEvent.copy(decryptionException = error)
-                            }
+                            timelineEvent.copy(
+                                decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) })
                         } else oldEvent
                     }
                 }

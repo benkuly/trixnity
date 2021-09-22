@@ -14,7 +14,7 @@ data class EncryptedFile(
     @Serializable
     data class JWK(
         @SerialName("k") val key: String,
-        @SerialName("key") val keyType: String = "oct",
+        @SerialName("kty") val keyType: String = "oct",
         @SerialName("key_opts") val keyOperations: Set<String> = setOf("encrypt", "decrypt"),
         @SerialName("alg") val algorithm: String = "A256CTR",
         @SerialName("ext") val extractable: Boolean = true

@@ -36,7 +36,7 @@ kotlin {
 
     sourceSets {
         all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.RequiresOptIn")
         }
         val commonMain by getting {
             dependencies {
@@ -46,6 +46,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+//                implementation("com.squareup.okio:okio:${Versions.okio}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }

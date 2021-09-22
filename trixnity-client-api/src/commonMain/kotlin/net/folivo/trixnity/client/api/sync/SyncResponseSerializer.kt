@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.api.sync
 import kotlinx.serialization.json.*
 
 object SyncResponseSerializer : JsonTransformingSerializer<SyncResponse>(SyncResponse.serializer()) {
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     override fun transformDeserialize(element: JsonElement): JsonElement {
         require(element is JsonObject)
         val rooms = element["rooms"] ?: return element
@@ -20,7 +20,6 @@ object SyncResponseSerializer : JsonTransformingSerializer<SyncResponse>(SyncRes
         })
     }
 
-    @ExperimentalStdlibApi
     private fun MutableMap<String, JsonElement>.putAndConvertEventMap(
         key: String,
         source: JsonElement?,
@@ -32,7 +31,7 @@ object SyncResponseSerializer : JsonTransformingSerializer<SyncResponse>(SyncRes
         }
     }
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     private fun convertEventMap(source: JsonObject, eventContainerKeys: Set<String>): JsonObject {
         return JsonObject(buildMap {
             source.forEach {
@@ -49,7 +48,7 @@ object SyncResponseSerializer : JsonTransformingSerializer<SyncResponse>(SyncRes
         })
     }
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     private fun MutableMap<String, JsonElement>.putAndConvertEventMapContent(
         key: String,
         source: JsonElement?,
@@ -68,7 +67,7 @@ object SyncResponseSerializer : JsonTransformingSerializer<SyncResponse>(SyncRes
         }
     }
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     private fun addRoomIdToEvents(source: JsonArray, roomId: String): JsonArray {
         return JsonArray(source.map { timelineEvent ->
             require(timelineEvent is JsonObject)

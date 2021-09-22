@@ -33,11 +33,11 @@ class RoomEventSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
+        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
         requireNotNull(type)
-        val content = jsonObj["content"]
         val contentSerializer =
-            if (content != null && content.jsonObject.isNotEmpty())
+            if (!isRedacted)
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownRoomEventContent.serializer(), type)
             else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)

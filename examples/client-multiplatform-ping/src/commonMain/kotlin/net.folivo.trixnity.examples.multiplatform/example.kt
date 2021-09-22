@@ -98,8 +98,8 @@ suspend fun example() = coroutineScope {
                         println("${event.sender}: ${content.body}")
                     event is RoomEvent && content is MegolmEncryptedEventContent -> {
                         val decryptedEvent = timelineEvent.value?.decryptedEvent
-                        val decryptedEventContent = decryptedEvent?.content
-                        val decryptionException = timelineEvent.value?.decryptionException
+                        val decryptedEventContent = decryptedEvent?.getOrNull()?.content
+                        val decryptionException = timelineEvent.value?.decryptedEvent?.exceptionOrNull()
                         when {
                             decryptionException != null -> println("${event.sender}: cannot decrypt (${decryptionException.message})")
                             decryptedEvent == null -> println("${event.sender}: not yet decrypted")

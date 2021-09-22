@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.api.authentication.LoginType
 import net.folivo.trixnity.client.crypto.OlmManager
+import net.folivo.trixnity.client.media.MediaManager
 import net.folivo.trixnity.client.room.RoomManager
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -24,6 +25,7 @@ class MatrixClient private constructor(
     val api: MatrixApiClient,
     val olm: OlmManager,
     val rooms: RoomManager,
+    val media: MediaManager,
     loggerFactory: LoggerFactory
 ) {
 
@@ -63,7 +65,9 @@ class MatrixClient private constructor(
             store.deviceKeys.byUserId(userId).value = mapOf(deviceId to olm.myDeviceKeys.signed)
             api.keys.uploadKeys(deviceKeys = olm.myDeviceKeys)
 
-            return MatrixClient(store, api, olm, roomManager, loggerFactory)
+            val mediaManager = MediaManager(api, store, loggerFactory)
+
+            return MatrixClient(store, api, olm, roomManager, mediaManager, loggerFactory)
         }
 
         fun fromStore(
@@ -89,7 +93,8 @@ class MatrixClient private constructor(
                     loggerFactory = loggerFactory
                 )
                 val roomManager = RoomManager(store, api, olm, loggerFactory)
-                MatrixClient(store, api, olm, roomManager, loggerFactory)
+                val mediaManager = MediaManager(api, store, loggerFactory)
+                MatrixClient(store, api, olm, roomManager, mediaManager, loggerFactory)
             } else null
         }
     }
@@ -106,7 +111,6 @@ class MatrixClient private constructor(
         olm.free()
         store.clear()
     }
-
 
     suspend fun startSync() {
         val handler = CoroutineExceptionHandler { _, exception ->

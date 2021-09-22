@@ -41,7 +41,7 @@ kotlin {
         }
         publishLibraryVariants("release", "debug")
     }
-//    js(IR) { // FIXME enable on kotlin >= 1.5.30
+//    js(IR) { // FIXME enable
 //        browser {
 //            testTask {
 //                useKarma {
@@ -64,7 +64,7 @@ kotlin {
 
     sourceSets {
         all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.RequiresOptIn")
         }
         val commonMain by getting {
             dependencies {

@@ -81,7 +81,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("file") val file: EncryptedFile? = null
     ) : MessageEventContent() {
         companion object {
-            const val type = "m.image"
+            const val type = "m.file"
         }
     }
 
@@ -96,7 +96,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("file") val file: EncryptedFile? = null
     ) : MessageEventContent() {
         companion object {
-            const val type = "m.image"
+            const val type = "m.audio"
         }
     }
 
@@ -111,7 +111,7 @@ sealed class MessageEventContent : RoomEventContent {
         @SerialName("file") val file: EncryptedFile? = null
     ) : MessageEventContent() {
         companion object {
-            const val type = "m.image"
+            const val type = "m.video"
         }
     }
 

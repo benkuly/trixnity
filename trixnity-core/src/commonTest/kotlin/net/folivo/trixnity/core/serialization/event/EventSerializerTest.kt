@@ -259,7 +259,23 @@ class EventSerializerTest {
             "sender":"@example:example.org",
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
-            "unsigned":{"age":1234},
+            "unsigned":{
+                "age":1234,
+                "redacted_because":{
+                    "content":{
+                        "reason":"spam"
+                    },
+                    "event_id":"$143273582443PhrSn:example.org",
+                    "sender":"@example:example.org",
+                    "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                    "origin_server_ts":1432735824653,
+                    "unsigned":{
+                        "age":1234
+                    },
+                    "type":"m.room.redaction",
+                    "redacts":"$143273582443PhrSn:example.org"
+                    }
+                },
             "type":"m.room.message"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }

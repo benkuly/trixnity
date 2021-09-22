@@ -45,7 +45,7 @@ class OlmUtilityTest {
     fun sha256() = initTest {
         freeAfter(OlmUtility.create()) { utility ->
             val msgToHash = "The quick brown fox jumps over the lazy dog"
-            utility.sha256(msgToHash) shouldNot beBlank()
+            utility.sha256(msgToHash.encodeToByteArray()) shouldNot beBlank()
         }
     }
 }
