@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Instant
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.DecryptionException
@@ -41,6 +40,8 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
@@ -92,12 +93,12 @@ class RoomManagerTest : ShouldSpec({
     context(RoomManager::setLastEventAt.name) {
         should("set last event from room event") {
             cut.setLastEventAt(textEvent(24))
-            store.rooms.byId(room).value?.lastEventAt shouldBe Instant.fromEpochMilliseconds(24)
+            store.rooms.byId(room).value?.lastEventAt shouldBe fromEpochMilliseconds(24)
         }
         should("set last event from state event") {
             cut.setLastEventAt(
                 Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent(membership = JOIN),
                     EventId("\$event1"),
                     alice,
                     room,
@@ -105,7 +106,7 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.rooms.byId(room).value?.lastEventAt shouldBe Instant.fromEpochMilliseconds(25)
+            store.rooms.byId(room).value?.lastEventAt shouldBe fromEpochMilliseconds(25)
         }
     }
 
@@ -301,7 +302,7 @@ class RoomManagerTest : ShouldSpec({
             store.account.userId.value = alice
             cut.setOwnMembership(
                 Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.LEAVE),
+                    MemberEventContent(membership = LEAVE),
                     EventId("\$event1"),
                     alice,
                     room,
@@ -309,7 +310,7 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.rooms.byId(room).value?.ownMembership shouldBe MemberEventContent.Membership.LEAVE
+            store.rooms.byId(room).value?.ownMembership shouldBe LEAVE
         }
     }
     context(RoomManager::setUnreadMessageCount.name) {
@@ -329,7 +330,7 @@ class RoomManagerTest : ShouldSpec({
         should("load members") {
             coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf(
                 Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent(membership = JOIN),
                     EventId("\$event1"),
                     alice,
                     room,
@@ -337,7 +338,7 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = alice.full
                 ),
                 Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent(membership = JOIN),
                     EventId("\$event2"),
                     bob,
                     room,
@@ -352,11 +353,11 @@ class RoomManagerTest : ShouldSpec({
             store.rooms.state.byId<MemberEventContent>(
                 room,
                 alice.full
-            ).value?.content?.membership shouldBe MemberEventContent.Membership.JOIN
+            ).value?.content?.membership shouldBe JOIN
             store.rooms.state.byId<MemberEventContent>(
                 room,
                 bob.full
-            ).value?.content?.membership shouldBe MemberEventContent.Membership.JOIN
+            ).value?.content?.membership shouldBe JOIN
             store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
         }
     }
@@ -464,7 +465,7 @@ class RoomManagerTest : ShouldSpec({
     }
     context(RoomManager::getLastTimelineEvent.name) {
         should("return last event of room") {
-            val initialRoom = Room(room, fromEpochMilliseconds(24), null)
+            val initialRoom = Room(room, lastEventAt = fromEpochMilliseconds(24), lastEventId = null)
             val event1 = textEvent(1)
             val event2 = textEvent(2)
             val event2Timeline = TimelineEvent(

@@ -76,10 +76,10 @@ class InMemoryStore(
         }
 
         class InMemoryRoomStateStore(private val scope: CoroutineScope) : Store.RoomsStore.RoomStateStore {
-            private val states: MutableMap<RoomId, MutableMap<KClass<out StateEventContent>, MutableStateFlow<Map<String, Event<StateEventContent>>>>> =
+            private val states: MutableMap<RoomId, MutableMap<KClass<out StateEventContent>, MutableStateFlow<Map<String, Event<out StateEventContent>>>>> =
                 mutableMapOf()
 
-            override suspend fun update(event: Event<StateEventContent>) {
+            override suspend fun update(event: Event<out StateEventContent>) {
                 val roomId = event.getRoomId()
                 val stateKey = event.getStateKey()
                 if (roomId != null && stateKey != null) {
@@ -95,11 +95,11 @@ class InMemoryStore(
                 }
             }
 
-            override suspend fun updateAll(events: List<Event<StateEventContent>>) {
+            override suspend fun updateAll(events: List<Event.StateEvent<out StateEventContent>>) {
                 events.forEach { update(it) }
             }
 
-            override suspend fun <C : StateEventContent> byId(
+            override suspend fun <C : StateEventContent> allById(
                 roomId: RoomId,
                 eventContentClass: KClass<C>
             ): StateFlow<Map<String, Event<C>>> {
@@ -109,7 +109,7 @@ class InMemoryStore(
                     MutableStateFlow<Map<String, Event.StateEvent<C>>>(mapOf()).also {
                         @Suppress("UNCHECKED_CAST") // TODO unchecked cast
                         states.getOrPut(roomId) { mutableMapOf() }[eventContentClass] =
-                            it as MutableStateFlow<Map<String, Event<StateEventContent>>>
+                            it as MutableStateFlow<Map<String, Event<out StateEventContent>>>
                     }.asStateFlow()
                 } else {
                     @Suppress("UNCHECKED_CAST") // TODO unchecked cast
@@ -117,7 +117,7 @@ class InMemoryStore(
                 }
             }
 
-            override suspend fun <C : StateEventContent> byId(
+            override suspend fun <C : StateEventContent> allById(
                 roomId: RoomId,
                 stateKey: String,
                 eventContentClass: KClass<C>
@@ -128,7 +128,7 @@ class InMemoryStore(
                     MutableStateFlow<Map<String, Event.StateEvent<C>>>(mapOf()).also {
                         @Suppress("UNCHECKED_CAST") // TODO unchecked cast
                         states.getOrPut(roomId) { mutableMapOf() }[eventContentClass] =
-                            it as MutableStateFlow<Map<String, Event<StateEventContent>>>
+                            it as MutableStateFlow<Map<String, Event<out StateEventContent>>>
                     }.map { it[stateKey] }.stateIn(scope)
                 } else {
                     @Suppress("UNCHECKED_CAST") // TODO unchecked cast
