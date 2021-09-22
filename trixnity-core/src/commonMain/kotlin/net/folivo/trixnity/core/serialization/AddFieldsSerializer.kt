@@ -10,17 +10,15 @@ open class AddFieldsSerializer<T : Any>(
     baseSerializer: KSerializer<T>,
     private vararg val fields: Pair<String, String>
 ) : JsonTransformingSerializer<T>(baseSerializer) {
-    @ExperimentalStdlibApi
     override fun transformDeserialize(element: JsonElement): JsonElement {
         return addField(element)
     }
 
-    @ExperimentalStdlibApi
     override fun transformSerialize(element: JsonElement): JsonElement {
         return addField(element)
     }
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     private fun addField(element: JsonElement): JsonElement {
         require(element is JsonObject)
         return JsonObject(buildMap {

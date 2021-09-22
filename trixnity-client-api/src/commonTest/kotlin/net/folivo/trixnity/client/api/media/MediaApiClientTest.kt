@@ -135,8 +135,8 @@ class MediaApiClientTest {
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         val result = matrixRestClient.media.downloadThumbnail(
             mxcUri = "mxc://matrix.org/ascERGshawAWawugaAcauga",
-            width = 64,
-            height = 64,
+            width = 64u,
+            height = 64u,
             method = ThumbnailResizingMethod.SCALE,
             allowRemote = false,
             progress = progress

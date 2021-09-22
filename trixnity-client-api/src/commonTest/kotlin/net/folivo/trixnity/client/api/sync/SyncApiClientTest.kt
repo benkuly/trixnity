@@ -292,7 +292,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -305,7 +305,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -428,7 +428,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -441,7 +441,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -454,7 +454,7 @@ class SyncApiClientTest {
                             }
                             3 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&full_state=false&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)

@@ -11,4 +11,7 @@ sealed class DecryptionException(message: String, cause: Throwable? = null) : Ex
 
     data class SessionException(override val cause: OlmLibraryException) :
         DecryptionException("There was a problem with the session: ${cause.message}", cause)
+
+    data class OtherException(override val cause: Throwable) :
+        DecryptionException("There was a problem while decrypting: ${cause.message}", cause)
 }

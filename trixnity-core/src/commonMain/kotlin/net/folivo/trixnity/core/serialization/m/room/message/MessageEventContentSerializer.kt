@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.m.room.message
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -16,7 +15,6 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 object MessageEventContentSerializer : KSerializer<MessageEventContent> {
 
-    @InternalSerializationApi
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): MessageEventContent {
@@ -42,7 +40,6 @@ object MessageEventContentSerializer : KSerializer<MessageEventContent> {
         }
     }
 
-    @ExperimentalStdlibApi
     override fun serialize(encoder: Encoder, value: MessageEventContent) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {

@@ -33,9 +33,9 @@ class StrippedStateEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val content = jsonObj["content"]
+        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
         val contentSerializer =
-            if (content != null && content.jsonObject.isNotEmpty())
+            if (!isRedacted)
                 eventsContentLookupByType[type]
                     ?: UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
             else RedactedEventContentSerializer(RedactedRoomEventContent.serializer(), type)

@@ -37,16 +37,15 @@ class MediaApiClient(private val httpClient: HttpClient) {
     suspend fun upload(
         content: ByteReadChannel,
         contentLength: Long,
-        contentType: ContentType? = null,
+        contentType: ContentType,
         filename: String? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): UploadResponse {
         return httpClient.post("/_matrix/media/r0/upload") {
-            //TODO should be added with https://youtrack.jetbrains.com/issue/KTOR-560
             accept(ContentType.Application.Json)
             parameter("filename", filename)
             body = object : OutgoingContent.ReadChannelContent() {
-                override val contentType: ContentType?
+                override val contentType: ContentType
                     get() = contentType
                 override val contentLength: Long
                     get() = contentLength
@@ -93,8 +92,8 @@ class MediaApiClient(private val httpClient: HttpClient) {
      */
     suspend fun downloadThumbnail(
         mxcUri: String,
-        width: Int,
-        height: Int,
+        width: UInt,
+        height: UInt,
         method: ThumbnailResizingMethod,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,

@@ -120,7 +120,6 @@ class RoomManagerTest : ShouldSpec({
                         TimelineEvent(
                             event = event1,
                             decryptedEvent = null,
-                            decryptionException = null,
                             roomId = room,
                             eventId = event1.id,
                             previousEventId = null,
@@ -129,8 +128,7 @@ class RoomManagerTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            decryptedEvent = MegolmEvent(TextMessageEventContent("hi"), room),
-                            decryptionException = DecryptionException.ValidationFailed,
+                            decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -140,7 +138,6 @@ class RoomManagerTest : ShouldSpec({
                         TimelineEvent(
                             event = event3,
                             decryptedEvent = null,
-                            decryptionException = null,
                             roomId = room,
                             eventId = event3.id,
                             previousEventId = event3.id,
@@ -169,7 +166,6 @@ class RoomManagerTest : ShouldSpec({
                         )
                     )
                     decryptedEvent shouldBe null
-                    decryptionException shouldBe null
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -185,7 +181,6 @@ class RoomManagerTest : ShouldSpec({
                         TimelineEvent(
                             event = event1,
                             decryptedEvent = null,
-                            decryptionException = null,
                             roomId = room,
                             eventId = event1.id,
                             previousEventId = null,
@@ -194,8 +189,7 @@ class RoomManagerTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            decryptedEvent = null,
-                            decryptionException = DecryptionException.ValidationFailed,
+                            decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -205,7 +199,6 @@ class RoomManagerTest : ShouldSpec({
                         TimelineEvent(
                             event = event3,
                             decryptedEvent = null,
-                            decryptionException = null,
                             roomId = room,
                             eventId = event3.id,
                             previousEventId = event3.id,
@@ -235,7 +228,6 @@ class RoomManagerTest : ShouldSpec({
                         ""
                     )
                     decryptedEvent shouldBe null
-                    decryptionException shouldBe null
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -250,7 +242,6 @@ class RoomManagerTest : ShouldSpec({
                 val timelineEvent1 = TimelineEvent(
                     event = event1,
                     decryptedEvent = null,
-                    decryptionException = null,
                     roomId = room,
                     eventId = event1.id,
                     previousEventId = null,
@@ -259,8 +250,7 @@ class RoomManagerTest : ShouldSpec({
                 )
                 val timelineEvent2 = TimelineEvent(
                     event = event2,
-                    decryptedEvent = null,
-                    decryptionException = DecryptionException.ValidationFailed,
+                    decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
                     roomId = room,
                     eventId = event2.id,
                     previousEventId = event1.id,
@@ -394,10 +384,10 @@ class RoomManagerTest : ShouldSpec({
             withData(
                 mapOf(
                     "with already encrypted event" to encryptedTimelineEvent.copy(
-                        decryptedEvent = MegolmEvent(TextMessageEventContent("hi"), room)
+                        decryptedEvent = Result.success(MegolmEvent(TextMessageEventContent("hi"), room))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
-                        decryptionException = DecryptionException.ValidationFailed
+                        decryptedEvent = Result.failure(DecryptionException.ValidationFailed)
                     ),
                     "without RoomEvent" to encryptedTimelineEvent.copy(
                         event = nameEvent(24)
@@ -424,8 +414,8 @@ class RoomManagerTest : ShouldSpec({
         }
         context("event can be decrypted") {
             should("decrypt event") {
-                val decryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
-                coEvery { olm.events.decryptMegolm(any()) } returns decryptedEvent
+                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                coEvery { olm.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.rooms.timeline.updateAll(listOf(encryptedTimelineEvent))
                 store.olm.inboundMegolmSession(room, session, senderKey).update {
                     StoredOlmInboundMegolmSession(session, senderKey, room, "pickle")
@@ -435,8 +425,7 @@ class RoomManagerTest : ShouldSpec({
                 assertSoftly(result[1]) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    this.decryptedEvent shouldBe decryptedEvent
-                    decryptionException shouldBe null
+                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
                 }
             }
             should("handle error") {
@@ -450,13 +439,12 @@ class RoomManagerTest : ShouldSpec({
                 assertSoftly(result[1]) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    decryptedEvent shouldBe null
-                    decryptionException shouldBe DecryptionException.ValidationFailed
+                    decryptedEvent?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed
                 }
             }
             should("wait for olm session") {
-                val decryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
-                coEvery { olm.events.decryptMegolm(any()) } returns decryptedEvent
+                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                coEvery { olm.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.rooms.timeline.updateAll(listOf(encryptedTimelineEvent))
 
                 val result = cut.getTimelineEvent(eventId, room)
@@ -468,8 +456,7 @@ class RoomManagerTest : ShouldSpec({
                 assertSoftly(result.value) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    this.decryptedEvent shouldBe decryptedEvent
-                    decryptionException shouldBe null
+                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
                 }
             }
         }
@@ -482,7 +469,6 @@ class RoomManagerTest : ShouldSpec({
             val event2Timeline = TimelineEvent(
                 event = event2,
                 decryptedEvent = null,
-                decryptionException = null,
                 roomId = room,
                 eventId = event2.id,
                 previousEventId = null,

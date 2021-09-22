@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store
 
-import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event
@@ -8,8 +7,7 @@ import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 
 data class TimelineEvent(
     val event: Event<*>,
-    val decryptedEvent: MegolmEvent<*>? = null,
-    val decryptionException: DecryptionException? = null,
+    val decryptedEvent: Result<MegolmEvent<*>>? = null,
 
     val roomId: RoomId,
     val eventId: EventId,

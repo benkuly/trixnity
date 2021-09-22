@@ -22,8 +22,8 @@ fun createMatrixJson(
     return Json {
         classDiscriminator = "neverUsed"
         ignoreUnknownKeys = true
-//        encodeDefaults = true // FIXME add with kotlinx.serialization >=1.3.0
-//        explicitNulls = false
+        encodeDefaults = true
+        explicitNulls = false
         serializersModule =
             if (customModule != null) modules + customModule else modules
     }

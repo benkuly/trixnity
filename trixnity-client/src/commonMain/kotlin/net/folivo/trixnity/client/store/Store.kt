@@ -17,6 +17,7 @@ interface Store {
     val rooms: RoomsStore
     val deviceKeys: DeviceKeysStores
     val olm: OlmStore
+    val media: MediaStore
 
     interface ServerStore {
         val hostname: String
@@ -92,5 +93,11 @@ interface Store {
         ): MutableStateFlow<StoredMegolmMessageIndex?>
 
         suspend fun outboundMegolmSession(roomId: RoomId): MutableStateFlow<StoredOutboundMegolmSession?>
+    }
+
+    interface MediaStore {
+        // TODO this should use Source or something similar streaming bytes.
+        suspend fun add(uri: String, media: ByteArray)
+        suspend fun byUri(uri: String): ByteArray?
     }
 }

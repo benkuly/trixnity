@@ -1,5 +1,6 @@
 package net.folivo.trixnity.examples.multiplatform
 
+import io.ktor.http.*
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -50,8 +51,8 @@ suspend fun example() = coroutineScope {
                             if (senderAvatar != null) {
                                 val senderAvatarDownload = matrixRestClient.media.downloadThumbnail(
                                     senderAvatar,
-                                    64,
-                                    64,
+                                    64u,
+                                    64u,
                                     ThumbnailResizingMethod.CROP
                                 )
                                 val contentLength = senderAvatarDownload.contentLength
@@ -59,7 +60,7 @@ suspend fun example() = coroutineScope {
                                 val uploadedUrl = matrixRestClient.media.upload(
                                     senderAvatarDownload.content,
                                     contentLength,
-                                    senderAvatarDownload.contentType
+                                    senderAvatarDownload.contentType ?: ContentType.Application.OctetStream
                                 ).contentUri
                                 matrixRestClient.rooms.sendRoomEvent(
                                     roomId, ImageMessageEventContent(

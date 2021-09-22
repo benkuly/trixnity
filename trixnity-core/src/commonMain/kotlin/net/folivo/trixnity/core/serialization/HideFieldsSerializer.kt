@@ -10,17 +10,15 @@ open class HideFieldsSerializer<T : Any>(
     private vararg val hideFields: String,
 ) : JsonTransformingSerializer<T>(baseSerializer) {
 
-    @ExperimentalStdlibApi
     override fun transformDeserialize(element: JsonElement): JsonElement {
         return hideField(element)
     }
 
-    @ExperimentalStdlibApi
     override fun transformSerialize(element: JsonElement): JsonElement {
         return hideField(element)
     }
 
-    @ExperimentalStdlibApi
+    @OptIn(ExperimentalStdlibApi::class)
     private fun hideField(element: JsonElement): JsonElement {
         require(element is JsonObject)
         return JsonObject(buildMap {

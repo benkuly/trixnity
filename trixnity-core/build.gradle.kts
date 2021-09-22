@@ -13,7 +13,7 @@ kotlin {
         }
         withJava()
     }
-//    js {
+//    js(IR) {
 //        browser {
 //            testTask {
 //                useKarma {
@@ -34,7 +34,7 @@ kotlin {
 
     sourceSets {
         all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.RequiresOptIn")
         }
         val commonMain by getting {
             dependencies {
