@@ -11,8 +11,6 @@ import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
@@ -51,7 +49,6 @@ import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalKotest::class)
 class RoomManagerTest : ShouldSpec({
-    val scope = CoroutineScope(Dispatchers.Default)
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val room = MatrixId.RoomId("room", "server")
@@ -478,7 +475,7 @@ class RoomManagerTest : ShouldSpec({
                 gap = null
             )
             store.rooms.timeline.updateAll(listOf(event2Timeline))
-            val result = scope.async {
+            val result = async {
                 cut.getLastTimelineEvent(room).take(3).toList()
             }
             store.rooms.update(room) { initialRoom }

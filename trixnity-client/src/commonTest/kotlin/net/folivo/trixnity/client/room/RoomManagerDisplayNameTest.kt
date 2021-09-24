@@ -11,6 +11,8 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.RoomDisplayName
+import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.UserId
@@ -24,7 +26,7 @@ import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalKotest::class)
 class RoomManagerDisplayNameTest : ShouldSpec({
-    val room = MatrixId.RoomId("room", "server")
+    val roomId = MatrixId.RoomId("room", "server")
     val store = InMemoryStore()
     val api = mockk<MatrixApiClient>()
     val olm = mockk<OlmManager>()
@@ -57,7 +59,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
             ),
             EventId("\$event$i"),
             userId,
-            room,
+            roomId,
             i,
             stateKey = userId.full
         )
@@ -72,7 +74,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
             NameEventContent(name),
             EventId("\$event$i"),
             userId,
-            room,
+            roomId,
             i,
             stateKey = ""
         )
@@ -86,15 +88,286 @@ class RoomManagerDisplayNameTest : ShouldSpec({
             CanonicalAliasEventContent(roomAliasId),
             EventId("\$event$i"),
             userId,
-            room,
+            roomId,
             1,
             stateKey = ""
         )
     }
 
+    context(RoomManager::setRoomUser.name) {
+        val user1Event = Event.StateEvent(
+            mockk<MemberEventContent>(),
+            EventId("\$event1"),
+            UserId("sender", "server"),
+            roomId,
+            1234,
+            stateKey = user1.full
+        )
+        val user2Event = Event.StateEvent(
+            mockk<MemberEventContent>(),
+            EventId("\$event2"),
+            UserId("sender", "server"),
+            roomId,
+            1234,
+            stateKey = user2.full
+        )
+        val user3Event = Event.StateEvent(
+            mockk<MemberEventContent>(),
+            EventId("\$event3"),
+            UserId("sender", "server"),
+            roomId,
+            1234,
+            stateKey = user3.full
+        )
+        beforeTest {
+            // This should be ignored
+            store.rooms.users.update(user4, roomId) {
+                RoomUser(
+                    roomId,
+                    user4,
+                    "U1 (@user4:server)",
+                    Event.StateEvent(
+                        MemberEventContent(displayName = "U1", membership = BAN),
+                        EventId("\$event4"),
+                        UserId("sender", "server"),
+                        roomId,
+                        1234,
+                        stateKey = user4.full
+                    )
+                )
+            }
+        }
+        context("user is new member") {
+            should("set our displayName to 'DisplayName'") {
+                val event = user1Event.copy(
+                    content = MemberEventContent(
+                        displayName = "U1",
+                        membership = JOIN
+                    )
+                )
+                cut.setRoomUser(event)
+                store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(roomId, user1, "U1", event)
+            }
+        }
+        context("user is member") {
+            beforeTest {
+                store.rooms.users.update(user1, roomId) {
+                    RoomUser(
+                        roomId,
+                        user1,
+                        "OLD",
+                        user1Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+                    )
+                }
+            }
+            context("no other user has same displayName") {
+                beforeTest {
+                    store.rooms.users.update(user2, roomId) {
+                        RoomUser(
+                            roomId,
+                            user2,
+                            "U2",
+                            user2Event.copy(content = MemberEventContent(displayName = "U2", membership = JOIN))
+                        )
+                    }
+                }
+                should("set our displayName to 'DisplayName'") {
+                    val event = user1Event.copy(
+                        content = MemberEventContent(
+                            displayName = "U1",
+                            membership = JOIN
+                        )
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(roomId, user1, "U1", event)
+                }
+                should("not change our displayName when it has not changed") {
+                    val event = user1Event.copy(
+                        content = MemberEventContent(
+                            displayName = "OLD",
+                            membership = JOIN
+                        )
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(roomId, user1, "OLD", event)
+                }
+                should("set our displayName to '@user:server' when no displayName set") {
+                    val event = user1Event.copy(content = MemberEventContent(membership = JOIN))
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId,
+                        user1,
+                        "@user1:server",
+                        event
+                    )
+                }
+                should("set our displayName to '@user:server' when displayName is empty") {
+                    val event = user1Event.copy(content = MemberEventContent(displayName = "", membership = JOIN))
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId,
+                        user1,
+                        "@user1:server",
+                        event
+                    )
+                }
+            }
+            context("one other user has same displayName") {
+                should("set displayName of the other and us to 'DisplayName (@user1:server)'") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = JOIN)
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId, user1, "U1 (@user1:server)", event
+                    )
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "U1 (@user2:server)", event2
+                    )
+                }
+            }
+            context("two other users have same displayName") {
+                should("set our displayName to 'DisplayName (@user:server)'") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) {
+                        RoomUser(roomId, user2, "U1 (@user2:server)", event2)
+                    }
+                    val event3 =
+                        user3Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user3, roomId) {
+                        RoomUser(roomId, user3, "U1 (@user3:server)", event3)
+                    }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = JOIN)
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId, user1, "U1 (@user1:server)", event
+                    )
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "U1 (@user2:server)", event2
+                    )
+                    store.rooms.users.byId(user3, roomId).value shouldBe RoomUser(
+                        roomId, user3, "U1 (@user3:server)", event3
+                    )
+                }
+            }
+            context("one other user has same old displayName") {
+                should("set displayName of the other to 'DisplayName'") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) {
+                        RoomUser(roomId, user2, "OLD (@user2:server)", event2)
+                    }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = JOIN)
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "OLD", event2
+                    )
+                }
+            }
+            context("two other users have same old displayName") {
+                should("keep displayName of the others'") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) {
+                        RoomUser(roomId, user2, "OLD (@user2:server)", event2)
+                    }
+                    val event3 =
+                        user3Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+                    store.rooms.users.update(user3, roomId) {
+                        RoomUser(roomId, user3, "OLD (@user3:server)", event3)
+                    }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = JOIN)
+                    )
+                    cut.setRoomUser(event)
+
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "OLD (@user2:server)", event2
+                    )
+                    store.rooms.users.byId(user3, roomId).value shouldBe RoomUser(
+                        roomId, user3, "OLD (@user3:server)", event3
+                    )
+                }
+            }
+        }
+        context("user is not member anymore") {
+            beforeTest {
+                store.rooms.users.update(user1, roomId) {
+                    RoomUser(
+                        roomId,
+                        user1,
+                        "OLD",
+                        user1Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+                    )
+                }
+            }
+            should("set our displayName to 'DisplayName (@user:server)'") {
+                val event = user1Event.copy(
+                    content = MemberEventContent(displayName = "OLD", membership = LEAVE)
+                )
+                cut.setRoomUser(event)
+                store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                    roomId, user1, "OLD (@user1:server)", event
+                )
+            }
+            context("one other user has same displayName") {
+                should("set displayName of the other to 'DisplayName'") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = BAN)
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId, user1, "U1 (@user1:server)", event
+                    )
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "U1", event2
+                    )
+                }
+            }
+            context("two other users have same displayName") {
+                should("keep displayName of the others") {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user2, roomId) {
+                        RoomUser(roomId, user2, "U1 (@user2:server)", event2)
+                    }
+                    val event3 =
+                        user3Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
+                    store.rooms.users.update(user3, roomId) {
+                        RoomUser(roomId, user3, "U1 (@user3:server)", event3)
+                    }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = LEAVE)
+                    )
+                    cut.setRoomUser(event)
+                    store.rooms.users.byId(user1, roomId).value shouldBe RoomUser(
+                        roomId, user1, "U1 (@user1:server)", event
+                    )
+                    store.rooms.users.byId(user2, roomId).value shouldBe RoomUser(
+                        roomId, user2, "U1 (@user2:server)", event2
+                    )
+                    store.rooms.users.byId(user3, roomId).value shouldBe RoomUser(
+                        roomId, user3, "U1 (@user3:server)", event3
+                    )
+                }
+            }
+        }
+    }
+
     context(RoomManager::setRoomDisplayName.name) {
         beforeTest {
-            store.rooms.update(room) { simpleRoom.copy(roomId = room) }
+            store.rooms.update(roomId) { simpleRoom.copy(roomId = roomId) }
         }
         suspend fun ShouldSpecContainerContext.testWithoutNameFromNameEvent() {
             context("with an existent Canonical Alias Event") {
@@ -113,9 +386,9 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                         heroes = heroes,
                         joinedMemberCountFromSync = 1,
                         invitedMemberCountFromSync = 1,
-                        roomId = room
+                        roomId = roomId
                     )
-                    store.rooms.byId(room).value?.name shouldBe RoomDisplayName(explicitName = "#somewhere:localhost")
+                    store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(explicitName = "#somewhere:localhost")
                 }
             }
             context("with a non-existent Canonical Alias Event") {
@@ -145,9 +418,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 1,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(heroesDisplayname = listOf("User1-Display"))
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
+                                    heroes = listOf(user1)
+                                )
                             }
                         }
                         context("|heroes| = 2") {
@@ -157,13 +432,10 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 1,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
-                                    heroesDisplayname = listOf(
-                                        "User1-Display",
-                                        "User2-Display"
-                                    )
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
+                                    heroes = listOf(user1, user2)
                                 )
                             }
                         }
@@ -184,9 +456,9 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 2,
                                     invitedMemberCountFromSync = 2,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(otherUsersCount = 3)
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(otherUsersCount = 3)
                             }
                         }
                         context("|heroes| = 1") {
@@ -196,10 +468,10 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 2,
                                     invitedMemberCountFromSync = 2,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
-                                    heroesDisplayname = listOf("User1-Display"),
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
+                                    heroes = listOf(user1),
                                     otherUsersCount = 2
                                 )
                             }
@@ -211,10 +483,10 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 2,
                                     invitedMemberCountFromSync = 2,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
-                                    heroesDisplayname = listOf("User1-Display", "User2-Display"),
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
+                                    heroes = listOf(user1, user2),
                                     otherUsersCount = 1
                                 )
                             }
@@ -238,9 +510,9 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                 heroes = heroes,
                                 joinedMemberCountFromSync = 1,
                                 invitedMemberCountFromSync = 0,
-                                roomId = room
+                                roomId = roomId
                             )
-                            store.rooms.byId(room).value?.name shouldBe RoomDisplayName(isEmpty = true)
+                            store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(isEmpty = true)
                         }
                     }
                     context("|heroes| >= |left member| + |banned member| - 1") {
@@ -251,11 +523,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User2-Display"),
+                                    heroes = listOf(user2),
                                     otherUsersCount = 1
                                 )
 
@@ -268,11 +540,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User2-Display", "User3-Display")
+                                    heroes = listOf(user2, user3)
                                 )
                             }
                         }
@@ -293,11 +565,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User2-Display"),
+                                    heroes = listOf(user2),
                                     otherUsersCount = 3
                                 )
                             }
@@ -309,11 +581,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 1,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User2-Display", "User3-Display"),
+                                    heroes = listOf(user2, user3),
                                     otherUsersCount = 2
                                 )
                             }
@@ -336,9 +608,9 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                 heroes = heroes,
                                 joinedMemberCountFromSync = 0,
                                 invitedMemberCountFromSync = 0,
-                                roomId = room
+                                roomId = roomId
                             )
-                            store.rooms.byId(room).value?.name shouldBe RoomDisplayName(isEmpty = true)
+                            store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(isEmpty = true)
                         }
                     }
                     context("|heroes| >= |left member| + |banned member| - 1") {
@@ -349,11 +621,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 0,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User1-Display")
+                                    heroes = listOf(user1)
                                 )
                             }
                         }
@@ -368,11 +640,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 0,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User1-Display", "User2-Display")
+                                    heroes = listOf(user1, user2)
                                 )
                             }
                         }
@@ -395,11 +667,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 0,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User1-Display"),
+                                    heroes = listOf(user1),
                                     otherUsersCount = 3
                                 )
                             }
@@ -412,11 +684,11 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                                     heroes = heroes,
                                     joinedMemberCountFromSync = 0,
                                     invitedMemberCountFromSync = 0,
-                                    roomId = room
+                                    roomId = roomId
                                 )
-                                store.rooms.byId(room).value?.name shouldBe RoomDisplayName(
+                                store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroesDisplayname = listOf("User1-Display", "User2-Display"),
+                                    heroes = listOf(user1, user2),
                                     otherUsersCount = 2
                                 )
                             }
@@ -445,9 +717,9 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                         heroes = heroes,
                         joinedMemberCountFromSync = 1,
                         invitedMemberCountFromSync = 1,
-                        roomId = room
+                        roomId = roomId
                     )
-                    store.rooms.byId(room).value?.name shouldBe RoomDisplayName(explicitName = "The room name")
+                    store.rooms.byId(roomId).value?.name shouldBe RoomDisplayName(explicitName = "The room name")
                 }
             }
             context("with an empty name field") {
@@ -459,58 +731,6 @@ class RoomManagerDisplayNameTest : ShouldSpec({
         }
         context("non-existent room name state event") {
             testWithoutNameFromNameEvent()
-        }
-    }
-
-    context(RoomManager::getUserDisplayName.name) {
-        context("with nonexistent userId") {
-            should("return the UserId as String") {
-                cut.getUserDisplayName(room, user1) shouldBe "@user1:server"
-            }
-        }
-        context("with existent userId") {
-            context("with nonexistent displayname value") {
-                should("return the UserId as String") {
-                    store.rooms.state.update(
-                        Event.StateEvent(
-                            MemberEventContent(membership = JOIN),
-                            EventId("\$event1"),
-                            user1,
-                            room,
-                            25,
-                            stateKey = user1.full
-                        )
-                    )
-                    cut.getUserDisplayName(room, user1) shouldBe "@user1:server"
-                }
-            }
-            context("with existent displayname value") {
-                beforeTest {
-                    store.rooms.state.updateAll(
-                        listOf(
-                            memberEvent(1, user1, "User1-Display", JOIN),
-                            memberEvent(2, user2, "User2-Display", INVITE),
-                            memberEvent(3, user3, "User3-Display", JOIN),
-                            memberEvent(4, user4, "User4-Display", JOIN),
-                        )
-                    )
-                }
-                context("with unique displayname value") {
-                    should("return the value of the displayname field") {
-                        cut.getUserDisplayName(room, user1) shouldBe "User1-Display"
-                    }
-                }
-                context("with non-unique displayname value") {
-                    should("return the value of the displayname field concatenated with the userId") {
-                        store.rooms.state.update(
-                            memberEvent(5, user5, "User1-Display", JOIN)
-                        )
-                        cut.getUserDisplayName(
-                            room, user1
-                        ) shouldBe "User1-Display (@user1:server)"
-                    }
-                }
-            }
         }
     }
 })

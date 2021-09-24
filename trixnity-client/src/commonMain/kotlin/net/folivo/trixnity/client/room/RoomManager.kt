@@ -40,6 +40,7 @@ class RoomManager(
         launch { api.sync.events<StateEventContent>().collect { store.rooms.state.update(it) } }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
+        launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
         launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
         launch {
             api.sync.syncResponses.collect { syncResponse ->
@@ -90,24 +91,72 @@ class RoomManager(
         // TODO reaction and edit (also in fetchMissingEvents!)
     }
 
-    //TODO add hash table mapping from displayname to a list of room members using that name, see https://matrix.org/docs/spec/client_server/latest#calculating-the-display-name-for-a-user
-    suspend fun getUserDisplayName(roomId: RoomId, userId: UserId): String {
-        val userDisplayName = store.rooms.state.byId<MemberEventContent>(
-            roomId,
-            userId.full
-        ).value?.content?.displayName
+    private fun calculateUserDisplayName(
+        displayName: String?,
+        isUnique: Boolean,
+        userId: UserId,
+    ): String {
+        return when {
+            displayName.isNullOrEmpty() -> userId.full
+            isUnique -> displayName
+            else -> "$displayName (${userId.full})"
+        }
+    }
 
-        if (userDisplayName.isNullOrEmpty()) return userId.full
+    private suspend fun resolveUserDisplayNameCollisions(
+        displayName: String,
+        isOld: Boolean,
+        sourceUserId: UserId,
+        roomId: RoomId
+    ): Boolean {
+        val usersWithSameDisplayName =
+            store.rooms.users.byOriginalNameAndMembership(displayName, setOf(JOIN, INVITE), roomId) - sourceUserId
+        if (usersWithSameDisplayName.size == 1) {
+            val userId = usersWithSameDisplayName.first()
+            val calculatedName = calculateUserDisplayName(displayName, isOld, userId)
+            store.rooms.users.update(userId, roomId) {
+                it?.copy(
+                    name = calculatedName
+                )
+            }
+            log.debug { "found displayName collision '$displayName' of $userId with $sourceUserId in $roomId - new displayName: '$calculatedName'" }
+        }
+        return usersWithSameDisplayName.isNotEmpty()
+    }
 
-        val containsUserWithSameDisplayName =
-            store.rooms.state.allById<MemberEventContent>(roomId).value.asSequence()
-                .filter { it.key != userId.full }
-                .filter { it.value.content.membership == JOIN || it.value.content.membership == INVITE }
-                .find { it.value.content.displayName == userDisplayName } != null
+    internal suspend fun setRoomUser(event: Event<MemberEventContent>) {
+        val roomId = event.getRoomId()
+        val stateKey = event.getStateKey()
+        if (roomId != null && stateKey != null) {
+            val userId = UserId(stateKey)
+            val membership = event.content.membership
+            val newDisplayName = event.content.displayName
 
-        if (containsUserWithSameDisplayName) return "$userDisplayName ($userId)"
+            val hasLeftRoom = membership == LEAVE || membership == BAN
 
-        return userDisplayName
+            val oldDisplayName = store.rooms.users.byId(userId, roomId).value?.originalName
+            val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
+                if (!oldDisplayName.isNullOrEmpty())
+                    resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
+                if (!newDisplayName.isNullOrEmpty())
+                    resolveUserDisplayNameCollisions(newDisplayName, hasLeftRoom, userId, roomId)
+                else false
+            } else false
+            val calculatedName = calculateUserDisplayName(newDisplayName, !hasLeftRoom && !hasCollisions, userId)
+            log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
+
+            store.rooms.users.update(userId, roomId) { oldRoomUser ->
+                oldRoomUser?.copy(
+                    name = calculatedName,
+                    event = event
+                ) ?: RoomUser(
+                    roomId = roomId,
+                    userId = userId,
+                    name = calculatedName,
+                    event = event
+                )
+            }
+        }
     }
 
     internal suspend fun setRoomDisplayName(
@@ -136,17 +185,17 @@ class RoomManager(
                             val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
                             val leftMembersCount =
                                 store.rooms.state.membersCount(roomId, LEAVE, BAN) - if (isCompletelyEmpty) us else 0
-                            val heroesDisplayName = heroes.map { getUserDisplayName(roomId, UserId(it)) }
+                            val heroesUserIds = heroes.map { UserId(it) }
                             when {
                                 leftMembersCount <= heroes.size ->
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroesDisplayname = heroesDisplayName
+                                        heroes = heroesUserIds
                                     )
                                 else -> {
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroesDisplayname = heroesDisplayName,
+                                        heroes = heroesUserIds,
                                         otherUsersCount = leftMembersCount - heroes.size
                                     )
                                 }
@@ -161,15 +210,15 @@ class RoomManager(
                                 otherUsersCount = joinedMemberCount + invitedMemberCount - us
                             )
                         else -> {
-                            val heroesDisplayName = heroes.map { getUserDisplayName(roomId, UserId(it)) }
+                            val heroesUserIds = heroes.map { UserId(it) }
                             when {
                                 joinedMemberCount + invitedMemberCount - us <= heroes.size ->
                                     RoomDisplayName(
-                                        heroesDisplayname = heroesDisplayName
+                                        heroes = heroesUserIds
                                     )
                                 else ->
                                     RoomDisplayName(
-                                        heroesDisplayname = heroesDisplayName,
+                                        heroes = heroesUserIds,
                                         otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us
                                     )
                             }
@@ -198,9 +247,7 @@ class RoomManager(
             }
     }
 
-    internal suspend fun setEncryptionAlgorithm(
-        event: Event<EncryptionEventContent>
-    ) {
+    internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {
         if (event is StateEvent) {
             store.rooms.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
@@ -361,10 +408,7 @@ class RoomManager(
         }
     }
 
-    suspend fun fetchMissingEvents(
-        startEvent: TimelineEvent, limit: Long =
-            20
-    ) {
+    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20) {
         val startGap = startEvent.gap
         if (startGap != null) {
             val roomId = startEvent.roomId
@@ -545,9 +589,10 @@ class RoomManager(
                 val memberEvents = api.rooms.getMembers(
                     roomId = roomId,
                     at = store.account.syncBatchToken.value,
-                    membership = Membership.JOIN
+                    notMembership = Membership.LEAVE
                 ).toList()
                 store.rooms.state.updateAll(memberEvents.filterIsInstance<StateEvent<StateEventContent>>())
+                memberEvents.forEach { setRoomUser(it) }
                 store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                 oldRoom.copy(membersLoaded = true)
             } else oldRoom
@@ -588,23 +633,18 @@ class RoomManager(
     val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(roomId: RoomId)
-            : StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
+    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
         store.rooms.byId(roomId).transformLatest { room ->
             if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId))
             else emit(null)
         }.stateIn(lastTimelineEventScope)
     }
 
-    suspend fun getPreviousTimelineEvent(event: TimelineEvent)
-            : StateFlow<TimelineEvent?>
-    ? {
+    suspend fun getPreviousTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
         return event.previousEventId?.let { getTimelineEvent(it, event.roomId) }
     }
 
-    suspend fun getNextTimelineEvent(event: TimelineEvent)
-            : StateFlow<TimelineEvent?>
-    ? {
+    suspend fun getNextTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId) }
     }
 }
