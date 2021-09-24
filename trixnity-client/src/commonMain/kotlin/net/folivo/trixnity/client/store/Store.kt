@@ -7,6 +7,7 @@ import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
 import kotlin.reflect.KClass
 
 interface Store {
@@ -36,6 +37,7 @@ interface Store {
     interface RoomsStore {
         val state: RoomStateStore
         val timeline: RoomTimelineStore
+        val users: RoomUserStore
 
         suspend fun all(): StateFlow<Set<Room>>
         suspend fun byId(roomId: RoomId): StateFlow<Room?>
@@ -65,6 +67,22 @@ interface Store {
 
             suspend fun updateAll(events: List<TimelineEvent>)
             suspend fun byId(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?>
+        }
+
+        interface RoomUserStore {
+            suspend fun all(): StateFlow<Set<RoomUser>>
+            suspend fun byId(userId: UserId, roomId: RoomId): StateFlow<RoomUser?>
+            suspend fun update(
+                userId: UserId,
+                roomId: RoomId,
+                updater: suspend (oldRoomUser: RoomUser?) -> RoomUser?
+            ): StateFlow<RoomUser?>
+
+            suspend fun byOriginalNameAndMembership(
+                originalName: String,
+                membership: Set<Membership>,
+                roomId: RoomId
+            ): Set<UserId>
         }
     }
 

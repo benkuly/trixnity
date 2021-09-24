@@ -7,10 +7,12 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import kotlin.reflect.KClass
 
 class InMemoryStore(
@@ -44,7 +46,7 @@ class InMemoryStore(
         Store.ServerStore
 
     class InMemoryAccountStore : Store.AccountStore {
-        override val userId: MutableStateFlow<MatrixId.UserId?> = MutableStateFlow(null)
+        override val userId: MutableStateFlow<UserId?> = MutableStateFlow(null)
         override val deviceId: MutableStateFlow<String?> = MutableStateFlow(null)
         override val accessToken: MutableStateFlow<String?> = MutableStateFlow(null)
         override val syncBatchToken: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -57,6 +59,7 @@ class InMemoryStore(
 
         override val state = InMemoryRoomStateStore(scope)
         override val timeline = InMemoryRoomTimelineStore()
+        override val users = InMemoryRoomUserStore(scope)
 
         private val rooms: MutableStateFlow<Map<RoomId, Room?>> = MutableStateFlow(mapOf())
 
@@ -160,15 +163,53 @@ class InMemoryStore(
                 return timelineEvents.getOrPut(eventId + roomId) { MutableStateFlow(null) }
             }
         }
+
+        class InMemoryRoomUserStore(private val scope: CoroutineScope) : Store.RoomsStore.RoomUserStore {
+            private val roomUsers = MutableStateFlow<Map<Pair<UserId, RoomId>, RoomUser?>>(mapOf())
+
+            override suspend fun all(): StateFlow<Set<RoomUser>> {
+                return roomUsers.map { roomUsersMap -> roomUsersMap.mapNotNull { it.value }.toSet() }.stateIn(scope)
+            }
+
+            override suspend fun byId(userId: UserId, roomId: RoomId): StateFlow<RoomUser?> {
+                return roomUsers.map { it[userId to roomId] }.stateIn(scope)
+            }
+
+            override suspend fun update(
+                userId: UserId,
+                roomId: RoomId,
+                updater: suspend (oldRoomUser: RoomUser?) -> RoomUser?
+            ): StateFlow<RoomUser?> {
+                roomUsers.update { oldRoomUsers ->
+                    oldRoomUsers + mapOf((userId to roomId) to updater(oldRoomUsers[(userId to roomId)]))
+                }
+                return byId(userId, roomId)
+            }
+
+            override suspend fun byOriginalNameAndMembership(
+                originalName: String,
+                membership: Set<MemberEventContent.Membership>,
+                roomId: RoomId
+            ): Set<UserId> {
+                return roomUsers.value.asSequence()
+                    .filter { it.key.second == roomId }
+                    .mapNotNull { it.value }
+                    .filter { it.originalName == originalName }
+                    .filter { membership.contains(it.membership) }
+                    .map { it.userId }
+                    .toSet()
+            }
+
+        }
     }
 
     class InMemoryDeviceKeysStore : Store.DeviceKeysStores {
-        private val deviceKeys: MutableMap<MatrixId.UserId, MutableStateFlow<Map<String, DeviceKeys>?>> = mutableMapOf()
-        override suspend fun byUserId(userId: MatrixId.UserId): MutableStateFlow<Map<String, DeviceKeys>?> {
+        private val deviceKeys: MutableMap<UserId, MutableStateFlow<Map<String, DeviceKeys>?>> = mutableMapOf()
+        override suspend fun byUserId(userId: UserId): MutableStateFlow<Map<String, DeviceKeys>?> {
             return deviceKeys.getOrPut(userId) { MutableStateFlow(null) }
         }
 
-        override val outdatedKeys: MutableStateFlow<Set<MatrixId.UserId>> = MutableStateFlow(setOf())
+        override val outdatedKeys: MutableStateFlow<Set<UserId>> = MutableStateFlow(setOf())
     }
 
     class InMemoryOlmStore : Store.OlmStore {

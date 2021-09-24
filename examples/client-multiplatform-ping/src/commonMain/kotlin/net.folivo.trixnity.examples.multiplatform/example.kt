@@ -94,7 +94,7 @@ suspend fun example() = coroutineScope {
             }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
                 val event = timelineEvent.value?.event
                 val content = event?.content
-                val sender = event?.sender?.let { matrixClient.rooms.getUserDisplayName(roomId, it) }
+                val sender = event?.sender?.let { store.rooms.users.byId(it, roomId).value?.name }
                 when {
                     event is MessageEvent && content is RoomMessageEventContent ->
                         println("${sender}: ${content.body}")

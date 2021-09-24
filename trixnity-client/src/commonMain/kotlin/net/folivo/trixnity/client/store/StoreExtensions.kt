@@ -57,3 +57,12 @@ suspend inline fun Store.OlmStore.waitForInboundMegolmSession(
 ) {
     inboundMegolmSession(roomId, sessionId, senderKey).first { it != null }
 }
+
+val RoomUser.originalName
+    get() = this.event.content.displayName
+
+val RoomUser.avatarUrl
+    get() = this.event.content.avatarUrl
+
+val RoomUser.membership
+    get() = this.event.content.membership
