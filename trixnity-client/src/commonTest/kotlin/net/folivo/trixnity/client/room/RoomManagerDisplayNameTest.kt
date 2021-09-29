@@ -8,7 +8,6 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomDisplayName
@@ -29,8 +28,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
     val roomId = MatrixId.RoomId("room", "server")
     val store = InMemoryStore()
     val api = mockk<MatrixApiClient>()
-    val olm = mockk<OlmManager>()
-    val cut = RoomManager(store, api, olm, LoggerFactory.default)
+    val cut = RoomManager(store, api, mockk(), mockk(), loggerFactory = LoggerFactory.default)
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
     val user3 = UserId("user3", "server")
@@ -42,7 +40,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
     }
 
     afterTest {
-        clearMocks(api, olm)
+        clearMocks(api)
         store.clear()
     }
 

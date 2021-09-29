@@ -73,9 +73,10 @@ class SyncApiClient(
                         is CancellationException -> throw error
                         else -> _currentSyncState.value = SyncState.ERROR
                     }
-                    log.error(error) { "error while sync to server: ${error.message}" }
+                    log.info { "error while sync to server: $error" }
+                    log.debug { error.stackTraceToString() }
                     delay(5000)// TODO better retry policy!
-                    continue
+                    _currentSyncState.value = SyncState.STARTED
                 }
             }
         }

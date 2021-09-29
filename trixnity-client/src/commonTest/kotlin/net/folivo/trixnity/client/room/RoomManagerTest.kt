@@ -5,32 +5,34 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.media.FileTransferProgress
+import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.STARTED
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.OlmManager
+import net.folivo.trixnity.client.media.MediaManager
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.UserId
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
@@ -42,6 +44,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
@@ -51,11 +54,12 @@ import kotlin.test.assertNotNull
 class RoomManagerTest : ShouldSpec({
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
-    val room = MatrixId.RoomId("room", "server")
+    val room = simpleRoom.roomId
     val store = InMemoryStore()
     val api = mockk<MatrixApiClient>()
     val olm = mockk<OlmManager>()
-    val cut = RoomManager(store, api, olm, LoggerFactory.default)
+    val media = mockk<MediaManager>()
+    val cut = RoomManager(store, api, olm, media, loggerFactory = LoggerFactory.default)
 
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
@@ -282,7 +286,7 @@ class RoomManagerTest : ShouldSpec({
         should("update set encryption algorithm") {
             cut.setEncryptionAlgorithm(
                 Event.StateEvent(
-                    EncryptionEventContent(algorithm = EncryptionAlgorithm.Megolm),
+                    EncryptionEventContent(algorithm = Megolm),
                     EventId("\$event1"),
                     alice,
                     room,
@@ -290,7 +294,7 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.rooms.byId(room).value?.encryptionAlgorithm shouldBe EncryptionAlgorithm.Megolm
+            store.rooms.byId(room).value?.encryptionAlgorithm shouldBe Megolm
         }
     }
 
@@ -489,6 +493,138 @@ class RoomManagerTest : ShouldSpec({
                 this[1]?.value shouldBe null
                 this[2]?.value shouldBe event2Timeline
             }
+        }
+    }
+    context(RoomManager::sendMessage.name) {
+        should("just save message in store for later use") {
+            val content = TextMessageEventContent("hi")
+            cut.sendMessage(content, room)
+            val outboundMessages = store.rooms.outboxMessages.all().value
+            outboundMessages shouldHaveSize 1
+            assertSoftly(outboundMessages.first()) {
+                roomId shouldBe room
+                content shouldBe content
+                transactionId.length shouldBeGreaterThan 12
+            }
+        }
+    }
+    context(RoomManager::syncOutboxMessage.name) {
+        should("ignore messages from foreign users") {
+            store.account.userId.value = UserId("me", "server")
+            val roomOutboxMessage = RoomOutboxMessage(TextMessageEventContent("hi"), room, "transaction", true)
+            store.rooms.outboxMessages.add(roomOutboxMessage)
+            val event: Event<MessageEventContent> = MessageEvent(
+                TextMessageEventContent("hi"),
+                EventId("\$event"),
+                UserId("sender", "server"),
+                room,
+                1234,
+                UnsignedMessageEventData(transactionId = "transaction")
+            )
+            cut.syncOutboxMessage(event)
+            store.rooms.outboxMessages.all().value.first() shouldBe roomOutboxMessage
+        }
+        should("remove outbox message from us") {
+            store.account.userId.value = UserId("me", "server")
+            val roomOutboxMessage = RoomOutboxMessage(TextMessageEventContent("hi"), room, "transaction", true)
+            store.rooms.outboxMessages.add(roomOutboxMessage)
+            val event: Event<MessageEventContent> = MessageEvent(
+                TextMessageEventContent("hi"),
+                EventId("\$event"),
+                UserId("me", "server"),
+                room,
+                1234,
+                UnsignedMessageEventData(transactionId = "transaction")
+            )
+            cut.syncOutboxMessage(event)
+            store.rooms.outboxMessages.all().value.size shouldBe 0
+        }
+    }
+    context(RoomManager::processOutboxMessages.name) {
+        should("wait until connected, upload media, send message and mark outbox message as sent") {
+            store.rooms.update(room) { simpleRoom }
+            val mxcUrl = "mxc://dino"
+            val cacheUrl = "cache://unicorn"
+            val mediaUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
+            val message1 =
+                RoomOutboxMessage(
+                    ImageMessageEventContent("hi.png", url = cacheUrl),
+                    room, "transaction1", false, mediaUploadProgress
+                )
+            val message2 = RoomOutboxMessage(TextMessageEventContent("hi"), room, "transaction2", false)
+            store.rooms.outboxMessages.add(message1)
+            store.rooms.outboxMessages.add(message2)
+            coEvery { media.uploadMedia(any(), any()) } returns mxcUrl
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event", "server")
+            val syncState = MutableStateFlow(STARTED)
+            coEvery { api.sync.currentSyncState } returns syncState.asStateFlow()
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.rooms.outboxMessages.all()) }
+            delay(50)
+            job.isActive shouldBe true
+            syncState.value = RUNNING
+
+            coVerify(timeout = 500) {
+                media.uploadMedia(cacheUrl, mediaUploadProgress)
+                api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
+                api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
+            }
+            val outboxMessages = store.rooms.outboxMessages.all().value
+            outboxMessages shouldHaveSize 2
+            outboxMessages[0].wasSent shouldBe true
+            outboxMessages[1].wasSent shouldBe true
+            job.cancel()
+        }
+        should("encrypt events in encrypted rooms") {
+            store.rooms.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm) }
+            val message = RoomOutboxMessage(TextMessageEventContent("hi"), room, "transaction", false)
+            store.rooms.outboxMessages.add(message)
+            val encryptionState =
+                Event.StateEvent(
+                    EncryptionEventContent(),
+                    EventId("\$stateEvent"),
+                    UserId("sender", "server"),
+                    room,
+                    1234,
+                    stateKey = ""
+                )
+            store.rooms.state.update(encryptionState)
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event", "server")
+            val megolmEventContent = mockk<MegolmEncryptedEventContent>()
+            coEvery { olm.events.encryptMegolm(any(), any(), any()) } returns megolmEventContent
+            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf()
+            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.rooms.outboxMessages.all()) }
+
+            coVerify(timeout = 500) {
+                api.rooms.sendMessageEvent(room, megolmEventContent, "transaction")
+                olm.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
+                api.rooms.getMembers(any(), any(), any(), any(), any())
+            }
+            val outboxMessages = store.rooms.outboxMessages.all().value
+            outboxMessages shouldHaveSize 1
+            outboxMessages[0].wasSent shouldBe true
+            job.cancel()
+        }
+        should("retry on sending error") {
+            store.rooms.update(room) { simpleRoom }
+            val message = RoomOutboxMessage(TextMessageEventContent("hi"), room, "transaction", false)
+            store.rooms.outboxMessages.add(message)
+            coEvery {
+                api.rooms.sendMessageEvent(any(), any(), any(), any())
+            } throws IllegalArgumentException("wtf") andThen EventId("event", "server")
+            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.rooms.outboxMessages.all()) }
+
+            coVerify(exactly = 2, timeout = 500) {
+                api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
+            }
+            val outboxMessages = store.rooms.outboxMessages.all().value
+            outboxMessages shouldHaveSize 1
+            outboxMessages[0].wasSent shouldBe true
+            job.cancel()
         }
     }
 })

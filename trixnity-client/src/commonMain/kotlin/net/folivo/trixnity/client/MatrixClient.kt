@@ -15,8 +15,10 @@ import net.folivo.trixnity.client.api.users.RoomFilter
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.media.MediaManager
 import net.folivo.trixnity.client.room.RoomManager
+import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
@@ -39,6 +41,8 @@ class MatrixClient private constructor(
             password: String,
             initialDeviceDisplayName: String? = null,
             store: Store,
+            customMappings: EventContentSerializerMappings? = null,
+            customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient {
             val api = MatrixApiClient(
@@ -46,6 +50,7 @@ class MatrixClient private constructor(
                 store.server.port,
                 store.server.secure,
                 store.account.accessToken,
+                customMappings = customMappings,
                 loggerFactory = loggerFactory
             )
             val (userId, accessToken, deviceId) = api.authentication.login(
@@ -63,17 +68,20 @@ class MatrixClient private constructor(
                 json = api.json,
                 loggerFactory = loggerFactory
             )
-            val roomManager = RoomManager(store, api, olm, loggerFactory)
             store.deviceKeys.byUserId(userId).value = mapOf(deviceId to olm.myDeviceKeys.signed)
             api.keys.uploadKeys(deviceKeys = olm.myDeviceKeys)
 
             val mediaManager = MediaManager(api, store, loggerFactory)
+            val roomManager =
+                RoomManager(store, api, olm, mediaManager, customOutboxMessageMediaUploaderMappings, loggerFactory)
 
             return MatrixClient(store, api, olm, roomManager, mediaManager, loggerFactory)
         }
 
         fun fromStore(
             store: Store,
+            customMappings: EventContentSerializerMappings? = null,
+            customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient? {
             val api = MatrixApiClient(
@@ -81,6 +89,8 @@ class MatrixClient private constructor(
                 store.server.port,
                 store.server.secure,
                 store.account.accessToken,
+                customMappings = customMappings,
+                loggerFactory = loggerFactory
             )
 
             val accessToken = store.account.accessToken.value
@@ -94,8 +104,10 @@ class MatrixClient private constructor(
                     json = api.json,
                     loggerFactory = loggerFactory
                 )
-                val roomManager = RoomManager(store, api, olm, loggerFactory)
                 val mediaManager = MediaManager(api, store, loggerFactory)
+                val roomManager =
+                    RoomManager(store, api, olm, mediaManager, customOutboxMessageMediaUploaderMappings, loggerFactory)
+
                 MatrixClient(store, api, olm, roomManager, mediaManager, loggerFactory)
             } else null
         }
@@ -117,7 +129,7 @@ class MatrixClient private constructor(
     suspend fun startSync() {
         val handler = CoroutineExceptionHandler { _, exception ->
             // TODO maybe log to some sort of backend
-            log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now." }
+            log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
             scope.launch { api.sync.cancel() }
         }
         scope.launch(handler) {

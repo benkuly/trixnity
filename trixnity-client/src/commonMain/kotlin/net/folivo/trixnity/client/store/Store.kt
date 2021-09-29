@@ -38,6 +38,7 @@ interface Store {
         val state: RoomStateStore
         val timeline: RoomTimelineStore
         val users: RoomUserStore
+        val outboxMessages: RoomOutboxMessagesStore
 
         suspend fun all(): StateFlow<Set<Room>>
         suspend fun byId(roomId: RoomId): StateFlow<Room?>
@@ -84,6 +85,15 @@ interface Store {
                 roomId: RoomId
             ): Set<UserId>
         }
+
+        interface RoomOutboxMessagesStore {
+            suspend fun add(message: RoomOutboxMessage)
+            suspend fun deleteByTransactionId(transactionId: String)
+            suspend fun markAsSent(transactionId: String)
+
+            suspend fun all(): StateFlow<List<RoomOutboxMessage>>
+            suspend fun allByRoomId(roomId: RoomId): StateFlow<List<RoomOutboxMessage>>
+        }
     }
 
     interface DeviceKeysStores {
@@ -113,9 +123,16 @@ interface Store {
         suspend fun outboundMegolmSession(roomId: RoomId): MutableStateFlow<StoredOutboundMegolmSession?>
     }
 
+    // TODO this should be Okio Source or something similar streaming bytes.
     interface MediaStore {
-        // TODO this should use Source or something similar streaming bytes.
-        suspend fun add(uri: String, media: ByteArray)
+        suspend fun addContent(uri: String, content: ByteArray)
         suspend fun byUri(uri: String): ByteArray?
+        suspend fun changeUri(oldUri: String, newUri: String)
+
+        suspend fun getUploadMediaCache(cacheUri: String): UploadMediaCache?
+        suspend fun updateUploadMediaCache(
+            cacheUri: String,
+            updater: suspend (oldUploadMediaCache: UploadMediaCache?) -> UploadMediaCache?
+        )
     }
 }

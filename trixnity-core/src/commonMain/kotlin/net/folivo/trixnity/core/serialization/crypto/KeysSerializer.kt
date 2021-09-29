@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
 import net.folivo.trixnity.core.model.crypto.Keys
 
-object KeysSerializer : KSerializer<Keys> { // FIXME test
+object KeysSerializer : KSerializer<Keys> { // TODO test
     override fun deserialize(decoder: Decoder): Keys {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject

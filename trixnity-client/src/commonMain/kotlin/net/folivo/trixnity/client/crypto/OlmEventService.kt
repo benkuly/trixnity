@@ -246,7 +246,7 @@ class OlmEventService internal constructor(
                             try {
                                 deviceName to encryptOlm(roomKeyEventContent, user, deviceName)
                             } catch (e: Throwable) {
-                                log.warning(e) { "could not encrypt olm" }
+                                log.debug { "could not encrypt olm: ${e.stackTraceToString()}" }
                                 null
                             }
                         }.toMap()

@@ -38,7 +38,7 @@ suspend fun example() = coroutineScope {
                     val body = event.content.body
                     when {
                         body.startsWith("ping") -> {
-                            matrixRestClient.rooms.sendRoomEvent(
+                            matrixRestClient.rooms.sendMessageEvent(
                                 roomId, TextMessageEventContent(body = "pong")
                             )
                         }
@@ -62,7 +62,7 @@ suspend fun example() = coroutineScope {
                                     contentLength,
                                     senderAvatarDownload.contentType ?: ContentType.Application.OctetStream
                                 ).contentUri
-                                matrixRestClient.rooms.sendRoomEvent(
+                                matrixRestClient.rooms.sendMessageEvent(
                                     roomId, ImageMessageEventContent(
                                         body = "avatar image of ${event.sender}",
                                         format = ImageInfo(),

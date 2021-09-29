@@ -47,6 +47,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 //                implementation("com.squareup.okio:okio:${Versions.okio}")
+                implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
