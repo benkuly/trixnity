@@ -54,6 +54,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
                     return content
                 }
             }
+            timeout {
+                requestTimeoutMillis = 600000
+            }
             if (progress != null)
                 onUpload { transferred, total ->
                     progress.value = FileTransferProgress(transferred, total)
@@ -74,6 +77,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
         val response = httpClient.get<HttpResponse> {
             url("/_matrix/media/r0/download/${uri.host}${uri.encodedPath}")
             parameter("allow_remote", allowRemote)
+            timeout {
+                requestTimeoutMillis = 600000
+            }
             if (progress != null)
                 onDownload { transferred, total ->
                     progress.value = FileTransferProgress(transferred, total)
@@ -106,6 +112,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
             parameter("height", height)
             parameter("method", method.value)
             parameter("allow_remote", allowRemote)
+            timeout {
+                requestTimeoutMillis = 300000
+            }
             if (progress != null)
                 onDownload { transferred, total ->
                     progress.value = FileTransferProgress(transferred, total)
