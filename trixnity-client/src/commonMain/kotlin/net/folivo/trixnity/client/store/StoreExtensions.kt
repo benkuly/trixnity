@@ -17,7 +17,7 @@ suspend inline fun <reified C : StateEventContent> Store.RoomsStore.RoomStateSto
     stateKey: String = ""
 ): StateFlow<Event<C>?> = this.allById(roomId, stateKey, C::class)
 
-// FIXME test
+// TODO test
 suspend inline fun Store.RoomsStore.RoomStateStore.members(
     roomId: MatrixId.RoomId,
     membership: Membership,
@@ -27,7 +27,7 @@ suspend inline fun Store.RoomsStore.RoomStateStore.members(
         (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
     }.map { MatrixId.UserId(it.key) }.toSet()
 
-// FIXME test
+// TODO test
 suspend inline fun Store.RoomsStore.RoomStateStore.membersCount(
     roomId: MatrixId.RoomId,
     membership: Membership,

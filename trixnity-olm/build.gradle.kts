@@ -41,7 +41,7 @@ kotlin {
         }
         publishLibraryVariants("release", "debug")
     }
-//    js(IR) { // FIXME enable
+//    js(IR) { // TODO enable
 //        browser {
 //            testTask {
 //                useKarma {

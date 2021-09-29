@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 import org.kodein.log.filter.entry.minimumLevel
@@ -29,9 +30,9 @@ suspend fun example() = coroutineScope {
         "password",
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
         store,
-        LoggerFactory(
+        loggerFactory = LoggerFactory(
             listOf(defaultLogFrontend),
-            listOf(minimumLevel(Logger.Level.WARNING)),
+            listOf(minimumLevel(Logger.Level.INFO)),
         )
     )
 
@@ -42,8 +43,6 @@ suspend fun example() = coroutineScope {
 
     val roomId = RoomId("!room:server")
 
-    val answers = MutableSharedFlow<String>(extraBufferCapacity = 5)
-
     val job1 = launch {
         encrytpedEventFlow.collect { event ->
             require(event is MessageEvent<MegolmEncryptedEventContent>)
@@ -53,8 +52,8 @@ suspend fun example() = coroutineScope {
                     try {
                         val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
                         val content = decryptedEvent.content
-                        if (content is RoomMessageEventContent.TextMessageEventContent && content.body.startsWith("ping")) {
-                            answers.emit("pong to ${content.body}")
+                        if (content is TextMessageEventContent && content.body.startsWith("ping")) {
+                            matrixClient.rooms.sendMessage(TextMessageEventContent("pong to ${content.body}"), roomId)
                         }
                     } catch (_: Exception) {
 
@@ -64,17 +63,6 @@ suspend fun example() = coroutineScope {
         }
     }
     val job2 = launch {
-        answers.collect {
-            delay(500)
-            val pongEvent = matrixClient.olm.events.encryptMegolm(
-                RoomMessageEventContent.TextMessageEventContent(it),
-                roomId,
-                matrixClient.api.rooms.getStateEvent(roomId)
-            )
-            matrixClient.api.rooms.sendRoomEvent(roomId, pongEvent)
-        }
-    }
-    val job3 = launch {
         matrixClient.rooms.getLastTimelineEvent(roomId).filterNotNull().collect { lastEvent ->
             matrixClient.rooms.loadMembers(roomId)
             val roomName = store.rooms.byId(roomId).value?.name
@@ -122,7 +110,6 @@ suspend fun example() = coroutineScope {
 
     delay(300000)
 
-    job3.cancelAndJoin()
     job2.cancelAndJoin()
     job1.cancelAndJoin()
 }

@@ -30,7 +30,7 @@ class RoomManagerTimelineTest : ShouldSpec({
     val store = InMemoryStore()
     val api = mockk<MatrixApiClient>()
     val olm = mockk<OlmManager>()
-    val cut = RoomManager(store, api, olm, LoggerFactory.default)
+    val cut = RoomManager(store, api, olm, mockk(), loggerFactory = LoggerFactory.default)
 
     afterTest {
         clearMocks(api)

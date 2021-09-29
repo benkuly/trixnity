@@ -1,24 +1,30 @@
 package net.folivo.trixnity.client.room
 
+import arrow.fx.coroutines.Schedule
+import arrow.fx.coroutines.retry
+import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.rooms.Membership
+import net.folivo.trixnity.client.api.sync.SyncApiClient
+import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getOriginTimestamp
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
+import net.folivo.trixnity.client.media.MediaManager
+import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.MatrixId.*
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -27,68 +33,79 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 class RoomManager(
     private val store: Store,
     private val api: MatrixApiClient,
     private val olm: OlmManager,
+    private val media: MediaManager,
+    customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     loggerFactory: LoggerFactory
 ) {
     private val log = newLogger(loggerFactory)
 
+    private val outboxMessageMediaUploaderMappings =
+        DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
+
+    @OptIn(FlowPreview::class)
     suspend fun startEventHandling() = coroutineScope {
         launch { api.sync.events<StateEventContent>().collect { store.rooms.state.update(it) } }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
         launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
         launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
-        launch {
-            api.sync.syncResponses.collect { syncResponse ->
-                syncResponse.room?.join?.entries?.forEach { room ->
-                    val roomId = room.key
-                    // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
-                    store.rooms.update(roomId) { oldRoom ->
-                        oldRoom ?: Room(
-                            roomId = roomId,
-                            ownMembership = JOIN,
-                            lastEventAt = fromEpochMilliseconds(0),
-                            lastEventId = null
-                        )
-                    }
-                    room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
-                    room.value.timeline?.also {
-                        addEventsToTimelineAtEnd(
-                            roomId = roomId,
-                            events = it.events,
-                            previousBatch = it.previousBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.also { event -> setLastEventAt(event) }
-                    }
+        launch { api.sync.events<MessageEventContent>().collect(::syncOutboxMessage) }
+        launch { processOutboxMessages(store.rooms.outboxMessages.all()) }
+        launch { api.sync.syncResponses.collect(::handleSyncResponse) }
+        // TODO reaction and edit (also in fetchMissingEvents!)
+    }
 
-                    room.value.summary?.also {
-                        setRoomDisplayName(
-                            roomId,
-                            it.heroes,
-                            it.joinedMemberCount,
-                            it.invitedMemberCount,
-                        )
-                    }
-                }
-                syncResponse.room?.leave?.entries?.forEach { room ->
-                    room.value.timeline?.also {
-                        addEventsToTimelineAtEnd(
-                            roomId = room.key,
-                            events = it.events,
-                            previousBatch = it.previousBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.let { event -> setLastEventAt(event) }
-                    }
-                }
+    // TODO test
+    internal suspend fun handleSyncResponse(syncResponse: SyncResponse) {
+        syncResponse.room?.join?.entries?.forEach { room ->
+            val roomId = room.key
+            // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
+            store.rooms.update(roomId) { oldRoom ->
+                oldRoom ?: Room(
+                    roomId = roomId,
+                    ownMembership = JOIN,
+                    lastEventAt = fromEpochMilliseconds(0),
+                    lastEventId = null
+                )
+            }
+            room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
+            room.value.timeline?.also {
+                addEventsToTimelineAtEnd(
+                    roomId = roomId,
+                    events = it.events,
+                    previousBatch = it.previousBatch,
+                    hasGapBefore = it.limited ?: false
+                )
+                it.events?.lastOrNull()?.also { event -> setLastEventAt(event) }
+            }
+
+            room.value.summary?.also {
+                setRoomDisplayName(
+                    roomId,
+                    it.heroes,
+                    it.joinedMemberCount,
+                    it.invitedMemberCount,
+                )
             }
         }
-        // TODO reaction and edit (also in fetchMissingEvents!)
+        syncResponse.room?.leave?.entries?.forEach { room ->
+            room.value.timeline?.also {
+                addEventsToTimelineAtEnd(
+                    roomId = room.key,
+                    events = it.events,
+                    previousBatch = it.previousBatch,
+                    hasGapBefore = it.limited ?: false
+                )
+                it.events?.lastOrNull()?.let { event -> setLastEventAt(event) }
+            }
+        }
     }
 
     private fun calculateUserDisplayName(
@@ -629,12 +646,11 @@ class RoomManager(
         }
     }
 
-    private
-    val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
+    private val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> = coroutineScope {
-        store.rooms.byId(roomId).transformLatest { room ->
+    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> {
+        return store.rooms.byId(roomId).transformLatest { room ->
             if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId))
             else emit(null)
         }.stateIn(lastTimelineEventScope)
@@ -646,5 +662,80 @@ class RoomManager(
 
     suspend fun getNextTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId) }
+    }
+
+    suspend fun sendMessage(content: MessageEventContent, roomId: RoomId) {
+        store.rooms.outboxMessages.add(
+            RoomOutboxMessage(
+                content,
+                roomId,
+                uuid4().toString(),
+                false,
+                MutableStateFlow(null)
+            )
+        )
+    }
+
+    internal suspend fun syncOutboxMessage(event: Event<MessageEventContent>) {
+        if (event is MessageEvent && event.sender == store.account.userId.value) {
+            event.unsigned?.transactionId?.also {
+                store.rooms.outboxMessages.deleteByTransactionId(it)
+            }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
+        val isConnected =
+            api.sync.currentSyncState.map { it == SyncApiClient.SyncState.RUNNING }.stateIn(this)
+        val schedule = Schedule.exponential<Throwable>(Duration.milliseconds(100))
+            .or(Schedule.spaced(Duration.minutes(5)))
+            .and(Schedule.doWhile { isConnected.value }) // just stop, when we are not connected anymore
+            .logInput { log.debug { "failed sending outbox messages due to ${it.stackTraceToString()}" } }
+
+        while (currentCoroutineContext().isActive) {
+            isConnected.first { it } // just wait, until we are connected again
+            try {
+                schedule.retry {
+                    log.info { "start sending outbox messages" }
+                    outboxMessages.collect { outboxMessagesList ->
+                        outboxMessagesList
+                            .filter { !it.wasSent }
+                            .forEach { outboxMessage ->
+                                val roomId = outboxMessage.roomId
+                                val content = outboxMessage.content
+                                    .let { content ->
+                                        val uploader =
+                                            outboxMessageMediaUploaderMappings.find { it.kClass.isInstance(content) }?.uploader
+                                                ?: throw IllegalArgumentException(
+                                                    "EventContent class ${content::class.simpleName}} is not supported by any media uploader."
+                                                )
+                                        uploader(content) { cacheUri ->
+                                            media.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress)
+                                        }
+                                    }.let { content ->
+                                        if (store.rooms.byId(roomId).value?.encryptionAlgorithm == Megolm) {
+                                            // The UI should do that, when a room gets opened, because of lazy loading
+                                            // members Trixnity may not know all devices for encryption yet.
+                                            // To ensure an easy usage of Trixnity and because
+                                            // the impact on performance is minimal, we call it here for prevention.
+                                            loadMembers(roomId)
+
+                                            val megolmSettings =
+                                                store.rooms.state.byId<EncryptionEventContent>(roomId).value?.content
+                                            requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
+                                            olm.events.encryptMegolm(content, outboxMessage.roomId, megolmSettings)
+                                        } else content
+                                    }
+
+                                api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId)
+                                store.rooms.outboxMessages.markAsSent(outboxMessage.transactionId)
+                            }
+                    }
+                }
+            } catch (error: Throwable) {
+                log.info { "stop sending outbox messages, because we are not connected" }
+            }
+        }
     }
 }

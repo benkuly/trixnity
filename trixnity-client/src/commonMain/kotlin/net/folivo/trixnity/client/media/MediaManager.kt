@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.media
 
+import com.benasher44.uuid.uuid4
 import io.ktor.http.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
@@ -13,6 +14,7 @@ import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.UploadMediaCache
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
@@ -28,13 +30,17 @@ class MediaManager(
 ) {
     private val log = newLogger(loggerFactory)
 
+    companion object {
+        const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
+    }
+
     suspend fun getMedia(
         mxcUri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): ByteArray {
         return store.media.byUri(mxcUri)
             ?: api.media.download(mxcUri, progress = progress).content.toByteArray().also { mediaDownload ->
-                store.media.add(mxcUri, mediaDownload)
+                store.media.addContent(mxcUri, mediaDownload)
             }
     }
 
@@ -48,7 +54,7 @@ class MediaManager(
         }
         val originalHash = encryptedFile.hashes["sha256"]
         if (originalHash == null || hash != originalHash) {
-            log.debug { "could not validate due to different hashes. Our hash: $hash their hash: $originalHash" }
+            log.debug { "could not validate due to different hashes. Our hash: $hash, their hash: $originalHash" }
             throw DecryptionException.ValidationFailed
         }
         return decryptAes256Ctr(
@@ -73,36 +79,25 @@ class MediaManager(
         return store.media.byUri(thumbnailUrl)
             ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress).content.toByteArray()
                 .also { mediaDownload ->
-                    store.media.add(thumbnailUrl, mediaDownload)
+                    store.media.addContent(thumbnailUrl, mediaDownload)
                 }
     }
 
-    suspend fun uploadMedia(
-        content: ByteArray,
-        contentType: ContentType,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): String {
-        val mxcUri = api.media.upload(
-            content = ByteReadChannel(content),
-            contentLength = content.size.toLong(),
-            contentType = contentType,
-            progress = progress
-        ).contentUri
-        store.media.add(mxcUri, content)
-        return mxcUri
+    suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
+        return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
+            store.media.addContent(cacheUri, content)
+            store.media.updateUploadMediaCache(cacheUri) { UploadMediaCache(cacheUri, contentTyp = contentType) }
+        }
     }
 
-    suspend fun uploadEncryptedMedia(
-        content: ByteArray,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): EncryptedFile {
+    suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
         val encrypted = encryptAes256Ctr(content)
-        val mxcUri = uploadMedia(encrypted.encryptedContent, ContentType.Application.OctetStream, progress)
+        val cacheUri = prepareUploadMedia(encrypted.encryptedContent, ContentType.Application.OctetStream)
         val hash = freeAfter(OlmUtility.create()) {
             it.sha256(encrypted.encryptedContent)
         }
         return EncryptedFile(
-            url = mxcUri,
+            url = cacheUri,
             key = EncryptedFile.JWK(
                 // url-safe base64 is required
                 key = encrypted.key.encodeUnpaddedBase64().replace("+", "-").replace("/", "_")
@@ -110,5 +105,30 @@ class MediaManager(
             initialisationVector = encrypted.initialisationVector.encodeUnpaddedBase64(),
             hashes = mapOf("sha256" to hash)
         )
+    }
+
+    suspend fun uploadMedia(
+        cacheUri: String,
+        progress: MutableStateFlow<FileTransferProgress?>? = null
+    ): String {
+        if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
+
+        val uploadMediaCache = store.media.getUploadMediaCache(cacheUri)
+        val cachedMxcUri = uploadMediaCache?.mxcUri
+
+        return if (cachedMxcUri == null) {
+            val content =
+                store.media.byUri(cacheUri)
+                    ?: throw IllegalArgumentException("content for cacheUri $cacheUri not found")
+            api.media.upload(
+                content = ByteReadChannel(content),
+                contentLength = content.size.toLong(),
+                contentType = uploadMediaCache?.contentTyp ?: ContentType.Application.OctetStream,
+                progress = progress
+            ).contentUri.also { mxcUri ->
+                store.media.changeUri(cacheUri, mxcUri)
+                store.media.updateUploadMediaCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
+            }
+        } else cachedMxcUri
     }
 }

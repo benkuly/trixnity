@@ -1,13 +1,16 @@
 package net.folivo.trixnity.client.crypto
 
+import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.MatrixId
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
 
     context(Store.DeviceKeysStores::waitForUpdateOutdatedKey.name) {
@@ -17,8 +20,9 @@ class UtilsTest : ShouldSpec({
             val job = launch {
                 store.deviceKeys.waitForUpdateOutdatedKey()
             }
-            delay(50)
-            job.isActive shouldBe true
+            until(milliseconds(50)) {
+                job.isActive
+            }
             store.deviceKeys.outdatedKeys.value = setOf()
             job.join()
             job.isActive shouldBe false
@@ -32,8 +36,9 @@ class UtilsTest : ShouldSpec({
                     MatrixId.UserId("cedric", "server")
                 )
             }
-            delay(50)
-            job.isActive shouldBe true
+            until(milliseconds(50)) {
+                job.isActive
+            }
             store.deviceKeys.outdatedKeys.value = setOf(MatrixId.UserId("bob", "server"))
             job.join()
             job.isActive shouldBe false

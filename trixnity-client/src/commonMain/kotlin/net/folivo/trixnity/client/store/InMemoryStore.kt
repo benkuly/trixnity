@@ -60,6 +60,7 @@ class InMemoryStore(
         override val state = InMemoryRoomStateStore(scope)
         override val timeline = InMemoryRoomTimelineStore()
         override val users = InMemoryRoomUserStore(scope)
+        override val outboxMessages = InMemoryRoomOutboxMessagesStore(scope)
 
         private val rooms: MutableStateFlow<Map<RoomId, Room?>> = MutableStateFlow(mapOf())
 
@@ -199,6 +200,35 @@ class InMemoryStore(
                     .map { it.userId }
                     .toSet()
             }
+        }
+
+        class InMemoryRoomOutboxMessagesStore(private val scope: CoroutineScope) :
+            Store.RoomsStore.RoomOutboxMessagesStore {
+            private val outboxMessages = MutableStateFlow(listOf<RoomOutboxMessage>())
+
+            override suspend fun add(message: RoomOutboxMessage) {
+                outboxMessages.update { it + message }
+            }
+
+            override suspend fun deleteByTransactionId(transactionId: String) {
+                outboxMessages.update { list -> list.filter { it.transactionId != transactionId } }
+            }
+
+            override suspend fun markAsSent(transactionId: String) {
+                outboxMessages.update { list ->
+                    list.map {
+                        if (it.transactionId == transactionId) it.copy(wasSent = true) else it
+                    }
+                }
+            }
+
+            override suspend fun all(): StateFlow<List<RoomOutboxMessage>> {
+                return outboxMessages.asStateFlow()
+            }
+
+            override suspend fun allByRoomId(roomId: RoomId): StateFlow<List<RoomOutboxMessage>> {
+                return outboxMessages.map { list -> list.filter { it.roomId == roomId } }.stateIn(scope)
+            }
 
         }
     }
@@ -257,13 +287,35 @@ class InMemoryStore(
     class InMemoryMediaStore : Store.MediaStore {
 
         private val media = mutableMapOf<String, ByteArray>()
+        private val uploadMediaCache = mutableMapOf<String, UploadMediaCache?>()
 
-        override suspend fun add(uri: String, media: ByteArray) {
-            this.media[uri] = media
+        override suspend fun addContent(uri: String, content: ByteArray) {
+            this.media[uri] = content
         }
 
         override suspend fun byUri(uri: String): ByteArray? {
             return this.media[uri]
+        }
+
+        override suspend fun changeUri(oldUri: String, newUri: String) {
+            this.media[oldUri]?.also { this.media[newUri] = it }
+            this.media.remove(oldUri)
+        }
+
+        override suspend fun getUploadMediaCache(cacheUri: String): UploadMediaCache? {
+            return uploadMediaCache[cacheUri]
+        }
+
+        override suspend fun updateUploadMediaCache(
+            cacheUri: String,
+            updater: suspend (oldUploadMediaCache: UploadMediaCache?) -> UploadMediaCache?
+        ) {
+            val oldCache = uploadMediaCache[cacheUri]
+            if (oldCache == null) {
+                updater(null)?.also { uploadMediaCache[cacheUri] = it }
+            } else {
+                uploadMediaCache[cacheUri] = updater(oldCache)
+            }
         }
     }
 }

@@ -412,7 +412,7 @@ class RoomsApiClientTest {
                 }
             })
         val eventContent = TextMessageEventContent("someBody")
-        val result = matrixRestClient.rooms.sendRoomEvent(
+        val result = matrixRestClient.rooms.sendMessageEvent(
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             txnId = "someTxnId"
@@ -430,7 +430,7 @@ class RoomsApiClientTest {
         }
 
         try {
-            matrixRestClient.rooms.sendRoomEvent(
+            matrixRestClient.rooms.sendMessageEvent(
                 roomId = RoomId("room", "server"),
                 eventContent = eventContent
             )

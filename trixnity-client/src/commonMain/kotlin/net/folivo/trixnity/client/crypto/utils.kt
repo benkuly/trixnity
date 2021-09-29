@@ -16,7 +16,7 @@ import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
-// FIXME test
+// TODO test
 internal suspend inline fun <reified T : Key> Store.DeviceKeysStores.getKeyFromDevice(
     userId: MatrixId.UserId,
     deviceId: String?
@@ -30,7 +30,7 @@ internal suspend inline fun <reified T : Key> Store.DeviceKeysStores.getKeyFromD
     } else key
 }
 
-// FIXME test
+// TODO test
 internal suspend inline fun <reified T : Key> Store.DeviceKeysStores.getKeysFromUser(
     userId: MatrixId.UserId
 ): Set<T> {
@@ -49,7 +49,7 @@ internal fun Store.OlmStore.storeAccount(olmAccount: OlmAccount) {
     account.update { olmAccount.pickle(pickleKey) }
 }
 
-// FIXME test
+// TODO test
 internal suspend fun Store.OlmStore.storeInboundMegolmSession(
     roomId: MatrixId.RoomId,
     senderKey: Key.Curve25519Key,
@@ -64,7 +64,7 @@ internal suspend fun Store.OlmStore.storeInboundMegolmSession(
     }
 }
 
-// FIXME test
+// TODO test
 internal suspend fun Store.OlmStore.storeOlmSession(session: OlmSession, identityKey: Key.Curve25519Key) {
     olmSessions(identityKey).update { oldStoredSessions ->
         val newSessions = oldStoredSessions.filterNot { it.sessionId == session.sessionId }.toSet() +
