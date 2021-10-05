@@ -355,6 +355,36 @@ class RoomsApiClient(
         }
     }
 
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-receipt-receipttype-eventid">matrix spec</a>
+     */
+    suspend fun setReceipt(
+        roomId: RoomId,
+        eventId: EventId,
+        receiptType: ReceiptType = ReceiptType.READ,
+        asUserId: UserId? = null,
+    ) {
+        return httpClient.post {
+            url("/_matrix/client/r0/rooms/${roomId.e()}/receipt/${receiptType.value}/${eventId.e()}")
+            parameter("user_id", asUserId)
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-read-markers">matrix spec</a>
+     */
+    suspend fun setReadMarkers(
+        roomId: RoomId,
+        eventId: EventId,
+        asUserId: UserId? = null,
+    ) {
+        return httpClient.post {
+            url("/_matrix/client/r0/rooms/${roomId.e()}/read_markers")
+            parameter("user_id", asUserId)
+            body = FullyReadRequest(eventId, eventId)
+        }
+    }
+
 //    /**
 //     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-forget">matrix spec</a>
 //     */

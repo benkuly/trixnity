@@ -779,4 +779,58 @@ class RoomsApiClientTest {
             })
         matrixRestClient.rooms.leaveRoom(RoomId("room", "server"))
     }
+
+    @Test
+    fun shouldSetReceipt() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/rooms/%21room%3Aserver/receipt/m.read/%24event%3Aserver",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.setReceipt(RoomId("room", "server"), EventId("event", "server"))
+    }
+
+    @Test
+    fun shouldSetReadMarkers() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/rooms/%21room%3Aserver/read_markers",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals(
+                            """
+                    {
+                      "m.fully_read":"${'$'}event:server",
+                      "m.read":"${'$'}event:server"
+                    }
+                    """.trimIndent().lines().joinToString("") { it.trim() }, request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.setReadMarkers(RoomId("room", "server"), EventId("event", "server"))
+    }
 }
