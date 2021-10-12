@@ -1,0 +1,22 @@
+CREATE TABLE sql_room_outbox_message (
+  transaction_id TEXT PRIMARY KEY NOT NULL,
+  room_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  content TEXT NOT NULL,
+  was_sent INTEGER AS Boolean NOT NULL
+);
+
+getRoomOutboxMessage:
+SELECT * FROM sql_room_outbox_message
+WHERE transaction_id = ?;
+
+getAllRoomOutboxMessages:
+SELECT * FROM sql_room_outbox_message;
+
+saveRoomOutboxMessage:
+INSERT OR REPLACE INTO sql_room_outbox_message
+VALUES ?;
+
+deleteRoomOutboxMessage:
+DELETE FROM sql_room_outbox_message
+WHERE transaction_id = ?;

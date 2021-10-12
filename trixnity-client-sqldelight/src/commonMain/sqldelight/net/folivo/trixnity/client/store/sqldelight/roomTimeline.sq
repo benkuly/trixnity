@@ -1,0 +1,18 @@
+CREATE TABLE sql_room_timeline_event (
+  event_id TEXT NOT NULL,
+  room_id TEXT NOT NULL,
+  timeline_event TEXT NOT NULL,
+  PRIMARY KEY(event_id,room_id)
+);
+
+getTimelineEvent:
+SELECT timeline_event FROM sql_room_timeline_event
+WHERE event_id = ? AND room_id = ?;
+
+saveTimelineEvent:
+INSERT OR REPLACE INTO sql_room_timeline_event
+VALUES (?, ?, ?);
+
+deleteTimelineEvent:
+DELETE FROM sql_room_timeline_event
+WHERE event_id = ? AND room_id = ?;

@@ -37,7 +37,7 @@ data class SyncResponse(
         ) {
             @Serializable
             data class RoomSummary(
-                @SerialName("m.heroes") val heroes: List<String>? = null,
+                @SerialName("m.heroes") val heroes: List<UserId>? = null,
                 @SerialName("m.joined_member_count") val joinedMemberCount: Int? = null,
                 @SerialName("m.invited_member_count") val invitedMemberCount: Int? = null
             )

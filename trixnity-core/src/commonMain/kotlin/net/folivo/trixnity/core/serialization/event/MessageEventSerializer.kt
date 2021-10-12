@@ -63,19 +63,32 @@ class MessageEventSerializer(
 
     override fun serialize(encoder: Encoder, value: MessageEvent<*>) {
         val content = value.content
-        if (content is UnknownMessageEventContent || content is RedactedMessageEventContent) throw IllegalArgumentException(
-            "${content::class.simpleName} should never be serialized"
-        )
+        val type: String
+        val serializer: KSerializer<out MessageEventContent>
+        when (content) {
+            is UnknownMessageEventContent -> {
+                type = content.eventType
+                serializer = UnknownEventContentSerializer(UnknownMessageEventContent.serializer(), type)
+            }
+            is RedactedMessageEventContent -> {
+                type = content.eventType
+                serializer = RedactedEventContentSerializer(RedactedMessageEventContent.serializer(), type)
+            }
+            else -> {
+                val contentDescriptor = messageEventContentSerializers.find { it.kClass.isInstance(value.content) }
+                requireNotNull(contentDescriptor) { "event content type ${content::class} must be registered" }
+                type = contentDescriptor.type
+                serializer = contentDescriptor.serializer
+            }
+        }
         require(encoder is JsonEncoder)
-        val contentSerializerMapping = messageEventContentSerializers.find { it.kClass.isInstance(value.content) }
-        requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
 
-        val addFields = mutableListOf("type" to contentSerializerMapping.type)
+        val addFields = mutableListOf("type" to type)
         if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
         val contentSerializer =
             if (content is RedactionEventContent)
-                HideFieldsSerializer(contentSerializerMapping.serializer, "redacts")
-            else contentSerializerMapping.serializer
+                HideFieldsSerializer(serializer, "redacts")
+            else serializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast

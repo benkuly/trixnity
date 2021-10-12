@@ -3,9 +3,13 @@ import de.undercouch.gradle.tasks.download.Download
 buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
+        classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
     }
     repositories {
         google()
+        mavenCentral()
+        maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
+        maven { url = uri("https://jetbrains.bintray.com/intellij-third-party-dependencies") }
     }
 }
 

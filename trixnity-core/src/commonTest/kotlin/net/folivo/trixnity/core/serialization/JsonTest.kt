@@ -71,7 +71,7 @@ class JsonTest {
             "type": "m.room.message",
             "unsigned": {
                 "age": 1234,
-                "redactedBecause": {
+                "redacted_because": {
                     "content": {
                         "reason": "Spamming"
                     },
@@ -95,7 +95,7 @@ class JsonTest {
             val redactedBecauseEventContent = result.unsigned?.redactedBecause?.content
             if (redactedBecauseEventContent is RedactionEventContent)
                 assertEquals("Spamming", redactedBecauseEventContent.reason)
-            else fail("resultContent should be of type ${RedactionEventContent::class}")
+            else fail("resultContent should be of type ${RedactionEventContent::class} but was ${redactedBecauseEventContent?.let { it::class }}")
         } else {
             fail("resultContent should be of type ${MessageEvent::class}")
         }

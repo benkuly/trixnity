@@ -14,7 +14,7 @@ import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.UploadMediaCache
+import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
@@ -38,7 +38,7 @@ class MediaManager(
         mxcUri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): ByteArray {
-        return store.media.byUri(mxcUri)
+        return store.media.getContent(mxcUri)
             ?: api.media.download(mxcUri, progress = progress).content.toByteArray().also { mediaDownload ->
                 store.media.addContent(mxcUri, mediaDownload)
             }
@@ -76,7 +76,7 @@ class MediaManager(
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): ByteArray {
         val thumbnailUrl = "$mxcUri/${width}x$height/${method.value}"
-        return store.media.byUri(thumbnailUrl)
+        return store.media.getContent(thumbnailUrl)
             ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress).content.toByteArray()
                 .also { mediaDownload ->
                     store.media.addContent(thumbnailUrl, mediaDownload)
@@ -86,7 +86,7 @@ class MediaManager(
     suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             store.media.addContent(cacheUri, content)
-            store.media.updateUploadMediaCache(cacheUri) { UploadMediaCache(cacheUri, contentTyp = contentType) }
+            store.media.updateUploadMedia(cacheUri) { UploadMedia(cacheUri, contentTyp = contentType) }
         }
     }
 
@@ -113,12 +113,12 @@ class MediaManager(
     ): String {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 
-        val uploadMediaCache = store.media.getUploadMediaCache(cacheUri)
+        val uploadMediaCache = store.media.getUploadMedia(cacheUri)
         val cachedMxcUri = uploadMediaCache?.mxcUri
 
         return if (cachedMxcUri == null) {
             val content =
-                store.media.byUri(cacheUri)
+                store.media.getContent(cacheUri)
                     ?: throw IllegalArgumentException("content for cacheUri $cacheUri not found")
             api.media.upload(
                 content = ByteReadChannel(content),
@@ -127,7 +127,7 @@ class MediaManager(
                 progress = progress
             ).contentUri.also { mxcUri ->
                 store.media.changeUri(cacheUri, mxcUri)
-                store.media.updateUploadMediaCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
+                store.media.updateUploadMedia(cacheUri) { it?.copy(mxcUri = mxcUri) }
             }
         } else cachedMxcUri
     }

@@ -15,14 +15,19 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.mockk.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.api.keys.QueryKeysResponse
 import net.folivo.trixnity.client.api.sync.SyncResponse
-import net.folivo.trixnity.client.room.RoomManager
 import net.folivo.trixnity.client.simpleRoom
-import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.SecureStore
+import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
+import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.MatrixId.UserId
@@ -48,26 +53,31 @@ import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalKotest::class)
 class OlmManagerTest : ShouldSpec({
+    timeout = 1000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
     val bobDevice = "BOBDEVICE"
-    val store = InMemoryStore()
+    lateinit var store: Store
+    lateinit var storeScope: CoroutineScope
+    val secureStore = mockk<SecureStore>()
     val api = mockk<MatrixApiClient>()
-    val roomManager = mockk<RoomManager>()
     val json = createMatrixJson()
-    store.account.userId.value = alice
-    store.account.deviceId.value = aliceDevice
-    val cut = OlmManager(store, api, json, LoggerFactory.default)
+    lateinit var cut: OlmManager
 
     beforeTest {
+        storeScope = CoroutineScope(Dispatchers.Default)
+        store = createInMemoryStore(storeScope)
+        store.init()
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDevice
+        coEvery { secureStore.olmPickleKey } returns ""
+        cut = OlmManager(store, secureStore, api, json, LoggerFactory.default)
     }
 
     afterTest {
-        clearMocks(api, roomManager)
-        store.clear()
+        clearAllMocks()
+        storeScope.cancel()
     }
 
     afterSpec {
@@ -104,15 +114,15 @@ class OlmManagerTest : ShouldSpec({
         context("device key is tracked") {
             should("add changed devices to outdated keys") {
                 store.deviceKeys.outdatedKeys.value = setOf(alice)
-                store.deviceKeys.byUserId(bob).value = mapOf(bobDevice to mockk())
+                store.deviceKeys.update(bob) { mapOf(bobDevice to mockk()) }
                 cut.handleDeviceLists(SyncResponse.DeviceLists(changed = setOf(bob)))
                 store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
             }
             should("remove key when user left") {
                 store.deviceKeys.outdatedKeys.value = setOf(alice, bob)
-                store.deviceKeys.byUserId(alice).value = mockk()
+                store.deviceKeys.update(alice) { mockk() }
                 cut.handleDeviceLists(SyncResponse.DeviceLists(left = setOf(alice)))
-                store.deviceKeys.byUserId(alice).value should beNull()
+                store.deviceKeys.get(alice).value should beNull()
                 store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(bob)
             }
         }
@@ -134,7 +144,7 @@ class OlmManagerTest : ShouldSpec({
             OlmAccount.create(),
             OlmUtility.create()
         ) { cedricAccount1, cedricAccount2, utility ->
-            val cedricStore = InMemoryStore()
+            val cedricStore = createInMemoryStore(storeScope).apply { init() }
             cedricStore.account.userId.value = cedric
             cedricStore.account.deviceId.value = cedricDevice
             val cedricSignService = OlmSignService(json, cedricStore, cedricAccount1, utility)
@@ -169,7 +179,7 @@ class OlmManagerTest : ShouldSpec({
             OlmAccount.create(),
             OlmUtility.create()
         ) { aliceAccount2, utility ->
-            val aliceStore2 = InMemoryStore()
+            val aliceStore2 = createInMemoryStore(storeScope).apply { init() }
             aliceStore2.account.userId.value = alice
             aliceStore2.account.deviceId.value = aliceDevice2
             val aliceSignService2 = OlmSignService(json, aliceStore2, aliceAccount2, utility)
@@ -197,10 +207,10 @@ class OlmManagerTest : ShouldSpec({
                 mapOf(cedric to mapOf(cedricDevice to cedricKey1), alice to mapOf(aliceDevice2 to aliceKey2))
             )
             cut.handleOutdatedKeys(setOf(cedric, alice))
-            val storedCedricKeys = store.deviceKeys.byUserId(cedric).value
+            val storedCedricKeys = store.deviceKeys.get(cedric).value
             assertNotNull(storedCedricKeys)
             storedCedricKeys shouldContainExactly mapOf(cedricDevice to cedricKey1.signed)
-            val storedAliceKeys = store.deviceKeys.byUserId(alice).value
+            val storedAliceKeys = store.deviceKeys.get(alice).value
             assertNotNull(storedAliceKeys)
             storedAliceKeys shouldContainExactly mapOf(aliceDevice2 to aliceKey2.signed)
         }
@@ -209,9 +219,9 @@ class OlmManagerTest : ShouldSpec({
                 mapOf(),
                 mapOf(cedric to mapOf(cedricDevice to cedricKey2))
             )
-            store.deviceKeys.byUserId(cedric).value = mapOf(cedricDevice to cedricKey1.signed)
+            store.deviceKeys.update(cedric) { mapOf(cedricDevice to cedricKey1.signed) }
             cut.handleOutdatedKeys(setOf(cedric))
-            val storedKeys = store.deviceKeys.byUserId(cedric).value
+            val storedKeys = store.deviceKeys.get(cedric).value
             assertNotNull(storedKeys)
             storedKeys shouldContainExactly mapOf(cedricDevice to cedricKey1.signed)
         }
@@ -223,10 +233,10 @@ class OlmManagerTest : ShouldSpec({
             val room1 = RoomId("room1", "server")
             val room2 = RoomId("room2", "server")
             val room3 = RoomId("room3", "server")
-            store.rooms.update(room1) { simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm) }
-            store.rooms.update(room2) { simpleRoom.copy(roomId = room2, encryptionAlgorithm = Megolm) }
-            store.rooms.update(room3) { simpleRoom.copy(roomId = room3, encryptionAlgorithm = Megolm) }
-            store.rooms.state.updateAll(
+            store.room.update(room1) { simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm) }
+            store.room.update(room2) { simpleRoom.copy(roomId = room2, encryptionAlgorithm = Megolm) }
+            store.room.update(room3) { simpleRoom.copy(roomId = room3, encryptionAlgorithm = Megolm) }
+            store.roomState.updateAll(
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),
@@ -263,18 +273,19 @@ class OlmManagerTest : ShouldSpec({
                 )
             )
 
-            store.olm.outboundMegolmSession(room1).value = StoredOutboundMegolmSession(room1, pickle = "")
-            store.olm.outboundMegolmSession(room3).value =
+            store.olm.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickle = "") }
+            store.olm.updateOutboundMegolmSession(room3) {
                 StoredOutboundMegolmSession(room3, newDevices = mapOf(cedric to setOf(cedricDevice)), pickle = "")
+            }
 
             cut.handleOutdatedKeys(setOf(cedric, alice))
 
-            store.olm.outboundMegolmSession(room1).value!!.newDevices shouldBe mapOf(
+            store.olm.getOutboundMegolmSession(room1)?.newDevices shouldBe mapOf(
                 alice to setOf(aliceDevice2),
                 cedric to setOf(cedricDevice)
             )
-            store.olm.outboundMegolmSession(room2).value should beNull()
-            store.olm.outboundMegolmSession(room3).value!!.newDevices shouldBe mapOf(
+            store.olm.getOutboundMegolmSession(room2) should beNull()
+            store.olm.getOutboundMegolmSession(room3)?.newDevices shouldBe mapOf(
                 alice to setOf(aliceDevice2),
                 cedric to setOf(cedricDevice)
             )
@@ -296,7 +307,7 @@ class OlmManagerTest : ShouldSpec({
             ) { deviceKeys ->
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns QueryKeysResponse(mapOf(), deviceKeys)
                 cut.handleOutdatedKeys(setOf(alice, cedric))
-                val storedKeys = store.deviceKeys.byUserId(alice).value
+                val storedKeys = store.deviceKeys.get(alice).value
                 assertNotNull(storedKeys)
                 storedKeys shouldHaveSize 0
             }
@@ -306,42 +317,46 @@ class OlmManagerTest : ShouldSpec({
     context(OlmManager::handleOlmEncryptedToDeviceEvents.name) {
         context("handle ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
-                val bobStore = InMemoryStore()
+                val bobStore = createInMemoryStore(storeScope).apply { init() }
                 bobStore.account.userId.value = bob
                 bobStore.account.deviceId.value = bobDevice
-                val bobOlmManager = OlmManager(bobStore, api, json, LoggerFactory.default)
+                val bobOlmManager = OlmManager(bobStore, secureStore, api, json, LoggerFactory.default)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
-                    store.olm.storeAccount(aliceAccount)
-                    val cutWithAccount = OlmManager(store, api, json, LoggerFactory.default)
-                    store.deviceKeys.byUserId(bob).value = mapOf(
-                        bobDevice to DeviceKeys(
-                            userId = bob,
-                            deviceId = bobDevice,
-                            algorithms = setOf(Olm, Megolm),
-                            keys = Keys(
-                                keysOf(
-                                    bobOlmManager.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                    bobOlmManager.myDeviceKeys.signed.get<Ed25519Key>()!!
+                    store.olm.storeAccount(aliceAccount, "")
+                    val cutWithAccount = OlmManager(store, secureStore, api, json, LoggerFactory.default)
+                    store.deviceKeys.update(bob) {
+                        mapOf(
+                            bobDevice to DeviceKeys(
+                                userId = bob,
+                                deviceId = bobDevice,
+                                algorithms = setOf(Olm, Megolm),
+                                keys = Keys(
+                                    keysOf(
+                                        bobOlmManager.myDeviceKeys.signed.get<Curve25519Key>()!!,
+                                        bobOlmManager.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                    )
                                 )
                             )
                         )
-                    )
-                    bobStore.deviceKeys.byUserId(alice).value = mapOf(
-                        aliceDevice to DeviceKeys(
-                            userId = alice,
-                            deviceId = aliceDevice,
-                            algorithms = setOf(Olm, Megolm),
-                            keys = Keys(
-                                keysOf(
-                                    cutWithAccount.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                    cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!
+                    }
+                    bobStore.deviceKeys.update(alice) {
+                        mapOf(
+                            aliceDevice to DeviceKeys(
+                                userId = alice,
+                                deviceId = aliceDevice,
+                                algorithms = setOf(Olm, Megolm),
+                                keys = Keys(
+                                    keysOf(
+                                        cutWithAccount.myDeviceKeys.signed.get<Curve25519Key>()!!,
+                                        cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                    )
                                 )
                             )
                         )
-                    )
+                    }
 
                     coEvery {
                         api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
@@ -376,10 +391,11 @@ class OlmManagerTest : ShouldSpec({
                     cutWithAccount.handleOlmEncryptedToDeviceEvents(ToDeviceEvent(eventContent, bob))
 
                     assertSoftly(
-                        store.olm.inboundMegolmSession(
-                            RoomId("room", "server"),
+                        store.olm.getInboundMegolmSession(
+                            bobOlmManager.myDeviceKeys.signed.get()!!,
                             outboundSession.sessionId,
-                            bobOlmManager.myDeviceKeys.signed.get()!!
+                            RoomId("room", "server"),
+                            this
                         ).value!!
                     ) {
                         roomId shouldBe RoomId("room", "server")
@@ -396,11 +412,11 @@ class OlmManagerTest : ShouldSpec({
     context(OlmManager::handleMemberEvents.name) {
         val room = RoomId("room", "server")
         beforeTest {
-            store.rooms.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = Megolm) }
+            store.room.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = Megolm) }
         }
         should("ignore unencrypted rooms") {
             val room2 = RoomId("roo2", "server")
-            store.rooms.update(room2) { simpleRoom.copy(roomId = room2) }
+            store.room.update(room2) { simpleRoom.copy(roomId = room2) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
@@ -414,7 +430,7 @@ class OlmManagerTest : ShouldSpec({
             store.deviceKeys.outdatedKeys.value shouldHaveSize 0
         }
         should("remove megolm session on leave or ban") {
-            store.olm.outboundMegolmSession(room).value = mockk()
+            store.olm.updateOutboundMegolmSession(room) { mockk() }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
@@ -425,12 +441,12 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.olm.outboundMegolmSession(room).value should beNull()
+            store.olm.getOutboundMegolmSession(room) should beNull()
 
-            store.olm.outboundMegolmSession(room).value = mockk()
+            store.olm.updateOutboundMegolmSession(room) { mockk() }
             cut.handleMemberEvents(
                 StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.BAN),
+                    MemberEventContent(membership = BAN),
                     MatrixId.EventId("\$event"),
                     alice,
                     room,
@@ -438,10 +454,10 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.olm.outboundMegolmSession(room).value should beNull()
+            store.olm.getOutboundMegolmSession(room) should beNull()
         }
         should("remove device keys on leave or ban of the last encrypted room") {
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
@@ -452,9 +468,9 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.byUserId(alice).value should beNull()
+            store.deviceKeys.get(alice).value should beNull()
 
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = MemberEventContent.Membership.BAN),
@@ -465,13 +481,14 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.byUserId(alice).value should beNull()
+            store.deviceKeys.get(alice).value should beNull()
         }
         should("not remove device keys on leave or ban when there are more rooms") {
             val otherRoom = RoomId("otherRoom", "server")
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
-            store.rooms.update(otherRoom) { simpleRoom.copy(roomId = otherRoom, encryptionAlgorithm = Megolm) }
-            store.rooms.state.update(
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
+            store.room.update(otherRoom) { simpleRoom.copy(roomId = otherRoom, encryptionAlgorithm = Megolm) }
+            delay(500)
+            store.roomState.update(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
                     MatrixId.EventId("\$event"),
@@ -491,12 +508,12 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.byUserId(alice).value shouldNot beNull()
+            store.deviceKeys.get(alice).value shouldNot beNull()
 
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
                 StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.BAN),
+                    MemberEventContent(membership = BAN),
                     MatrixId.EventId("\$event"),
                     alice,
                     room,
@@ -504,7 +521,7 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.byUserId(alice).value shouldNot beNull()
+            store.deviceKeys.get(alice).value shouldNot beNull()
         }
         should("ignore join without real change (already join)") {
             cut.handleMemberEvents(
@@ -550,7 +567,7 @@ class OlmManagerTest : ShouldSpec({
             store.deviceKeys.outdatedKeys.value shouldContain alice
         }
         should("not mark keys as outdated when join, but devices are already tracked") {
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
@@ -566,7 +583,7 @@ class OlmManagerTest : ShouldSpec({
     }
     context(OlmManager::handleEncryptionEvents.name) {
         should("mark all joined and invited users as outdated") {
-            store.rooms.state.updateAll(
+            store.roomState.updateAll(
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),
@@ -599,9 +616,9 @@ class OlmManagerTest : ShouldSpec({
             store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
         }
         should("not mark joined or invited users as outdated, when keys already tracked") {
-            store.deviceKeys.byUserId(alice).value = mapOf(aliceDevice to mockk())
-            store.deviceKeys.byUserId(bob).value = mapOf(bobDevice to mockk())
-            store.rooms.state.updateAll(
+            store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
+            store.deviceKeys.update(bob) { mapOf(bobDevice to mockk()) }
+            store.roomState.updateAll(
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),

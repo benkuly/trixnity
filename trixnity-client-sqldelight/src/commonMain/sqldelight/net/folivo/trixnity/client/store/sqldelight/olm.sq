@@ -1,0 +1,92 @@
+CREATE TABLE sql_olm_account (
+  id INTEGER NOT NULL PRIMARY KEY,
+  pickled_account TEXT
+);
+
+saveOlmAccount:
+INSERT OR REPLACE INTO sql_olm_account
+VALUES (?, ?);
+
+getOlmAccount:
+SELECT pickled_account FROM sql_olm_account
+WHERE id = ?;
+
+deleteOlmAccount:
+DELETE FROM sql_olm_account
+WHERE id = ?;
+
+CREATE TABLE sql_olm_sessions(
+  sender_key TEXT PRIMARY KEY NOT NULL,
+  olm_sessions TEXT NOT NULL
+);
+
+getOlmSessions:
+SELECT olm_sessions FROM sql_olm_sessions
+WHERE sender_key = ?;
+
+saveOlmSessions:
+INSERT OR REPLACE INTO sql_olm_sessions
+VALUES (?, ?);
+
+deleteOlmSessions:
+DELETE FROM sql_olm_sessions
+WHERE sender_key = ?;
+
+CREATE TABLE sql_inbound_megolm_session(
+  sender_key TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  room_id TEXT NOT NULL,
+  pickled_session TEXT NOT NULL,
+  PRIMARY KEY(sender_key, session_id, room_id)
+);
+
+getInboundMegolmSession:
+SELECT pickled_session FROM sql_inbound_megolm_session
+WHERE sender_key = ? AND session_id = ? AND room_id = ?;
+
+saveInboundMegolmSession:
+INSERT OR REPLACE INTO sql_inbound_megolm_session
+VALUES (?, ?, ?, ?);
+
+deleteInboundMegolmSession:
+DELETE FROM sql_inbound_megolm_session
+WHERE sender_key = ? AND session_id = ? AND room_id = ?;
+
+CREATE TABLE sql_inbound_megolm_session_index(
+  sender_key TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  room_id TEXT NOT NULL,
+  message_index INTEGER NOT NULL,
+  event_id TEXT NOT NULL,
+  origin_timestamp INTEGER NOT NULL,
+  PRIMARY KEY(sender_key, session_id, room_id, message_index)
+);
+
+getInboundMegolmSessionIndex:
+SELECT * FROM sql_inbound_megolm_session_index
+WHERE sender_key = ? AND session_id = ? AND room_id = ? AND message_index = ?;
+
+saveInboundMegolmSessionIndex:
+INSERT OR REPLACE INTO sql_inbound_megolm_session_index
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteInboundMegolmSessionIndex:
+DELETE FROM sql_inbound_megolm_session_index
+WHERE sender_key = ? AND session_id = ? AND room_id = ? AND message_index = ?;
+
+CREATE TABLE sql_outbound_megolm_session(
+  room_id TEXT PRIMARY KEY NOT NULL,
+  outbound_megolm_session TEXT NOT NULL
+);
+
+getOutboundMegolmSession:
+SELECT outbound_megolm_session FROM sql_outbound_megolm_session
+WHERE room_id = ?;
+
+saveOutboundMegolmSession:
+INSERT OR REPLACE INTO sql_outbound_megolm_session
+VALUES (?, ?);
+
+deleteOutboundMegolmSession:
+DELETE FROM sql_outbound_megolm_session
+WHERE room_id = ?;

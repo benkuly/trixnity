@@ -58,7 +58,7 @@ class EncryptedEventContentSerializerTest {
         val result = json.decodeFromString<EncryptedEventContent>(input)
         assertEquals(
             MegolmEncryptedEventContent(
-                senderKey = Key.Curve25519Key("", "<sender_curve25519_key>"),
+                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
@@ -111,7 +111,7 @@ class EncryptedEventContentSerializerTest {
         val result = json.decodeFromString<EncryptedEventContent>(input)
         assertEquals(
             OlmEncryptedEventContent(
-                senderKey = Key.Curve25519Key("", "<sender_curve25519_key>"),
+                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
@@ -139,7 +139,7 @@ class EncryptedEventContentSerializerTest {
         assertEquals(
             UnknownEncryptedEventContent(
                 algorithm = Unknown("super_duper_algo"),
-                senderKey = Key.Curve25519Key("", "<sender_curve25519_key>"),
+                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
                 ciphertext = JsonObject(
                     mapOf(
                         "<device_curve25519_key>" to JsonObject(

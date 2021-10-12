@@ -1,0 +1,33 @@
+CREATE TABLE sql_device_keys(
+  user_id TEXT PRIMARY KEY NOT NULL,
+  device_keys TEXT NOT NULL
+);
+
+getDeviceKeys:
+SELECT device_keys FROM sql_device_keys
+WHERE user_id = ?;
+
+saveDeviceKeys:
+INSERT OR REPLACE INTO sql_device_keys
+VALUES (?, ?);
+
+deleteDeviceKeys:
+DELETE FROM sql_device_keys
+WHERE user_id = ?;
+
+CREATE TABLE sql_outdated_device_keys (
+  id INTEGER NOT NULL PRIMARY KEY,
+  outdated_device_keys TEXT
+);
+
+saveOutdatedDeviceKeys:
+INSERT OR REPLACE INTO sql_outdated_device_keys
+VALUES  ?;
+
+getOutdatedDeviceKeys:
+SELECT outdated_device_keys FROM sql_outdated_device_keys
+WHERE id = ?;
+
+deleteOutdatedDeviceKeys:
+DELETE FROM sql_outdated_device_keys
+WHERE id = ?;

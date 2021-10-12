@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.MatrixId.UserId
 
+@Serializable
 data class RoomDisplayName(
     val explicitName: String? = null,
     val isEmpty: Boolean = false,

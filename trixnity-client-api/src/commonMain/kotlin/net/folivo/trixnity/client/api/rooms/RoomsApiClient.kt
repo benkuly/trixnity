@@ -178,7 +178,7 @@ class RoomsApiClient(
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        val eventType = contentMappings.room.find { it.kClass.isInstance(eventContent) }?.type
+        val eventType = contentMappings.message.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
         return httpClient.put<SendEventResponse> {
             url("/_matrix/client/r0/rooms/${roomId.e()}/send/$eventType/$txnId")

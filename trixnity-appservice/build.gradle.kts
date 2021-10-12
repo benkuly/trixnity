@@ -21,7 +21,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-client-api"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
 

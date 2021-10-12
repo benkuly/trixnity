@@ -18,28 +18,27 @@ import net.folivo.trixnity.client.api.media.DownloadResponse
 import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.client.api.media.UploadResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.UploadMediaCache
+import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import org.kodein.log.LoggerFactory
 
 class MediaManagerTest : ShouldSpec({
     val api: MatrixApiClient = mockk()
-    val store: Store = InMemoryStore()
+    val store = mockk<Store>(relaxUnitFun = true)
     val cut = MediaManager(api, store, LoggerFactory.default)
 
     val mxcUri = "mxc://example.com/abc"
 
     beforeTest {
-        clearMocks(api)
-        store.clear()
+        clearAllMocks()
         coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns UploadResponse(mxcUri)
+        coEvery { store.media.getContent(any()) } returns null
     }
     context(MediaManager::getMedia.name) {
         should("prefer cache") {
-            store.media.addContent(mxcUri, "test".encodeToByteArray())
+            coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
             cut.getMedia(mxcUri).decodeToString() shouldBe "test"
             coVerify { api wasNot Called }
         }
@@ -48,8 +47,11 @@ class MediaManagerTest : ShouldSpec({
                 ByteReadChannel("test"), null, null, null
             )
             cut.getMedia(mxcUri).decodeToString() shouldBe "test"
-            coVerify { api.media.download(mxcUri) }
-            store.media.byUri(mxcUri)?.decodeToString() shouldBe "test"
+
+            coVerify {
+                api.media.download(mxcUri)
+                store.media.addContent(mxcUri, "test".encodeToByteArray())
+            }
         }
     }
     context(MediaManager::getEncryptedMedia.name) {
@@ -63,7 +65,7 @@ class MediaManagerTest : ShouldSpec({
             hashes = mapOf("sha256" to "Hk9NwPYLemjX/b6MMxpLKYn632NkYSFaBEoEvj4Fzo4")
         )
         should("prefer cache and decrypt") {
-            store.media.addContent(mxcUri, rawFile)
+            coEvery { store.media.getContent(mxcUri) } returns rawFile
             cut.getEncryptedMedia(encryptedFile).decodeToString() shouldBe "test"
         }
         should("download, cache and decrypt") {
@@ -71,10 +73,10 @@ class MediaManagerTest : ShouldSpec({
                 ByteReadChannel(rawFile), null, null, null
             )
             cut.getEncryptedMedia(encryptedFile).decodeToString() shouldBe "test"
-            store.media.byUri(mxcUri) shouldBe rawFile
+            coVerify { store.media.addContent(mxcUri, rawFile) }
         }
         should("validate hash") {
-            store.media.addContent(mxcUri, rawFile)
+            coEvery { store.media.getContent(mxcUri) } returns rawFile
             val encryptedFileWIthWrongHash = encryptedFile.copy(hashes = mapOf("sha256" to "nope"))
             shouldThrow<DecryptionException.ValidationFailed> {
                 cut.getEncryptedMedia(encryptedFileWIthWrongHash).decodeToString()
@@ -83,7 +85,7 @@ class MediaManagerTest : ShouldSpec({
     }
     context(MediaManager::getThumbnail.name) {
         should("prefer cache") {
-            store.media.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
+            coEvery { store.media.getContent("$mxcUri/32x32/crop") } returns "test".encodeToByteArray()
             cut.getThumbnail(mxcUri, 32u, 32u).decodeToString() shouldBe "test"
             coVerify { api wasNot Called }
         }
@@ -92,8 +94,10 @@ class MediaManagerTest : ShouldSpec({
                 ByteReadChannel("test"), null, null, null
             )
             cut.getThumbnail(mxcUri, 32u, 32u).decodeToString() shouldBe "test"
-            coVerify { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) }
-            store.media.byUri("$mxcUri/32x32/crop")?.decodeToString() shouldBe "test"
+            coVerify {
+                api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP)
+                store.media.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
+            }
         }
     }
     context(MediaManager::prepareUploadMedia.name) {
@@ -101,8 +105,12 @@ class MediaManagerTest : ShouldSpec({
             val result = cut.prepareUploadMedia("test".encodeToByteArray(), Plain)
             result shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
             result.length shouldBeGreaterThan 12
-            store.media.byUri(result)?.decodeToString() shouldBe "test"
-            store.media.getUploadMediaCache(result) shouldBe UploadMediaCache(result, null, Plain)
+            coVerify {
+                store.media.addContent(result, "test".encodeToByteArray())
+                store.media.updateUploadMedia(result, coWithArg {
+                    it.invoke(null) shouldBe UploadMedia(result, null, Plain)
+                })
+            }
         }
     }
     context(MediaManager::prepareUploadEncryptedMedia.name) {
@@ -115,26 +123,40 @@ class MediaManagerTest : ShouldSpec({
                 initialisationVector shouldNot beEmpty()
                 hashes["sha256"] shouldNot beEmpty()
             }
-            store.media.byUri(result.url)?.decodeToString() shouldNotBe "test"
-            store.media.getUploadMediaCache(result.url) shouldBe UploadMediaCache(result.url, null, OctetStream)
+            coVerify {
+                store.media.addContent(result.url, withArg {
+                    it shouldNotBe "test".encodeToByteArray()
+                })
+                store.media.updateUploadMedia(result.url, coWithArg {
+                    it.invoke(null) shouldBe UploadMedia(result.url, null, OctetStream)
+                })
+            }
         }
     }
     context(MediaManager::uploadMedia.name) {
         should("upload and add to cache") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
             val cacheUri = "cache://some-uuid"
-            store.media.addContent(cacheUri, "test".encodeToByteArray())
-            store.media.updateUploadMediaCache(cacheUri) { UploadMediaCache(cacheUri, null, Plain) }
+            coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
+            coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain)
 
             cut.uploadMedia(cacheUri) shouldBe mxcUri
-            store.media.byUri(mxcUri)?.decodeToString() shouldBe "test"
-            store.media.getUploadMediaCache(cacheUri) shouldBe UploadMediaCache(cacheUri, mxcUri, Plain)
+
+            coVerify {
+                api.media.upload(any(), any(), any())
+                store.media.changeUri(cacheUri, mxcUri)
+                store.media.updateUploadMedia(cacheUri, coWithArg {
+                    it.invoke(UploadMedia(cacheUri, null, Plain)) shouldBe UploadMedia(cacheUri, mxcUri, Plain)
+                })
+            }
         }
         should("should not upload twice") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
             val cacheUri = "cache://some-uuid"
-            store.media.addContent(cacheUri, "test".encodeToByteArray())
-            store.media.updateUploadMediaCache(cacheUri) { UploadMediaCache(cacheUri, null, Plain) }
+            coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
+            coEvery { store.media.getUploadMedia(cacheUri) }
+                .returns(UploadMedia(cacheUri, null, Plain))
+                .andThen(UploadMedia(cacheUri, mxcUri, Plain))
 
             cut.uploadMedia(cacheUri) shouldBe mxcUri
             cut.uploadMedia(cacheUri) shouldBe mxcUri
