@@ -118,7 +118,6 @@ class RoomManagerTest : ShouldSpec({
     }
 
     context(RoomManager::redactTimelineEvent.name) {
-
         context("with existent event") {
             should("redact room event") {
                 val event1 = textEvent(1)
