@@ -430,12 +430,12 @@ class RoomManager(
                     filter = """{"lazy_load_members":true}"""
                 )
                 val chunk = response.chunk
+                val end = response.end
                 if (!chunk.isNullOrEmpty()) {
                     val previousEventIndex =
-                        previousEvent?.let { chunk.indexOfFirst { event -> event.id == it.eventId } }
-                            ?: -1
+                        previousEvent?.let { chunk.indexOfFirst { event -> event.id == it.eventId } } ?: -1
                     val events = if (previousEventIndex < 0) chunk else chunk.take(previousEventIndex)
-                    val filledGap = previousEventIndex >= 0 || response.end == destinationBatch
+                    val filledGap = previousEventIndex >= 0 || end == destinationBatch
                     val timelineEvents = events.mapIndexed { index, event ->
                         val timelineEvent = when (index) {
                             events.lastIndex -> {
@@ -446,7 +446,7 @@ class RoomManager(
                                     previousEventId = previousEvent?.eventId,
                                     nextEventId = if (index == 0) startEvent.eventId
                                     else events.getOrNull(index - 1)?.id,
-                                    gap = if (filledGap) null else GapBefore(response.end)
+                                    gap = if (filledGap) null else end?.let { GapBefore(it) }
                                 )
                             }
                             0 -> {
@@ -498,6 +498,18 @@ class RoomManager(
                         timelineEvent
                     }
                     store.roomTimeline.addAll(timelineEvents)
+                } else if (end == null || end == response.start) {
+                    // we reached the start of visible timeline
+                    store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                        val oldGap = oldStartEvent?.gap
+                        oldStartEvent?.copy(
+                            gap = when (oldGap) {
+                                is GapAfter -> oldGap
+                                is GapBoth -> GapAfter(oldGap.batch)
+                                else -> null
+                            }
+                        )
+                    }
                 }
             }
             val nextEvent = store.roomTimeline.getNext(startEvent)?.value
@@ -529,7 +541,7 @@ class RoomManager(
                                     previousEventId = if (index == 0) startEvent.eventId
                                     else events.getOrNull(index - 1)?.id,
                                     nextEventId = nextEvent.eventId,
-                                    gap = if (filledGap) null else GapAfter(response.end),
+                                    gap = if (filledGap) null else response.end?.let { GapAfter(it) },
                                 )
                             }
                             0 -> {

@@ -404,6 +404,41 @@ class RoomManagerTimelineTest : ShouldSpec({
                         gap shouldBe GapAfter("start")
                     }
                 }
+                should("detect start of timeline") {
+                    coEvery {
+                        api.rooms.getEvents(
+                            roomId = room,
+                            from = "start",
+                            to = null,
+                            dir = BACKWARDS,
+                            limit = 20,
+                            filter = """{"lazy_load_members":true}"""
+                        )
+                    } returns GetEventsResponse(
+                        start = "start",
+                        end = "start",
+                        chunk = listOf(),
+                        state = listOf()
+                    )
+                    val startEvent = TimelineEvent(
+                        event = event3,
+                        roomId = room,
+                        eventId = event3.id,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = GapBefore("start")
+                    )
+                    store.roomTimeline.addAll(listOf(startEvent))
+                    cut.fetchMissingEvents(startEvent)
+                    assertSoftly(store.roomTimeline.get(event3.id, room).value!!) {
+                        event shouldBe event3
+                        eventId shouldBe event3.id
+                        roomId shouldBe room
+                        previousEventId shouldBe beNull()
+                        nextEventId should beNull()
+                        gap should beNull()
+                    }
+                }
             }
             context("gap filled") {
                 should("add element to timeline") {
