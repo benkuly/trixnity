@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.URLProtocol.Companion.HTTP
 import io.ktor.http.URLProtocol.Companion.HTTPS
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.api.authentication.AuthenticationApiClient
@@ -32,12 +31,11 @@ class MatrixApiClient(
     private val hostname: String,
     private val hostport: Int = 443,
     private val secure: Boolean = true,
-    val accessToken: MutableStateFlow<String?> = MutableStateFlow(null),
     baseHttpClient: HttpClient = HttpClient(),
     customMappings: EventContentSerializerMappings? = null,
     loggerFactory: LoggerFactory = LoggerFactory.default
 ) {
-
+    var accessToken: String? = null
     val eventContentSerializerMappings = DefaultEventContentSerializerMappings + customMappings
     val json =
         createMatrixJson(
@@ -69,7 +67,7 @@ class MatrixApiClient(
             host = hostname
             port = hostport
             url.protocol = if (secure) HTTPS else HTTP
-            accessToken.value?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+            accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
             if (!url.encodedPath.startsWith("_matrix/media")) {
                 header(HttpHeaders.ContentType, Application.Json)
                 accept(Application.Json)

@@ -60,17 +60,31 @@ class StrippedStateEventSerializer(
 
     override fun serialize(encoder: Encoder, value: StrippedStateEvent<*>) {
         val content = value.content
-        if (content is UnknownStateEventContent || value.content is RedactedStateEventContent)
-            throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
+        val type: String
+        val serializer: KSerializer<out StateEventContent>
+        when (content) {
+            is UnknownStateEventContent -> {
+                type = content.eventType
+                serializer = UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)
+            }
+            is RedactedStateEventContent -> {
+                type = content.eventType
+                serializer = RedactedEventContentSerializer(RedactedStateEventContent.serializer(), type)
+            }
+            else -> {
+                val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(content) }
+                requireNotNull(contentDescriptor) { "event content type ${content::class} must be registered" }
+                type = contentDescriptor.type
+                serializer = contentDescriptor.serializer
+            }
+        }
         require(encoder is JsonEncoder)
-        val contentDescriptor = stateEventContentSerializers.find { it.kClass.isInstance(content) }
-        requireNotNull(contentDescriptor) { "event content type ${content::class} must be registered" }
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             AddFieldsSerializer(
-                StrippedStateEvent.serializer(contentDescriptor.serializer) as KSerializer<StrippedStateEvent<*>>,
-                "type" to contentDescriptor.type
+                StrippedStateEvent.serializer(serializer) as KSerializer<StrippedStateEvent<*>>,
+                "type" to type
             ), value
         )
         encoder.encodeJsonElement(jsonElement)

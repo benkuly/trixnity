@@ -5,7 +5,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,7 +20,6 @@ class MatrixApiClientTest {
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
             hostname = "matrix.host",
-            accessToken = MutableStateFlow("token"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -38,7 +36,7 @@ class MatrixApiClientTest {
                         )
                     }
                 }
-            })
+            }).apply { accessToken = "token" }
 
         matrixRestClient.httpClient.post<OkResponse> {
             url("/path")

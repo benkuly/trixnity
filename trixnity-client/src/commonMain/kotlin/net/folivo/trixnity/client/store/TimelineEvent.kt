@@ -1,12 +1,16 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.serialization.*
+import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
 
+@Serializable
 data class TimelineEvent(
-    val event: RoomEvent<*>,
+    val event: @Contextual RoomEvent<*>,
+    @Transient
     val decryptedEvent: Result<MegolmEvent<*>>? = null,
 
     val roomId: RoomId,
@@ -16,19 +20,28 @@ data class TimelineEvent(
     val nextEventId: EventId?,
     val gap: Gap?,
 ) {
-    sealed interface Gap {
-        val batch: String
+    @OptIn(ExperimentalSerializationApi::class)
+    @Serializable
+    @JsonClassDiscriminator("position")
+    sealed class Gap {
+        abstract val batch: String
 
+        @Serializable
+        @SerialName("before")
         data class GapBefore(
             override val batch: String,
-        ) : Gap
+        ) : Gap()
 
+        @Serializable
+        @SerialName("both")
         data class GapBoth(
             override val batch: String,
-        ) : Gap
+        ) : Gap()
 
+        @Serializable
+        @SerialName("after")
         data class GapAfter(
             override val batch: String,
-        ) : Gap
+        ) : Gap()
     }
 }

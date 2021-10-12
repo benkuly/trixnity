@@ -27,14 +27,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}-native-mt")
+                implementation(project(":trixnity-client-sqldelight"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
+                implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
             }
         }
 //        val jsMain by getting {

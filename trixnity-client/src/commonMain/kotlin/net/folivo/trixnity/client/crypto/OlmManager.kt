@@ -36,6 +36,7 @@ import org.kodein.log.newLogger
 @OptIn(FlowPreview::class)
 class OlmManager(
     private val store: Store,
+    private val secureStore: SecureStore,
     private val api: MatrixApiClient,
     val json: Json,
     loggerFactory: LoggerFactory
@@ -43,10 +44,9 @@ class OlmManager(
 
     private val log = newLogger(loggerFactory)
 
-    private val pickleKey = store.olm.pickleKey
     private val account: OlmAccount =
-        store.olm.account.value?.let { OlmAccount.unpickle(pickleKey, it) }
-            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(pickleKey) }
+        store.olm.account.value?.let { OlmAccount.unpickle(secureStore.olmPickleKey, it) }
+            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(secureStore.olmPickleKey) }
     private val utility = OlmUtility.create()
 
     fun free() {
@@ -78,6 +78,7 @@ class OlmManager(
         json = json,
         account = account,
         store = store,
+        secureStore = secureStore,
         api = api,
         signService = sign,
         loggerFactory = loggerFactory
@@ -109,7 +110,7 @@ class OlmManager(
                 }.toSet())
             )
             account.markOneTimeKeysAsPublished()
-            store.olm.storeAccount(account)
+            store.olm.storeAccount(account, secureStore.olmPickleKey)
         }
     }
 
@@ -117,30 +118,30 @@ class OlmManager(
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
             store.deviceKeys.outdatedKeys.update { oldUserIds ->
-                oldUserIds + userIds.filterNot { store.deviceKeys.isTracked(it) }
+                oldUserIds + userIds.filter { store.deviceKeys.isTracked(it) }
             }
         }
         deviceList.left?.forEach { userId ->
             store.deviceKeys.outdatedKeys.update { it - userId }
-            store.deviceKeys.byUserId(userId).value = null
+            store.deviceKeys.update(userId) { null }
         }
     }
 
     internal suspend fun handleOutdatedKeys(userIds: Set<UserId>) = coroutineScope {
         if (userIds.isNotEmpty()) {
             log.debug { "update outdated device keys" }
-            val joinedEncryptedRooms = async { store.rooms.encryptedJoinedRooms() }
+            val joinedEncryptedRooms = async { store.room.encryptedJoinedRooms() }
             api.keys.getKeys(
                 deviceKeys = userIds.associateWith { emptySet() },
                 token = store.account.syncBatchToken.value
             ).deviceKeys.forEach { (userId, devices) ->
-                log.debug { "update outdated device keys for user $userId" }
+                log.debug { "update received outdated device keys for user $userId" }
                 val keys = devices.filter { (deviceId, deviceKeys) ->
                     // this prevents attacks from a malicious or compromised homeserver
                     userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                             && sign.verify(deviceKeys) == KeyVerificationState.Valid
                 }.map { it.key to it.value.signed }.toMap()
-                store.deviceKeys.byUserId(userId).update { oldDevices ->
+                store.deviceKeys.update(userId) { oldDevices ->
                     // we must check that the Ed25519 key hasn't changed and otherwise ignore device (use old value)
                     val newDevices = keys + (oldDevices?.filter { (deviceId, deviceKeys) ->
                         val newEd25519 = keys[deviceId]?.get<Ed25519Key>() ?: return@filter false
@@ -150,19 +151,20 @@ class OlmManager(
                     val diff = newDevices.filterNot { oldDevices?.get(it.key) == it.value }
                     if (diff.isNotEmpty()) {
                         log.debug { "look for encrypted room, where the user participates and notify megolm sessions about new device keys" }
-                        joinedEncryptedRooms.await().filter { room ->
-                            store.rooms.state.byId<MemberEventContent>(room.roomId, userId.full).value
-                                ?.content?.membership.let { it == JOIN || it == INVITE }
-                        }.forEach { room ->
-                            store.olm.outboundMegolmSession(room.roomId).update { oms ->
-                                oms?.copy(
-                                    newDevices = oms.newDevices + Pair(
-                                        userId,
-                                        oms.newDevices[userId]?.plus(diff.keys) ?: diff.keys
+                        joinedEncryptedRooms.await()
+                            .filter { roomId ->
+                                store.roomState.getByStateKey<MemberEventContent>(roomId, userId.full)
+                                    ?.content?.membership.let { it == JOIN || it == INVITE }
+                            }.forEach { roomId ->
+                                store.olm.updateOutboundMegolmSession(roomId) { oms ->
+                                    oms?.copy(
+                                        newDevices = oms.newDevices + Pair(
+                                            userId,
+                                            oms.newDevices[userId]?.plus(diff.keys) ?: diff.keys
+                                        )
                                     )
-                                )
+                                }
                             }
-                        }
                     }
                     newDevices
                 }
@@ -187,7 +189,8 @@ class OlmManager(
                         roomId = content.roomId,
                         senderKey = event.content.senderKey,
                         sessionId = content.sessionId,
-                        sessionKey = content.sessionKey
+                        sessionKey = content.sessionKey,
+                        pickleKey = secureStore.olmPickleKey
                     )
                 }
             }
@@ -195,21 +198,19 @@ class OlmManager(
     }
 
     internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
-        if (event is StateEvent
-            && store.rooms.byId(event.roomId).value?.encryptionAlgorithm == Megolm
-        ) {
+        if (event is StateEvent && store.room.get(event.roomId).value?.encryptionAlgorithm == Megolm) {
             log.debug { "handle membership change in an encrypted room" }
             when (event.content.membership) {
                 LEAVE, BAN -> {
-                    store.olm.outboundMegolmSession(event.roomId).value = null
-                    if (store.rooms.encryptedJoinedRooms().find { room ->
-                            store.rooms.state.byId<MemberEventContent>(room.roomId, event.stateKey).value
+                    store.olm.updateOutboundMegolmSession(event.roomId) { null }
+                    if (store.room.encryptedJoinedRooms().find { roomId ->
+                            store.roomState.getByStateKey<MemberEventContent>(roomId, event.stateKey)
                                 ?.content?.membership.let { it == JOIN || it == INVITE }
-                        } == null) store.deviceKeys.byUserId(UserId(event.stateKey)).value = null
+                        } == null) store.deviceKeys.update(UserId(event.stateKey)) { null }
                 }
                 JOIN, INVITE -> {
                     if (event.unsigned?.previousContent?.membership != event.content.membership
-                        && store.deviceKeys.isTracked(UserId(event.stateKey))
+                        && !store.deviceKeys.isTracked(UserId(event.stateKey))
                     ) store.deviceKeys.outdatedKeys.update { it + UserId(event.stateKey) }
                 }
                 else -> {
@@ -220,7 +221,7 @@ class OlmManager(
 
     internal suspend fun handleEncryptionEvents(event: Event<EncryptionEventContent>) {
         if (event is StateEvent) {
-            val outdatedKeys = store.rooms.state.members(event.roomId, JOIN, INVITE).filter {
+            val outdatedKeys = store.roomState.members(event.roomId, JOIN, INVITE).filterNot {
                 store.deviceKeys.isTracked(it)
             }
             store.deviceKeys.outdatedKeys.update { it + outdatedKeys }

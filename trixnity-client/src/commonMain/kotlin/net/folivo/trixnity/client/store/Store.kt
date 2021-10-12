@@ -1,138 +1,50 @@
 package net.folivo.trixnity.client.store
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.core.model.MatrixId.*
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
-import kotlin.reflect.KClass
+import kotlinx.coroutines.CoroutineScope
+import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 
-interface Store {
-    suspend fun clear()
+class Store(
+    scope: CoroutineScope,
+    accountRepository: AccountRepository,
+    outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
+    deviceKeysRepository: DeviceKeysRepository,
+    olmAccountRepository: OlmAccountRepository,
+    olmSessionRepository: OlmSessionRepository,
+    inboundMegolmSessionRepository: InboundMegolmSessionRepository,
+    inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
+    outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
+    roomRepository: RoomRepository,
+    roomUserRepository: RoomUserRepository,
+    roomStateRepository: RoomStateRepository,
+    roomTimelineRepository: RoomTimelineRepository,
+    roomOutboxMessageRepository: RoomOutboxMessageRepository,
+    mediaRepository: MediaRepository,
+    uploadMediaRepository: UploadMediaRepository,
+    contentMappings: EventContentSerializerMappings,
+) {
+    val account = AccountStore(accountRepository, scope)
+    val deviceKeys = DeviceKeysStore(outdatedDeviceKeysRepository, deviceKeysRepository, scope)
+    val olm = OlmStore(
+        olmAccountRepository,
+        olmSessionRepository,
+        inboundMegolmSessionRepository,
+        inboundMegolmMessageIndexRepository,
+        outboundMegolmSessionRepository,
+        scope
+    )
+    val room = RoomStore(roomRepository, scope)
+    val roomUser = RoomUserStore(roomUserRepository, scope)
+    val roomState = RoomStateStore(roomStateRepository, contentMappings, scope)
+    val roomTimeline = RoomTimelineStore(roomTimelineRepository, scope)
+    val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, scope)
+    val media = MediaStore(mediaRepository, uploadMediaRepository, scope)
 
-    val server: ServerStore
-    val account: AccountStore
-    val rooms: RoomsStore
-    val deviceKeys: DeviceKeysStores
-    val olm: OlmStore
-    val media: MediaStore
-
-    interface ServerStore {
-        val hostname: String
-        val port: Int
-        val secure: Boolean
-    }
-
-    interface AccountStore {
-        val userId: MutableStateFlow<UserId?>
-        val deviceId: MutableStateFlow<String?>
-        val accessToken: MutableStateFlow<String?>
-        val syncBatchToken: MutableStateFlow<String?>
-        val filterId: MutableStateFlow<String?>
-    }
-
-    interface RoomsStore {
-        val state: RoomStateStore
-        val timeline: RoomTimelineStore
-        val users: RoomUserStore
-        val outboxMessages: RoomOutboxMessagesStore
-
-        suspend fun all(): StateFlow<Set<Room>>
-        suspend fun byId(roomId: RoomId): StateFlow<Room?>
-        suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?): StateFlow<Room?>
-
-        interface RoomStateStore {
-            suspend fun update(event: Event<out StateEventContent>)
-            suspend fun updateAll(events: List<Event.StateEvent<out StateEventContent>>)
-            suspend fun <C : StateEventContent> allById(
-                roomId: RoomId,
-                eventContentClass: KClass<C>
-            ): StateFlow<Map<String, Event<C>>>
-
-            suspend fun <C : StateEventContent> allById(
-                roomId: RoomId,
-                stateKey: String,
-                eventContentClass: KClass<C>
-            ): StateFlow<Event<C>?>
-        }
-
-        interface RoomTimelineStore {
-            suspend fun update(
-                eventId: EventId,
-                roomId: RoomId,
-                updater: suspend (oldTimelineEvent: TimelineEvent?) -> TimelineEvent?
-            ): TimelineEvent?
-
-            suspend fun updateAll(events: List<TimelineEvent>)
-            suspend fun byId(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?>
-        }
-
-        interface RoomUserStore {
-            suspend fun all(): StateFlow<Set<RoomUser>>
-            suspend fun byId(userId: UserId, roomId: RoomId): StateFlow<RoomUser?>
-            suspend fun update(
-                userId: UserId,
-                roomId: RoomId,
-                updater: suspend (oldRoomUser: RoomUser?) -> RoomUser?
-            ): StateFlow<RoomUser?>
-
-            suspend fun byOriginalNameAndMembership(
-                originalName: String,
-                membership: Set<Membership>,
-                roomId: RoomId
-            ): Set<UserId>
-        }
-
-        interface RoomOutboxMessagesStore {
-            suspend fun add(message: RoomOutboxMessage)
-            suspend fun deleteByTransactionId(transactionId: String)
-            suspend fun markAsSent(transactionId: String)
-
-            suspend fun all(): StateFlow<List<RoomOutboxMessage>>
-            suspend fun allByRoomId(roomId: RoomId): StateFlow<List<RoomOutboxMessage>>
-        }
-    }
-
-    interface DeviceKeysStores {
-        suspend fun byUserId(userId: UserId): MutableStateFlow<Map<String, DeviceKeys>?>
-        val outdatedKeys: MutableStateFlow<Set<UserId>>
-    }
-
-    interface OlmStore {
-        // it is important, that this key is stored in secure location! Changing this value is not that easy, because
-        // we need to encrypt every pickled object with the new key.
-        val pickleKey: String
-        val account: MutableStateFlow<String?>
-        suspend fun olmSessions(senderKey: Curve25519Key): MutableStateFlow<Set<StoredOlmSession>>
-        suspend fun inboundMegolmSession(
-            roomId: RoomId,
-            sessionId: String,
-            senderKey: Curve25519Key
-        ): MutableStateFlow<StoredOlmInboundMegolmSession?>
-
-        suspend fun inboundMegolmMessageIndex(
-            roomId: RoomId,
-            sessionId: String,
-            senderKey: Curve25519Key,
-            messageIndex: Long
-        ): MutableStateFlow<StoredMegolmMessageIndex?>
-
-        suspend fun outboundMegolmSession(roomId: RoomId): MutableStateFlow<StoredOutboundMegolmSession?>
-    }
-
-    // TODO this should be Okio Source or something similar streaming bytes.
-    interface MediaStore {
-        suspend fun addContent(uri: String, content: ByteArray)
-        suspend fun byUri(uri: String): ByteArray?
-        suspend fun changeUri(oldUri: String, newUri: String)
-
-        suspend fun getUploadMediaCache(cacheUri: String): UploadMediaCache?
-        suspend fun updateUploadMediaCache(
-            cacheUri: String,
-            updater: suspend (oldUploadMediaCache: UploadMediaCache?) -> UploadMediaCache?
-        )
+    suspend fun init() {
+        account.init()
+        deviceKeys.init()
+        olm.init()
+        room.init()
+        roomOutboxMessage.init()
     }
 }

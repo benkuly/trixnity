@@ -13,4 +13,8 @@ class RedactedEventContentSerializer<T : Any>(
     override fun transformDeserialize(element: JsonElement): JsonElement {
         return JsonObject(mapOf("eventType" to JsonPrimitive(eventType)))
     }
+
+    override fun transformSerialize(element: JsonElement): JsonElement {
+        return JsonObject(mapOf())
+    }
 }

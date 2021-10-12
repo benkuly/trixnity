@@ -9,9 +9,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
-import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
+import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
@@ -24,24 +25,42 @@ import org.kodein.log.filter.entry.minimumLevel
 import org.kodein.log.frontend.defaultLogFrontend
 
 suspend fun example() = coroutineScope {
-    val store = InMemoryStore("your-server")
-    val matrixClient = MatrixClient.login(
-        IdentifierType.User("user"),
-        "password",
-        initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
-        store,
-        loggerFactory = LoggerFactory(
-            listOf(defaultLogFrontend),
-            listOf(minimumLevel(Logger.Level.INFO)),
-        )
+    val username = "username"
+    val password = "password"
+    val roomId = RoomId("!room:example.org")
+    val hostname = "example.org"
+    val port = 443
+    val secure = true
+    val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
+    val secureStore = object : SecureStore {
+        override val olmPickleKey = ""
+    }
+    val loggerFactory = LoggerFactory(
+        listOf(defaultLogFrontend),
+        listOf(minimumLevel(Logger.Level.INFO)),
     )
-
+    val matrixClient = MatrixClient.fromStore(
+        hostname = hostname,
+        port = port,
+        secure = secure,
+        storeFactory = storeFactory,
+        secureStore = secureStore,
+        loggerFactory = loggerFactory
+    ) ?: MatrixClient.login(
+        hostname = hostname,
+        port = port,
+        secure = secure,
+        IdentifierType.User(username),
+        password,
+        initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
+        storeFactory = storeFactory,
+        secureStore = secureStore,
+        loggerFactory = loggerFactory
+    )
 
     val encrytpedEventFlow = matrixClient.api.sync.events<MegolmEncryptedEventContent>()
 
     val startTime = Clock.System.now()
-
-    val roomId = RoomId("!room:server")
 
     val job1 = launch {
         encrytpedEventFlow.collect { event ->
@@ -53,7 +72,7 @@ suspend fun example() = coroutineScope {
                         val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
                         val content = decryptedEvent.content
                         if (content is TextMessageEventContent && content.body.startsWith("ping")) {
-                            matrixClient.rooms.sendMessage(TextMessageEventContent("pong to ${content.body}"), roomId)
+                            matrixClient.room.sendMessage(TextMessageEventContent("pong to ${content.body}"), roomId)
                         }
                     } catch (_: Exception) {
 
@@ -63,9 +82,9 @@ suspend fun example() = coroutineScope {
         }
     }
     val job2 = launch {
-        matrixClient.rooms.getLastTimelineEvent(roomId).filterNotNull().collect { lastEvent ->
-            matrixClient.rooms.loadMembers(roomId)
-            val roomName = store.rooms.byId(roomId).value?.name
+        matrixClient.room.getLastTimelineEvent(roomId, this).filterNotNull().collect { lastEvent ->
+            matrixClient.room.loadMembers(roomId)
+            val roomName = matrixClient.room.getById(roomId).value?.name
             println("------------------------- $roomName")
             flow {
                 var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
@@ -73,16 +92,18 @@ suspend fun example() = coroutineScope {
                 while (currentTimelineEvent?.value != null) {
                     val currentTimelineEventValue = currentTimelineEvent.value
                     if (currentTimelineEventValue?.gap is GapBefore) {
-                        matrixClient.rooms.fetchMissingEvents(currentTimelineEventValue)
+                        matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
                     }
                     currentTimelineEvent =
-                        currentTimelineEvent.value?.let { matrixClient.rooms.getPreviousTimelineEvent(it) }
+                        currentTimelineEvent.value?.let {
+                            matrixClient.room.getPreviousTimelineEvent(it, this@coroutineScope)
+                        }
                     emit(currentTimelineEvent)
                 }
             }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
                 val event = timelineEvent.value?.event
                 val content = event?.content
-                val sender = event?.sender?.let { store.rooms.users.byId(it, roomId).value?.name }
+                val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
                 when {
                     event is MessageEvent && content is RoomMessageEventContent ->
                         println("${sender}: ${content.body}")

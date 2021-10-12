@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
-import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -51,13 +50,13 @@ class RoomManager(
 
     @OptIn(FlowPreview::class)
     suspend fun startEventHandling() = coroutineScope {
-        launch { api.sync.events<StateEventContent>().collect { store.rooms.state.update(it) } }
+        launch { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
         launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
         launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
         launch { api.sync.events<MessageEventContent>().collect(::syncOutboxMessage) }
-        launch { processOutboxMessages(store.rooms.outboxMessages.all()) }
+        launch { processOutboxMessages(store.roomOutboxMessage.getAll()) }
         launch { api.sync.syncResponses.collect(::handleSyncResponse) }
         // TODO reaction and edit (also in fetchMissingEvents!)
     }
@@ -67,10 +66,10 @@ class RoomManager(
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
-            store.rooms.update(roomId) { oldRoom ->
+            store.room.update(roomId) { oldRoom ->
                 oldRoom ?: Room(
                     roomId = roomId,
-                    ownMembership = JOIN,
+                    membership = JOIN,
                     lastEventAt = fromEpochMilliseconds(0),
                     lastEventId = null
                 )
@@ -127,14 +126,12 @@ class RoomManager(
         roomId: RoomId
     ): Boolean {
         val usersWithSameDisplayName =
-            store.rooms.users.byOriginalNameAndMembership(displayName, setOf(JOIN, INVITE), roomId) - sourceUserId
+            store.roomUser.getByOriginalNameAndMembership(displayName, setOf(JOIN, INVITE), roomId) - sourceUserId
         if (usersWithSameDisplayName.size == 1) {
             val userId = usersWithSameDisplayName.first()
             val calculatedName = calculateUserDisplayName(displayName, isOld, userId)
-            store.rooms.users.update(userId, roomId) {
-                it?.copy(
-                    name = calculatedName
-                )
+            store.roomUser.update(userId, roomId) {
+                it?.copy(name = calculatedName)
             }
             log.debug { "found displayName collision '$displayName' of $userId with $sourceUserId in $roomId - new displayName: '$calculatedName'" }
         }
@@ -151,7 +148,7 @@ class RoomManager(
 
             val hasLeftRoom = membership == LEAVE || membership == BAN
 
-            val oldDisplayName = store.rooms.users.byId(userId, roomId).value?.originalName
+            val oldDisplayName = store.roomUser.get(userId, roomId)?.originalName
             val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
                 if (!oldDisplayName.isNullOrEmpty())
                     resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
@@ -162,7 +159,7 @@ class RoomManager(
             val calculatedName = calculateUserDisplayName(newDisplayName, !hasLeftRoom && !hasCollisions, userId)
             log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
 
-            store.rooms.users.update(userId, roomId) { oldRoomUser ->
+            store.roomUser.update(userId, roomId) { oldRoomUser ->
                 oldRoomUser?.copy(
                     name = calculatedName,
                     event = event
@@ -178,20 +175,20 @@ class RoomManager(
 
     internal suspend fun setRoomDisplayName(
         roomId: RoomId,
-        heroes: List<String>?,
+        heroes: List<UserId>?,
         joinedMemberCountFromSync: Int?,
         invitedMemberCountFromSync: Int?,
     ) {
-        val nameFromNameEvent = store.rooms.state.byId<NameEventContent>(roomId).value?.content?.name
+        val nameFromNameEvent = store.roomState.getByStateKey<NameEventContent>(roomId)?.content?.name
         val nameFromCanonicalAliasEvent =
-            store.rooms.state.byId<CanonicalAliasEventContent>(roomId).value?.content?.alias
+            store.roomState.getByStateKey<CanonicalAliasEventContent>(roomId)?.content?.alias
 
         val roomName = when {
             !nameFromNameEvent.isNullOrEmpty() -> RoomDisplayName(explicitName = nameFromNameEvent)
             nameFromCanonicalAliasEvent != null -> RoomDisplayName(explicitName = nameFromCanonicalAliasEvent.full)
             else -> {
-                val joinedMemberCount = joinedMemberCountFromSync ?: store.rooms.state.membersCount(roomId, JOIN)
-                val invitedMemberCount = invitedMemberCountFromSync ?: store.rooms.state.membersCount(roomId, INVITE)
+                val joinedMemberCount = joinedMemberCountFromSync ?: store.roomState.membersCount(roomId, JOIN)
+                val invitedMemberCount = invitedMemberCountFromSync ?: store.roomState.membersCount(roomId, INVITE)
                 val us = 1
 
                 if (joinedMemberCount + invitedMemberCount <= 1) {
@@ -201,18 +198,17 @@ class RoomManager(
                         else -> {
                             val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
                             val leftMembersCount =
-                                store.rooms.state.membersCount(roomId, LEAVE, BAN) - if (isCompletelyEmpty) us else 0
-                            val heroesUserIds = heroes.map { UserId(it) }
+                                store.roomState.membersCount(roomId, LEAVE, BAN) - if (isCompletelyEmpty) us else 0
                             when {
                                 leftMembersCount <= heroes.size ->
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroes = heroesUserIds
+                                        heroes = heroes
                                     )
                                 else -> {
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroes = heroesUserIds,
+                                        heroes = heroes,
                                         otherUsersCount = leftMembersCount - heroes.size
                                     )
                                 }
@@ -226,47 +222,38 @@ class RoomManager(
                             RoomDisplayName(
                                 otherUsersCount = joinedMemberCount + invitedMemberCount - us
                             )
-                        else -> {
-                            val heroesUserIds = heroes.map { UserId(it) }
-                            when {
-                                joinedMemberCount + invitedMemberCount - us <= heroes.size ->
-                                    RoomDisplayName(
-                                        heroes = heroesUserIds
-                                    )
-                                else ->
-                                    RoomDisplayName(
-                                        heroes = heroesUserIds,
-                                        otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us
-                                    )
-                            }
-                        }
+                        joinedMemberCount + invitedMemberCount - us <= heroes.size ->
+                            RoomDisplayName(
+                                heroes = heroes
+                            )
+                        else ->
+                            RoomDisplayName(
+                                heroes = heroes,
+                                otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us
+                            )
                     }
                 }
             }
         }
-        store.rooms.update(roomId) { oldRoom ->
+        store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(name = roomName)
         }
     }
 
 
     internal suspend fun setLastEventAt(event: Event<*>) {
-        val (roomId, eventTime) = when (event) {
-            is MessageEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
-            is StateEvent -> event.roomId to fromEpochMilliseconds(event.originTimestamp)
-            else -> null to null
-        }
-        val eventId = event.getEventId()
-        if (roomId != null && eventTime != null && eventId != null)
-            store.rooms.update(roomId) { oldRoom ->
-                oldRoom?.copy(lastEventAt = eventTime, lastEventId = eventId)
-                    ?: Room(roomId = roomId, lastEventAt = eventTime, lastEventId = eventId)
+        if (event is RoomEvent) {
+            val eventTime = fromEpochMilliseconds(event.originTimestamp)
+            store.room.update(event.roomId) { oldRoom ->
+                oldRoom?.copy(lastEventAt = eventTime, lastEventId = event.id)
+                    ?: Room(roomId = event.roomId, lastEventAt = eventTime, lastEventId = event.id)
             }
+        }
     }
 
     internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {
         if (event is StateEvent) {
-            store.rooms.update(event.roomId) { oldRoom ->
+            store.room.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
                     encryptionAlgorithm = event.content.algorithm
                 ) ?: Room(
@@ -283,12 +270,12 @@ class RoomManager(
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null && stateKey == store.account.userId.value?.full) {
-            store.rooms.update(roomId) { oldRoom ->
+            store.room.update(roomId) { oldRoom ->
                 oldRoom?.copy(
-                    ownMembership = event.content.membership
+                    membership = event.content.membership
                 ) ?: Room(
                     roomId = roomId,
-                    ownMembership = event.content.membership,
+                    membership = event.content.membership,
                     lastEventAt = fromEpochMilliseconds(event.getOriginTimestamp() ?: 0),
                     lastEventId = event.getEventId()
                 )
@@ -297,7 +284,7 @@ class RoomManager(
     }
 
     internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
-        store.rooms.update(roomId) { oldRoom ->
+        store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(
                 unreadMessageCount = count
             )
@@ -308,12 +295,12 @@ class RoomManager(
         if (redactionEvent is MessageEvent) {
             val roomId = redactionEvent.roomId
             log.debug { "redact event with id ${redactionEvent.content.redacts} in room $roomId" }
-            store.rooms.timeline.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
+            store.roomTimeline.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
                 if (oldTimelineEvent != null) {
                     when (val oldEvent = oldTimelineEvent.event) {
                         is MessageEvent -> {
                             val eventType =
-                                api.eventContentSerializerMappings.room
+                                api.eventContentSerializerMappings.message
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
                             oldTimelineEvent.copy(
@@ -365,11 +352,11 @@ class RoomManager(
     ) {
         if (!events.isNullOrEmpty()) {
             val nextEventIdForPreviousEvent = events[0].id
-            val room = store.rooms.byId(roomId).value
+            val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
-            val previousEvent =
-                room.lastEventId?.let {
-                    store.rooms.timeline.update(it, roomId) { oldEvent ->
+            val previousEventId =
+                room.lastEventId?.also {
+                    store.roomTimeline.update(it, roomId) { oldEvent ->
                         if (hasGapBefore)
                             oldEvent?.copy(nextEventId = nextEventIdForPreviousEvent)
                         else {
@@ -389,7 +376,7 @@ class RoomManager(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = if (index == 0) previousEvent?.eventId
+                            previousEventId = if (index == 0) previousEventId
                             else events.getOrNull(index - 1)?.id,
                             nextEventId = null,
                             gap = if (index == 0 && hasGapBefore)
@@ -402,7 +389,7 @@ class RoomManager(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = previousEvent?.eventId,
+                            previousEventId = previousEventId,
                             nextEventId = events.getOrNull(index + 1)?.id,
                             gap = if (hasGapBefore && previousBatch != null)
                                 GapBefore(previousBatch)
@@ -421,7 +408,7 @@ class RoomManager(
                     }
                 }
             }
-            store.rooms.timeline.updateAll(timelineEvents)
+            store.roomTimeline.addAll(timelineEvents)
         }
     }
 
@@ -432,7 +419,7 @@ class RoomManager(
             if (startGap is GapBefore || startGap is GapBoth) {
                 log.debug { "fetch missing events before ${startEvent.eventId}" }
 
-                val previousEvent = store.rooms.timeline.getPrevious(startEvent)?.value
+                val previousEvent = store.roomTimeline.getPrevious(startEvent)?.value
                 val destinationBatch = previousEvent?.gap?.batch
                 val response = api.rooms.getEvents(
                     roomId = roomId,
@@ -484,7 +471,7 @@ class RoomManager(
                             }
                         }
                         if (index == 0)
-                            store.rooms.timeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                            store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
                                     previousEventId = event.id,
@@ -496,7 +483,7 @@ class RoomManager(
                                 )
                             }
                         if (index == events.lastIndex && previousEvent != null)
-                            store.rooms.timeline.update(previousEvent.eventId, roomId) { oldPreviousEvent ->
+                            store.roomTimeline.update(previousEvent.eventId, roomId) { oldPreviousEvent ->
                                 val oldGap = oldPreviousEvent?.gap
                                 oldPreviousEvent?.copy(
                                     nextEventId = event.id,
@@ -510,10 +497,10 @@ class RoomManager(
                             }
                         timelineEvent
                     }
-                    store.rooms.timeline.updateAll(timelineEvents)
+                    store.roomTimeline.addAll(timelineEvents)
                 }
             }
-            val nextEvent = store.rooms.timeline.getNext(startEvent)?.value
+            val nextEvent = store.roomTimeline.getNext(startEvent)?.value
             if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
                 log.debug { "fetch missing events after ${startEvent.eventId}" }
 
@@ -567,7 +554,7 @@ class RoomManager(
                             }
                         }
                         if (index == 0)
-                            store.rooms.timeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                            store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
                                     nextEventId = event.id,
@@ -579,7 +566,7 @@ class RoomManager(
                                 )
                             }
                         if (index == events.lastIndex)
-                            store.rooms.timeline.update(nextEvent.eventId, roomId) { oldNextEvent ->
+                            store.roomTimeline.update(nextEvent.eventId, roomId) { oldNextEvent ->
                                 val oldGap = oldNextEvent?.gap
                                 oldNextEvent?.copy(
                                     previousEventId = event.id,
@@ -593,14 +580,14 @@ class RoomManager(
                             }
                         timelineEvent
                     }
-                    store.rooms.timeline.updateAll(timelineEvents)
+                    store.roomTimeline.addAll(timelineEvents)
                 }
             }
         }
     }
 
     suspend fun loadMembers(roomId: RoomId) {
-        store.rooms.update(roomId) { oldRoom ->
+        store.room.update(roomId) { oldRoom ->
             requireNotNull(oldRoom) { "cannot load members of a room, that we don't know yet ($roomId)" }
             if (!oldRoom.membersLoaded) {
                 val memberEvents = api.rooms.getMembers(
@@ -608,7 +595,7 @@ class RoomManager(
                     at = store.account.syncBatchToken.value,
                     notMembership = Membership.LEAVE
                 ).toList()
-                store.rooms.state.updateAll(memberEvents.filterIsInstance<StateEvent<StateEventContent>>())
+                store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
                 memberEvents.forEach { setRoomUser(it) }
                 store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                 oldRoom.copy(membersLoaded = true)
@@ -616,23 +603,30 @@ class RoomManager(
         }
     }
 
-    private val decryptionScope = CoroutineScope(Dispatchers.Default)
-
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
                 && this.event.content is MegolmEncryptedEventContent
                 && this.decryptedEvent == null
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
-    suspend fun getTimelineEvent(eventId: EventId, roomId: RoomId): StateFlow<TimelineEvent?> {
-        return store.rooms.timeline.byId(eventId, roomId).also {
+    suspend fun getTimelineEvent(
+        eventId: EventId,
+        roomId: RoomId,
+        coroutineScope: CoroutineScope
+    ): StateFlow<TimelineEvent?> {
+        return store.roomTimeline.get(eventId, roomId, coroutineScope).also {
             val timelineEvent = it.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
-                decryptionScope.launch(coroutineContext) {
+                coroutineScope.launch {
                     log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                    store.olm.waitForInboundMegolmSession(roomId, content.sessionId, content.senderKey)
-                    store.rooms.timeline.update(eventId, roomId) { oldEvent ->
+                    store.olm.waitForInboundMegolmSession(
+                        roomId,
+                        content.sessionId,
+                        content.senderKey,
+                        this
+                    )
+                    store.roomTimeline.update(eventId, roomId) { oldEvent ->
                         if (oldEvent?.canBeDecrypted() == true) {
                             log.debug { "try to decrypt event $eventId in $roomId" }
                             @Suppress("UNCHECKED_CAST")
@@ -646,30 +640,37 @@ class RoomManager(
         }
     }
 
-    private val lastTimelineEventScope = CoroutineScope(Dispatchers.Default)
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(roomId: RoomId): StateFlow<StateFlow<TimelineEvent?>?> {
-        return store.rooms.byId(roomId).transformLatest { room ->
-            if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId))
+    suspend fun getLastTimelineEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope
+    ): StateFlow<StateFlow<TimelineEvent?>?> {
+        return store.room.get(roomId).transformLatest { room ->
+            if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, coroutineScope))
             else emit(null)
-        }.stateIn(lastTimelineEventScope)
+        }.stateIn(coroutineScope)
     }
 
-    suspend fun getPreviousTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
-        return event.previousEventId?.let { getTimelineEvent(it, event.roomId) }
+    suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope
+    ): StateFlow<TimelineEvent?>? {
+        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
 
-    suspend fun getNextTimelineEvent(event: TimelineEvent): StateFlow<TimelineEvent?>? {
-        return event.nextEventId?.let { getTimelineEvent(it, event.roomId) }
+    suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope
+    ): StateFlow<TimelineEvent?>? {
+        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
 
     suspend fun sendMessage(content: MessageEventContent, roomId: RoomId) {
-        store.rooms.outboxMessages.add(
+        store.roomOutboxMessage.add(
             RoomOutboxMessage(
-                content,
-                roomId,
                 uuid4().toString(),
+                roomId,
+                content,
                 false,
                 MutableStateFlow(null)
             )
@@ -679,7 +680,7 @@ class RoomManager(
     internal suspend fun syncOutboxMessage(event: Event<MessageEventContent>) {
         if (event is MessageEvent && event.sender == store.account.userId.value) {
             event.unsigned?.transactionId?.also {
-                store.rooms.outboxMessages.deleteByTransactionId(it)
+                store.roomOutboxMessage.deleteByTransactionId(it)
             }
         }
     }
@@ -714,7 +715,7 @@ class RoomManager(
                                             media.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress)
                                         }
                                     }.let { content ->
-                                        if (store.rooms.byId(roomId).value?.encryptionAlgorithm == Megolm) {
+                                        if (store.room.get(roomId).value?.encryptionAlgorithm == Megolm) {
                                             // The UI should do that, when a room gets opened, because of lazy loading
                                             // members Trixnity may not know all devices for encryption yet.
                                             // To ensure an easy usage of Trixnity and because
@@ -722,14 +723,13 @@ class RoomManager(
                                             loadMembers(roomId)
 
                                             val megolmSettings =
-                                                store.rooms.state.byId<EncryptionEventContent>(roomId).value?.content
+                                                store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
                                             requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
                                             olm.events.encryptMegolm(content, outboxMessage.roomId, megolmSettings)
                                         } else content
                                     }
-
                                 api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId)
-                                store.rooms.outboxMessages.markAsSent(outboxMessage.transactionId)
+                                store.roomOutboxMessage.markAsSent(outboxMessage.transactionId)
                             }
                     }
                 }
@@ -737,5 +737,13 @@ class RoomManager(
                 log.info { "stop sending outbox messages, because we are not connected" }
             }
         }
+    }
+
+    fun getAll(): StateFlow<Set<Room>> {
+        return store.room.getAll()
+    }
+
+    suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+        return store.room.get(roomId)
     }
 }

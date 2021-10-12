@@ -14,14 +14,14 @@ sealed interface UnsignedRoomEventData {
     @Serializable
     data class UnsignedMessageEventData(
         @SerialName("age") override val age: Long? = null,
-        @SerialName("redactedBecause") @Contextual override val redactedBecause: Event<*>? = null,
+        @SerialName("redacted_because") @Contextual override val redactedBecause: Event<*>? = null,
         @SerialName("transaction_id") override val transactionId: String? = null
     ) : UnsignedRoomEventData
 
     @Serializable
     data class UnsignedStateEventData<C : StateEventContent>(
         @SerialName("age") override val age: Long? = null,
-        @SerialName("redactedBecause") @Contextual override val redactedBecause: Event<*>? = null,
+        @SerialName("redacted_because") @Contextual override val redactedBecause: Event<*>? = null,
         @SerialName("transaction_id") override val transactionId: String? = null,
         @SerialName("prev_content") val previousContent: C? = null
     ) : UnsignedRoomEventData

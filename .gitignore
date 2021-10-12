@@ -17,3 +17,5 @@ gradle-app.setting
 
 # Android NDK/CMake
 .cxx
+
+test.db

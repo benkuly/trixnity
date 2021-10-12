@@ -4,7 +4,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -22,8 +21,7 @@ suspend fun example() = coroutineScope {
     val matrixRestClient =
         MatrixApiClient(
             hostname = "host",
-            accessToken = MutableStateFlow("token")
-        )
+        ).apply { accessToken = "token" }
     val roomId = RoomId("!room:server")
 
     val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()

@@ -1,61 +1,78 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
 
-suspend inline fun <reified C : StateEventContent> Store.RoomsStore.RoomStateStore.allById(roomId: MatrixId.RoomId):
-        StateFlow<Map<String, Event<C>>> = this.allById(roomId, C::class)
+suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
+    roomId: RoomId,
+    scope: CoroutineScope? = null
+): StateFlow<Map<String, Event<C>>?> = get(roomId, C::class, scope)
 
-suspend inline fun <reified C : StateEventContent> Store.RoomsStore.RoomStateStore.byId(
-    roomId: MatrixId.RoomId,
+suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
+    roomId: RoomId,
+    stateKey: String = "",
+    scope: CoroutineScope
+): StateFlow<Event<C>?> = getByStateKey(roomId, stateKey, C::class, scope)
+
+suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
+    roomId: RoomId,
     stateKey: String = ""
-): StateFlow<Event<C>?> = this.allById(roomId, stateKey, C::class)
+): Event<C>? = getByStateKey(roomId, stateKey, C::class)
 
 // TODO test
-suspend inline fun Store.RoomsStore.RoomStateStore.members(
-    roomId: MatrixId.RoomId,
+suspend inline fun RoomStateStore.members(
+    roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Set<MatrixId.UserId> =
-    allById<MemberEventContent>(roomId).value.filter { entry ->
-        (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
-    }.map { MatrixId.UserId(it.key) }.toSet()
+): Set<UserId> =
+    get<MemberEventContent>(roomId).value
+        ?.filter { entry ->
+            (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
+        }?.map { UserId(it.key) }?.toSet() ?: setOf()
 
 // TODO test
-suspend inline fun Store.RoomsStore.RoomStateStore.membersCount(
-    roomId: MatrixId.RoomId,
+suspend inline fun RoomStateStore.membersCount(
+    roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Int =
-    allById<MemberEventContent>(roomId).value.filter { entry ->
+): Int = get<MemberEventContent>(roomId).value
+    ?.filter { entry ->
         (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
-    }.count()
+    }?.count() ?: 0
 
-suspend inline fun Store.RoomsStore.encryptedJoinedRooms(): List<Room> =
-    all().value.filter { it.encryptionAlgorithm != null && it.ownMembership == Membership.JOIN }
+fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
+    getAll().value.filter { it.encryptionAlgorithm != null && it.membership == Membership.JOIN }.map { it.roomId }
 
+suspend inline fun RoomTimelineStore.getNext(
+    event: TimelineEvent,
+    scope: CoroutineScope? = null
+): StateFlow<TimelineEvent?>? =
+    event.nextEventId?.let { get(it, event.roomId, scope) }
 
-suspend inline fun Store.RoomsStore.RoomTimelineStore.getNext(event: TimelineEvent): StateFlow<TimelineEvent?>? =
-    event.nextEventId?.let { this.byId(it, event.roomId) }
+suspend inline fun RoomTimelineStore.getPrevious(
+    event: TimelineEvent,
+    scope: CoroutineScope? = null
+): StateFlow<TimelineEvent?>? =
+    event.previousEventId?.let { get(it, event.roomId, scope) }
 
-suspend inline fun Store.RoomsStore.RoomTimelineStore.getPrevious(event: TimelineEvent): StateFlow<TimelineEvent?>? =
-    event.previousEventId?.let { this.byId(it, event.roomId) }
+suspend inline fun DeviceKeysStore.isTracked(userId: UserId): Boolean =
+    get(userId).value.isNullOrEmpty().not()
 
-suspend inline fun Store.DeviceKeysStores.isTracked(userId: MatrixId.UserId): Boolean =
-    byUserId(userId).value.isNullOrEmpty()
-
-suspend inline fun Store.OlmStore.waitForInboundMegolmSession(
-    roomId: MatrixId.RoomId,
+suspend inline fun OlmStore.waitForInboundMegolmSession(
+    roomId: RoomId,
     sessionId: String,
-    senderKey: Key.Curve25519Key
+    senderKey: Key.Curve25519Key,
+    scope: CoroutineScope
 ) {
-    inboundMegolmSession(roomId, sessionId, senderKey).first { it != null }
+    getInboundMegolmSession(senderKey, sessionId, roomId, scope).first { it != null }
 }
 
 val RoomUser.originalName

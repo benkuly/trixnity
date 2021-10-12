@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.serialization.m.room.encrypted.EncryptedEventCon
 import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventContentSerializer
 
 object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
-    override val room: Set<EventContentSerializerMapping<out MessageEventContent>> = setOf(
+    override val message: Set<EventContentSerializerMapping<out MessageEventContent>> = setOf(
         of("m.room.message", RoomMessageEventContentSerializer),
         of<RedactionEventContent>("m.room.redaction"),
         of("m.room.encrypted", EncryptedEventContentSerializer),

@@ -15,15 +15,15 @@ fun createEventSerializersModule(
     loggerFactory: LoggerFactory
 ): SerializersModule {
     val basicEventSerializer = BasicEventSerializer()
-    val messageEventSerializer = MessageEventSerializer(mappings.room, loggerFactory)
+    val messageEventSerializer = MessageEventSerializer(mappings.message, loggerFactory)
     val stateEventSerializer = StateEventSerializer(mappings.state, loggerFactory)
     val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer, loggerFactory)
     val strippedStateEventSerializer = StrippedStateEventSerializer(mappings.state, loggerFactory)
     val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral, loggerFactory)
     val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice, loggerFactory)
     val olmEventSerializer =
-        OlmEventSerializer(mappings.room + mappings.state + mappings.ephemeral + mappings.toDevice, loggerFactory)
-    val megolmEventSerializer = MegolmEventSerializer(mappings.room, loggerFactory)
+        OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice, loggerFactory)
+    val megolmEventSerializer = MegolmEventSerializer(mappings.message, loggerFactory)
     val eventSerializer = EventSerializer(
         basicEventSerializer,
         roomEventSerializer,
@@ -46,7 +46,7 @@ fun createEventSerializersModule(
         contextual(olmEventSerializer)
         contextual(megolmEventSerializer)
 
-        mappings.room.forEach {
+        mappings.message.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             contextual(it.kClass as KClass<MessageEventContent>, it.serializer as KSerializer<MessageEventContent>)
         }
