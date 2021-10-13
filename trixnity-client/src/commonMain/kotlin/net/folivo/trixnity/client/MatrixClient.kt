@@ -142,6 +142,8 @@ class MatrixClient private constructor(
 
     val syncState = api.sync.currentSyncState
 
+    val userId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
+
     suspend fun logout() {
         api.sync.stop()
         api.authentication.logout()
