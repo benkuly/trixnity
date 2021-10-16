@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
+import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
@@ -90,6 +91,22 @@ class MediaManager(
         }
     }
 
+    suspend fun prepareUploadThumbnail(content: ByteArray, contentType: ContentType): Pair<String, ThumbnailInfo>? {
+        val thumbnail = try {
+            createThumbnail(content, contentType, 600, 600)
+        } catch (e: ThumbnailCreationException) {
+            log.debug { "could not create thumbnail from file with content type $contentType" }
+            return null
+        }
+        val cacheUri = prepareUploadMedia(thumbnail.file, thumbnail.contentType)
+        return cacheUri to ThumbnailInfo(
+            width = thumbnail.width,
+            height = thumbnail.height,
+            mimeType = thumbnail.contentType.toString(),
+            size = thumbnail.file.size
+        )
+    }
+
     suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
         val encrypted = encryptAes256Ctr(content)
         val cacheUri = prepareUploadMedia(encrypted.encryptedContent, ContentType.Application.OctetStream)
@@ -104,6 +121,25 @@ class MediaManager(
             ),
             initialisationVector = encrypted.initialisationVector.encodeUnpaddedBase64(),
             hashes = mapOf("sha256" to hash)
+        )
+    }
+
+    suspend fun prepareUploadEncryptedThumbnail(
+        content: ByteArray,
+        contentType: ContentType
+    ): Pair<EncryptedFile, ThumbnailInfo>? {
+        val thumbnail = try {
+            createThumbnail(content, contentType, 600, 600)
+        } catch (e: ThumbnailCreationException) {
+            log.debug { "could not create thumbnail from file with content type $contentType" }
+            return null
+        }
+        val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file)
+        return encryptedFile to ThumbnailInfo(
+            width = thumbnail.width,
+            height = thumbnail.height,
+            mimeType = thumbnail.contentType.toString(),
+            size = thumbnail.file.size
         )
     }
 

@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventContentSerializer
 
@@ -115,10 +116,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         }
     }
 
-    @Serializable
     data class UnknownMessageEventContent(
-        @SerialName("msgtype") val type: String,
-        @SerialName("body") override val body: String
+        val type: String,
+        override val body: String,
+        val raw: JsonObject
     ) : RoomMessageEventContent
 }
 

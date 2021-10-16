@@ -14,4 +14,5 @@ object Versions {
     const val androidGradle = "4.2.2" // https://developer.android.com/reference/tools/gradle-api
     const val arrow = "1.0.0" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.1" // https://github.com/cashapp/sqldelight/releases
+    const val thumbnailator = "0.4.14" // https://github.com/coobird/thumbnailator/releases
 }

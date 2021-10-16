@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.room.outbox
 
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 // TODO test
 suspend fun roomMessageEventContentMediaUploader(
@@ -10,10 +11,10 @@ suspend fun roomMessageEventContentMediaUploader(
 ): RoomMessageEventContent {
     require(content is RoomMessageEventContent)
     return when (content) {
-        is RoomMessageEventContent.TextMessageEventContent -> content
-        is RoomMessageEventContent.NoticeMessageEventContent -> content
-        is RoomMessageEventContent.EmoteMessageEventContent -> content
-        is RoomMessageEventContent.FileMessageEventContent -> {
+        is TextMessageEventContent -> content
+        is NoticeMessageEventContent -> content
+        is EmoteMessageEventContent -> content
+        is FileMessageEventContent -> {
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
@@ -36,7 +37,7 @@ suspend fun roomMessageEventContentMediaUploader(
                 )
             } else content
         }
-        is RoomMessageEventContent.ImageMessageEventContent -> {
+        is ImageMessageEventContent -> {
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
@@ -59,7 +60,7 @@ suspend fun roomMessageEventContentMediaUploader(
                 )
             } else content
         }
-        is RoomMessageEventContent.VideoMessageEventContent -> {
+        is VideoMessageEventContent -> {
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
@@ -82,7 +83,7 @@ suspend fun roomMessageEventContentMediaUploader(
                 )
             } else content
         }
-        is RoomMessageEventContent.AudioMessageEventContent -> {
+        is AudioMessageEventContent -> {
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
@@ -93,6 +94,6 @@ suspend fun roomMessageEventContentMediaUploader(
                 content.copy(url = mxcUri)
             } else content
         }
-        is RoomMessageEventContent.UnknownMessageEventContent -> content
+        is UnknownMessageEventContent -> content
     }
 }

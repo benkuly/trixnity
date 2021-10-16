@@ -20,7 +20,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     override fun deserialize(decoder: Decoder): RoomMessageEventContent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (jsonObj["msgtype"]?.jsonPrimitive?.content) {
+        return when (val type = jsonObj["msgtype"]?.jsonPrimitive?.content) {
             NoticeMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(NoticeMessageEventContentSerializer, jsonObj)
             TextMessageEventContent.type ->
@@ -35,8 +35,12 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 decoder.json.decodeFromJsonElement(AudioMessageEventContentSerializer, jsonObj)
             VideoMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(VideoMessageEventContentSerializer, jsonObj)
-            else ->
-                decoder.json.decodeFromJsonElement(UnknownMessageEventContent.serializer(), jsonObj)
+            else -> {
+                val body = jsonObj["body"]?.jsonPrimitive?.content
+                requireNotNull(type)
+                requireNotNull(body)
+                UnknownMessageEventContent(type, body, jsonObj)
+            }
         }
     }
 
@@ -57,7 +61,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 encoder.json.encodeToJsonElement(AudioMessageEventContentSerializer, value)
             is VideoMessageEventContent ->
                 encoder.json.encodeToJsonElement(VideoMessageEventContentSerializer, value)
-            is UnknownMessageEventContent -> throw IllegalArgumentException("${UnknownMessageEventContent::class.simpleName} should never be serialized")
+            is UnknownMessageEventContent -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
     }
