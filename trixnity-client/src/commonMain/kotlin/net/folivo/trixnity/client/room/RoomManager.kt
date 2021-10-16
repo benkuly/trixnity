@@ -428,7 +428,7 @@ class RoomManager(
             if (startGap is GapBefore || startGap is GapBoth) {
                 log.debug { "fetch missing events before ${startEvent.eventId}" }
 
-                val previousEvent = store.roomTimeline.getPrevious(startEvent)?.value
+                val previousEvent = store.roomTimeline.getPrevious(startEvent, null)?.value
                 val destinationBatch = previousEvent?.gap?.batch
                 val response = api.rooms.getEvents(
                     roomId = roomId,
@@ -521,7 +521,7 @@ class RoomManager(
                     }
                 }
             }
-            val nextEvent = store.roomTimeline.getNext(startEvent)?.value
+            val nextEvent = store.roomTimeline.getNext(startEvent, null)?.value
             if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
                 log.debug { "fetch missing events after ${startEvent.eventId}" }
 
@@ -777,7 +777,7 @@ class RoomManager(
         eventContentClass: KClass<C>,
         scope: CoroutineScope
     ): StateFlow<C?> {
-        return store.roomAccountData.get(roomId, eventContentClass)
+        return store.roomAccountData.get(roomId, eventContentClass, scope)
             .map { it?.content }
             .stateIn(scope)
     }

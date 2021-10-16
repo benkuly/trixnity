@@ -22,7 +22,7 @@ class RoomAccountDataStore(
     suspend fun <C : AccountDataEventContent> get(
         roomId: MatrixId.RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope? = null
+        scope: CoroutineScope
     ): StateFlow<Event.AccountDataEvent<C>?> {
         val eventType = contentMappings.accountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot get account data event, because it is not supported. You need to register it first.")

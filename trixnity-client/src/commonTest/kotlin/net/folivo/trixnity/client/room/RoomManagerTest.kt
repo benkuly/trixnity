@@ -16,8 +16,6 @@ import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.media.FileTransferProgress
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.RUNNING
@@ -31,8 +29,11 @@ import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -641,7 +642,7 @@ class RoomManagerTest : ShouldSpec({
             val roomId = RoomId("room1", "server")
             val accountDataEvent = AccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId)
             cut.setRoomAccountData(accountDataEvent)
-            store.roomAccountData.get<FullyReadEventContent>(roomId).value shouldBe accountDataEvent
+            store.roomAccountData.get<FullyReadEventContent>(roomId, this).value shouldBe accountDataEvent
         }
     }
 })

@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-    scope: CoroutineScope? = null
+    scope: CoroutineScope?
 ): StateFlow<Map<String, Event<C>>?> = get(roomId, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
@@ -28,9 +28,9 @@ suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     stateKey: String = ""
 ): Event<C>? = getByStateKey(roomId, stateKey, C::class)
 
-suspend inline fun <reified C: AccountDataEventContent> RoomAccountDataStore.get(
+suspend inline fun <reified C : AccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
-    scope: CoroutineScope? = null
+    scope: CoroutineScope
 ): StateFlow<Event.AccountDataEvent<C>?> = get(roomId, C::class, scope)
 
 // TODO test
@@ -39,7 +39,7 @@ suspend inline fun RoomStateStore.members(
     membership: Membership,
     vararg moreMemberships: Membership
 ): Set<UserId> =
-    get<MemberEventContent>(roomId).value
+    get<MemberEventContent>(roomId, null).value
         ?.filter { entry ->
             (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
         }?.map { UserId(it.key) }?.toSet() ?: setOf()
@@ -49,7 +49,7 @@ suspend inline fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Int = get<MemberEventContent>(roomId).value
+): Int = get<MemberEventContent>(roomId, null).value
     ?.filter { entry ->
         (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
     }?.count() ?: 0
@@ -59,13 +59,13 @@ fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
 
 suspend inline fun RoomTimelineStore.getNext(
     event: TimelineEvent,
-    scope: CoroutineScope? = null
+    scope: CoroutineScope?
 ): StateFlow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId, scope) }
 
 suspend inline fun RoomTimelineStore.getPrevious(
     event: TimelineEvent,
-    scope: CoroutineScope? = null
+    scope: CoroutineScope?
 ): StateFlow<TimelineEvent?>? =
     event.previousEventId?.let { get(it, event.roomId, scope) }
 
