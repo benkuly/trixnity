@@ -123,6 +123,7 @@ class SyncApiClient(
                             joinedRoom.state?.events?.forEach { emitEvent(it) }
                             joinedRoom.timeline?.events?.forEach { emitEvent(it) }
                             joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                            joinedRoom.accountData?.events?.forEach { emitEvent(it) }
                         }
                         response.room?.invite?.forEach { (_, invitedRoom) ->
                             invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
@@ -130,6 +131,7 @@ class SyncApiClient(
                         response.room?.leave?.forEach { (_, leftRoom) ->
                             leftRoom.state?.events?.forEach { emitEvent(it) }
                             leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                            leftRoom.accountData?.events?.forEach { emitEvent(it) }
                         }
                         _syncResponses.emit(response)
                         log.debug { "processed sync response" }

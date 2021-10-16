@@ -98,6 +98,11 @@ class SqlDelightStoreFactory(
             ),
             mediaRepository = SqlDelightMediaRepository(database.mediaQueries, databaseCoroutineContext),
             uploadMediaRepository = SqlDelightUploadMediaRepository(database.mediaQueries, databaseCoroutineContext),
+            roomAccountDataRepository = SqlDelightRoomAccountDataRepository(
+                database.roomAccountDataQueries,
+                json,
+                databaseCoroutineContext
+            ),
             contentMappings = contentMappings
         )
     }

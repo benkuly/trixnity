@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
+import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
@@ -286,6 +287,24 @@ class JsonTest {
         val result = json.decodeFromString(serializer, content)
         val eventContent = result.content
         assertEquals(PresenceEventContent::class, eventContent::class)
+    }
+
+    @Test
+    fun shouldCreateSubtypeFromFullyReadEvent() {
+        val content = """
+            {
+                "content": {
+                    "event_id": "$143273582443PhrSn:example.org"
+                },
+                "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+                "type": "m.fully_read"
+            }
+            """.trimIndent()
+        val serializer = json.serializersModule.getContextual(AccountDataEvent::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, content)
+        val eventContent = result.content
+        assertEquals(FullyReadEventContent::class, eventContent::class)
     }
 
     @Serializable

@@ -89,4 +89,10 @@ sealed interface Event<C : EventContent> {
         @SerialName("content") override val content: C,
         @SerialName("room_id") val roomId: RoomId
     ) : Event<C>
+
+    @Serializable
+    data class AccountDataEvent<C : AccountDataEventContent>(
+        @SerialName("content") override val content: C,
+        @SerialName("room_id") val roomId: RoomId? = null,
+    ): Event<C>
 }

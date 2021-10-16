@@ -22,6 +22,7 @@ class EventSerializer(
     private val toDeviceEventSerializer: KSerializer<ToDeviceEvent<*>>,
     private val olmEventSerializer: KSerializer<OlmEvent<*>>,
     private val megolmEventSerializer: KSerializer<MegolmEvent<*>>,
+    private val accountDataEventSerializer: KSerializer<AccountDataEvent<*>>,
     loggerFactory: LoggerFactory
 ) : KSerializer<Event<*>> {
     private val log = newLogger(loggerFactory)
@@ -58,6 +59,7 @@ class EventSerializer(
             is ToDeviceEvent -> encoder.json.encodeToJsonElement(toDeviceEventSerializer, value)
             is OlmEvent -> encoder.json.encodeToJsonElement(olmEventSerializer, value)
             is MegolmEvent -> encoder.json.encodeToJsonElement(megolmEventSerializer, value)
+            is AccountDataEvent -> encoder.json.encodeToJsonElement(accountDataEventSerializer, value)
             is BasicEvent<*> -> encoder.json.encodeToJsonElement(basicEventSerializer, value)
         }
         encoder.encodeJsonElement(jsonElement)
