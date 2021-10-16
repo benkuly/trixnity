@@ -9,6 +9,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
+import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
@@ -72,7 +73,9 @@ suspend fun example() = coroutineScope {
                         val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
                         val content = decryptedEvent.content
                         if (content is TextMessageEventContent && content.body.startsWith("ping")) {
-                            matrixClient.room.sendMessage(TextMessageEventContent("pong to ${content.body}"), roomId)
+                            matrixClient.room.sendMessage(roomId) {
+                                text("pong to ${content.body}")
+                            }
                         }
                     } catch (_: Exception) {
 

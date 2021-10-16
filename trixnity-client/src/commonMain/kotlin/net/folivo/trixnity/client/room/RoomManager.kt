@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.getOriginTimestamp
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaManager
+import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
@@ -677,7 +678,10 @@ class RoomManager(
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
 
-    suspend fun sendMessage(content: MessageEventContent, roomId: RoomId) {
+    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+        val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
+        val content = MessageBuilder(isEncryptedRoom, media).build(builder)
+        requireNotNull(content)
         store.roomOutboxMessage.add(
             RoomOutboxMessage(
                 uuid4().toString(),

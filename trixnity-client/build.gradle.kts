@@ -51,6 +51,11 @@ kotlin {
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
         }
+        val jvmMain by getting {
+            dependencies {
+                implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

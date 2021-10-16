@@ -498,7 +498,9 @@ class RoomManagerTest : ShouldSpec({
     context(RoomManager::sendMessage.name) {
         should("just save message in store for later use") {
             val content = TextMessageEventContent("hi")
-            cut.sendMessage(content, room)
+            cut.sendMessage(room) {
+                this.content = content
+            }
             retry(4, milliseconds(1000), milliseconds(30)) {// we need this, because the cache may not be fast enough
                 val outboundMessages = store.roomOutboxMessage.getAll().value
                 outboundMessages shouldHaveSize 1

@@ -132,7 +132,8 @@ class EventSerializerTest {
         {
             "content":{
                 "msgtype":"m.dino",
-                "body":"hello"
+                "body":"hello",
+                "something":"unicorn"
             },
             "event_id":"$143273582443PhrSn:example.org",
             "sender":"@example:example.org",
@@ -150,7 +151,15 @@ class EventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                UnknownMessageEventContent("m.dino", "hello"),
+                UnknownMessageEventContent(
+                    "m.dino", "hello", JsonObject(
+                        mapOf(
+                            "msgtype" to JsonPrimitive("m.dino"),
+                            "body" to JsonPrimitive("hello"),
+                            "something" to JsonPrimitive("unicorn")
+                        )
+                    )
+                ),
                 EventId("143273582443PhrSn", "example.org"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),

@@ -10,6 +10,8 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.string.shouldStartWith
 import io.ktor.http.ContentType.Application.OctetStream
+import io.ktor.http.ContentType.Image.JPEG
+import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
 import io.mockk.*
@@ -30,6 +32,8 @@ class MediaManagerTest : ShouldSpec({
     val cut = MediaManager(api, store, LoggerFactory.default)
 
     val mxcUri = "mxc://example.com/abc"
+
+    mockkStatic(::createThumbnail)
 
     beforeTest {
         clearAllMocks()
@@ -113,6 +117,35 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
+    context(MediaManager::prepareUploadThumbnail.name) {
+        should("save and return local cache uri") {
+            val file = "fake_file".encodeToByteArray()
+            val thumbnail = "fake_thumbnail".encodeToByteArray()
+            coEvery { createThumbnail(file, PNG, 600, 600) }
+                .returns(Thumbnail(thumbnail, JPEG, 600, 300))
+
+            val result = cut.prepareUploadThumbnail(file, PNG)
+            result?.first shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+            assertSoftly(result!!.second) {
+                width shouldBe 600
+                height shouldBe 300
+                size shouldBe 14
+                mimeType shouldBe "image/jpeg"
+            }
+            coVerify {
+                store.media.addContent(result.first, thumbnail)
+                store.media.updateUploadMedia(result.first, coWithArg {
+                    it.invoke(null) shouldBe UploadMedia(result.first, null, JPEG)
+                })
+            }
+        }
+        should("return null, when no thumbnail could be generated") {
+            coEvery { createThumbnail("test".toByteArray(), PNG, 600, 600) }
+                .throws(ThumbnailCreationException(IllegalArgumentException("wrong format")))
+
+            cut.prepareUploadThumbnail("test".toByteArray(), PNG) shouldBe null
+        }
+    }
     context(MediaManager::prepareUploadEncryptedMedia.name) {
         should("encrypt, save, and return local cache uri") {
             val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray())
@@ -131,6 +164,43 @@ class MediaManagerTest : ShouldSpec({
                     it.invoke(null) shouldBe UploadMedia(result.url, null, OctetStream)
                 })
             }
+        }
+    }
+    context(MediaManager::prepareUploadEncryptedThumbnail.name) {
+        should("encrypt, save, and return local cache uri") {
+            val file = "fake_file".encodeToByteArray()
+            val thumbnail = "fake_thumbnail".encodeToByteArray()
+            coEvery { createThumbnail(file, PNG, 600, 600) }
+                .returns(Thumbnail(thumbnail, JPEG, 600, 300))
+
+            val result = cut.prepareUploadEncryptedThumbnail(file, PNG)
+            assertSoftly(result!!.first) {
+                url shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+                url.length shouldBeGreaterThan 12
+                key.key shouldNot beEmpty()
+                initialisationVector shouldNot beEmpty()
+                hashes["sha256"] shouldNot beEmpty()
+            }
+            assertSoftly(result!!.second) {
+                width shouldBe 600
+                height shouldBe 300
+                size shouldBe 14
+                mimeType shouldBe "image/jpeg"
+            }
+            coVerify {
+                store.media.addContent(result.first.url, withArg {
+                    it shouldNotBe "test".encodeToByteArray()
+                })
+                store.media.updateUploadMedia(result.first.url, coWithArg {
+                    it.invoke(null) shouldBe UploadMedia(result.first.url, null, OctetStream)
+                })
+            }
+        }
+        should("return null, when no thumbnail could be generated") {
+            coEvery { createThumbnail("test".toByteArray(), PNG, 600, 600) }
+                .throws(ThumbnailCreationException(IllegalArgumentException("wrong format")))
+
+            cut.prepareUploadEncryptedThumbnail("test".toByteArray(), PNG) shouldBe null
         }
     }
     context(MediaManager::uploadMedia.name) {

@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ThumbnailInfo(
-    @SerialName("h")
-    val height: Int? = null,
     @SerialName("w")
     val width: Int? = null,
+    @SerialName("h")
+    val height: Int? = null,
     @SerialName("mimetype")
     val mimeType: String? = null,
     @SerialName("size")
