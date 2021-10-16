@@ -3,10 +3,7 @@ package net.folivo.trixnity.core.serialization.event
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.*
 import org.kodein.log.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -24,6 +21,7 @@ fun createEventSerializersModule(
     val olmEventSerializer =
         OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice, loggerFactory)
     val megolmEventSerializer = MegolmEventSerializer(mappings.message, loggerFactory)
+    val accountDataEventSerializer = AccountDataEventSerializer(mappings.accountData, loggerFactory)
     val eventSerializer = EventSerializer(
         basicEventSerializer,
         roomEventSerializer,
@@ -32,6 +30,7 @@ fun createEventSerializersModule(
         toDeviceEventSerializer,
         olmEventSerializer,
         megolmEventSerializer,
+        accountDataEventSerializer,
         loggerFactory
     )
     return SerializersModule {
@@ -45,6 +44,7 @@ fun createEventSerializersModule(
         contextual(toDeviceEventSerializer)
         contextual(olmEventSerializer)
         contextual(megolmEventSerializer)
+        contextual(accountDataEventSerializer)
 
         mappings.message.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
@@ -61,6 +61,10 @@ fun createEventSerializersModule(
         mappings.toDevice.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             contextual(it.kClass as KClass<ToDeviceEventContent>, it.serializer as KSerializer<ToDeviceEventContent>)
+        }
+        mappings.accountData.forEach {
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            contextual(it.kClass as KClass<AccountDataEventContent>, it.serializer as KSerializer<AccountDataEventContent>)
         }
     }
 }

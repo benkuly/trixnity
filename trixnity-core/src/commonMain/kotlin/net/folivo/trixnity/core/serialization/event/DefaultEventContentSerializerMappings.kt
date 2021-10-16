@@ -1,9 +1,6 @@
 package net.folivo.trixnity.core.serialization.event
 
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.RequestEventContent
@@ -44,5 +41,8 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<RequestEventContent>("m.key.verification.request"),
         of<StartEventContent>("m.key.verification.start"),
         of<CancelEventContent>("m.key.verification.cancel"),
+    )
+    override val accountData: Set<EventContentSerializerMapping<out AccountDataEventContent>> = setOf(
+        of<FullyReadEventContent>("m.fully_read")
     )
 }

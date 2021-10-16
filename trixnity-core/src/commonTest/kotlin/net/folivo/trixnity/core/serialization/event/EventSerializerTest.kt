@@ -7,9 +7,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.UnknownAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
+import org.jetbrains.annotations.TestOnly
 import org.kodein.log.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -370,6 +371,65 @@ class EventSerializerTest {
             content
         )
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    @ExperimentalSerializationApi
+    fun shouldDeserializeUnknownAccountDataEvent() {
+        val input = """
+            {
+                "type": "org.example.mynamespace.custom",
+                "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+                "content": {
+                    "ancestor_of_chicken": "dinos"
+                }
+            }
+            """.trimIndent()
+        val serializer = json.serializersModule.getContextual(AccountDataEvent::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, input)
+        assertEquals(
+            AccountDataEvent(
+                UnknownAccountDataEventContent(
+                    JsonObject(
+                        mapOf(
+                            "ancestor_of_chicken" to JsonPrimitive("dinos")
+                        )
+                    ),
+                    "org.example.mynamespace.custom"
+                ),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+            ), result
+        )
+    }
+
+    @ExperimentalSerializationApi
+    @Test
+    fun shouldSerializeUnknownAccountDataEvent() {
+        val event = AccountDataEvent(
+            UnknownAccountDataEventContent(
+                JsonObject(
+                    mapOf(
+                        "ancestor_of_chicken" to JsonPrimitive("dinos")
+                    )
+                ),
+                "org.example.mynamespace.custom"
+            ),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
+        )
+        val expected = """
+            {
+                "content":{
+                    "ancestor_of_chicken":"dinos"
+                },
+                "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                "type":"org.example.mynamespace.custom"
+            }
+            """.trimIndent().lines().joinToString("") { it.trim() }
+        val serializer = json.serializersModule.getContextual(AccountDataEvent::class)
+        requireNotNull(serializer)
+        val result = json.encodeToString(serializer, event)
+        assertEquals(expected, result)
     }
 
     @Test

@@ -21,6 +21,7 @@ class Store(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
     mediaRepository: MediaRepository,
     uploadMediaRepository: UploadMediaRepository,
+    roomAccountDataRepository: RoomAccountDataRepository,
     contentMappings: EventContentSerializerMappings,
 ) {
     val account = AccountStore(accountRepository, scope)
@@ -39,6 +40,8 @@ class Store(
     val roomTimeline = RoomTimelineStore(roomTimelineRepository, scope)
     val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, scope)
     val media = MediaStore(mediaRepository, uploadMediaRepository, scope)
+    val roomAccountData = RoomAccountDataStore(roomAccountDataRepository, contentMappings, scope)
+    // TODO add accountData
 
     suspend fun init() {
         account.init()

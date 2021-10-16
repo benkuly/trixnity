@@ -52,6 +52,7 @@ class RoomManager(
     @OptIn(FlowPreview::class)
     suspend fun startEventHandling() = coroutineScope {
         launch { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
+        launch { api.sync.events<AccountDataEventContent>().collect(::setRoomAccountData) }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
         launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
@@ -137,6 +138,12 @@ class RoomManager(
             log.debug { "found displayName collision '$displayName' of $userId with $sourceUserId in $roomId - new displayName: '$calculatedName'" }
         }
         return usersWithSameDisplayName.isNotEmpty()
+    }
+
+    internal suspend fun setRoomAccountData(accountDataEvent: Event<out AccountDataEventContent>) {
+        if (accountDataEvent is AccountDataEvent && accountDataEvent.roomId != null) {
+            store.roomAccountData.update(accountDataEvent)
+        }
     }
 
     internal suspend fun setRoomUser(event: Event<MemberEventContent>) {

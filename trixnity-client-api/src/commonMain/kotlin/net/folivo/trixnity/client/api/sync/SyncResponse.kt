@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 
@@ -91,7 +90,7 @@ data class SyncResponse(
 
     @Serializable
     data class AccountData(
-        @SerialName("events") val events: List<@Contextual Event<*>>? = null
+        @SerialName("events") val events: List<@Contextual AccountDataEvent<*>>? = null
     )
 
     @Serializable

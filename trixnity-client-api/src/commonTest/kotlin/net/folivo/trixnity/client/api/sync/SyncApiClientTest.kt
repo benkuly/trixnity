@@ -15,15 +15,20 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.events.AccountDataEventContent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.UnknownAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -532,7 +537,22 @@ class SyncApiClientTest {
                                 )
                             )
                         ),
-                        ephemeral = Rooms.JoinedRoom.Ephemeral(emptyList()) //TODO
+                        ephemeral = Rooms.JoinedRoom.Ephemeral(emptyList()), //TODO
+                        accountData = AccountData(
+                            listOf(
+                                Event.AccountDataEvent(
+                                    FullyReadEventContent(EventId("event1", "server")),
+                                    RoomId("room1", "server")
+                                ),
+                                Event.AccountDataEvent(
+                                    UnknownAccountDataEventContent(
+                                        JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
+                                        "org.example.mynamespace"
+                                    ),
+                                    RoomId("room1", "server")
+                                )
+                            )
+                        )
                     )
                 ),
                 leave = mapOf(
@@ -604,7 +624,7 @@ class SyncApiClientTest {
 
         val allEventsFlow = matrixRestClient.sync.allEvents()
         val allEvents = GlobalScope.async {
-            allEventsFlow.take(7).toList()
+            allEventsFlow.take(9).toList()
         }
         val messageEventsFlow = matrixRestClient.sync.events<RoomMessageEventContent>()
         val messageEvents = GlobalScope.async {
@@ -622,6 +642,10 @@ class SyncApiClientTest {
         val roomKeyEvents = GlobalScope.async {
             roomKeyEventsFlow.take(1).toList()
         }
+        val accountDataEventsFlow = matrixRestClient.sync.events<AccountDataEventContent>()
+        val roomAccountDataEvents = GlobalScope.async {
+            accountDataEventsFlow.take(2).toList()
+        }
 
         GlobalScope.launch {
             matrixRestClient.sync.start()
@@ -629,7 +653,7 @@ class SyncApiClientTest {
 
         inChannel.send(response)
 
-        assertEquals(7, allEvents.await().count())
+        assertEquals(9, allEvents.await().count())
         assertEquals(
             listOf("event1", "event4"),
             allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.localpart })
@@ -643,6 +667,7 @@ class SyncApiClientTest {
         assertEquals(3, memberEvents.await().count())
         assertEquals(1, presenceEvents.await().count())
         assertEquals(1, roomKeyEvents.await().count())
+        assertEquals(2, roomAccountDataEvents.await().count())
 
         matrixRestClient.sync.stop()
     }

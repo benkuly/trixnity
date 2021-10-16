@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.events.AccountDataEventContent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -26,6 +27,11 @@ suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = ""
 ): Event<C>? = getByStateKey(roomId, stateKey, C::class)
+
+suspend inline fun <reified C: AccountDataEventContent> RoomAccountDataStore.get(
+    roomId: RoomId,
+    scope: CoroutineScope? = null
+): StateFlow<Event.AccountDataEvent<C>?> = get(roomId, C::class, scope)
 
 // TODO test
 suspend inline fun RoomStateStore.members(
