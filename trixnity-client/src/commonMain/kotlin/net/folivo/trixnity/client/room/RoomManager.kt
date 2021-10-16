@@ -33,6 +33,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -768,5 +769,16 @@ class RoomManager(
 
     suspend fun getById(roomId: RoomId): StateFlow<Room?> {
         return store.room.get(roomId)
+    }
+
+
+    suspend fun <C : AccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): StateFlow<C?> {
+        return store.roomAccountData.get(roomId, eventContentClass)
+            .map { it?.content }
+            .stateIn(scope)
     }
 }
