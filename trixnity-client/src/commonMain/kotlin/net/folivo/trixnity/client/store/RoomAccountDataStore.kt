@@ -6,9 +6,9 @@ import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.events.AccountDataEventContent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
@@ -19,25 +19,25 @@ class RoomAccountDataStore(
 ) {
     private val roomAccountDataCache = StateFlowCache(storeScope, roomAccountDataRepository)
 
-    suspend fun <C : AccountDataEventContent> get(
+    suspend fun <C : RoomAccountDataEventContent> get(
         roomId: MatrixId.RoomId,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Event.AccountDataEvent<C>?> {
-        val eventType = contentMappings.accountData.find { it.kClass == eventContentClass }?.type
+    ): StateFlow<Event.RoomAccountDataEvent<C>?> {
+        val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot get account data event, because it is not supported. You need to register it first.")
         val key = RoomAccountDataRepositoryKey(roomId, eventType)
         @Suppress("UNCHECKED_CAST")
-        return roomAccountDataCache.get(key, scope) as StateFlow<Event.AccountDataEvent<C>>
+        return roomAccountDataCache.get(key, scope) as StateFlow<Event.RoomAccountDataEvent<C>>
     }
 
-    suspend fun update(event: Event.AccountDataEvent<out AccountDataEventContent>) {
+    suspend fun update(event: Event.RoomAccountDataEvent<out RoomAccountDataEventContent>) {
         val roomId = event.roomId
 
         if (roomId != null) {
             val eventType = when (val content = event.content) {
-                is UnknownAccountDataEventContent -> content.eventType
-                else -> contentMappings.accountData.find { it.kClass.isInstance(event.content) }?.type
+                is UnknownRoomAccountDataEventContent -> content.eventType
+                else -> contentMappings.roomAccountData.find { it.kClass.isInstance(event.content) }?.type
             }
             requireNotNull(eventType)
             roomAccountDataCache.update(RoomAccountDataRepositoryKey(roomId, eventType)) {

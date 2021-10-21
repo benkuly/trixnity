@@ -300,7 +300,7 @@ class JsonTest {
                 "type": "m.fully_read"
             }
             """.trimIndent()
-        val serializer = json.serializersModule.getContextual(AccountDataEvent::class)
+        val serializer = json.serializersModule.getContextual(RoomAccountDataEvent::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
         val eventContent = result.content

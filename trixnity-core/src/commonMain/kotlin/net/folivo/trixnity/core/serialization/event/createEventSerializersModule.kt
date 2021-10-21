@@ -21,7 +21,8 @@ fun createEventSerializersModule(
     val olmEventSerializer =
         OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice, loggerFactory)
     val megolmEventSerializer = MegolmEventSerializer(mappings.message, loggerFactory)
-    val accountDataEventSerializer = AccountDataEventSerializer(mappings.accountData, loggerFactory)
+    val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData, loggerFactory)
+    val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData, loggerFactory)
     val eventSerializer = EventSerializer(
         basicEventSerializer,
         roomEventSerializer,
@@ -30,7 +31,8 @@ fun createEventSerializersModule(
         toDeviceEventSerializer,
         olmEventSerializer,
         megolmEventSerializer,
-        accountDataEventSerializer,
+        globalAccountDataEventSerializer,
+        roomAccountDataEventSerializer,
         loggerFactory
     )
     return SerializersModule {
@@ -44,7 +46,8 @@ fun createEventSerializersModule(
         contextual(toDeviceEventSerializer)
         contextual(olmEventSerializer)
         contextual(megolmEventSerializer)
-        contextual(accountDataEventSerializer)
+        contextual(globalAccountDataEventSerializer)
+        contextual(roomAccountDataEventSerializer)
 
         mappings.message.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
@@ -62,9 +65,19 @@ fun createEventSerializersModule(
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
             contextual(it.kClass as KClass<ToDeviceEventContent>, it.serializer as KSerializer<ToDeviceEventContent>)
         }
-        mappings.accountData.forEach {
+        mappings.globalAccountData.forEach {
             @Suppress("UNCHECKED_CAST") // TODO unchecked cast
-            contextual(it.kClass as KClass<AccountDataEventContent>, it.serializer as KSerializer<AccountDataEventContent>)
+            contextual(
+                it.kClass as KClass<GlobalAccountDataEventContent>,
+                it.serializer as KSerializer<GlobalAccountDataEventContent>
+            )
+        }
+        mappings.roomAccountData.forEach {
+            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            contextual(
+                it.kClass as KClass<RoomAccountDataEventContent>,
+                it.serializer as KSerializer<RoomAccountDataEventContent>
+            )
         }
     }
 }

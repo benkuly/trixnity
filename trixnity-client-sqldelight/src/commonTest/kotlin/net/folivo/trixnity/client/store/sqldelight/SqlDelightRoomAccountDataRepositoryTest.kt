@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.core.model.MatrixId.EventId
 import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
@@ -36,9 +36,9 @@ class SqlDelightRoomAccountDataRepositoryTest : ShouldSpec({
         val roomId2 = RoomId("room2", "server")
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
-        val accountDataEvent1 = Event.AccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId1)
-        val accountDataEvent2 = Event.AccountDataEvent(
-            UnknownAccountDataEventContent(
+        val accountDataEvent1 = Event.RoomAccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId1)
+        val accountDataEvent2 = Event.RoomAccountDataEvent(
+            UnknownRoomAccountDataEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),
