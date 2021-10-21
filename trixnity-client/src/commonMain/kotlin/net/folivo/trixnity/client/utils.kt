@@ -34,7 +34,7 @@ fun Event<*>?.getRoomId(): RoomId? {
         is StrippedStateEvent -> this.roomId
         is EphemeralEvent -> this.roomId
         is MegolmEvent -> this.roomId
-        is AccountDataEvent -> this.roomId
+        is RoomAccountDataEvent -> this.roomId
         else -> null
     }
 }

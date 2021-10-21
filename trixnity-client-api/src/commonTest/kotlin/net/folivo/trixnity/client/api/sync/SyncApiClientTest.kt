@@ -22,10 +22,10 @@ import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.events.AccountDataEventContent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.UnknownAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
@@ -272,7 +272,7 @@ class SyncApiClientTest {
     fun shouldSyncLoop() = runBlockingTest {
         val response1 = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
@@ -281,7 +281,7 @@ class SyncApiClientTest {
         )
         val response2 = SyncResponse(
             nextBatch = "nextBatch2",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
@@ -350,7 +350,7 @@ class SyncApiClientTest {
     fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
@@ -408,7 +408,7 @@ class SyncApiClientTest {
     fun shouldRetrySyncLoopOnError() = runBlockingTest {
         val response1 = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
@@ -417,7 +417,7 @@ class SyncApiClientTest {
         )
         val response2 = SyncResponse(
             nextBatch = "nextBatch2",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
@@ -500,7 +500,7 @@ class SyncApiClientTest {
     fun shouldEmitEvents() = runBlockingTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(
@@ -538,14 +538,14 @@ class SyncApiClientTest {
                             )
                         ),
                         ephemeral = Rooms.JoinedRoom.Ephemeral(emptyList()), //TODO
-                        accountData = AccountData(
+                        accountData = Rooms.RoomAccountData(
                             listOf(
-                                Event.AccountDataEvent(
+                                Event.RoomAccountDataEvent(
                                     FullyReadEventContent(EventId("event1", "server")),
                                     RoomId("room1", "server")
                                 ),
-                                Event.AccountDataEvent(
-                                    UnknownAccountDataEventContent(
+                                Event.RoomAccountDataEvent(
+                                    UnknownRoomAccountDataEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
                                         "org.example.mynamespace"
                                     ),
@@ -642,7 +642,7 @@ class SyncApiClientTest {
         val roomKeyEvents = GlobalScope.async {
             roomKeyEventsFlow.take(1).toList()
         }
-        val accountDataEventsFlow = matrixRestClient.sync.events<AccountDataEventContent>()
+        val accountDataEventsFlow = matrixRestClient.sync.events<RoomAccountDataEventContent>()
         val roomAccountDataEvents = GlobalScope.async {
             accountDataEventsFlow.take(2).toList()
         }
@@ -676,7 +676,7 @@ class SyncApiClientTest {
     fun shouldDealWithMultipleStartsAndStops() = runBlockingTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = AccountData(emptyList()),
+            accountData = GlobalAccountData(emptyList()),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),

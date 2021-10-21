@@ -4,4 +4,5 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class UnknownAccountDataEventContent(val raw: JsonObject, val eventType: String): AccountDataEventContent
+data class UnknownGlobalAccountDataEventContent(val raw: JsonObject, val eventType: String) :
+    GlobalAccountDataEventContent

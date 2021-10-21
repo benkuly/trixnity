@@ -7,7 +7,8 @@ interface EventContentSerializerMappings {
     val state: Set<EventContentSerializerMapping<out StateEventContent>>
     val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>>
     val toDevice: Set<EventContentSerializerMapping<out ToDeviceEventContent>>
-    val accountData: Set<EventContentSerializerMapping<out AccountDataEventContent>>
+    val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>
+    val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>
 
     operator fun plus(plus: EventContentSerializerMappings?): EventContentSerializerMappings {
         if (plus == null) return this
@@ -15,13 +16,15 @@ interface EventContentSerializerMappings {
         val stateEventContentSerializerMappings = this.state + plus.state
         val ephemeralEventContentSerializerMappings = this.ephemeral + plus.ephemeral
         val toDeviceEventContentSerializerMappings = this.toDevice + plus.toDevice
-        val accountDataEventContentSerializerMappings = this.accountData + plus.accountData
+        val globalAccountDataEventContentSerializerMappings = this.globalAccountData + plus.globalAccountData
+        val roomAccountDataEventContentSerializerMappings = this.roomAccountData + plus.roomAccountData
         return object : EventContentSerializerMappings {
             override val message = roomEventContentSerializerMappings
             override val state = stateEventContentSerializerMappings
             override val ephemeral = ephemeralEventContentSerializerMappings
             override val toDevice = toDeviceEventContentSerializerMappings
-            override val accountData = accountDataEventContentSerializerMappings
+            override val globalAccountData = globalAccountDataEventContentSerializerMappings
+            override val roomAccountData = roomAccountDataEventContentSerializerMappings
         }
     }
 }

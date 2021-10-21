@@ -42,7 +42,9 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<StartEventContent>("m.key.verification.start"),
         of<CancelEventContent>("m.key.verification.cancel"),
     )
-    override val accountData: Set<EventContentSerializerMapping<out AccountDataEventContent>> = setOf(
+    override val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>> = setOf(
+    )
+    override val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>> = setOf(
         of<FullyReadEventContent>("m.fully_read")
     )
 }

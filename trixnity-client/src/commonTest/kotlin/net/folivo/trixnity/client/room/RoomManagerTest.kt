@@ -640,7 +640,7 @@ class RoomManagerTest : ShouldSpec({
     context(RoomManager::setRoomAccountData.name) {
         should("set the room's account data") {
             val roomId = RoomId("room1", "server")
-            val accountDataEvent = AccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId)
+            val accountDataEvent = RoomAccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId)
             cut.setRoomAccountData(accountDataEvent)
             store.roomAccountData.get<FullyReadEventContent>(roomId, this).value shouldBe accountDataEvent
         }

@@ -14,7 +14,7 @@ data class SyncResponse(
     @SerialName("next_batch") val nextBatch: String,
     @SerialName("rooms") val room: Rooms? = null,
     @SerialName("presence") val presence: Presence? = null,
-    @SerialName("account_data") val accountData: AccountData? = null,
+    @SerialName("account_data") val accountData: GlobalAccountData? = null,
     @SerialName("to_device") val toDevice: ToDevice? = null,
     @SerialName("device_lists") val deviceLists: DeviceLists? = null,
     @SerialName("device_one_time_keys_count") val deviceOneTimeKeysCount: DeviceOneTimeKeysCount? = null
@@ -31,7 +31,7 @@ data class SyncResponse(
             @SerialName("state") val state: State? = null,
             @SerialName("timeline") val timeline: Timeline? = null,
             @SerialName("ephemeral") val ephemeral: Ephemeral? = null,
-            @SerialName("account_data") val accountData: AccountData? = null,
+            @SerialName("account_data") val accountData: RoomAccountData? = null,
             @SerialName("unread_notifications") val unreadNotifications: UnreadNotificationCounts? = null
         ) {
             @Serializable
@@ -67,7 +67,7 @@ data class SyncResponse(
         data class LeftRoom(
             @SerialName("state") val state: State? = null,
             @SerialName("timeline") val timeline: Timeline? = null,
-            @SerialName("account_data") val accountData: AccountData? = null
+            @SerialName("account_data") val accountData: RoomAccountData? = null
         )
 
         @Serializable
@@ -81,6 +81,11 @@ data class SyncResponse(
             @SerialName("limited") val limited: Boolean? = null,
             @SerialName("prev_batch") val previousBatch: String? = null
         )
+
+        @Serializable
+        data class RoomAccountData(
+            @SerialName("events") val events: List<@Contextual RoomAccountDataEvent<*>>? = null
+        )
     }
 
     @Serializable
@@ -89,8 +94,8 @@ data class SyncResponse(
     )
 
     @Serializable
-    data class AccountData(
-        @SerialName("events") val events: List<@Contextual AccountDataEvent<*>>? = null
+    data class GlobalAccountData(
+        @SerialName("events") val events: List<@Contextual GlobalAccountDataEvent<*>>? = null
     )
 
     @Serializable

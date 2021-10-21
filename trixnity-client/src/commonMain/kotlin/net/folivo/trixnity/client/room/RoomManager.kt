@@ -53,7 +53,7 @@ class RoomManager(
     @OptIn(FlowPreview::class)
     suspend fun startEventHandling() = coroutineScope {
         launch { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
-        launch { api.sync.events<AccountDataEventContent>().collect(::setRoomAccountData) }
+        launch { api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData) }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
         launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
@@ -141,8 +141,8 @@ class RoomManager(
         return usersWithSameDisplayName.isNotEmpty()
     }
 
-    internal suspend fun setRoomAccountData(accountDataEvent: Event<out AccountDataEventContent>) {
-        if (accountDataEvent is AccountDataEvent && accountDataEvent.roomId != null) {
+    internal suspend fun setRoomAccountData(accountDataEvent: Event<out RoomAccountDataEventContent>) {
+        if (accountDataEvent is RoomAccountDataEvent) {
             store.roomAccountData.update(accountDataEvent)
         }
     }
@@ -772,7 +772,7 @@ class RoomManager(
     }
 
 
-    suspend fun <C : AccountDataEventContent> getAccountData(
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
