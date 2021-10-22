@@ -6,14 +6,11 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.features.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -22,13 +19,13 @@ import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -78,6 +75,15 @@ class SyncApiClientTest {
                                 "content": {
                                   "custom_config_key": "custom_config_value"
                                 }
+                              },
+                              {
+                                "content": {
+                                  "@bob:example.com": [
+                                    "!abcdefgh:example.com",
+                                    "!hgfedcba:example.com"
+                                  ]
+                                },
+                                "type": "m.direct"
                               }
                             ]
                           },
@@ -225,7 +231,7 @@ class SyncApiClientTest {
         )
         assertEquals("s72595_4483_1934", result.nextBatch)
         assertEquals(1, result.presence?.events?.size)
-        assertEquals(1, result.accountData?.events?.size)
+        assertEquals(2, result.accountData?.events?.size)
         assertEquals(1, result.room?.join?.size)
         assertEquals(1, result.room?.invite?.size)
         assertEquals(0, result.room?.leave?.size)
@@ -500,7 +506,17 @@ class SyncApiClientTest {
     fun shouldEmitEvents() = runBlockingTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
-            accountData = GlobalAccountData(emptyList()),
+            accountData = GlobalAccountData(
+                listOf(
+                    GlobalAccountDataEvent(
+                        DirectEventContent(
+                            mapOf(
+                                UserId("alice", "server") to setOf(RoomId("room1", "server"))
+                            )
+                        )
+                    )
+                )
+            ),
             deviceLists = DeviceLists(emptySet(), emptySet()),
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(
@@ -599,7 +615,7 @@ class SyncApiClientTest {
             ),
             toDevice = ToDevice(
                 listOf(
-                    Event.ToDeviceEvent(
+                    ToDeviceEvent(
                         RoomKeyEventContent(RoomId("room", "server"), "se", "sk", Megolm),
                         UserId("dino", "server")
                     )
@@ -622,54 +638,61 @@ class SyncApiClientTest {
                 }
             })
 
-        val allEventsFlow = matrixRestClient.sync.allEvents()
-        val allEvents = GlobalScope.async {
-            allEventsFlow.take(9).toList()
-        }
-        val messageEventsFlow = matrixRestClient.sync.events<RoomMessageEventContent>()
-        val messageEvents = GlobalScope.async {
-            messageEventsFlow.take(2).toList()
-        }
-        val memberEventsFlow = matrixRestClient.sync.events<MemberEventContent>()
-        val memberEvents = GlobalScope.async {
-            memberEventsFlow.take(3).toList()
-        }
-        val presenceEventsFlow = matrixRestClient.sync.events<PresenceEventContent>()
-        val presenceEvents = GlobalScope.async {
-            presenceEventsFlow.take(1).toList()
-        }
-        val roomKeyEventsFlow = matrixRestClient.sync.events<RoomKeyEventContent>()
-        val roomKeyEvents = GlobalScope.async {
-            roomKeyEventsFlow.take(1).toList()
-        }
-        val accountDataEventsFlow = matrixRestClient.sync.events<RoomAccountDataEventContent>()
-        val roomAccountDataEvents = GlobalScope.async {
-            accountDataEventsFlow.take(2).toList()
-        }
+        coroutineScope {
+            val allEventsFlow = matrixRestClient.sync.allEvents()
+            val allEvents = async {
+                allEventsFlow.take(10).toList()
+            }
+            val messageEventsFlow = matrixRestClient.sync.events<RoomMessageEventContent>()
+            val messageEvents = async {
+                messageEventsFlow.take(2).toList()
+            }
+            val memberEventsFlow = matrixRestClient.sync.events<MemberEventContent>()
+            val memberEvents = async {
+                memberEventsFlow.take(3).toList()
+            }
+            val presenceEventsFlow = matrixRestClient.sync.events<PresenceEventContent>()
+            val presenceEvents = async {
+                presenceEventsFlow.take(1).toList()
+            }
+            val roomKeyEventsFlow = matrixRestClient.sync.events<RoomKeyEventContent>()
+            val roomKeyEvents = async {
+                roomKeyEventsFlow.take(1).toList()
+            }
+            val globalAccountDataEventsFlow = matrixRestClient.sync.events<GlobalAccountDataEventContent>()
+            val globalAccountDataEvents = async {
+                globalAccountDataEventsFlow.take(1).toList()
+            }
+            val roomAccountDataEventsFlow = matrixRestClient.sync.events<RoomAccountDataEventContent>()
+            val roomAccountDataEvents = async {
+                roomAccountDataEventsFlow.take(2).toList()
+            }
 
-        GlobalScope.launch {
-            matrixRestClient.sync.start()
+            launch {
+                matrixRestClient.sync.start()
+            }
+
+            inChannel.send(response)
+
+            assertEquals(10, allEvents.await().count())
+            assertEquals(
+                listOf("event1", "event4"),
+                allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.localpart })
+            assertEquals(
+                listOf("event2", "event5"),
+                allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.localpart })
+            assertEquals(
+                listOf("room3"),
+                allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
+            assertEquals(2, messageEvents.await().count())
+            assertEquals(3, memberEvents.await().count())
+            assertEquals(1, presenceEvents.await().count())
+            assertEquals(1, roomKeyEvents.await().count())
+            assertEquals(1, globalAccountDataEvents.await().count())
+            assertEquals(2, roomAccountDataEvents.await().count())
+
+            matrixRestClient.sync.stop()
         }
-
-        inChannel.send(response)
-
-        assertEquals(9, allEvents.await().count())
-        assertEquals(
-            listOf("event1", "event4"),
-            allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.localpart })
-        assertEquals(
-            listOf("event2", "event5"),
-            allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.localpart })
-        assertEquals(
-            listOf("room3"),
-            allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
-        assertEquals(2, messageEvents.await().count())
-        assertEquals(3, memberEvents.await().count())
-        assertEquals(1, presenceEvents.await().count())
-        assertEquals(1, roomKeyEvents.await().count())
-        assertEquals(2, roomAccountDataEvents.await().count())
-
-        matrixRestClient.sync.stop()
     }
 
     @Test

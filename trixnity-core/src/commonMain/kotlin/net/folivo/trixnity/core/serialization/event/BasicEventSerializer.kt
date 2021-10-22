@@ -6,31 +6,26 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.core.model.events.Event.BasicEvent
-import net.folivo.trixnity.core.model.events.RedactedBasicEventContent
-import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
+import net.folivo.trixnity.core.model.events.EmptyEventContent
+import net.folivo.trixnity.core.model.events.Event.UnknownEvent
 
-class BasicEventSerializer : KSerializer<BasicEvent<*>> {
+class BasicEventSerializer : KSerializer<UnknownEvent> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BasicEventSerializer")
 
-    override fun deserialize(decoder: Decoder): BasicEvent<*> {
+    override fun deserialize(decoder: Decoder): UnknownEvent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
-        val contentSerializer =
-            if (!isRedacted)
-                UnknownEventContentSerializer(UnknownBasicEventContent.serializer(), type)
-            else RedactedEventContentSerializer(RedactedBasicEventContent.serializer(), type)
-        return decoder.json.decodeFromJsonElement(
-            BasicEvent.serializer(contentSerializer), jsonObj
-        )
+
+        return UnknownEvent(EmptyEventContent, type, jsonObj)
     }
 
-    override fun serialize(encoder: Encoder, value: BasicEvent<*>) {
-        throw IllegalArgumentException("BasicEvent should never be serialized")
+    override fun serialize(encoder: Encoder, value: UnknownEvent) {
+        require(encoder is JsonEncoder)
+        encoder.encodeJsonElement(value.raw)
     }
 }

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.api.users
 
 import io.kotest.assertions.json.shouldEqualJson
+import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -12,6 +13,7 @@ import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import kotlin.test.Test
@@ -251,5 +253,69 @@ class UsersApiClientTest {
             })
         val response = matrixRestClient.users.getFilter(UserId("dino", "server"), "0")
         assertEquals(Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true))), response)
+    }
+
+    @Test
+    fun shouldGetAccountData() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"@bob:server":["!someRoom:server"]}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.getAccountData<DirectEventContent>(UserId("alice", "example.com"))
+            .shouldBe(
+                DirectEventContent(
+                    mapOf(
+                        UserId("bob", "server") to setOf(MatrixId.RoomId("someRoom", "server"))
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun shouldSetAccountData() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"@bob:server":["!someRoom:server"]}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.setAccountData(
+            DirectEventContent(
+                mapOf(
+                    UserId("bob", "server") to setOf(MatrixId.RoomId("someRoom", "server"))
+                )
+            ),
+            UserId("alice", "example.com")
+        )
     }
 }

@@ -7,7 +7,6 @@ import io.kotest.assertions.until.until
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -26,7 +25,9 @@ import net.folivo.trixnity.client.media.MediaManager
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.client.user.UserManager
+import net.folivo.trixnity.core.model.MatrixId.EventId
+import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
@@ -36,10 +37,13 @@ import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -51,11 +55,11 @@ import kotlin.time.Duration.Companion.milliseconds
 class RoomManagerTest : ShouldSpec({
     timeout = 2000
     val alice = UserId("alice", "server")
-    val bob = UserId("bob", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixApiClient>()
+    val users = mockk<UserManager>(relaxUnitFun = true)
     val olm = mockk<OlmManager>()
     val media = mockk<MediaManager>()
     lateinit var cut: RoomManager
@@ -64,7 +68,7 @@ class RoomManagerTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = createInMemoryStore(storeScope).apply { init() }
-        cut = RoomManager(store, api, olm, media, loggerFactory = LoggerFactory.default)
+        cut = RoomManager(store, api, olm, users, media, loggerFactory = LoggerFactory.default)
     }
 
     afterTest {
@@ -322,41 +326,6 @@ class RoomManagerTest : ShouldSpec({
             store.room.get(room).value?.unreadMessageCount shouldBe 24
         }
     }
-    context(RoomManager::loadMembers.name) {
-        should("do nothing when members already loaded") {
-            val storedRoom = simpleRoom.copy(roomId = room, membersLoaded = true)
-            store.room.update(room) { storedRoom }
-            cut.loadMembers(room)
-            store.room.get(room).value shouldBe storedRoom
-        }
-        should("load members") {
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf(
-                StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("\$event1"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full
-                ),
-                StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("\$event2"),
-                    bob,
-                    room,
-                    1234,
-                    stateKey = bob.full
-                )
-            )
-            val storedRoom = simpleRoom.copy(roomId = room, membersLoaded = false)
-            store.room.update(room) { storedRoom }
-            cut.loadMembers(room)
-            store.room.get(room).value?.membersLoaded shouldBe true
-            store.roomState.getByStateKey<MemberEventContent>(room, alice.full)?.content?.membership shouldBe JOIN
-            store.roomState.getByStateKey<MemberEventContent>(room, bob.full)?.content?.membership shouldBe JOIN
-            store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
-        }
-    }
     context(RoomManager::getTimelineEvent.name) {
         val eventId = EventId("\$event1")
         val session = "SESSION"
@@ -606,7 +575,7 @@ class RoomManagerTest : ShouldSpec({
             coVerify(timeout = 1000) {
                 api.rooms.sendMessageEvent(room, megolmEventContent, "transaction")
                 olm.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
-                api.rooms.getMembers(any(), any(), any(), any(), any())
+                users.loadMembers(room)
             }
             retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
@@ -635,14 +604,6 @@ class RoomManagerTest : ShouldSpec({
                 outboxMessages[0].wasSent shouldBe true
             }
             job.cancel()
-        }
-    }
-    context(RoomManager::setRoomAccountData.name) {
-        should("set the room's account data") {
-            val roomId = RoomId("room1", "server")
-            val accountDataEvent = RoomAccountDataEvent(FullyReadEventContent(EventId("event1", "server")), roomId)
-            cut.setRoomAccountData(accountDataEvent)
-            store.roomAccountData.get<FullyReadEventContent>(roomId, this).value shouldBe accountDataEvent
         }
     }
 })

@@ -40,7 +40,7 @@ class RoomManagerTimelineTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = createInMemoryStore(storeScope).apply { init() }
-        cut = RoomManager(store, api, olm, mockk(), loggerFactory = LoggerFactory.default)
+        cut = RoomManager(store, api, olm, mockk(), mockk(), loggerFactory = LoggerFactory.default)
     }
 
     afterTest {

@@ -1,7 +1,7 @@
 package net.folivo.trixnity.core.model
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.serialization.MatrixIdSerializer
+import net.folivo.trixnity.core.serialization.*
 
 @Serializable(with = MatrixIdSerializer::class)
 sealed class MatrixId {
@@ -63,25 +63,25 @@ sealed class MatrixId {
         return full
     }
 
-    @Serializable(with = MatrixIdSerializer::class)
+    @Serializable(with = UserIdSerializer::class)
     class UserId : MatrixId {
         constructor(full: String) : super(full, '@')
         constructor(localpart: String, domain: String) : super(localpart, domain, '@')
     }
 
-    @Serializable(with = MatrixIdSerializer::class)
+    @Serializable(with = RoomIdSerializer::class)
     class RoomId : MatrixId {
         constructor(full: String) : super(full, '!')
         constructor(localpart: String, domain: String) : super(localpart, domain, '!')
     }
 
-    @Serializable(with = MatrixIdSerializer::class)
+    @Serializable(with = RoomAliasIdSerializer::class)
     class RoomAliasId : MatrixId {
         constructor(full: String) : super(full, '#')
         constructor(localpart: String, domain: String) : super(localpart, domain, '#')
     }
 
-    @Serializable(with = MatrixIdSerializer::class)
+    @Serializable(with = EventIdSerializer::class)
     class EventId : MatrixId {
         constructor(full: String) : super(full, '$')
         constructor(localpart: String, domain: String) : super(localpart, domain, '$')

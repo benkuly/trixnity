@@ -85,9 +85,17 @@ class MatrixClient private constructor(
             api.keys.uploadKeys(deviceKeys = olm.myDeviceKeys)
 
             val mediaManager = MediaManager(api, store, loggerFactory)
+            val userManager = UserManager(store, api, loggerFactory)
             val roomManager =
-                RoomManager(store, api, olm, mediaManager, customOutboxMessageMediaUploaderMappings, loggerFactory)
-            val userManager = UserManager(store)
+                RoomManager(
+                    store,
+                    api,
+                    olm,
+                    userManager,
+                    mediaManager,
+                    customOutboxMessageMediaUploaderMappings,
+                    loggerFactory
+                )
 
             return MatrixClient(store, api, olm, roomManager, userManager, mediaManager, loggerFactory)
         }
@@ -127,9 +135,17 @@ class MatrixClient private constructor(
                     loggerFactory = loggerFactory
                 )
                 val mediaManager = MediaManager(api, store, loggerFactory)
+                val userManager = UserManager(store, api, loggerFactory)
                 val roomManager =
-                    RoomManager(store, api, olm, mediaManager, customOutboxMessageMediaUploaderMappings, loggerFactory)
-                val userManager = UserManager(store)
+                    RoomManager(
+                        store,
+                        api,
+                        olm,
+                        userManager,
+                        mediaManager,
+                        customOutboxMessageMediaUploaderMappings,
+                        loggerFactory
+                    )
 
                 MatrixClient(store, api, olm, roomManager, userManager, mediaManager, loggerFactory)
             } else null
@@ -157,12 +173,9 @@ class MatrixClient private constructor(
             scope.launch { api.sync.cancel() }
         }
         scope.launch(handler) {
-            launch {
-                olm.startEventHandling()
-            }
-            launch {
-                room.startEventHandling()
-            }
+            launch { olm.startEventHandling() }
+            launch { room.startEventHandling() }
+            launch { user.startEventHandling() }
         }
 
         val myUserId = store.account.userId.value
