@@ -3,16 +3,21 @@ package net.folivo.trixnity.client.api.users
 import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.unsupportedEventType
 import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import kotlin.reflect.KClass
 
 class UsersApiClient(
     private val httpClient: HttpClient,
+    val json: Json,
     private val contentMappings: EventContentSerializerMappings
 ) {
 
@@ -128,6 +133,39 @@ class UsersApiClient(
         return httpClient.get {
             url("/_matrix/client/r0/user/${userId.e()}/filter/$filterId")
             parameter("user_id", asUserId)
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+        accountDataEventContentClass: KClass<C>,
+        userId: UserId,
+        asUserId: UserId? = null
+    ): C {
+        val eventType =
+            contentMappings.globalAccountData.find { it.kClass == accountDataEventContentClass }?.type
+                ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val responseBody = httpClient.get<String> {
+            url("/_matrix/client/r0/user/${userId.e()}/account_data/$eventType")
+            parameter("user_id", asUserId)
+        }
+        val serializer = json.serializersModule.getContextual(accountDataEventContentClass)
+        requireNotNull(serializer)
+        return json.decodeFromString(serializer, responseBody)
+    }
+
+    suspend fun <C : GlobalAccountDataEventContent> setAccountData(
+        content: C,
+        userId: UserId,
+        asUserId: UserId? = null
+    ) {
+        val eventType =
+            contentMappings.globalAccountData.find { it.kClass.isInstance(content) }?.type
+                ?: throw IllegalArgumentException(unsupportedEventType(content::class))
+        httpClient.put<String> {
+            url("/_matrix/client/r0/user/${userId.e()}/account_data/$eventType")
+            parameter("user_id", asUserId)
+            body = content
         }
     }
 }

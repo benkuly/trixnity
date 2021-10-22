@@ -19,6 +19,7 @@ import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -51,18 +52,6 @@ class RoomsApiClient(
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
-    suspend inline fun <reified C : StateEventContent> getStateEvent(
-        roomId: RoomId,
-        stateKey: String = "",
-        asUserId: UserId? = null
-    ): C {
-        return getStateEvent(C::class, roomId, stateKey, asUserId)
-    }
-
-    /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
-     */
-    @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : StateEventContent> getStateEvent(
         stateEventContentClass: KClass<C>,
         roomId: RoomId,
@@ -79,7 +68,6 @@ class RoomsApiClient(
         val serializer = json.serializersModule.getContextual(stateEventContentClass)
         requireNotNull(serializer)
         return json.decodeFromString(serializer, responseBody)
-
     }
 
     /**
@@ -385,52 +373,38 @@ class RoomsApiClient(
         }
     }
 
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-forget">matrix spec</a>
-//     */
-//    fun forgetRoom() {
-//        // TODO implement
-//    }
+    @OptIn(ExperimentalSerializationApi::class)
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        accountDataEventContentClass: KClass<C>,
+        roomId: RoomId,
+        userId: UserId,
+        asUserId: UserId? = null
+    ): C {
+        val eventType =
+            contentMappings.roomAccountData.find { it.kClass == accountDataEventContentClass }?.type
+                ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val responseBody = httpClient.get<String> {
+            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
+            parameter("user_id", asUserId)
+        }
+        val serializer = json.serializersModule.getContextual(accountDataEventContentClass)
+        requireNotNull(serializer)
+        return json.decodeFromString(serializer, responseBody)
+    }
 
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-kick">matrix spec</a>
-//     */
-//    fun kickUser() {
-//        // TODO implement
-//    }
-
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-ban">matrix spec</a>
-//     */
-//    fun banUser() {
-//        // TODO implement
-//    }
-
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-unban">matrix spec</a>
-//     */
-//    fun unbanUser() {
-//        // TODO implement
-//    }
-
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-directory-list-room-roomid">matrix spec</a>
-//     */
-//    fun getVisibility() {
-//        // TODO implement
-//    }
-
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-directory-list-room-roomid">matrix spec</a>
-//     */
-//    fun setVisibility() {
-//        // TODO implement
-//    }
-
-//    /**
-//     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-publicrooms">matrix spec</a>
-//     */
-//    fun getPublicRooms() {
-//        // TODO implement
-//    }
+    suspend fun <C : RoomAccountDataEventContent> setAccountData(
+        content: C,
+        roomId: RoomId,
+        userId: UserId,
+        asUserId: UserId? = null
+    ) {
+        val eventType =
+            contentMappings.roomAccountData.find { it.kClass.isInstance(content) }?.type
+                ?: throw IllegalArgumentException(unsupportedEventType(content::class))
+        httpClient.put<String> {
+            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
+            parameter("user_id", asUserId)
+            body = content
+        }
+    }
 }

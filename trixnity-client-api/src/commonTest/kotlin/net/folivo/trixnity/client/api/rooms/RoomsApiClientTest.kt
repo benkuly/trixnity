@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.api.rooms
 
+import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -23,6 +24,7 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
@@ -832,5 +834,64 @@ class RoomsApiClientTest {
                 }
             })
         matrixRestClient.rooms.setReadMarkers(RoomId("room", "server"), EventId("event", "server"))
+    }
+
+    @Test
+    fun shouldGetAccountData() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"event_id":"$1event"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.getAccountData<FullyReadEventContent>(
+            RoomId("room", "server"),
+            UserId("alice", "example.com")
+        ).shouldBe(
+            FullyReadEventContent(EventId("$1event"))
+        )
+    }
+
+    @Test
+    fun shouldSetAccountData() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"event_id":"$1event"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.setAccountData(
+            FullyReadEventContent(EventId("$1event")),
+            RoomId("room", "server"),
+            UserId("alice", "example.com")
+        )
     }
 }

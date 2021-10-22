@@ -22,7 +22,7 @@ class RoomAccountDataEventSerializer(
     loggerFactory: LoggerFactory
 ) : KSerializer<Event.RoomAccountDataEvent<*>> {
     private val log = newLogger(loggerFactory)
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
 
     private val eventsContentLookupByType = messageEventContentSerializers.associate { it.type to it.serializer }
 

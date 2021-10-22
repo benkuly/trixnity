@@ -7,10 +7,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
-import net.folivo.trixnity.core.model.events.m.room.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
@@ -211,12 +210,13 @@ class JsonTest {
         val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
-        val resultContent = result.content
-        if (result is BasicEvent && resultContent is UnknownBasicEventContent) {
-            assertEquals("unknownEventType", resultContent.eventType)
-            assertEquals("unicorn", resultContent.raw.jsonObject["something"]?.jsonPrimitive?.content)
+        if (result is UnknownEvent) {
+            assertEquals(
+                "unicorn",
+                result.raw.jsonObject["content"]?.jsonObject?.get("something")?.jsonPrimitive?.content
+            )
         } else {
-            fail("result should be of type ${BasicEvent::class} but was ${result::class}")
+            fail("result should be of type ${UnknownEvent::class} but was ${result::class}")
         }
     }
 
@@ -255,15 +255,17 @@ class JsonTest {
         val result = json.decodeFromString(ListSerializer(serializer), content)
         val result1 = result[0]
         val result2 = result[1]
-        val resultContent1 = result1.content
-        val resultContent2 = result2.content
-        if (result1 is BasicEvent && result2 is BasicEvent && resultContent1 is UnknownBasicEventContent && resultContent2 is UnknownBasicEventContent) {
-            assertEquals("unknownEventType1", resultContent1.eventType)
-            assertEquals("unknownEventType2", resultContent2.eventType)
-            assertEquals("unicorn1", resultContent1.raw.jsonObject["something"]?.jsonPrimitive?.content)
-            assertEquals("unicorn2", resultContent2.raw.jsonObject["something"]?.jsonPrimitive?.content)
+        if (result1 is UnknownEvent && result2 is UnknownEvent) {
+            assertEquals(
+                "unicorn1",
+                result1.raw.jsonObject["content"]?.jsonObject?.get("something")?.jsonPrimitive?.content
+            )
+            assertEquals(
+                "unicorn2",
+                result2.raw.jsonObject["content"]?.jsonObject?.get("something")?.jsonPrimitive?.content
+            )
         } else {
-            fail("result should be of type ${BasicEvent::class}")
+            fail("result should be of type ${UnknownEvent::class}")
         }
     }
 

@@ -27,7 +27,6 @@ import kotlinx.datetime.minus
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
-import net.folivo.trixnity.client.room.RoomManager
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.core.model.MatrixId.*
@@ -66,7 +65,6 @@ class OlmEventServiceTest : ShouldSpec({
 
     val api = mockk<MatrixApiClient>()
     val signService = mockk<OlmSignService>()
-    val roomManager = mockk<RoomManager>()
 
     lateinit var cut: OlmEventService
 
@@ -109,7 +107,6 @@ class OlmEventServiceTest : ShouldSpec({
         bobAccount.markOneTimeKeysAsPublished()
         coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } just Runs
-        coEvery { roomManager.loadMembers(any()) } just Runs
         every { secureStore.olmPickleKey } returns ""
 
         cut = OlmEventService(json, aliceAccount, store, secureStore, api, signService, LoggerFactory.default)

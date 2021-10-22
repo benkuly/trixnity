@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
-import net.folivo.trixnity.client.api.rooms.Membership
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmManager
@@ -22,6 +21,7 @@ import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderM
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
+import net.folivo.trixnity.client.user.UserManager
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.*
@@ -41,6 +41,7 @@ class RoomManager(
     private val store: Store,
     private val api: MatrixApiClient,
     private val olm: OlmManager,
+    private val user: UserManager,
     private val media: MediaManager,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     loggerFactory: LoggerFactory
@@ -56,7 +57,6 @@ class RoomManager(
         launch { api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData) }
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
-        launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
         launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
         launch { api.sync.events<MessageEventContent>().collect(::syncOutboxMessage) }
         launch { processOutboxMessages(store.roomOutboxMessage.getAll()) }
@@ -110,75 +110,9 @@ class RoomManager(
         }
     }
 
-    private fun calculateUserDisplayName(
-        displayName: String?,
-        isUnique: Boolean,
-        userId: UserId,
-    ): String {
-        return when {
-            displayName.isNullOrEmpty() -> userId.full
-            isUnique -> displayName
-            else -> "$displayName (${userId.full})"
-        }
-    }
-
-    private suspend fun resolveUserDisplayNameCollisions(
-        displayName: String,
-        isOld: Boolean,
-        sourceUserId: UserId,
-        roomId: RoomId
-    ): Boolean {
-        val usersWithSameDisplayName =
-            store.roomUser.getByOriginalNameAndMembership(displayName, setOf(JOIN, INVITE), roomId) - sourceUserId
-        if (usersWithSameDisplayName.size == 1) {
-            val userId = usersWithSameDisplayName.first()
-            val calculatedName = calculateUserDisplayName(displayName, isOld, userId)
-            store.roomUser.update(userId, roomId) {
-                it?.copy(name = calculatedName)
-            }
-            log.debug { "found displayName collision '$displayName' of $userId with $sourceUserId in $roomId - new displayName: '$calculatedName'" }
-        }
-        return usersWithSameDisplayName.isNotEmpty()
-    }
-
     internal suspend fun setRoomAccountData(accountDataEvent: Event<out RoomAccountDataEventContent>) {
         if (accountDataEvent is RoomAccountDataEvent) {
             store.roomAccountData.update(accountDataEvent)
-        }
-    }
-
-    internal suspend fun setRoomUser(event: Event<MemberEventContent>) {
-        val roomId = event.getRoomId()
-        val stateKey = event.getStateKey()
-        if (roomId != null && stateKey != null) {
-            val userId = UserId(stateKey)
-            val membership = event.content.membership
-            val newDisplayName = event.content.displayName
-
-            val hasLeftRoom = membership == LEAVE || membership == BAN
-
-            val oldDisplayName = store.roomUser.get(userId, roomId)?.originalName
-            val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
-                if (!oldDisplayName.isNullOrEmpty())
-                    resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
-                if (!newDisplayName.isNullOrEmpty())
-                    resolveUserDisplayNameCollisions(newDisplayName, hasLeftRoom, userId, roomId)
-                else false
-            } else false
-            val calculatedName = calculateUserDisplayName(newDisplayName, !hasLeftRoom && !hasCollisions, userId)
-            log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
-
-            store.roomUser.update(userId, roomId) { oldRoomUser ->
-                oldRoomUser?.copy(
-                    name = calculatedName,
-                    event = event
-                ) ?: RoomUser(
-                    roomId = roomId,
-                    userId = userId,
-                    name = calculatedName,
-                    event = event
-                )
-            }
         }
     }
 
@@ -607,23 +541,6 @@ class RoomManager(
         }
     }
 
-    suspend fun loadMembers(roomId: RoomId) {
-        store.room.update(roomId) { oldRoom ->
-            requireNotNull(oldRoom) { "cannot load members of a room, that we don't know yet ($roomId)" }
-            if (!oldRoom.membersLoaded) {
-                val memberEvents = api.rooms.getMembers(
-                    roomId = roomId,
-                    at = store.account.syncBatchToken.value,
-                    notMembership = Membership.LEAVE
-                ).toList()
-                store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
-                memberEvents.forEach { setRoomUser(it) }
-                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
-                oldRoom.copy(membersLoaded = true)
-            } else oldRoom
-        }
-    }
-
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
                 && this.event.content is MegolmEncryptedEventContent
@@ -744,7 +661,7 @@ class RoomManager(
                                             // members Trixnity may not know all devices for encryption yet.
                                             // To ensure an easy usage of Trixnity and because
                                             // the impact on performance is minimal, we call it here for prevention.
-                                            loadMembers(roomId)
+                                            user.loadMembers(roomId)
 
                                             val megolmSettings =
                                                 store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content

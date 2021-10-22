@@ -80,7 +80,7 @@ class MatrixApiClient(
 
     val authentication = AuthenticationApiClient(httpClient)
     val server = ServerApiClient(httpClient)
-    val users = UsersApiClient(httpClient, eventContentSerializerMappings)
+    val users = UsersApiClient(httpClient, json, eventContentSerializerMappings)
     val rooms = RoomsApiClient(httpClient, json, eventContentSerializerMappings)
     val sync = SyncApiClient(httpClient, loggerFactory)
     val keys = KeysApiClient(httpClient)

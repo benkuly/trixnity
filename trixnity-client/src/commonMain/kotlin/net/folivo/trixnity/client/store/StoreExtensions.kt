@@ -7,6 +7,9 @@ import net.folivo.trixnity.core.model.MatrixId.RoomId
 import net.folivo.trixnity.core.model.MatrixId.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -31,7 +34,11 @@ suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
 suspend inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
     scope: CoroutineScope
-): StateFlow<Event.RoomAccountDataEvent<C>?> = get(roomId, C::class, scope)
+): StateFlow<RoomAccountDataEvent<C>?> = get(roomId, C::class, scope)
+
+suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
+    scope: CoroutineScope
+): StateFlow<GlobalAccountDataEvent<C>?> = get(C::class, scope)
 
 // TODO test
 suspend inline fun RoomStateStore.members(

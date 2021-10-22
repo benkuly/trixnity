@@ -1,0 +1,16 @@
+CREATE TABLE sql_global_account_data (
+    type TEXT NOT NULL PRIMARY KEY ,
+    event TEXT NOT NULL
+);
+
+getGlobalAccountData:
+SELECT * FROM sql_global_account_data
+WHERE type = ?;
+
+saveGlobalAccountData:
+INSERT OR REPLACE INTO sql_global_account_data
+VALUES (?, ?);
+
+deleteGlobalAccountData:
+DELETE FROM sql_global_account_data
+WHERE  type = ?;

@@ -86,7 +86,6 @@ suspend fun example() = coroutineScope {
     }
     val job2 = launch {
         matrixClient.room.getLastTimelineEvent(roomId, this).filterNotNull().collect { lastEvent ->
-            matrixClient.room.loadMembers(roomId)
             val roomName = matrixClient.room.getById(roomId).value?.name
             println("------------------------- $roomName")
             flow {
