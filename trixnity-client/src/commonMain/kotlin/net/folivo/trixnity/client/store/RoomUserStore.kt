@@ -79,7 +79,8 @@ class RoomUserStore(
         roomId: RoomId
     ): Set<UserId> {
         // TODO loading all users into memory could could make performance issues -> make db query
-        return roomUserCache.get(roomId).value?.filter { it.value.originalName == originalName && membership.contains(it.value.membership) }?.keys
+        return roomUserCache.get(roomId)
+            ?.filter { it.value.originalName == originalName && membership.contains(it.value.membership) }?.keys
             ?: setOf()
     }
 }

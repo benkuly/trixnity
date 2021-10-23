@@ -27,11 +27,11 @@ internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeyFromDevice(
     userId: MatrixId.UserId,
     deviceId: String?
 ): T {
-    val key = get(userId).value?.get(deviceId)?.get<T>()
+    val key = get(userId)?.get(deviceId)?.get<T>()
     return if (key == null) {
         outdatedKeys.update { it + userId }
         waitForUpdateOutdatedKey(userId)
-        get(userId).value?.get(deviceId)?.get()
+        get(userId)?.get(deviceId)?.get()
             ?: throw KeyException.KeyNotFoundException("no key ${T::class} found for device $deviceId from user $userId")
     } else key
 }
@@ -40,11 +40,10 @@ internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeyFromDevice(
 internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeysFromUser(
     userId: MatrixId.UserId
 ): Set<T> {
-    val userKeys = get(userId).value ?: run {
+    val userKeys = get(userId) ?: run {
         outdatedKeys.update { it + userId }
         waitForUpdateOutdatedKey(userId)
-        get(userId).value
-            ?: throw KeyException.KeyNotFoundException("no keys found for user $userId")
+        get(userId) ?: throw KeyException.KeyNotFoundException("no keys found for user $userId")
     }
     val keys = userKeys.values.flatMap { it.keys }.filterIsInstance<T>()
     if (keys.isEmpty()) throw KeyException.KeyNotFoundException("no key ${T::class} found for user $userId")

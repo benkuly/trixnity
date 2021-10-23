@@ -50,7 +50,7 @@ class RoomStateStore(
     suspend fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope? = null
+        scope: CoroutineScope
     ): StateFlow<Map<String, Event<C>>?> {
         val eventType = contentMappings.state.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot get state event, because it is not supported. You need to register it first.")
@@ -58,6 +58,18 @@ class RoomStateStore(
         return roomStateCache.get(
             RoomStateRepositoryKey(roomId, eventType), scope
         ) as StateFlow<Map<String, Event<C>>?>
+    }
+
+    suspend fun <C : StateEventContent> get(
+        roomId: RoomId,
+        eventContentClass: KClass<C>
+    ): Map<String, Event<C>>? {
+        val eventType = contentMappings.state.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException("Cannot get state event, because it is not supported. You need to register it first.")
+        @Suppress("UNCHECKED_CAST")
+        return roomStateCache.get(
+            RoomStateRepositoryKey(roomId, eventType)
+        ) as Map<String, Event<C>>?
     }
 
     private suspend fun <C : StateEventContent> getByStateKeyAsFlow(

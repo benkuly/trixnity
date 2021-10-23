@@ -161,7 +161,7 @@ class OlmEventService internal constructor(
                 } else throw SessionException.PreventToManySessions
             } else {
                 val senderDeviceId =
-                    store.deviceKeys.get(senderId).value?.entries
+                    store.deviceKeys.get(senderId)?.entries
                         ?.find { it.value.keys.contains(senderIdentityKey) }?.key
                         ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
                 api.users.sendToDevice(
@@ -205,7 +205,7 @@ class OlmEventService internal constructor(
             store.deviceKeys.waitForUpdateOutdatedKey(*members.toTypedArray())
             val deviceKeys =
                 members.mapNotNull { userId ->
-                    store.deviceKeys.get(userId).value?.let { userId to it }
+                    store.deviceKeys.get(userId)?.let { userId to it }
                 }.toMap()
             freeAfter(OlmOutboundGroupSession.create()) { session ->
                 store.olm.storeInboundMegolmSession(

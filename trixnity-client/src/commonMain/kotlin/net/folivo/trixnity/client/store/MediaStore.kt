@@ -14,7 +14,7 @@ class MediaStore(
 
     suspend fun addContent(uri: String, content: ByteArray) = mediaCache.update(uri) { content }
 
-    suspend fun getContent(uri: String): ByteArray? = mediaCache.get(uri).value
+    suspend fun getContent(uri: String): ByteArray? = mediaCache.get(uri)
 
     suspend fun deleteContent(uri: String) = mediaCache.update(uri) { null }
 
@@ -25,7 +25,7 @@ class MediaStore(
     private val uploadMediaCache = StateFlowCache(storeScope, uploadMediaRepository)
 
     suspend fun getUploadMedia(cacheUri: String): UploadMedia? =
-        uploadMediaCache.get(cacheUri).value
+        uploadMediaCache.get(cacheUri)
 
     suspend fun updateUploadMedia(
         cacheUri: String,

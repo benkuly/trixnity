@@ -28,7 +28,7 @@ class RoomStore(
 
     fun getAll(): StateFlow<Set<Room>> = allRooms
 
-    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.get(roomId)
+    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.get(roomId, null)
 
     suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?) =
         roomCache.update(roomId, updater)

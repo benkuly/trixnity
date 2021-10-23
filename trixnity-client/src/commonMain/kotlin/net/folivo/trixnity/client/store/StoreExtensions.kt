@@ -14,8 +14,12 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-    scope: CoroutineScope?
+    scope: CoroutineScope
 ): StateFlow<Map<String, Event<C>>?> = get(roomId, C::class, scope)
+
+suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
+    roomId: RoomId,
+): Map<String, Event<C>>? = get(roomId, C::class)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
@@ -39,7 +43,7 @@ suspend inline fun RoomStateStore.members(
     membership: Membership,
     vararg moreMemberships: Membership
 ): Set<UserId> =
-    get<MemberEventContent>(roomId, null).value
+    get<MemberEventContent>(roomId)
         ?.filter { entry ->
             (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
         }?.map { UserId(it.key) }?.toSet() ?: setOf()
@@ -49,7 +53,7 @@ suspend inline fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Int = get<MemberEventContent>(roomId, null).value
+): Int = get<MemberEventContent>(roomId)
     ?.filter { entry ->
         (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
     }?.count() ?: 0
@@ -70,7 +74,7 @@ suspend inline fun RoomTimelineStore.getPrevious(
     event.previousEventId?.let { get(it, event.roomId, scope) }
 
 suspend inline fun DeviceKeysStore.isTracked(userId: UserId): Boolean =
-    get(userId).value.isNullOrEmpty().not()
+    get(userId).isNullOrEmpty().not()
 
 suspend inline fun OlmStore.waitForInboundMegolmSession(
     roomId: RoomId,

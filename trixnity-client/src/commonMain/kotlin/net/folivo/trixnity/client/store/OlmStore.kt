@@ -34,7 +34,7 @@ class OlmStore(
 
     suspend fun getOlmSessions(
         senderKey: Curve25519Key
-    ): Set<StoredOlmSession>? = olmSessionsCache.get(senderKey).value
+    ): Set<StoredOlmSession>? = olmSessionsCache.get(senderKey)
 
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
@@ -73,7 +73,7 @@ class OlmStore(
     private val outboundMegolmSessionCache = StateFlowCache(storeScope, outboundMegolmSessionRepository)
 
     suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
-        outboundMegolmSessionCache.get(roomId).value
+        outboundMegolmSessionCache.get(roomId)
 
     suspend fun updateOutboundMegolmSession(
         roomId: RoomId,

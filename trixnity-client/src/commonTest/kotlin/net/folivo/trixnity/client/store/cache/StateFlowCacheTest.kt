@@ -211,12 +211,12 @@ class StateFlowCacheTest : ShouldSpec({
         beforeTest { cut = StateFlowCache(cacheScope, repository) }
         should("read from database") {
             coEvery { repository.get("key") } returns "value"
-            cut.get("key").value shouldBe "value"
+            cut.get("key") shouldBe "value"
         }
         should("prefer cache") {
             coEvery { repository.get("key") } returns "value" andThen "value2"
-            cut.get("key").value shouldBe "value"
-            cut.get("key").value shouldBe "value"
+            cut.get("key") shouldBe "value"
+            cut.get("key") shouldBe "value"
         }
     }
     context("writeWithCache") {

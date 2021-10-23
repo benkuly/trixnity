@@ -82,7 +82,16 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         return result.value.asStateFlow()
     }
 
-    suspend fun get(key: K, scope: CoroutineScope? = null): StateFlow<V?> {
+    suspend fun get(key: K): V? {
+        return readWithCache(
+            key,
+            containsInCache = { it != null },
+            retrieveFromRepoAndUpdateCache = { _, repository -> repository.get(key) },
+            null
+        ).value
+    }
+
+    suspend fun get(key: K, scope: CoroutineScope?): StateFlow<V?> {
         return readWithCache(
             key,
             containsInCache = { it != null },

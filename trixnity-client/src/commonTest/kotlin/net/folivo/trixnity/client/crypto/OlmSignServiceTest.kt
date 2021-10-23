@@ -35,17 +35,14 @@ class OlmSignServiceTest : ShouldSpec({
     val store = mockk<Store> {
         every { this@mockk.account.userId } returns MutableStateFlow(UserId("me", "server"))
         every { this@mockk.account.deviceId } returns MutableStateFlow("ABCDEF")
-        coEvery { deviceKeys.get(UserId("bob", "server")) } returns
-                MutableStateFlow(
-                    mapOf(
-                        "BBBBBB" to DeviceKeys(
-                            UserId("bob", "server"),
-                            "BBBBBB",
-                            setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                            keysOf(Ed25519Key("", signingAccount.identityKeys.ed25519))
-                        )
-                    )
-                )
+        coEvery { deviceKeys.get(UserId("bob", "server")) } returns mapOf(
+            "BBBBBB" to DeviceKeys(
+                UserId("bob", "server"),
+                "BBBBBB",
+                setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                keysOf(Ed25519Key("", signingAccount.identityKeys.ed25519))
+            )
+        )
     }
 
     val cut = OlmSignService(json, store, account, utility)

@@ -122,7 +122,7 @@ class OlmManagerTest : ShouldSpec({
                 store.deviceKeys.outdatedKeys.value = setOf(alice, bob)
                 store.deviceKeys.update(alice) { mockk() }
                 cut.handleDeviceLists(SyncResponse.DeviceLists(left = setOf(alice)))
-                store.deviceKeys.get(alice).value should beNull()
+                store.deviceKeys.get(alice) should beNull()
                 store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(bob)
             }
         }
@@ -207,10 +207,10 @@ class OlmManagerTest : ShouldSpec({
                 mapOf(cedric to mapOf(cedricDevice to cedricKey1), alice to mapOf(aliceDevice2 to aliceKey2))
             )
             cut.handleOutdatedKeys(setOf(cedric, alice))
-            val storedCedricKeys = store.deviceKeys.get(cedric).value
+            val storedCedricKeys = store.deviceKeys.get(cedric)
             assertNotNull(storedCedricKeys)
             storedCedricKeys shouldContainExactly mapOf(cedricDevice to cedricKey1.signed)
-            val storedAliceKeys = store.deviceKeys.get(alice).value
+            val storedAliceKeys = store.deviceKeys.get(alice)
             assertNotNull(storedAliceKeys)
             storedAliceKeys shouldContainExactly mapOf(aliceDevice2 to aliceKey2.signed)
         }
@@ -221,7 +221,7 @@ class OlmManagerTest : ShouldSpec({
             )
             store.deviceKeys.update(cedric) { mapOf(cedricDevice to cedricKey1.signed) }
             cut.handleOutdatedKeys(setOf(cedric))
-            val storedKeys = store.deviceKeys.get(cedric).value
+            val storedKeys = store.deviceKeys.get(cedric)
             assertNotNull(storedKeys)
             storedKeys shouldContainExactly mapOf(cedricDevice to cedricKey1.signed)
         }
@@ -307,7 +307,7 @@ class OlmManagerTest : ShouldSpec({
             ) { deviceKeys ->
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns QueryKeysResponse(mapOf(), deviceKeys)
                 cut.handleOutdatedKeys(setOf(alice, cedric))
-                val storedKeys = store.deviceKeys.get(alice).value
+                val storedKeys = store.deviceKeys.get(alice)
                 assertNotNull(storedKeys)
                 storedKeys shouldHaveSize 0
             }
@@ -468,7 +468,7 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.get(alice).value should beNull()
+            store.deviceKeys.get(alice) should beNull()
 
             store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
@@ -481,7 +481,7 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.get(alice).value should beNull()
+            store.deviceKeys.get(alice) should beNull()
         }
         should("not remove device keys on leave or ban when there are more rooms") {
             val otherRoom = RoomId("otherRoom", "server")
@@ -508,7 +508,7 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.get(alice).value shouldNot beNull()
+            store.deviceKeys.get(alice) shouldNot beNull()
 
             store.deviceKeys.update(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
@@ -521,7 +521,7 @@ class OlmManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.deviceKeys.get(alice).value shouldNot beNull()
+            store.deviceKeys.get(alice) shouldNot beNull()
         }
         should("ignore join without real change (already join)") {
             cut.handleMemberEvents(

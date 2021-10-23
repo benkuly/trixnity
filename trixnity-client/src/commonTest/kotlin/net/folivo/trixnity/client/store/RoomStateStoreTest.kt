@@ -71,14 +71,14 @@ class RoomStateStoreTest : ShouldSpec({
             coEvery {
                 roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
             } returns mapOf("@user:server" to event1)
-            cut.get<MemberEventContent>(roomId, null).value shouldBe mapOf("@user:server" to event1)
+            cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
         }
         should("prefer cache") {
             coEvery {
                 roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
             } returns mapOf("@user:server" to event1)
-            cut.get<MemberEventContent>(roomId, null).value shouldBe mapOf("@user:server" to event1)
-            cut.get<MemberEventContent>(roomId, null).value shouldBe mapOf("@user:server" to event1)
+            cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
+            cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
             coVerify(exactly = 1) {
                 roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
             }

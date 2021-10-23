@@ -28,8 +28,12 @@ class DeviceKeysStore(
 
     suspend fun get(
         userId: UserId,
-        scope: CoroutineScope? = null
+        scope: CoroutineScope
     ): StateFlow<Map<String, DeviceKeys>?> = deviceKeysCache.get(userId, scope)
+
+    suspend fun get(
+        userId: UserId,
+    ): Map<String, DeviceKeys>? = deviceKeysCache.get(userId)
 
     suspend fun update(
         userId: UserId,
