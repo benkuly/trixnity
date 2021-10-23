@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.Keys
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
@@ -14,9 +15,11 @@ sealed interface Event<C : EventContent> {
     val content: C
 
     @Serializable
-    data class BasicEvent<C : EventContent>(
-        @SerialName("content") override val content: C
-    ) : Event<C>
+    data class UnknownEvent(
+        override val content: EmptyEventContent,
+        val type: String,
+        val raw: JsonObject
+    ) : Event<EmptyEventContent>
 
     /**
      * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#room-event-fields">matrix spec</a>

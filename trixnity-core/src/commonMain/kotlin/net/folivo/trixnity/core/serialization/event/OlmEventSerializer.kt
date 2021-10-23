@@ -10,9 +10,9 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import net.folivo.trixnity.core.model.events.EmptyEventContent
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
 import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.UnknownBasicEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
@@ -32,7 +32,7 @@ class OlmEventSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
         val contentSerializer = eventsContentLookupByType[type]
-            ?: UnknownEventContentSerializer(UnknownBasicEventContent.serializer(), type)
+            ?: UnknownEventContentSerializer(EmptyEventContent.serializer(), type)
         return try {
             decoder.json.decodeFromJsonElement(OlmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: SerializationException) {
@@ -40,7 +40,7 @@ class OlmEventSerializer(
             decoder.json.decodeFromJsonElement(
                 OlmEvent.serializer(
                     UnknownEventContentSerializer(
-                        UnknownBasicEventContent.serializer(),
+                        EmptyEventContent.serializer(),
                         type
                     )
                 ), jsonObj
@@ -50,7 +50,7 @@ class OlmEventSerializer(
 
     override fun serialize(encoder: Encoder, value: OlmEvent<*>) {
         val content = value.content
-        if (content is UnknownBasicEventContent) throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
+        if (content is EmptyEventContent) throw IllegalArgumentException("${content::class.simpleName} should never be serialized")
         require(encoder is JsonEncoder)
         val contentSerializerMapping = eventContentSerializers.find { it.kClass.isInstance(value.content) }
         requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }

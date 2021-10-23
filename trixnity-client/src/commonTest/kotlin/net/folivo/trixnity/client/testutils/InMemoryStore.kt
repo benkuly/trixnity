@@ -31,6 +31,7 @@ fun createInMemoryStore(storeCoroutineScope: CoroutineScope): Store {
         roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
         mediaRepository = InMemoryMediaRepository(),
         uploadMediaRepository = InMemoryMinimalStoreRepository(),
+        globalAccountDataRepository = InMemoryMinimalStoreRepository(),
         roomAccountDataRepository = InMemoryMinimalStoreRepository(),
         contentMappings = DefaultEventContentSerializerMappings
     )

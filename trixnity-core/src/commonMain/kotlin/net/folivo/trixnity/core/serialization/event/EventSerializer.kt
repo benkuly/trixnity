@@ -15,7 +15,7 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
 class EventSerializer(
-    private val basicEventSerializer: KSerializer<BasicEvent<*>>,
+    private val unknownEventSerializer: KSerializer<UnknownEvent>,
     private val roomEventSerializer: KSerializer<RoomEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
     private val ephemeralEventSerializer: KSerializer<EphemeralEvent<*>>,
@@ -41,13 +41,13 @@ class EventSerializer(
             hasEventId && hasRoomId && hasSenderId -> roomEventSerializer
             !hasEventId && hasStateKey && hasRoomId && hasSenderId -> strippedStateEventSerializer
             // it is hard to detect if an event is e. g. an MegolmEvent or an EphemeralEvent and we don't need it
-            else -> basicEventSerializer
+            else -> unknownEventSerializer
         }
         return try {
             decoder.json.decodeFromJsonElement(serializer, jsonObj)
         } catch (error: SerializationException) {
             log.warning(error) { "could not deserialize event" }
-            decoder.json.decodeFromJsonElement(basicEventSerializer, jsonObj)
+            decoder.json.decodeFromJsonElement(unknownEventSerializer, jsonObj)
         }
     }
 
@@ -62,7 +62,7 @@ class EventSerializer(
             is MegolmEvent -> encoder.json.encodeToJsonElement(megolmEventSerializer, value)
             is GlobalAccountDataEvent -> encoder.json.encodeToJsonElement(globalAccountDataEventSerializer, value)
             is RoomAccountDataEvent -> encoder.json.encodeToJsonElement(roomAccountDataEventSerializer, value)
-            is BasicEvent<*> -> encoder.json.encodeToJsonElement(basicEventSerializer, value)
+            is UnknownEvent -> encoder.json.encodeToJsonElement(unknownEventSerializer, value)
         }
         encoder.encodeJsonElement(jsonElement)
     }

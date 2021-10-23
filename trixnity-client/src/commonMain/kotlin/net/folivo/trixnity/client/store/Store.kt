@@ -21,6 +21,7 @@ class Store(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
     mediaRepository: MediaRepository,
     uploadMediaRepository: UploadMediaRepository,
+    globalAccountDataRepository: GlobalAccountDataRepository,
     roomAccountDataRepository: RoomAccountDataRepository,
     contentMappings: EventContentSerializerMappings,
 ) {
@@ -40,6 +41,7 @@ class Store(
     val roomTimeline = RoomTimelineStore(roomTimelineRepository, scope)
     val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, scope)
     val media = MediaStore(mediaRepository, uploadMediaRepository, scope)
+    val globalAccountData = GlobalAccountDataStore(globalAccountDataRepository, contentMappings, scope)
     val roomAccountData = RoomAccountDataStore(roomAccountDataRepository, contentMappings, scope)
     // TODO add accountData
 
