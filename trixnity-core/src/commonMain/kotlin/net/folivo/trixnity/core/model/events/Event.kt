@@ -88,7 +88,7 @@ sealed interface Event<C : EventContent> {
     ) : Event<C>
 
     @Serializable
-    data class MegolmEvent<C : MessageEventContent>(
+    data class MegolmEvent<C : RoomEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("room_id") val roomId: RoomId
     ) : Event<C>
