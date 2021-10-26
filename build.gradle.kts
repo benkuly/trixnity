@@ -1,4 +1,5 @@
 import de.undercouch.gradle.tasks.download.Download
+import org.gradle.internal.os.OperatingSystem
 
 buildscript {
     dependencies {
@@ -61,7 +62,10 @@ val extractOlm by tasks.registering(Copy::class) {
 val prepareBuildOlm by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olm.root)
-    commandLine("cmake", ".", "-Bbuild")
+    if (OperatingSystem.current().isWindows)
+        commandLine("cmake", ".", "-Bbuild", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
+    else
+        commandLine("cmake", ".", "-Bbuild")
     dependsOn(extractOlm)
 }
 
