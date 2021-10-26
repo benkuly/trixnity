@@ -150,3 +150,22 @@ launch {
 #### Logging
 
 TODO
+
+## Build this project
+
+Add a file named `local.properties` with the following content in the project root:
+
+```properties
+sdk.dir=/path/to/android/sdk
+```
+
+Install the Android SDK with the following packages:
+
+- platforms;android-30
+- build-tools
+- ndk
+- cmake
+
+Linux: You may need to install `libncurses5`.
+
+Run the gradle build task.
