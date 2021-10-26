@@ -38,7 +38,7 @@ class OlmStoreTest : ShouldSpec({
             cut.init()
 
             cut.account.value = "olm_account"
-            coVerify {
+            coVerify(timeout = 2_000) {
                 olmAccountRepository.save(1, "olm_account")
             }
         }

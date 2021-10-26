@@ -28,7 +28,7 @@ import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
 class UserManagerTest : ShouldSpec({
-    timeout = 2000
+    timeout = 10_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val roomId = simpleRoom.roomId

@@ -53,7 +53,7 @@ import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalKotest::class)
 class OlmManagerTest : ShouldSpec({
-    timeout = 1000
+    timeout = 10_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
