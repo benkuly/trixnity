@@ -35,7 +35,7 @@ allprojects {
     apply(plugin = "org.jetbrains.dokka")
 
     dependencies {
-        dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:1.5.0")
+        dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
     }
 }
 
@@ -58,11 +58,18 @@ val extractOlm by tasks.registering(Copy::class) {
     dependsOn(downloadOlm)
 }
 
+val prepareBuildOlm by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olm.root)
+    commandLine("cmake", ".", "-Bbuild")
+    dependsOn(extractOlm)
+}
+
 val buildOlm by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olm.root)
-    commandLine("make")
-    dependsOn(extractOlm)
+    commandLine("cmake", "--build", "build")
+    dependsOn(prepareBuildOlm)
 }
 
 subprojects {

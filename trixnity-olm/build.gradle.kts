@@ -39,7 +39,7 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
         }
-        publishLibraryVariants("release", "debug")
+        publishLibraryVariants("release")
     }
 //    js(IR) { // TODO enable
 //        browser {
