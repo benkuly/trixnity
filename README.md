@@ -173,5 +173,5 @@ sdk.dir=/path/to/android/sdk
 Linux: You may need to install `libncurses5`.
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
-shell `pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
+shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
 . Run all gradle tasks within the msys2 mingw64 shell!
