@@ -62,10 +62,12 @@ val extractOlm by tasks.registering(Copy::class) {
 val prepareBuildOlm by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olm.root)
-    if (OperatingSystem.current().isWindows)
-        commandLine("cmake", ".", "-Bbuild", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
-    else
+    if (OperatingSystem.current().isWindows) {
+        // TODO we disabled tests, because the linking of them fails
+        commandLine("cmake", ".", "-Bbuild", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF")
+    } else {
         commandLine("cmake", ".", "-Bbuild")
+    }
     dependsOn(extractOlm)
 }
 

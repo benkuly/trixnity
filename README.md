@@ -153,11 +153,7 @@ TODO
 
 ## Build this project
 
-Add a file named `local.properties` with the following content in the project root:
-
-```properties
-sdk.dir=/path/to/android/sdk
-```
+### Android SDK
 
 Install the Android SDK with the following packages:
 
@@ -166,6 +162,16 @@ Install the Android SDK with the following packages:
 - ndk
 - cmake
 
+Add a file named `local.properties` with the following content in the project root:
+
+```properties
+sdk.dir=/path/to/android/sdk
+```
+
+### Libraries for c-bindings
+
 Linux: You may need to install `libncurses5`.
 
-Run the gradle build task.
+Windows: Install msys2. Add cmake and run in msys2 mingw64
+shell `pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
+. Run all gradle tasks within the msys2 mingw64 shell!

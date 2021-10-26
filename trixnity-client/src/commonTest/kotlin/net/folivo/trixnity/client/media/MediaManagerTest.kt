@@ -181,7 +181,7 @@ class MediaManagerTest : ShouldSpec({
                 initialisationVector shouldNot beEmpty()
                 hashes["sha256"] shouldNot beEmpty()
             }
-            assertSoftly(result!!.second) {
+            assertSoftly(result.second) {
                 width shouldBe 600
                 height shouldBe 300
                 size shouldBe 14
