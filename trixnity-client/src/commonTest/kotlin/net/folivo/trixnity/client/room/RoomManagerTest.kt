@@ -466,7 +466,7 @@ class RoomManagerTest : ShouldSpec({
             cut.sendMessage(room) {
                 this.content = content
             }
-            retry(4, milliseconds(1000), milliseconds(30)) {// we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
                 val outboundMessages = store.roomOutboxMessage.getAll().value
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
@@ -491,7 +491,7 @@ class RoomManagerTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value.first() shouldBe roomOutboxMessage
             }
         }
@@ -508,7 +508,7 @@ class RoomManagerTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value.size shouldBe 0
             }
         }
@@ -544,7 +544,7 @@ class RoomManagerTest : ShouldSpec({
                 api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
             }
-            retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].wasSent shouldBe true
@@ -579,7 +579,7 @@ class RoomManagerTest : ShouldSpec({
                 olm.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
                 users.loadMembers(room)
             }
-            retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].wasSent shouldBe true
@@ -600,7 +600,7 @@ class RoomManagerTest : ShouldSpec({
             coVerify(exactly = 2, timeout = 2_000) {
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
             }
-            retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].wasSent shouldBe true

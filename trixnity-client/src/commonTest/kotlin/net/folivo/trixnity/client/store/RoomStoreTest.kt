@@ -41,7 +41,7 @@ class RoomStoreTest : ShouldSpec({
 
             cut.init()
 
-            retry(4, milliseconds(1000), milliseconds(30)) {
+            retry(10, milliseconds(2_000), milliseconds(30)) {
                 cut.getAll().value shouldContainExactly listOf(room1, room2)
             }
         }
