@@ -2,8 +2,9 @@
 
 # Trixnity
 
-Trixnity is a cross-plattform [Matrix](matrix.org) client SDK written in Kotlin. This SDK supports JS and JVM (native
-not working yet) as targets. [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
+Trixnity is a cross-plattform [Matrix](matrix.org) client SDK written in Kotlin. This SDK supports JVM as targets (
+native and JS not working yet due to a bug in kotlinx.serialization). [Ktor](https://github.com/ktorio/ktor) is used for
+the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
 
 If you want to use Trixnity in combination with Spring Boot, have a look
@@ -13,51 +14,33 @@ You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/
 
 ## Client
 
-The client module of Trixnity gives you access to the Matrix Client-Server API.
+TODO
 
-There is a working example, which runs on JVM and NodeJS in the `trixnity-examples` directory.
+## Client-API
+
+The client api module of Trixnity gives you access to the plain Matrix Client-Server API.
+
+There is a working example in the `trixnity-examples` directory.
 
 ### Installation
 
-#### Java/Kotlin
-
-Add `net.folivo:trixnity-client` to your project.
+Add `net.folivo:trixnity-client-api` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html).
 
-#### Javascript
-
-Coming soon.
-
 ### Usage
 
-#### Create `MatrixRestClient`
+#### Create `MatrixApiClient`
 
-The most important class of this library is `MatrixRestClient`. It's constructor needs some parameters:
-
-- `HttpClient` with an engine.
-- `MatrixRestClientProperties`, which contains some information to connect to the homeserver.
-- (optional) `SyncBatchTokenStore`, which saves the sync token. You should implement it with a database backend for
-  example, so that the client knows, which was the last sync batch token.
-- (optional) `Set<EventContentSerializerMapping<out RoomEventContent>>` allows you to add custom room events.
-- (optional) `Set<EventContentSerializerMapping<out StateEventContent>>` allows you to add custom state events.
+The most important class of this library is `MatrixApiClient`.
 
 Here is a typical example, how to create a `MatrixRestClient`:
 
 ```kotlin
-private val matrixRestClient = MatrixRestClient(
-    HttpClient(Java),
-    MatrixRestClientProperties(
-        HomeServerProperties("you.home.server"),
-        "superSecretToken"
-    )
-)
+private val matrixRestClient = MatrixApiClient(hostname = "example.org").apply { accessToken = "your_token" }
 ```
 
 #### Use Matrix Client-Server API
-
-You have access to the Matrix Client-Server API via `MatrixRestClient`. Currently not all endpoints are implemented. If
-you need more, feel free to contribute or open an issue.
 
 Example 1: You can send messages.
 
@@ -71,30 +54,27 @@ matrixRestClient.room.sendRoomEvent(
 Example 2: You can receive different type of events.
 
 ```kotlin
-// first register your event handlers
-val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
-val memberEventFlow = matrixRestClient.sync.events<MemberEventContent>()
-val allEventsFlow = matrixRestClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
+coroutineScope {
+    // first register your event handlers
+    val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
+    val memberEventFlow = matrixRestClient.sync.events<MemberEventContent>()
+    val allEventsFlow = matrixRestClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
 
-// wait for events in separate coroutines and print to console
-val job1 = launch {
-    textMessageEventFlow.collect { println(it.content.body) }
+    // wait for events in separate coroutines and print to console
+    launch {
+        textMessageEventFlow.collect { println(it.content.body) }
+    }
+    launch {
+        memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
+    }
+    launch {
+        allEventsFlow.collect { println(it) }
+    }
+
+    matrixRestClient.sync.start() // you need to start the sync to receive messages
+    delay(30000) // wait some time
+    matrixRestClient.sync.stop() // stop the client
 }
-val job2 = launch {
-    memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
-}
-val job3 = launch {
-    allEventsFlow.collect { println(it) }
-}
-
-matrixRestClient.sync.start() // you need to start the sync to receive messages
-
-delay(30000) // wait some time
-
-matrixRestClient.sync.stop() // stop the client
-job1.cancelAndJoin()
-job2.cancelAndJoin()
-job3.cancelAndJoin()
 ```
 
 ## Appservice
@@ -103,15 +83,9 @@ The appservice module of Trixnity contains a webserver, which hosts the Matrix A
 
 ### Installation
 
-#### Java/Kotlin
-
 Add `net.folivo:trixnity-appservice` to your project.
 
 You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
-
-#### Javascript
-
-Not supported by Ktor yet.
 
 ### Usage
 
@@ -146,10 +120,6 @@ launch {
     textMessageEventFlow.collect { println(it.content.body) }
 }
 ```
-
-#### Logging
-
-TODO
 
 ## Build this project
 
