@@ -53,7 +53,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
 class RoomManagerTest : ShouldSpec({
-    timeout = 2000
+    timeout = 10_000
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
@@ -537,7 +537,7 @@ class RoomManagerTest : ShouldSpec({
             }
             syncState.value = RUNNING
 
-            coVerify(timeout = 1000) {
+            coVerify(timeout = 2_000) {
                 media.uploadMedia(cacheUrl, mediaUploadProgress)
                 api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
@@ -572,7 +572,7 @@ class RoomManagerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            coVerify(timeout = 1000) {
+            coVerify(timeout = 2_000) {
                 api.rooms.sendMessageEvent(room, megolmEventContent, "transaction")
                 olm.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
                 users.loadMembers(room)
@@ -595,7 +595,7 @@ class RoomManagerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            coVerify(exactly = 2, timeout = 1000) {
+            coVerify(exactly = 2, timeout = 2_000) {
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
             }
             retry(4, milliseconds(1000), milliseconds(30)) { // we need this, because the cache may not be fast enough

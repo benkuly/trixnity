@@ -50,7 +50,7 @@ class AccountStoreTest : ShouldSpec({
             cut.init()
 
             cut.userId.value = UserId("user", "server")
-            coVerify(timeout = 100) {
+            coVerify(timeout = 2_000) {
                 repository.save(
                     1, Account(
                         UserId("user", "server"),

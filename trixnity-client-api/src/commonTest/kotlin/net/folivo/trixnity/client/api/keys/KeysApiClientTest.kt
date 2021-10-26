@@ -200,7 +200,7 @@ class KeysApiClientTest {
             },
         )
         val result = matrixRestClient.keys.getKeys(
-            timeout = 10000,
+            timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
             token = "string"
         )
@@ -264,7 +264,7 @@ class KeysApiClientTest {
             },
         )
         val result = matrixRestClient.keys.claimKeys(
-            timeout = 10000,
+            timeout = 10_000,
             oneTimeKeys = mapOf(UserId("alice", "example.com") to mapOf("JLAFKJWSCS" to SignedCurve25519))
         )
         assertEquals(mapOf(), result.failures)
