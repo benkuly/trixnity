@@ -7,6 +7,7 @@ import io.kotest.assertions.until.until
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -492,7 +493,7 @@ class RoomManagerTest : ShouldSpec({
             )
             cut.syncOutboxMessage(event)
             retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
-                store.roomOutboxMessage.getAll().value.first() shouldBe roomOutboxMessage
+                store.roomOutboxMessage.getAll().value shouldContainExactly listOf(roomOutboxMessage)
             }
         }
         should("remove outbox message from us") {
