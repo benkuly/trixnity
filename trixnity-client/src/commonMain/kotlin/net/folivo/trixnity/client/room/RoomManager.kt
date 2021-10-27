@@ -11,8 +11,6 @@ import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmManager
-import net.folivo.trixnity.client.getEventId
-import net.folivo.trixnity.client.getOriginTimestamp
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaManager
@@ -73,8 +71,6 @@ class RoomManager(
                 oldRoom ?: Room(
                     roomId = roomId,
                     membership = JOIN,
-                    lastEventAt = fromEpochMilliseconds(0),
-                    lastEventId = null
                 )
             }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
@@ -202,8 +198,6 @@ class RoomManager(
                 ) ?: Room(
                     roomId = event.roomId,
                     encryptionAlgorithm = event.content.algorithm,
-                    lastEventAt = fromEpochMilliseconds(event.originTimestamp),
-                    lastEventId = event.id
                 )
             }
         }
@@ -219,8 +213,6 @@ class RoomManager(
                 ) ?: Room(
                     roomId = roomId,
                     membership = event.content.membership,
-                    lastEventAt = fromEpochMilliseconds(event.getOriginTimestamp() ?: 0),
-                    lastEventId = event.getEventId()
                 )
             }
         }
@@ -294,12 +286,12 @@ class RoomManager(
         hasGapBefore: Boolean
     ) {
         if (!events.isNullOrEmpty()) {
-            val nextEventIdForPreviousEvent = events[0].id
             val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             val previousEventId =
                 room.lastEventId?.also {
                     store.roomTimeline.update(it, roomId) { oldEvent ->
+                        val nextEventIdForPreviousEvent = events[0].id
                         if (hasGapBefore)
                             oldEvent?.copy(nextEventId = nextEventIdForPreviousEvent)
                         else {
