@@ -290,6 +290,7 @@ class RoomManager(
         hasGapBefore: Boolean
     ) {
         if (!events.isNullOrEmpty()) {
+            log.debug { "add events to timeline at end of $roomId" }
             val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             val previousEventId =
@@ -371,6 +372,7 @@ class RoomManager(
                 val chunk = response.chunk
                 val end = response.end
                 if (!chunk.isNullOrEmpty()) {
+                    log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
                     val previousEventIndex =
                         previousEvent?.let { chunk.indexOfFirst { event -> event.id == it.eventId } } ?: -1
                     val events = if (previousEventIndex < 0) chunk else chunk.take(previousEventIndex)
@@ -438,7 +440,7 @@ class RoomManager(
                     }
                     store.roomTimeline.addAll(timelineEvents)
                 } else if (end == null || end == response.start) {
-                    // we reached the start of visible timeline
+                    log.debug { "reached the start of visible timeline of $roomId" }
                     store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
                         val oldGap = oldStartEvent?.gap
                         oldStartEvent?.copy(
@@ -467,6 +469,7 @@ class RoomManager(
                 )
                 val chunk = response.chunk
                 if (!chunk.isNullOrEmpty()) {
+                    log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
                     val nextEventIndex = chunk.indexOfFirst { it.id == nextEvent.eventId }
                     val events = if (nextEventIndex < 0) chunk else chunk.take(nextEventIndex)
                     val filledGap = nextEventIndex >= 0 || response.end == destinationBatch
