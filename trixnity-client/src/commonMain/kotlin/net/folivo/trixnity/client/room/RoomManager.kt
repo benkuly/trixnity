@@ -71,8 +71,6 @@ class RoomManager(
                 oldRoom ?: Room(
                     roomId = roomId,
                     membership = JOIN,
-                    lastEventAt = fromEpochMilliseconds(0),
-                    lastEventId = null
                 )
             }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
@@ -292,12 +290,12 @@ class RoomManager(
         hasGapBefore: Boolean
     ) {
         if (!events.isNullOrEmpty()) {
-            val nextEventIdForPreviousEvent = events[0].id
             val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             val previousEventId =
                 room.lastEventId?.also {
                     store.roomTimeline.update(it, roomId) { oldEvent ->
+                        val nextEventIdForPreviousEvent = events[0].id
                         if (hasGapBefore)
                             oldEvent?.copy(nextEventId = nextEventIdForPreviousEvent)
                         else {
