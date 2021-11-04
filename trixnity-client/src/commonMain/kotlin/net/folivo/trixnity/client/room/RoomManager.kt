@@ -11,8 +11,6 @@ import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmManager
-import net.folivo.trixnity.client.getEventId
-import net.folivo.trixnity.client.getOriginTimestamp
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaManager
@@ -180,6 +178,7 @@ class RoomManager(
         }
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(name = roomName)
+                ?: Room(roomId = roomId, name = roomName)
         }
     }
 
@@ -202,8 +201,6 @@ class RoomManager(
                 ) ?: Room(
                     roomId = event.roomId,
                     encryptionAlgorithm = event.content.algorithm,
-                    lastEventAt = fromEpochMilliseconds(event.originTimestamp),
-                    lastEventId = event.id
                 )
             }
         }
@@ -219,8 +216,6 @@ class RoomManager(
                 ) ?: Room(
                     roomId = roomId,
                     membership = event.content.membership,
-                    lastEventAt = fromEpochMilliseconds(event.getOriginTimestamp() ?: 0),
-                    lastEventId = event.getEventId()
                 )
             }
         }
@@ -229,6 +224,9 @@ class RoomManager(
     internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(
+                unreadMessageCount = count
+            ) ?: Room(
+                roomId = roomId,
                 unreadMessageCount = count
             )
         }
