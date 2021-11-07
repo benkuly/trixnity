@@ -41,6 +41,7 @@ class RoomManager(
     private val olm: OlmManager,
     private val user: UserManager,
     private val media: MediaManager,
+    private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     loggerFactory: LoggerFactory
 ) {
@@ -56,7 +57,6 @@ class RoomManager(
         launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
         launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
         launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
-        launch { api.sync.events<MessageEventContent>().collect(::syncOutboxMessage) }
         launch { processOutboxMessages(store.roomOutboxMessage.getAll()) }
         launch { api.sync.syncResponses.collect(::handleSyncResponse) }
         // TODO reaction and edit (also in fetchMissingEvents!)
@@ -82,6 +82,7 @@ class RoomManager(
                     hasGapBefore = it.limited ?: false
                 )
                 it.events?.lastOrNull()?.also { event -> setLastEventAt(event) }
+                it.events?.forEach { event -> syncOutboxMessage(event) }
             }
 
             room.value.summary?.also {
@@ -617,7 +618,7 @@ class RoomManager(
         )
     }
 
-    internal suspend fun syncOutboxMessage(event: Event<MessageEventContent>) {
+    internal suspend fun syncOutboxMessage(event: Event<*>) {
         if (event is MessageEvent && event.sender == store.account.userId.value) {
             event.unsigned?.transactionId?.also {
                 store.roomOutboxMessage.deleteByTransactionId(it)
@@ -668,7 +669,10 @@ class RoomManager(
                                             olm.events.encryptMegolm(content, outboxMessage.roomId, megolmSettings)
                                         } else content
                                     }
-                                api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId)
+                                val eventId = api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId)
+                                if (setOwnMessagesAsFullyRead) {
+                                    api.rooms.setReadMarkers(roomId, eventId)
+                                }
                                 store.roomOutboxMessage.markAsSent(outboxMessage.transactionId)
                             }
                     }
@@ -687,7 +691,6 @@ class RoomManager(
         return store.room.get(roomId)
     }
 
-
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
@@ -697,4 +700,6 @@ class RoomManager(
             .map { it?.content }
             .stateIn(scope)
     }
+
+    fun getOutbox(): StateFlow<List<RoomOutboxMessage>> = store.roomOutboxMessage.getAll()
 }
