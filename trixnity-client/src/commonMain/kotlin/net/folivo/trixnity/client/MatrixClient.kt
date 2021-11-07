@@ -50,6 +50,7 @@ class MatrixClient private constructor(
             storeFactory: StoreFactory,
             secureStore: SecureStore,
             customMappings: EventContentSerializerMappings? = null,
+            setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient {
@@ -93,6 +94,7 @@ class MatrixClient private constructor(
                     olm,
                     userManager,
                     mediaManager,
+                    setOwnMessagesAsFullyRead,
                     customOutboxMessageMediaUploaderMappings,
                     loggerFactory
                 )
@@ -107,6 +109,7 @@ class MatrixClient private constructor(
             storeFactory: StoreFactory,
             secureStore: SecureStore,
             customMappings: EventContentSerializerMappings? = null,
+            setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient? {
@@ -143,6 +146,7 @@ class MatrixClient private constructor(
                         olm,
                         userManager,
                         mediaManager,
+                        setOwnMessagesAsFullyRead,
                         customOutboxMessageMediaUploaderMappings,
                         loggerFactory
                     )
