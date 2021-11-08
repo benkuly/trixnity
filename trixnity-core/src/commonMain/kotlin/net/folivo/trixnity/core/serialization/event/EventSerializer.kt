@@ -18,6 +18,7 @@ class EventSerializer(
     private val unknownEventSerializer: KSerializer<UnknownEvent>,
     private val roomEventSerializer: KSerializer<RoomEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
+    private val initialStateEventSerializer: KSerializer<InitialStateEvent<*>>,
     private val ephemeralEventSerializer: KSerializer<EphemeralEvent<*>>,
     private val toDeviceEventSerializer: KSerializer<ToDeviceEvent<*>>,
     private val olmEventSerializer: KSerializer<OlmEvent<*>>,
@@ -56,6 +57,7 @@ class EventSerializer(
         val jsonElement = when (value) {
             is RoomEvent -> encoder.json.encodeToJsonElement(roomEventSerializer, value)
             is StrippedStateEvent -> encoder.json.encodeToJsonElement(strippedStateEventSerializer, value)
+            is InitialStateEvent -> encoder.json.encodeToJsonElement(initialStateEventSerializer, value)
             is EphemeralEvent -> encoder.json.encodeToJsonElement(ephemeralEventSerializer, value)
             is ToDeviceEvent -> encoder.json.encodeToJsonElement(toDeviceEventSerializer, value)
             is OlmEvent -> encoder.json.encodeToJsonElement(olmEventSerializer, value)

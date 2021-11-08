@@ -66,6 +66,12 @@ sealed interface Event<C : EventContent> {
     ) : Event<C>
 
     @Serializable
+    data class InitialStateEvent<C : StateEventContent>(
+        @SerialName("content") override val content: C,
+        @SerialName("state_key") val stateKey: String
+    ) : Event<C>
+
+    @Serializable
     data class ToDeviceEvent<C : ToDeviceEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId

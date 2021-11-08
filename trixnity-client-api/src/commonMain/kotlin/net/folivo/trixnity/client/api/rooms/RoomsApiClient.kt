@@ -204,7 +204,7 @@ class RoomsApiClient(
         invite3Pid: Set<Invite3Pid>? = null,
         roomVersion: String? = null,
         creationContent: CreateEventContent? = null,
-        initialState: List<StateEvent<*>>? = null,
+        initialState: List<Event.InitialStateEvent<*>>? = null,
         preset: Preset? = null,
         isDirect: Boolean? = null,
         powerLevelContentOverride: PowerLevelsEventContent? = null,
