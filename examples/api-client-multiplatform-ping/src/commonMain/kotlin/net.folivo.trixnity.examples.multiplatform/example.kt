@@ -1,11 +1,8 @@
 package net.folivo.trixnity.examples.multiplatform
 
 import io.ktor.http.*
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -77,10 +74,12 @@ suspend fun example() = coroutineScope {
         }
     }
 
-    matrixRestClient.sync.start()
+    val scope = CoroutineScope(Dispatchers.Default)
+    matrixRestClient.sync.start(scope = scope)
 
     delay(30000)
 
     matrixRestClient.sync.stop()
     job.cancelAndJoin()
+    scope.cancel()
 }

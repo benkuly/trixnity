@@ -668,8 +668,8 @@ class SyncApiClientTest {
                 roomAccountDataEventsFlow.take(2).toList()
             }
 
-            launch {
-                matrixRestClient.sync.start()
+            GlobalScope.launch {
+                matrixRestClient.sync.start(scope = this)
             }
 
             inChannel.send(response)
@@ -743,8 +743,8 @@ class SyncApiClientTest {
         }
 
         GlobalScope.launch {
-            matrixRestClient.sync.start()
-            matrixRestClient.sync.start()
+            matrixRestClient.sync.start(scope = this)
+            matrixRestClient.sync.start(scope = this)
         }
 
         inChannel.send(response)

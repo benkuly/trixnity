@@ -82,7 +82,7 @@ class SyncApiClient(
         }
     }
 
-    private val scope = CoroutineScope(Dispatchers.Default)
+
     private var syncJob: Job? = null
 
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
@@ -107,6 +107,7 @@ class SyncApiClient(
         timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
+        scope : CoroutineScope
     ) {
         stop(wait = true)
         syncJob = scope.launch {
@@ -143,10 +144,6 @@ class SyncApiClient(
             _currentSyncState.value = SyncState.STOPPED
         }
         if (wait) syncJob?.join()
-    }
-
-    suspend fun cancel() {
-        syncJob?.cancelAndJoin()
     }
 
     suspend fun stop(wait: Boolean = false) {
