@@ -170,11 +170,15 @@ class MatrixClient private constructor(
         olm.free()
     }
 
-    suspend fun startSync() {
+    suspend fun stopSync() {
+        api.sync.stop()
+    }
+
+    suspend fun startSync(scope: CoroutineScope) {
         val handler = CoroutineExceptionHandler { _, exception ->
             // TODO maybe log to some sort of backend
             log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
-            scope.launch { api.sync.cancel() }
+            scope.launch { api.sync.stop() }
         }
         scope.launch(handler) {
             launch { olm.startEventHandling() }
@@ -195,6 +199,7 @@ class MatrixClient private constructor(
             filter = store.account.filterId.value,
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = store.account.syncBatchToken,
+            scope = scope,
         )
     }
 }
