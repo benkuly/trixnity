@@ -2,7 +2,6 @@ package net.folivo.trixnity.client
 
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -34,6 +33,7 @@ class MatrixClient private constructor(
     val room: RoomManager,
     val user: UserManager,
     val media: MediaManager,
+    private val scope: CoroutineScope,
     loggerFactory: LoggerFactory
 ) {
 
@@ -52,6 +52,7 @@ class MatrixClient private constructor(
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
+            scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient {
             val api = MatrixApiClient(
@@ -99,7 +100,7 @@ class MatrixClient private constructor(
                     loggerFactory
                 )
 
-            return MatrixClient(store, api, olm, roomManager, userManager, mediaManager, loggerFactory)
+            return MatrixClient(store, api, olm, roomManager, userManager, mediaManager, scope, loggerFactory)
         }
 
         suspend fun fromStore(
@@ -111,6 +112,7 @@ class MatrixClient private constructor(
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
+            scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient? {
             val api = MatrixApiClient(
@@ -151,12 +153,10 @@ class MatrixClient private constructor(
                         loggerFactory
                     )
 
-                MatrixClient(store, api, olm, roomManager, userManager, mediaManager, loggerFactory)
+                MatrixClient(store, api, olm, roomManager, userManager, mediaManager, scope, loggerFactory)
             } else null
         }
     }
-
-    private val scope = CoroutineScope(Dispatchers.Default)
 
     val isLoggedIn = store.account.accessToken.map { it != null }.stateIn(scope, Eagerly, false)
 
@@ -174,7 +174,7 @@ class MatrixClient private constructor(
         api.sync.stop()
     }
 
-    suspend fun startSync(scope: CoroutineScope) {
+    suspend fun startSync() {
         val handler = CoroutineExceptionHandler { _, exception ->
             // TODO maybe log to some sort of backend
             log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
