@@ -5,7 +5,7 @@ import arrow.fx.coroutines.retry
 import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.sync.SyncApiClient
@@ -81,7 +81,9 @@ class RoomManager(
                     previousBatch = it.previousBatch,
                     hasGapBefore = it.limited ?: false
                 )
-                it.events?.lastOrNull()?.also { event -> setLastEventAt(event) }
+                it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                it.events?.filterIsInstance<MessageEvent<*>>()?.lastOrNull()
+                    ?.also { event -> setLastMessageEvent(event) }
                 it.events?.forEach { event -> syncOutboxMessage(event) }
             }
 
@@ -102,7 +104,7 @@ class RoomManager(
                     previousBatch = it.previousBatch,
                     hasGapBefore = it.limited ?: false
                 )
-                it.events?.lastOrNull()?.let { event -> setLastEventAt(event) }
+                it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
             }
         }
     }
@@ -181,13 +183,19 @@ class RoomManager(
         }
     }
 
+    internal suspend fun setLastMessageEvent(event: MessageEvent<*>) {
+        val eventTime = Instant.fromEpochMilliseconds(event.originTimestamp)
+        store.room.update(event.roomId) { oldRoom ->
+            oldRoom?.copy(lastMessageEventAt = eventTime, lastMessageEventId = event.id)
+                ?: Room(roomId = event.roomId, lastMessageEventAt = eventTime, lastMessageEventId = event.id)
+        }
+    }
 
-    internal suspend fun setLastEventAt(event: Event<*>) {
+    internal suspend fun setLastEventId(event: Event<*>) {
         if (event is RoomEvent) {
-            val eventTime = fromEpochMilliseconds(event.originTimestamp)
             store.room.update(event.roomId) { oldRoom ->
-                oldRoom?.copy(lastEventAt = eventTime, lastEventId = event.id)
-                    ?: Room(roomId = event.roomId, lastEventAt = eventTime, lastEventId = event.id)
+                oldRoom?.copy(lastEventId = event.id)
+                    ?: Room(roomId = event.roomId, lastEventId = event.id)
             }
         }
     }
@@ -603,6 +611,17 @@ class RoomManager(
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getLastMessageEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+    ): StateFlow<StateFlow<TimelineEvent?>?> {
+        return store.room.get(roomId).transformLatest { room ->
+            if (room?.lastMessageEventId != null) emit(getTimelineEvent(room.lastMessageEventId, roomId, coroutineScope))
+            else emit(null)
+        }.stateIn(coroutineScope)
+    }
+
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, media).build(builder)
@@ -702,4 +721,13 @@ class RoomManager(
     }
 
     fun getOutbox(): StateFlow<List<RoomOutboxMessage>> = store.roomOutboxMessage.getAll()
+
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): StateFlow<Event<C>?> {
+        return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
+    }
 }

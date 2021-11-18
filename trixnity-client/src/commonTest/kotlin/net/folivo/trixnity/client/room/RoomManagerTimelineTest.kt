@@ -67,7 +67,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                     store.room.update(room) {
                         Room(
                             roomId = room,
-                            lastEventAt = Instant.fromEpochMilliseconds(0),
+                            lastMessageEventAt = Instant.fromEpochMilliseconds(0),
                             lastEventId = null
                         )
                     }
@@ -101,7 +101,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                     store.room.update(room) {
                         Room(
                             roomId = room,
-                            lastEventAt = Instant.fromEpochMilliseconds(0),
+                            lastMessageEventAt = Instant.fromEpochMilliseconds(0),
                             lastEventId = null
                         )
                     }
@@ -121,7 +121,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                     store.room.update(room) {
                         Room(
                             roomId = room,
-                            lastEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
+                            lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
                             lastEventId = event1.id
                         )
                     }
@@ -167,7 +167,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                     store.room.update(room) {
                         Room(
                             roomId = room,
-                            lastEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
+                            lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
                             lastEventId = event1.id
                         )
                     }
@@ -208,7 +208,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                 store.room.update(room) {
                     Room(
                         roomId = room,
-                        lastEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
+                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
                         lastEventId = event1.id
                     )
                 }
@@ -254,7 +254,7 @@ class RoomManagerTimelineTest : ShouldSpec({
                 store.room.update(room) {
                     Room(
                         roomId = room,
-                        lastEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
+                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
                         lastEventId = event1.id
                     )
                 }

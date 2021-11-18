@@ -5,4 +5,4 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.MatrixId
 
 val simpleRoom =
-    Room(MatrixId.RoomId("room", "server"), lastEventAt = Clock.System.now(), lastEventId = MatrixId.EventId("\$event"))
+    Room(MatrixId.RoomId("room", "server"), lastMessageEventAt = Clock.System.now(), lastEventId = MatrixId.EventId("\$event"))

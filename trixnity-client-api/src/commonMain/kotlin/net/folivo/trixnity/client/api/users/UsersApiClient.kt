@@ -27,7 +27,7 @@ class UsersApiClient(
     suspend fun getDisplayName(
         userId: UserId,
         asUserId: UserId? = null
-    ): String {
+    ): String? {
         return httpClient.get<GetDisplayNameResponse> {
             url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
@@ -46,6 +46,47 @@ class UsersApiClient(
             url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
             body = mapOf("displayname" to displayName)
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-profile-userid-avatar-url">matrix spec</a>
+     */
+    suspend fun getAvatarUrl(
+        userId: UserId,
+        asUserId: UserId? = null,
+    ): String? {
+        return httpClient.get<GetAvatarUrlResponse> {
+            url("/_matrix/client/r0/profile/${userId.e()}/avatar_url")
+            parameter("user_id", asUserId)
+        }.avatarUrl
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-profile-userid-avatar-url">matrix spec</a>
+     */
+    suspend fun setAvatarUrl(
+        userId: UserId,
+        avatarUrl: String,
+        asUserId: UserId? = null,
+    ) {
+        return httpClient.put {
+            url("/_matrix/client/r0/profile/${userId.e()}/avatar_url")
+            parameter("user_id", asUserId)
+            body = mapOf("avatar_url" to avatarUrl)
+        }
+    }
+
+    /**
+     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-profile-userid">matrix spec</a>
+     */
+    suspend fun getProfile(
+        userId: UserId,
+        asUserId: UserId? = null,
+    ): GetProfileResponse {
+        return httpClient.get {
+            url("/_matrix/client/r0/profile/${userId.e()}")
+            parameter("user_id", asUserId)
         }
     }
 
