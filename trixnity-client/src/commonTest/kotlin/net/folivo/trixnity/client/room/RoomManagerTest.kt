@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.media.FileTransferProgress
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.STARTED
+import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.OlmManager
 import net.folivo.trixnity.client.media.MediaManager
@@ -27,8 +28,7 @@ import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.client.user.UserManager
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.MatrixId.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
@@ -38,13 +38,10 @@ import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -98,13 +95,13 @@ class RoomManagerTest : ShouldSpec({
         )
     }
 
-    context(RoomManager::setLastEventAt.name) {
+    context(RoomManager::setLastEventId.name) {
         should("set last event from room event") {
-            cut.setLastEventAt(textEvent(24))
-            store.room.get(room).value?.lastEventAt shouldBe fromEpochMilliseconds(24)
+            cut.setLastEventId(textEvent(24))
+            store.room.get(room).value?.lastEventId shouldBe EventId("\$event24")
         }
         should("set last event from state event") {
-            cut.setLastEventAt(
+            cut.setLastEventId(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
                     EventId("\$event1"),
@@ -114,7 +111,51 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            store.room.get(room).value?.lastEventAt shouldBe fromEpochMilliseconds(25)
+            store.room.get(room).value?.lastEventId shouldBe EventId("\$event1")
+        }
+    }
+
+    context(RoomManager::setLastMessageEvent.name) {
+        should("set last message event") {
+            cut.handleSyncResponse(
+                SyncResponse(
+                    room = SyncResponse.Rooms(
+                        join = mapOf(
+                            room to SyncResponse.Rooms.JoinedRoom(
+                                timeline = SyncResponse.Rooms.Timeline(
+                                    events = listOf(
+                                        StateEvent(
+                                            CreateEventContent(UserId("user1", "localhost")),
+                                            EventId("event1", "localhost"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            0,
+                                            stateKey = ""
+                                        ),
+                                        MessageEvent(
+                                            TextMessageEventContent("Hello!"),
+                                            EventId("event2", "localhost"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            5,
+                                        ),
+                                        StateEvent(
+                                            AvatarEventContent("mxc://localhost/123456"),
+                                            EventId("event3", "localhost"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            10,
+                                            stateKey = ""
+                                        ),
+                                    ), previousBatch = "abcdef"
+                                )
+                            )
+                        )
+                    ), nextBatch = "123456"
+                )
+            )
+            store.room.get(room).value?.lastMessageEventId shouldBe EventId("event2", "localhost")
+            store.room.get(room).value?.lastMessageEventAt shouldBe fromEpochMilliseconds(5)
         }
     }
 
@@ -431,7 +472,7 @@ class RoomManagerTest : ShouldSpec({
     }
     context(RoomManager::getLastTimelineEvent.name) {
         should("return last event of room") {
-            val initialRoom = Room(room, lastEventAt = fromEpochMilliseconds(24), lastEventId = null)
+            val initialRoom = Room(room, lastMessageEventAt = fromEpochMilliseconds(24), lastEventId = null)
             val event1 = textEvent(1)
             val event2 = textEvent(2)
             val event2Timeline = TimelineEvent(

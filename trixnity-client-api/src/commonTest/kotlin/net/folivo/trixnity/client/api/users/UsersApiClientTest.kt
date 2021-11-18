@@ -66,6 +66,96 @@ class UsersApiClientTest {
     }
 
     @Test
+    fun shouldSetAvatarUrl() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"avatar_url":"mxc://localhost/123456"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.setAvatarUrl(UserId("user", "server"), "mxc://localhost/123456")
+    }
+
+    @Test
+    fun shouldGetAvatarUrl() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"avatar_url":"mxc://localhost/123456"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        assertEquals("mxc://localhost/123456", matrixRestClient.users.getAvatarUrl(UserId("user", "server")))
+    }
+
+    @Test
+    fun shouldGetProfile() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        assertEquals(
+            GetProfileResponse("someDisplayName", "mxc://localhost/123456"),
+            matrixRestClient.users.getProfile(UserId("user", "server"))
+        )
+    }
+
+    @Test
+    fun shouldSetNullForMissingProfileValues() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        assertEquals(
+            GetProfileResponse(null, null),
+            matrixRestClient.users.getProfile(UserId("user", "server"))
+        )
+    }
+
+    @Test
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"))
         val matrixRestClient = MatrixApiClient(

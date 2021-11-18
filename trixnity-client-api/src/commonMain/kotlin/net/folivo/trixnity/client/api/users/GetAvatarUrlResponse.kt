@@ -4,6 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class GetDisplayNameResponse(
-    @SerialName("displayname") val displayName: String?
+internal data class GetAvatarUrlResponse(
+    @SerialName("avatar_url") val avatarUrl: String?
 )

@@ -11,8 +11,9 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 data class Room(
     val roomId: RoomId,
     val name: RoomDisplayName? = null,
-    val lastEventAt: Instant? = null, // This may only be changed by RoomManager::setLastEventAt !!!
-    val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventAt !!!
+    val lastMessageEventAt: Instant? = null,
+    val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventId !!!
+    val lastMessageEventId: EventId? = null,
     val unreadMessageCount: Int = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,
     val membership: Membership = Membership.JOIN,
