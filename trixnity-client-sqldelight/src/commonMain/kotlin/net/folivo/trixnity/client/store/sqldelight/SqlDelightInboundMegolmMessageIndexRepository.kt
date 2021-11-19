@@ -4,7 +4,7 @@ import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.EventId
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightInboundMegolmMessageIndexRepository(
@@ -19,7 +19,7 @@ class SqlDelightInboundMegolmMessageIndexRepository(
                 ?.let {
                     StoredInboundMegolmMessageIndex(
                         key.senderKey, key.sessionId, key.roomId, key.messageIndex,
-                        MatrixId.EventId(it.event_id),
+                        EventId(it.event_id),
                         it.origin_timestamp
                     )
                 }

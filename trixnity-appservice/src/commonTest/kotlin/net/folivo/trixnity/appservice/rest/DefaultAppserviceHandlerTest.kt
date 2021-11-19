@@ -13,8 +13,10 @@ import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService
 import net.folivo.trixnity.appservice.rest.room.CreateRoomParameter
 import net.folivo.trixnity.appservice.rest.user.AppserviceUserService
 import net.folivo.trixnity.appservice.rest.user.RegisterUserParameter
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import kotlin.test.BeforeTest
@@ -51,7 +53,7 @@ class DefaultAppserviceHandlerTest {
 
         val event = Event.MessageEvent(
             RoomMessageEventContent.NoticeMessageEventContent("hi"),
-            EventId("event4", "server"),
+            EventId("event4"),
             UserId("user", "server"),
             RoomId("room2", "server"),
             1234L
@@ -116,35 +118,35 @@ class DefaultAppserviceHandlerTest {
 
     @Test
     fun `should hasRoomAlias when delegated service says it exists`() {
-        coEvery { appserviceRoomServiceMock.roomExistingState(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { appserviceRoomServiceMock.roomExistingState(RoomAliasId("alias", "server")) }
             .returns(AppserviceRoomService.RoomExistingState.EXISTS)
 
-        val hasRoom = runBlocking { cut.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) }
+        val hasRoom = runBlocking { cut.hasRoomAlias(RoomAliasId("alias", "server")) }
         hasRoom shouldBe true
     }
 
     @Test
     fun `should hasRoomAlias and create it when delegated service want to`() {
-        coEvery { appserviceRoomServiceMock.roomExistingState(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { appserviceRoomServiceMock.roomExistingState(RoomAliasId("alias", "server")) }
             .returns(AppserviceRoomService.RoomExistingState.CAN_BE_CREATED)
-        coEvery { appserviceRoomServiceMock.getCreateRoomParameter(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { appserviceRoomServiceMock.getCreateRoomParameter(RoomAliasId("alias", "server")) }
             .returns(CreateRoomParameter(name = "someName"))
 
-        val hasRoom = runBlocking { cut.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) }
+        val hasRoom = runBlocking { cut.hasRoomAlias(RoomAliasId("alias", "server")) }
         hasRoom shouldBe true
 
-        coVerify { appserviceRoomServiceMock.createManagedRoom(MatrixId.RoomAliasId("alias", "server")) }
+        coVerify { appserviceRoomServiceMock.createManagedRoom(RoomAliasId("alias", "server")) }
     }
 
     @Test
     fun `should not hasRoomAlias when creation fails`() {
-        coEvery { appserviceRoomServiceMock.roomExistingState(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { appserviceRoomServiceMock.roomExistingState(RoomAliasId("alias", "server")) }
             .returns(AppserviceRoomService.RoomExistingState.CAN_BE_CREATED)
 
         coEvery { appserviceRoomServiceMock.createManagedRoom(any()) }.throws(RuntimeException())
 
         try {
-            runBlocking { cut.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) }
+            runBlocking { cut.hasRoomAlias(RoomAliasId("alias", "server")) }
             fail("should have error")
         } catch (error: Throwable) {
 
@@ -153,10 +155,10 @@ class DefaultAppserviceHandlerTest {
 
     @Test
     fun `should not hasRoomAlias when delegated service says it does not exists and should not be created`() {
-        coEvery { appserviceRoomServiceMock.roomExistingState(MatrixId.RoomAliasId("alias", "server")) }
+        coEvery { appserviceRoomServiceMock.roomExistingState(RoomAliasId("alias", "server")) }
             .returns(AppserviceRoomService.RoomExistingState.DOES_NOT_EXISTS)
 
-        val hasRoom = runBlocking { cut.hasRoomAlias(MatrixId.RoomAliasId("alias", "server")) }
+        val hasRoom = runBlocking { cut.hasRoomAlias(RoomAliasId("alias", "server")) }
         hasRoom shouldBe false
 
         coVerify(exactly = 0) { appserviceRoomServiceMock.createManagedRoom(any()) }

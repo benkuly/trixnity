@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.repository.RoomRepository
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightRoomRepository(

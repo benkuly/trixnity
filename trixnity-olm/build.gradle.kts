@@ -32,7 +32,6 @@ kotlin {
             useJUnitPlatform()
             systemProperty("java.library.path", olm.build.canonicalPath)
             systemProperty("jna.library.path", olm.build.canonicalPath)
-            dependsOn(":buildOlm")
         }
     }
     android {

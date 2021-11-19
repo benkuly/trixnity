@@ -8,8 +8,8 @@ import io.ktor.routing.*
 import kotlinx.coroutines.flow.asFlow
 import net.folivo.trixnity.appservice.rest.event.EventRequest
 import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.UserId
 
 fun Route.controller(appserviceService: AppserviceService) {
     v1(appserviceService)

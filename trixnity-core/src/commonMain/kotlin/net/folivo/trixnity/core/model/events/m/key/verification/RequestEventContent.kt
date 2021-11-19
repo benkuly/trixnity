@@ -5,16 +5,16 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-key-verification-request">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationrequest">matrix spec</a>
  */
-@Serializable // TODO this should be sealed and contain m.sas.v1 and custom serializer based on method key
+@Serializable
 data class RequestEventContent(
     @SerialName("from_device")
-    val fromDevice: String,
-    @SerialName("transaction_id")
-    val transactionId: String,
+    override val fromDevice: String,
     @SerialName("methods")
-    val methods: Set<String>,
+    override val methods: Set<VerificationMethod>,
     @SerialName("timestamp")
-    val timestamp: Int
-) : ToDeviceEventContent
+    val timestamp: Long,
+    @SerialName("transaction_id")
+    val transactionId: String
+) : ToDeviceEventContent, VerificationRequest

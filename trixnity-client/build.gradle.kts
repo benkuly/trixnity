@@ -1,6 +1,7 @@
 plugins {
     kotlin("plugin.serialization")
     kotlin("multiplatform")
+    id("kotlinx-atomicfu")
 }
 
 kotlin {
@@ -12,7 +13,6 @@ kotlin {
             useJUnitPlatform()
             systemProperty("java.library.path", olm.build.canonicalPath)
             systemProperty("jna.library.path", olm.build.canonicalPath)
-            dependsOn(":buildOlm")
         }
     }
 //    js {
@@ -46,6 +46,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")

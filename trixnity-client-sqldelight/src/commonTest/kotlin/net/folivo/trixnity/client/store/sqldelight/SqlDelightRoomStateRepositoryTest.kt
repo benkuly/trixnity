@@ -8,7 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
@@ -69,7 +71,7 @@ class SqlDelightRoomStateRepositoryTest : ShouldSpec({
         cut.delete(key1)
         cut.get(key1) shouldHaveSize 0
     }
-    should("should save and get by state key") {
+    should("save and get by state key") {
         val key = RoomStateRepositoryKey(RoomId("room3", "server"), "m.room.member")
         val event = StateEvent(
             MemberEventContent(membership = JOIN),

@@ -7,10 +7,13 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.serializer
+import net.folivo.trixnity.client.crypto.VerificationState.*
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmAccount
@@ -25,11 +28,11 @@ class OlmSignService internal constructor(
     private val myUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
     private val myDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
 
-    fun signatures(jsonObject: JsonObject): Signatures<MatrixId.UserId> {
+    fun signatures(jsonObject: JsonObject): Signatures<UserId> {
         val signature = account.sign(canonicalFilteredJson(jsonObject))
         return mapOf(
             myUserId to keysOf(
-                Key.Ed25519Key(
+                Ed25519Key(
                     keyId = myDeviceId,
                     value = signature
                 )
@@ -38,17 +41,17 @@ class OlmSignService internal constructor(
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    inline fun <reified T> sign(unsignedObject: T): Signed<T, MatrixId.UserId> {
+    inline fun <reified T> sign(unsignedObject: T): Signed<T, UserId> {
         return sign(unsignedObject, serializer())
     }
 
-    fun <T> sign(unsignedObject: T, serializer: KSerializer<T>): Signed<T, MatrixId.UserId> {
+    fun <T> sign(unsignedObject: T, serializer: KSerializer<T>): Signed<T, UserId> {
         val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
         require(jsonObject is JsonObject)
         return Signed(unsignedObject, signatures(jsonObject))
     }
 
-    fun signCurve25519Key(key: Key.Curve25519Key): Key.SignedCurve25519Key {
+    fun signCurve25519Key(key: Curve25519Key): Key.SignedCurve25519Key {
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
@@ -56,7 +59,7 @@ class OlmSignService internal constructor(
         )
     }
 
-    suspend inline fun <reified T> verify(signedObject: Signed<T, MatrixId.UserId>): KeyVerificationState {
+    suspend inline fun <reified T> verify(signedObject: Signed<T, UserId>): KeyVerificationState {
         return verify(signedObject, serializer())
     }
 
@@ -65,7 +68,7 @@ class OlmSignService internal constructor(
         val key: String
     )
 
-    suspend fun <T> verify(signedObject: Signed<T, MatrixId.UserId>, serializer: KSerializer<T>): KeyVerificationState {
+    suspend fun <T> verify(signedObject: Signed<T, UserId>, serializer: KSerializer<T>): KeyVerificationState {
         val signed = signedObject.signed
         return if (signedObject is Key.SignedCurve25519Key) verify(
             Signed(
@@ -78,8 +81,8 @@ class OlmSignService internal constructor(
             require(jsonObject is JsonObject)
             val signedJson = canonicalFilteredJson(jsonObject)
             return signedObject.signatures.flatMap { (userId, signatureKeys) ->
-                signatureKeys.keys.filterIsInstance<Key.Ed25519Key>().map { signatureKey ->
-                    val key = store.deviceKeys.getKeyFromDevice<Key.Ed25519Key>(userId, signatureKey.keyId).value
+                signatureKeys.keys.filterIsInstance<Ed25519Key>().map { signatureKey ->
+                    val key = store.deviceKeys.getKeyFromDevice<Ed25519Key>(userId, signatureKey.keyId).value
                     try {
                         utility.verifyEd25519(
                             key,
@@ -95,16 +98,16 @@ class OlmSignService internal constructor(
         }
     }
 
-    private fun verifyDeviceKeys(deviceKeys: Signed<DeviceKeys, MatrixId.UserId>): KeyVerificationState {
+    private fun verifyDeviceKeys(deviceKeys: Signed<DeviceKeys, UserId>): KeyVerificationState {
         val jsonObject = json.encodeToJsonElement(deviceKeys.signed)
         require(jsonObject is JsonObject)
         val signedJson = canonicalFilteredJson(jsonObject)
         try {
             utility.verifyEd25519(
-                deviceKeys.get<Key.Ed25519Key>()?.value
+                deviceKeys.get<Ed25519Key>()?.value
                     ?: return KeyVerificationState.Invalid("no ed25591 key found"),
                 signedJson,
-                deviceKeys.signatures[deviceKeys.signed.userId]?.get<Key.Ed25519Key>()?.value
+                deviceKeys.signatures[deviceKeys.signed.userId]?.get<Ed25519Key>()?.value
                     ?: return KeyVerificationState.Invalid("no signature key found"),
             )
             return KeyVerificationState.Valid
@@ -116,10 +119,20 @@ class OlmSignService internal constructor(
     private fun canonicalFilteredJson(input: JsonObject): String =
         canonicalJson(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 
-    suspend fun verifyEncryptedMegolm(encryptedEvent: Event.MessageEvent<MegolmEncryptedEventContent>): VerificationState {
-        return if (store.deviceKeys.getKeysFromUser<Key.Curve25519Key>(encryptedEvent.sender)
-                .find { it.value == encryptedEvent.content.senderKey.value } == null
-        ) VerificationState.Invalid("the sender key of the event is not known for this device")
-        else VerificationState.Valid
+    suspend fun verifyEncryptedMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): VerificationState {
+        val deviceKeys = store.deviceKeys.get(encryptedEvent.sender)?.get(encryptedEvent.content.deviceId)?.keys
+        val curve25519Key =
+            deviceKeys?.filterIsInstance<Curve25519Key>()?.find { it.value == encryptedEvent.content.senderKey.value }
+        val ed25519Key =
+            deviceKeys?.filterIsInstance<Ed25519Key>()?.find { it.keyId == encryptedEvent.content.deviceId }
+        return if (curve25519Key == null)
+            Invalid("the sender key of the event is not known for this device")
+        else if (ed25519Key != null && store.deviceKeys.isVerified(
+                key = ed25519Key,
+                userId = encryptedEvent.sender,
+                deviceId = encryptedEvent.content.deviceId
+            )
+        ) Verified
+        else Valid
     }
 }

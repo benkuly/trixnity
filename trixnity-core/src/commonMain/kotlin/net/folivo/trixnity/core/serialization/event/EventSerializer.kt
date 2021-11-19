@@ -28,8 +28,7 @@ class EventSerializer(
     loggerFactory: LoggerFactory
 ) : KSerializer<Event<*>> {
     private val log = newLogger(loggerFactory)
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("EventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EventSerializer")
 
     override fun deserialize(decoder: Decoder): Event<*> {
         require(decoder is JsonDecoder)
@@ -41,7 +40,9 @@ class EventSerializer(
         val serializer = when {
             hasEventId && hasRoomId && hasSenderId -> roomEventSerializer
             !hasEventId && hasStateKey && hasRoomId && hasSenderId -> strippedStateEventSerializer
-            // it is hard to detect if an event is e. g. an MegolmEvent or an EphemeralEvent and we don't need it
+            !hasEventId && !hasStateKey && !hasRoomId && hasSenderId -> toDeviceEventSerializer
+            // it is hard to detect if an event is e.g. an MegolmEvent, EphemeralEvent or RoomAccountDataEvent and we don't need it
+            // -> that's why we skip some event types here.
             else -> unknownEventSerializer
         }
         return try {

@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent

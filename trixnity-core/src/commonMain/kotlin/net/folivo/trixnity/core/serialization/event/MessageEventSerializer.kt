@@ -91,7 +91,7 @@ class MessageEventSerializer(
             else serializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 MessageEvent.serializer(contentSerializer) as KSerializer<MessageEvent<*>>,
                 *addFields.toTypedArray()

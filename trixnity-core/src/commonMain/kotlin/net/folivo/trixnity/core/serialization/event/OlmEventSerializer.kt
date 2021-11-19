@@ -56,7 +56,7 @@ class OlmEventSerializer(
         requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 OlmEvent.serializer(contentSerializerMapping.serializer) as KSerializer<OlmEvent<*>>,
                 "type" to contentSerializerMapping.type

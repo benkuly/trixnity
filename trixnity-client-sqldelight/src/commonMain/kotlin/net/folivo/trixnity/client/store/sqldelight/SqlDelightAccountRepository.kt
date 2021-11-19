@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.sqldelight
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightAccountRepository(

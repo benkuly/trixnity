@@ -1,10 +1,12 @@
 package net.folivo.trixnity.core.model
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.serialization.*
+import net.folivo.trixnity.core.serialization.EventIdSerializer
+import net.folivo.trixnity.core.serialization.RoomAliasIdSerializer
+import net.folivo.trixnity.core.serialization.RoomIdSerializer
+import net.folivo.trixnity.core.serialization.UserIdSerializer
 
-@Serializable(with = MatrixIdSerializer::class)
-sealed class MatrixId {
+abstract class MatrixId {
 
     val full: String
     val sigilCharacter: Char
@@ -21,7 +23,7 @@ sealed class MatrixId {
         if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
         if (sigilCharacter != full.first()) throw IllegalArgumentException("given sigil character $sigilCharacter does not match with full string $full")
         if (localpart.isEmpty()) throw IllegalArgumentException("localpart must not be empty")
-        if (domain.isEmpty() && sigilCharacter != '$') throw IllegalArgumentException("domain must not be empty")
+        if (domain.isEmpty()) throw IllegalArgumentException("domain must not be empty")
     }
 
     constructor(localpart: String, domain: String, sigilCharacter: Char) {
@@ -38,7 +40,6 @@ sealed class MatrixId {
                 '@' -> UserId(full)
                 '!' -> RoomId(full)
                 '#' -> RoomAliasId(full)
-                '$' -> EventId(full)
                 else -> throw IllegalArgumentException("not a valid matrix identifier")
             }
         }
@@ -62,28 +63,25 @@ sealed class MatrixId {
     override fun toString(): String {
         return full
     }
-
-    @Serializable(with = UserIdSerializer::class)
-    class UserId : MatrixId {
-        constructor(full: String) : super(full, '@')
-        constructor(localpart: String, domain: String) : super(localpart, domain, '@')
-    }
-
-    @Serializable(with = RoomIdSerializer::class)
-    class RoomId : MatrixId {
-        constructor(full: String) : super(full, '!')
-        constructor(localpart: String, domain: String) : super(localpart, domain, '!')
-    }
-
-    @Serializable(with = RoomAliasIdSerializer::class)
-    class RoomAliasId : MatrixId {
-        constructor(full: String) : super(full, '#')
-        constructor(localpart: String, domain: String) : super(localpart, domain, '#')
-    }
-
-    @Serializable(with = EventIdSerializer::class)
-    class EventId : MatrixId {
-        constructor(full: String) : super(full, '$')
-        constructor(localpart: String, domain: String) : super(localpart, domain, '$')
-    }
 }
+
+@Serializable(with = UserIdSerializer::class)
+class UserId : MatrixId {
+    constructor(full: String) : super(full, '@')
+    constructor(localpart: String, domain: String) : super(localpart, domain, '@')
+}
+
+@Serializable(with = RoomIdSerializer::class)
+class RoomId : MatrixId {
+    constructor(full: String) : super(full, '!')
+    constructor(localpart: String, domain: String) : super(localpart, domain, '!')
+}
+
+@Serializable(with = RoomAliasIdSerializer::class)
+class RoomAliasId : MatrixId {
+    constructor(full: String) : super(full, '#')
+    constructor(localpart: String, domain: String) : super(localpart, domain, '#')
+}
+
+@Serializable(with = EventIdSerializer::class)
+data class EventId(val full: String)

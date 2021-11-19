@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.serialization.crypto
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
@@ -29,7 +30,12 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
                         requireNotNull(signatures)
                         Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures))
                     }
-                    else -> Key.UnknownKey(keyId, it.value, KeyAlgorithm.Unknown(algorithm.name))
+                    else -> Key.UnknownKey(
+                        keyId,
+                        decoder.json.encodeToString(it.value),
+                        it.value,
+                        KeyAlgorithm.Unknown(algorithm.name)
+                    )
                 }
             }.toSet()
         )
@@ -51,7 +57,7 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
                                 "signatures" to encoder.json.encodeToJsonElement(key.signatures)
                             )
                         )
-                    is Key.UnknownKey -> "${key.algorithm}:${key.keyId}" to key.value
+                    is Key.UnknownKey -> "${key.algorithm}:${key.keyId}" to key.raw
                 }
             }.toMap())
         )

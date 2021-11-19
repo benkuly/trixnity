@@ -15,9 +15,10 @@ import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -27,12 +28,12 @@ import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerialize
 import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalKotest::class)
-class RoomManagerDisplayNameTest : ShouldSpec({
-    val roomId = MatrixId.RoomId("room", "server")
+class RoomServiceDisplayNameTest : ShouldSpec({
+    val roomId = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixApiClient>()
-    lateinit var cut: RoomManager
+    lateinit var cut: RoomService
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
     val user3 = UserId("user3", "server")
@@ -43,7 +44,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = createInMemoryStore(storeScope).apply { init() }
-        cut = RoomManager(store, api, mockk(), mockk(), mockk(), loggerFactory = LoggerFactory.default)
+        cut = RoomService(store, api, mockk(), mockk(), mockk(), loggerFactory = LoggerFactory.default)
     }
 
     afterTest {
@@ -87,7 +88,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
 
     fun canonicalAliasEvent(
         i: Long,
-        userId: UserId, roomAliasId: MatrixId.RoomAliasId
+        userId: UserId, roomAliasId: RoomAliasId
     ): Event.StateEvent<CanonicalAliasEventContent> {
         return Event.StateEvent(
             CanonicalAliasEventContent(roomAliasId),
@@ -99,7 +100,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
         )
     }
 
-    context(RoomManager::setRoomDisplayName.name) {
+    context(RoomService::setRoomDisplayName.name) {
         beforeTest {
             store.room.update(roomId) { simpleRoom.copy(roomId = roomId) }
         }
@@ -109,7 +110,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                     val heroes = listOf(user1, user2)
                     store.roomState.updateAll(
                         listOf(
-                            canonicalAliasEvent(2, user2, MatrixId.RoomAliasId("somewhere", "localhost")),
+                            canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
                             memberEvent(3, user1, "User1-Display", JOIN),
                             memberEvent(4, user2, "User2-Display", INVITE),
                             memberEvent(5, user3, "User3-Display", BAN),
@@ -440,7 +441,7 @@ class RoomManagerDisplayNameTest : ShouldSpec({
                     val heroes = listOf(user1, user2)
                     store.roomState.updateAll(
                         listOf(
-                            canonicalAliasEvent(2, user2, MatrixId.RoomAliasId("somewhere", "localhost")),
+                            canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
                             memberEvent(3, user1, "User1-Display", JOIN),
                             memberEvent(4, user2, "User2-Display", INVITE),
                             memberEvent(5, user3, "User3-Display", BAN),

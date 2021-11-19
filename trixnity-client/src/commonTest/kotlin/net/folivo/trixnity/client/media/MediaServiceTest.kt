@@ -26,10 +26,10 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import org.kodein.log.LoggerFactory
 
-class MediaManagerTest : ShouldSpec({
+class MediaServiceTest : ShouldSpec({
     val api: MatrixApiClient = mockk()
     val store = mockk<Store>(relaxUnitFun = true)
-    val cut = MediaManager(api, store, LoggerFactory.default)
+    val cut = MediaService(api, store, LoggerFactory.default)
 
     val mxcUri = "mxc://example.com/abc"
 
@@ -40,7 +40,7 @@ class MediaManagerTest : ShouldSpec({
         coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns UploadResponse(mxcUri)
         coEvery { store.media.getContent(any()) } returns null
     }
-    context(MediaManager::getMedia.name) {
+    context(MediaService::getMedia.name) {
         should("prefer cache") {
             coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
             cut.getMedia(mxcUri).decodeToString() shouldBe "test"
@@ -58,7 +58,7 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
-    context(MediaManager::getEncryptedMedia.name) {
+    context(MediaService::getEncryptedMedia.name) {
         val rawFile = "lQ/twg".decodeUnpaddedBase64Bytes()
         val encryptedFile = EncryptedFile(
             url = mxcUri,
@@ -87,7 +87,7 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
-    context(MediaManager::getThumbnail.name) {
+    context(MediaService::getThumbnail.name) {
         should("prefer cache") {
             coEvery { store.media.getContent("$mxcUri/32x32/crop") } returns "test".encodeToByteArray()
             cut.getThumbnail(mxcUri, 32u, 32u).decodeToString() shouldBe "test"
@@ -104,10 +104,10 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
-    context(MediaManager::prepareUploadMedia.name) {
+    context(MediaService::prepareUploadMedia.name) {
         should("save and return local cache uri") {
             val result = cut.prepareUploadMedia("test".encodeToByteArray(), Plain)
-            result shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+            result shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
             result.length shouldBeGreaterThan 12
             coVerify {
                 store.media.addContent(result, "test".encodeToByteArray())
@@ -117,7 +117,7 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
-    context(MediaManager::prepareUploadThumbnail.name) {
+    context(MediaService::prepareUploadThumbnail.name) {
         should("save and return local cache uri") {
             val file = "fake_file".encodeToByteArray()
             val thumbnail = "fake_thumbnail".encodeToByteArray()
@@ -125,7 +125,7 @@ class MediaManagerTest : ShouldSpec({
                 .returns(Thumbnail(thumbnail, JPEG, 600, 300))
 
             val result = cut.prepareUploadThumbnail(file, PNG)
-            result?.first shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+            result?.first shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
             assertSoftly(result!!.second) {
                 width shouldBe 600
                 height shouldBe 300
@@ -146,11 +146,11 @@ class MediaManagerTest : ShouldSpec({
             cut.prepareUploadThumbnail("test".toByteArray(), PNG) shouldBe null
         }
     }
-    context(MediaManager::prepareUploadEncryptedMedia.name) {
+    context(MediaService::prepareUploadEncryptedMedia.name) {
         should("encrypt, save, and return local cache uri") {
             val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray())
             assertSoftly(result) {
-                url shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+                url shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
                 key.key shouldNot beEmpty()
                 initialisationVector shouldNot beEmpty()
@@ -166,7 +166,7 @@ class MediaManagerTest : ShouldSpec({
             }
         }
     }
-    context(MediaManager::prepareUploadEncryptedThumbnail.name) {
+    context(MediaService::prepareUploadEncryptedThumbnail.name) {
         should("encrypt, save, and return local cache uri") {
             val file = "fake_file".encodeToByteArray()
             val thumbnail = "fake_thumbnail".encodeToByteArray()
@@ -175,7 +175,7 @@ class MediaManagerTest : ShouldSpec({
 
             val result = cut.prepareUploadEncryptedThumbnail(file, PNG)
             assertSoftly(result!!.first) {
-                url shouldStartWith MediaManager.UPLOAD_MEDIA_CACHE_URI_PREFIX
+                url shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
                 key.key shouldNot beEmpty()
                 initialisationVector shouldNot beEmpty()
@@ -203,7 +203,7 @@ class MediaManagerTest : ShouldSpec({
             cut.prepareUploadEncryptedThumbnail("test".toByteArray(), PNG) shouldBe null
         }
     }
-    context(MediaManager::uploadMedia.name) {
+    context(MediaService::uploadMedia.name) {
         should("upload and add to cache") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
             val cacheUri = "cache://some-uuid"
@@ -220,7 +220,7 @@ class MediaManagerTest : ShouldSpec({
                 })
             }
         }
-        should("should not upload twice") {
+        should("not upload twice") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
             val cacheUri = "cache://some-uuid"
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()

@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.RoomId
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightOutboundMegolmSessionRepository(
@@ -14,19 +14,19 @@ class SqlDelightOutboundMegolmSessionRepository(
     private val json: Json,
     private val context: CoroutineContext
 ) : OutboundMegolmSessionRepository {
-    override suspend fun get(key: MatrixId.RoomId): StoredOutboundMegolmSession? = withContext(context) {
+    override suspend fun get(key: RoomId): StoredOutboundMegolmSession? = withContext(context) {
         db.getOutboundMegolmSession(key.full).executeAsOneOrNull()
             ?.let { json.decodeFromString(it) }
     }
 
     override suspend fun save(
-        key: MatrixId.RoomId,
+        key: RoomId,
         value: StoredOutboundMegolmSession
     ) = withContext(context) {
         db.saveOutboundMegolmSession(key.full, json.encodeToString(value))
     }
 
-    override suspend fun delete(key: MatrixId.RoomId) = withContext(context) {
+    override suspend fun delete(key: RoomId) = withContext(context) {
         db.deleteOutboundMegolmSession(key.full)
     }
 }

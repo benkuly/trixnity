@@ -21,6 +21,7 @@ import net.folivo.trixnity.client.api.server.ServerApiClient
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponseSerializer
 import net.folivo.trixnity.client.api.users.UsersApiClient
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.MatrixId
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -88,5 +89,9 @@ class MatrixApiClient(
 }
 
 fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
+    return full.encodeURLQueryComponent(true)
+}
+
+fun EventId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
     return full.encodeURLQueryComponent(true)
 }

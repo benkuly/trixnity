@@ -10,5 +10,7 @@ expect class OlmUtility : WantsToBeFree {
     override fun free()
 
     fun sha256(input: ByteArray): String
+    fun sha256(input: String): String
+    
     fun verifyEd25519(key: String, message: String, signature: String)
 }

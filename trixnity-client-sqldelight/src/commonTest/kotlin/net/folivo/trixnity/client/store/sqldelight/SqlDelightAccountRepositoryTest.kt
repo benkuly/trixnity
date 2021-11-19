@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 
 class SqlDelightAccountRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightAccountRepository

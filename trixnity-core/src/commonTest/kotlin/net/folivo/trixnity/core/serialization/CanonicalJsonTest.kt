@@ -4,7 +4,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -51,7 +51,7 @@ class CanonicalJsonTest {
                 "auth" to JsonObject(
                     mapOf(
                         "success" to JsonPrimitive(true),
-                        "mxid" to JsonPrimitive(MatrixId.UserId("john.doe", "example.com").toString()),
+                        "mxid" to JsonPrimitive(UserId("john.doe", "example.com").toString()),
                         "profile" to JsonObject(
                             mapOf(
                                 "display_name" to JsonPrimitive("John Doe"),

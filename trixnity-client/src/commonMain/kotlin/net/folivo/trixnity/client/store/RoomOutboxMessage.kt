@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.api.media.FileTransferProgress
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 
 data class RoomOutboxMessage(

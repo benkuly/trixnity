@@ -3,8 +3,8 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
@@ -44,6 +44,9 @@ suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountData
     scope: CoroutineScope
 ): StateFlow<GlobalAccountDataEvent<C>?> = get(C::class, scope)
 
+suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
+): GlobalAccountDataEvent<C>? = get(C::class)
+
 // TODO test
 suspend inline fun RoomStateStore.members(
     roomId: RoomId,
@@ -70,15 +73,19 @@ fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
 
 suspend inline fun RoomTimelineStore.getNext(
     event: TimelineEvent,
-    scope: CoroutineScope?
+    scope: CoroutineScope
 ): StateFlow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId, scope) }
 
+suspend inline fun RoomTimelineStore.getNext(
+    event: TimelineEvent,
+): TimelineEvent? =
+    event.nextEventId?.let { get(it, event.roomId) }
+
 suspend inline fun RoomTimelineStore.getPrevious(
     event: TimelineEvent,
-    scope: CoroutineScope?
-): StateFlow<TimelineEvent?>? =
-    event.previousEventId?.let { get(it, event.roomId, scope) }
+): TimelineEvent? =
+    event.previousEventId?.let { get(it, event.roomId) }
 
 suspend inline fun DeviceKeysStore.isTracked(userId: UserId): Boolean =
     get(userId).isNullOrEmpty().not()

@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.api.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.client.api.authentication.RegisterResponse
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail

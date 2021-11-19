@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 
 class AccountStoreTest : ShouldSpec({
     val repository = mockk<AccountRepository>(relaxUnitFun = true)
@@ -50,7 +50,7 @@ class AccountStoreTest : ShouldSpec({
             cut.init()
 
             cut.userId.value = UserId("user", "server")
-            coVerify(timeout = 2_000) {
+            coVerify(timeout = 5_000) {
                 repository.save(
                     1, Account(
                         UserId("user", "server"),

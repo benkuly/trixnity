@@ -7,7 +7,8 @@ import net.folivo.trixnity.client.store.DeviceKeysStore
 import net.folivo.trixnity.client.store.OlmStore
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredOlmSession
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.crypto.Keys
@@ -17,14 +18,14 @@ import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
-internal suspend fun DeviceKeysStore.waitForUpdateOutdatedKey(vararg users: MatrixId.UserId) {
+internal suspend fun DeviceKeysStore.waitForUpdateOutdatedKey(vararg users: UserId) {
     outdatedKeys
         .first { if (users.isEmpty()) it.isEmpty() else !it.any { outdated -> users.contains(outdated) } }
 }
 
 // TODO test
 internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeyFromDevice(
-    userId: MatrixId.UserId,
+    userId: UserId,
     deviceId: String?
 ): T {
     val key = get(userId)?.get(deviceId)?.get<T>()
@@ -37,8 +38,23 @@ internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeyFromDevice(
 }
 
 // TODO test
+internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeysFromDevice(
+    userId: UserId,
+    deviceId: String?
+): Set<T> {
+    val userKeys = get(userId) ?: run {
+        outdatedKeys.update { it + userId }
+        waitForUpdateOutdatedKey(userId)
+        get(userId) ?: throw KeyException.KeyNotFoundException("no keys found for user $userId")
+    }
+    val keys = userKeys[deviceId]?.keys?.filterIsInstance<T>()
+    if (keys.isNullOrEmpty()) throw KeyException.KeyNotFoundException("no key ${T::class} found for user $userId")
+    return keys.toSet()
+}
+
+// TODO test
 internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeysFromUser(
-    userId: MatrixId.UserId
+    userId: UserId
 ): Set<T> {
     val userKeys = get(userId) ?: run {
         outdatedKeys.update { it + userId }
@@ -56,7 +72,7 @@ internal fun OlmStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
 
 // TODO test
 internal suspend fun OlmStore.storeInboundMegolmSession(
-    roomId: MatrixId.RoomId,
+    roomId: RoomId,
     sessionId: String,
     senderKey: Key.Curve25519Key,
     sessionKey: String,
@@ -99,6 +115,6 @@ internal inline fun <reified T : Key> Keys.get(): T? {
     return keys.filterIsInstance<T>().firstOrNull()
 }
 
-internal inline fun <reified T : Key> Signed<DeviceKeys, MatrixId.UserId>.get(): T? {
+internal inline fun <reified T : Key> Signed<DeviceKeys, UserId>.get(): T? {
     return signed.keys.keys.filterIsInstance<T>().firstOrNull()
 }

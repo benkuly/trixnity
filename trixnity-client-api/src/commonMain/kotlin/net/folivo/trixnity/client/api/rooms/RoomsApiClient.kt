@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
@@ -14,7 +15,10 @@ import net.folivo.trixnity.client.api.rooms.CreateRoomRequest.Preset
 import net.folivo.trixnity.client.api.rooms.Direction.FORWARD
 import net.folivo.trixnity.client.api.rooms.JoinRoomRequest.ThirdParty
 import net.folivo.trixnity.client.api.unsupportedEventType
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
@@ -58,15 +62,15 @@ class RoomsApiClient(
         stateKey: String = "",
         asUserId: UserId? = null
     ): C {
-        val eventType =
-            contentMappings.state.find { it.kClass == stateEventContentClass }?.type
-                ?: throw IllegalArgumentException(unsupportedEventType(stateEventContentClass))
+        val mapping = contentMappings.state.find { it.kClass == stateEventContentClass }
+            ?: throw IllegalArgumentException(unsupportedEventType(stateEventContentClass))
         val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state/${mapping.type}/$stateKey")
             parameter("user_id", asUserId)
         }
-        val serializer = json.serializersModule.getContextual(stateEventContentClass)
-        requireNotNull(serializer)
+
+        @Suppress("UNCHECKED_CAST")
+        val serializer = mapping.serializer as KSerializer<C>
         return json.decodeFromString(serializer, responseBody)
     }
 
@@ -380,15 +384,15 @@ class RoomsApiClient(
         userId: UserId,
         asUserId: UserId? = null
     ): C {
-        val eventType =
-            contentMappings.roomAccountData.find { it.kClass == accountDataEventContentClass }?.type
-                ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val mapping = contentMappings.roomAccountData.find { it.kClass == accountDataEventContentClass }
+            ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
         val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
+            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
             parameter("user_id", asUserId)
         }
-        val serializer = json.serializersModule.getContextual(accountDataEventContentClass)
-        requireNotNull(serializer)
+
+        @Suppress("UNCHECKED_CAST")
+        val serializer = mapping.serializer as KSerializer<C>
         return json.decodeFromString(serializer, responseBody)
     }
 

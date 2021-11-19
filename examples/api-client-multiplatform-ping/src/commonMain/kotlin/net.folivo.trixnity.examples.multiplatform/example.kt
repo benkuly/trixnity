@@ -8,7 +8,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod
 import net.folivo.trixnity.client.api.rooms.getStateEvent
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent

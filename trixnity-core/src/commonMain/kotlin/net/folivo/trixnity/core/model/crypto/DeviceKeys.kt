@@ -2,12 +2,12 @@ package net.folivo.trixnity.core.model.crypto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 data class DeviceKeys(
     @SerialName("user_id")
-    val userId: MatrixId.UserId,
+    val userId: UserId,
     @SerialName("device_id")
     val deviceId: String,
     @SerialName("algorithms")

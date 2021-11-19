@@ -4,28 +4,33 @@ import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
 import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
-import net.folivo.trixnity.client.crypto.OlmManager
+import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.media.MediaManager
+import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.client.user.UserManager
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
@@ -35,12 +40,12 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
-class RoomManager(
+class RoomService(
     private val store: Store,
     private val api: MatrixApiClient,
-    private val olm: OlmManager,
-    private val user: UserManager,
-    private val media: MediaManager,
+    private val olm: OlmService,
+    private val user: UserService,
+    private val media: MediaService,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     loggerFactory: LoggerFactory
@@ -50,16 +55,16 @@ class RoomManager(
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
-    @OptIn(FlowPreview::class)
     suspend fun startEventHandling() = coroutineScope {
-        launch { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
-        launch { api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData) }
-        launch { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
-        launch { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
-        launch { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
-        launch { processOutboxMessages(store.roomOutboxMessage.getAll()) }
-        launch { api.sync.syncResponses.collect(::handleSyncResponse) }
-        // TODO reaction and edit (also in fetchMissingEvents!)
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        launch(start = UNDISPATCHED) { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
+        launch(start = UNDISPATCHED) { api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData) }
+        launch(start = UNDISPATCHED) { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
+        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
+        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setDirectRooms) }
+        launch(start = UNDISPATCHED) { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
+        launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
+        launch(start = UNDISPATCHED) { api.sync.syncResponses.collect(::handleSyncResponse) }
     }
 
     // TODO test
@@ -228,6 +233,43 @@ class RoomManager(
         }
     }
 
+    internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
+        val roomId = event.getRoomId()
+        val stateKey = event.getStateKey()
+        val ownUserId = store.account.userId.value
+        if (roomId != null && stateKey != null && ownUserId != null) {
+            val userId = UserId(stateKey)
+            if (userId != ownUserId && event.content.isDirect == true) {
+                val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
+                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(UserId(stateKey))
+                val newDirectRooms = when {
+                    existingDirectRoomsWithUser != null -> {
+                        currentDirectRooms.copy(currentDirectRooms.mappings + (userId to (existingDirectRoomsWithUser + roomId)))
+                    }
+                    currentDirectRooms != null -> {
+                        currentDirectRooms.copy(currentDirectRooms.mappings + (userId to setOf(roomId)))
+                    }
+                    else -> {
+                        DirectEventContent(mapOf(userId to setOf(roomId)))
+                    }
+                }
+                if (newDirectRooms != currentDirectRooms)
+                    api.users.setAccountData(newDirectRooms, ownUserId)
+            }
+            if (userId == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
+                val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
+                if (currentDirectRooms != null) {
+                    val newDirectRooms = DirectEventContent(
+                        currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
+                            .filterValues { !it.isNullOrEmpty() }
+                    )
+                    if (newDirectRooms != currentDirectRooms)
+                        api.users.setAccountData(newDirectRooms, ownUserId)
+                }
+            }
+        }
+    }
+
     internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(
@@ -368,7 +410,7 @@ class RoomManager(
             if (startGap is GapBefore || startGap is GapBoth) {
                 log.debug { "fetch missing events before ${startEvent.eventId}" }
 
-                val previousEvent = store.roomTimeline.getPrevious(startEvent, null)?.value
+                val previousEvent = store.roomTimeline.getPrevious(startEvent)
                 val destinationBatch = previousEvent?.gap?.batch
                 val response = api.rooms.getEvents(
                     roomId = roomId,
@@ -462,7 +504,7 @@ class RoomManager(
                     }
                 }
             }
-            val nextEvent = store.roomTimeline.getNext(startEvent, null)?.value
+            val nextEvent = store.roomTimeline.getNext(startEvent)
             if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
                 log.debug { "fetch missing events after ${startEvent.eventId}" }
 
@@ -577,8 +619,15 @@ class RoomManager(
                             log.debug { "try to decrypt event $eventId in $roomId" }
                             @Suppress("UNCHECKED_CAST")
                             val encryptedEvent = oldEvent.event as MessageEvent<MegolmEncryptedEventContent>
+                            val decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
+                            val verificationState =
+                                if (decryptedEvent.isSuccess)
+                                    olm.sign.verifyEncryptedMegolm(encryptedEvent)
+                                else null
                             timelineEvent.copy(
-                                decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) })
+                                decryptedEvent = decryptedEvent,
+                                verificationState = verificationState
+                            )
                         } else oldEvent
                     }
                 }
@@ -671,22 +720,10 @@ class RoomManager(
                                                 ?: throw IllegalArgumentException(
                                                     "EventContent class ${content::class.simpleName}} is not supported by any media uploader."
                                                 )
-                                        uploader(content) { cacheUri ->
+                                        val uploadedContent = uploader(content) { cacheUri ->
                                             media.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress)
                                         }
-                                    }.let { content ->
-                                        if (store.room.get(roomId).value?.encryptionAlgorithm == Megolm) {
-                                            // The UI should do that, when a room gets opened, because of lazy loading
-                                            // members Trixnity may not know all devices for encryption yet.
-                                            // To ensure an easy usage of Trixnity and because
-                                            // the impact on performance is minimal, we call it here for prevention.
-                                            user.loadMembers(roomId)
-
-                                            val megolmSettings =
-                                                store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
-                                            requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
-                                            olm.events.encryptMegolm(content, outboxMessage.roomId, megolmSettings)
-                                        } else content
+                                        possiblyEncryptEvent(uploadedContent, roomId, store, olm, user)
                                     }
                                 val eventId = api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId)
                                 if (setOwnMessagesAsFullyRead) {

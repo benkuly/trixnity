@@ -33,7 +33,6 @@ class SqlDelightRoomStateRepository(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> = withContext(context) {
         db.getRoomState(key.roomId.full, key.type).executeAsList().associate {
-            println(it.state_key)
             it.state_key to json.decodeFromString(serializer, it.event)
         }
     }

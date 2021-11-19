@@ -9,8 +9,8 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
 class SqlDelightRoomRepositoryTest : ShouldSpec({

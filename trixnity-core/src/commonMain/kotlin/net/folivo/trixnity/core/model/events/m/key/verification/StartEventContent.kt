@@ -1,20 +1,44 @@
 package net.folivo.trixnity.core.model.events.m.key.verification
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import kotlinx.serialization.json.JsonClassDiscriminator
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.DECIMAL
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.EMOJI
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-key-verification-start">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationstart">matrix spec</a>
  */
-@Serializable // TODO this should be sealed and contain m.sas.v1 and custom serializer based on method key
-data class StartEventContent(
-    @SerialName("from_device")
-    val fromDevice: String,
-    @SerialName("transaction_id")
-    val transactionId: String,
-    @SerialName("method")
-    val method: String,
-    @SerialName("next_method")
-    val nextMethod: String? = null
-) : ToDeviceEventContent
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+@JsonClassDiscriminator("method")
+sealed class StartEventContent : VerificationStep {
+    abstract val fromDevice: String
+    abstract val nextMethod: VerificationMethod?
+
+    /**
+     * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationstartmsasv1">matrix spec</a>
+     */
+    @Serializable
+    @SerialName("m.sas.v1")
+    data class SasStartEventContent(
+        @SerialName("from_device")
+        override val fromDevice: String,
+        @SerialName("hashes")
+        val hashes: Set<String> = setOf("sha256"),
+        @SerialName("key_agreement_protocols")
+        val keyAgreementProtocols: Set<String> = setOf("curve25519-hkdf-sha256"),
+        @SerialName("message_authentication_codes")
+        val messageAuthenticationCodes: Set<String> = setOf("hkdf-hmac-sha256"),
+        @SerialName("short_authentication_string")
+        val shortAuthenticationString: Set<SasMethod> = setOf(DECIMAL, EMOJI),
+        @SerialName("m.relates_to")
+        override val relatesTo: VerificationStepRelatesTo?,
+        @SerialName("transaction_id")
+        override val transactionId: String?,
+    ) : StartEventContent() {
+        @SerialName("next_method")
+        override val nextMethod: VerificationMethod? = null
+    }
+}

@@ -56,7 +56,7 @@ class MegolmEventSerializer(
         requireNotNull(contentSerializerMapping) { "event content type ${value.content::class} must be registered" }
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 MegolmEvent.serializer(contentSerializerMapping.serializer) as KSerializer<MegolmEvent<*>>,
                 "type" to contentSerializerMapping.type

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,8 +12,8 @@ import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.originalName
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -21,7 +22,7 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import kotlin.reflect.KClass
 
-class UserManager(
+class UserService(
     private val store: Store,
     private val api: MatrixApiClient,
     loggerFactory: LoggerFactory
@@ -29,14 +30,17 @@ class UserManager(
     private val log = newLogger(loggerFactory)
 
     suspend fun startEventHandling() = coroutineScope {
-        launch { api.sync.events<GlobalAccountDataEventContent>().collect(::setGlobalAccountData) }
-        launch { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        launch(start = UNDISPATCHED) {
+            api.sync.events<GlobalAccountDataEventContent>().collect(::setGlobalAccountData)
+        }
+        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
     }
 
     private fun calculateUserDisplayName(
         displayName: String?,
         isUnique: Boolean,
-        userId: MatrixId.UserId,
+        userId: UserId,
     ): String {
         return when {
             displayName.isNullOrEmpty() -> userId.full
@@ -48,7 +52,7 @@ class UserManager(
     private suspend fun resolveUserDisplayNameCollisions(
         displayName: String,
         isOld: Boolean,
-        sourceUserId: MatrixId.UserId,
+        sourceUserId: UserId,
         roomId: RoomId
     ): Boolean {
         val usersWithSameDisplayName =
@@ -73,7 +77,7 @@ class UserManager(
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
-            val userId = MatrixId.UserId(stateKey)
+            val userId = UserId(stateKey)
             val membership = event.content.membership
             val newDisplayName = event.content.displayName
 
@@ -116,7 +120,7 @@ class UserManager(
                 ).toList()
                 store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
                 memberEvents.forEach { setRoomUser(it) }
-                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> MatrixId.UserId(event.stateKey) } }
+                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                 oldRoom.copy(membersLoaded = true)
             } else oldRoom
         }
@@ -132,7 +136,7 @@ class UserManager(
         return store.roomUser.getAll(roomId, scope)
     }
 
-    suspend fun getById(userId: MatrixId.UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
+    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
         return store.roomUser.get(userId, roomId, scope)
     }
 

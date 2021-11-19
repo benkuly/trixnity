@@ -8,9 +8,9 @@ import net.folivo.trixnity.client.store.RoomTimelineKey
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -30,18 +30,18 @@ class SqlDelightRoomTimelineRepositoryTest : ShouldSpec({
         driver.close()
     }
     should("save, get and delete") {
-        val key1 = RoomTimelineKey(MatrixId.EventId("\$event1"), RoomId("room1", "server"))
-        val key2 = RoomTimelineKey(MatrixId.EventId("\$event2"), RoomId("room1", "server"))
+        val key1 = RoomTimelineKey(EventId("\$event1"), RoomId("room1", "server"))
+        val key2 = RoomTimelineKey(EventId("\$event2"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
             Event.MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
-                MatrixId.EventId("\$event1"),
+                EventId("\$event1"),
                 UserId("sender", "server"),
                 RoomId("room1", "server"),
                 1234
             ),
             roomId = RoomId("room1", "server"),
-            eventId = MatrixId.EventId("\$event1"),
+            eventId = EventId("\$event1"),
             previousEventId = null,
             nextEventId = null,
             gap = TimelineEvent.Gap.GapBefore("batch")
@@ -49,18 +49,18 @@ class SqlDelightRoomTimelineRepositoryTest : ShouldSpec({
         val event2 = TimelineEvent(
             Event.MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
-                MatrixId.EventId("\$event2"),
+                EventId("\$event2"),
                 UserId("sender", "server"),
                 RoomId("room2", "server"),
                 1234
             ),
             roomId = RoomId("room2", "server"),
-            eventId = MatrixId.EventId("\$event2"),
+            eventId = EventId("\$event2"),
             previousEventId = null,
             nextEventId = null,
             gap = null
         )
-        val session2Copy = event2.copy(nextEventId = MatrixId.EventId("\$superfancy"))
+        val session2Copy = event2.copy(nextEventId = EventId("\$superfancy"))
 
         cut.save(key1, event1)
         cut.save(key2, event2)

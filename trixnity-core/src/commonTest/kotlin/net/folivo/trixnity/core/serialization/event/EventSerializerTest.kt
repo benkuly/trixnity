@@ -5,7 +5,10 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
@@ -29,7 +32,7 @@ class EventSerializerTest {
     fun shouldSerializeStateEvent() {
         val content = StateEvent(
             CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
-            EventId("143273582443PhrSn", "example.org"),
+            EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
@@ -41,7 +44,7 @@ class EventSerializerTest {
             "content":{
                 "alias":"#somewhere:example.org"
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
@@ -67,7 +70,7 @@ class EventSerializerTest {
             "content":{
                 "alias":"#somewhere:example.org"
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
@@ -85,7 +88,7 @@ class EventSerializerTest {
         assertEquals(
             StateEvent(
                 CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
-                EventId("143273582443PhrSn", "example.org"),
+                EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
@@ -99,7 +102,7 @@ class EventSerializerTest {
     fun shouldSerializeMessageEvent() {
         val content = MessageEvent(
             RoomMessageEventContent.TextMessageEventContent("hello"),
-            EventId("143273582443PhrSn", "example.org"),
+            EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
@@ -111,7 +114,7 @@ class EventSerializerTest {
                 "body":"hello",
                 "msgtype":"m.text"
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
@@ -135,7 +138,7 @@ class EventSerializerTest {
                 "body":"hello",
                 "something":"unicorn"
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
@@ -160,7 +163,7 @@ class EventSerializerTest {
                         )
                     )
                 ),
-                EventId("143273582443PhrSn", "example.org"),
+                EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
@@ -173,7 +176,7 @@ class EventSerializerTest {
     fun shouldSerializeEventList() {
         val content = listOf(
             StateEvent(
-                id = EventId("143273582443PhrSn", "server"),
+                id = EventId("$143273582443PhrSn"),
                 roomId = RoomId("room", "server"),
                 unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
@@ -182,7 +185,7 @@ class EventSerializerTest {
                 stateKey = ""
             ),
             StateEvent(
-                id = EventId("143273584443PhrSn", "server"),
+                id = EventId("$143273584443PhrSn"),
                 roomId = RoomId("room", "server"),
                 unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
@@ -196,7 +199,7 @@ class EventSerializerTest {
             "content":{
                 "name":"test"
             },
-            "event_id":"$143273582443PhrSn:server",
+            "event_id":"$143273582443PhrSn",
             "sender":"@sender:server",
             "room_id":"!room:server",
             "origin_server_ts":1234,
@@ -208,7 +211,7 @@ class EventSerializerTest {
             "content":{
                 "membership":"invite"
             },
-            "event_id":"$143273584443PhrSn:server",
+            "event_id":"$143273584443PhrSn",
             "sender":"@sender:server",
             "room_id":"!room:server",
             "origin_server_ts":1234,
@@ -233,8 +236,8 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeRedactsEvent() {
         val content = MessageEvent(
-            RedactionEventContent("spam", EventId("123", "example.org")),
-            EventId("143273582443PhrSn", "example.org"),
+            RedactionEventContent("spam", EventId("$123")),
+            EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
@@ -245,7 +248,7 @@ class EventSerializerTest {
             "content":{
                 "reason":"spam"
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
@@ -253,7 +256,7 @@ class EventSerializerTest {
                 "age":1234
             },
             "type":"m.room.redaction",
-            "redacts":"$123:example.org"
+            "redacts":"$123"
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
@@ -268,7 +271,7 @@ class EventSerializerTest {
         val input = """
         {
             "content":{},
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
@@ -278,7 +281,7 @@ class EventSerializerTest {
                     "content":{
                         "reason":"spam"
                     },
-                    "event_id":"$143273582443PhrSn:example.org",
+                    "event_id":"$143273582443PhrSn",
                     "sender":"@example:example.org",
                     "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                     "origin_server_ts":1432735824653,
@@ -286,7 +289,7 @@ class EventSerializerTest {
                         "age":1234
                     },
                     "type":"m.room.redaction",
-                    "redacts":"$143273582443PhrSn:example.org"
+                    "redacts":"$143273582443PhrSn"
                     }
                 },
             "type":"m.room.message"
@@ -301,14 +304,14 @@ class EventSerializerTest {
         assertEquals(
             MessageEvent(
                 RedactedMessageEventContent("m.room.message"),
-                EventId("143273582443PhrSn", "example.org"),
+                EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, redactedBecause = MessageEvent(
-                        RedactionEventContent("spam", EventId("143273582443PhrSn", "example.org")),
-                        EventId("143273582443PhrSn", "example.org"),
+                        RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                        EventId("$143273582443PhrSn"),
                         UserId("example", "example.org"),
                         RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                         1432735824653,
@@ -323,14 +326,14 @@ class EventSerializerTest {
     fun shouldSerializeRedactedMessageEvent() {
         val content = MessageEvent(
             RedactedMessageEventContent("m.room.message"),
-            EventId("143273582443PhrSn", "example.org"),
+            EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
             UnsignedMessageEventData(
                 1234, redactedBecause = MessageEvent(
-                    RedactionEventContent("spam", EventId("143273582443PhrSn", "example.org")),
-                    EventId("143273582443PhrSn", "example.org"),
+                    RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                    EventId("$143273582443PhrSn"),
                     UserId("example", "example.org"),
                     RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                     1432735824653,
@@ -341,7 +344,7 @@ class EventSerializerTest {
         val expectedResult = """
         {
             "content":{},
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
@@ -351,7 +354,7 @@ class EventSerializerTest {
                     "content":{
                         "reason":"spam"
                     },
-                    "event_id":"$143273582443PhrSn:example.org",
+                    "event_id":"$143273582443PhrSn",
                     "sender":"@example:example.org",
                     "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                     "origin_server_ts":1432735824653,
@@ -359,7 +362,7 @@ class EventSerializerTest {
                         "age":1234
                     },
                     "type":"m.room.redaction",
-                    "redacts":"$143273582443PhrSn:example.org"
+                    "redacts":"$143273582443PhrSn"
                     }
                 },
             "type":"m.room.message"
@@ -441,7 +444,7 @@ class EventSerializerTest {
                 "alias":"dino",
                 "unicorns":[]
             },
-            "event_id":"$143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
@@ -463,7 +466,7 @@ class EventSerializerTest {
                         )
                     ), "m.room.canonical_alias"
                 ),
-                EventId("143273582443PhrSn", "example.org"),
+                EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
@@ -485,7 +488,7 @@ class EventSerializerTest {
                     )
                 ), "m.room.canonical_alias"
             ),
-            EventId("143273582443PhrSn", "example.org"),
+            EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
@@ -498,7 +501,7 @@ class EventSerializerTest {
                 "alias":"dino",
                 "unicorns":[]
             },
-            "event_id":"${'$'}143273582443PhrSn:example.org",
+            "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,

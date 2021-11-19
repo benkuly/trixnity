@@ -1,8 +1,8 @@
 package net.folivo.trixnity.appservice.rest.room
 
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
 
 interface AppserviceRoomService {
 

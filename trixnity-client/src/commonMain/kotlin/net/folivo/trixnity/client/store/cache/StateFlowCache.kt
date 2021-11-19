@@ -20,10 +20,9 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     private val writeCacheTime: Duration = Duration.seconds(5)
 ) {
     private val _cache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
-    val cache =
-        _cache
-            .map { value -> value.mapValues { it.value.value } }
-            .stateIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0), mapOf())
+    val cache = _cache
+        .map { value -> value.mapValues { it.value.value.asStateFlow() } }
+        .stateIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0), mapOf())
 
     fun init(initialValues: Map<K, V>) {
         require(infiniteCache) { "Cache cannot be initialized with values, when infiniteCache is disabled." }
@@ -91,7 +90,7 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         ).value
     }
 
-    suspend fun get(key: K, scope: CoroutineScope?): StateFlow<V?> {
+    suspend fun get(key: K, scope: CoroutineScope): StateFlow<V?> {
         return readWithCache(
             key,
             containsInCache = { it != null },
@@ -100,6 +99,14 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         )
     }
 
+    suspend fun getWithInfiniteMode(key: K): StateFlow<V?> {
+        return readWithCache(
+            key,
+            containsInCache = { it != null },
+            retrieveFromRepoAndUpdateCache = { _, repository -> repository.get(key) },
+            null
+        )
+    }
 
     suspend fun writeWithCache(
         key: K,

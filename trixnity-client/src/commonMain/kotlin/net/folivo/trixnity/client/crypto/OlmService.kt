@@ -1,28 +1,24 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
-import net.folivo.trixnity.core.model.events.m.DummyEventContent
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -33,8 +29,7 @@ import net.folivo.trixnity.olm.OlmUtility
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
-@OptIn(FlowPreview::class)
-class OlmManager(
+class OlmService(
     private val store: Store,
     private val secureStore: SecureStore,
     private val api: MatrixApiClient,
@@ -84,17 +79,63 @@ class OlmManager(
         loggerFactory = loggerFactory
     )
 
+    data class DecryptedOlmEvent(val encrypted: Event<OlmEncryptedEventContent>, val decrypted: OlmEvent<*>)
+
+    private val _decryptedOlmEvents = MutableSharedFlow<DecryptedOlmEvent>()
+    internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
+
+    @OptIn(FlowPreview::class)
     internal suspend fun startEventHandling() = coroutineScope {
-        launch {
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        launch(start = UNDISPATCHED) {
             api.sync.syncResponses.collect { syncResponse ->
                 syncResponse.deviceOneTimeKeysCount?.also { handleDeviceOneTimeKeysCount(it) }
                 syncResponse.deviceLists?.also { handleDeviceLists(it) }
             }
         }
-        launch { store.deviceKeys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys) }
-        launch { api.sync.events<OlmEncryptedEventContent>().collect(::handleOlmEncryptedToDeviceEvents) }
-        launch { api.sync.events<MemberEventContent>().collect(::handleMemberEvents) }
-        launch { api.sync.events<EncryptionEventContent>().collect(::handleEncryptionEvents) }
+        launch(start = UNDISPATCHED) {
+            store.deviceKeys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys)
+        }
+        launch(start = UNDISPATCHED) {
+            api.sync.events<MemberEventContent>().collect(::handleMemberEvents)
+        }
+        launch(start = UNDISPATCHED) {
+            api.sync.events<EncryptionEventContent>().collect(::handleEncryptionEvents)
+        }
+        launch(start = UNDISPATCHED) {
+            api.sync.events<OlmEncryptedEventContent>().collect(::handleOlmEncryptedToDeviceEvents)
+        }
+        launch(start = UNDISPATCHED) {
+            decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent)
+        }
+    }
+
+    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
+        if (event is ToDeviceEvent) {
+            val decryptedEvent = try {
+                events.decryptOlm(event.content, event.sender)
+            } catch (e: Exception) {
+                log.error(e) { "could not decrypt ${ToDeviceEvent::class.simpleName}" }
+                null
+            }
+            if (decryptedEvent != null) {
+                _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
+            }
+        }
+    }
+
+    internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEvent) {
+        val content = event.decrypted.content
+        if (content is RoomKeyEventContent) {
+            log.debug { "got inbound megolm session for room ${content.roomId}" }
+            store.olm.storeInboundMegolmSession(
+                roomId = content.roomId,
+                senderKey = event.encrypted.content.senderKey,
+                sessionId = content.sessionId,
+                sessionKey = content.sessionKey,
+                pickleKey = secureStore.olmPickleKey
+            )
+        }
     }
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount) {
@@ -170,30 +211,6 @@ class OlmManager(
                 }
             }
             store.deviceKeys.outdatedKeys.update { it - userIds }
-        }
-    }
-
-    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
-        if (event is ToDeviceEvent) {
-            val content = try {
-                events.decryptOlm(event.content, event.sender).content
-            } catch (e: Exception) {
-                log.error(e) { "could not decrypt ${ToDeviceEvent::class.simpleName}" }
-            }
-            when (content) {
-                is DummyEventContent -> {
-                }
-                is RoomKeyEventContent -> {
-                    log.debug { "got inbound megolm session for room ${content.roomId}" }
-                    store.olm.storeInboundMegolmSession(
-                        roomId = content.roomId,
-                        senderKey = event.content.senderKey,
-                        sessionId = content.sessionId,
-                        sessionKey = content.sessionKey,
-                        pickleKey = secureStore.olmPickleKey
-                    )
-                }
-            }
         }
     }
 

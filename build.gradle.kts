@@ -5,6 +5,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.kotlinxAtomicfu}")
     }
     repositories {
         google()
@@ -22,6 +23,7 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("js") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
+    id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
 allprojects {

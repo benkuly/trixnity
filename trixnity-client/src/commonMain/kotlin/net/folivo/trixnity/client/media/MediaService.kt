@@ -24,7 +24,7 @@ import net.folivo.trixnity.olm.freeAfter
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 
-class MediaManager(
+class MediaService(
     private val api: MatrixApiClient,
     private val store: Store,
     loggerFactory: LoggerFactory

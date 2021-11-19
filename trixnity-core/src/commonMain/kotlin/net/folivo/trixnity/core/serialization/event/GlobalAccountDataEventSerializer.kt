@@ -68,7 +68,7 @@ class GlobalAccountDataEventSerializer(
         }
         require(encoder is JsonEncoder)
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             (AddFieldsSerializer(
                 Event.GlobalAccountDataEvent.serializer(serializer) as KSerializer<GlobalAccountDataEvent<*>>,
                 "type" to type

@@ -24,7 +24,16 @@ class GlobalAccountDataStore(
         val eventType = contentMappings.globalAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot get account data event, because it is not supported. You need to register it first.")
         @Suppress("UNCHECKED_CAST")
-        return globalAccountDataCache.get(eventType, scope) as StateFlow<GlobalAccountDataEvent<C>>
+        return globalAccountDataCache.get(eventType, scope) as StateFlow<GlobalAccountDataEvent<C>?>
+    }
+
+    suspend fun <C : GlobalAccountDataEventContent> get(
+        eventContentClass: KClass<C>
+    ): GlobalAccountDataEvent<C>? {
+        val eventType = contentMappings.globalAccountData.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException("Cannot get account data event, because it is not supported. You need to register it first.")
+        @Suppress("UNCHECKED_CAST")
+        return globalAccountDataCache.get(eventType) as GlobalAccountDataEvent<C>?
     }
 
     suspend fun update(event: GlobalAccountDataEvent<out GlobalAccountDataEventContent>) {

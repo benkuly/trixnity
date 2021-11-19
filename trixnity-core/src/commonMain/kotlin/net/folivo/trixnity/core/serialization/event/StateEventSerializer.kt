@@ -73,7 +73,7 @@ class StateEventSerializer(
         }
         require(encoder is JsonEncoder)
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 StateEvent.serializer(serializer) as KSerializer<StateEvent<*>>,
                 "type" to type

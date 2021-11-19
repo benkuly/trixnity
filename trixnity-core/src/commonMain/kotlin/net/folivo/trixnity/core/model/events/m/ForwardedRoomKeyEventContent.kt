@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key

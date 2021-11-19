@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.api.sync
 
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
+
 
 interface SyncBatchTokenStore {
     suspend fun getBatchToken(userId: UserId? = null): String?

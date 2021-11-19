@@ -57,7 +57,7 @@ class ToDeviceEventSerializer(
         val contentSerializer = contentSerializerMapping.serializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 ToDeviceEvent.serializer(contentSerializer) as KSerializer<ToDeviceEvent<*>>,
                 *addFields.toTypedArray()

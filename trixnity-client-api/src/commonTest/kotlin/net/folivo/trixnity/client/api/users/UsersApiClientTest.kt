@@ -10,8 +10,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -270,7 +270,7 @@ class UsersApiClientTest {
             mapOf(
                 UserId("@alice:example.com") to mapOf(
                     "TLLBEANAAG" to RoomKeyEventContent(
-                        roomId = MatrixId.RoomId("!Cuyf34gef24t:localhost"),
+                        roomId = RoomId("!Cuyf34gef24t:localhost"),
                         sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
                         sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
                         algorithm = Megolm
@@ -369,7 +369,7 @@ class UsersApiClientTest {
             .shouldBe(
                 DirectEventContent(
                     mapOf(
-                        UserId("bob", "server") to setOf(MatrixId.RoomId("someRoom", "server"))
+                        UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
                     )
                 )
             )
@@ -402,7 +402,7 @@ class UsersApiClientTest {
         matrixRestClient.users.setAccountData(
             DirectEventContent(
                 mapOf(
-                    UserId("bob", "server") to setOf(MatrixId.RoomId("someRoom", "server"))
+                    UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
                 )
             ),
             UserId("alice", "example.com")

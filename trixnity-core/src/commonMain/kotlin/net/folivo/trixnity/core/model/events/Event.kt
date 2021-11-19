@@ -3,7 +3,9 @@ package net.folivo.trixnity.core.model.events
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Keys
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
@@ -80,17 +82,17 @@ sealed interface Event<C : EventContent> {
     @Serializable
     data class EphemeralEvent<C : EphemeralEventContent>(
         @SerialName("content") override val content: C,
-        @SerialName("room_id") val roomId: RoomId? = null,
-        @SerialName("sender") val sender: UserId? = null
+        @SerialName("sender") val sender: UserId? = null,
+        @SerialName("room_id") val roomId: RoomId? = null
     ) : Event<C>
 
     @Serializable
     data class OlmEvent<C : EventContent>(
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId,
+        @SerialName("keys") val senderKeys: Keys,
         @SerialName("recipient") val recipient: UserId,
-        @SerialName("recipient_keys") val recipientKeys: Keys,
-        @SerialName("keys") val senderKeys: Keys
+        @SerialName("recipient_keys") val recipientKeys: Keys
     ) : Event<C>
 
     @Serializable
