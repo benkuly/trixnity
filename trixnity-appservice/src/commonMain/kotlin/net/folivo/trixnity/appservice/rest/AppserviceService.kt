@@ -1,8 +1,8 @@
 package net.folivo.trixnity.appservice.rest
 
 import kotlinx.coroutines.flow.Flow
-import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 
 interface AppserviceService {

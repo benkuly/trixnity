@@ -7,8 +7,8 @@ import net.folivo.trixnity.client.api.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.client.api.rooms.Visibility
-import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail

@@ -5,7 +5,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import kotlin.coroutines.CoroutineContext
@@ -21,7 +21,7 @@ class SqlDelightRoomOutboxMessageRepository(
         requireNotNull(serializer)
         return RoomOutboxMessage(
             transactionId = input.transaction_id,
-            roomId = MatrixId.RoomId(input.room_id),
+            roomId = RoomId(input.room_id),
             content = json.decodeFromString(serializer, input.content),
             wasSent = input.was_sent
         )

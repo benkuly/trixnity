@@ -8,8 +8,8 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 
@@ -19,6 +19,7 @@ fun createInMemoryStore(storeCoroutineScope: CoroutineScope): Store {
         accountRepository = InMemoryMinimalStoreRepository(),
         outdatedDeviceKeysRepository = InMemoryMinimalStoreRepository(),
         deviceKeysRepository = InMemoryMinimalStoreRepository(),
+        verifiedKeysRepository = InMemoryMinimalStoreRepository(),
         olmAccountRepository = InMemoryMinimalStoreRepository(),
         olmSessionRepository = InMemoryMinimalStoreRepository(),
         inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
@@ -91,5 +92,4 @@ class InMemoryMediaRepository : MediaRepository, InMemoryMinimalStoreRepository<
             it
         }
     }
-
 }

@@ -18,8 +18,8 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
@@ -27,21 +27,21 @@ import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerialize
 import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
-class UserManagerTest : ShouldSpec({
-    timeout = 10_000
+class UserServiceTest : ShouldSpec({
+    timeout = 30_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val roomId = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixApiClient>()
-    lateinit var cut: UserManager
+    lateinit var cut: UserService
 
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = createInMemoryStore(storeScope).apply { init() }
-        cut = UserManager(store, api, loggerFactory = LoggerFactory.default)
+        cut = UserService(store, api, loggerFactory = LoggerFactory.default)
     }
 
     afterTest {
@@ -49,7 +49,7 @@ class UserManagerTest : ShouldSpec({
         storeScope.cancel()
     }
 
-    context(UserManager::loadMembers.name) {
+    context(UserService::loadMembers.name) {
         should("do nothing when members already loaded") {
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
             store.room.update(roomId) { storedRoom }
@@ -84,7 +84,7 @@ class UserManagerTest : ShouldSpec({
             store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
         }
     }
-    context(UserManager::setRoomUser.name) {
+    context(UserService::setRoomUser.name) {
         val user1 = UserId("user1", "server")
         val user2 = UserId("user2", "server")
         val user3 = UserId("user3", "server")

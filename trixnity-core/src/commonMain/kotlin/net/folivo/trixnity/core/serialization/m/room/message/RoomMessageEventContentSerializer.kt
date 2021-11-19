@@ -35,6 +35,8 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 decoder.json.decodeFromJsonElement(AudioMessageEventContentSerializer, jsonObj)
             VideoMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement(VideoMessageEventContentSerializer, jsonObj)
+            VerificationRequestMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement(VerificationRequestMessageEventContentSerializer, jsonObj)
             else -> {
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 requireNotNull(type)
@@ -61,6 +63,8 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 encoder.json.encodeToJsonElement(AudioMessageEventContentSerializer, value)
             is VideoMessageEventContent ->
                 encoder.json.encodeToJsonElement(VideoMessageEventContentSerializer, value)
+            is VerificationRequestMessageEventContent ->
+                encoder.json.encodeToJsonElement(VerificationRequestMessageEventContentSerializer, value)
             is UnknownMessageEventContent -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
@@ -107,4 +111,10 @@ object VideoMessageEventContentSerializer :
     AddFieldsSerializer<VideoMessageEventContent>(
         VideoMessageEventContent.serializer(),
         "msgtype" to VideoMessageEventContent.type
+    )
+
+object VerificationRequestMessageEventContentSerializer :
+    AddFieldsSerializer<VerificationRequestMessageEventContent>(
+        VerificationRequestMessageEventContent.serializer(),
+        "msgtype" to VerificationRequestMessageEventContent.type
     )

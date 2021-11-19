@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomRepository
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 
 class RoomStore(
     private val roomRepository: RoomRepository,
@@ -15,10 +15,10 @@ class RoomStore(
 
     private val roomCache = StateFlowCache(storeScope, roomRepository, true)
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val allRooms =
         roomCache.cache
-            .flatMapMerge { combine(it.values) { transform -> transform } }
+            .flatMapLatest { combine(it.values) { transform -> transform } }
             .map { it.filterNotNull().toSet() }
             .stateIn(storeScope, Eagerly, setOf())
 
@@ -28,7 +28,7 @@ class RoomStore(
 
     fun getAll(): StateFlow<Set<Room>> = allRooms
 
-    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.get(roomId, null)
+    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.getWithInfiniteMode(roomId)
 
     suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?) =
         roomCache.update(roomId, updater)

@@ -7,24 +7,10 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.*
-
-object MatrixIdSerializer : KSerializer<MatrixId> {
-    override fun deserialize(decoder: Decoder): MatrixId {
-        return try {
-            MatrixId.of(decoder.decodeString())
-        } catch (ex: IllegalArgumentException) {
-            throw SerializationException(ex.message)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: MatrixId) {
-        encoder.encodeString(value.full)
-    }
-
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MatrixId", PrimitiveKind.STRING)
-}
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 
 object UserIdSerializer : KSerializer<UserId> {
     override fun deserialize(decoder: Decoder): UserId {
@@ -76,11 +62,7 @@ object RoomAliasIdSerializer : KSerializer<RoomAliasId> {
 
 object EventIdSerializer : KSerializer<EventId> {
     override fun deserialize(decoder: Decoder): EventId {
-        return try {
-            EventId(decoder.decodeString())
-        } catch (ex: IllegalArgumentException) {
-            throw SerializationException(ex.message)
-        }
+        return EventId(decoder.decodeString())
     }
 
     override fun serialize(encoder: Encoder, value: EventId) {

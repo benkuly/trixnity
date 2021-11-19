@@ -8,8 +8,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -31,14 +31,12 @@ class SqlDelightGlobalAccountDataRepositoryTest : ShouldSpec({
     }
 
     should("save, get and delete") {
-        val roomId1 = RoomId("room1", "server")
-        val roomId2 = RoomId("room2", "server")
         val key1 = "m.fully_read"
         val key2 = "org.example.mynamespace"
         val accountDataEvent1 = GlobalAccountDataEvent(
             DirectEventContent(
                 mapOf(
-                    MatrixId.UserId(
+                    UserId(
                         "alice",
                         "server.org"
                     ) to setOf(RoomId("!room", "server"))
@@ -54,7 +52,7 @@ class SqlDelightGlobalAccountDataRepositoryTest : ShouldSpec({
         val accountDataEvent1Copy = accountDataEvent1.copy(
             content = DirectEventContent(
                 mapOf(
-                    MatrixId.UserId(
+                    UserId(
                         "alice",
                         "server.org"
                     ) to null

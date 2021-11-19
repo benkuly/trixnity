@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.MatrixId.RoomAliasId
+import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 /**

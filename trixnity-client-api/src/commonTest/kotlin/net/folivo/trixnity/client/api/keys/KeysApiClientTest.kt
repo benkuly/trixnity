@@ -7,7 +7,7 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm

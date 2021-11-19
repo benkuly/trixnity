@@ -72,6 +72,10 @@ class SqlDelightStoreFactory(
             deviceKeysRepository = SqlDelightDeviceKeysRepository(
                 database.deviceKeysQueries, json, databaseCoroutineContext
             ),
+            verifiedKeysRepository = SqlDelightVerifiedKeysRepository(
+                database.deviceKeysQueries,
+                databaseCoroutineContext
+            ),
             olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
             olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
             inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(

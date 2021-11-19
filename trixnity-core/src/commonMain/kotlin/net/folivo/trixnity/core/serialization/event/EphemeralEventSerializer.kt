@@ -61,7 +61,7 @@ class EphemeralEventSerializer(
         val contentSerializer = contentSerializerMapping.serializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
                 EphemeralEvent.serializer(contentSerializer) as KSerializer<EphemeralEvent<*>>,
                 *addFields.toTypedArray()

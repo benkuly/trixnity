@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInfo
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.HomeserverInformation
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.IdentityServerInformation
 import net.folivo.trixnity.client.api.runBlockingTest
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -2,20 +2,20 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 
-suspend inline fun <reified C : RoomAccountDataEventContent> RoomManager.getAccountData(
-    roomId: MatrixId.RoomId,
+suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
+    roomId: RoomId,
     scope: CoroutineScope
 ): StateFlow<C?> {
     return getAccountData(roomId, C::class, scope)
 }
 
-suspend inline fun <reified C : StateEventContent> RoomManager.getState(
-    roomId: MatrixId.RoomId,
+suspend inline fun <reified C : StateEventContent> RoomService.getState(
+    roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
 ): StateFlow<Event<C>?> {

@@ -1,13 +1,14 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 
 class OlmStore(
@@ -22,7 +23,8 @@ class OlmStore(
 
     suspend fun init() {
         account.value = olmAccountRepository.get(1)
-        storeScope.launch {
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        storeScope.launch(start = UNDISPATCHED) {
             account.collect {
                 if (it != null) olmAccountRepository.save(1, it)
                 else olmAccountRepository.delete(1)
@@ -50,6 +52,13 @@ class OlmStore(
         scope: CoroutineScope
     ): StateFlow<StoredInboundMegolmSession?> =
         inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId), scope)
+
+    suspend fun getInboundMegolmSession(
+        senderKey: Curve25519Key,
+        sessionId: String,
+        roomId: RoomId,
+    ): StoredInboundMegolmSession? =
+        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId))
 
     suspend fun updateInboundMegolmSession(
         senderKey: Curve25519Key,

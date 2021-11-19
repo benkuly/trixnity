@@ -1,10 +1,17 @@
 package net.folivo.trixnity.client
 
 import io.ktor.http.*
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.getByStateKey
+import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 
 fun Event<*>?.getStateKey(): String? {
     return when (this) {
@@ -32,7 +39,6 @@ fun Event<*>?.getRoomId(): RoomId? {
     return when (this) {
         is RoomEvent -> this.roomId
         is StrippedStateEvent -> this.roomId
-        is EphemeralEvent -> this.roomId
         is MegolmEvent -> this.roomId
         is RoomAccountDataEvent -> this.roomId
         else -> null
@@ -41,3 +47,23 @@ fun Event<*>?.getRoomId(): RoomId? {
 
 fun String.toMxcUri(): Url =
     Url(this).also { require(it.protocol.name == "mxc") { "uri protocol was not mxc" } }
+
+suspend fun possiblyEncryptEvent(
+    content: MessageEventContent,
+    roomId: RoomId,
+    store: Store,
+    olm: OlmService,
+    user: UserService
+): MessageEventContent {
+    return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+        // The UI should do that, when a room gets opened, because of lazy loading
+        // members Trixnity may not know all devices for encryption yet.
+        // To ensure an easy usage of Trixnity and because
+        // the impact on performance is minimal, we call it here for prevention.
+        user.loadMembers(roomId)
+
+        val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
+        requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
+        olm.events.encryptMegolm(content, roomId, megolmSettings)
+    } else content
+}

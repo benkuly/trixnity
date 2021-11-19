@@ -31,3 +31,24 @@ WHERE id = ?;
 deleteOutdatedDeviceKeys:
 DELETE FROM sql_outdated_device_keys
 WHERE id = ?;
+
+CREATE TABLE sql_verified_keys (
+    user_id TEXT NOT NULL,
+    device_id TEXT,
+    key_id TEXT NOT NULL,
+    key_algorithm TEXT NOT NULL,
+    key_value TEXT NOT NULL,
+    PRIMARY KEY (user_id,device_id,key_algorithm,key_algorithm)
+);
+
+saveVerifiedKey:
+INSERT OR REPLACE INTO sql_verified_keys
+VALUES  ?;
+
+getVerifiedKey:
+SELECT key_value FROM sql_verified_keys
+WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
+
+deleteVerifiedKey:
+DELETE FROM sql_verified_keys
+WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;

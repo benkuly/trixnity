@@ -29,7 +29,9 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
@@ -132,9 +134,9 @@ class OlmEventServiceTest : ShouldSpec({
         val olmEvent = OlmEvent(
             content = eventContent,
             sender = alice,
+            senderKeys = keysOf(aliceEdKey.copy(keyId = null)),
             recipient = bob,
-            recipientKeys = keysOf(bobEdKey.copy(keyId = null)),
-            senderKeys = keysOf(aliceEdKey.copy(keyId = null))
+            recipientKeys = keysOf(bobEdKey.copy(keyId = null))
         )
         context("without stored session") {
             should("encrypt") {
@@ -223,9 +225,9 @@ class OlmEventServiceTest : ShouldSpec({
         val olmEvent = OlmEvent(
             content = eventContent,
             sender = bob,
+            senderKeys = keysOf(bobEdKey),
             recipient = alice,
-            recipientKeys = keysOf(aliceEdKey),
-            senderKeys = keysOf(bobEdKey)
+            recipientKeys = keysOf(aliceEdKey)
         )
         beforeTest {
             aliceAccount.generateOneTimeKeys(1)

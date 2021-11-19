@@ -2,8 +2,8 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
 

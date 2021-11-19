@@ -3,7 +3,10 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
 import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventContentSerializer
 
 /**
@@ -113,6 +116,18 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     ) : RoomMessageEventContent {
         companion object {
             const val type = "m.video"
+        }
+    }
+
+    @Serializable
+    data class VerificationRequestMessageEventContent(
+        @SerialName("from_device") override val fromDevice: String,
+        @SerialName("to") val to: UserId,
+        @SerialName("methods") override val methods: Set<VerificationMethod>,
+        @SerialName("body") override val body: String = "Attempting verification request. (m.key.verification.request) Apparently your client doesn't support this.",
+    ) : RoomMessageEventContent, VerificationRequest {
+        companion object {
+            const val type = "m.key.verification.request"
         }
     }
 

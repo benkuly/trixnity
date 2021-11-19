@@ -4,8 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
-import net.folivo.trixnity.core.model.MatrixId.EventId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 
 class RoomTimelineStore(
     roomTimelineRepository: MinimalStoreRepository<RoomTimelineKey, TimelineEvent>,
@@ -14,8 +14,11 @@ class RoomTimelineStore(
 
     private val roomTimelineCache = StateFlowCache(storeScope, roomTimelineRepository)
 
-    suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope? = null): StateFlow<TimelineEvent?> =
+    suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
         roomTimelineCache.get(RoomTimelineKey(eventId, roomId), scope)
+
+    suspend fun get(eventId: EventId, roomId: RoomId): TimelineEvent? =
+        roomTimelineCache.get(RoomTimelineKey(eventId, roomId))
 
     suspend fun update(
         eventId: EventId,

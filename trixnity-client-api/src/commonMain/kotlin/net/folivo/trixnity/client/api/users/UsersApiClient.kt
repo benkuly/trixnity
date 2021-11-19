@@ -4,10 +4,11 @@ import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.request.*
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.unsupportedEventType
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -183,15 +184,15 @@ class UsersApiClient(
         userId: UserId,
         asUserId: UserId? = null
     ): C {
-        val eventType =
-            contentMappings.globalAccountData.find { it.kClass == accountDataEventContentClass }?.type
-                ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val mapping = contentMappings.globalAccountData.find { it.kClass == accountDataEventContentClass }
+            ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
         val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/user/${userId.e()}/account_data/$eventType")
+            url("/_matrix/client/r0/user/${userId.e()}/account_data/${mapping.type}")
             parameter("user_id", asUserId)
         }
-        val serializer = json.serializersModule.getContextual(accountDataEventContentClass)
-        requireNotNull(serializer)
+
+        @Suppress("UNCHECKED_CAST")
+        val serializer = mapping.serializer as KSerializer<C>
         return json.decodeFromString(serializer, responseBody)
     }
 

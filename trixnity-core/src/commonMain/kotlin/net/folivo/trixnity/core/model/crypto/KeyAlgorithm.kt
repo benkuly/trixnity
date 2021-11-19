@@ -1,7 +1,7 @@
 package net.folivo.trixnity.core.model.crypto
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.serialization.crypto.KeyAlgorithmSerializer
+import net.folivo.trixnity.core.serialization.crypto.*
 
 @Serializable(with = KeyAlgorithmSerializer::class)
 sealed class KeyAlgorithm {
@@ -11,22 +11,22 @@ sealed class KeyAlgorithm {
         return name
     }
 
-    @Serializable(with = KeyAlgorithmSerializer::class)
+    @Serializable(with = Ed25519KeyAlgorithmSerializer::class)
     object Ed25519 : KeyAlgorithm() {
         override val name = "ed25519"
     }
 
-    @Serializable(with = KeyAlgorithmSerializer::class)
+    @Serializable(with = Curve25519KeyAlgorithmSerializer::class)
     object Curve25519 : KeyAlgorithm() {
         override val name = "curve25519"
     }
 
-    @Serializable(with = KeyAlgorithmSerializer::class)
+    @Serializable(with = SignedCurve25519KeyAlgorithmSerializer::class)
     object SignedCurve25519 : KeyAlgorithm() {
         override val name = "signed_curve25519"
     }
 
-    @Serializable(with = KeyAlgorithmSerializer::class)
+    @Serializable(with = UnknownKeyAlgorithmSerializer::class)
     data class Unknown(override val name: String) : KeyAlgorithm()
 
     companion object {

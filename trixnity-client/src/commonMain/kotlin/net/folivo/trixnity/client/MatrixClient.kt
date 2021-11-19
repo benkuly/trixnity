@@ -2,7 +2,9 @@ package net.folivo.trixnity.client
 
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -11,14 +13,15 @@ import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.api.authentication.LoginType
 import net.folivo.trixnity.client.api.users.Filters
 import net.folivo.trixnity.client.api.users.RoomFilter
-import net.folivo.trixnity.client.crypto.OlmManager
-import net.folivo.trixnity.client.media.MediaManager
-import net.folivo.trixnity.client.room.RoomManager
+import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
-import net.folivo.trixnity.client.user.UserManager
+import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.kodein.log.LoggerFactory
@@ -29,10 +32,11 @@ import org.kodein.log.newLogger
 class MatrixClient private constructor(
     private val store: Store,
     val api: MatrixApiClient,
-    val olm: OlmManager,
-    val room: RoomManager,
-    val user: UserManager,
-    val media: MediaManager,
+    val olm: OlmService,
+    val room: RoomService,
+    val user: UserService,
+    val media: MediaService,
+    val verification: VerificationService,
     private val scope: CoroutineScope,
     loggerFactory: LoggerFactory
 ) {
@@ -76,31 +80,51 @@ class MatrixClient private constructor(
             store.account.accessToken.value = newAccessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
-            val olm = OlmManager(
+            val olmService = OlmService(
                 store = store,
                 secureStore = secureStore,
                 api = api,
                 json = api.json,
                 loggerFactory = loggerFactory
             )
-            store.deviceKeys.update(userId) { mapOf(deviceId to olm.myDeviceKeys.signed) }
-            api.keys.uploadKeys(deviceKeys = olm.myDeviceKeys)
+            store.deviceKeys.update(userId) { mapOf(deviceId to olmService.myDeviceKeys.signed) }
+            api.keys.uploadKeys(deviceKeys = olmService.myDeviceKeys)
 
-            val mediaManager = MediaManager(api, store, loggerFactory)
-            val userManager = UserManager(store, api, loggerFactory)
-            val roomManager =
-                RoomManager(
+            val mediaService = MediaService(api, store, loggerFactory)
+            val userService = UserService(store, api, loggerFactory)
+            val roomService =
+                RoomService(
                     store,
                     api,
-                    olm,
-                    userManager,
-                    mediaManager,
+                    olmService,
+                    userService,
+                    mediaService,
                     setOwnMessagesAsFullyRead,
                     customOutboxMessageMediaUploaderMappings,
                     loggerFactory
                 )
+            val verificationService = VerificationService(
+                ownUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null"),
+                ownDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("userId must not be null"),
+                api = api,
+                store = store,
+                olm = olmService,
+                room = roomService,
+                user = userService,
+                loggerFactory = loggerFactory
+            )
 
-            return MatrixClient(store, api, olm, roomManager, userManager, mediaManager, scope, loggerFactory)
+            return MatrixClient(
+                store,
+                api,
+                olmService,
+                roomService,
+                userService,
+                mediaService,
+                verificationService,
+                scope,
+                loggerFactory
+            )
         }
 
         suspend fun fromStore(
@@ -132,33 +156,55 @@ class MatrixClient private constructor(
 
             return if (accessToken != null && userId != null && deviceId != null) {
                 api.accessToken = accessToken
-                val olm = OlmManager(
+                val olmService = OlmService(
                     store = store,
                     secureStore = secureStore,
                     api = api,
                     json = api.json,
                     loggerFactory = loggerFactory
                 )
-                val mediaManager = MediaManager(api, store, loggerFactory)
-                val userManager = UserManager(store, api, loggerFactory)
-                val roomManager =
-                    RoomManager(
-                        store,
-                        api,
-                        olm,
-                        userManager,
-                        mediaManager,
-                        setOwnMessagesAsFullyRead,
-                        customOutboxMessageMediaUploaderMappings,
-                        loggerFactory
-                    )
+                val mediaService = MediaService(api, store, loggerFactory)
+                val userService = UserService(store, api, loggerFactory)
+                val roomService = RoomService(
+                    store,
+                    api,
+                    olmService,
+                    userService,
+                    mediaService,
+                    setOwnMessagesAsFullyRead,
+                    customOutboxMessageMediaUploaderMappings,
+                    loggerFactory
+                )
+                val verificationService = VerificationService(
+                    ownUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null"),
+                    ownDeviceId = store.account.deviceId.value
+                        ?: throw IllegalArgumentException("userId must not be null"),
+                    api = api,
+                    store = store,
+                    olm = olmService,
+                    room = roomService,
+                    user = userService,
+                    loggerFactory = loggerFactory
+                )
 
-                MatrixClient(store, api, olm, roomManager, userManager, mediaManager, scope, loggerFactory)
+                MatrixClient(
+                    store,
+                    api,
+                    olmService,
+                    roomService,
+                    userService,
+                    mediaService,
+                    verificationService,
+                    scope,
+                    loggerFactory
+                )
             } else null
         }
     }
 
-    val isLoggedIn = store.account.accessToken.map { it != null }.stateIn(scope, Eagerly, false)
+    fun isLoggedIn(scope: CoroutineScope): StateFlow<Boolean> {
+        return store.account.accessToken.map { it != null }.stateIn(scope, Eagerly, false)
+    }
 
     val syncState = api.sync.currentSyncState
 
@@ -180,10 +226,12 @@ class MatrixClient private constructor(
             log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
             scope.launch { api.sync.stop() }
         }
-        scope.launch(handler) {
-            launch { olm.startEventHandling() }
-            launch { room.startEventHandling() }
-            launch { user.startEventHandling() }
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        scope.launch(handler, start = UNDISPATCHED) {
+            launch(start = UNDISPATCHED) { olm.startEventHandling() }
+            launch(start = UNDISPATCHED) { room.startEventHandling() }
+            launch(start = UNDISPATCHED) { user.startEventHandling() }
+            launch(start = UNDISPATCHED) { verification.startEventHandling() }
         }
 
         val myUserId = store.account.userId.value

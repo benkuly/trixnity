@@ -1,10 +1,7 @@
 package net.folivo.trixnity.examples.multiplatform
 
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
@@ -14,7 +11,7 @@ import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
 import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
-import net.folivo.trixnity.core.model.MatrixId.RoomId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -25,7 +22,7 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.filter.entry.minimumLevel
 import org.kodein.log.frontend.defaultLogFrontend
 
-suspend fun example() = coroutineScope {
+suspend fun timelineExample() = coroutineScope {
     val username = "username"
     val password = "password"
     val roomId = RoomId("!room:example.org")
@@ -40,12 +37,14 @@ suspend fun example() = coroutineScope {
         listOf(defaultLogFrontend),
         listOf(minimumLevel(Logger.Level.INFO)),
     )
+    val scope = CoroutineScope(Dispatchers.Default)
     val matrixClient = MatrixClient.fromStore(
         hostname = hostname,
         port = port,
         secure = secure,
         storeFactory = storeFactory,
         secureStore = secureStore,
+        scope = scope,
         loggerFactory = loggerFactory
     ) ?: MatrixClient.login(
         hostname = hostname,
@@ -56,6 +55,7 @@ suspend fun example() = coroutineScope {
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
         storeFactory = storeFactory,
         secureStore = secureStore,
+        scope = scope,
         loggerFactory = loggerFactory
     )
 
@@ -130,8 +130,8 @@ suspend fun example() = coroutineScope {
 
     matrixClient.startSync()
 
-
     delay(300000)
+    scope.cancel()
 
     job2.cancelAndJoin()
     job1.cancelAndJoin()

@@ -17,10 +17,10 @@ suspend fun MessageBuilder.video(
     val url: String?
     val encryptedFile: EncryptedFile?
     if (isEncryptedRoom) {
-        val (thumbnailFile, thumbnailInfo) = mediaManager.prepareUploadEncryptedThumbnail(video, type)
+        val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(video, type)
             ?: Pair(null, null)
 
-        encryptedFile = mediaManager.prepareUploadEncryptedMedia(video)
+        encryptedFile = mediaService.prepareUploadEncryptedMedia(video)
         format = VideoInfo(
             duration = duration,
             height = height,
@@ -33,8 +33,8 @@ suspend fun MessageBuilder.video(
         )
         url = null
     } else {
-        url = mediaManager.prepareUploadMedia(video, type)
-        val (thumbnailUrl, thumbnailInfo) = mediaManager.prepareUploadThumbnail(video, type) ?: Pair(null, null)
+        url = mediaService.prepareUploadMedia(video, type)
+        val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(video, type) ?: Pair(null, null)
         format = VideoInfo(
             duration = duration,
             height = height,

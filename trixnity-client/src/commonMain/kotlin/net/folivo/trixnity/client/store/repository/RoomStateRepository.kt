@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.store.repository
 
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 
 
@@ -10,6 +10,6 @@ interface RoomStateRepository : MinimalStoreRepository<RoomStateRepositoryKey, M
 }
 
 data class RoomStateRepositoryKey(
-    val roomId: MatrixId.RoomId,
+    val roomId: RoomId,
     val type: String
 )

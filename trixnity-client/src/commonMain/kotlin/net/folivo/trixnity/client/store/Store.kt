@@ -9,6 +9,7 @@ class Store(
     accountRepository: AccountRepository,
     outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
     deviceKeysRepository: DeviceKeysRepository,
+    verifiedKeysRepository: VerifiedKeysRepository,
     olmAccountRepository: OlmAccountRepository,
     olmSessionRepository: OlmSessionRepository,
     inboundMegolmSessionRepository: InboundMegolmSessionRepository,
@@ -26,7 +27,7 @@ class Store(
     contentMappings: EventContentSerializerMappings,
 ) {
     val account = AccountStore(accountRepository, scope)
-    val deviceKeys = DeviceKeysStore(outdatedDeviceKeysRepository, deviceKeysRepository, scope)
+    val deviceKeys = DeviceKeysStore(outdatedDeviceKeysRepository, deviceKeysRepository, verifiedKeysRepository, scope)
     val olm = OlmStore(
         olmAccountRepository,
         olmSessionRepository,
@@ -43,7 +44,6 @@ class Store(
     val media = MediaStore(mediaRepository, uploadMediaRepository, scope)
     val globalAccountData = GlobalAccountDataStore(globalAccountDataRepository, contentMappings, scope)
     val roomAccountData = RoomAccountDataStore(roomAccountDataRepository, contentMappings, scope)
-    // TODO add accountData
 
     suspend fun init() {
         account.init()

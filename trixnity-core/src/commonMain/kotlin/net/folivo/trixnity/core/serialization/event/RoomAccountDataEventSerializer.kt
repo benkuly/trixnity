@@ -67,7 +67,7 @@ class RoomAccountDataEventSerializer(
         }
         require(encoder is JsonEncoder)
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+            @Suppress("UNCHECKED_CAST")
             (AddFieldsSerializer(
                 Event.RoomAccountDataEvent.serializer(serializer) as KSerializer<Event.RoomAccountDataEvent<*>>,
                 "type" to type

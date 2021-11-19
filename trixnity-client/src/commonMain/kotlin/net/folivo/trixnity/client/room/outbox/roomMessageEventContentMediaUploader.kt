@@ -14,6 +14,7 @@ suspend fun roomMessageEventContentMediaUploader(
         is TextMessageEventContent -> content
         is NoticeMessageEventContent -> content
         is EmoteMessageEventContent -> content
+        is VerificationRequestMessageEventContent -> content
         is FileMessageEventContent -> {
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url

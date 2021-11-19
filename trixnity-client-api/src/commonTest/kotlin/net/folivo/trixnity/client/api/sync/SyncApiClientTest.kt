@@ -17,7 +17,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
@@ -534,7 +536,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
-                                    EventId("event1", "server"),
+                                    EventId("event1"),
                                     UserId("user", "server"),
                                     RoomId("room1", "server"),
                                     1234L
@@ -545,7 +547,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.StateEvent(
                                     MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                                    EventId("event2", "server"),
+                                    EventId("event2"),
                                     UserId("user", "server"),
                                     RoomId("room1", "server"),
                                     1235L,
@@ -557,7 +559,7 @@ class SyncApiClientTest {
                         accountData = Rooms.RoomAccountData(
                             listOf(
                                 Event.RoomAccountDataEvent(
-                                    FullyReadEventContent(EventId("event1", "server")),
+                                    FullyReadEventContent(EventId("event1")),
                                     RoomId("room1", "server")
                                 ),
                                 Event.RoomAccountDataEvent(
@@ -577,7 +579,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.MessageEvent(
                                     RoomMessageEventContent.NoticeMessageEventContent("hi"),
-                                    EventId("event4", "server"),
+                                    EventId("event4"),
                                     UserId("user", "server"),
                                     RoomId("room2", "server"),
                                     1234L
@@ -588,7 +590,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.StateEvent(
                                     MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                                    EventId("event5", "server"),
+                                    EventId("event5"),
                                     UserId("user", "server"),
                                     RoomId("room2", "server"),
                                     1235L,
@@ -677,10 +679,10 @@ class SyncApiClientTest {
             assertEquals(10, allEvents.await().count())
             assertEquals(
                 listOf("event1", "event4"),
-                allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.localpart })
+                allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.full })
             assertEquals(
                 listOf("event2", "event5"),
-                allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.localpart })
+                allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.full })
             assertEquals(
                 listOf("room3"),
                 allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
@@ -710,7 +712,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
-                                    EventId("event", "server"),
+                                    EventId("event"),
                                     UserId("user", "server"),
                                     RoomId("room", "server"),
                                     1234L

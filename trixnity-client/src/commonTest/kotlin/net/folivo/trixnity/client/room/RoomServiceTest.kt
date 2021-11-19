@@ -22,13 +22,16 @@ import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.STARTED
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.OlmManager
-import net.folivo.trixnity.client.media.MediaManager
+import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.VerificationState
+import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.client.user.UserManager
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
@@ -38,10 +41,10 @@ import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -50,23 +53,23 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
-class RoomManagerTest : ShouldSpec({
-    timeout = 10_000
+class RoomServiceTest : ShouldSpec({
+    timeout = 30_000
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
-    val users = mockk<UserManager>(relaxUnitFun = true)
-    val olm = mockk<OlmManager>()
-    val media = mockk<MediaManager>()
-    lateinit var cut: RoomManager
+    val api = mockk<MatrixApiClient>(relaxed = true)
+    val users = mockk<UserService>(relaxUnitFun = true)
+    val olm = mockk<OlmService>()
+    val media = mockk<MediaService>()
+    lateinit var cut: RoomService
 
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = createInMemoryStore(storeScope).apply { init() }
-        cut = RoomManager(store, api, olm, users, media, loggerFactory = LoggerFactory.default)
+        cut = RoomService(store, api, olm, users, media, loggerFactory = LoggerFactory.default)
     }
 
     afterTest {
@@ -95,7 +98,7 @@ class RoomManagerTest : ShouldSpec({
         )
     }
 
-    context(RoomManager::setLastEventId.name) {
+    context(RoomService::setLastEventId.name) {
         should("set last event from room event") {
             cut.setLastEventId(textEvent(24))
             store.room.get(room).value?.lastEventId shouldBe EventId("\$event24")
@@ -115,7 +118,7 @@ class RoomManagerTest : ShouldSpec({
         }
     }
 
-    context(RoomManager::setLastMessageEvent.name) {
+    context(RoomService::setLastMessageEvent.name) {
         should("set last message event") {
             cut.handleSyncResponse(
                 SyncResponse(
@@ -126,7 +129,7 @@ class RoomManagerTest : ShouldSpec({
                                     events = listOf(
                                         StateEvent(
                                             CreateEventContent(UserId("user1", "localhost")),
-                                            EventId("event1", "localhost"),
+                                            EventId("event1"),
                                             UserId("user1", "localhost"),
                                             room,
                                             0,
@@ -134,14 +137,14 @@ class RoomManagerTest : ShouldSpec({
                                         ),
                                         MessageEvent(
                                             TextMessageEventContent("Hello!"),
-                                            EventId("event2", "localhost"),
+                                            EventId("event2"),
                                             UserId("user1", "localhost"),
                                             room,
                                             5,
                                         ),
                                         StateEvent(
                                             AvatarEventContent("mxc://localhost/123456"),
-                                            EventId("event3", "localhost"),
+                                            EventId("event3"),
                                             UserId("user1", "localhost"),
                                             room,
                                             10,
@@ -154,12 +157,12 @@ class RoomManagerTest : ShouldSpec({
                     ), nextBatch = "123456"
                 )
             )
-            store.room.get(room).value?.lastMessageEventId shouldBe EventId("event2", "localhost")
+            store.room.get(room).value?.lastMessageEventId shouldBe EventId("event2")
             store.room.get(room).value?.lastMessageEventAt shouldBe fromEpochMilliseconds(5)
         }
     }
 
-    context(RoomManager::redactTimelineEvent.name) {
+    context(RoomService::redactTimelineEvent.name) {
         context("with existent event") {
             should("redact room event") {
                 val event1 = textEvent(1)
@@ -204,7 +207,7 @@ class RoomManagerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(store.roomTimeline.get(event2.id, room).value!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
                     event shouldBe MessageEvent(
                         RedactedMessageEventContent("m.room.message"),
                         event2.id,
@@ -265,7 +268,7 @@ class RoomManagerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(store.roomTimeline.get(event2.id, room).value!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
                     event shouldBe StateEvent(
                         RedactedStateEventContent("m.room.name"),
                         event2.id,
@@ -322,14 +325,14 @@ class RoomManagerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                store.roomTimeline.get(EventId("\$incorrectlyEvent"), room).value shouldBe null
-                store.roomTimeline.get(timelineEvent1.eventId, room).value shouldBe timelineEvent1
-                store.roomTimeline.get(timelineEvent2.eventId, room).value shouldBe timelineEvent2
+                store.roomTimeline.get(EventId("\$incorrectlyEvent"), room) shouldBe null
+                store.roomTimeline.get(timelineEvent1.eventId, room) shouldBe timelineEvent1
+                store.roomTimeline.get(timelineEvent2.eventId, room) shouldBe timelineEvent2
             }
         }
     }
 
-    context(RoomManager::setEncryptionAlgorithm.name) {
+    context(RoomService::setEncryptionAlgorithm.name) {
         should("update set encryption algorithm") {
             cut.setEncryptionAlgorithm(
                 StateEvent(
@@ -345,7 +348,7 @@ class RoomManagerTest : ShouldSpec({
         }
     }
 
-    context(RoomManager::setOwnMembership.name) {
+    context(RoomService::setOwnMembership.name) {
         should("set own membership of a room") {
             store.account.userId.value = alice
             cut.setOwnMembership(
@@ -361,14 +364,149 @@ class RoomManagerTest : ShouldSpec({
             store.room.get(room).value?.membership shouldBe LEAVE
         }
     }
-    context(RoomManager::setUnreadMessageCount.name) {
+    context(RoomService::setDirectRooms.name) {
+        val otherRoom = RoomId("other", "server")
+        val bob = UserId("bob", "server")
+        beforeTest {
+            store.account.userId.value = bob
+        }
+        context("membership is direct") {
+            val event = StateEvent(
+                MemberEventContent(membership = JOIN, isDirect = true),
+                EventId("$123"),
+                alice,
+                room,
+                1234,
+                stateKey = alice.full
+            )
+            context("there are direct rooms with that user") {
+                beforeTest {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(DirectEventContent(mapOf(alice to setOf(otherRoom))))
+                    )
+                }
+                should("add direct room") {
+                    cut.setDirectRooms(event)
+                    coVerify {
+                        api.users.setAccountData(
+                            withArg {
+                                it shouldBe DirectEventContent(mapOf(alice to setOf(otherRoom, room)))
+                            },
+                            bob
+                        )
+                    }
+                }
+            }
+            context("there are no direct rooms with that user") {
+                beforeTest {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(
+                            DirectEventContent(
+                                mapOf(UserId("nobody", "server") to setOf(otherRoom))
+                            )
+                        )
+                    )
+                }
+                should("add direct room") {
+                    cut.setDirectRooms(event)
+                    coVerify {
+                        api.users.setAccountData(
+                            withArg {
+                                it shouldBe DirectEventContent(
+                                    mapOf(
+                                        UserId("nobody", "server") to setOf(otherRoom),
+                                        alice to setOf(room)
+                                    )
+                                )
+                            },
+                            bob
+                        )
+                    }
+                }
+            }
+            context("there are no direct rooms at all") {
+                should("add direct room") {
+                    cut.setDirectRooms(event)
+                    coVerify {
+                        api.users.setAccountData(
+                            withArg {
+                                it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
+                            },
+                            bob
+                        )
+                    }
+                }
+            }
+        }
+        context("own membership is leave or ban") {
+            beforeTest {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(
+                        DirectEventContent(
+                            mapOf(
+                                UserId("1", "server") to setOf(room),
+                                UserId("2", "server") to setOf(room, otherRoom)
+                            )
+                        )
+                    )
+                )
+            }
+            should("remove direct room on leave") {
+                val event = StateEvent(
+                    MemberEventContent(membership = LEAVE),
+                    EventId("$123"),
+                    bob,
+                    room,
+                    1234,
+                    stateKey = bob.full
+                )
+                cut.setDirectRooms(event)
+                coVerify {
+                    api.users.setAccountData(
+                        withArg {
+                            it shouldBe DirectEventContent(
+                                mapOf(
+                                    UserId("2", "server") to setOf(otherRoom)
+                                )
+                            )
+                        },
+                        bob
+                    )
+                }
+            }
+            should("remove direct room on ban") {
+                val event = StateEvent(
+                    MemberEventContent(membership = BAN),
+                    EventId("$123"),
+                    bob,
+                    room,
+                    1234,
+                    stateKey = bob.full
+                )
+                cut.setDirectRooms(event)
+                coVerify {
+                    api.users.setAccountData(
+                        withArg {
+                            it shouldBe DirectEventContent(
+                                mapOf(
+                                    UserId("2", "server") to setOf(otherRoom)
+                                )
+                            )
+                        },
+                        bob
+                    )
+                }
+            }
+        }
+    }
+    context(RoomService::setUnreadMessageCount.name) {
         should("set unread message count for room") {
             store.room.update(room) { simpleRoom.copy(roomId = room) }
             cut.setUnreadMessageCount(room, 24)
             store.room.get(room).value?.unreadMessageCount shouldBe 24
         }
     }
-    context(RoomManager::getTimelineEvent.name) {
+    context(RoomService::getTimelineEvent.name) {
         val eventId = EventId("\$event1")
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
@@ -425,6 +563,7 @@ class RoomManagerTest : ShouldSpec({
             should("decrypt event") {
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olm.events.decryptMegolm(any()) } returns expectedDecryptedEvent
+                coEvery { olm.sign.verifyEncryptedMegolm(any()) } returns VerificationState.Valid
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
                 store.olm.updateInboundMegolmSession(senderKey, session, room) {
                     StoredInboundMegolmSession(senderKey, session, room, "pickle")
@@ -435,6 +574,7 @@ class RoomManagerTest : ShouldSpec({
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
                     decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                    verificationState shouldBe VerificationState.Valid
                 }
             }
             should("handle error") {
@@ -454,6 +594,7 @@ class RoomManagerTest : ShouldSpec({
             should("wait for olm session") {
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olm.events.decryptMegolm(any()) } returns expectedDecryptedEvent
+                coEvery { olm.sign.verifyEncryptedMegolm(any()) } returns VerificationState.Valid
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
 
                 val result = cut.getTimelineEvent(eventId, room, this)
@@ -466,11 +607,12 @@ class RoomManagerTest : ShouldSpec({
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
                     decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                    verificationState shouldBe VerificationState.Valid
                 }
             }
         }
     }
-    context(RoomManager::getLastTimelineEvent.name) {
+    context(RoomService::getLastTimelineEvent.name) {
         should("return last event of room") {
             val initialRoom = Room(room, lastMessageEventAt = fromEpochMilliseconds(24), lastEventId = null)
             val event1 = textEvent(1)
@@ -502,13 +644,13 @@ class RoomManagerTest : ShouldSpec({
             scope.cancel()
         }
     }
-    context(RoomManager::sendMessage.name) {
+    context(RoomService::sendMessage.name) {
         should("just save message in store for later use") {
             val content = TextMessageEventContent("hi")
             cut.sendMessage(room) {
                 this.content = content
             }
-            retry(10, milliseconds(2_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
+            retry(100, milliseconds(3_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
                 val outboundMessages = store.roomOutboxMessage.getAll().value
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
@@ -519,7 +661,7 @@ class RoomManagerTest : ShouldSpec({
             }
         }
     }
-    context(RoomManager::syncOutboxMessage.name) {
+    context(RoomService::syncOutboxMessage.name) {
         should("ignore messages from foreign users") {
             store.account.userId.value = UserId("me", "server")
             val roomOutboxMessage = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), true)
@@ -533,7 +675,11 @@ class RoomManagerTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(
+                100,
+                milliseconds(3_000),
+                milliseconds(30)
+            ) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value shouldContainExactly listOf(roomOutboxMessage)
             }
         }
@@ -550,12 +696,16 @@ class RoomManagerTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(
+                100,
+                milliseconds(3_000),
+                milliseconds(30)
+            ) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value.size shouldBe 0
             }
         }
     }
-    context(RoomManager::processOutboxMessages.name) {
+    context(RoomService::processOutboxMessages.name) {
         should("wait until connected, upload media, send message and mark outbox message as sent") {
             store.room.update(room) { simpleRoom }
             val mxcUrl = "mxc://dino"
@@ -570,7 +720,7 @@ class RoomManagerTest : ShouldSpec({
             store.roomOutboxMessage.add(message1)
             store.roomOutboxMessage.add(message2)
             coEvery { media.uploadMedia(any(), any()) } returns mxcUrl
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event", "server")
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event")
             val syncState = MutableStateFlow(STARTED)
             coEvery { api.sync.currentSyncState } returns syncState
 
@@ -581,12 +731,16 @@ class RoomManagerTest : ShouldSpec({
             }
             syncState.value = RUNNING
 
-            coVerify(timeout = 2_000) {
+            coVerify(timeout = 5_000) {
                 media.uploadMedia(cacheUrl, mediaUploadProgress)
                 api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
             }
-            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(
+                100,
+                milliseconds(3_000),
+                milliseconds(30)
+            ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].wasSent shouldBe true
@@ -608,7 +762,7 @@ class RoomManagerTest : ShouldSpec({
                     stateKey = ""
                 )
             store.roomState.update(encryptionState)
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event", "server")
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event")
             val megolmEventContent = mockk<MegolmEncryptedEventContent>()
             coEvery { olm.events.encryptMegolm(any(), any(), any()) } returns megolmEventContent
             coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf()
@@ -616,12 +770,16 @@ class RoomManagerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            coVerify(timeout = 2_000) {
+            coVerify(timeout = 5_000) {
                 api.rooms.sendMessageEvent(room, megolmEventContent, "transaction")
                 olm.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
                 users.loadMembers(room)
             }
-            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(
+                100,
+                milliseconds(3_000),
+                milliseconds(30)
+            ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].wasSent shouldBe true
@@ -634,15 +792,19 @@ class RoomManagerTest : ShouldSpec({
             store.roomOutboxMessage.add(message)
             coEvery {
                 api.rooms.sendMessageEvent(any(), any(), any(), any())
-            } throws IllegalArgumentException("wtf") andThen EventId("event", "server")
+            } throws IllegalArgumentException("wtf") andThen EventId("event")
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            coVerify(exactly = 2, timeout = 2_000) {
+            coVerify(exactly = 2, timeout = 5_000) {
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
             }
-            retry(10, milliseconds(2_000), milliseconds(30)) { // we need this, because the cache may not be fast enough
+            retry(
+                100,
+                milliseconds(3_000),
+                milliseconds(30)
+            ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].wasSent shouldBe true

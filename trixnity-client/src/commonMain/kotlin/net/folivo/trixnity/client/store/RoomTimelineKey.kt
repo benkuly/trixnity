@@ -1,8 +1,9 @@
 package net.folivo.trixnity.client.store
 
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 
 data class RoomTimelineKey(
-    val eventId: MatrixId.EventId,
-    val roomId: MatrixId.RoomId
+    val eventId: EventId,
+    val roomId: RoomId
 )

@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.core.EventEmitter
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
@@ -107,7 +107,7 @@ class SyncApiClient(
         timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
-        scope : CoroutineScope
+        scope: CoroutineScope
     ) {
         stop(wait = true)
         syncJob = scope.launch {

@@ -13,10 +13,10 @@ class RoomOutboxMessageStore(
 ) {
     private val roomOutboxMessageCache = StateFlowCache(storeScope, roomOutboxMessageRepository, infiniteCache = true)
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val allRoomOutboxMessages =
         roomOutboxMessageCache.cache
-            .flatMapMerge { combine(it.values) { transform -> transform } }
+            .flatMapLatest { combine(it.values) { transform -> transform } }
             .map { it.filterNotNull() }
             .stateIn(storeScope, Eagerly, listOf())
 

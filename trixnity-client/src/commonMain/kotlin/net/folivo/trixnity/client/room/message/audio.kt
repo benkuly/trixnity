@@ -16,7 +16,7 @@ suspend fun MessageBuilder.audio(
     val encryptedFile: EncryptedFile?
     if (isEncryptedRoom) {
 
-        encryptedFile = mediaManager.prepareUploadEncryptedMedia(audio)
+        encryptedFile = mediaService.prepareUploadEncryptedMedia(audio)
         format = AudioInfo(
             duration = duration,
             mimeType = type.toString(),
@@ -24,7 +24,7 @@ suspend fun MessageBuilder.audio(
         )
         url = null
     } else {
-        url = mediaManager.prepareUploadMedia(audio, type)
+        url = mediaService.prepareUploadMedia(audio, type)
         format = AudioInfo(
             duration = duration,
             mimeType = type.toString(),

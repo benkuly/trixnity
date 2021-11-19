@@ -2,7 +2,7 @@ package net.folivo.trixnity.appservice.rest.user
 
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.UserId
 
 interface AppserviceUserService {
 

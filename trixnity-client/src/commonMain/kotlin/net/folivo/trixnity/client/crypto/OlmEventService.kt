@@ -9,8 +9,8 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.KeyException.*
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.Key.*
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
@@ -99,11 +99,13 @@ class OlmEventService internal constructor(
     ): OlmEncryptedEventContent {
         val serializer = json.serializersModule.getContextual(OlmEvent::class)
         val event = OlmEvent(
-            content,
-            myUserId,
-            receiverId,
-            keysOf(store.deviceKeys.getKeyFromDevice<Ed25519Key>(receiverId, deviceId).copy(keyId = null)),
-            keysOf(myEd25519Key.copy(keyId = null))
+            content = content,
+            sender = myUserId,
+            senderKeys = keysOf(myEd25519Key.copy(keyId = null)),
+            recipient = receiverId,
+            recipientKeys = keysOf(
+                store.deviceKeys.getKeyFromDevice<Ed25519Key>(receiverId, deviceId).copy(keyId = null)
+            )
         ).also { log.debug { "olm event: $it" } }
         requireNotNull(serializer)
         val encryptedContent = olmSession.encrypt(json.encodeToString(serializer, event))

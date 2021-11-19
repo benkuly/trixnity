@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.DeviceKeysStore
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.core.model.MatrixId
+import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
@@ -20,37 +20,37 @@ class UtilsTest : ShouldSpec({
 
     context(DeviceKeysStore::waitForUpdateOutdatedKey.name) {
         should("wait until outdated does not contain anything") {
-            val outdatedKeys = MutableStateFlow(setOf(MatrixId.UserId("alice", "server")))
+            val outdatedKeys = MutableStateFlow(setOf(UserId("alice", "server")))
             val store = mockk<Store> {
                 coEvery { deviceKeys.outdatedKeys } returns outdatedKeys
             }
             val job = launch(Dispatchers.Default) {
                 store.deviceKeys.waitForUpdateOutdatedKey()
             }
-            until(milliseconds(50), milliseconds(25).fixed()) {
+            until(milliseconds(1_000), milliseconds(50).fixed()) {
                 job.isActive
             }
             outdatedKeys.value = setOf()
-            until(milliseconds(50), milliseconds(25).fixed()) {
+            until(milliseconds(1_000), milliseconds(50).fixed()) {
                 !job.isActive
             }
             job.cancelAndJoin()
         }
         should("wait until outdated does not contain ids") {
-            val outdatedKeys = MutableStateFlow(setOf(MatrixId.UserId("alice", "server")))
+            val outdatedKeys = MutableStateFlow(setOf(UserId("alice", "server")))
             val store = mockk<Store> {
                 coEvery { deviceKeys.outdatedKeys } returns outdatedKeys
             }
             val job = launch(Dispatchers.Default) {
                 store.deviceKeys.waitForUpdateOutdatedKey(
-                    MatrixId.UserId("alice", "server"),
-                    MatrixId.UserId("cedric", "server")
+                    UserId("alice", "server"),
+                    UserId("cedric", "server")
                 )
             }
             until(milliseconds(50), milliseconds(25).fixed()) {
                 job.isActive
             }
-            outdatedKeys.value = setOf(MatrixId.UserId("bob", "server"))
+            outdatedKeys.value = setOf(UserId("bob", "server"))
             until(milliseconds(50), milliseconds(25).fixed()) {
                 !job.isActive
             }

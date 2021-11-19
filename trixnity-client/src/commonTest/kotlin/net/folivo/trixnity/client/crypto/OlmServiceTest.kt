@@ -19,6 +19,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.shareIn
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.api.keys.QueryKeysResponse
@@ -28,14 +31,15 @@ import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.client.testutils.createInMemoryStore
-import net.folivo.trixnity.core.model.MatrixId
-import net.folivo.trixnity.core.model.MatrixId.RoomId
-import net.folivo.trixnity.core.model.MatrixId.UserId
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -52,8 +56,8 @@ import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalKotest::class)
-class OlmManagerTest : ShouldSpec({
-    timeout = 10_000
+class OlmServiceTest : ShouldSpec({
+    timeout = 30_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -63,7 +67,7 @@ class OlmManagerTest : ShouldSpec({
     val secureStore = mockk<SecureStore>()
     val api = mockk<MatrixApiClient>()
     val json = createMatrixJson()
-    lateinit var cut: OlmManager
+    lateinit var cut: OlmService
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
@@ -72,7 +76,7 @@ class OlmManagerTest : ShouldSpec({
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDevice
         coEvery { secureStore.olmPickleKey } returns ""
-        cut = OlmManager(store, secureStore, api, json, LoggerFactory.default)
+        cut = OlmService(store, secureStore, api, json, LoggerFactory.default)
     }
 
     afterTest {
@@ -84,7 +88,7 @@ class OlmManagerTest : ShouldSpec({
         cut.free()
     }
 
-    context(OlmManager::handleDeviceOneTimeKeysCount.name) {
+    context(OlmService::handleDeviceOneTimeKeysCount.name) {
         beforeTest {
             coEvery { api.keys.uploadKeys(any(), any(), any()) } returns mapOf(KeyAlgorithm.SignedCurve25519 to 50)
         }
@@ -110,7 +114,7 @@ class OlmManagerTest : ShouldSpec({
         }
     }
 
-    context(OlmManager::handleDeviceLists.name) {
+    context(OlmService::handleDeviceLists.name) {
         context("device key is tracked") {
             should("add changed devices to outdated keys") {
                 store.deviceKeys.outdatedKeys.value = setOf(alice)
@@ -135,7 +139,7 @@ class OlmManagerTest : ShouldSpec({
         }
     }
 
-    context(OlmManager::handleOutdatedKeys.name) {
+    context(OlmService::handleOutdatedKeys.name) {
         val cedric = UserId("cedric", "server")
         val cedricDevice = "CEDRICDEVICE"
         val aliceDevice2 = "ALICEDEVICE2"
@@ -240,7 +244,7 @@ class OlmManagerTest : ShouldSpec({
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event1"),
+                        EventId("\$event1"),
                         alice,
                         room1,
                         1234,
@@ -248,7 +252,7 @@ class OlmManagerTest : ShouldSpec({
                     ),
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event2"),
+                        EventId("\$event2"),
                         alice,
                         room2,
                         1234,
@@ -256,7 +260,7 @@ class OlmManagerTest : ShouldSpec({
                     ),
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event3"),
+                        EventId("\$event3"),
                         alice,
                         room3,
                         1234,
@@ -264,7 +268,7 @@ class OlmManagerTest : ShouldSpec({
                     ),
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event4"),
+                        EventId("\$event4"),
                         cedric,
                         room1,
                         1234,
@@ -314,19 +318,19 @@ class OlmManagerTest : ShouldSpec({
         }
     }
 
-    context(OlmManager::handleOlmEncryptedToDeviceEvents.name) {
-        context("handle ${RoomKeyEventContent::class.simpleName}") {
+    context(OlmService::handleOlmEncryptedRoomKeyEventContent.name) {
+        context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
                 val bobStore = createInMemoryStore(storeScope).apply { init() }
                 bobStore.account.userId.value = bob
                 bobStore.account.deviceId.value = bobDevice
-                val bobOlmManager = OlmManager(bobStore, secureStore, api, json, LoggerFactory.default)
+                val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
-                    val cutWithAccount = OlmManager(store, secureStore, api, json, LoggerFactory.default)
+                    val cutWithAccount = OlmService(store, secureStore, api, json, LoggerFactory.default)
                     store.deviceKeys.update(bob) {
                         mapOf(
                             bobDevice to DeviceKeys(
@@ -335,8 +339,8 @@ class OlmManagerTest : ShouldSpec({
                                 algorithms = setOf(Olm, Megolm),
                                 keys = Keys(
                                     keysOf(
-                                        bobOlmManager.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                        bobOlmManager.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                        bobOlmService.myDeviceKeys.signed.get<Curve25519Key>()!!,
+                                        bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!
                                     )
                                 )
                             )
@@ -377,39 +381,153 @@ class OlmManagerTest : ShouldSpec({
                     )
 
                     val outboundSession = OlmOutboundGroupSession.create()
-                    val eventContent = bobOlmManager.events.encryptOlm(
-                        RoomKeyEventContent(
-                            RoomId("room", "server"),
-                            outboundSession.sessionId,
-                            outboundSession.sessionKey,
-                            Megolm
-                        ),
-                        alice,
-                        aliceDevice
+                    val eventContent = RoomKeyEventContent(
+                        RoomId("room", "server"),
+                        outboundSession.sessionId,
+                        outboundSession.sessionKey,
+                        Megolm
+                    )
+                    val encryptedEvent = ToDeviceEvent(
+                        bobOlmService.events.encryptOlm(
+                            eventContent,
+                            alice,
+                            aliceDevice
+                        ), bob
                     )
 
-                    cutWithAccount.handleOlmEncryptedToDeviceEvents(ToDeviceEvent(eventContent, bob))
+                    cutWithAccount.handleOlmEncryptedRoomKeyEventContent(
+                        OlmService.DecryptedOlmEvent(
+                            encryptedEvent,
+                            Event.OlmEvent(
+                                eventContent,
+                                bob,
+                                keysOf(bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!),
+                                alice,
+                                keysOf(cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!)
+                            )
+                        )
+                    )
 
                     assertSoftly(
                         store.olm.getInboundMegolmSession(
-                            bobOlmManager.myDeviceKeys.signed.get()!!,
+                            bobOlmService.myDeviceKeys.signed.get()!!,
                             outboundSession.sessionId,
-                            RoomId("room", "server"),
-                            this
-                        ).value!!
+                            RoomId("room", "server")
+                        )!!
                     ) {
                         roomId shouldBe RoomId("room", "server")
                         sessionId shouldBe outboundSession.sessionId
-                        senderKey shouldBe bobOlmManager.myDeviceKeys.signed.get()
+                        senderKey shouldBe bobOlmService.myDeviceKeys.signed.get()!!
                     }
 
-                    bobOlmManager.free()
+                    bobOlmService.free()
                     cutWithAccount.free()
                 }
             }
         }
     }
-    context(OlmManager::handleMemberEvents.name) {
+    context(OlmService::handleOlmEncryptedToDeviceEvents.name) {
+        should("emit decrypted events") {
+            val bobStore = createInMemoryStore(storeScope).apply { init() }
+            bobStore.account.userId.value = bob
+            bobStore.account.deviceId.value = bobDevice
+            val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)
+            freeAfter(
+                OlmAccount.create()
+            ) { aliceAccount ->
+                aliceAccount.generateOneTimeKeys(1)
+                store.olm.storeAccount(aliceAccount, "")
+                val cutWithAccount = OlmService(store, secureStore, api, json, LoggerFactory.default)
+                store.deviceKeys.update(bob) {
+                    mapOf(
+                        bobDevice to DeviceKeys(
+                            userId = bob,
+                            deviceId = bobDevice,
+                            algorithms = setOf(Olm, Megolm),
+                            keys = Keys(
+                                keysOf(
+                                    bobOlmService.myDeviceKeys.signed.get<Curve25519Key>()!!,
+                                    bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                )
+                            )
+                        )
+                    )
+                }
+                bobStore.deviceKeys.update(alice) {
+                    mapOf(
+                        aliceDevice to DeviceKeys(
+                            userId = alice,
+                            deviceId = aliceDevice,
+                            algorithms = setOf(Olm, Megolm),
+                            keys = Keys(
+                                keysOf(
+                                    cutWithAccount.myDeviceKeys.signed.get<Curve25519Key>()!!,
+                                    cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                )
+                            )
+                        )
+                    )
+                }
+
+                coEvery {
+                    api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
+                } returns ClaimKeysResponse(
+                    emptyMap(),
+                    mapOf(
+                        alice to mapOf(
+                            aliceDevice to keysOf(
+                                cutWithAccount.sign.signCurve25519Key(
+                                    Curve25519Key(
+                                        aliceDevice,
+                                        aliceAccount.oneTimeKeys.curve25519.values.first()
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+
+                val outboundSession = OlmOutboundGroupSession.create()
+                val eventContent = RoomKeyEventContent(
+                    RoomId("room", "server"),
+                    outboundSession.sessionId,
+                    outboundSession.sessionKey,
+                    Megolm
+                )
+                val encryptedEvent = ToDeviceEvent(
+                    bobOlmService.events.encryptOlm(
+                        eventContent,
+                        alice,
+                        aliceDevice
+                    ), bob
+                )
+
+                val scope = CoroutineScope(Dispatchers.Default)
+                val emittedEvent =
+                    cutWithAccount.decryptedOlmEvents.shareIn(scope, started = SharingStarted.Eagerly, replay = 1)
+                cutWithAccount.handleOlmEncryptedToDeviceEvents(encryptedEvent)
+
+                assertSoftly(
+                    emittedEvent.firstOrNull()
+                ) {
+                    assertNotNull(this)
+                    encrypted shouldBe encryptedEvent
+                    decrypted shouldBe Event.OlmEvent(
+                        eventContent,
+                        bob,
+                        keysOf(bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null)),
+                        alice,
+                        keysOf(cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null))
+                    )
+                }
+                scope.cancel()
+
+                bobOlmService.free()
+                cutWithAccount.free()
+            }
+        }
+    }
+    context(OlmService::handleMemberEvents.name) {
         val room = RoomId("room", "server")
         beforeTest {
             store.room.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = Megolm) }
@@ -420,7 +538,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room2,
                     1234,
@@ -434,7 +552,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -447,7 +565,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = BAN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -461,7 +579,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -474,7 +592,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = MemberEventContent.Membership.BAN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -491,7 +609,7 @@ class OlmManagerTest : ShouldSpec({
             store.roomState.update(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     otherRoom,
                     1234,
@@ -501,7 +619,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -514,7 +632,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = BAN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -527,7 +645,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -543,7 +661,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -557,7 +675,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = INVITE),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -571,7 +689,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
-                    MatrixId.EventId("\$event"),
+                    EventId("\$event"),
                     alice,
                     room,
                     1234,
@@ -581,13 +699,13 @@ class OlmManagerTest : ShouldSpec({
             store.deviceKeys.outdatedKeys.value shouldHaveSize 0
         }
     }
-    context(OlmManager::handleEncryptionEvents.name) {
+    context(OlmService::handleEncryptionEvents.name) {
         should("mark all joined and invited users as outdated") {
             store.roomState.updateAll(
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event1"),
+                        EventId("\$event1"),
                         alice,
                         RoomId("room", "server"),
                         1234,
@@ -595,7 +713,7 @@ class OlmManagerTest : ShouldSpec({
                     ),
                     StateEvent(
                         MemberEventContent(membership = INVITE),
-                        MatrixId.EventId("\$event2"),
+                        EventId("\$event2"),
                         bob,
                         RoomId("room", "server"),
                         1234,
@@ -606,7 +724,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleEncryptionEvents(
                 StateEvent(
                     EncryptionEventContent(),
-                    MatrixId.EventId("\$event3"),
+                    EventId("\$event3"),
                     bob,
                     RoomId("room", "server"),
                     1234,
@@ -622,7 +740,7 @@ class OlmManagerTest : ShouldSpec({
                 listOf(
                     StateEvent(
                         MemberEventContent(membership = JOIN),
-                        MatrixId.EventId("\$event1"),
+                        EventId("\$event1"),
                         alice,
                         RoomId("room", "server"),
                         1234,
@@ -630,7 +748,7 @@ class OlmManagerTest : ShouldSpec({
                     ),
                     StateEvent(
                         MemberEventContent(membership = INVITE),
-                        MatrixId.EventId("\$event2"),
+                        EventId("\$event2"),
                         bob,
                         RoomId("room", "server"),
                         1234,
@@ -641,7 +759,7 @@ class OlmManagerTest : ShouldSpec({
             cut.handleEncryptionEvents(
                 StateEvent(
                     EncryptionEventContent(),
-                    MatrixId.EventId("\$event3"),
+                    EventId("\$event3"),
                     bob,
                     RoomId("room", "server"),
                     1234,

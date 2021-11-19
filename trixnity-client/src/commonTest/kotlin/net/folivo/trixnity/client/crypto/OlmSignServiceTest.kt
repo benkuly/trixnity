@@ -14,13 +14,17 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.crypto.VerificationState.*
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.core.model.MatrixId.*
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
@@ -32,15 +36,19 @@ class OlmSignServiceTest : ShouldSpec({
     val account = OlmAccount.create()
     val signingAccount = OlmAccount.create()
     val utility = OlmUtility.create()
+    val bob = UserId("bob", "server")
     val store = mockk<Store> {
         every { this@mockk.account.userId } returns MutableStateFlow(UserId("me", "server"))
         every { this@mockk.account.deviceId } returns MutableStateFlow("ABCDEF")
-        coEvery { deviceKeys.get(UserId("bob", "server")) } returns mapOf(
+        coEvery { deviceKeys.get(bob) } returns mapOf(
             "BBBBBB" to DeviceKeys(
-                UserId("bob", "server"),
+                bob,
                 "BBBBBB",
                 setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                keysOf(Ed25519Key("", signingAccount.identityKeys.ed25519))
+                keysOf(
+                    Ed25519Key("BBBBBB", signingAccount.identityKeys.ed25519),
+                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519)
+                )
             )
         )
     }
@@ -234,6 +242,51 @@ class OlmSignServiceTest : ShouldSpec({
                     )
                 ) shouldBe KeyVerificationState.Invalid("BAD_MESSAGE_MAC")
             }
+        }
+    }
+    context(OlmSignService::verifyEncryptedMegolm.name) {
+        should("be ${Invalid::class.simpleName} when no key found") {
+            val senderKey = Curve25519Key("BBBBBB", "keykeykey")
+            val event = Event.MessageEvent(
+                EncryptedEventContent.MegolmEncryptedEventContent("cipher cipher", senderKey, "BBBBBB", "sessionId"),
+                EventId("$1event"),
+                bob,
+                RoomId("room", "server"),
+                1234
+            )
+            cut.verifyEncryptedMegolm(event)::class shouldBe Invalid::class
+        }
+        should("be ${Valid::class.simpleName} when key found, but not marked as verified") {
+            coEvery { store.deviceKeys.isVerified(any(), any(), any()) } returns false
+            val event = Event.MessageEvent(
+                EncryptedEventContent.MegolmEncryptedEventContent(
+                    "cipher cipher",
+                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519),
+                    "BBBBBB",
+                    "sessionId"
+                ),
+                EventId("$1event"),
+                bob,
+                RoomId("room", "server"),
+                1234
+            )
+            cut.verifyEncryptedMegolm(event) shouldBe Valid
+        }
+        should("be ${Verified::class.simpleName} when key found and marked as verified") {
+            coEvery { store.deviceKeys.isVerified(any(), any(), any()) } returns true
+            val event = Event.MessageEvent(
+                EncryptedEventContent.MegolmEncryptedEventContent(
+                    "cipher cipher",
+                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519),
+                    "BBBBBB",
+                    "sessionId"
+                ),
+                EventId("$1event"),
+                bob,
+                RoomId("room", "server"),
+                1234
+            )
+            cut.verifyEncryptedMegolm(event) shouldBe Verified
         }
     }
 })

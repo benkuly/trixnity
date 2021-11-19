@@ -22,7 +22,7 @@ abstract class EventEmitter { // TODO test it
     }
 
     fun <T : EventContent> events(clazz: KClass<T>): SharedFlow<Event<T>> {
-        @Suppress("UNCHECKED_CAST") // TODO unchecked cast
+        @Suppress("UNCHECKED_CAST")
         return (eventHandler.getOrPut(clazz) { MutableSharedFlow() } as MutableSharedFlow<Event<T>>)
             .asSharedFlow()
     }
