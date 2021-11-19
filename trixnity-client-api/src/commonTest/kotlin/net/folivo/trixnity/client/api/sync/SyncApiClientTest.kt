@@ -8,14 +8,13 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
+import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.*
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -31,13 +30,41 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 class SyncApiClientTest {
     private val json = createMatrixJson()
 
     data class RequestCounter(var value: Int)
+    lateinit var scope:CoroutineScope
+
+    private val serverResponse1 = SyncResponse(
+        nextBatch = "nextBatch1",
+        accountData = GlobalAccountData(emptyList()),
+        deviceLists = DeviceLists(emptySet(), emptySet()),
+        deviceOneTimeKeysCount = emptyMap(),
+        presence = Presence(emptyList()),
+        room = Rooms(emptyMap(), emptyMap(), emptyMap()),
+        toDevice = ToDevice(emptyList())
+    )
+    private val serverResponse2 = SyncResponse(
+        nextBatch = "nextBatch2",
+        accountData = GlobalAccountData(emptyList()),
+        deviceLists = DeviceLists(emptySet(), emptySet()),
+        deviceOneTimeKeysCount = emptyMap(),
+        presence = Presence(emptyList()),
+        room = Rooms(emptyMap(), emptyMap(), emptyMap()),
+        toDevice = ToDevice(emptyList())
+    )
+    @BeforeTest
+    fun beforeTest(){
+        scope=CoroutineScope(Dispatchers.Default)
+    }
+
+    @AfterTest
+    fun afterTest(){
+        scope.cancel()
+    }
 
     @Test
     fun shouldSyncOnce() = runBlockingTest {
@@ -278,24 +305,6 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncLoop() = runBlockingTest {
-        val response1 = SyncResponse(
-            nextBatch = "nextBatch1",
-            accountData = GlobalAccountData(emptyList()),
-            deviceLists = DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = Presence(emptyList()),
-            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = ToDevice(emptyList())
-        )
-        val response2 = SyncResponse(
-            nextBatch = "nextBatch2",
-            accountData = GlobalAccountData(emptyList()),
-            deviceLists = DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = Presence(emptyList()),
-            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = ToDevice(emptyList())
-        )
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             "matrix.host",
@@ -311,7 +320,7 @@ class SyncApiClientTest {
                                 assertEquals(HttpMethod.Get, request.method)
                                 requestCount.value++
                                 respond(
-                                    json.encodeToString(response1),
+                                    json.encodeToString(serverResponse1),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -324,14 +333,14 @@ class SyncApiClientTest {
                                 assertEquals(HttpMethod.Get, request.method)
                                 requestCount.value++
                                 respond(
-                                    json.encodeToString(response2),
+                                    json.encodeToString(serverResponse2),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
                             }
                             else -> {
                                 respond(
-                                    json.encodeToString(response2),
+                                    json.encodeToString(serverResponse2),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -349,22 +358,170 @@ class SyncApiClientTest {
         ).take(3).toList()
 
         assertEquals(3, requestCount.value)
-        assertEquals(response1, result[0])
-        assertEquals(response2, result[1])
+        assertEquals(serverResponse1, result[0])
+        assertEquals(serverResponse2, result[1])
         assertEquals("nextBatch2", currentBatchToken.value)
     }
 
     @Test
-    fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
-        val response = SyncResponse(
-            nextBatch = "nextBatch1",
-            accountData = GlobalAccountData(emptyList()),
-            deviceLists = DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = Presence(emptyList()),
-            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = ToDevice(emptyList())
+    fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runBlockingTest {
+        val requestCount = RequestCounter(1)
+        val matrixRestClient = MatrixApiClient(
+            "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        when (requestCount.value) {
+                            1 -> {
+                                assertEquals(
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=100",
+                                    request.url.fullPath
+                                )
+                                assertEquals(HttpMethod.Get, request.method)
+                                requestCount.value++
+                                respond(
+                                    json.encodeToString(serverResponse1),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                            2 -> {
+                                requestCount.value++
+                                delay(6000)
+                                respond(
+                                    json.encodeToString(serverResponse2),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                            else -> {
+                                respond(
+                                    json.encodeToString(serverResponse2),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+
+        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 10)
+
+        stateResult.first { it == STOPPED }
+
+        val currentBatchToken = MutableStateFlow<String?>(null)
+        matrixRestClient.sync.start(
+            filter = "someFilter",
+            setPresence = PresenceEventContent.Presence.ONLINE,
+            currentBatchToken = currentBatchToken,
+            scope = scope,
+            timeout = 100
         )
+        stateResult.first { it == TIMEOUT }
+        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT), stateResult.replayCache)
+        matrixRestClient.sync.stop(wait = true)
+        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT, STOPPING, STOPPED), stateResult.replayCache)
+    }
+
+    @Test
+    fun shouldSyncLoopWithoutInitialSyncState() = runBlockingTest {
+        val requestCount = RequestCounter(1)
+        val matrixRestClient = MatrixApiClient(
+            "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        when (requestCount.value) {
+                            1 -> {
+                                assertEquals(
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
+                                    request.url.fullPath
+                                )
+                                assertEquals(HttpMethod.Get, request.method)
+                                requestCount.value++
+                                respond(
+                                    json.encodeToString(serverResponse1),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                            else -> {
+                                respond(
+                                    json.encodeToString(serverResponse2),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+
+        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 10)
+        stateResult.first { it == STOPPED }
+        val currentBatchToken = MutableStateFlow<String?>("ananas")
+        matrixRestClient.sync.start(
+            filter = "someFilter",
+            setPresence = PresenceEventContent.Presence.ONLINE,
+            currentBatchToken = currentBatchToken,
+            scope = scope,
+            timeout = 100
+        )
+        stateResult.first { it == RUNNING }
+        assertEquals(listOf(STOPPED, STARTED, RUNNING), stateResult.replayCache)
+    }
+
+    @Test
+    fun shouldSyncLoopWithErrorState() = runBlockingTest {
+        val requestCount = RequestCounter(1)
+        val matrixRestClient = MatrixApiClient(
+            "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        when (requestCount.value) {
+                            1 -> {
+                                assertEquals(
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    request.url.fullPath
+                                )
+                                assertEquals(HttpMethod.Get, request.method)
+                                requestCount.value++
+                                respond(
+                                    json.encodeToString(serverResponse1),
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                            else -> {
+                                respond(
+                                    json.encodeToString(serverResponse2),
+                                    HttpStatusCode.BadRequest,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+
+        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 10)
+
+        val currentBatchToken = MutableStateFlow<String?>(null)
+        matrixRestClient.sync.start(
+            filter = null,
+            setPresence = null,
+            currentBatchToken = currentBatchToken,
+            asUserId = null,
+            scope = scope
+        )
+        stateResult.first {it == ERROR}
+        assertContains (stateResult.replayCache, ERROR)
+    }
+
+    @Test
+    fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             "matrix.host",
@@ -384,7 +541,7 @@ class SyncApiClientTest {
                                 requestCount.value++
                                 delay(6000)
                                 respond(
-                                    json.encodeToString(response),
+                                    json.encodeToString(serverResponse1),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -398,7 +555,7 @@ class SyncApiClientTest {
                                 requestCount.value++
                                 delay(100)
                                 respond(
-                                    json.encodeToString(response),
+                                    json.encodeToString(serverResponse1),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -414,24 +571,6 @@ class SyncApiClientTest {
 
     @Test
     fun shouldRetrySyncLoopOnError() = runBlockingTest {
-        val response1 = SyncResponse(
-            nextBatch = "nextBatch1",
-            accountData = GlobalAccountData(emptyList()),
-            deviceLists = DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = Presence(emptyList()),
-            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = ToDevice(emptyList())
-        )
-        val response2 = SyncResponse(
-            nextBatch = "nextBatch2",
-            accountData = GlobalAccountData(emptyList()),
-            deviceLists = DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = Presence(emptyList()),
-            room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = ToDevice(emptyList())
-        )
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             "matrix.host",
@@ -447,7 +586,7 @@ class SyncApiClientTest {
                                 assertEquals(HttpMethod.Get, request.method)
                                 requestCount.value++
                                 respond(
-                                    json.encodeToString(response1),
+                                    json.encodeToString(serverResponse1),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -473,14 +612,14 @@ class SyncApiClientTest {
                                 assertEquals(HttpMethod.Get, request.method)
                                 requestCount.value++
                                 respond(
-                                    json.encodeToString(response2),
+                                    json.encodeToString(serverResponse2),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
                             }
                             else -> {
                                 respond(
-                                    json.encodeToString(response2),
+                                    json.encodeToString(serverResponse2),
                                     HttpStatusCode.OK,
                                     headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                 )
@@ -499,8 +638,8 @@ class SyncApiClientTest {
         ).take(3).toList()
 
         assertEquals(4, requestCount.value)
-        assertEquals(response1, result[0])
-        assertEquals(response2, result[1])
+        assertEquals(serverResponse1, result[0])
+        assertEquals(serverResponse2, result[1])
         assertEquals("nextBatch2", currentBatchToken.value)
     }
 
@@ -670,8 +809,8 @@ class SyncApiClientTest {
                 roomAccountDataEventsFlow.take(2).toList()
             }
 
-            GlobalScope.launch {
-                matrixRestClient.sync.start(scope = this)
+            launch {
+                matrixRestClient.sync.start(scope = scope)
             }
 
             inChannel.send(response)
@@ -692,8 +831,6 @@ class SyncApiClientTest {
             assertEquals(1, roomKeyEvents.await().count())
             assertEquals(1, globalAccountDataEvents.await().count())
             assertEquals(2, roomAccountDataEvents.await().count())
-
-            matrixRestClient.sync.stop()
         }
     }
 
@@ -740,11 +877,11 @@ class SyncApiClientTest {
                 }
             })
 
-        val events = GlobalScope.async {
+        val events = scope.async {
             matrixRestClient.sync.events<EventContent>().take(2).toList()
         }
 
-        GlobalScope.launch {
+        scope.launch {
             matrixRestClient.sync.start(scope = this)
             matrixRestClient.sync.start(scope = this)
         }

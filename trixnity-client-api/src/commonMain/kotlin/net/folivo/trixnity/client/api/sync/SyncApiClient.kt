@@ -54,6 +54,7 @@ class SyncApiClient(
         return flow {
             while (currentCoroutineContext().isActive && _currentSyncState.value != SyncState.STOPPING) {
                 try {
+
                     val batchToken = currentBatchToken.value
                     val response = syncOnce(
                         filter = filter,
@@ -63,20 +64,25 @@ class SyncApiClient(
                         timeout = timeout,
                         asUserId = asUserId
                     )
-                    _currentSyncState.value = SyncState.RUNNING
                     emit(response)
+                    if (_currentSyncState.value != SyncState.STOPPING) {
+                        _currentSyncState.value = SyncState.RUNNING
+                    }
                     // we want to be sure, that the next batch is only set, when we finished the processing of the response
                     currentBatchToken.value = response.nextBatch
                 } catch (error: Throwable) {
                     when (error) {
-                        is HttpRequestTimeoutException -> _currentSyncState.value = SyncState.TIMEOUT
+                        is HttpRequestTimeoutException -> if (_currentSyncState.value != SyncState.STOPPING) _currentSyncState.value = SyncState.TIMEOUT
                         is CancellationException -> throw error
-                        else -> _currentSyncState.value = SyncState.ERROR
+                        else -> if (_currentSyncState.value != SyncState.STOPPING) _currentSyncState.value = SyncState.ERROR
                     }
                     log.info { "error while sync to server: $error" }
                     log.debug { error.stackTraceToString() }
                     delay(5000)// TODO better retry policy!
-                    _currentSyncState.value = SyncState.STARTED
+                    val isInitialSync = currentBatchToken.value == null
+                    if(_currentSyncState.value != SyncState.STOPPING){
+                        if (isInitialSync) SyncState.INITIAL_SYNC else SyncState.STARTED
+                    }
                 }
             }
         }
@@ -92,6 +98,7 @@ class SyncApiClient(
     val syncResponses = _syncResponses.asSharedFlow()
 
     enum class SyncState {
+        INITIAL_SYNC,
         STARTED,
         RUNNING,
         ERROR,
@@ -112,7 +119,10 @@ class SyncApiClient(
         stop(wait = true)
         syncJob = scope.launch {
             log.info { "started syncLoop" }
-            _currentSyncState.value = SyncState.STARTED
+            val isInitialSync = currentBatchToken.value == null
+            _currentSyncState.value =
+                if (isInitialSync && _currentSyncState.value != SyncState.STOPPING) SyncState.INITIAL_SYNC else SyncState.STARTED
+
             try {
                 syncLoop(filter, setPresence, currentBatchToken, timeout, asUserId)
                     .collect { response ->
@@ -138,8 +148,7 @@ class SyncApiClient(
                         log.debug { "processed sync response" }
                     }
             } catch (error: Throwable) {
-                log.info { "stopped syncLoop" }
-                log.debug { "reason: ${error.stackTraceToString()}" }
+                log.info { "stopped syncLoop: ${error.message}" }
             }
             _currentSyncState.value = SyncState.STOPPED
         }
@@ -147,7 +156,9 @@ class SyncApiClient(
     }
 
     suspend fun stop(wait: Boolean = false) {
-        _currentSyncState.value = SyncState.STOPPING
-        if (wait) syncJob?.join()
+        if (syncJob != null) {
+            _currentSyncState.value = SyncState.STOPPING
+            if (wait) syncJob?.join()
+        }
     }
 }
