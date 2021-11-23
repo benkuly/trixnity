@@ -19,7 +19,7 @@ suspend fun example() = coroutineScope {
     val matrixRestClient =
         MatrixApiClient(
             hostname = "host",
-        ).apply { accessToken = "token" }
+        ).apply { accessToken.value = "token" }
     val roomId = RoomId("!room:server")
 
     val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
@@ -61,7 +61,7 @@ suspend fun example() = coroutineScope {
                                 matrixRestClient.rooms.sendMessageEvent(
                                     roomId, ImageMessageEventContent(
                                         body = "avatar image of ${event.sender}",
-                                        format = ImageInfo(),
+                                        info = ImageInfo(),
                                         url = uploadedUrl
                                     )
                                 )

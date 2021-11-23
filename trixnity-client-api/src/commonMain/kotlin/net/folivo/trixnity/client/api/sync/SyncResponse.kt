@@ -21,10 +21,21 @@ data class SyncResponse(
 ) {
     @Serializable
     data class Rooms(
+        @SerialName("knock") val knock: Map<RoomId, KnockedRoom>? = null,
         @SerialName("join") val join: Map<RoomId, JoinedRoom>? = null,
         @SerialName("invite") val invite: Map<RoomId, InvitedRoom>? = null,
         @SerialName("leave") val leave: Map<RoomId, LeftRoom>? = null
     ) {
+        @Serializable
+        data class KnockedRoom(
+            @SerialName("knock_state") val knockState: InviteState? = null
+        ) {
+            @Serializable
+            data class InviteState(
+                @SerialName("events") val events: List<@Contextual StrippedStateEvent<*>>? = null
+            )
+        }
+
         @Serializable
         data class JoinedRoom(
             @SerialName("summary") val summary: RoomSummary? = null,

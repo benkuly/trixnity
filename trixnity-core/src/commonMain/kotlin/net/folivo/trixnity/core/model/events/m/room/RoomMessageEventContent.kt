@@ -64,7 +64,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class ImageMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val format: ImageInfo? = null,
+        @SerialName("info") val info: ImageInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
     ) : RoomMessageEventContent {
@@ -80,7 +80,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     data class FileMessageEventContent(
         @SerialName("body") override val body: String,
         @SerialName("filename") val fileName: String? = null,
-        @SerialName("info") val format: FileInfo? = null,
+        @SerialName("info") val info: FileInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
     ) : RoomMessageEventContent {
@@ -95,7 +95,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class AudioMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val format: AudioInfo? = null,
+        @SerialName("info") val info: AudioInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
     ) : RoomMessageEventContent {
@@ -110,7 +110,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class VideoMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val format: VideoInfo? = null,
+        @SerialName("info") val info: VideoInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
     ) : RoomMessageEventContent {

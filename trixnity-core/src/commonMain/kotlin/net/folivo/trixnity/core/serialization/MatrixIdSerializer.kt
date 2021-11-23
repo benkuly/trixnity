@@ -25,7 +25,7 @@ object UserIdSerializer : KSerializer<UserId> {
         encoder.encodeString(value.full)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UserId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UserIdSerializer", PrimitiveKind.STRING)
 }
 
 object RoomIdSerializer : KSerializer<RoomId> {
@@ -41,7 +41,7 @@ object RoomIdSerializer : KSerializer<RoomId> {
         encoder.encodeString(value.full)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomIdSerializer", PrimitiveKind.STRING)
 }
 
 object RoomAliasIdSerializer : KSerializer<RoomAliasId> {
@@ -57,7 +57,7 @@ object RoomAliasIdSerializer : KSerializer<RoomAliasId> {
         encoder.encodeString(value.full)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomAliasId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomAliasIdSerializer", PrimitiveKind.STRING)
 }
 
 object EventIdSerializer : KSerializer<EventId> {
@@ -69,5 +69,5 @@ object EventIdSerializer : KSerializer<EventId> {
         encoder.encodeString(value.full)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventIdSerializer", PrimitiveKind.STRING)
 }

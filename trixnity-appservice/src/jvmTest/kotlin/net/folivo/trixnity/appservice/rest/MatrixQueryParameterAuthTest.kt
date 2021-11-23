@@ -38,7 +38,7 @@ class MatrixQueryParameterAuthTest {
         val response = handleRequest(HttpMethod.Get, "/_matrix/something").response
         assertEquals(HttpStatusCode.Unauthorized, response.status())
         assertEquals(ContentType.Application.Json.withCharset(Charset.defaultCharset()), response.contentType())
-        assertEquals(Json.encodeToString(ErrorResponse("401", "NET.FOLIVO.MATRIX_UNAUTHORIZED")), response.content)
+        assertEquals(Json.encodeToString(ErrorResponse.Unauthorized()), response.content)
     }
 
     @Test
@@ -46,7 +46,7 @@ class MatrixQueryParameterAuthTest {
         val response = handleRequest(HttpMethod.Get, "/_matrix/something?access_token=invalidToken").response
         assertEquals(HttpStatusCode.Forbidden, response.status())
         assertEquals(ContentType.Application.Json.withCharset(Charset.defaultCharset()), response.contentType())
-        assertEquals(Json.encodeToString(ErrorResponse("403", "NET.FOLIVO.MATRIX_FORBIDDEN")), response.content)
+        assertEquals(Json.encodeToString(ErrorResponse.Forbidden()), response.content)
     }
 
     @Test

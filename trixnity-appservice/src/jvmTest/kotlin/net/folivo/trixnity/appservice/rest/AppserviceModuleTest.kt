@@ -19,7 +19,10 @@ fun Application.testAppAppserviceModule() {
     matrixAppserviceModule(MatrixAppserviceProperties("token"), mockk())
     routing {
         get("/error") {
-            throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse("OH", "no"))
+            throw MatrixServerException(
+                HttpStatusCode.InternalServerError,
+                ErrorResponse.CustomErrorResponse("OH", "no")
+            )
         }
         authenticate("default") {
             get("/authenticated") {
@@ -36,7 +39,7 @@ class AppserviceModuleTest {
         val response = handleRequest(HttpMethod.Get, "/error").response
         assertEquals(HttpStatusCode.InternalServerError, response.status())
         assertEquals(ContentType.Application.Json.withCharset(Charset.defaultCharset()), response.contentType())
-        assertEquals(Json.encodeToString(ErrorResponse("OH", "no")), response.content)
+        assertEquals(Json.encodeToString(ErrorResponse.CustomErrorResponse("OH", "no")), response.content)
     }
 
     @Test

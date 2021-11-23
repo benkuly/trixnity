@@ -1,38 +1,33 @@
 package net.folivo.trixnity.client.api.media
 
-import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.content.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.client.api.MatrixHttpClient
 
-class MediaApiClient(private val httpClient: HttpClient) {
+class MediaApiClient(private val httpClient: MatrixHttpClient) {
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-media-r0-config">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3config">matrix spec</a>
      */
     suspend fun getConfig(): GetConfigResponse {
-        return httpClient.get("/_matrix/media/r0/config") {
+        return httpClient.request {
+            method = Get
+            url("/_matrix/media/v3/config")
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
     }
 
-    private class StreamContent(
-        private val content: ByteReadChannel,
-        override val contentLength: Long
-    ) : OutgoingContent.ReadChannelContent() {
-        override fun readFrom(): ByteReadChannel {
-            return content
-        }
-    }
-
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-media-r0-upload">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixmediav3upload">matrix spec</a>
      */
     suspend fun upload(
         content: ByteReadChannel,
@@ -41,7 +36,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
         filename: String? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): UploadResponse {
-        return httpClient.post("/_matrix/media/r0/upload") {
+        return httpClient.request {
+            method = Post
+            url("/_matrix/media/v3/upload")
             accept(ContentType.Application.Json)
             parameter("filename", filename)
             body = object : OutgoingContent.ReadChannelContent() {
@@ -65,7 +62,7 @@ class MediaApiClient(private val httpClient: HttpClient) {
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-media-r0-download-servername-mediaid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
      */
     suspend fun download(
         mxcUri: String,
@@ -74,8 +71,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
     ): DownloadResponse {
         val uri = Url(mxcUri)
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
-        val response = httpClient.get<HttpResponse> {
-            url("/_matrix/media/r0/download/${uri.host}${uri.encodedPath}")
+        val response = httpClient.request<HttpResponse> {
+            method = Get
+            url("/_matrix/media/v3/download/${uri.host}${uri.encodedPath}")
             parameter("allow_remote", allowRemote)
             timeout {
                 requestTimeoutMillis = 600000
@@ -94,7 +92,7 @@ class MediaApiClient(private val httpClient: HttpClient) {
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-media-r0-thumbnail-servername-mediaid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
      */
     suspend fun downloadThumbnail(
         mxcUri: String,
@@ -106,8 +104,9 @@ class MediaApiClient(private val httpClient: HttpClient) {
     ): DownloadResponse {
         val uri = Url(mxcUri)
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
-        val response = httpClient.get<HttpResponse> {
-            url("/_matrix/media/r0/thumbnail/${uri.host}${uri.encodedPath}")
+        val response = httpClient.request<HttpResponse> {
+            this.method = Get
+            url("/_matrix/media/v3/thumbnail/${uri.host}${uri.encodedPath}")
             parameter("width", width)
             parameter("height", height)
             parameter("method", method.value)

@@ -7,6 +7,7 @@ import net.folivo.trixnity.core.model.crypto.Signed
 
 @Serializable
 data class JoinRoomRequest(
+    @SerialName("reason") val reason: String?,
     @SerialName("third_party_signed") val thirdPartySigned: Signed<ThirdParty, String>?,
 ) {
     @Serializable

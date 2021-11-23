@@ -1,11 +1,11 @@
-package net.folivo.trixnity.client.api.users
+package net.folivo.trixnity.client.api.rooms
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
-internal data class WhoAmIResponse(
+data class BanUserRequest(
     @SerialName("user_id") val userId: UserId,
-    @SerialName("device_id") val deviceId: String?
+    @SerialName("reason") val reason: String?
 )

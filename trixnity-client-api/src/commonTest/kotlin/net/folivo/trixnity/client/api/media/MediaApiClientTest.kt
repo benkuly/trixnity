@@ -9,7 +9,7 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.runBlockingTest
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MediaApiClientTest {
@@ -20,7 +20,7 @@ class MediaApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/media/r0/config", request.url.fullPath)
+                        assertEquals("/_matrix/media/v3/config", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -45,7 +45,7 @@ class MediaApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/media/r0/upload?filename=testFile.txt", request.url.fullPath)
+                        assertEquals("/_matrix/media/v3/upload?filename=testFile.txt", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(ContentType.Text.Plain, request.body.contentType)
                         assertEquals(4, request.body.contentLength)
@@ -82,7 +82,7 @@ class MediaApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/media/r0/download/matrix.org/ascERGshawAWawugaAcauga?allow_remote=false",
+                            "/_matrix/media/v3/download/matrix.org/ascERGshawAWawugaAcauga?allow_remote=false",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -117,7 +117,7 @@ class MediaApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/media/r0/thumbnail/matrix.org/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
+                            "/_matrix/media/v3/thumbnail/matrix.org/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)

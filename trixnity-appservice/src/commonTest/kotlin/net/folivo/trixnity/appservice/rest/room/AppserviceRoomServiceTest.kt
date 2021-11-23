@@ -66,7 +66,7 @@ class AppserviceRoomServiceTest {
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
-                    ErrorResponse("500", "M_UNKNOWN")
+                    ErrorResponse.Unknown("internal server error")
                 )
             )
 

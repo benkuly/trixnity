@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType
 
 object OlmMessageTypeSerializer : KSerializer<OlmMessageType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("OlmMessageType", PrimitiveKind.INT)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("OlmMessageTypeSerializer", PrimitiveKind.INT)
 
     override fun deserialize(decoder: Decoder): OlmMessageType {
         return OlmMessageType.of(decoder.decodeInt())

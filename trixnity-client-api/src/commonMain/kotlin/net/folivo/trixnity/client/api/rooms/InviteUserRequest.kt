@@ -7,4 +7,5 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 data class InviteUserRequest(
     @SerialName("user_id") val userId: UserId,
+    @SerialName("reason") val reason: String?
 )

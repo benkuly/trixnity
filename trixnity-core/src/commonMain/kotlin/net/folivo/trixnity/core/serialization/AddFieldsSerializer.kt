@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonTransformingSerializer
 
 open class AddFieldsSerializer<T : Any>(
     baseSerializer: KSerializer<T>,
-    private vararg val fields: Pair<String, String>
+    private vararg val fields: Pair<String, String?>
 ) : JsonTransformingSerializer<T>(baseSerializer) {
     override fun transformDeserialize(element: JsonElement): JsonElement {
         return addField(element)
