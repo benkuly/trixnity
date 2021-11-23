@@ -76,7 +76,7 @@ class MatrixClient private constructor(
                 type = LoginType.Password,
                 initialDeviceDisplayName = initialDeviceDisplayName
             )
-            api.accessToken = newAccessToken
+            api.accessToken.value = newAccessToken
             store.account.accessToken.value = newAccessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
@@ -155,7 +155,7 @@ class MatrixClient private constructor(
             val deviceId = store.account.deviceId.value
 
             return if (accessToken != null && userId != null && deviceId != null) {
-                api.accessToken = accessToken
+                api.accessToken.value = accessToken
                 val olmService = OlmService(
                     store = store,
                     secureStore = secureStore,

@@ -19,22 +19,22 @@ suspend fun roomMessageEventContentMediaUploader(
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailFile?.url?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let { upload(it) }
                 val mxcUri = upload(encryptedContentUrl)
                 content.copy(
                     file = content.file?.copy(url = mxcUri),
-                    format = content.format?.copy(thumbnailFile = thumbnailMxcUri?.let {
-                        content.format?.thumbnailFile?.copy(
+                    info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
+                        content.info?.thumbnailFile?.copy(
                             url = it
                         )
                     })
                 )
             } else if (contentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailUrl?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailUrl?.let { upload(it) }
                 val mxcUri = upload(contentUrl)
                 content.copy(
                     url = mxcUri,
-                    format = content.format?.copy(thumbnailUrl = thumbnailMxcUri)
+                    info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
                 )
             } else content
         }
@@ -42,22 +42,22 @@ suspend fun roomMessageEventContentMediaUploader(
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailFile?.url?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let { upload(it) }
                 val mxcUri = upload(encryptedContentUrl)
                 content.copy(
                     file = content.file?.copy(url = mxcUri),
-                    format = content.format?.copy(thumbnailFile = thumbnailMxcUri?.let {
-                        content.format?.thumbnailFile?.copy(
+                    info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
+                        content.info?.thumbnailFile?.copy(
                             url = it
                         )
                     })
                 )
             } else if (contentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailUrl?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailUrl?.let { upload(it) }
                 val mxcUri = upload(contentUrl)
                 content.copy(
                     url = mxcUri,
-                    format = content.format?.copy(thumbnailUrl = thumbnailMxcUri)
+                    info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
                 )
             } else content
         }
@@ -65,22 +65,22 @@ suspend fun roomMessageEventContentMediaUploader(
             val encryptedContentUrl = content.file?.url
             val contentUrl = content.url
             if (encryptedContentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailFile?.url?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let { upload(it) }
                 val mxcUri = upload(encryptedContentUrl)
                 content.copy(
                     file = content.file?.copy(url = mxcUri),
-                    format = content.format?.copy(thumbnailFile = thumbnailMxcUri?.let {
-                        content.format?.thumbnailFile?.copy(
+                    info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
+                        content.info?.thumbnailFile?.copy(
                             url = it
                         )
                     })
                 )
             } else if (contentUrl != null) {
-                val thumbnailMxcUri = content.format?.thumbnailUrl?.let { upload(it) }
+                val thumbnailMxcUri = content.info?.thumbnailUrl?.let { upload(it) }
                 val mxcUri = upload(contentUrl)
                 content.copy(
                     url = mxcUri,
-                    format = content.format?.copy(thumbnailUrl = thumbnailMxcUri)
+                    info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
                 )
             } else content
         }

@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventConte
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
 
 object CodeSerializer : KSerializer<Code> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Code", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CodeSerializer", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Code {
         return when (val value = decoder.decodeString()) {

@@ -8,6 +8,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.ErrorResponseSerializer
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -22,8 +23,9 @@ fun Application.matrixAppserviceModule(
     customMappings: EventContentSerializerMappings? = null
 ) {
     val log = newLogger(loggerFactory)
+    val json = createMatrixJson(loggerFactory, DefaultEventContentSerializerMappings + customMappings)
     install(ContentNegotiation) {
-        json(createMatrixJson(loggerFactory, DefaultEventContentSerializerMappings + customMappings))
+        json(json)
     }
     install(Authentication) {
         matrixQueryParameter("default", "access_token", properties.hsToken)
@@ -31,10 +33,10 @@ fun Application.matrixAppserviceModule(
     install(StatusPages) {
         exception<Throwable> { cause ->
             log.error(cause)
-            call.respond(HttpStatusCode.InternalServerError, ErrorResponse("M_UNKNOWN", cause.message))
+            call.respond(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(cause.message))
         }
         exception<MatrixServerException> { cause ->
-            call.respond(cause.statusCode, cause.errorResponse)
+            call.respond(cause.statusCode, json.encodeToJsonElement(ErrorResponseSerializer, cause.errorResponse))
         }
     }
 

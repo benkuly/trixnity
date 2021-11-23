@@ -36,7 +36,8 @@ class SyncApiClientTest {
     private val json = createMatrixJson()
 
     data class RequestCounter(var value: Int)
-    lateinit var scope:CoroutineScope
+
+    lateinit var scope: CoroutineScope
 
     private val serverResponse1 = SyncResponse(
         nextBatch = "nextBatch1",
@@ -56,13 +57,14 @@ class SyncApiClientTest {
         room = Rooms(emptyMap(), emptyMap(), emptyMap()),
         toDevice = ToDevice(emptyList())
     )
+
     @BeforeTest
-    fun beforeTest(){
-        scope=CoroutineScope(Dispatchers.Default)
+    fun beforeTest() {
+        scope = CoroutineScope(Dispatchers.Default)
     }
 
     @AfterTest
-    fun afterTest(){
+    fun afterTest() {
         scope.cancel()
     }
 
@@ -74,7 +76,7 @@ class SyncApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
+                            "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -277,7 +279,7 @@ class SyncApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
+                            "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -314,7 +316,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -327,7 +329,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -374,7 +376,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=100",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -435,7 +437,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -483,7 +485,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -516,8 +518,8 @@ class SyncApiClientTest {
             asUserId = null,
             scope = scope
         )
-        stateResult.first {it == ERROR}
-        assertContains (stateResult.replayCache, ERROR)
+        stateResult.first { it == ERROR }
+        assertContains(stateResult.replayCache, ERROR)
     }
 
     @Test
@@ -534,7 +536,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?timeout=100",
+                                    "/_matrix/client/v3/sync?timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -548,7 +550,7 @@ class SyncApiClientTest {
                             }
                             else -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?timeout=100",
+                                    "/_matrix/client/v3/sync?timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -580,7 +582,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -593,7 +595,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -606,7 +608,7 @@ class SyncApiClientTest {
                             }
                             3 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -843,7 +845,7 @@ class SyncApiClientTest {
             deviceOneTimeKeysCount = emptyMap(),
             presence = Presence(emptyList()),
             room = Rooms(
-                mapOf(
+                join = mapOf(
                     RoomId("room", "Server") to Rooms.JoinedRoom(
                         timeline = Rooms.Timeline(
                             listOf(
@@ -857,7 +859,7 @@ class SyncApiClientTest {
                             )
                         )
                     )
-                ), emptyMap(), emptyMap()
+                ), knock = null, invite = null, leave = null
             ),
             toDevice = ToDevice(emptyList())
         )

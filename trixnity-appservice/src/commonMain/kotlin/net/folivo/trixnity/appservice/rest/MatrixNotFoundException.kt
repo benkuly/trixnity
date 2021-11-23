@@ -6,5 +6,5 @@ import net.folivo.trixnity.client.api.MatrixServerException
 
 class MatrixNotFoundException(message: String) : MatrixServerException(
     HttpStatusCode.NotFound,
-    ErrorResponse("NET.FOLIVO.MATRIX_NOT_FOUND", message)
+    ErrorResponse.NotFound(message)
 )

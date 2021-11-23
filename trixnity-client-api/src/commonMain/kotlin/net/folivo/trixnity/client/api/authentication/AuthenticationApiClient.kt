@@ -1,18 +1,32 @@
 package net.folivo.trixnity.client.api.authentication
 
-import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Post
+import net.folivo.trixnity.client.api.MatrixHttpClient
+import net.folivo.trixnity.client.api.uia.UIA
 
 class AuthenticationApiClient(
-    private val httpClient: HttpClient,
+    private val httpClient: MatrixHttpClient
 ) {
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-register">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3registeravailable">matrix spec</a>
+     */
+    suspend fun isUsernameAvailable(
+        username: String
+    ) {
+        httpClient.request<Unit> {
+            method = Get
+            url("/_matrix/client/v3/register/available")
+            parameter("username", username)
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3register">matrix spec</a>
      */
     suspend fun register(
-        authenticationType: String? = null, // TODO in client spec mandatory
-        authenticationSession: String? = null,
         username: String? = null,
         password: String? = null,
         accountType: AccountType? = null,
@@ -20,12 +34,9 @@ class AuthenticationApiClient(
         initialDeviceDisplayName: String? = null,
         inhibitLogin: Boolean? = null,
         isAppservice: Boolean = false // TODO why is the spec so inconsistent?
-    ): RegisterResponse {
-        return httpClient.post {
-            url("/_matrix/client/r0/register")
-            parameter("kind", accountType?.value)
+    ): UIA<RegisterResponse> {
+        return httpClient.uiaRequest(
             body = RegisterRequest(
-                RegisterRequest.Auth(authenticationType, authenticationSession),
                 username,
                 password,
                 deviceId,
@@ -33,20 +44,25 @@ class AuthenticationApiClient(
                 inhibitLogin,
                 if (isAppservice) "m.login.application_service" else null
             )
+        ) {
+            method = Post
+            url("/_matrix/client/v3/register")
+            parameter("kind", accountType?.value)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-login">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3login">matrix spec</a>
      */
     suspend fun getLoginTypes(): Set<LoginType> {
-        return httpClient.get<GetLoginTypesResponse> {
-            url("/_matrix/client/r0/login")
+        return httpClient.request<GetLoginTypesResponse> {
+            method = Get
+            url("/_matrix/client/v3/login")
         }.flows
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-login">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3login">matrix spec</a>
      */
     suspend fun login(
         identifier: IdentifierType,
@@ -55,8 +71,9 @@ class AuthenticationApiClient(
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null
     ): LoginResponse {
-        return httpClient.post {
-            url("/_matrix/client/r0/login")
+        return httpClient.request {
+            method = Post
+            url("/_matrix/client/v3/login")
             body = LoginRequest(
                 type.name,
                 identifier,
@@ -69,20 +86,51 @@ class AuthenticationApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-logout">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logout">matrix spec</a>
      */
     suspend fun logout() {
-        return httpClient.get {
-            url("/_matrix/client/r0/logout")
+        return httpClient.request {
+            method = Post
+            url("/_matrix/client/v3/logout")
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-logout-all">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logoutall">matrix spec</a>
      */
     suspend fun logoutAll() {
-        return httpClient.get {
-            url("/_matrix/client/r0/logout/all")
+        return httpClient.request {
+            method = Post
+            url("/_matrix/client/v3/logout/all")
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
+     */
+    suspend fun deactivateAccount(
+        identityServer: String? = null
+    ): UIA<Unit> {
+        return httpClient.uiaRequest(
+            body = DeactivateAccountRequest(identityServer)
+        ) {
+            method = Post
+            url("/_matrix/client/v3/account/deactivate")
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
+     */
+    suspend fun changePassword(
+        newPassword: String,
+        logoutDevices: Boolean = false
+    ): UIA<Unit> {
+        return httpClient.uiaRequest(
+            body = ChangePasswordRequest(newPassword, logoutDevices),
+        ) {
+            method = Post
+            url("/_matrix/client/v3/account/password")
         }
     }
 }

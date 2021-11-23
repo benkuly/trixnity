@@ -6,5 +6,5 @@ import net.folivo.trixnity.client.api.MatrixServerException
 
 class MatrixBadRequestException(message: String) : MatrixServerException(
     HttpStatusCode.BadRequest,
-    ErrorResponse("NET.FOLIVO.MATRIX_BAD_REQUEST", message)
+    ErrorResponse.Unknown(message)
 )

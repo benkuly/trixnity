@@ -17,7 +17,8 @@ object EncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm> {
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EncryptionAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("EncryptionAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object MegolmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Megolm> {
@@ -30,7 +31,7 @@ object MegolmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Meg
     }
 
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("MegolmEncryptionAlgorithm", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("MegolmEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object OlmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Olm> {
@@ -43,7 +44,7 @@ object OlmEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Olm> {
     }
 
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("OlmEncryptionAlgorithm", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("OlmEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object UnknownEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Unknown> {
@@ -56,5 +57,5 @@ object UnknownEncryptionAlgorithmSerializer : KSerializer<EncryptionAlgorithm.Un
     }
 
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("OlmEncryptionAlgorithm", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("UnknownEncryptionAlgorithmSerializer", PrimitiveKind.STRING)
 }

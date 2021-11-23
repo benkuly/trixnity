@@ -1,14 +1,18 @@
 package net.folivo.trixnity.client.api.rooms
 
 import com.benasher44.uuid.uuid4
-import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.http.HttpMethod.Companion.Delete
+import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Post
+import io.ktor.http.HttpMethod.Companion.Put
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.api.MatrixHttpClient
 import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.rooms.CreateRoomRequest.Invite3Pid
 import net.folivo.trixnity.client.api.rooms.CreateRoomRequest.Preset
@@ -32,13 +36,13 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 import kotlin.reflect.KClass
 
 class RoomsApiClient(
-    val httpClient: HttpClient,
+    val httpClient: MatrixHttpClient,
     val json: Json,
     private val contentMappings: EventContentSerializerMappings
 ) {
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-event-eventid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
      */
     @ExperimentalSerializationApi
     suspend fun getEvent(
@@ -46,14 +50,15 @@ class RoomsApiClient(
         eventId: EventId,
         asUserId: UserId? = null
     ): Event<*> {
-        return httpClient.get {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/event/${eventId.e()}")
+        return httpClient.request {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : StateEventContent> getStateEvent(
@@ -64,8 +69,9 @@ class RoomsApiClient(
     ): C {
         val mapping = contentMappings.state.find { it.kClass == stateEventContentClass }
             ?: throw IllegalArgumentException(unsupportedEventType(stateEventContentClass))
-        val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/state/${mapping.type}/$stateKey")
+        val responseBody = httpClient.request<String> {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/state/${mapping.type}/$stateKey")
             parameter("user_id", asUserId)
         }
 
@@ -75,12 +81,13 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-state">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidstate">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Flow<StateEvent<*>> {
-        val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/state")
+        val responseBody = httpClient.request<String> {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
         val serializer = json.serializersModule.getContextual(StateEvent::class)
@@ -89,7 +96,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-members">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
      */
     suspend fun getMembers(
         roomId: RoomId,
@@ -98,8 +105,9 @@ class RoomsApiClient(
         notMembership: Membership? = null,
         asUserId: UserId? = null
     ): Flow<StateEvent<MemberEventContent>> {
-        return httpClient.get<GetMembersResponse> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/members")
+        return httpClient.request<GetMembersResponse> {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
@@ -108,20 +116,21 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-joined-members">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidjoined_members">matrix spec</a>
      */
     suspend fun getJoinedMembers(
         roomId: RoomId,
         asUserId: UserId? = null
     ): GetJoinedMembersResponse {
-        return httpClient.get {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/joined_members")
+        return httpClient.request {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/joined_members")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-rooms-roomid-messages">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
      */
     suspend fun getEvents(
         roomId: RoomId,
@@ -132,8 +141,9 @@ class RoomsApiClient(
         filter: String? = null,
         asUserId: UserId? = null
     ): GetEventsResponse {
-        return httpClient.get {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/messages")
+        return httpClient.request {
+            method = Get
+            url("/_matrix/client/v3/rooms/${roomId.e()}/messages")
             parameter("from", from)
             parameter("to", to)
             parameter("dir", dir.value)
@@ -144,7 +154,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-state-eventtype-statekey">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
     suspend fun sendStateEvent(
         roomId: RoomId,
@@ -154,15 +164,16 @@ class RoomsApiClient(
     ): EventId {
         val eventType = contentMappings.state.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
-        return httpClient.put<SendEventResponse> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
+        return httpClient.request<SendEventResponse> {
+            method = Put
+            url("/_matrix/client/v3/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-send-eventtype-txnid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
      */
     suspend fun sendMessageEvent(
         roomId: RoomId,
@@ -172,32 +183,34 @@ class RoomsApiClient(
     ): EventId {
         val eventType = contentMappings.message.find { it.kClass.isInstance(eventContent) }?.type
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
-        return httpClient.put<SendEventResponse> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
+        return httpClient.request<SendEventResponse> {
+            method = Put
+            url("/_matrix/client/v3/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-rooms-roomid-redact-eventid-txnid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidredacteventidtxnid">matrix spec</a>
      */
-    suspend fun sendRedactEvent(
+    suspend fun redactEvent(
         roomId: RoomId,
         eventId: EventId,
         reason: String? = null,
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): EventId {
-        return httpClient.put<SendEventResponse> {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
+        return httpClient.request<SendEventResponse> {
+            method = Put
+            url("/_matrix/client/v3/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
             body = if (reason != null) mapOf("reason" to reason) else mapOf()
         }.eventId
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-createroom">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
      */
     suspend fun createRoom(
         visibility: Visibility = Visibility.PRIVATE,
@@ -214,8 +227,9 @@ class RoomsApiClient(
         powerLevelContentOverride: PowerLevelsEventContent? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<CreateRoomResponse> {
-            url("/_matrix/client/r0/createRoom")
+        return httpClient.request<CreateRoomResponse> {
+            method = Post
+            url("/_matrix/client/v3/createRoom")
             parameter("user_id", asUserId)
             body = CreateRoomRequest(
                 visibility,
@@ -235,120 +249,235 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#put-matrix-client-r0-directory-room-roomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun setRoomAlias(
         roomId: RoomId,
         roomAliasId: RoomAliasId,
         asUserId: UserId? = null
     ) {
-        return httpClient.put {
-            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
+        httpClient.request<Unit> {
+            method = Put
+            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
             body = SetRoomAliasRequest(roomId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-directory-room-roomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
         asUserId: UserId? = null
     ): GetRoomAliasResponse {
-        return httpClient.get {
-            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
+        return httpClient.request {
+            method = Get
+            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#delete-matrix-client-r0-directory-room-roomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun deleteRoomAlias(
         roomAliasId: RoomAliasId,
         asUserId: UserId? = null
     ) {
-        return httpClient.delete {
-            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
+        httpClient.request<Unit> {
+            method = Delete
+            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#get-matrix-client-r0-joined-rooms">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3joined_rooms">matrix spec</a>
      */
     suspend fun getJoinedRooms(asUserId: UserId? = null): Flow<RoomId> {
-        return httpClient.get<GetJoinedRoomsResponse> {
-            url("/_matrix/client/r0/joined_rooms")
+        return httpClient.request<GetJoinedRoomsResponse> {
+            method = Get
+            url("/_matrix/client/v3/joined_rooms")
             parameter("user_id", asUserId)
         }.joinedRooms.asFlow()
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-invite">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidinvite">matrix spec</a>
      */
     suspend fun inviteUser(
         roomId: RoomId,
         userId: UserId,
+        reason: String? = null,
         asUserId: UserId? = null
     ) {
-        return httpClient.post {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/invite")
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/invite")
             parameter("user_id", asUserId)
-            body = InviteUserRequest(userId)
+            body = InviteUserRequest(userId, reason)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-join-roomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidkick">matrix spec</a>
+     */
+    suspend fun kickUser(
+        roomId: RoomId,
+        userId: UserId,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ) {
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/kick")
+            parameter("user_id", asUserId)
+            body = KickUserRequest(userId, reason)
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidban">matrix spec</a>
+     */
+    suspend fun banUser(
+        roomId: RoomId,
+        userId: UserId,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ) {
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/ban")
+            parameter("user_id", asUserId)
+            body = BanUserRequest(userId, reason)
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidunban">matrix spec</a>
+     */
+    suspend fun unbanUser(
+        roomId: RoomId,
+        userId: UserId,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ) {
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/unban")
+            parameter("user_id", asUserId)
+            body = UnbanUserRequest(userId, reason)
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidjoin">matrix spec</a>
      */
     suspend fun joinRoom(
         roomId: RoomId,
         serverNames: Set<String>? = null,
+        reason: String? = null,
         thirdPartySigned: Signed<ThirdParty, String>? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<JoinRoomResponse> {
-            url("/_matrix/client/r0/join/${roomId.e()}")
+        return httpClient.request<JoinRoomResponse> {
+            method = Post
+            url("/_matrix/client/v3/join/${roomId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
-            body = JoinRoomRequest(thirdPartySigned)
+            body = JoinRoomRequest(reason, thirdPartySigned)
         }.roomId
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-join-roomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
      */
     suspend fun joinRoom(
         roomAliasId: RoomAliasId,
         serverNames: Set<String>? = null,
+        reason: String? = null,
         thirdPartySigned: Signed<ThirdParty, String>? = null,
         asUserId: UserId? = null
     ): RoomId {
-        return httpClient.post<JoinRoomResponse> {
-            url("/_matrix/client/r0/join/${roomAliasId.e()}")
+        return httpClient.request<JoinRoomResponse> {
+            method = Post
+            url("/_matrix/client/v3/join/${roomAliasId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
-            body = JoinRoomRequest(thirdPartySigned)
+            body = JoinRoomRequest(reason, thirdPartySigned)
         }.roomId
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-leave">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
      */
-    suspend fun leaveRoom(
+    suspend fun knockRoom(
+        roomId: RoomId,
+        serverNames: Set<String>? = null,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ): RoomId {
+        return httpClient.request<KnockRoomResponse> {
+            method = Post
+            url("/_matrix/client/v3/knock/${roomId.e()}")
+            serverNames?.forEach { parameter("server_name", it) }
+            parameter("user_id", asUserId)
+            body = KnockRoomRequest(reason)
+        }.roomId
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
+     */
+    suspend fun knockRoom(
+        roomAliasId: RoomAliasId,
+        serverNames: Set<String>? = null,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ): RoomId {
+        return httpClient.request<KnockRoomResponse> {
+            method = Post
+            url("/_matrix/client/v3/knock/${roomAliasId.e()}")
+            serverNames?.forEach { parameter("server_name", it) }
+            parameter("user_id", asUserId)
+            body = KnockRoomRequest(reason)
+        }.roomId
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidforget">matrix spec</a>
+     */
+    suspend fun forgetRoom(
         roomId: RoomId,
         asUserId: UserId? = null
     ) {
-        return httpClient.post {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/leave")
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/forget")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-receipt-receipttype-eventid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidleave">matrix spec</a>
+     */
+    suspend fun leaveRoom(
+        roomId: RoomId,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ) {
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/leave")
+            parameter("user_id", asUserId)
+            body = LeaveRoomRequest(reason)
+        }
+    }
+
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidreceiptreceipttypeeventid">matrix spec</a>
      */
     suspend fun setReceipt(
         roomId: RoomId,
@@ -356,27 +485,32 @@ class RoomsApiClient(
         receiptType: ReceiptType = ReceiptType.READ,
         asUserId: UserId? = null,
     ) {
-        return httpClient.post {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/receipt/${receiptType.value}/${eventId.e()}")
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/receipt/${receiptType.value}/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
 
     /**
-     * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#post-matrix-client-r0-rooms-roomid-read-markers">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidread_markers">matrix spec</a>
      */
     suspend fun setReadMarkers(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null,
     ) {
-        return httpClient.post {
-            url("/_matrix/client/r0/rooms/${roomId.e()}/read_markers")
+        httpClient.request<Unit> {
+            method = Post
+            url("/_matrix/client/v3/rooms/${roomId.e()}/read_markers")
             parameter("user_id", asUserId)
             body = FullyReadRequest(eventId, eventId)
         }
     }
 
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
         accountDataEventContentClass: KClass<C>,
@@ -386,8 +520,9 @@ class RoomsApiClient(
     ): C {
         val mapping = contentMappings.roomAccountData.find { it.kClass == accountDataEventContentClass }
             ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
-        val responseBody = httpClient.get<String> {
-            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
+        val responseBody = httpClient.request<String> {
+            method = Get
+            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
             parameter("user_id", asUserId)
         }
 
@@ -396,6 +531,9 @@ class RoomsApiClient(
         return json.decodeFromString(serializer, responseBody)
     }
 
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     */
     suspend fun <C : RoomAccountDataEventContent> setAccountData(
         content: C,
         roomId: RoomId,
@@ -405,8 +543,9 @@ class RoomsApiClient(
         val eventType =
             contentMappings.roomAccountData.find { it.kClass.isInstance(content) }?.type
                 ?: throw IllegalArgumentException(unsupportedEventType(content::class))
-        httpClient.put<String> {
-            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
+        httpClient.request<String> {
+            method = Put
+            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
             parameter("user_id", asUserId)
             body = content
         }

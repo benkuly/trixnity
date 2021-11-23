@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.api.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.client.api.authentication.RegisterResponse
+import net.folivo.trixnity.client.api.uia.UIA
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,7 +47,7 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(RegisterResponse(UserId("user", "server")))
+            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
@@ -74,7 +75,7 @@ class AppserviceUserServiceTest {
             .throws(
                 MatrixServerException(
                     HttpStatusCode.InternalServerError,
-                    ErrorResponse("500", "M_UNKNOWN")
+                    ErrorResponse.Unknown("internal server error")
                 )
             )
 
@@ -93,14 +94,14 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(RegisterResponse(UserId("user", "server")))
+            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
             .throws(
                 MatrixServerException(
                     HttpStatusCode.BadRequest,
-                    ErrorResponse("M_USER_IN_USE", "Desired user ID is already taken.")
+                    ErrorResponse.UserInUse("Desired user ID is already taken.")
                 )
             )
 
@@ -131,7 +132,7 @@ class AppserviceUserServiceTest {
 
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(RegisterResponse(UserId("user", "server")))
+            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
 
         try {
             runBlocking { cut.registerManagedUser(UserId("user", "server")) }
@@ -153,7 +154,7 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter())
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(RegisterResponse(UserId("user", "server")))
+            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
@@ -165,9 +166,9 @@ class AppserviceUserServiceTest {
     @Test
     fun `should not have error when setting displayName fails`() {
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) }
-            .throws(MatrixServerException(HttpStatusCode.BadRequest, ErrorResponse("M_UNKNOWN")))
+            .throws(MatrixServerException(HttpStatusCode.BadRequest, ErrorResponse.Unknown()))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(RegisterResponse(UserId("user", "server")))
+            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
     }

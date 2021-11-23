@@ -8,9 +8,6 @@ import io.mockk.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.api.ErrorResponse
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -122,12 +119,7 @@ class AppserviceControllerTest {
                 ).response
             assertEquals(HttpStatusCode.NotFound, response.status())
             assertEquals(
-                Json.encodeToString(
-                    ErrorResponse(
-                        "NET.FOLIVO.MATRIX_NOT_FOUND",
-                        "user @user:server not found"
-                    )
-                ), response.content
+                """{"errcode":"M_NOT_FOUND","error":"user @user:server not found"}""", response.content
             )
         }
     }
@@ -161,12 +153,7 @@ class AppserviceControllerTest {
                 ).response
             assertEquals(HttpStatusCode.NotFound, response.status())
             assertEquals(
-                Json.encodeToString(
-                    ErrorResponse(
-                        "NET.FOLIVO.MATRIX_NOT_FOUND",
-                        "no room alias #alias:server found"
-                    )
-                ), response.content
+                """{"errcode":"M_NOT_FOUND","error":"no room alias #alias:server found"}""", response.content
             )
         }
     }

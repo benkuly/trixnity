@@ -12,20 +12,39 @@ import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInfo
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.HomeserverInformation
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.IdentityServerInformation
 import net.folivo.trixnity.client.api.runBlockingTest
+import net.folivo.trixnity.client.api.uia.UIA
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AuthenticationApiClientTest {
+
+    @Test
+    fun shouldIsUsernameAvailable() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/v3/register/available?username=user", request.url.fullPath)
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.authentication.isUsernameAvailable("user")
+    }
+
     @Test
     fun shouldRegister() = runBlockingTest {
         val response = RegisterResponse(UserId("user", "server"))
         val expectedRequest = """
             {
-              "auth":{
-                "type":"someAuthenticationType",
-                "session":"someAuthenticationSession"
-              },
               "username":"someUsername",
               "password":"somePassword",
               "device_id":"someDeviceId",
@@ -38,7 +57,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/register?kind=user", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
                         respond(
@@ -50,8 +69,6 @@ class AuthenticationApiClientTest {
                 }
             })
         val result = matrixRestClient.authentication.register(
-            authenticationType = "someAuthenticationType",
-            authenticationSession = "someAuthenticationSession",
             username = "someUsername",
             password = "somePassword",
             accountType = AccountType.USER,
@@ -59,7 +76,8 @@ class AuthenticationApiClientTest {
             initialDeviceDisplayName = "someInitialDeviceDisplayName",
             inhibitLogin = true
         )
-        assertEquals(response, result)
+        require(result is UIA.UIASuccess)
+        assertEquals(response, result.value)
     }
 
     @Test
@@ -69,7 +87,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -116,7 +134,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -169,5 +187,95 @@ class AuthenticationApiClientTest {
                 )
             ), result
         )
+    }
+
+    @Test
+    fun shouldLogout() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/v3/logout", request.url.fullPath)
+                        assertEquals(HttpMethod.Post, request.method)
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.authentication.logout()
+    }
+
+    @Test
+    fun shouldLogoutAll() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/v3/logout/all", request.url.fullPath)
+                        assertEquals(HttpMethod.Post, request.method)
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.authentication.logoutAll()
+    }
+
+    @Test
+    fun shouldDeactivateAccount() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/v3/account/deactivate", request.url.fullPath)
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals(
+                            """{"id_server":"id.host"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        val result = matrixRestClient.authentication.deactivateAccount("id.host")
+        assertTrue { result is UIA.UIASuccess }
+    }
+
+    @Test
+    fun shouldChangePassword() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            hostname = "matrix.host",
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals("/_matrix/client/v3/account/password", request.url.fullPath)
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals(
+                            """{"new_password":"newPassword","logout_devices":false}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        val result = matrixRestClient.authentication.changePassword("newPassword")
+        assertTrue { result is UIA.UIASuccess }
     }
 }

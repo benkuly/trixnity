@@ -11,7 +11,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Unknown
 
 object VerificationMethodSerializer : KSerializer<VerificationMethod> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("VerificationMethod", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("VerificationMethodSerializer", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): VerificationMethod {
         return when (val value = decoder.decodeString()) {

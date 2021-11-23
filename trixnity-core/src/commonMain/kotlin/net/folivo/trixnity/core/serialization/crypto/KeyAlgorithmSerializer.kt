@@ -17,7 +17,8 @@ object KeyAlgorithmSerializer : KSerializer<KeyAlgorithm> {
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("KeyAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("KeyAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object Ed25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Ed25519> {
@@ -29,7 +30,8 @@ object Ed25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Ed25519> {
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("KeyAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("Ed25519KeyAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object Curve25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Curve25519> {
@@ -41,7 +43,8 @@ object Curve25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Curve25519> {
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("KeyAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("Curve25519KeyAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object SignedCurve25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.SignedCurve25519> {
@@ -53,7 +56,8 @@ object SignedCurve25519KeyAlgorithmSerializer : KSerializer<KeyAlgorithm.SignedC
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("KeyAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("SignedCurve25519KeyAlgorithmSerializer", PrimitiveKind.STRING)
 }
 
 object UnknownKeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Unknown> {
@@ -65,5 +69,6 @@ object UnknownKeyAlgorithmSerializer : KSerializer<KeyAlgorithm.Unknown> {
         encoder.encodeString(value.name)
     }
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("KeyAlgorithm", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("UnknownKeyAlgorithmSerializer", PrimitiveKind.STRING)
 }

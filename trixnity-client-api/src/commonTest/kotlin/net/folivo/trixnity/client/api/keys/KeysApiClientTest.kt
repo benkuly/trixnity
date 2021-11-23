@@ -30,7 +30,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/keys/upload",
+                            "/_matrix/client/v3/keys/upload",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -147,7 +147,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/keys/query",
+                            "/_matrix/client/v3/keys/query",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -220,7 +220,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/keys/claim",
+                            "/_matrix/client/v3/keys/claim",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -283,7 +283,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435",
+                            "/_matrix/client/v3/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)

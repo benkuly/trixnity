@@ -39,12 +39,12 @@ fun Authentication.Configuration.matrixQueryParameter(
                 when (cause) {
                     AuthenticationFailedCause.NoCredentials -> call.respond(
                         HttpStatusCode.Unauthorized,
-                        ErrorResponse("401", "NET.FOLIVO.MATRIX_UNAUTHORIZED")
+                        ErrorResponse.Unauthorized()
 
                     )
                     else -> call.respond(
                         HttpStatusCode.Forbidden,
-                        ErrorResponse("403", "NET.FOLIVO.MATRIX_FORBIDDEN")
+                        ErrorResponse.Forbidden()
 
                     )
                 }
