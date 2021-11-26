@@ -40,7 +40,7 @@ kotlin {
             dependencies {
                 api(project(":trixnity-core"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 api("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
@@ -56,10 +56,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-json:${Versions.kotest}")
             }
         }
-        val jvmTest by getting {
-            dependencies {
-            }
-        }
+        val jvmTest by getting { }
 //        val jsTest by getting
 //        val nativeTest by getting
     }

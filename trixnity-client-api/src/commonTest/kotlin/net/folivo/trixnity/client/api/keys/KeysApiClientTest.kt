@@ -25,12 +25,12 @@ class KeysApiClientTest {
     @Test
     fun shouldUploadKeys() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/keys/upload",
+                            "/_matrix/client/r0/keys/upload",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -142,12 +142,12 @@ class KeysApiClientTest {
     @Test
     fun shouldQueryKeys() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/keys/query",
+                            "/_matrix/client/r0/keys/query",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -215,12 +215,12 @@ class KeysApiClientTest {
     @Test
     fun shouldClaimKeys() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/keys/claim",
+                            "/_matrix/client/r0/keys/claim",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -278,12 +278,12 @@ class KeysApiClientTest {
     @Test
     fun shouldGetKeyChanges() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435",
+                            "/_matrix/client/r0/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)

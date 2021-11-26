@@ -55,16 +55,22 @@ class RoomService(
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
-    suspend fun startEventHandling() = coroutineScope {
+    suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        launch(start = UNDISPATCHED) { api.sync.events<StateEventContent>().collect { store.roomState.update(it) } }
-        launch(start = UNDISPATCHED) { api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData) }
-        launch(start = UNDISPATCHED) { api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm) }
-        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
-        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setDirectRooms) }
-        launch(start = UNDISPATCHED) { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
-        launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
-        launch(start = UNDISPATCHED) { api.sync.syncResponses.collect(::handleSyncResponse) }
+        scope.launch(start = UNDISPATCHED) {
+            api.sync.events<StateEventContent>().collect { store.roomState.update(it) }
+        }
+        scope.launch(start = UNDISPATCHED) {
+            api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData)
+        }
+        scope.launch(start = UNDISPATCHED) {
+            api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm)
+        }
+        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
+        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setDirectRooms) }
+        scope.launch(start = UNDISPATCHED) { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
+        scope.launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
+        scope.launch(start = UNDISPATCHED) { api.sync.syncResponses.collect(::handleSyncResponse) }
     }
 
     // TODO test
@@ -82,7 +88,7 @@ class RoomService(
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = roomId,
-                    events = it.events,
+                    newEvents = it.events,
                     previousBatch = it.previousBatch,
                     hasGapBefore = it.limited ?: false
                 )
@@ -105,7 +111,7 @@ class RoomService(
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = room.key,
-                    events = it.events,
+                    newEvents = it.events,
                     previousBatch = it.previousBatch,
                     hasGapBefore = it.limited ?: false
                 )
@@ -334,12 +340,18 @@ class RoomService(
         }
     }
 
+    // You may think: wtf are you doing here? This prevents loops, when the server has the wonderful idea to send you
+    // the same event in two different or in the same sync response(s). And this is actually happen 🤯.
+    private suspend fun List<RoomEvent<*>>.filterDuplicateEvents() =
+        this.distinctBy { it.id }.filter { store.roomTimeline.get(it.id, it.roomId) == null }
+
     internal suspend fun addEventsToTimelineAtEnd(
         roomId: RoomId,
-        events: List<RoomEvent<*>>?,
+        newEvents: List<RoomEvent<*>>?,
         previousBatch: String?,
         hasGapBefore: Boolean
     ) {
+        val events = newEvents?.filterDuplicateEvents()
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
             val room = store.room.get(roomId).value
@@ -420,7 +432,7 @@ class RoomService(
                     limit = limit,
                     filter = """{"lazy_load_members":true}"""
                 )
-                val chunk = response.chunk
+                val chunk = response.chunk?.filterDuplicateEvents()
                 val end = response.end
                 if (!chunk.isNullOrEmpty()) {
                     log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
@@ -518,7 +530,7 @@ class RoomService(
                     limit = limit,
                     filter = """{"lazy_load_members":true}"""
                 )
-                val chunk = response.chunk
+                val chunk = response.chunk?.filterDuplicateEvents()
                 if (!chunk.isNullOrEmpty()) {
                     log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
                     val nextEventIndex = chunk.indexOfFirst { it.id == nextEvent.eventId }
@@ -666,7 +678,13 @@ class RoomService(
         coroutineScope: CoroutineScope,
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
-            if (room?.lastMessageEventId != null) emit(getTimelineEvent(room.lastMessageEventId, roomId, coroutineScope))
+            if (room?.lastMessageEventId != null) emit(
+                getTimelineEvent(
+                    room.lastMessageEventId,
+                    roomId,
+                    coroutineScope
+                )
+            )
             else emit(null)
         }.stateIn(coroutineScope)
     }
@@ -696,15 +714,15 @@ class RoomService(
 
     @OptIn(ExperimentalTime::class)
     internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
-        val isConnected =
+        val isSyncRunning =
             api.sync.currentSyncState.map { it == SyncApiClient.SyncState.RUNNING }.stateIn(this)
         val schedule = Schedule.exponential<Throwable>(Duration.milliseconds(100))
             .or(Schedule.spaced(Duration.minutes(5)))
-            .and(Schedule.doWhile { isConnected.value }) // just stop, when we are not connected anymore
-            .logInput { log.debug { "failed sending outbox messages due to ${it.stackTraceToString()}" } }
+            .and(Schedule.doWhile { isSyncRunning.value }) // just stop, when we are not connected anymore
+            .logInput { log.warning { "failed sending outbox messages due to ${it.stackTraceToString()}" } }
 
         while (currentCoroutineContext().isActive) {
-            isConnected.first { it } // just wait, until we are connected again
+            isSyncRunning.first { it } // just wait, until we are connected again
             try {
                 schedule.retry {
                     log.info { "start sending outbox messages" }
@@ -730,11 +748,12 @@ class RoomService(
                                     api.rooms.setReadMarkers(roomId, eventId)
                                 }
                                 store.roomOutboxMessage.markAsSent(outboxMessage.transactionId)
+                                log.debug { "sent message: $content" }
                             }
                     }
                 }
             } catch (error: Throwable) {
-                log.info { "stop sending outbox messages, because we are not connected" }
+                log.info { "stop sending outbox messages, because sync is not running anymore" }
             }
         }
     }

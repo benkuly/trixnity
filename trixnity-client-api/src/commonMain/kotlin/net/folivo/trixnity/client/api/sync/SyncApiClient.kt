@@ -33,7 +33,7 @@ class SyncApiClient(
     ): SyncResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/sync")
+            url("/_matrix/client/r0/sync")
             parameter("filter", filter)
             if (fullState) parameter("full_state", true)
             parameter("set_presence", setPresence?.value)

@@ -258,7 +258,7 @@ class OlmEventServiceTest : ShouldSpec({
                     OlmSession.createInboundFrom(aliceAccount, bobCurveKey.value, encryptedMessage.cipherText)
                 }
             }
-            should("not decrypt pre key message, when last created session is not older then 1 hour") {
+            should("not decrypt pre key message, when the 5 last created sessions are not older then 1 hour") {
                 val encryptedMessage = freeAfter(
                     OlmSession.createOutbound(
                         bobAccount,
@@ -268,23 +268,29 @@ class OlmEventServiceTest : ShouldSpec({
                 ) { bobSession ->
                     bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
                 }
-                freeAfter(OlmAccount.create()) { dummyAccount ->
-                    dummyAccount.generateOneTimeKeys(1)
-                    freeAfter(
-                        OlmSession.createOutbound(
-                            aliceAccount,
-                            dummyAccount.identityKeys.curve25519,
-                            dummyAccount.oneTimeKeys.curve25519.values.first()
-                        )
-                    ) { aliceSession ->
-                        val storedOlmSession = StoredOlmSession(
-                            bobCurveKey,
-                            aliceSession.sessionId,
-                            Clock.System.now(),
-                            Clock.System.now(),
-                            aliceSession.pickle("")
-                        )
-                        store.olm.updateOlmSessions(bobCurveKey) { setOf(storedOlmSession) }
+                repeat(5) { pseudoSessionId ->
+                    freeAfter(OlmAccount.create()) { dummyAccount ->
+                        dummyAccount.generateOneTimeKeys(1)
+                        freeAfter(
+                            OlmSession.createOutbound(
+                                aliceAccount,
+                                dummyAccount.identityKeys.curve25519,
+                                dummyAccount.oneTimeKeys.curve25519.values.first()
+                            )
+                        ) { aliceSession ->
+                            val storedOlmSession = StoredOlmSession(
+                                bobCurveKey,
+                                pseudoSessionId.toString(),
+                                Clock.System.now(),
+                                Clock.System.now(),
+                                aliceSession.pickle("")
+                            )
+                            store.olm.updateOlmSessions(bobCurveKey) {
+                                it?.plus(storedOlmSession) ?: setOf(
+                                    storedOlmSession
+                                )
+                            }
+                        }
                     }
                 }
                 shouldThrow<SessionException.PreventToManySessions> {

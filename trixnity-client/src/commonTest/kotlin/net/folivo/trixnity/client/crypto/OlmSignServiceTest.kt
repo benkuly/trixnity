@@ -209,11 +209,10 @@ class OlmSignServiceTest : ShouldSpec({
                             Curve25519Key("ABCDEF", account.identityKeys.curve25519)
                         )
                     ),
-                    unsigned = DeviceKeys.UnsignedDeviceInfo("bob")
                 )
                 val signed = cut.sign(toBeSigned)
                 cut.verify(
-                    Signed(signed.signed.copy(unsigned = DeviceKeys.UnsignedDeviceInfo("dev")), signed.signatures)
+                    Signed(signed.signed, signed.signatures)
                 ) shouldBe KeyVerificationState.Valid
             }
             should("return invalid") {
@@ -229,7 +228,6 @@ class OlmSignServiceTest : ShouldSpec({
                                     Curve25519Key("ABCDEF", "CW6OxKFraxGEdMJsv/D+AcsExtyF3AZf/vi2h7l2tmU")
                                 )
                             ),
-                            unsigned = DeviceKeys.UnsignedDeviceInfo("bob")
                         ),
                         mapOf(
                             UserId("me", "server") to keysOf(

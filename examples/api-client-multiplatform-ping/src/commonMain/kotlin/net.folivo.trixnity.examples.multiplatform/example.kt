@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 suspend fun example() = coroutineScope {
     val matrixRestClient =
         MatrixApiClient(
-            hostname = "host",
+            baseUrl = Url("http://host"),
         ).apply { accessToken.value = "token" }
     val roomId = RoomId("!room:server")
 

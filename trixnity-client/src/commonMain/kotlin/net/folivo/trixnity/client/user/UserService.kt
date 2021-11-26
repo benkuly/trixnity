@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -29,12 +28,12 @@ class UserService(
 ) {
     private val log = newLogger(loggerFactory)
 
-    suspend fun startEventHandling() = coroutineScope {
+    suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             api.sync.events<GlobalAccountDataEventContent>().collect(::setGlobalAccountData)
         }
-        launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
+        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setRoomUser) }
     }
 
     private fun calculateUserDisplayName(
@@ -115,7 +114,6 @@ class UserService(
             if (!oldRoom.membersLoaded) {
                 val memberEvents = api.rooms.getMembers(
                     roomId = roomId,
-                    at = store.account.syncBatchToken.value,
                     notMembership = Membership.LEAVE
                 ).toList()
                 store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())

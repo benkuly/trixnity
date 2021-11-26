@@ -23,7 +23,7 @@ class KeysApiClient(
     ): Map<KeyAlgorithm, Int> {
         return httpClient.request<UploadKeysResponse> {
             method = Post
-            url("/_matrix/client/v3/keys/upload")
+            url("/_matrix/client/r0/keys/upload")
             parameter("user_id", asUserId)
             body = UploadKeysRequest(deviceKeys, oneTimeKeys)
         }.oneTimeKeyCounts
@@ -40,7 +40,7 @@ class KeysApiClient(
     ): QueryKeysResponse {
         return httpClient.request {
             method = Post
-            url("/_matrix/client/v3/keys/query")
+            url("/_matrix/client/r0/keys/query")
             parameter("user_id", asUserId)
             body = QueryKeysRequest(deviceKeys, token, timeout)
         }
@@ -56,7 +56,7 @@ class KeysApiClient(
     ): ClaimKeysResponse {
         return httpClient.request {
             method = Post
-            url("/_matrix/client/v3/keys/claim")
+            url("/_matrix/client/r0/keys/claim")
             parameter("user_id", asUserId)
             body = ClaimKeysRequest(oneTimeKeys, timeout)
         }
@@ -72,7 +72,7 @@ class KeysApiClient(
     ): GetKeyChangesResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/keys/changes")
+            url("/_matrix/client/r0/keys/changes")
             parameter("from", from)
             parameter("to", to)
             parameter("user_id", asUserId)

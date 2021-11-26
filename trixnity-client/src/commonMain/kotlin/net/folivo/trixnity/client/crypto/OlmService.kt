@@ -1,11 +1,8 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.DeviceOneTimeKeysCount
@@ -85,29 +82,25 @@ class OlmService(
     internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
 
     @OptIn(FlowPreview::class)
-    internal suspend fun startEventHandling() = coroutineScope {
+    internal suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             api.sync.syncResponses.collect { syncResponse ->
                 syncResponse.deviceOneTimeKeysCount?.also { handleDeviceOneTimeKeysCount(it) }
                 syncResponse.deviceLists?.also { handleDeviceLists(it) }
             }
         }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             store.deviceKeys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys)
         }
-        launch(start = UNDISPATCHED) {
-            api.sync.events<MemberEventContent>().collect(::handleMemberEvents)
-        }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::handleMemberEvents) }
+        scope.launch(start = UNDISPATCHED) {
             api.sync.events<EncryptionEventContent>().collect(::handleEncryptionEvents)
         }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             api.sync.events<OlmEncryptedEventContent>().collect(::handleOlmEncryptedToDeviceEvents)
         }
-        launch(start = UNDISPATCHED) {
-            decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent)
-        }
+        scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
     }
 
     internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
@@ -143,7 +136,7 @@ class OlmService(
             (account.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
                 .coerceAtLeast(0)
         if (generateOneTimeKeysCount > 0) {
-            log.debug { "generate and upload one time keys, because one time keys count is $generateOneTimeKeysCount" }
+            log.debug { "generate and upload $generateOneTimeKeysCount one time keys" }
             account.generateOneTimeKeys(generateOneTimeKeysCount + account.maxNumberOfOneTimeKeys / 4)
             api.keys.uploadKeys(
                 oneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {

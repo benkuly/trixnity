@@ -13,9 +13,9 @@ import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalSerializationApi::class)
 fun createMatrixJson(
-    loggerFactory: LoggerFactory = LoggerFactory.default,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
-    customModule: SerializersModule? = null
+    customModule: SerializersModule? = null,
+    loggerFactory: LoggerFactory = LoggerFactory.default
 ): Json {
     val modules = (createEventSerializersModule(eventContentSerializerMappings, loggerFactory)
             + createMessageEventContentSerializersModule()

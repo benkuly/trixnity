@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.sqldelight
 import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.sqldelight.db.Database
@@ -21,7 +22,9 @@ class SqlDelightAccountRepositoryTest : ShouldSpec({
         driver.close()
     }
     should("save, get and delete") {
-        val account = Account(UserId("alice", "server"), "aliceDevice", "accessToken", "syncToken", "filterId")
+        val account = Account(
+            Url("http://host"), UserId("alice", "server"), "aliceDevice", "accessToken", "syncToken", "filterId"
+        )
         cut.save(1, account)
         cut.get(1) shouldBe account
         val accountCopy = account.copy(syncBatchToken = "otherSyncToken")

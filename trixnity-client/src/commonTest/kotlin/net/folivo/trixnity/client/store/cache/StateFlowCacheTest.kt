@@ -110,7 +110,7 @@ class StateFlowCacheTest : ShouldSpec({
                     key = "key",
                     containsInCache = { true },
                     retrieveFromRepoAndUpdateCache = { _, _ ->
-                        // if the key is in cache, this will never be called
+                        // if the key would be in cache, this would never be called
                         "another value"
                     },
                     readScope2

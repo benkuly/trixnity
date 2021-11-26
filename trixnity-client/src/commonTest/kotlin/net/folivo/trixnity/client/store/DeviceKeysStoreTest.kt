@@ -38,23 +38,18 @@ class DeviceKeysStoreTest : ShouldSpec({
 
             cut.init()
 
-            cut.outdatedKeys.value shouldBe setOf(
-                UserId("alice", "server"), UserId("bob", "server")
-            )
+            cut.outdatedKeys.value shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
         }
         should("start job, which saves changes to database") {
             coEvery { outdatedDeviceKeysRepository.get(1) } returns null
 
             cut.init()
 
-            cut.outdatedKeys.value = setOf(
-                UserId("alice", "server"), UserId("bob", "server")
-            )
-            coVerify {
+            cut.outdatedKeys.value = setOf(UserId("alice", "server"), UserId("bob", "server"))
+
+            coVerify(timeout = 1_000) {
                 outdatedDeviceKeysRepository.save(
-                    1, setOf(
-                        UserId("alice", "server"), UserId("bob", "server")
-                    )
+                    1, setOf(UserId("alice", "server"), UserId("bob", "server"))
                 )
             }
         }

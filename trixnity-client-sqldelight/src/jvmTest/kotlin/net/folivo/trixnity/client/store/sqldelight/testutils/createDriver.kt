@@ -6,7 +6,7 @@ import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 
 actual fun createDriver(): SqlDriver {
-    return LogSqliteDriver(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)) { println(it) }
+    return LogSqliteDriver(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)) { /*println(it)*/ }
 }
 
 actual fun createDriverWithSchema(): SqlDriver {

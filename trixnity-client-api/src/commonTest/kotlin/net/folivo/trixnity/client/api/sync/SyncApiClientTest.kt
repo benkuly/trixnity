@@ -71,12 +71,12 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncOnce() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -271,7 +271,7 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncOnceAndHandleLongTimeout() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 install(HttpTimeout) {
                     requestTimeoutMillis = 100
@@ -279,7 +279,7 @@ class SyncApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
+                            "/_matrix/client/r0/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -309,14 +309,14 @@ class SyncApiClientTest {
     fun shouldSyncLoop() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -329,7 +329,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -369,14 +369,14 @@ class SyncApiClientTest {
     fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=100",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=300",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -418,7 +418,7 @@ class SyncApiClientTest {
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = currentBatchToken,
             scope = scope,
-            timeout = 100
+            timeout = 300
         )
         stateResult.first { it == TIMEOUT }
         assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT), stateResult.replayCache)
@@ -430,14 +430,14 @@ class SyncApiClientTest {
     fun shouldSyncLoopWithoutInitialSyncState() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -478,14 +478,14 @@ class SyncApiClientTest {
     fun shouldSyncLoopWithErrorState() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -526,7 +526,7 @@ class SyncApiClientTest {
     fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 install(HttpTimeout) {
                     requestTimeoutMillis = 100
@@ -536,7 +536,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?timeout=100",
+                                    "/_matrix/client/r0/sync?timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -550,7 +550,7 @@ class SyncApiClientTest {
                             }
                             else -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?timeout=100",
+                                    "/_matrix/client/r0/sync?timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -575,14 +575,14 @@ class SyncApiClientTest {
     fun shouldRetrySyncLoopOnError() = runBlockingTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -595,7 +595,7 @@ class SyncApiClientTest {
                             }
                             2 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -608,7 +608,7 @@ class SyncApiClientTest {
                             }
                             3 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -768,7 +768,7 @@ class SyncApiClientTest {
         val inChannel = Channel<SyncResponse>()
 
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
@@ -866,7 +866,7 @@ class SyncApiClientTest {
         val inChannel = Channel<SyncResponse>()
 
         val matrixRestClient = MatrixApiClient(
-            "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {

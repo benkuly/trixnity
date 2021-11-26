@@ -52,7 +52,7 @@ class RoomsApiClient(
     ): Event<*> {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/event/${eventId.e()}")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/event/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -71,7 +71,7 @@ class RoomsApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(stateEventContentClass))
         val responseBody = httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/state/${mapping.type}/$stateKey")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state/${mapping.type}/$stateKey")
             parameter("user_id", asUserId)
         }
 
@@ -87,7 +87,7 @@ class RoomsApiClient(
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Flow<StateEvent<*>> {
         val responseBody = httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/state")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state")
             parameter("user_id", asUserId)
         }
         val serializer = json.serializersModule.getContextual(StateEvent::class)
@@ -107,7 +107,7 @@ class RoomsApiClient(
     ): Flow<StateEvent<MemberEventContent>> {
         return httpClient.request<GetMembersResponse> {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/members")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/members")
             parameter("at", at)
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
@@ -124,7 +124,7 @@ class RoomsApiClient(
     ): GetJoinedMembersResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/joined_members")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/joined_members")
             parameter("user_id", asUserId)
         }
     }
@@ -143,7 +143,7 @@ class RoomsApiClient(
     ): GetEventsResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/rooms/${roomId.e()}/messages")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/messages")
             parameter("from", from)
             parameter("to", to)
             parameter("dir", dir.value)
@@ -166,7 +166,7 @@ class RoomsApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
         return httpClient.request<SendEventResponse> {
             method = Put
-            url("/_matrix/client/v3/rooms/${roomId.e()}/state/$eventType/$stateKey")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/state/$eventType/$stateKey")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -185,7 +185,7 @@ class RoomsApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
         return httpClient.request<SendEventResponse> {
             method = Put
-            url("/_matrix/client/v3/rooms/${roomId.e()}/send/$eventType/$txnId")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/send/$eventType/$txnId")
             parameter("user_id", asUserId)
             body = eventContent
         }.eventId
@@ -203,7 +203,7 @@ class RoomsApiClient(
     ): EventId {
         return httpClient.request<SendEventResponse> {
             method = Put
-            url("/_matrix/client/v3/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/redact/${eventId.e()}/$txnId")
             parameter("user_id", asUserId)
             body = if (reason != null) mapOf("reason" to reason) else mapOf()
         }.eventId
@@ -229,7 +229,7 @@ class RoomsApiClient(
     ): RoomId {
         return httpClient.request<CreateRoomResponse> {
             method = Post
-            url("/_matrix/client/v3/createRoom")
+            url("/_matrix/client/r0/createRoom")
             parameter("user_id", asUserId)
             body = CreateRoomRequest(
                 visibility,
@@ -258,7 +258,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Put
-            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
             body = SetRoomAliasRequest(roomId)
         }
@@ -273,7 +273,7 @@ class RoomsApiClient(
     ): GetRoomAliasResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -287,7 +287,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Delete
-            url("/_matrix/client/v3/directory/room/${roomAliasId.e()}")
+            url("/_matrix/client/r0/directory/room/${roomAliasId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -298,7 +298,7 @@ class RoomsApiClient(
     suspend fun getJoinedRooms(asUserId: UserId? = null): Flow<RoomId> {
         return httpClient.request<GetJoinedRoomsResponse> {
             method = Get
-            url("/_matrix/client/v3/joined_rooms")
+            url("/_matrix/client/r0/joined_rooms")
             parameter("user_id", asUserId)
         }.joinedRooms.asFlow()
     }
@@ -314,7 +314,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/invite")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/invite")
             parameter("user_id", asUserId)
             body = InviteUserRequest(userId, reason)
         }
@@ -331,7 +331,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/kick")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/kick")
             parameter("user_id", asUserId)
             body = KickUserRequest(userId, reason)
         }
@@ -348,7 +348,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/ban")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/ban")
             parameter("user_id", asUserId)
             body = BanUserRequest(userId, reason)
         }
@@ -365,7 +365,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/unban")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/unban")
             parameter("user_id", asUserId)
             body = UnbanUserRequest(userId, reason)
         }
@@ -383,7 +383,7 @@ class RoomsApiClient(
     ): RoomId {
         return httpClient.request<JoinRoomResponse> {
             method = Post
-            url("/_matrix/client/v3/join/${roomId.e()}")
+            url("/_matrix/client/r0/join/${roomId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(reason, thirdPartySigned)
@@ -402,7 +402,7 @@ class RoomsApiClient(
     ): RoomId {
         return httpClient.request<JoinRoomResponse> {
             method = Post
-            url("/_matrix/client/v3/join/${roomAliasId.e()}")
+            url("/_matrix/client/r0/join/${roomAliasId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = JoinRoomRequest(reason, thirdPartySigned)
@@ -420,7 +420,7 @@ class RoomsApiClient(
     ): RoomId {
         return httpClient.request<KnockRoomResponse> {
             method = Post
-            url("/_matrix/client/v3/knock/${roomId.e()}")
+            url("/_matrix/client/r0/knock/${roomId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = KnockRoomRequest(reason)
@@ -438,7 +438,7 @@ class RoomsApiClient(
     ): RoomId {
         return httpClient.request<KnockRoomResponse> {
             method = Post
-            url("/_matrix/client/v3/knock/${roomAliasId.e()}")
+            url("/_matrix/client/r0/knock/${roomAliasId.e()}")
             serverNames?.forEach { parameter("server_name", it) }
             parameter("user_id", asUserId)
             body = KnockRoomRequest(reason)
@@ -454,7 +454,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/forget")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/forget")
             parameter("user_id", asUserId)
         }
     }
@@ -469,7 +469,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/leave")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/leave")
             parameter("user_id", asUserId)
             body = LeaveRoomRequest(reason)
         }
@@ -487,7 +487,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/receipt/${receiptType.value}/${eventId.e()}")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/receipt/${receiptType.value}/${eventId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -502,7 +502,7 @@ class RoomsApiClient(
     ) {
         httpClient.request<Unit> {
             method = Post
-            url("/_matrix/client/v3/rooms/${roomId.e()}/read_markers")
+            url("/_matrix/client/r0/rooms/${roomId.e()}/read_markers")
             parameter("user_id", asUserId)
             body = FullyReadRequest(eventId, eventId)
         }
@@ -522,7 +522,7 @@ class RoomsApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
         val responseBody = httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
+            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
             parameter("user_id", asUserId)
         }
 
@@ -545,7 +545,7 @@ class RoomsApiClient(
                 ?: throw IllegalArgumentException(unsupportedEventType(content::class))
         httpClient.request<String> {
             method = Put
-            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
+            url("/_matrix/client/r0/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
             parameter("user_id", asUserId)
             body = content
         }

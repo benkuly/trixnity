@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.ktor.http.*
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -29,6 +30,7 @@ class AccountStoreTest : ShouldSpec({
     context(AccountStore::init.name) {
         should("load values from database") {
             coEvery { repository.get(1) } returns Account(
+                Url("http://localhost"),
                 UserId("user", "server"),
                 "device",
                 "access_token",
@@ -38,6 +40,7 @@ class AccountStoreTest : ShouldSpec({
 
             cut.init()
 
+            cut.baseUrl.value shouldBe Url("http://localhost")
             cut.userId.value shouldBe UserId("user", "server")
             cut.deviceId.value shouldBe "device"
             cut.accessToken.value shouldBe "access_token"
@@ -53,6 +56,7 @@ class AccountStoreTest : ShouldSpec({
             coVerify(timeout = 5_000) {
                 repository.save(
                     1, Account(
+                        null,
                         UserId("user", "server"),
                         null,
                         null,

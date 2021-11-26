@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.verification
 import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -46,18 +45,18 @@ class VerificationService(
     val activeDeviceVerifications = _activeDeviceVerifications.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
 
-    internal suspend fun startEventHandling() = coroutineScope {
+    internal suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             api.sync.events<RequestEventContent>().collect(::handleDeviceVerificationRequestEvents)
         }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             olm.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
-        launch(start = UNDISPATCHED) {
+        scope.launch(start = UNDISPATCHED) {
             activeDeviceVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
     }

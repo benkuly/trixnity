@@ -18,7 +18,7 @@ class AuthenticationApiClient(
     ) {
         httpClient.request<Unit> {
             method = Get
-            url("/_matrix/client/v3/register/available")
+            url("/_matrix/client/r0/register/available")
             parameter("username", username)
         }
     }
@@ -46,7 +46,7 @@ class AuthenticationApiClient(
             )
         ) {
             method = Post
-            url("/_matrix/client/v3/register")
+            url("/_matrix/client/r0/register")
             parameter("kind", accountType?.value)
         }
     }
@@ -57,7 +57,7 @@ class AuthenticationApiClient(
     suspend fun getLoginTypes(): Set<LoginType> {
         return httpClient.request<GetLoginTypesResponse> {
             method = Get
-            url("/_matrix/client/v3/login")
+            url("/_matrix/client/r0/login")
         }.flows
     }
 
@@ -73,7 +73,7 @@ class AuthenticationApiClient(
     ): LoginResponse {
         return httpClient.request {
             method = Post
-            url("/_matrix/client/v3/login")
+            url("/_matrix/client/r0/login")
             body = LoginRequest(
                 type.name,
                 identifier,
@@ -91,7 +91,7 @@ class AuthenticationApiClient(
     suspend fun logout() {
         return httpClient.request {
             method = Post
-            url("/_matrix/client/v3/logout")
+            url("/_matrix/client/r0/logout")
         }
     }
 
@@ -101,7 +101,7 @@ class AuthenticationApiClient(
     suspend fun logoutAll() {
         return httpClient.request {
             method = Post
-            url("/_matrix/client/v3/logout/all")
+            url("/_matrix/client/r0/logout/all")
         }
     }
 
@@ -115,7 +115,7 @@ class AuthenticationApiClient(
             body = DeactivateAccountRequest(identityServer)
         ) {
             method = Post
-            url("/_matrix/client/v3/account/deactivate")
+            url("/_matrix/client/r0/account/deactivate")
         }
     }
 
@@ -130,7 +130,7 @@ class AuthenticationApiClient(
             body = ChangePasswordRequest(newPassword, logoutDevices),
         ) {
             method = Post
-            url("/_matrix/client/v3/account/password")
+            url("/_matrix/client/r0/account/password")
         }
     }
 }

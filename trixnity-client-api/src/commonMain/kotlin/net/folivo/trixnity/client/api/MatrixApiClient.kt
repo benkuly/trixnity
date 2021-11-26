@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.api
 
 import io.ktor.client.*
+import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.api.authentication.AuthenticationApiClient
@@ -18,22 +20,15 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 import org.kodein.log.LoggerFactory
 
 class MatrixApiClient(
-    hostname: String,
-    hostport: Int = 443,
-    secure: Boolean = true,
+    baseUrl: Url,
     baseHttpClient: HttpClient = HttpClient(),
-    customMappings: EventContentSerializerMappings? = null,
-    loggerFactory: LoggerFactory = LoggerFactory.default
+    val eventContentSerializerMappings: EventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(),
+    loggerFactory: LoggerFactory = LoggerFactory.default,
+    val json: Json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory),
 ) {
     val accessToken = MutableStateFlow<String?>(null)
-    val eventContentSerializerMappings = DefaultEventContentSerializerMappings + customMappings
-    val json =
-        createMatrixJson(
-            loggerFactory,
-            eventContentSerializerMappings,
-            SerializersModule { contextual(SyncResponseSerializer) })
 
-    val httpClient = MatrixHttpClient(baseHttpClient, json, hostname, hostport, secure, accessToken)
+    val httpClient = MatrixHttpClient(baseHttpClient, json, baseUrl, accessToken)
 
     val authentication = AuthenticationApiClient(httpClient)
     val server = ServerApiClient(httpClient)
@@ -43,3 +38,16 @@ class MatrixApiClient(
     val keys = KeysApiClient(httpClient)
     val media = MediaApiClient(httpClient)
 }
+
+fun createMatrixApiClientEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+    DefaultEventContentSerializerMappings + customMappings
+
+fun createMatrixApiClientJson(
+    eventContentSerializerMappings: EventContentSerializerMappings,
+    loggerFactory: LoggerFactory
+): Json =
+    createMatrixJson(
+        eventContentSerializerMappings,
+        SerializersModule { contextual(SyncResponseSerializer) },
+        loggerFactory
+    )

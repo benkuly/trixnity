@@ -1,16 +1,18 @@
 package net.folivo.trixnity.client
 
+import io.ktor.client.*
+import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.api.authentication.LoginType
+import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerializerMappings
+import net.folivo.trixnity.client.api.createMatrixApiClientJson
 import net.folivo.trixnity.client.api.users.Filters
 import net.folivo.trixnity.client.api.users.RoomFilter
 import net.folivo.trixnity.client.crypto.OlmService
@@ -22,6 +24,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.VerificationService
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.kodein.log.LoggerFactory
@@ -30,45 +33,94 @@ import org.kodein.log.newLogger
 
 // TODO test
 class MatrixClient private constructor(
-    private val store: Store,
+    val userId: UserId,
+    val deviceId: String,
     val api: MatrixApiClient,
-    val olm: OlmService,
-    val room: RoomService,
-    val user: UserService,
-    val media: MediaService,
-    val verification: VerificationService,
+    private val store: Store,
+    json: Json,
+    secureStore: SecureStore,
+    setOwnMessagesAsFullyRead: Boolean = false,
+    customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     private val scope: CoroutineScope,
     loggerFactory: LoggerFactory
 ) {
-
     private val log = newLogger(loggerFactory)
+
+    val olm: OlmService
+    val room: RoomService
+    val user: UserService
+    val media: MediaService
+    val verification: VerificationService
+
+    init {
+        olm = OlmService(
+            store = store,
+            secureStore = secureStore,
+            api = api,
+            json = json,
+            loggerFactory = loggerFactory
+        )
+        media = MediaService(
+            api = api,
+            store = store,
+            loggerFactory = loggerFactory
+        )
+        user = UserService(
+            api = api,
+            store = store,
+            loggerFactory = loggerFactory
+        )
+        room = RoomService(
+            store = store,
+            api = api,
+            olm = olm,
+            user = user,
+            media = media,
+            setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+            customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+            loggerFactory = loggerFactory
+        )
+        verification = VerificationService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
+            api = api,
+            store = store,
+            olm = olm,
+            room = room,
+            user = user,
+            loggerFactory = loggerFactory
+        )
+    }
 
     companion object {
         suspend fun login(
-            hostname: String,
-            port: Int = 443,
-            secure: Boolean = true,
+            baseUrl: Url,
             identifier: IdentifierType,
             password: String,
             initialDeviceDisplayName: String? = null,
             storeFactory: StoreFactory,
             secureStore: SecureStore,
+            baseHttpClient: HttpClient = HttpClient(),
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient {
+            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
+            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
+
+            val store =
+                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
+            store.init()
+
             val api = MatrixApiClient(
-                hostname,
-                port,
-                secure,
-                customMappings = customMappings,
+                baseUrl = baseUrl,
+                baseHttpClient = baseHttpClient,
+                json = json,
+                eventContentSerializerMappings = eventContentSerializerMappings,
                 loggerFactory = loggerFactory
             )
-            val store =
-                storeFactory.createStore(api.eventContentSerializerMappings, api.json, loggerFactory = loggerFactory)
-            store.init()
 
             val (userId, newAccessToken, deviceId) = api.authentication.login(
                 identifier = identifier,
@@ -80,123 +132,126 @@ class MatrixClient private constructor(
             store.account.accessToken.value = newAccessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
-            val olmService = OlmService(
+
+            val matrixClient = MatrixClient(
+                userId = userId,
+                deviceId = deviceId,
+                api = api,
                 store = store,
+                json = json,
                 secureStore = secureStore,
-                api = api,
-                json = api.json,
+                setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+                customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                scope = scope,
                 loggerFactory = loggerFactory
             )
-            store.deviceKeys.update(userId) { mapOf(deviceId to olmService.myDeviceKeys.signed) }
-            api.keys.uploadKeys(deviceKeys = olmService.myDeviceKeys)
 
-            val mediaService = MediaService(api, store, loggerFactory)
-            val userService = UserService(store, api, loggerFactory)
-            val roomService =
-                RoomService(
-                    store,
-                    api,
-                    olmService,
-                    userService,
-                    mediaService,
-                    setOwnMessagesAsFullyRead,
-                    customOutboxMessageMediaUploaderMappings,
-                    loggerFactory
-                )
-            val verificationService = VerificationService(
-                ownUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null"),
-                ownDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("userId must not be null"),
+            store.deviceKeys.update(userId) { mapOf(deviceId to matrixClient.olm.myDeviceKeys.signed) }
+            api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
+
+            return matrixClient
+        }
+
+        data class LoginInfo(
+            val userId: UserId,
+            val deviceId: String,
+            val accessToken: String,
+        )
+
+        suspend fun loginWith(
+            baseUrl: Url,
+            storeFactory: StoreFactory,
+            secureStore: SecureStore,
+            baseHttpClient: HttpClient = HttpClient(),
+            customMappings: EventContentSerializerMappings? = null,
+            setOwnMessagesAsFullyRead: Boolean = false,
+            customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
+            scope: CoroutineScope,
+            loggerFactory: LoggerFactory = LoggerFactory.default,
+            getLoginInfo: suspend (MatrixApiClient) -> LoginInfo
+        ): MatrixClient {
+            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
+            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
+
+            val store =
+                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
+            store.init()
+
+            val api = MatrixApiClient(
+                baseUrl = baseUrl,
+                baseHttpClient = baseHttpClient,
+                json = json,
+                eventContentSerializerMappings = eventContentSerializerMappings,
+                loggerFactory = loggerFactory
+            )
+            val loginInfo = getLoginInfo(api)
+
+            api.accessToken.value = loginInfo.accessToken
+            store.account.accessToken.value = loginInfo.accessToken
+            store.account.userId.value = loginInfo.userId
+            store.account.deviceId.value = loginInfo.deviceId
+
+            val matrixClient = MatrixClient(
+                userId = loginInfo.userId,
+                deviceId = loginInfo.deviceId,
                 api = api,
                 store = store,
-                olm = olmService,
-                room = roomService,
-                user = userService,
+                json = json,
+                secureStore = secureStore,
+                setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+                customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                scope = scope,
                 loggerFactory = loggerFactory
             )
 
-            return MatrixClient(
-                store,
-                api,
-                olmService,
-                roomService,
-                userService,
-                mediaService,
-                verificationService,
-                scope,
-                loggerFactory
-            )
+            store.deviceKeys.update(loginInfo.userId) { mapOf(loginInfo.deviceId to matrixClient.olm.myDeviceKeys.signed) }
+            api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
+
+            return matrixClient
         }
 
         suspend fun fromStore(
-            hostname: String,
-            port: Int = 443,
-            secure: Boolean = true,
             storeFactory: StoreFactory,
             secureStore: SecureStore,
+            baseHttpClient: HttpClient = HttpClient(),
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient? {
-            val api = MatrixApiClient(
-                hostname,
-                port,
-                secure,
-                customMappings = customMappings,
-                loggerFactory = loggerFactory
-            )
+            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
+            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
+
             val store =
-                storeFactory.createStore(api.eventContentSerializerMappings, api.json, loggerFactory = loggerFactory)
+                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
             store.init()
 
+            val baseUrl = store.account.baseUrl.value
             val accessToken = store.account.accessToken.value
             val userId = store.account.userId.value
             val deviceId = store.account.deviceId.value
 
-            return if (accessToken != null && userId != null && deviceId != null) {
+            return if (accessToken != null && userId != null && deviceId != null && baseUrl != null) {
+                val api = MatrixApiClient(
+                    baseUrl = baseUrl,
+                    baseHttpClient = baseHttpClient,
+                    json = json,
+                    eventContentSerializerMappings = eventContentSerializerMappings,
+                    loggerFactory = loggerFactory
+                )
                 api.accessToken.value = accessToken
-                val olmService = OlmService(
-                    store = store,
-                    secureStore = secureStore,
-                    api = api,
-                    json = api.json,
-                    loggerFactory = loggerFactory
-                )
-                val mediaService = MediaService(api, store, loggerFactory)
-                val userService = UserService(store, api, loggerFactory)
-                val roomService = RoomService(
-                    store,
-                    api,
-                    olmService,
-                    userService,
-                    mediaService,
-                    setOwnMessagesAsFullyRead,
-                    customOutboxMessageMediaUploaderMappings,
-                    loggerFactory
-                )
-                val verificationService = VerificationService(
-                    ownUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null"),
-                    ownDeviceId = store.account.deviceId.value
-                        ?: throw IllegalArgumentException("userId must not be null"),
-                    api = api,
-                    store = store,
-                    olm = olmService,
-                    room = roomService,
-                    user = userService,
-                    loggerFactory = loggerFactory
-                )
-
                 MatrixClient(
-                    store,
-                    api,
-                    olmService,
-                    roomService,
-                    userService,
-                    mediaService,
-                    verificationService,
-                    scope,
-                    loggerFactory
+                    userId = userId,
+                    deviceId = deviceId,
+                    api = api,
+                    store = store,
+                    json = json,
+                    secureStore = secureStore,
+                    setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+                    customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                    scope = scope,
+                    loggerFactory = loggerFactory
                 )
             } else null
         }
@@ -207,8 +262,6 @@ class MatrixClient private constructor(
     }
 
     val syncState = api.sync.currentSyncState
-
-    val userId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
 
     suspend fun logout() {
         api.sync.stop()
@@ -226,13 +279,15 @@ class MatrixClient private constructor(
             log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
             scope.launch { api.sync.stop() }
         }
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(handler, start = UNDISPATCHED) {
-            launch(start = UNDISPATCHED) { olm.startEventHandling() }
-            launch(start = UNDISPATCHED) { room.startEventHandling() }
-            launch(start = UNDISPATCHED) { user.startEventHandling() }
-            launch(start = UNDISPATCHED) { verification.startEventHandling() }
+        val everythingStarted = MutableStateFlow(false)
+        scope.launch(handler) {
+            olm.startEventHandling(this)
+            room.startEventHandling(this)
+            user.startEventHandling(this)
+            verification.startEventHandling(this)
+            everythingStarted.value = true
         }
+        everythingStarted.first { it } // we wait until everything has started
 
         val myUserId = store.account.userId.value
         requireNotNull(myUserId)

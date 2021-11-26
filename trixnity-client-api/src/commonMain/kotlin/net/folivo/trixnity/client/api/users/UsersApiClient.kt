@@ -34,7 +34,7 @@ class UsersApiClient(
     ): String? {
         return httpClient.request<GetDisplayNameResponse> {
             method = Get
-            url("/_matrix/client/v3/profile/${userId.e()}/displayname")
+            url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
         }.displayName
     }
@@ -49,7 +49,7 @@ class UsersApiClient(
     ) {
         httpClient.request<Unit> {
             method = Put
-            url("/_matrix/client/v3/profile/${userId.e()}/displayname")
+            url("/_matrix/client/r0/profile/${userId.e()}/displayname")
             parameter("user_id", asUserId)
             body = mapOf("displayname" to displayName)
         }
@@ -64,7 +64,7 @@ class UsersApiClient(
     ): String? {
         return httpClient.request<GetAvatarUrlResponse> {
             method = Get
-            url("/_matrix/client/v3/profile/${userId.e()}/avatar_url")
+            url("/_matrix/client/r0/profile/${userId.e()}/avatar_url")
             parameter("user_id", asUserId)
         }.avatarUrl
     }
@@ -79,7 +79,7 @@ class UsersApiClient(
     ) {
         httpClient.request<Unit> {
             method = Put
-            url("/_matrix/client/v3/profile/${userId.e()}/avatar_url")
+            url("/_matrix/client/r0/profile/${userId.e()}/avatar_url")
             parameter("user_id", asUserId)
             body = mapOf("avatar_url" to avatarUrl)
         }
@@ -94,7 +94,7 @@ class UsersApiClient(
     ): GetProfileResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/profile/${userId.e()}")
+            url("/_matrix/client/r0/profile/${userId.e()}")
             parameter("user_id", asUserId)
         }
     }
@@ -105,7 +105,7 @@ class UsersApiClient(
     suspend fun whoAmI(asUserId: UserId? = null): UserId {
         return httpClient.request<WhoAmIResponse> {
             method = Get
-            url("/_matrix/client/v3/account/whoami")
+            url("/_matrix/client/r0/account/whoami")
             parameter("user_id", asUserId)
         }.userId
     }
@@ -121,7 +121,7 @@ class UsersApiClient(
     ) {
         httpClient.request<Unit> {
             method = Put
-            url("/_matrix/client/v3/presence/${userId.e()}/status")
+            url("/_matrix/client/r0/presence/${userId.e()}/status")
             parameter("user_id", asUserId)
             body = mapOf("presence" to presence.value, "status_msg" to statusMessage)
         }
@@ -136,7 +136,7 @@ class UsersApiClient(
     ): PresenceEventContent {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/presence/${userId.e()}/status")
+            url("/_matrix/client/r0/presence/${userId.e()}/status")
             parameter("user_id", asUserId)
         }
     }
@@ -155,7 +155,7 @@ class UsersApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(firstEventForType::class))
         httpClient.request<Unit> {
             method = Put
-            url("/_matrix/client/v3/sendToDevice/$eventType/$transactionId")
+            url("/_matrix/client/r0/sendToDevice/$eventType/$transactionId")
             parameter("user_id", asUserId)
             body = mapOf("messages" to events)
         }
@@ -171,7 +171,7 @@ class UsersApiClient(
     ): String {
         return httpClient.request<SetFilterResponse> {
             method = Post
-            url("/_matrix/client/v3/user/${userId.e()}/filter")
+            url("/_matrix/client/r0/user/${userId.e()}/filter")
             parameter("user_id", asUserId)
             body = filters
         }.filterId
@@ -187,7 +187,7 @@ class UsersApiClient(
     ): Filters {
         return httpClient.request {
             method = Get
-            url("/_matrix/client/v3/user/${userId.e()}/filter/$filterId")
+            url("/_matrix/client/r0/user/${userId.e()}/filter/$filterId")
             parameter("user_id", asUserId)
         }
     }
@@ -205,7 +205,7 @@ class UsersApiClient(
                 ?: throw IllegalArgumentException(unsupportedEventType(content::class))
         httpClient.request<String> {
             method = Put
-            url("/_matrix/client/v3/user/${userId.e()}/account_data/$eventType")
+            url("/_matrix/client/r0/user/${userId.e()}/account_data/$eventType")
             parameter("user_id", asUserId)
             body = content
         }
@@ -224,7 +224,7 @@ class UsersApiClient(
             ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
         val responseBody = httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/user/${userId.e()}/account_data/${mapping.type}")
+            url("/_matrix/client/r0/user/${userId.e()}/account_data/${mapping.type}")
             parameter("user_id", asUserId)
         }
 
