@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store.sqldelight
 
+import io.ktor.http.*
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
@@ -13,6 +14,7 @@ class SqlDelightAccountRepository(
     override suspend fun get(key: Long): Account? = withContext(context) {
         db.getAccount(key).executeAsOneOrNull()?.let {
             Account(
+                baseUrl = it.base_url?.let { it1 -> Url(it1) },
                 userId = it.user_id?.let { it1 -> UserId(it1) },
                 deviceId = it.device_id,
                 accessToken = it.access_token,
@@ -26,6 +28,7 @@ class SqlDelightAccountRepository(
         db.saveAccount(
             Sql_account(
                 id = key,
+                base_url = value.baseUrl?.toString(),
                 user_id = value.userId?.full,
                 device_id = value.deviceId,
                 access_token = value.accessToken,

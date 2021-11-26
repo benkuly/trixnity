@@ -1,5 +1,6 @@
 package net.folivo.trixnity.examples.multiplatform
 
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
@@ -20,9 +21,7 @@ import org.kodein.log.frontend.defaultLogFrontend
 suspend fun verificationExample() = coroutineScope {
     val username = "username"
     val password = "password"
-    val hostname = "example.org"
-    val port = 443
-    val secure = true
+    val baseUrl = Url("https://example.org")
     val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
@@ -33,17 +32,12 @@ suspend fun verificationExample() = coroutineScope {
     )
     val scope = CoroutineScope(Dispatchers.Default)
     val matrixClient = MatrixClient.fromStore(
-        hostname = hostname,
-        port = port,
-        secure = secure,
         storeFactory = storeFactory,
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
     ) ?: MatrixClient.login(
-        hostname = hostname,
-        port = port,
-        secure = secure,
+        baseUrl = baseUrl,
         IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",

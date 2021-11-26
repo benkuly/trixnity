@@ -34,7 +34,7 @@ class MatrixHttpClientTest {
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -68,7 +68,7 @@ class MatrixHttpClientTest {
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val cut = MatrixHttpClient(
-                hostname = "matrix.host",
+                baseUrl = Url("https://matrix.host"),
                 initialHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
@@ -102,7 +102,7 @@ class MatrixHttpClientTest {
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
         try {
             val cut = MatrixHttpClient(
-                hostname = "matrix.host",
+                baseUrl = Url("https://matrix.host"),
                 initialHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler {
@@ -132,7 +132,7 @@ class MatrixHttpClientTest {
     @Test
     fun uiaRequestShouldPreventUsageOfBodyInBuilder() = runBlockingTest {
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -167,7 +167,7 @@ class MatrixHttpClientTest {
     @Test
     fun uiaRequestShouldReturnSuccess() = runBlockingTest {
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -201,7 +201,7 @@ class MatrixHttpClientTest {
     @Test
     fun uiaRequestShouldReturnError() = runBlockingTest {
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler {
@@ -235,7 +235,7 @@ class MatrixHttpClientTest {
     fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runBlockingTest {
         var requestCount = 0
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -322,14 +322,14 @@ class MatrixHttpClientTest {
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host:443/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/r0/auth/m.login.password/fallback/web?session=session1"
     }
 
     @Test
     fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runBlockingTest {
         var requestCount = 0
         val cut = MatrixHttpClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -418,7 +418,7 @@ class MatrixHttpClientTest {
         result.errorResponse shouldBe ErrorResponse.NotFound()
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host:443/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/r0/auth/m.login.password/fallback/web?session=session1"
         requestCount shouldBe 2
     }
 }

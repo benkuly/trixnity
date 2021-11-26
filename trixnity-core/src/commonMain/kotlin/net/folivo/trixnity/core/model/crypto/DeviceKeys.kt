@@ -13,13 +13,5 @@ data class DeviceKeys(
     @SerialName("algorithms")
     val algorithms: Set<EncryptionAlgorithm>,
     @SerialName("keys")
-    val keys: Keys,
-    @SerialName("unsigned")
-    val unsigned: UnsignedDeviceInfo? = null
-) {
-    @Serializable
-    data class UnsignedDeviceInfo(
-        @SerialName("device_display_name")
-        val deviceDisplayName: String
-    )
-}
+    val keys: Keys
+)

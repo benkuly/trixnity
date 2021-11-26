@@ -8,7 +8,7 @@ sealed class SessionException(message: String) : Exception(message) {
         SessionException("could not decrypt with any olm session, but try to create new session")
 
     object PreventToManySessions :
-        SessionException("the last created session is less then an hour old, so we do not create one again")
+        SessionException("the last 5 created sessions with that sender are less then an hour old, so we do not create one again")
 
     object ValidationFailed :
         DecryptionException("The validation failed. This could be due to a man-in-the-middle attack.")

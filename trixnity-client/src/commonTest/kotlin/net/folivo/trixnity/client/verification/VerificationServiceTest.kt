@@ -7,13 +7,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
@@ -95,9 +93,7 @@ class VerificationServiceTest : ShouldSpec({
         lateinit var eventHandlingCoroutineScope: CoroutineScope
         beforeTest {
             eventHandlingCoroutineScope = CoroutineScope(Dispatchers.Default)
-            eventHandlingCoroutineScope.launch(start = UNDISPATCHED) {
-                cut.startEventHandling()
-            }
+            cut.startEventHandling(eventHandlingCoroutineScope)
         }
         afterTest {
             eventHandlingCoroutineScope.cancel()

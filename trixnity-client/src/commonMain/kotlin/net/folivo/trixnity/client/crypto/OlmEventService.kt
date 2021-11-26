@@ -132,24 +132,34 @@ class OlmEventService internal constructor(
         val storedSessions = store.olm.getOlmSessions(senderIdentityKey)
         val decryptedContent = storedSessions?.sortedByDescending { it.lastUsedAt }
             ?.mapNotNull { storedSession ->
-                log.debug { "try decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey" }
                 freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickle)) { olmSession ->
-                    try {
-                        if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
-                            if (olmSession.matchesInboundSession(ciphertext.body)) {
-                                olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
-                            } else null
+                    if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
+                        if (olmSession.matchesInboundSession(ciphertext.body)) {
+                            log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                            olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
                         } else {
-                            olmSession.decrypt(OlmMessage(ciphertext.body, ORDINARY))
+                            log.debug { "initial olm event did not match session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                            null
                         }
-                    } catch (_: Throwable) {
-                        null
+                    } else {
+                        try {
+                            log.debug { "try decrypt ordinary olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                            olmSession.decrypt(OlmMessage(ciphertext.body, ORDINARY))
+                        } catch (error: Throwable) {
+                            log.warning { "could not decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey. Reason: ${error.message}" }
+                            null
+                        }
                     }?.also { store.olm.storeOlmSession(olmSession, senderIdentityKey, secureStore.olmPickleKey) }
                 }
             }?.firstOrNull()
             ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
-                val lastCreation = storedSessions?.maxByOrNull { it.createdAt }?.createdAt
-                if (lastCreation == null || lastCreation.plus(1, DateTimeUnit.HOUR) <= Clock.System.now()) {
+                val now = Clock.System.now()
+                val tooManyNewSessions = (storedSessions?.size ?: 0) >= 5 && storedSessions
+                    ?.sortedByDescending { it.createdAt }
+                    ?.takeLast(5)
+                    ?.map { it.createdAt.plus(1, DateTimeUnit.HOUR) <= now }
+                    ?.all { true } == true
+                if (!tooManyNewSessions) {
                     log.debug { "decrypt olm event with new session for device with key $senderIdentityKey" }
                     freeAfter(
                         OlmSession.createInboundFrom(account, senderIdentityKey.value, ciphertext.body)
@@ -167,9 +177,7 @@ class OlmEventService internal constructor(
                         ?.find { it.value.keys.contains(senderIdentityKey) }?.key
                         ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
                 api.users.sendToDevice(
-                    mapOf(
-                        senderId to mapOf(senderDeviceId to encryptOlm(DummyEventContent, senderId, senderDeviceId))
-                    )
+                    mapOf(senderId to mapOf(senderDeviceId to encryptOlm(DummyEventContent, senderId, senderDeviceId)))
                 )
                 throw SessionException.CouldNotDecrypt
             }
@@ -205,9 +213,9 @@ class OlmEventService internal constructor(
             log.debug { "encrypt megolm event with new session" }
             val members = store.roomState.members(roomId, JOIN, INVITE)
             store.deviceKeys.waitForUpdateOutdatedKey(*members.toTypedArray())
-            val deviceKeys =
+            val newUserDevices =
                 members.mapNotNull { userId ->
-                    store.deviceKeys.get(userId)?.let { userId to it }
+                    store.deviceKeys.get(userId)?.let { userId to it.keys }
                 }.toMap()
             freeAfter(OlmOutboundGroupSession.create()) { session ->
                 store.olm.storeInboundMegolmSession(
@@ -217,7 +225,7 @@ class OlmEventService internal constructor(
                     sessionKey = session.sessionKey,
                     pickleKey = secureStore.olmPickleKey
                 )
-                encryptWithMegolmSession(session, content, roomId, deviceKeys.mapValues { it.value.keys })
+                encryptWithMegolmSession(session, content, roomId, newUserDevices)
             }
         } else {
             log.debug { "encrypt megolm event with existing session" }
@@ -233,16 +241,19 @@ class OlmEventService internal constructor(
         roomId: RoomId,
         newUserDevices: Map<UserId, Set<String>>
     ): MegolmEncryptedEventContent {
-        if (newUserDevices.isNotEmpty()) {
+        val newUserDevicesWithoutUs = newUserDevices
+            .mapValues { (userId, deviceIds) -> if (userId == myUserId) deviceIds - myDeviceId else deviceIds }
+            .filterValues { it.isNotEmpty() }
+        if (newUserDevicesWithoutUs.isNotEmpty()) {
             val roomKeyEventContent = RoomKeyEventContent(
                 roomId = roomId,
                 sessionId = session.sessionId,
                 sessionKey = session.sessionKey,
                 algorithm = Megolm
             )
-            log.debug { "send megolm key to devices: $newUserDevices" }
+            log.debug { "send megolm key to devices: $newUserDevicesWithoutUs" }
             api.users.sendToDevice(
-                newUserDevices.mapValues { (user, devices) ->
+                newUserDevicesWithoutUs.mapValues { (user, devices) ->
                     devices.filterNot { user == myUserId && it == myDeviceId }
                         .mapNotNull { deviceName ->
                             try {

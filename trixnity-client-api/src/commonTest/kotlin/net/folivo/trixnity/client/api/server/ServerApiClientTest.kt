@@ -19,7 +19,7 @@ class ServerApiClientTest {
             unstable_features = mapOf()
         )
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
@@ -49,11 +49,11 @@ class ServerApiClientTest {
             )
         )
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/capabilities", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/capabilities", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             Json.encodeToString(response),

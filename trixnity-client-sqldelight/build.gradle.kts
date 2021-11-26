@@ -11,6 +11,8 @@ kotlin {
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
+            systemProperty("java.library.path", olm.build.canonicalPath)
+            systemProperty("jna.library.path", olm.build.canonicalPath)
         }
     }
 //    js {
@@ -55,13 +57,16 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting {
-            dependencies { }
-        }
+        val jvmMain by getting { }
         val jvmTest by getting {
             dependencies {
                 implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
+                implementation("io.ktor:ktor-client-java:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
+                implementation("org.testcontainers:testcontainers:${Versions.testContainers}")
+                implementation("org.testcontainers:junit-jupiter:${Versions.testContainers}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsTest by getting

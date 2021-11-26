@@ -36,14 +36,12 @@ class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({
                 "ADEV1",
                 setOf(Megolm, Olm),
                 keysOf(Curve25519Key(null, "aliceCurveKey1"), Key.Ed25519Key(null, "aliceEdKey1")),
-                unsigned = DeviceKeys.UnsignedDeviceInfo("super cool device from alice 1")
             ),
             "ADEV2" to DeviceKeys(
                 alice,
                 "ADEV2",
                 setOf(Megolm, Olm),
                 keysOf(Curve25519Key(null, "aliceCurveKey2"), Key.Ed25519Key(null, "aliceEdKey2")),
-                unsigned = DeviceKeys.UnsignedDeviceInfo("super cool device from alice 2")
             )
         )
         val bobDeviceKeys = mapOf(
@@ -52,7 +50,6 @@ class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({
                 "BDEV1",
                 setOf(Megolm, Olm),
                 keysOf(Curve25519Key(null, "bobCurveKey1"), Key.Ed25519Key(null, "bobEdKey1")),
-                unsigned = DeviceKeys.UnsignedDeviceInfo("super cool device from bob 1")
             )
         )
         val bobDeviceKeysCopy = mapOf(
@@ -61,7 +58,6 @@ class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({
                 "BDEV1",
                 setOf(Megolm, Olm),
                 keysOf(Curve25519Key(null, "changedBobCurveKey1"), Key.Ed25519Key(null, "bobEdKey1")),
-                unsigned = DeviceKeys.UnsignedDeviceInfo("super cool device from bob 1")
             )
         )
         cut.save(alice, aliceDeviceKeys)

@@ -23,11 +23,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldIsUsernameAvailable() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/register/available?username=user", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/register/available?username=user", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             "{}",
@@ -53,11 +53,11 @@ class AuthenticationApiClientTest {
             }
         """.trimIndent().lines().joinToString("") { it.trim() }
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/register?kind=user", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
                         respond(
@@ -83,11 +83,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldGetLoginTypes() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -130,11 +130,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldLogin() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -192,11 +192,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldLogout() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/logout", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/logout", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         respond(
                             "{}",
@@ -212,11 +212,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldLogoutAll() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/logout/all", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/logout/all", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         respond(
                             "{}",
@@ -232,11 +232,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldDeactivateAccount() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/account/deactivate", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/account/deactivate", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(
                             """{"id_server":"id.host"}""",
@@ -257,11 +257,11 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldChangePassword() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/account/password", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/account/password", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(
                             """{"new_password":"newPassword","logout_devices":false}""",

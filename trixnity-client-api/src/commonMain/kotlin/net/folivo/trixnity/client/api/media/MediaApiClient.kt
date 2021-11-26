@@ -20,7 +20,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
     suspend fun getConfig(): GetConfigResponse {
         return httpClient.request {
             method = Get
-            url("/_matrix/media/v3/config")
+            url("/_matrix/media/r0/config")
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
@@ -38,7 +38,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
     ): UploadResponse {
         return httpClient.request {
             method = Post
-            url("/_matrix/media/v3/upload")
+            url("/_matrix/media/r0/upload")
             accept(ContentType.Application.Json)
             parameter("filename", filename)
             body = object : OutgoingContent.ReadChannelContent() {
@@ -73,7 +73,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
         val response = httpClient.request<HttpResponse> {
             method = Get
-            url("/_matrix/media/v3/download/${uri.host}${uri.encodedPath}")
+            url("/_matrix/media/r0/download/${uri.host}${uri.encodedPath}")
             parameter("allow_remote", allowRemote)
             timeout {
                 requestTimeoutMillis = 600000
@@ -106,7 +106,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
         val response = httpClient.request<HttpResponse> {
             this.method = Get
-            url("/_matrix/media/v3/thumbnail/${uri.host}${uri.encodedPath}")
+            url("/_matrix/media/r0/thumbnail/${uri.host}${uri.encodedPath}")
             parameter("width", width)
             parameter("height", height)
             parameter("method", method.value)

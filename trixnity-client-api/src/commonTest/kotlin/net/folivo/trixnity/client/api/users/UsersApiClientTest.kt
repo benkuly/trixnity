@@ -24,11 +24,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSetDisplayName() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/displayname", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
                         assertEquals(
                             """{"displayname":"someDisplayName"}""",
@@ -48,11 +48,11 @@ class UsersApiClientTest {
     @Test
     fun shouldGetDisplayName() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/displayname", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/displayname", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """{"displayname":"someDisplayName"}""",
@@ -68,11 +68,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSetAvatarUrl() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
                         assertEquals(
                             """{"avatar_url":"mxc://localhost/123456"}""",
@@ -92,11 +92,11 @@ class UsersApiClientTest {
     @Test
     fun shouldGetAvatarUrl() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """{"avatar_url":"mxc://localhost/123456"}""",
@@ -112,11 +112,11 @@ class UsersApiClientTest {
     @Test
     fun shouldGetProfile() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName"}""",
@@ -135,11 +135,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSetNullForMissingProfileValues() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/profile/%40user%3Aserver", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/profile/%40user%3Aserver", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """{}""",
@@ -159,11 +159,11 @@ class UsersApiClientTest {
     fun shouldGetWhoami() = runBlockingTest {
         val response = WhoAmIResponse(UserId("user", "server"), "ABCDEF")
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/account/whoami", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/account/whoami", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             Json.encodeToString(response),
@@ -180,11 +180,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSetPresence() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/presence/%40user%3Aserver/status", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/presence/%40user%3Aserver/status", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -210,11 +210,11 @@ class UsersApiClientTest {
     @Test
     fun shouldGetPresence() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/presence/%40user%3Aserver/status", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/presence/%40user%3Aserver/status", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -236,11 +236,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSendToDevice() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/tnxId", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/sendToDevice/m.room_key/tnxId", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -284,11 +284,11 @@ class UsersApiClientTest {
     @Test
     fun shouldSetFilter() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/user/%40dino%3Aserver/filter", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/user/%40dino%3Aserver/filter", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -319,11 +319,11 @@ class UsersApiClientTest {
     @Test
     fun shouldGetFilter() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/v3/user/%40dino%3Aserver/filter/0", request.url.fullPath)
+                        assertEquals("/_matrix/client/r0/user/%40dino%3Aserver/filter/0", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -348,12 +348,12 @@ class UsersApiClientTest {
     @Test
     fun shouldGetAccountData() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -378,12 +378,12 @@ class UsersApiClientTest {
     @Test
     fun shouldSetAccountData() = runBlockingTest {
         val matrixRestClient = MatrixApiClient(
-            hostname = "matrix.host",
+            baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)

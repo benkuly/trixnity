@@ -23,7 +23,7 @@ fun Application.matrixAppserviceModule(
     customMappings: EventContentSerializerMappings? = null
 ) {
     val log = newLogger(loggerFactory)
-    val json = createMatrixJson(loggerFactory, DefaultEventContentSerializerMappings + customMappings)
+    val json = createMatrixJson(DefaultEventContentSerializerMappings + customMappings, loggerFactory = loggerFactory)
     install(ContentNegotiation) {
         json(json)
     }

@@ -48,10 +48,7 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val jvmTest by getting {
-            dependencies {
-            }
-        }
+        val jvmTest by getting { }
 //        val jsTest by getting
 //        val nativeTest by getting
     }

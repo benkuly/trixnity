@@ -1,5 +1,6 @@
 CREATE TABLE sql_account (
   id INTEGER NOT NULL PRIMARY KEY,
+  base_url TEXT,
   user_id TEXT,
   device_id TEXT,
   access_token TEXT,

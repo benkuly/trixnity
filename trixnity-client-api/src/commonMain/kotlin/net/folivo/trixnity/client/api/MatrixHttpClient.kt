@@ -23,9 +23,7 @@ import net.folivo.trixnity.client.api.uia.UIA
 class MatrixHttpClient(
     initialHttpClient: HttpClient,
     val json: Json,
-    private val hostname: String,
-    private val hostport: Int = 443,
-    private val secure: Boolean = true,
+    private val baseUrl: Url,
     private val accessToken: MutableStateFlow<String?>
 ) {
     val baseClient: HttpClient = initialHttpClient.config {
@@ -33,11 +31,12 @@ class MatrixHttpClient(
             serializer = KotlinxSerializer(json)
         }
         install(DefaultRequest) {
-            host = hostname
-            port = hostport
-            url.protocol = if (secure) URLProtocol.HTTPS else URLProtocol.HTTP
+            val requestUrl = url.encodedPath
+            url.takeFrom(URLBuilder().takeFrom(baseUrl).apply {
+                encodedPath += requestUrl
+            })
             accessToken.value?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-            if (!url.encodedPath.startsWith("_matrix/media")) {
+            if (!requestUrl.startsWith("_matrix/media")) {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 accept(ContentType.Application.Json)
             }
@@ -104,14 +103,10 @@ class MatrixHttpClient(
                     uiaRequest(authBody, serializer(), responseSerializer, requestBuilder)
                 }
                 val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
-                    URLBuilder(
-                        host = hostname,
-                        port = hostport,
-                        protocol = if (secure) URLProtocol.HTTPS else URLProtocol.HTTP,
-                        encodedPath = "/_matrix/client/v3/auth/${authenticationType.name}/fallback/web",
-                        parameters = ParametersBuilder(1).apply { state.session?.let { append("session", it) } }
-
-                    ).build()
+                    URLBuilder().takeFrom(baseUrl).apply {
+                        encodedPath += "/_matrix/client/r0/auth/${authenticationType.name}/fallback/web"
+                        state.session?.let { parameters.append("session", it) }
+                    }.build()
                 }
                 return if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
