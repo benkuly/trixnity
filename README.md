@@ -236,7 +236,7 @@ coroutineScope {
 }
 ```
 
-## Appservice
+## [Trixnity-Appservice](/trixnity-appservice)
 
 The appservice module of Trixnity contains a webserver, which hosts the Matrix Application-Service API.
 
