@@ -33,16 +33,24 @@ class MediaService(
 
     companion object {
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
+        const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"
     }
 
     suspend fun getMedia(
-        mxcUri: String,
+        uri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): ByteArray {
-        return store.media.getContent(mxcUri)
-            ?: api.media.download(mxcUri, progress = progress).content.toByteArray().also { mediaDownload ->
-                store.media.addContent(mxcUri, mediaDownload)
-            }
+        return when {
+            uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> store.media.getContent(uri)
+                ?: api.media.download(uri, progress = progress).content.toByteArray().also { mediaDownload ->
+                    store.media.addContent(uri, mediaDownload)
+                }
+            uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> store.media.getContent(uri)
+                ?: store.media.getUploadMedia(uri)?.mxcUri
+                    ?.let { store.media.getContent(it) }
+                ?: throw IllegalArgumentException("cache uri $uri does not exists")
+            else -> throw IllegalArgumentException("uri $uri is no valid cache or mxc uri")
+        }
     }
 
     suspend fun getEncryptedMedia(

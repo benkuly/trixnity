@@ -32,6 +32,7 @@ class MediaServiceTest : ShouldSpec({
     val cut = MediaService(api, store, LoggerFactory.default)
 
     val mxcUri = "mxc://example.com/abc"
+    val cacheUri = "cache://some-string"
 
     mockkStatic(::createThumbnail)
 
@@ -41,20 +42,35 @@ class MediaServiceTest : ShouldSpec({
         coEvery { store.media.getContent(any()) } returns null
     }
     context(MediaService::getMedia.name) {
-        should("prefer cache") {
-            coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
-            cut.getMedia(mxcUri).decodeToString() shouldBe "test"
-            coVerify { api wasNot Called }
-        }
-        should("download and cache") {
-            coEvery { api.media.download(any(), any()) } returns DownloadResponse(
-                ByteReadChannel("test"), null, null, null
-            )
-            cut.getMedia(mxcUri).decodeToString() shouldBe "test"
+        context("is mxc uri") {
+            should("prefer cache") {
+                coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
+                cut.getMedia(mxcUri).decodeToString() shouldBe "test"
+                coVerify { api wasNot Called }
+            }
+            should("download and cache") {
+                coEvery { api.media.download(any(), any()) } returns DownloadResponse(
+                    ByteReadChannel("test"), null, null, null
+                )
+                cut.getMedia(mxcUri).decodeToString() shouldBe "test"
 
-            coVerify {
-                api.media.download(mxcUri)
-                store.media.addContent(mxcUri, "test".encodeToByteArray())
+                coVerify {
+                    api.media.download(mxcUri)
+                    store.media.addContent(mxcUri, "test".encodeToByteArray())
+                }
+            }
+        }
+        context("is cache uri") {
+            should("prefer cache") {
+                coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
+                cut.getMedia(cacheUri).decodeToString() shouldBe "test"
+                coVerify { api wasNot Called }
+            }
+            should("prefer cache, but use mxcUri, when already uploaded") {
+                coEvery { store.media.getUploadMedia(cacheUri)?.mxcUri } returns mxcUri
+                coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
+                cut.getMedia(cacheUri).decodeToString() shouldBe "test"
+                coVerify { api wasNot Called }
             }
         }
     }
@@ -219,6 +235,9 @@ class MediaServiceTest : ShouldSpec({
                     it.invoke(UploadMedia(cacheUri, null, Plain)) shouldBe UploadMedia(cacheUri, mxcUri, Plain)
                 })
             }
+        }
+        should("keep local cache url in cache") {
+
         }
         should("not upload twice") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
