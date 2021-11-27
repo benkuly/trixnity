@@ -2,15 +2,15 @@
 
 # Trixnity - Multiplatform Matrix SDK
 
-Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. This SDK supports JVM as targets (
-native and JS will follow soon). [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
+Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. This SDK supports JVM as targets (native and JS
+will follow soon). [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
 
 Trixnity aims to be strongly typed, customizable and easy to use. You can register custom events and Trixnity will take
 care, that you can send and receive that type.
 
 If you want to use Trixnity in combination with Spring Boot, have a look
-at [matrix-spring-boot-sdk](https://github.com/benkuly/matrix-spring-boot-sdk)
+at [matrix-spring-boot-sdk](https://gitlab.com/benkuly/matrix-spring-boot-sdk)
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
 
@@ -27,23 +27,23 @@ This project contains the following sub-projects, which can be used independentl
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity. The key features are:
-    - [x] exchangeable Database
-    - [x] fast cache on top of the Database
+    - [x] exchangeable database
+    - [x] fast cache on top of the database
     - [x] E2E (olm, megolm)
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
-    - [x] asynchronous message sending without caring about E2E stuff
-    - [x] media support (thumbnail generation)
+    - [x] asynchronous message sending without caring about E2E stuff or online state
+    - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
-- [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the Database for trixnity-client
+- [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the database for trixnity-client
   with [sqldelight](https://github.com/cashapp/sqldelight/).
 
-We plan to add something like `trixnity-client-indexeddb` as a faster Database backend for web in the future.
+We plan to add something like `trixnity-client-indexeddb` as a faster database backend for web in the future.
 
 ### Add Trixnity to you project
 
-Just add the following to you dependencies and fill `<sub-project>` (with e. g. `client-sqldelight`) and `<version>` (
+Just add the following to your dependencies and fill `<sub-project>` (with e.g. `client-sqldelight`) and `<version>` (
 with the current version):
 
 ```yml
@@ -82,13 +82,13 @@ val matrixClient = MatrixClient.fromStore(
 )
 ```
 
-It is important, that you call `matrixClient.startSync()`, to fully start the client.
+It is important, that you call `matrixClient.startSync()` to fully start the client.
 
 ### Read data
 
 Most data in Trixnity is wrapped into Kotlins `StateFlow`. This means, that you get the current value, but also every
-future value. This is useful when e.g. the display name or the avatar of a user changes, because you only need to render
-that change and not you complete application.
+future values. This is useful when e.g. the display name or the avatar of a user changes, because you only need to
+render that change and not your complete application.
 
 There are some important data, which are described below:
 
@@ -161,7 +161,7 @@ matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { 
 #### Outbox
 
 Messages, that were sent with Trixnity can be accessed with `matrixClient.room.getOutbox()` as long as they are not
-received (also called "echo") by the matrix server.
+received (also called "echo") from the matrix server.
 
 ### Send data
 
@@ -171,13 +171,13 @@ described below.
 
 #### Send messages
 
-With `matrixClient.room.sendMessage(...)` you get access to an extendable DSL to send messages. This messages will be
+With `matrixClient.room.sendMessage(...)` you get access to an extensible DSL to send messages. This messages will be
 saved locally and sent as soon as you are online.
 
 ```kotlin
 // send a text message
 matrixClient.room.sendMessage(roomId) {
-    text("pong to ${content.body}")
+    text("Hi!")
 }
 // send an image
 matrixClient.room.sendMessage(roomId) {
