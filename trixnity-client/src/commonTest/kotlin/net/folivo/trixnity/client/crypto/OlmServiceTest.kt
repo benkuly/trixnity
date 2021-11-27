@@ -30,7 +30,7 @@ import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
-import net.folivo.trixnity.client.testutils.createInMemoryStore
+import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

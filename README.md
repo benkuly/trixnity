@@ -1,43 +1,202 @@
 ![Version](https://maven-badges.herokuapp.com/maven-central/net.folivo/trixnity-core/badge.svg)
 
-# Trixnity
+# Trixnity - Multiplatform Matrix SDK
 
-Trixnity is a cross-plattform [Matrix](matrix.org) client SDK written in Kotlin. This SDK supports JVM as targets (
-native and JS not working yet due to a bug in kotlinx.serialization). [Ktor](https://github.com/ktorio/ktor) is used for
-the HTTP client/server and
+Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. This SDK supports JVM as targets (
+native and JS will follow soon). [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
+
+Trixnity aims to be strongly typed, customizable and easy to use. You can register custom events and Trixnity will take
+care, that you can send and receive that type.
 
 If you want to use Trixnity in combination with Spring Boot, have a look
 at [matrix-spring-boot-sdk](https://github.com/benkuly/matrix-spring-boot-sdk)
 
-You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).
+**You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
 
-## Client
+## Overview
 
-TODO
+This project contains the following sub-projects, which can be used independently:
 
-## Client-API
+- [trixnity-core](/trixnity-core) contains the model and serialization stuff for Matrix.
+- [trixnity-olm](/trixnity-olm) implements the wrappers of the
+  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/JS/Native.
+- [trixnity-client-api](/trixnity-client-api) implements
+  the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
+- [trixnity-appservice](/trixnity-appservice) implements
+  the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
+- [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
+  clients by just rendering data from and passing user interactions to Trixnity. The key features are:
+    - [x] exchangeable Database
+    - [x] fast cache on top of the Database
+    - [x] E2E (olm, megolm)
+    - [x] room list
+    - [x] timelines
+    - [x] user and room display name calculation
+    - [x] asynchronous message sending without caring about E2E stuff
+    - [x] media support (thumbnail generation)
+    - [x] redactions
+- [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the Database for trixnity-client
+  with [sqldelight](https://github.com/cashapp/sqldelight/).
 
-The client api module of Trixnity gives you access to the plain Matrix Client-Server API.
+We plan to add something like `trixnity-client-indexeddb` as a faster Database backend for web in the future.
 
-There is a working example in the `trixnity-examples` directory.
+### Add Trixnity to you project
 
-### Installation
+Just add the following to you dependencies and fill `<sub-project>` (with e. g. `client-sqldelight`) and `<version>` (
+with the current version):
 
-Add `net.folivo:trixnity-client-api` to your project.
+```yml
+implementation("net.folivo:trixnity-<sub-project>:<version>")
+```
 
-You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/http-client-engines.html).
+For Trixnity-Client and Trixnity-Client-API you also need to add a client engine to your project, that you can
+find [here](https://ktor.io/docs/http-client-engines.html).
+
+## [Trixnity-Client](/trixnity-client)
+
+### Create MatrixClient
+
+With `MatrixClient` you have access to the whole library. It can be instantiated by various static functions,
+e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database, a `SecureStore` for storing
+secrets and a `CouroutineScope`, which will be used for the lifecycle of the client.
+
+```kotlin
+val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
+val secureStore = object : SecureStore {
+    override val olmPickleKey = ""
+}
+val scope = CoroutineScope(Dispatchers.Default)
+
+val matrixClient = MatrixClient.fromStore(
+    storeFactory = storeFactory,
+    secureStore = secureStore,
+    scope = scope,
+) ?: MatrixClient.login(
+    baseUrl = Url("https://example.org"),
+    identifier = User("username"),
+    password = "password",
+    storeFactory = storeFactory,
+    secureStore = secureStore,
+    scope = scope,
+)
+```
+
+It is important, that you call `matrixClient.startSync()`, to fully start the client.
+
+### Read data
+
+Most data in Trixnity is wrapped into Kotlins `StateFlow`. This means, that you get the current value, but also every
+future value. This is useful when e.g. the display name or the avatar of a user changes, because you only need to render
+that change and not you complete application.
+
+There are some important data, which are described below:
+
+#### Rooms
+
+To get the room list, call `matrixClient.room.getAll()`. With `matrixClient.room.getById(...)` you can get one room.
+
+#### Users
+
+To get all members of a room, call `matrixClient.user.getAll(...)`. Because room members are loaded lazily, you should
+also call `matrixClient.user.loadMembers(...)` before. With `matrixClient.user.getById(...)` you can get one user. If
+you do that to e.g. show the sender of a message, you don't need to call `loadMembers(...)`, because this information is
+already delivered by the matrix server.
+
+#### TimelineEvents
+
+`TimelineEvent`s represent Events in a room timeline. Each `TimelineEvent` points to its previous and
+next `TimelineEvent`, so they form a linear graph: `... <-> TimelineEvent <-> TimelineEvent <-> TimelineEvent <-> ...`.
+You can use this to navigate threw the graph and e.g. form a list out of it.
+
+A `TimelineEvent` also contains a `Gap` which can be used to determine, if there are missing events, which can be loaded
+from the server: `GabBefore <-> TimelineEvent <-> TimelineEvent <-> GapAfter`. If a `TimelineEvent` has a `Gap`, you can
+fetch is neighbours by calling `matrixClient.room.fetchMissingEvents(...)`.
+
+You can always get the last known `TimelineEvent` of a room with `matrixClient.room.getLastTimelineEvent(...)`.
+
+The following example will always print the last 20 events of a room:
+
+```kotlin
+matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { lastEvent ->
+    flow {
+        var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
+        emit(lastEvent)
+        while (currentTimelineEvent?.value != null) {
+            val currentTimelineEventValue = currentTimelineEvent.value
+            if (currentTimelineEventValue?.gap is GapBefore) {
+                matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
+            }
+            currentTimelineEvent = currentTimelineEvent.value?.let {
+                matrixClient.room.getPreviousTimelineEvent(it, scope)
+            }
+            emit(currentTimelineEvent)
+        }
+    }.filterNotNull().take(20).toList().reversed().forEach { timelineEvent ->
+        val event = timelineEvent.value?.event
+        val content = event?.content
+        val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
+        when {
+            content is RoomMessageEventContent ->
+                println("${sender}: ${content.body}")
+            content is MegolmEncryptedEventContent -> {
+                val decryptedEvent = timelineEvent.value?.decryptedEvent
+                val decryptedEventContent = decryptedEvent?.getOrNull()?.content
+                val decryptionException = decryptedEvent?.exceptionOrNull()
+                when {
+                    decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
+                    decryptedEvent == null -> println("${sender}: not yet decrypted")
+                    decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
+                }
+            }
+            event is MessageEvent -> println("${sender}: $event")
+            event is StateEvent -> println("${sender}: $event")
+            else -> {
+            }
+        }
+    }
+}
+```
+
+#### Outbox
+
+Messages, that were sent with Trixnity can be accessed with `matrixClient.room.getOutbox()` as long as they are not
+received (also called "echo") by the matrix server.
+
+### Send data
+
+Many operations can be done with [trixnity-client-api](/trixnity-client-api). You have access to it
+via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
+described below.
+
+#### Send messages
+
+With `matrixClient.room.sendMessage(...)` you get access to an extendable DSL to send messages. This messages will be
+saved locally and sent as soon as you are online.
+
+```kotlin
+// send a text message
+matrixClient.room.sendMessage(roomId) {
+    text("pong to ${content.body}")
+}
+// send an image
+matrixClient.room.sendMessage(roomId) {
+    image("dino.png", image, ContentType.Image.PNG)
+}
+```
+
+## [Trixnity-Client-API](/trixnity-client-api)
 
 ### Usage
 
-#### Create `MatrixApiClient`
-
-The most important class of this library is `MatrixApiClient`.
+#### Create MatrixApiClient
 
 Here is a typical example, how to create a `MatrixRestClient`:
 
 ```kotlin
-private val matrixRestClient = MatrixApiClient(hostname = "example.org").apply { accessToken = "your_token" }
+val matrixRestClient = MatrixApiClient(
+    baseUrl = Url("http://host"),
+).apply { accessToken.value = "token" }
 ```
 
 #### Use Matrix Client-Server API
@@ -51,7 +210,7 @@ matrixRestClient.room.sendRoomEvent(
 )
 ```
 
-Example 2: You can receive different type of events.
+Example 2: You can receive different type of events from sync.
 
 ```kotlin
 coroutineScope {
@@ -79,13 +238,9 @@ coroutineScope {
 
 ## Appservice
 
-The appservice module of Trixnity contains a webserver, which hosts the Matrix Application Service API.
+The appservice module of Trixnity contains a webserver, which hosts the Matrix Application-Service API.
 
-### Installation
-
-Add `net.folivo:trixnity-appservice` to your project.
-
-You also need to add an engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
+You also need to add a server engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
 
 ### Usage
 
@@ -144,4 +299,4 @@ Linux: You may need to install `libncurses5`.
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
-. Run all gradle tasks within the msys2 mingw64 shell!
+. **Important:** Run this command and all gradle tasks within the ~~~~msys2 **mingw64** shell!**

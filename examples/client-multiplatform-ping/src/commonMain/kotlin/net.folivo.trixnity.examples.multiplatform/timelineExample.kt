@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.authentication.IdentifierType
+import net.folivo.trixnity.client.api.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -22,6 +22,7 @@ import org.kodein.log.Logger
 import org.kodein.log.LoggerFactory
 import org.kodein.log.filter.entry.minimumLevel
 import org.kodein.log.frontend.defaultLogFrontend
+import kotlin.random.Random
 
 suspend fun timelineExample() = coroutineScope {
     val username = "username"
@@ -44,9 +45,9 @@ suspend fun timelineExample() = coroutineScope {
         loggerFactory = loggerFactory
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
-        IdentifierType.User(username),
+        User(username),
         password,
-        initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
+        initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
         storeFactory = storeFactory,
         secureStore = secureStore,
         scope = scope,
@@ -101,16 +102,16 @@ suspend fun timelineExample() = coroutineScope {
                 val content = event?.content
                 val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
                 when {
-                    event is MessageEvent && content is RoomMessageEventContent ->
+                    content is RoomMessageEventContent ->
                         println("${sender}: ${content.body}")
-                    event is MessageEvent && content is MegolmEncryptedEventContent -> {
+                    content is MegolmEncryptedEventContent -> {
                         val decryptedEvent = timelineEvent.value?.decryptedEvent
                         val decryptedEventContent = decryptedEvent?.getOrNull()?.content
-                        val decryptionException = timelineEvent.value?.decryptedEvent?.exceptionOrNull()
+                        val decryptionException = decryptedEvent?.exceptionOrNull()
                         when {
-                            decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
-                            decryptedEvent == null -> println("${sender}: not yet decrypted")
                             decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
+                            decryptedEvent == null -> println("${sender}: not yet decrypted")
+                            decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
                         }
                     }
                     event is MessageEvent -> println("${sender}: $event")

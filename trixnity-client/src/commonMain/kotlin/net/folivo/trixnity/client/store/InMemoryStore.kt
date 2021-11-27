@@ -1,12 +1,8 @@
-package net.folivo.trixnity.client.testutils
+package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.RoomOutboxMessage
-import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

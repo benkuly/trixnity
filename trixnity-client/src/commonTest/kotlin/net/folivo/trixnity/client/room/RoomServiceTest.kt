@@ -27,7 +27,6 @@ import net.folivo.trixnity.client.crypto.VerificationState
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId

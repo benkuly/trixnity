@@ -21,7 +21,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.client.testutils.createInMemoryStore
+import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId

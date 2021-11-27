@@ -19,7 +19,7 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.testutils.createInMemoryStore
+import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Request

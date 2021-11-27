@@ -14,7 +14,7 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.testutils.createInMemoryStore
+import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId

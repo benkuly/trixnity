@@ -28,7 +28,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.testutils.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
