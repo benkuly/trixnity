@@ -222,7 +222,6 @@ class MediaServiceTest : ShouldSpec({
     context(MediaService::uploadMedia.name) {
         should("upload and add to cache") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
-            val cacheUri = "cache://some-uuid"
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
             coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain)
 
@@ -241,7 +240,6 @@ class MediaServiceTest : ShouldSpec({
         }
         should("not upload twice") {
             coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
-            val cacheUri = "cache://some-uuid"
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
             coEvery { store.media.getUploadMedia(cacheUri) }
                 .returns(UploadMedia(cacheUri, null, Plain))
