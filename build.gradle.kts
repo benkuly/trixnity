@@ -28,7 +28,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "1.0.0-SNAPSHOT"
+    version = "1.0.0-RC1"
 
     repositories {
         mavenCentral()
