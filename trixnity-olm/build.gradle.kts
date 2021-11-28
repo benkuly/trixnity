@@ -25,7 +25,7 @@ android {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(JavaVersion.VERSION_11.ordinal))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
     jvm {
         compilations.all {
