@@ -8,13 +8,13 @@ stages:
 # runtime for each build is more reliable since the runtime is completely
 # isolated from any previous builds.
 variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  ANDROID_SDK_ROOT: "$CI_PROJECT_DIR/.android"
-  ANDROID_CLI_TOOLS: "7583922"
-  ANDROID_PLATFORM: "30"
-  ANDROID_BUILD_TOOLS: "31.0.0"
-  ANDROID_NDK: "23.1.7779620"
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
+  ANDROID_SDK_ROOT: $CI_PROJECT_DIR/.android
+  ANDROID_CLI_TOOLS: 7583922
+  ANDROID_PLATFORM: 30
+  ANDROID_BUILD_TOOLS: 31.0.0
+  ANDROID_NDK: 23.1.7779620
 
 cache:
   paths:
@@ -22,9 +22,9 @@ cache:
     - .gradle/caches
     - .android
 
-rules: &rules
-  - if: "$CI_PIPELINE_SOURCE == 'merge_request_event'"
-  - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/"
+.rules: &rules
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
 
 check_mr:
   stage: check
@@ -74,13 +74,13 @@ check-linux:
   image: ubuntu:latest
   rules: *rules
   script:
-    - gradle check
+    - ./gradlew check
 
 publish:
   stage: publish
   tags: [ "docker" ]
   image: ubuntu:latest
   rules:
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/"
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
   script:
-    - gradle publish
+    - ./gradlew publish
