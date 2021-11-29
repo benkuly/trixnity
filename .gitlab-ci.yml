@@ -68,7 +68,7 @@ publish:
   cache: *build-cache
   variables: *docker-variables
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
   script:
     - ./gradlew buildOlm
     - ./gradlew publish
