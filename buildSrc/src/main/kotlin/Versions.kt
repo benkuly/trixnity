@@ -21,9 +21,9 @@ object Versions {
     const val logback = "1.2.7" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
-    const val androidTargetSdk = 31
+    const val androidTargetSdk = 30
     const val androidMinSdk = 26
-    const val androidBuildTools = "31.0.0"
+    const val androidBuildTools = "30.0.3"
     const val androidNdk = "23.1.7779620"
     const val androidCMake = "3.18.1"
 }
