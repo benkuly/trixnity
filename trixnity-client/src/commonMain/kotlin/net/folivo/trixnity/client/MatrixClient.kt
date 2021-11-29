@@ -129,6 +129,7 @@ class MatrixClient private constructor(
                 initialDeviceDisplayName = initialDeviceDisplayName
             )
             api.accessToken.value = newAccessToken
+            store.account.baseUrl.value = baseUrl
             store.account.accessToken.value = newAccessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
@@ -187,6 +188,7 @@ class MatrixClient private constructor(
             val loginInfo = getLoginInfo(api)
 
             api.accessToken.value = loginInfo.accessToken
+            store.account.baseUrl.value = baseUrl
             store.account.accessToken.value = loginInfo.accessToken
             store.account.userId.value = loginInfo.userId
             store.account.deviceId.value = loginInfo.deviceId
