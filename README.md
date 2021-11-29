@@ -30,6 +30,7 @@ This project contains the following sub-projects, which can be used independentl
     - [x] exchangeable database
     - [x] fast cache on top of the database
     - [x] E2E (olm, megolm)
+    - [x] verification
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
