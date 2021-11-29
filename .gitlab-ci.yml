@@ -13,7 +13,6 @@ variables:
   key: global-tixnity-cache
   paths:
     - .gradle
-    - .android
     - .konan
 
 .docker-variables: &docker-variables
