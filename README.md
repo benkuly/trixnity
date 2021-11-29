@@ -38,6 +38,7 @@ This project contains the following sub-projects, which can be used independentl
     - [x] redactions
 - [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the database for trixnity-client
   with [sqldelight](https://github.com/cashapp/sqldelight/).
+- [examples](/examples) contains some examples, if you want to see Trixnity in action.
 
 We plan to add something like `trixnity-client-indexeddb` as a faster database backend for web in the future.
 
@@ -299,4 +300,4 @@ Linux: You may need to install `libncurses5`.
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
-. **Important:** Run this command and all gradle tasks within the ~~~~msys2 **mingw64** shell!**
+. **Important:** Run this command and all gradle tasks within the msys2 **mingw64** shell!
