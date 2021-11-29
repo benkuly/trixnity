@@ -30,7 +30,6 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             initialValues.mapValues { StateFlowCacheValue<V?>(MutableStateFlow(it.value), setOf(), null) }.toMap()
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     suspend fun readWithCache(
         key: K,
         containsInCache: suspend (cacheValue: V?) -> Boolean,
@@ -45,7 +44,7 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
 
             // We try to remove the value from cache, when there is a job, we can listen to.
             if (infiniteCache.not())
-                job?.invokeOnCompletion(onCancelling = true, invokeImmediately = true) {
+                job?.invokeOnCompletion {
                     cacheScope.launch {
                         _cache.update {
                             val currentValue = it[key]

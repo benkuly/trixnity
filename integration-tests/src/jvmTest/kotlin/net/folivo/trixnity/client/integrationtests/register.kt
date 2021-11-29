@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.store.sqldelight.integration
+package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.types.shouldBeInstanceOf
 import net.folivo.trixnity.client.MatrixClient

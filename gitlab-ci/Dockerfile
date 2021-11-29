@@ -1,5 +1,6 @@
 FROM ubuntu:latest
 
+# make sure to update Versions.kt, when you change something here
 ARG ANDROID_CLI_TOOLS=7583922
 ARG ANDROID_PLATFORM=31
 ARG ANDROID_BUILD_TOOLS=31.0.0

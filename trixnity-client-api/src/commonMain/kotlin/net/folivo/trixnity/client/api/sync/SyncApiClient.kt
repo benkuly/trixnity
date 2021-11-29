@@ -157,6 +157,8 @@ class SyncApiClient(
             } catch (error: Throwable) {
                 log.info { "stopped syncLoop: ${error.message}" }
             }
+        }
+        syncJob?.invokeOnCompletion {
             _currentSyncState.value = SyncState.STOPPED
         }
         if (wait) syncJob?.join()
