@@ -1,45 +1,20 @@
 stages:
+  - prepare-build
   - build
   - publish
 
 variables:
-  DEBIAN_FRONTEND: noninteractive
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
-  ANDROID_SDK_ROOT: $CI_PROJECT_DIR/.android
-  ANDROID_SDK_MANAGER: ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
-  ANDROID_CLI_TOOLS: 7583922
-  ANDROID_PLATFORM: 31
-  ANDROID_BUILD_TOOLS: 31.0.0
-  ANDROID_NDK: 23.1.7779620
-  ANDROID_CMAKE: 3.18.1
+  BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
-cache:
+.build-cache: &build-cache
   key: global-tixnity-cache
   paths:
     - .gradle
     - .android
     - .konan
-
-.rules: &rules
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-
-.prepare-linux: &prepare-linux
-  - apt-get update && apt-get install -y docker.io wget unzip chromium-browser build-essential cmake libncurses5 libcurl4-openssl-dev openjdk-11-jre-headless
-  - wget https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CLI_TOOLS}_latest.zip
-  - mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools
-  - unzip commandlinetools-linux-${ANDROID_CLI_TOOLS}_latest.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools/
-  - mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest
-  # temporarily disable checking for EPIPE error and use yes to accept all licenses
-  - set +o pipefail
-  - yes | ${ANDROID_SDK_MANAGER} --licenses
-  - set -o pipefail
-  - echo y | ${ANDROID_SDK_MANAGER} "platforms;android-${ANDROID_PLATFORM}" >/dev/null
-  - echo y | ${ANDROID_SDK_MANAGER} "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
-  - echo y | ${ANDROID_SDK_MANAGER} "ndk;${ANDROID_NDK}" >/dev/null
-  - echo y | ${ANDROID_SDK_MANAGER} "cmake;${ANDROID_CMAKE}" >/dev/null
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2376
@@ -47,14 +22,26 @@ cache:
   DOCKER_TLS_VERIFY: 1
   DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
 
-build-linux:
-  stage: build
-  image: ubuntu:latest
+build-trixnity-build-linux-image:
+  stage: prepare-build
+  image: docker:20
   services:
     - docker:20-dind
+  when: manual
+  script:
+    - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $BUILD_LINUX_IMAGE_NAME
+
+build-linux:
+  stage: build
+  image: $BUILD_LINUX_IMAGE_NAME
+  services:
+    - docker:20-dind
+  cache: *build-cache
   variables: *docker-variables
-  rules: *rules
-  before_script: *prepare-linux
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
     - ./gradlew buildOlm
     - ./gradlew build
@@ -76,13 +63,13 @@ build-linux:
 
 publish:
   stage: publish
-  image: ubuntu:latest
+  image: $BUILD_LINUX_IMAGE_NAME
   services:
     - docker:20-dind
+  cache: *build-cache
   variables: *docker-variables
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+/'
-  before_script: *prepare-linux
   script:
     - ./gradlew buildOlm
     - ./gradlew publish
