@@ -7,10 +7,11 @@ plugins {
 }
 
 android {
-    compileSdk = 31
+    compileSdk = Versions.androidTargetSdk
     defaultConfig {
-        minSdk = 26
-        targetSdk = 31
+        minSdk = Versions.androidMinSdk
+        targetSdk = Versions.androidTargetSdk
+        ndkVersion = Versions.androidNdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main") {
@@ -19,6 +20,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file(olm.cMakeLists)
+            version = Versions.androidCMake
         }
     }
 }

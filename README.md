@@ -38,7 +38,8 @@ This project contains the following sub-projects, which can be used independentl
     - [x] redactions
 - [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the database for trixnity-client
   with [sqldelight](https://github.com/cashapp/sqldelight/).
-- [examples](/examples) contains some examples, if you want to see Trixnity in action.
+
+If you want to see Trixnity in action, take a look into the [examples](/examples).
 
 We plan to add something like `trixnity-client-indexeddb` as a faster database backend for web in the future.
 

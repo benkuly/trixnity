@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.store.sqldelight.integration
+package net.folivo.trixnity.client.integrationtests
 
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import io.ktor.http.*
