@@ -11,7 +11,7 @@ object Versions {
     const val ktor = "1.6.5" // https://github.com/ktorio/ktor/releases
     const val mockk = "1.12.1" // https://github.com/mockk/mockk/releases
     const val uuid = "0.3.1" // https://github.com/benasher44/uuid/releases
-    const val kotest = "4.6.3" // https://github.com/kotest/kotest/releases
+    const val kotest = "4.6.4" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
     const val kodeinLog = "0.11.1" // https://github.com/Kodein-Framework/Kodein-Log/releases
     const val androidGradle = "4.2.2" // https://developer.android.com/reference/tools/gradle-api

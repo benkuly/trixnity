@@ -71,6 +71,9 @@ val prepareBuildOlm by tasks.registering(Exec::class) {
         commandLine("cmake", ".", "-Bbuild")
     }
     dependsOn(extractOlm)
+    outputs.cacheIf { true }
+    inputs.files(olm.cMakeLists)
+    outputs.dir(olm.build)
 }
 
 val buildOlm by tasks.registering(Exec::class) {
@@ -78,6 +81,9 @@ val buildOlm by tasks.registering(Exec::class) {
     workingDir(olm.root)
     commandLine("cmake", "--build", "build")
     dependsOn(prepareBuildOlm)
+    outputs.cacheIf { true }
+    inputs.files(olm.cMakeLists)
+    outputs.dir(olm.build)
 }
 
 subprojects {

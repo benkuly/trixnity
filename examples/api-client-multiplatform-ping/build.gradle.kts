@@ -7,9 +7,6 @@ kotlin {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
-        }
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
