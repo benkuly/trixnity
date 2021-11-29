@@ -34,7 +34,7 @@ This project contains the following sub-projects, which can be used independentl
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
-    - [x] asynchronous message sending without caring about E2E stuff or online state
+    - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
 - [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the database for trixnity-client
