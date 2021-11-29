@@ -9,6 +9,7 @@ import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -43,7 +44,9 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class VerificationServiceTest : ShouldSpec({
     timeout = 30_000
     val aliceUserId = UserId("alice", "server")
@@ -154,6 +157,7 @@ class VerificationServiceTest : ShouldSpec({
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction"
                 )
+                delay(500) // TODO better solution to wait for startEventHandling
                 requestEventFlow.emit(ToDeviceEvent(request, bobUserId))
                 stepEventFlow.emit(
                     ToDeviceEvent(
@@ -186,7 +190,6 @@ class VerificationServiceTest : ShouldSpec({
                     gap = null
                 )
                 coEvery { room.getTimelineEvent(eventId, roomId, any()) } returns MutableStateFlow(timelineEvent)
-                store.roomTimeline.addAll(listOf(timelineEvent))
                 coEvery { room.getNextTimelineEvent(any(), any()) } returns MutableStateFlow(
                     TimelineEvent(
                         event = Event.MessageEvent(
@@ -207,9 +210,9 @@ class VerificationServiceTest : ShouldSpec({
                         gap = null
                     )
                 )
-                val result = cut.getActiveUserVerification(eventId, roomId)
+                val result = cut.getActiveUserVerification(timelineEvent)?.state
                 assertNotNull(result)
-                result.state.first { it is Cancel } shouldBe Cancel(
+                result.first { it is Cancel } shouldBe Cancel(
                     CancelEventContent(Code.User, "user", VerificationStepRelatesTo(eventId), null),
                     bobUserId
                 )
@@ -281,71 +284,59 @@ class VerificationServiceTest : ShouldSpec({
     }
     context(VerificationService::getActiveUserVerification.name) {
         should("skip timed out verifications") {
-            store.roomTimeline.addAll(
-                listOf(
-                    TimelineEvent(
-                        event = Event.MessageEvent(
-                            VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
-                            eventId,
-                            bobUserId,
-                            roomId,
-                            1234
-                        ),
-                        eventId = eventId,
-                        roomId = roomId,
-                        previousEventId = null,
-                        nextEventId = null,
-                        gap = null
-                    )
-                )
+            val timelineEvent = TimelineEvent(
+                event = Event.MessageEvent(
+                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    eventId,
+                    bobUserId,
+                    roomId,
+                    1234
+                ),
+                eventId = eventId,
+                roomId = roomId,
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
             )
-            val result = cut.getActiveUserVerification(eventId, roomId)
+            val result = cut.getActiveUserVerification(timelineEvent)
             result shouldBe null
         }
         should("return cached verification") {
-            store.roomTimeline.addAll(
-                listOf(
-                    TimelineEvent(
-                        event = Event.MessageEvent(
-                            VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
-                            eventId,
-                            bobUserId,
-                            roomId,
-                            Clock.System.now().toEpochMilliseconds()
-                        ),
-                        eventId = eventId,
-                        roomId = roomId,
-                        previousEventId = null,
-                        nextEventId = null,
-                        gap = null
-                    )
-                )
+            val timelineEvent = TimelineEvent(
+                event = Event.MessageEvent(
+                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    eventId,
+                    bobUserId,
+                    roomId,
+                    Clock.System.now().toEpochMilliseconds()
+                ),
+                eventId = eventId,
+                roomId = roomId,
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
             )
-            val result1 = cut.getActiveUserVerification(eventId, roomId)
+            val result1 = cut.getActiveUserVerification(timelineEvent)
             assertNotNull(result1)
-            val result2 = cut.getActiveUserVerification(eventId, roomId)
+            val result2 = cut.getActiveUserVerification(timelineEvent)
             result2 shouldBe result1
         }
         should("create verification from event") {
-            store.roomTimeline.addAll(
-                listOf(
-                    TimelineEvent(
-                        event = Event.MessageEvent(
-                            VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
-                            eventId,
-                            bobUserId,
-                            roomId,
-                            Clock.System.now().toEpochMilliseconds()
-                        ),
-                        eventId = eventId,
-                        roomId = roomId,
-                        previousEventId = null,
-                        nextEventId = null,
-                        gap = null
-                    )
-                )
+            val timelineEvent = TimelineEvent(
+                event = Event.MessageEvent(
+                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    eventId,
+                    bobUserId,
+                    roomId,
+                    Clock.System.now().toEpochMilliseconds()
+                ),
+                eventId = eventId,
+                roomId = roomId,
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
             )
-            val result = cut.getActiveUserVerification(eventId, roomId)
+            val result = cut.getActiveUserVerification(timelineEvent)
             val state = result?.state
             assertNotNull(state)
             state.value.shouldBeInstanceOf<Request>()

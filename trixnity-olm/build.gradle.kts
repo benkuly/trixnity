@@ -28,9 +28,6 @@ kotlin {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
-        }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
             systemProperty("java.library.path", olm.build.canonicalPath)
@@ -38,9 +35,6 @@ kotlin {
         }
     }
     android {
-        compilations.all {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
-        }
         publishLibraryVariants("release")
     }
 //    js(IR) { // TODO enable

@@ -3,7 +3,8 @@ import java.io.File
 
 class OlmDirs(buildDir: File) {
     val root = buildDir.resolve("olm").resolve(Versions.olm)
-    val zip = buildDir.resolve("tmp").resolve("olm-${Versions.olm}.zip")
+    val tmp = buildDir.resolve("tmp")
+    val zip = tmp.resolve("olm-${Versions.olm}.zip")
     val build = root.resolve("build")
     val include = root.resolve("include")
     val cMakeLists = root.resolve("CMakeLists.txt")

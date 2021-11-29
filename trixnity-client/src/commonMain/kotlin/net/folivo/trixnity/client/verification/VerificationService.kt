@@ -11,12 +11,11 @@ import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
-import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -171,13 +170,11 @@ class VerificationService(
     }
 
     suspend fun getActiveUserVerification(
-        eventId: EventId,
-        roomId: RoomId,
+        timelineEvent: TimelineEvent
     ): ActiveUserVerification? {
-        val timelineEvent = store.roomTimeline.get(eventId, roomId)
-        return if (timelineEvent != null && isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
+        return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
             val cache =
-                activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
+                activeUserVerifications.value.find { it.roomId == timelineEvent.roomId && it.relatesTo?.eventId == timelineEvent.eventId }
             if (cache != null) cache
             else {
                 val eventContent = timelineEvent.event.content
@@ -192,13 +189,13 @@ class VerificationService(
                 if (request != null) {
                     ActiveUserVerification(
                         request = request,
-                        requestEventId = eventId,
+                        requestEventId = timelineEvent.eventId,
                         requestTimestamp = timelineEvent.event.originTimestamp,
                         ownUserId = ownUserId,
                         ownDeviceId = ownDeviceId,
                         theirUserId = if (sender == ownUserId) request.to else sender,
                         theirInitialDeviceId = if (sender == ownUserId) null else request.fromDevice,
-                        roomId = roomId,
+                        roomId = timelineEvent.roomId,
                         supportedMethods = supportedMethods,
                         api = api,
                         store = store,
