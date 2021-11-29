@@ -9,6 +9,9 @@ kotlin {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
             systemProperty("java.library.path", olm.build.canonicalPath)
@@ -38,30 +41,27 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
-            dependencies {
-                api(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
-                implementation("com.squareup.sqldelight:coroutines-extensions:${Versions.sqlDelight}")
-                api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
-            }
-        }
+        val commonMain by getting {}
         val commonTest by getting {
             dependencies {
+                implementation(project(":trixnity-client"))
+                implementation(project(":trixnity-client-sqldelight"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
                 implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting { }
         val jvmTest by getting {
             dependencies {
                 implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
+                implementation("io.ktor:ktor-client-java:${Versions.ktor}")
+                implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
+                implementation("org.testcontainers:testcontainers:${Versions.testContainers}")
+                implementation("org.testcontainers:junit-jupiter:${Versions.testContainers}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsTest by getting
