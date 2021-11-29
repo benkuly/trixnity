@@ -8,10 +8,11 @@ plugins {
 
 android {
     compileSdk = Versions.androidTargetSdk
+    buildToolsVersion = Versions.androidBuildTools
+    ndkVersion = Versions.androidNdk
     defaultConfig {
         minSdk = Versions.androidMinSdk
         targetSdk = Versions.androidTargetSdk
-        ndkVersion = Versions.androidNdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main") {

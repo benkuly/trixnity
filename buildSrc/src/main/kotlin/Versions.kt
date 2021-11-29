@@ -23,6 +23,7 @@ object Versions {
     // make sure to update the build images, when you change a version here!
     const val androidTargetSdk = 31
     const val androidMinSdk = 26
+    const val androidBuildTools = "31.0.0"
     const val androidNdk = "23.1.7779620"
     const val androidCMake = "3.18.1"
 }
