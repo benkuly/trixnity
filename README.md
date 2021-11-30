@@ -2,8 +2,9 @@
 
 # Trixnity - Multiplatform Matrix SDK
 
-Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. This SDK supports JVM as targets (native and JS
-will follow soon). [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
+Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. You can write clients, bots and appservices with
+it. This SDK supports JVM as targets (native and JS will follow soon). [Ktor](https://github.com/ktorio/ktor) is used
+for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
 
 Trixnity aims to be strongly typed, customizable and easy to use. You can register custom events and Trixnity will take
