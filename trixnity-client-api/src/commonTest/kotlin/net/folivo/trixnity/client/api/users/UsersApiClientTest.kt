@@ -408,4 +408,39 @@ class UsersApiClientTest {
             UserId("alice", "example.com")
         )
     }
+
+    @Test
+    fun shouldSearchUsers() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/r0/user_directory/search",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        assertEquals(
+                            """{"search_term":"bob","limit":20}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        assertEquals(
+                            "de",
+                            request.headers["Accept-Language"]
+                        )
+                        respond(
+                            """{"limited":true,"results":[{"display_name":"bob","avatar_url":"mxc://localhost/123456","user_id":"@bob:localhost"}]}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.searchUsers("bob", "de", 20) shouldBe
+                SearchUsersResponse(
+                    limited = true,
+                    results = listOf(SearchUser("mxc://localhost/123456", "bob", UserId("@bob:localhost")))
+                )
+    }
 }
