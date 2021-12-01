@@ -232,4 +232,22 @@ class UsersApiClient(
         val serializer = mapping.serializer as KSerializer<C>
         return json.decodeFromString(serializer, responseBody)
     }
+
+    /**
+     *  @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3user_directorysearch">matrix spec</a>
+     */
+    suspend fun searchUsers(
+        searchTerm: String,
+        acceptLanguage: String,
+        limit: Int? = 10,
+        asUserId: UserId? = null,
+    ): SearchUsersResponse {
+        return httpClient.request {
+            method = Post
+            url("/_matrix/client/r0/user_directory/search")
+            parameter("user_id", asUserId)
+            header("Accept-Language", acceptLanguage)
+            body = SearchUsersRequest(searchTerm, limit)
+        }
+    }
 }
