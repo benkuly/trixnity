@@ -25,5 +25,5 @@ object Versions {
     const val androidMinSdk = 26
     const val androidBuildTools = "30.0.3"
     const val androidNdk = "23.1.7779620"
-    const val androidCMake = "3.18.1"
+    const val androidCMake = "3.10.2.4988404"
 }
