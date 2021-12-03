@@ -50,28 +50,30 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        lastSuccessfulBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
         asUserId: UserId? = null
     ): Flow<SyncResponse> {
+        val isInitialSync = MutableStateFlow(currentBatchToken.value == null)
         return flow {
             while (currentCoroutineContext().isActive && _currentSyncState.value != SyncState.STOPPING) {
                 try {
-
                     val batchToken = currentBatchToken.value
                     val response = syncOnce(
                         filter = filter,
                         setPresence = setPresence,
                         fullState = false,
                         since = batchToken,
-                        timeout = timeout,
+                        timeout = if (isInitialSync.value) 0L else timeout,
                         asUserId = asUserId
                     )
+                    lastSuccessfulBatchToken.value = currentBatchToken.value
+                    currentBatchToken.value = response.nextBatch
                     emit(response)
-                    if (_currentSyncState.value != SyncState.STOPPING) {
+                    if (isInitialSync.value.not() && _currentSyncState.value != SyncState.STOPPING) {
                         _currentSyncState.value = SyncState.RUNNING
                     }
-                    // we want to be sure, that the next batch is only set, when we finished the processing of the response
-                    currentBatchToken.value = response.nextBatch
+                    isInitialSync.value = false
                 } catch (error: Throwable) {
                     when (error) {
                         is HttpRequestTimeoutException -> if (_currentSyncState.value != SyncState.STOPPING) _currentSyncState.value =
@@ -83,9 +85,8 @@ class SyncApiClient(
                     log.info { "error while sync to server: $error" }
                     log.debug { error.stackTraceToString() }
                     delay(5000)// TODO better retry policy!
-                    val isInitialSync = currentBatchToken.value == null
                     if (_currentSyncState.value != SyncState.STOPPING) {
-                        if (isInitialSync) SyncState.INITIAL_SYNC else SyncState.STARTED
+                        if (currentBatchToken.value == null) SyncState.INITIAL_SYNC else SyncState.STARTED
                     }
                 }
             }
@@ -115,6 +116,7 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        lastSuccessfulBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
@@ -128,7 +130,7 @@ class SyncApiClient(
                 if (isInitialSync && _currentSyncState.value != SyncState.STOPPING) SyncState.INITIAL_SYNC else SyncState.STARTED
 
             try {
-                syncLoop(filter, setPresence, currentBatchToken, timeout, asUserId)
+                syncLoop(filter, setPresence, currentBatchToken, lastSuccessfulBatchToken, timeout, asUserId)
                     .collect { response ->
                         // do it at first, to be able to decrypt stuff
                         response.toDevice?.events?.forEach { emitEvent(it) }
