@@ -13,6 +13,7 @@ import kotlin.coroutines.CoroutineContext
 
 class SqlDelightStoreFactory(
     private val driver: SqlDriver,
+    private val scope: CoroutineScope,
     private val databaseCoroutineContext: CoroutineContext,
 ) : StoreFactory {
 
@@ -64,7 +65,7 @@ class SqlDelightStoreFactory(
         val database = Database(driver)
 
         return Store(
-            scope = CoroutineScope(storeCoroutineContext),
+            scope = scope,
             accountRepository = SqlDelightAccountRepository(database.accountQueries, databaseCoroutineContext),
             outdatedDeviceKeysRepository = SqlDelightOutdatedDeviceKeysRepository(
                 database.deviceKeysQueries, json, databaseCoroutineContext

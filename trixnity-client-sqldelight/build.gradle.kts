@@ -44,6 +44,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
                 implementation("com.squareup.sqldelight:coroutines-extensions:${Versions.sqlDelight}")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
         }

@@ -224,7 +224,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         coEvery { store.room.get(roomId).value?.encryptionAlgorithm } returns Megolm
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
         coEvery { api.rooms.sendMessageEvent(any(), any()) } returns EventId("$24")
-        coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException("hu")
+        coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)
         cut.cancel()

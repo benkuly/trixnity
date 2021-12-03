@@ -101,8 +101,11 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     suspend fun getWithInfiniteMode(key: K): StateFlow<V?> {
         return readWithCache(
             key,
-            containsInCache = { it != null },
-            retrieveFromRepoAndUpdateCache = { _, repository -> repository.get(key) },
+            containsInCache = { infiniteCache || it != null },
+            retrieveFromRepoAndUpdateCache = { cacheValue, repo ->
+                if (infiniteCache) cacheValue
+                else repo.get(key)
+            },
             null
         )
     }
@@ -117,12 +120,11 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         val result = _cache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
             val removerJob = if (infiniteCache.not()) removeFromCacheJob(key, writeCacheTime) else null
-            if (cacheValue == null) {
+            val newCacheValue: StateFlowCacheValue<V?>? = if (cacheValue == null) {
                 val valueFromDb = getFromRepositoryAndUpdateCache(null, repository)
-                val newCacheValue =
-                    MutableStateFlow(updater(valueFromDb)
-                        .also { if (it != valueFromDb) persistIntoRepository(it, repository) })
-                oldCache + (key to StateFlowCacheValue(newCacheValue, setOf(), removerJob))
+                val newValue = updater(valueFromDb)
+                    .also { persistIntoRepository(it, repository) }
+                newValue?.let { StateFlowCacheValue(MutableStateFlow(newValue), setOf(), removerJob) }
             } else {
                 val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
                     val oldValue =
@@ -130,20 +132,24 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
                             getFromRepositoryAndUpdateCache(oldCacheValue, repository)
                         else oldCacheValue
                     updater(oldValue)
-                        .also { if (it != oldValue) persistIntoRepository(it, repository) }
+                        .also { persistIntoRepository(it, repository) }
                 }
                 cacheValue.removerJob?.cancelAndJoin()
-                if (newValue == null) oldCache - key
-                else oldCache + (key to cacheValue.copy(removerJob = removerJob))
+                newValue?.let { cacheValue.copy(removerJob = removerJob) }
             }
+            if (newCacheValue == null) oldCache - key
+            else oldCache + (key to newCacheValue)
         }[key]
         result?.removerJob?.start()
     }
 
     suspend fun update(key: K, updater: suspend (oldValue: V?) -> V?) {
         writeWithCache(key, updater,
-            containsInCache = { it != null },
-            getFromRepositoryAndUpdateCache = { _, repo -> repo.get(key) },
+            containsInCache = { infiniteCache || it != null },
+            getFromRepositoryAndUpdateCache = { cacheValue, repo ->
+                if (infiniteCache) cacheValue
+                else repo.get(key)
+            },
             persistIntoRepository = { newValue, repo ->
                 if (newValue == null) repo.delete(key)
                 else repo.save(key, newValue)

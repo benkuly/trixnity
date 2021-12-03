@@ -29,7 +29,7 @@ internal inline fun <T : PointerType> genericInit(init: (Pointer?) -> T?, size: 
         return ptr
     } catch (e: Exception) {
         Native.free(Pointer.nativeValue(memory))
-        throw OlmLibraryException(e)
+        throw OlmLibraryException(message = "could not init object", cause = e)
     }
 }
 

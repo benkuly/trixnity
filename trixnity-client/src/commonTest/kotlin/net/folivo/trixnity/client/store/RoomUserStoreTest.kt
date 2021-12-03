@@ -82,6 +82,7 @@ class RoomUserStoreTest : ShouldSpec({
                 roomUserRepository.getByUserId(aliceId, roomId)
                 roomUserRepository.getByUserId(bobId, roomId)
                 roomUserRepository.saveByUserId(aliceId, roomId, aliceUser.copy(name = "ALICE-ALICE"))
+                roomUserRepository.deleteByUserId(bobId, roomId)
             }
         }
         should("delete in database") {

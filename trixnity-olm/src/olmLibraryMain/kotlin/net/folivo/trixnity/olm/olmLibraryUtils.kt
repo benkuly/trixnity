@@ -2,18 +2,18 @@ package net.folivo.trixnity.olm
 
 import kotlin.random.Random
 
-internal inline fun <T> checkError(
+internal inline fun <T : Any> checkError(
     ptr: T,
     result: ULong,
     getLastError: (T) -> String?
 ): ULong {
     if (result == OlmLibrary.error()) {
-        throw OlmLibraryException(getLastError(ptr) ?: "UNKNOWN")
+        throw OlmLibraryException(getLastError(ptr))
     }
     return result
 }
 
-internal inline fun <T> withRandom(
+internal inline fun <T : Any> withRandom(
     size: ULong,
     random: Random = Random.Default,
     block: (randomBytes: ByteArray?) -> T
@@ -26,7 +26,7 @@ internal inline fun <T> withRandom(
     }
 }
 
-internal inline fun <T> pickle(
+internal inline fun <T : Any> pickle(
     ptr: T,
     key: String,
     length: (T) -> ULong, pickle: (account: T, key: ByteArray, pickled: ByteArray) -> ULong,

@@ -222,7 +222,7 @@ class VerificationServiceTest : ShouldSpec({
     context(VerificationService::createDeviceVerificationRequest.name) {
         should("send request to device and save locally") {
             coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } just Runs
-            coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException("dino")
+            coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
             cut.createDeviceVerificationRequest(bobUserId, bobDeviceId)
             val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
             activeDeviceVerifications shouldHaveSize 1
@@ -253,7 +253,7 @@ class VerificationServiceTest : ShouldSpec({
         }
         context("no direct room with user exists") {
             should("create room and send request into it") {
-                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException("dino")
+                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
                 coEvery { api.rooms.createRoom(invite = setOf(bobUserId), isDirect = true) } returns roomId
                 cut.createUserVerificationRequest(bobUserId)
                 coVerify {
@@ -267,7 +267,7 @@ class VerificationServiceTest : ShouldSpec({
         }
         context("direct room with user exists") {
             should("send request to existing room") {
-                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException("dino")
+                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
                 store.globalAccountData.update(
                     Event.GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )

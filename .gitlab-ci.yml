@@ -21,6 +21,12 @@ variables:
   DOCKER_TLS_VERIFY: 1
   DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
 
+.artifact-reports: &artifact-reports
+  name: reports
+  when: always
+  paths: [ "*/build/reports" ]
+
+
 build-trixnity-build-linux-image:
   stage: prepare-build
   image: docker:20
@@ -39,11 +45,12 @@ build-linux:
     - docker:20-dind
   cache: *build-cache
   variables: *docker-variables
+  artifacts: *artifact-reports
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
     - ./gradlew buildOlm
-    - ./gradlew build
+    - ./gradlew build --stacktrace
 
 #build-windows:
 #  stage: build
@@ -67,6 +74,7 @@ publish:
     - docker:20-dind
   cache: *build-cache
   variables: *docker-variables
+  artifacts: *artifact-reports
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
   script:

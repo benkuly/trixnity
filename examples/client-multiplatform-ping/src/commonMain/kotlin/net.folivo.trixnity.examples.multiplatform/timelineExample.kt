@@ -25,11 +25,13 @@ import org.kodein.log.frontend.defaultLogFrontend
 import kotlin.random.Random
 
 suspend fun timelineExample() = coroutineScope {
+    val scope = CoroutineScope(Dispatchers.Default)
+
     val username = "username"
     val password = "password"
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
-    val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
+    val storeFactory = SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
@@ -37,7 +39,6 @@ suspend fun timelineExample() = coroutineScope {
         listOf(defaultLogFrontend),
         listOf(minimumLevel(Logger.Level.INFO)),
     )
-    val scope = CoroutineScope(Dispatchers.Default)
     val matrixClient = MatrixClient.fromStore(
         storeFactory = storeFactory,
         secureStore = secureStore,

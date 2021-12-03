@@ -14,11 +14,6 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import org.kodein.log.LogMapper
-import org.kodein.log.Logger
-import org.kodein.log.LoggerFactory
-import org.kodein.log.filter.entry.minimumLevel
-import org.kodein.log.frontend.defaultLogFrontend
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -35,6 +30,8 @@ class TimelineEventIT {
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
     private lateinit var scope: CoroutineScope
+    private lateinit var driver1: JdbcSqliteDriver
+    private lateinit var driver2: JdbcSqliteDriver
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:latest"))
@@ -63,21 +60,13 @@ class TimelineEventIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        val storeFactory1 = SqlDelightStoreFactory(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY), Dispatchers.IO)
-        val storeFactory2 = SqlDelightStoreFactory(JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY), Dispatchers.IO)
+        driver1 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        driver2 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val storeFactory1 = SqlDelightStoreFactory(driver1, scope, Dispatchers.IO)
+        val storeFactory2 = SqlDelightStoreFactory(driver2, scope, Dispatchers.IO)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
-
-        fun loggerFactory(prefix: String) = LoggerFactory(
-            listOf(defaultLogFrontend),
-            listOf(minimumLevel(Logger.Level.DEBUG)),
-            listOf(object : LogMapper {
-                override fun filter(tag: Logger.Tag, entry: Logger.Entry, message: String): String {
-                    return "$prefix: $message"
-                }
-            })
-        )
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
@@ -104,10 +93,12 @@ class TimelineEventIT {
     @AfterTest
     fun afterEach() {
         scope.cancel()
+        driver1.close()
+        driver2.close()
     }
 
     @Test
-    fun shouldStartEncryptedRoomAndSendMessages() = runBlocking {
+    fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
         val room = client1.api.rooms.createRoom(
             invite = setOf(client2.userId),
             initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))

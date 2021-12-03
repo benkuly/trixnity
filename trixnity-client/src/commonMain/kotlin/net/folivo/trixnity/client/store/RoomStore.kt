@@ -18,8 +18,11 @@ class RoomStore(
     @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val allRooms =
         roomCache.cache
-            .flatMapLatest { combine(it.values) { transform -> transform } }
-            .map { it.filterNotNull().toSet() }
+            .flatMapLatest {
+                if (it.isEmpty()) flowOf(arrayOf())
+                else combine(it.values) { transform -> transform }
+            }
+            .mapLatest { it.filterNotNull().toSet() }
             .stateIn(storeScope, Eagerly, setOf())
 
     suspend fun init() {

@@ -19,10 +19,12 @@ import org.kodein.log.filter.entry.minimumLevel
 import org.kodein.log.frontend.defaultLogFrontend
 
 suspend fun verificationExample() = coroutineScope {
+    val scope = CoroutineScope(Dispatchers.Default)
+
     val username = "username"
     val password = "password"
     val baseUrl = Url("https://example.org")
-    val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
+    val storeFactory = SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
@@ -30,7 +32,6 @@ suspend fun verificationExample() = coroutineScope {
         listOf(defaultLogFrontend),
         listOf(minimumLevel(Logger.Level.INFO)),
     )
-    val scope = CoroutineScope(Dispatchers.Default)
     val matrixClient = MatrixClient.fromStore(
         storeFactory = storeFactory,
         secureStore = secureStore,

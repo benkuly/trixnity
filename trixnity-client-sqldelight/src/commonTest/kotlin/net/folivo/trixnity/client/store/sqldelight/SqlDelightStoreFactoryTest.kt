@@ -3,7 +3,9 @@ package net.folivo.trixnity.client.store.sqldelight
 import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.longs.shouldBeGreaterThan
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriver
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -13,12 +15,15 @@ import org.kodein.log.frontend.defaultLogFrontend
 class SqlDelightStoreFactoryTest : ShouldSpec({
     lateinit var driver: SqlDriver
     lateinit var cut: SqlDelightStoreFactory
+    lateinit var scope: CoroutineScope
     beforeTest {
         driver = createDriver()
-        cut = SqlDelightStoreFactory(driver, Dispatchers.Default)
+        scope = CoroutineScope(Dispatchers.Default)
+        cut = SqlDelightStoreFactory(driver, scope, Dispatchers.Default)
     }
     afterTest {
         driver.close()
+        scope.cancel()
     }
     should("save schema version") {
         cut.createStore(
