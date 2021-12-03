@@ -7,6 +7,11 @@ import net.folivo.trixnity.client.api.authentication.AccountType
 import net.folivo.trixnity.client.api.authentication.RegisterResponse
 import net.folivo.trixnity.client.api.uia.AuthenticationRequest
 import net.folivo.trixnity.client.api.uia.UIA
+import org.kodein.log.LogMapper
+import org.kodein.log.Logger
+import org.kodein.log.LoggerFactory
+import org.kodein.log.filter.entry.minimumLevel
+import org.kodein.log.frontend.defaultLogFrontend
 
 suspend fun MatrixApiClient.register(username: String? = null, password: String): MatrixClient.Companion.LoginInfo {
     val registerStep = authentication.register(
@@ -22,3 +27,13 @@ suspend fun MatrixApiClient.register(username: String? = null, password: String)
     requireNotNull(accessToken)
     return MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken)
 }
+
+fun loggerFactory(prefix: String, level: Logger.Level = Logger.Level.DEBUG) = LoggerFactory(
+    listOf(defaultLogFrontend),
+    listOf(minimumLevel(level)),
+    listOf(object : LogMapper {
+        override fun filter(tag: Logger.Tag, entry: Logger.Entry, message: String): String {
+            return "$prefix: $message"
+        }
+    })
+)

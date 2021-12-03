@@ -6,6 +6,7 @@ import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
@@ -36,6 +37,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -118,6 +120,7 @@ class RoomService(
                 it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
             }
         }
+        removeOldOutboxMessages()
     }
 
     internal suspend fun setRoomAccountData(accountDataEvent: Event<out RoomAccountDataEventContent>) {
@@ -698,16 +701,30 @@ class RoomService(
                 uuid4().toString(),
                 roomId,
                 content,
-                false,
+                null,
                 MutableStateFlow(null)
             )
         )
     }
 
     internal suspend fun syncOutboxMessage(event: Event<*>) {
-        if (event is MessageEvent && event.sender == store.account.userId.value) {
-            event.unsigned?.transactionId?.also {
-                store.roomOutboxMessage.deleteByTransactionId(it)
+        if (event is MessageEvent)
+            if (event.sender == store.account.userId.value) {
+                event.unsigned?.transactionId?.also {
+                    store.roomOutboxMessage.deleteByTransactionId(it)
+                }
+            }
+    }
+
+    // we do this at the end of the sync, because it may be possible, that we missed events due to a gap
+    @OptIn(ExperimentalTime::class)
+    private suspend fun removeOldOutboxMessages() {
+        val outboxMessages = store.roomOutboxMessage.getAll().value
+        outboxMessages.forEach {
+            val deleteBeforeTimestamp = Clock.System.now() - Duration.seconds(10)
+            if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
+                log.warning { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
+                store.roomOutboxMessage.deleteByTransactionId(it.transactionId)
             }
         }
     }
@@ -719,7 +736,10 @@ class RoomService(
         val schedule = Schedule.exponential<Throwable>(Duration.milliseconds(100))
             .or(Schedule.spaced(Duration.minutes(5)))
             .and(Schedule.doWhile { isSyncRunning.value }) // just stop, when we are not connected anymore
-            .logInput { log.warning { "failed sending outbox messages due to ${it.stackTraceToString()}" } }
+            .logInput {
+                if (it is CancellationException) log.info { "stop sending outbox messages, because job was cancelled" }
+                else log.warning { "failed sending outbox messages due to ${it.stackTraceToString()}" }
+            }
 
         while (currentCoroutineContext().isActive) {
             isSyncRunning.first { it } // just wait, until we are connected again
@@ -728,7 +748,7 @@ class RoomService(
                     log.info { "start sending outbox messages" }
                     outboxMessages.collect { outboxMessagesList ->
                         outboxMessagesList
-                            .filter { !it.wasSent }
+                            .filter { it.sentAt == null }
                             .forEach { outboxMessage ->
                                 val roomId = outboxMessage.roomId
                                 val content = outboxMessage.content
@@ -753,6 +773,7 @@ class RoomService(
                     }
                 }
             } catch (error: Throwable) {
+                if (error is CancellationException) throw error
                 log.info { "stop sending outbox messages, because sync is not running anymore" }
             }
         }

@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
@@ -34,9 +35,9 @@ class SqlDelightRoomOutboxMessageRepositoryTest : ShouldSpec({
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), false)
-        val message2 = RoomOutboxMessage(key2, roomId, ImageMessageEventContent("hi"), false)
-        val message2Copy = message2.copy(wasSent = true)
+        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
+        val message2 = RoomOutboxMessage(key2, roomId, ImageMessageEventContent("hi"), null)
+        val message2Copy = message2.copy(sentAt = fromEpochMilliseconds(24))
 
         cut.save(key1, message1)
         cut.save(key2, message2)
@@ -57,8 +58,8 @@ class SqlDelightRoomOutboxMessageRepositoryTest : ShouldSpec({
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), false)
-        val message2 = RoomOutboxMessage(key1, roomId, ImageMessageEventContent("hi"), false)
+        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
+        val message2 = RoomOutboxMessage(key1, roomId, ImageMessageEventContent("hi"), null)
         cut.save(key1, message1)
         cut.save(key2, message2)
         cut.getAll() shouldHaveSize 2

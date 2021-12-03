@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.cache.StateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 
@@ -16,8 +17,11 @@ class RoomOutboxMessageStore(
     @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val allRoomOutboxMessages =
         roomOutboxMessageCache.cache
-            .flatMapLatest { combine(it.values) { transform -> transform } }
-            .map { it.filterNotNull() }
+            .flatMapLatest {
+                if (it.isEmpty()) flowOf(arrayOf())
+                else combine(it.values) { transform -> transform }
+            }
+            .mapLatest { it.filterNotNull() }
             .stateIn(storeScope, Eagerly, listOf())
 
     suspend fun init() {
@@ -28,10 +32,9 @@ class RoomOutboxMessageStore(
 
     suspend fun add(message: RoomOutboxMessage) = roomOutboxMessageCache.update(message.transactionId) { message }
 
-    suspend fun deleteByTransactionId(transactionId: String) = roomOutboxMessageCache.update(transactionId) { null }
+    suspend fun deleteByTransactionId(transactionId: String) =
+        roomOutboxMessageCache.update(transactionId) { null }
 
     suspend fun markAsSent(transactionId: String) =
-        roomOutboxMessageCache.update(transactionId) {
-            it?.copy(wasSent = true)
-        }
+        roomOutboxMessageCache.update(transactionId) { it?.copy(sentAt = Clock.System.now()) }
 }

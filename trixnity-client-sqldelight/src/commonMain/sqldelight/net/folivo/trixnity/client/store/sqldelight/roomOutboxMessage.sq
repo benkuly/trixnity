@@ -3,7 +3,7 @@ CREATE TABLE sql_room_outbox_message (
   room_id TEXT NOT NULL,
   type TEXT NOT NULL,
   content TEXT NOT NULL,
-  was_sent INTEGER AS Boolean NOT NULL
+  sent_at INTEGER
 );
 
 getRoomOutboxMessage:

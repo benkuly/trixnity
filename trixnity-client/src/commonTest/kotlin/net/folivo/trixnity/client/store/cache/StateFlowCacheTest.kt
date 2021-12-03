@@ -1,15 +1,14 @@
 package net.folivo.trixnity.client.store.cache
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -282,7 +281,7 @@ class StateFlowCacheTest : ShouldSpec({
             )
             wasCalled shouldBe false
         }
-        should("not save unchanged value") {
+        should("also save unchanged value") {
             cut = StateFlowCache(cacheScope, repository)
             cut.writeWithCache(
                 key = "key",
@@ -299,7 +298,25 @@ class StateFlowCacheTest : ShouldSpec({
                 getFromRepositoryAndUpdateCache = { _, _ -> null },
                 persistIntoRepository = { _, _ -> wasCalled = true }
             )
-            wasCalled shouldBe false
+            wasCalled shouldBe true
+        }
+        should("handle parallel manipulation") {
+            cut = StateFlowCache(cacheScope, repository)
+            val database = MutableSharedFlow<String?>(replay = 3000)
+            coroutineScope {
+                repeat(1000) { i ->
+                    launch {
+                        cut.writeWithCache(
+                            key = "key",
+                            updater = { "$i" },
+                            containsInCache = { false },
+                            getFromRepositoryAndUpdateCache = { _, _ -> database.replayCache.lastOrNull() },
+                            persistIntoRepository = { newValue, _ -> database.emit(newValue) }
+                        )
+                    }
+                }
+            }
+            database.replayCache shouldContainAll (0..99).map { it.toString() }
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {

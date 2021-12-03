@@ -98,7 +98,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     }
     should("send verification step and use unencrypted when encrypt failed") {
         coEvery { api.users.sendToDevice<CancelEventContent>(any()) } just Runs
-        coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException("hu")
+        coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)
         cut.cancel()

@@ -13,7 +13,7 @@ internal inline fun <T : CPointed> genericInit(
         return checkNotNull(ptr)
     } catch (e: Exception) {
         nativeHeap.free(memory)
-        throw OlmLibraryException(e)
+        throw OlmLibraryException(message = "could not init object", cause = e)
     }
 }
 

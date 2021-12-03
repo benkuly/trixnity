@@ -15,6 +15,7 @@ import io.kotest.matchers.shouldNotBe
 import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.media.FileTransferProgress
@@ -49,6 +50,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
@@ -158,6 +160,20 @@ class RoomServiceTest : ShouldSpec({
             )
             store.room.get(room).value?.lastMessageEventId shouldBe EventId("event2")
             store.room.get(room).value?.lastMessageEventAt shouldBe fromEpochMilliseconds(5)
+        }
+        should("remove old outbox messages") {
+            val outbox1 = RoomOutboxMessage("transaction1", room, mockk())
+            val outbox2 = RoomOutboxMessage("transaction2", room, mockk(), Clock.System.now() - Duration.seconds(10))
+            val outbox3 = RoomOutboxMessage("transaction3", room, mockk(), Clock.System.now())
+
+            store.roomOutboxMessage.add(outbox1)
+            store.roomOutboxMessage.add(outbox2)
+            store.roomOutboxMessage.add(outbox3)
+
+            retry(100, milliseconds(3_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
+                cut.handleSyncResponse(SyncResponse("nextBatch"))
+                store.roomOutboxMessage.getAll().value shouldContainExactly listOf(outbox1, outbox3)
+            }
         }
     }
 
@@ -663,7 +679,8 @@ class RoomServiceTest : ShouldSpec({
     context(RoomService::syncOutboxMessage.name) {
         should("ignore messages from foreign users") {
             store.account.userId.value = UserId("me", "server")
-            val roomOutboxMessage = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), true)
+            val roomOutboxMessage =
+                RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.add(roomOutboxMessage)
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
@@ -684,7 +701,8 @@ class RoomServiceTest : ShouldSpec({
         }
         should("remove outbox message from us") {
             store.account.userId.value = UserId("me", "server")
-            val roomOutboxMessage = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), true)
+            val roomOutboxMessage =
+                RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.add(roomOutboxMessage)
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
@@ -713,9 +731,9 @@ class RoomServiceTest : ShouldSpec({
             val message1 =
                 RoomOutboxMessage(
                     "transaction1", room, ImageMessageEventContent("hi.png", url = cacheUrl),
-                    false, mediaUploadProgress
+                    null, mediaUploadProgress
                 )
-            val message2 = RoomOutboxMessage("transaction2", room, TextMessageEventContent("hi"), false)
+            val message2 = RoomOutboxMessage("transaction2", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message1)
             store.roomOutboxMessage.add(message2)
             coEvery { media.uploadMedia(any(), any()) } returns mxcUrl
@@ -742,14 +760,14 @@ class RoomServiceTest : ShouldSpec({
             ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 2
-                outboxMessages[0].wasSent shouldBe true
-                outboxMessages[1].wasSent shouldBe true
+                outboxMessages[0].sentAt shouldNotBe null
+                outboxMessages[1].sentAt shouldNotBe null
             }
             job.cancel()
         }
         should("encrypt events in encrypted rooms") {
             store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm) }
-            val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), false)
+            val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message)
             val encryptionState =
                 StateEvent(
@@ -781,13 +799,13 @@ class RoomServiceTest : ShouldSpec({
             ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].wasSent shouldBe true
+                outboxMessages[0].sentAt shouldNotBe null
             }
             job.cancel()
         }
         should("retry on sending error") {
             store.room.update(room) { simpleRoom }
-            val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), false)
+            val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message)
             coEvery {
                 api.rooms.sendMessageEvent(any(), any(), any(), any())
@@ -806,7 +824,7 @@ class RoomServiceTest : ShouldSpec({
             ) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].wasSent shouldBe true
+                outboxMessages[0].sentAt shouldNotBe null
             }
             job.cancel()
         }
