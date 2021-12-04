@@ -83,7 +83,7 @@ class OlmEventServiceTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope).apply { init() }
+        store = InMemoryStore(storeScope).apply { init() }
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDeviceId
         store.deviceKeys.update(bob) {

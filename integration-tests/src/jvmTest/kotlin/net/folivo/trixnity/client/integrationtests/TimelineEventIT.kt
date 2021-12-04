@@ -51,6 +51,7 @@ class TimelineEventIT {
             waitingFor(Wait.forHealthcheck())
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun beforeEach() = runBlocking {
         scope = CoroutineScope(Dispatchers.Default)
@@ -62,8 +63,10 @@ class TimelineEventIT {
         ).build()
         driver1 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         driver2 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        val storeFactory1 = SqlDelightStoreFactory(driver1, scope, Dispatchers.IO)
-        val storeFactory2 = SqlDelightStoreFactory(driver2, scope, Dispatchers.IO)
+        val storeFactory1 =
+            SqlDelightStoreFactory(driver1, scope, Dispatchers.IO, newSingleThreadContext("transaction"))
+        val storeFactory2 =
+            SqlDelightStoreFactory(driver2, scope, Dispatchers.IO, newSingleThreadContext("transaction"))
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }

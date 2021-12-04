@@ -27,10 +27,10 @@ import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.api.keys.QueryKeysResponse
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
-import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -71,7 +71,7 @@ class OlmServiceTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope)
+        store = InMemoryStore(storeScope)
         store.init()
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDevice
@@ -148,7 +148,7 @@ class OlmServiceTest : ShouldSpec({
             OlmAccount.create(),
             OlmUtility.create()
         ) { cedricAccount1, cedricAccount2, utility ->
-            val cedricStore = createInMemoryStore(storeScope).apply { init() }
+            val cedricStore = InMemoryStore(storeScope).apply { init() }
             cedricStore.account.userId.value = cedric
             cedricStore.account.deviceId.value = cedricDevice
             val cedricSignService = OlmSignService(json, cedricStore, cedricAccount1, utility)
@@ -183,7 +183,7 @@ class OlmServiceTest : ShouldSpec({
             OlmAccount.create(),
             OlmUtility.create()
         ) { aliceAccount2, utility ->
-            val aliceStore2 = createInMemoryStore(storeScope).apply { init() }
+            val aliceStore2 = InMemoryStore(storeScope).apply { init() }
             aliceStore2.account.userId.value = alice
             aliceStore2.account.deviceId.value = aliceDevice2
             val aliceSignService2 = OlmSignService(json, aliceStore2, aliceAccount2, utility)
@@ -321,7 +321,7 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleOlmEncryptedRoomKeyEventContent.name) {
         context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
-                val bobStore = createInMemoryStore(storeScope).apply { init() }
+                val bobStore = InMemoryStore(storeScope).apply { init() }
                 bobStore.account.userId.value = bob
                 bobStore.account.deviceId.value = bobDevice
                 val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)
@@ -428,7 +428,7 @@ class OlmServiceTest : ShouldSpec({
     }
     context(OlmService::handleOlmEncryptedToDeviceEvents.name) {
         should("emit decrypted events") {
-            val bobStore = createInMemoryStore(storeScope).apply { init() }
+            val bobStore = InMemoryStore(storeScope).apply { init() }
             bobStore.account.userId.value = bob
             bobStore.account.deviceId.value = bobDevice
             val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)

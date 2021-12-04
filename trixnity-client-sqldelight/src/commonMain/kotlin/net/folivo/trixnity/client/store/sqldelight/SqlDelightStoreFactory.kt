@@ -11,10 +11,14 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * databaseCoroutineContext and blockingTransactionCoroutineContext should each be a single threaded CoroutineContext
+ */
 class SqlDelightStoreFactory(
     private val driver: SqlDriver,
     private val scope: CoroutineScope,
     private val databaseCoroutineContext: CoroutineContext,
+    private val blockingTransactionCoroutineContext: CoroutineContext,
 ) : StoreFactory {
 
     override suspend fun createStore(
@@ -64,56 +68,13 @@ class SqlDelightStoreFactory(
         log.debug { "create database and store from driver" }
         val database = Database(driver)
 
-        return Store(
-            scope = scope,
-            accountRepository = SqlDelightAccountRepository(database.accountQueries, databaseCoroutineContext),
-            outdatedDeviceKeysRepository = SqlDelightOutdatedDeviceKeysRepository(
-                database.deviceKeysQueries, json, databaseCoroutineContext
-            ),
-            deviceKeysRepository = SqlDelightDeviceKeysRepository(
-                database.deviceKeysQueries, json, databaseCoroutineContext
-            ),
-            verifiedKeysRepository = SqlDelightVerifiedKeysRepository(
-                database.deviceKeysQueries,
-                databaseCoroutineContext
-            ),
-            olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
-            olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
-            inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(
-                database.olmQueries, databaseCoroutineContext
-            ),
-            inboundMegolmMessageIndexRepository = SqlDelightInboundMegolmMessageIndexRepository(
-                database.olmQueries, databaseCoroutineContext
-            ),
-            outboundMegolmSessionRepository = SqlDelightOutboundMegolmSessionRepository(
-                database.olmQueries, json, databaseCoroutineContext
-            ),
-            roomRepository = SqlDelightRoomRepository(database.roomQueries, json, databaseCoroutineContext),
-            roomUserRepository = SqlDelightRoomUserRepository(database.roomUserQueries, json, databaseCoroutineContext),
-            roomStateRepository = SqlDelightRoomStateRepository(
-                database.roomStateQueries,
-                json,
-                databaseCoroutineContext
-            ),
-            roomTimelineRepository = SqlDelightRoomTimelineRepository(
-                database.roomTimelineQueries, json, databaseCoroutineContext
-            ),
-            roomOutboxMessageRepository = SqlDelightRoomOutboxMessageRepository(
-                database.roomOutboxMessageQueries, json, contentMappings, databaseCoroutineContext
-            ),
-            mediaRepository = SqlDelightMediaRepository(database.mediaQueries, databaseCoroutineContext),
-            uploadMediaRepository = SqlDelightUploadMediaRepository(database.mediaQueries, databaseCoroutineContext),
-            globalAccountDataRepository = SqlDelightGlobalAccountDataRepository(
-                database.globalAccountDataQueries,
-                json,
-                databaseCoroutineContext
-            ),
-            roomAccountDataRepository = SqlDelightRoomAccountDataRepository(
-                database.roomAccountDataQueries,
-                json,
-                databaseCoroutineContext
-            ),
-            contentMappings = contentMappings
+        return SqlDelightStore(
+            database = database,
+            contentMappings = contentMappings,
+            json = json,
+            databaseCoroutineContext = databaseCoroutineContext,
+            blockingTransactionCoroutineContext = blockingTransactionCoroutineContext,
+            scope = scope
         )
     }
 }
