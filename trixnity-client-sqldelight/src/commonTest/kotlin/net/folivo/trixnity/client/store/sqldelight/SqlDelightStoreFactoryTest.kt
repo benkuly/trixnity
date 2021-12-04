@@ -17,9 +17,9 @@ class SqlDelightStoreFactoryTest : ShouldSpec({
     lateinit var cut: SqlDelightStoreFactory
     lateinit var scope: CoroutineScope
     beforeTest {
-        driver = createDriver()
         scope = CoroutineScope(Dispatchers.Default)
-        cut = SqlDelightStoreFactory(driver, scope, Dispatchers.Default)
+        driver = createDriver()
+        cut = SqlDelightStoreFactory(driver, scope, Dispatchers.Default, Dispatchers.Default)
     }
     afterTest {
         driver.close()

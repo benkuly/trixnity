@@ -6,3 +6,5 @@ import kotlin.coroutines.CoroutineContext
 expect fun createDriver(): SqlDriver
 
 expect fun databaseCoroutineContext(): CoroutineContext
+
+expect fun blockingTransactionCoroutineContext(): CoroutineContext

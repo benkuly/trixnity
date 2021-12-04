@@ -31,7 +31,8 @@ suspend fun timelineExample() = coroutineScope {
     val password = "password"
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
-    val storeFactory = SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext())
+    val storeFactory =
+        SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext(), blockingTransactionCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }

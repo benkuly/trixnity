@@ -16,10 +16,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
-import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -58,7 +58,7 @@ class MatrixClientTest : ShouldSpec(
 
         context(MatrixClient::startSync.name) {
             should("write the last successfully processed batch token in the DB") {
-                val inMemoryStore = createInMemoryStore(scope)
+                val inMemoryStore = InMemoryStore(scope)
                 val cut = spyk(MatrixClient.loginWith(
                     baseUrl = Url("http://matrix.home"),
                     storeFactory = object : StoreFactory {
@@ -83,7 +83,10 @@ class MatrixClientTest : ShouldSpec(
                                         respond(
                                             """{"one_time_key_counts":{"ed25519":1}}""",
                                             HttpStatusCode.OK,
-                                            headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
                                         )
                                     }
                                     "/_matrix/client/r0/user/${userId.e()}/filter" -> {
@@ -91,7 +94,10 @@ class MatrixClientTest : ShouldSpec(
                                         respond(
                                             """{"filter_id":"someFilter"}""",
                                             HttpStatusCode.OK,
-                                            headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
                                         )
                                     }
                                     "/_matrix/client/r0/sync?filter=someFilter&set_presence=online" -> {
@@ -99,7 +105,10 @@ class MatrixClientTest : ShouldSpec(
                                         respond(
                                             json.encodeToString(serverResponse),
                                             HttpStatusCode.OK,
-                                            headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
                                         )
                                     }
                                     else -> {
@@ -123,7 +132,7 @@ class MatrixClientTest : ShouldSpec(
                 ))
 
                 val userServiceMock: UserService = spyk(cut.user)
-                every {cut.user} returns userServiceMock
+                every { cut.user } returns userServiceMock
                 coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
 
                 cut.startSync()

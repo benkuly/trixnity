@@ -17,11 +17,11 @@ import net.folivo.trixnity.client.api.rooms.Direction.BACKWARDS
 import net.folivo.trixnity.client.api.rooms.Direction.FORWARD
 import net.folivo.trixnity.client.api.rooms.GetEventsResponse
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -39,7 +39,7 @@ class RoomServiceTimelineTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope).apply { init() }
+        store = InMemoryStore(storeScope).apply { init() }
         cut = RoomService(store, api, olm, mockk(), mockk(), loggerFactory = LoggerFactory.default)
     }
 

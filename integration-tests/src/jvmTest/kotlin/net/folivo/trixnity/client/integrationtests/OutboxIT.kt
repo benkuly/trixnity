@@ -60,7 +60,12 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         driver = JdbcSqliteDriver("jdbc:sqlite:outbox-it.db")
-        val storeFactory = SqlDelightStoreFactory(driver, scope, newSingleThreadContext("sqlite"))
+        val storeFactory = SqlDelightStoreFactory(
+            driver,
+            scope,
+            newSingleThreadContext("sqlite"),
+            newSingleThreadContext("transactions")
+        )
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -71,7 +76,7 @@ class OutboxIT {
             storeFactory = storeFactory,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user 🔴", Logger.Level.INFO),
+            loggerFactory = loggerFactory("user 🔴", Logger.Level.DEBUG),
             getLoginInfo = { it.register("user", password) }
         )
         client.startSync()
