@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
@@ -41,6 +42,18 @@ fun Event<*>?.getRoomId(): RoomId? {
         is StrippedStateEvent -> this.roomId
         is MegolmEvent -> this.roomId
         is RoomAccountDataEvent -> this.roomId
+        else -> null
+    }
+}
+
+fun Event<*>?.getSender(): UserId? {
+    return when (this) {
+        is StateEvent -> this.sender
+        is StrippedStateEvent -> this.sender
+        is RoomEvent -> this.sender
+        is ToDeviceEvent -> this.sender
+        is EphemeralEvent -> this.sender
+        is OlmEvent -> this.sender
         else -> null
     }
 }
