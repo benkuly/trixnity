@@ -60,9 +60,6 @@ class RoomService(
     suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
-            api.sync.events<StateEventContent>().collect { store.roomState.update(it) }
-        }
-        scope.launch(start = UNDISPATCHED) {
             api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData)
         }
         scope.launch(start = UNDISPATCHED) {
@@ -87,6 +84,8 @@ class RoomService(
                 )
             }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
+            room.value.state?.events?.forEach { store.roomState.update(it) }
+            room.value.timeline?.events?.filterIsInstance<StateEvent<*>>()?.forEach { store.roomState.update(it) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = roomId,
@@ -110,6 +109,8 @@ class RoomService(
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
+            room.value.state?.events?.forEach { store.roomState.update(it) }
+            room.value.timeline?.events?.filterIsInstance<StateEvent<*>>()?.forEach { store.roomState.update(it) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = room.key,
@@ -119,6 +120,12 @@ class RoomService(
                 )
                 it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
             }
+        }
+        syncResponse.room?.knock?.entries?.forEach { room ->
+            room.value.knockState?.events?.forEach { store.roomState.update(it) }
+        }
+        syncResponse.room?.invite?.entries?.forEach { room ->
+            room.value.inviteState?.events?.forEach { store.roomState.update(it) }
         }
         removeOldOutboxMessages()
     }
