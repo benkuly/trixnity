@@ -14,9 +14,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
@@ -40,7 +40,7 @@ class UserServiceTest : ShouldSpec({
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope).apply { init() }
+        store = InMemoryStore(storeScope).apply { init() }
         cut = UserService(store, api, loggerFactory = LoggerFactory.default)
     }
 

@@ -11,8 +11,11 @@ class RoomTimelineStore(
     roomTimelineRepository: MinimalStoreRepository<RoomTimelineKey, TimelineEvent>,
     storeScope: CoroutineScope,
 ) {
-
     private val roomTimelineCache = StateFlowCache(storeScope, roomTimelineRepository)
+
+    fun resetCache() {
+        roomTimelineCache.reset()
+    }
 
     suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
         roomTimelineCache.get(RoomTimelineKey(eventId, roomId), scope)

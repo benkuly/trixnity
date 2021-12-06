@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 
-class Store(
+abstract class Store(
     scope: CoroutineScope,
     accountRepository: AccountRepository,
     outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
@@ -52,4 +52,22 @@ class Store(
         room.init()
         roomOutboxMessage.init()
     }
+
+    private fun resetCache() {
+        // at the moment only roomTimeline is used with transactions
+        roomTimeline.resetCache()
+    }
+
+    suspend fun <T : Any> transaction(block: suspend () -> T): T {
+        return databaseTransaction {
+            try {
+                block()
+            } catch (error: Throwable) {
+                resetCache()
+                throw error
+            }
+        }
+    }
+
+    protected abstract suspend fun <T : Any> databaseTransaction(block: suspend () -> T): T
 }

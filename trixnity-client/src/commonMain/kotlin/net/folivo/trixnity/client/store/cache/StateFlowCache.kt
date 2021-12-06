@@ -30,6 +30,10 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             initialValues.mapValues { StateFlowCacheValue<V?>(MutableStateFlow(it.value), setOf(), null) }.toMap()
     }
 
+    fun reset() {
+        _cache.value = emptyMap()
+    }
+
     suspend fun readWithCache(
         key: K,
         containsInCache: suspend (cacheValue: V?) -> Boolean,

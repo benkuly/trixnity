@@ -17,10 +17,10 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.createInMemoryStore
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Request
@@ -69,7 +69,7 @@ class VerificationServiceTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope)
+        store = InMemoryStore(storeScope)
         requestEventFlow = MutableSharedFlow(replay = 1)
         stepEventFlow = MutableSharedFlow(replay = 1)
         decryptedOlmEventFlow = MutableSharedFlow()

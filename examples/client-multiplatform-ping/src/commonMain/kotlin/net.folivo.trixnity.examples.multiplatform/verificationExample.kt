@@ -24,7 +24,8 @@ suspend fun verificationExample() = coroutineScope {
     val username = "username"
     val password = "password"
     val baseUrl = Url("https://example.org")
-    val storeFactory = SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext())
+    val storeFactory =
+        SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext(), blockingTransactionCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }

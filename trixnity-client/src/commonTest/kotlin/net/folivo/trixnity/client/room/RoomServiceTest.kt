@@ -69,7 +69,7 @@ class RoomServiceTest : ShouldSpec({
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = createInMemoryStore(storeScope).apply { init() }
+        store = InMemoryStore(storeScope).apply { init() }
         cut = RoomService(store, api, olm, users, media, loggerFactory = LoggerFactory.default)
     }
 

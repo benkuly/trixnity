@@ -360,7 +360,7 @@ class RoomService(
         newEvents: List<RoomEvent<*>>?,
         previousBatch: String?,
         hasGapBefore: Boolean
-    ) {
+    ) = store.transaction {
         val events = newEvents?.filterDuplicateEvents()
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
@@ -425,7 +425,7 @@ class RoomService(
         }
     }
 
-    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20) {
+    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20) = store.transaction {
         val startGap = startEvent.gap
         if (startGap != null) {
             val roomId = startEvent.roomId
