@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.possiblyEncryptEvent
@@ -254,26 +255,34 @@ class RoomService(
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         val ownUserId = store.account.userId.value
-        if (roomId != null && stateKey != null && ownUserId != null) {
-            val userId = UserId(stateKey)
-            if (userId != ownUserId && event.content.isDirect == true) {
+        val sender = event.getSender()
+        if (roomId != null && stateKey != null && ownUserId != null && sender != null) {
+            val invitee = UserId(stateKey)
+            val directUser = if (sender == ownUserId) {
+                invitee
+            } else if (invitee == ownUserId) {
+                sender
+            } else {
+                return
+            }
+            if (event.content.isDirect == true) {
                 val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
-                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(UserId(stateKey))
+                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser)
                 val newDirectRooms = when {
                     existingDirectRoomsWithUser != null -> {
-                        currentDirectRooms.copy(currentDirectRooms.mappings + (userId to (existingDirectRoomsWithUser + roomId)))
+                        currentDirectRooms.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
                     }
                     currentDirectRooms != null -> {
-                        currentDirectRooms.copy(currentDirectRooms.mappings + (userId to setOf(roomId)))
+                        currentDirectRooms.copy(currentDirectRooms.mappings + (directUser to setOf(roomId)))
                     }
                     else -> {
-                        DirectEventContent(mapOf(userId to setOf(roomId)))
+                        DirectEventContent(mapOf(directUser to setOf(roomId)))
                     }
                 }
                 if (newDirectRooms != currentDirectRooms)
                     api.users.setAccountData(newDirectRooms, ownUserId)
             }
-            if (userId == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
+            if (directUser == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
                 val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
                 if (currentDirectRooms != null) {
                     val newDirectRooms = DirectEventContent(
