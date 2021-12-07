@@ -23,6 +23,7 @@ import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -813,5 +814,14 @@ class RoomService(
         scope: CoroutineScope
     ): StateFlow<Event<C>?> {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
+    }
+
+    suspend fun isDirectRoom(roomId: RoomId, scope: CoroutineScope): StateFlow<Boolean> {
+        val isDirect = user.getAccountData<DirectEventContent>(scope).map { direct ->
+            direct?.mappings?.any { (_, rooms) ->
+                rooms?.contains(roomId) ?: false
+            } ?: false
+        }
+        return isDirect.stateIn(scope)
     }
 }
