@@ -29,6 +29,7 @@ import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -827,6 +828,31 @@ class RoomServiceTest : ShouldSpec({
                 outboxMessages[0].sentAt shouldNotBe null
             }
             job.cancel()
+        }
+    }
+
+    context(RoomService::isDirectRoom.name) {
+        should("return 'true' when room is found in user's direct room data") {
+            coEvery { users.getAccountData<DirectEventContent>(any()) } returns MutableStateFlow(
+                DirectEventContent(
+                    mappings = mapOf(
+                        UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"), room)
+                    )
+                )
+            )
+            val scope = CoroutineScope(Dispatchers.Default)
+            cut.isDirectRoom(room, scope).value shouldBe true
+        }
+        should("return 'false' when room is not found in user's room data") {
+            coEvery { users.getAccountData<DirectEventContent>(any()) } returns MutableStateFlow(
+                DirectEventContent(
+                    mappings = mapOf(
+                        UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"))
+                    )
+                )
+            )
+            val scope = CoroutineScope(Dispatchers.Default)
+            cut.isDirectRoom(room, scope).value shouldBe false
         }
     }
 })
