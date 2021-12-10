@@ -59,6 +59,8 @@ class RoomService(
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
+    private val eventsInDecryption = MutableStateFlow(setOf<Pair<CoroutineScope, TimelineEvent>>())
+
     suspend fun startEventHandling(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
@@ -431,7 +433,16 @@ class RoomService(
                     }
                 }
             }
-            store.roomTimeline.addAll(timelineEvents)
+            val replaceOwnMessagesWithOutboxContent = timelineEvents.map {
+                if (it.event.content is MegolmEncryptedEventContent) {
+                    it.event.unsigned?.transactionId?.let { transactionId ->
+                        store.roomOutboxMessage.getByTransactionId(transactionId)?.let { roomOutboxMessage ->
+                            it.copy(decryptedEvent = Result.success(MegolmEvent(roomOutboxMessage.content, roomId)))
+                        }
+                    }?: it
+                } else it
+            }
+            store.roomTimeline.addAll(replaceOwnMessagesWithOutboxContent)
         }
     }
 
@@ -638,6 +649,8 @@ class RoomService(
             val timelineEvent = it.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
+                val origEventsInDecryption = eventsInDecryption.getAndUpdate { events -> events + Pair(coroutineScope, timelineEvent) }
+                if (origEventsInDecryption.contains(Pair(coroutineScope, timelineEvent))) return@also
                 coroutineScope.launch {
                     log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
                     store.olm.waitForInboundMegolmSession(
