@@ -107,7 +107,11 @@ class ActiveUserVerification(
                 if (searchResult is IsVerificationStep) {
                     // we just ignore our own events (we already processed them)
                     if (searchResult.sender != ownUserId && searchResult.stepContent.relatesTo == relatesTo)
-                        handleIncomingVerificationStep(searchResult.stepContent, searchResult.sender)
+                        handleIncomingVerificationStep(
+                            searchResult.stepContent,
+                            searchResult.sender,
+                            searchResult.sender == ownUserId
+                        )
                 }
             }
         }

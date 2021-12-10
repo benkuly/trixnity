@@ -84,7 +84,9 @@ class ActiveDeviceVerification(
         if (event is Event.ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
     }
 
-    private suspend fun handleOlmDecryptedVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
+    private suspend fun handleOlmDecryptedVerificationRequestEvents(
+        event: OlmService.DecryptedOlmEvent,
+    ) {
         val content = event.decrypted.content
         if (content is VerificationStep) handleVerificationStepEvent(content, event.decrypted.sender)
     }
@@ -94,7 +96,7 @@ class ActiveDeviceVerification(
         if (eventTransactionId != null && eventTransactionId == transactionId
             && isVerificationRequestActive(timestamp, state.value)
         ) {
-            handleIncomingVerificationStep(step, sender)
+            handleIncomingVerificationStep(step, sender, false)
         }
     }
 }

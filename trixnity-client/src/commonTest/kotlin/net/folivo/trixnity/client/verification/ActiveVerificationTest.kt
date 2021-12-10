@@ -52,8 +52,8 @@ class ActiveVerificationTest : ShouldSpec({
             sendVerificationStepFlow.emit(step)
         }
 
-        suspend fun handleStep(step: VerificationStep, sender: UserId) {
-            super.handleIncomingVerificationStep(step, sender)
+        suspend fun handleStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
+            super.handleIncomingVerificationStep(step, sender, isOurOwn)
         }
     }
 
@@ -82,13 +82,13 @@ class ActiveVerificationTest : ShouldSpec({
     context("handleVerificationStep") {
         context("step is from foreign user") {
             should("cancel") {
-                cut.handleStep(ReadyEventContent("FFFFFF", setOf(), null, "t"), UserId("f", "server"))
+                cut.handleStep(ReadyEventContent("FFFFFF", setOf(), null, "t"), UserId("f", "server"), false)
                 sendVerificationStepFlow.first().shouldBeInstanceOf<CancelEventContent>()
             }
         }
         context("step has no matching transaction") {
             should("cancel") {
-                cut.handleStep(ReadyEventContent(aliceDevice, setOf(), null, null), alice)
+                cut.handleStep(ReadyEventContent(aliceDevice, setOf(), null, null), alice, true)
                 sendVerificationStepFlow.first().shouldBeInstanceOf<CancelEventContent>()
             }
         }
@@ -96,7 +96,7 @@ class ActiveVerificationTest : ShouldSpec({
             steps.forEach {
                 should("cancel unexpected message ${it::class.simpleName}") {
                     val stateBefore = cut.state.value
-                    cut.handleStep(it, bob)
+                    cut.handleStep(it, bob, false)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Cancel>()
                     state.content.code shouldBe Code.UnexpectedMessage
@@ -114,7 +114,7 @@ class ActiveVerificationTest : ShouldSpec({
                 DoneEventContent(null, "t"),
             )
             should("handle ${ReadyEventContent::class.simpleName}") {
-                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob)
+                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<Ready>()
                 state.methods shouldBe setOf(Sas)
@@ -123,7 +123,7 @@ class ActiveVerificationTest : ShouldSpec({
         }
         context("current state is ${Ready::class.simpleName}") {
             beforeTest {
-                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob)
+                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
                 cut.state.value.shouldBeInstanceOf<Ready>()
             }
             checkNotAllowedStateChange(
@@ -132,7 +132,7 @@ class ActiveVerificationTest : ShouldSpec({
             )
             should("handle ${StartEventContent::class.simpleName}") {
                 val step = SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t")
-                cut.handleStep(step, bob)
+                cut.handleStep(step, bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<Start>()
                 state.senderUserId shouldBe bob
@@ -146,8 +146,8 @@ class ActiveVerificationTest : ShouldSpec({
         }
         context("current state is ${Start::class.simpleName}") {
             beforeTest {
-                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob)
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob)
+                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
+                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
                 cut.state.value.shouldBeInstanceOf<Start>()
             }
             checkNotAllowedStateChange(
@@ -156,8 +156,8 @@ class ActiveVerificationTest : ShouldSpec({
             context("handle ${StartEventContent::class.simpleName}") {
                 should("keep event from lexicographically smaller user ID") {
                     val step = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t")
-                    cut.handleStep(step, alice)
-                    cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob)
+                    cut.handleStep(step, alice, true)
+                    cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe alice
@@ -169,7 +169,7 @@ class ActiveVerificationTest : ShouldSpec({
                     subState.step shouldBe step
                 }
                 should("keep event from lexicographically smaller deviceId") {
-                    cut.handleStep(SasStartEventContent("CCCCCC", relatesTo = null, transactionId = "t"), bob)
+                    cut.handleStep(SasStartEventContent("CCCCCC", relatesTo = null, transactionId = "t"), bob, false)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe bob
@@ -182,7 +182,7 @@ class ActiveVerificationTest : ShouldSpec({
                 }
                 should("override event from lexicographically smaller user ID") {
                     val step = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t")
-                    cut.handleStep(step, alice)
+                    cut.handleStep(step, alice, true)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe alice
@@ -195,7 +195,7 @@ class ActiveVerificationTest : ShouldSpec({
                 }
                 should("override event from lexicographically smaller deviceId") {
                     val step = SasStartEventContent("AAAAAA", relatesTo = null, transactionId = "t")
-                    cut.handleStep(step, bob)
+                    cut.handleStep(step, bob, false)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe bob
@@ -209,7 +209,7 @@ class ActiveVerificationTest : ShouldSpec({
             }
             should("handle ${DoneEventContent::class.simpleName}") {
                 val step = DoneEventContent(null, "t")
-                cut.handleStep(step, bob)
+                cut.handleStep(step, bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<PartlyDone>()
                 state.isOurOwn shouldBe false
@@ -217,9 +217,9 @@ class ActiveVerificationTest : ShouldSpec({
         }
         context("current state is ${PartlyDone::class.simpleName}") {
             beforeTest {
-                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob)
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob)
-                cut.handleStep(DoneEventContent(null, "t"), bob)
+                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
+                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                cut.handleStep(DoneEventContent(null, "t"), bob, false)
                 cut.state.value.shouldBeInstanceOf<PartlyDone>()
             }
             checkNotAllowedStateChange(
@@ -228,17 +228,17 @@ class ActiveVerificationTest : ShouldSpec({
             )
             should("handle ${DoneEventContent::class.simpleName}") {
                 val step = DoneEventContent(null, "t")
-                cut.handleStep(step, alice)
+                cut.handleStep(step, alice, true)
                 val state = cut.state.value
                 state shouldBe Done
             }
         }
         context("current state is ${Done::class.simpleName}") {
             beforeTest {
-                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob)
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob)
-                cut.handleStep(DoneEventContent(null, "t"), bob)
-                cut.handleStep(DoneEventContent(null, "t"), alice)
+                cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
+                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                cut.handleStep(DoneEventContent(null, "t"), bob, false)
+                cut.handleStep(DoneEventContent(null, "t"), alice, true)
                 cut.state.value.shouldBeInstanceOf<Done>()
             }
             checkNotAllowedStateChange(
@@ -249,7 +249,7 @@ class ActiveVerificationTest : ShouldSpec({
         }
         context("current state is ${Cancel::class.simpleName}") {
             beforeTest {
-                cut.handleStep(CancelEventContent(Code.User, "user", null, "t"), bob)
+                cut.handleStep(CancelEventContent(Code.User, "user", null, "t"), bob, false)
                 cut.state.value.shouldBeInstanceOf<Cancel>()
             }
             checkNotAllowedStateChange(
@@ -258,7 +258,7 @@ class ActiveVerificationTest : ShouldSpec({
                 DoneEventContent(null, "t"),
             )
             should("not send multiple cancel events") {
-                cut.handleStep(DoneEventContent(null, "t"), bob)
+                cut.handleStep(DoneEventContent(null, "t"), bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<Cancel>()
                 state.content.code shouldBe Code.UnexpectedMessage
