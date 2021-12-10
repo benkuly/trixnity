@@ -6,6 +6,7 @@ import com.sun.jna.ptr.IntByReference
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_fallback_key
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_fallback_key_length
+import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_forget_old_fallback_key
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_generate_fallback_key
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_generate_fallback_key_random_length
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_generate_one_time_keys
@@ -430,11 +431,14 @@ actual object OlmLibrary {
         olm_account_generate_fallback_key(account, randomPtr, randomSize).toULong()
     }
 
-    actual fun account_fallback_key_length(
+    actual fun account_forget_old_fallback_key(account: OlmAccountPointer) =
+        olm_account_forget_old_fallback_key(account)
+
+    actual fun account_unpublished_fallback_key_length(
         account: OlmAccountPointer
     ): ULong = olm_account_fallback_key_length(account).toULong()
 
-    actual fun account_fallback_key(
+    actual fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
     ): ULong = fallbackKey.withNativeWrite { fallbackKeyPtr, fallbackKeySize ->

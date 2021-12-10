@@ -136,14 +136,13 @@ class OlmService(
             (account.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
                 .coerceAtLeast(0)
         if (generateOneTimeKeysCount > 0) {
-            log.debug { "generate and upload $generateOneTimeKeysCount one time keys" }
             account.generateOneTimeKeys(generateOneTimeKeysCount + account.maxNumberOfOneTimeKeys / 4)
-            api.keys.uploadKeys(
-                oneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
-                    sign.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
-                }.toSet())
-            )
-            account.markOneTimeKeysAsPublished()
+            val signedOneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
+                sign.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
+            }.toSet())
+            log.debug { "generate and upload $generateOneTimeKeysCount one time keys: $signedOneTimeKeys" }
+            api.keys.uploadKeys(oneTimeKeys = signedOneTimeKeys)
+            account.markKeysAsPublished()
             store.olm.storeAccount(account, secureStore.olmPickleKey)
         }
     }

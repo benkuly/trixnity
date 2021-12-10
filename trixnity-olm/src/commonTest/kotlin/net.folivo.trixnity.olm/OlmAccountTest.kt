@@ -119,7 +119,7 @@ class OlmAccountTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateOneTimeKeys(2)
             account.oneTimeKeys.curve25519 shouldHaveSize 2
-            account.markOneTimeKeysAsPublished()
+            account.markKeysAsPublished()
             account.oneTimeKeys.curve25519 shouldHaveSize 0
         }
     }
@@ -139,12 +139,12 @@ class OlmAccountTest {
     }
 
     @Test
-    fun fallbackKey_shouldHaveSize1AfterGeneration() = initTest {
+    fun unpublishedFallbackKey_shouldHaveSize1AfterGeneration() = initTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateFallbackKey()
-            val key1 = account.fallbackKey.curve25519
+            val key1 = account.unpublishedFallbackKey.curve25519
             account.generateFallbackKey()
-            val key2 = account.fallbackKey.curve25519
+            val key2 = account.unpublishedFallbackKey.curve25519
             key1 shouldHaveSize 1
             key2 shouldHaveSize 1
             key1 shouldNotBe key2
@@ -152,9 +152,21 @@ class OlmAccountTest {
     }
 
     @Test
-    fun fallbackKey_shouldBeEmptyBeforeGeneration() = initTest {
+    fun unpublishedFallbackKey_shouldBeEmptyBeforeGeneration() = initTest {
         freeAfter(OlmAccount.create()) { account ->
-            account.fallbackKey.curve25519 shouldHaveSize 0
+            account.unpublishedFallbackKey.curve25519 shouldHaveSize 0
+        }
+    }
+
+    @Test
+    fun forgetOldFallbackKey_shouldRunAndRemoveFallbackKey() = initTest {
+        freeAfter(OlmAccount.create()) { account ->
+            account.generateFallbackKey()
+            account.unpublishedFallbackKey.curve25519 shouldHaveSize 1
+            account.forgetOldFallbackKey()
+            account.unpublishedFallbackKey.curve25519 shouldHaveSize 1
+            account.generateFallbackKey()
+            account.unpublishedFallbackKey.curve25519 shouldHaveSize 1
         }
     }
 

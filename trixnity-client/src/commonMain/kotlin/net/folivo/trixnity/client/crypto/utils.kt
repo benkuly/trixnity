@@ -52,6 +52,21 @@ internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeysFromDevice(
     return keys.toSet()
 }
 
+internal suspend inline fun <reified T : Key> DeviceKeysStore.getDeviceKeyByValue(
+    userId: UserId,
+    keyValue: String
+): T? {
+    return get(userId)?.map { deviceKeys ->
+        deviceKeys.value.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
+    }?.filterNotNull()?.firstOrNull() ?: run {
+        outdatedKeys.update { it + userId }
+        waitForUpdateOutdatedKey(userId)
+        get(userId)?.map { deviceKeys ->
+            deviceKeys.value.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
+        }?.filterNotNull()?.firstOrNull()
+    }
+}
+
 // TODO test
 internal suspend inline fun <reified T : Key> DeviceKeysStore.getKeysFromUser(
     userId: UserId

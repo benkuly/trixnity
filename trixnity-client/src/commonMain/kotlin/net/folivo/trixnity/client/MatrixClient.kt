@@ -149,6 +149,7 @@ class MatrixClient private constructor(
 
             store.deviceKeys.update(userId) { mapOf(deviceId to matrixClient.olm.myDeviceKeys.signed) }
             api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
+            store.deviceKeys.outdatedKeys.update { it + userId }
 
             return matrixClient
         }
@@ -208,6 +209,7 @@ class MatrixClient private constructor(
 
             store.deviceKeys.update(loginInfo.userId) { mapOf(loginInfo.deviceId to matrixClient.olm.myDeviceKeys.signed) }
             api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
+            store.deviceKeys.outdatedKeys.update { it + loginInfo.userId }
 
             return matrixClient
         }
@@ -281,8 +283,8 @@ class MatrixClient private constructor(
         val handler = CoroutineExceptionHandler { _, exception ->
             // TODO maybe log to some sort of backend
             log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
-            scope.launch{
-                api.sync.stop(wait=true)
+            scope.launch {
+                api.sync.stop(wait = true)
                 store.account.syncBatchToken.value = lastSuccessfulBatchToken.value
             }
         }

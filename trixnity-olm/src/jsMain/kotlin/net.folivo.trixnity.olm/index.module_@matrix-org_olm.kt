@@ -23,7 +23,8 @@ external class Account {
     fun generate_one_time_keys(number_of_keys: Number)
     fun remove_one_time_keys(session: Session)
     fun generate_fallback_key()
-    fun fallback_key(): String
+    fun forget_old_fallback_key()
+    fun unpublished_fallback_key(): String
     fun pickle(key: String): String
     fun unpickle(key: String, pickle: String)
 }

@@ -18,7 +18,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     }
 
     actual val identityKeys: OlmIdentityKeys get() = Json.decodeFromString(rethrow { ptr.identity_keys() })
-    actual val fallbackKey: OlmOneTimeKeys get() = Json.decodeFromString(rethrow { ptr.fallback_key() })
+    actual val unpublishedFallbackKey: OlmOneTimeKeys get() = Json.decodeFromString(rethrow { ptr.unpublished_fallback_key() })
     actual val oneTimeKeys: OlmOneTimeKeys get() = Json.decodeFromString(rethrow { ptr.one_time_keys() })
     actual val maxNumberOfOneTimeKeys: Long get() = rethrow { ptr.max_number_of_one_time_keys() }.toLong()
 
@@ -36,6 +36,8 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     }
 
     actual fun removeOneTimeKeys(session: OlmSession) = rethrow { ptr.remove_one_time_keys(session.ptr) }
+
+    actual fun forgetOldFallbackKey() = rethrow { ptr.forget_old_fallback_key(session.ptr) }
 
     actual fun generateFallbackKey() = rethrow { ptr.generate_fallback_key() }
 

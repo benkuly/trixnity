@@ -6,7 +6,7 @@ object Versions {
     const val kotlinxAtomicfu = "0.16.3" // https://github.com/Kotlin/kotlinx.atomicfu/releases
     const val kotlinxKover = "0.4.2" // https://github.com/Kotlin/kotlinx-kover
     const val dokka = "1.5.31" // https://github.com/Kotlin/dokka/releases
-    const val olm = "3.2.6" // https://gitlab.matrix.org/matrix-org/olm/-/releases
+    const val olm = "3.2.7" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.10.0" // https://github.com/java-native-access/jna/releases
     const val ktor = "1.6.5" // https://github.com/ktorio/ktor/releases
     const val mockk = "1.12.1" // https://github.com/mockk/mockk/releases
