@@ -35,6 +35,9 @@ class RoomOutboxMessageStore(
     suspend fun deleteByTransactionId(transactionId: String) =
         roomOutboxMessageCache.update(transactionId) { null }
 
+    suspend fun getByTransactionId(transactionId: String): RoomOutboxMessage? =
+        roomOutboxMessageCache.get(transactionId)
+
     suspend fun markAsSent(transactionId: String) =
         roomOutboxMessageCache.update(transactionId) { it?.copy(sentAt = Clock.System.now()) }
 }

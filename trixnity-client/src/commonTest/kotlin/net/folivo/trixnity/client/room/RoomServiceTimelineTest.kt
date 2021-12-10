@@ -5,9 +5,12 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldHave
+import io.kotest.matchers.types.beOfType
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -17,15 +20,18 @@ import net.folivo.trixnity.client.api.rooms.Direction.BACKWARDS
 import net.folivo.trixnity.client.api.rooms.Direction.FORWARD
 import net.folivo.trixnity.client.api.rooms.GetEventsResponse
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import org.kodein.log.LoggerFactory
 
@@ -286,6 +292,69 @@ class RoomServiceTimelineTest : ShouldSpec({
                     previousEventId shouldBe event1.id
                     nextEventId should beNull()
                     gap shouldBe GapAfter("previous")
+                }
+            }
+        }
+        context("outbox messages") {
+            should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
+                store = spyk(InMemoryStore(storeScope).apply { init() })
+                cut = RoomService(store, api, olm, mockk(), mockk(), loggerFactory = LoggerFactory.default)
+                store.room.update(room) {
+                    Room(
+                        roomId = room,
+                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
+                        lastEventId = event1.id
+                    )
+                }
+                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId1") } returns RoomOutboxMessage(
+                    "transactionId1",
+                    room,
+                    TextMessageEventContent("Hello!")
+                )
+                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId2") } returns null
+                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId-unknown") } returns null
+                val eventId1 = EventId("\$event1")
+                val eventId2 = EventId("\$event2")
+                val eventId3 = EventId("\$event3")
+                val encryptedEvent1 = MessageEvent(
+                    MegolmEncryptedEventContent("foobar", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    eventId1,
+                    UserId("sender", "server"),
+                    room,
+                    0L,
+                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId1")
+                )
+                val encryptedEvent2 = MessageEvent(
+                    MegolmEncryptedEventContent("barfoo", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    eventId2,
+                    UserId("other", "server"),
+                    room,
+                    10L,
+                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId2")
+                )
+                val encryptedEvent3 = MessageEvent(
+                    MegolmEncryptedEventContent("foo", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    eventId3,
+                    UserId("sender", "server"),
+                    room,
+                    20L,
+                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId-unknown")
+                )
+                cut.addEventsToTimelineAtEnd(
+                    room,
+                    listOf(encryptedEvent1, encryptedEvent2, encryptedEvent3),
+                    "previous",
+                    false
+                )
+
+                assertSoftly(store.roomTimeline.get(eventId1, room)!!) {
+                    decryptedEvent shouldBe Result.success(Event.MegolmEvent(TextMessageEventContent("Hello!"), room))
+                }
+                assertSoftly(store.roomTimeline.get(eventId2, room)!!) {
+                    decryptedEvent shouldBe null
+                }
+                assertSoftly(store.roomTimeline.get(eventId3, room)!!) {
+                    decryptedEvent shouldBe null
                 }
             }
         }
