@@ -296,6 +296,10 @@ object OlmLibraryWrapper : Library {
         random_length: NativeSize
     ): NativeSize
 
+    external fun olm_account_forget_old_fallback_key(
+        account: OlmAccountPointer?
+    )
+
     external fun olm_account_fallback_key_length(
         account: OlmAccountPointer?
     ): NativeSize

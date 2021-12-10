@@ -285,11 +285,14 @@ actual object OlmLibrary {
         random: ByteArray?,
     ): ULong = olm_account_generate_fallback_key(account.ptr, random?.refTo(0), random?.usize() ?: 0u)
 
-    actual fun account_fallback_key_length(
+    actual fun account_forget_old_fallback_key(account: OlmAccountPointer) =
+        olm_account_forget_old_fallback_key(account.ptr)
+
+    actual fun account_unpublished_fallback_key_length(
         account: OlmAccountPointer
     ): ULong = olm_account_fallback_key_length(account.ptr)
 
-    actual fun account_fallback_key(
+    actual fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
     ): ULong = olm_account_fallback_key(account.ptr, fallbackKey.refTo(0), fallbackKey.usize())

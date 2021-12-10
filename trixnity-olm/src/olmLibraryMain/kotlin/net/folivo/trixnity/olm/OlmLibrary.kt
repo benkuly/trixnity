@@ -226,11 +226,13 @@ expect object OlmLibrary {
         random: ByteArray?,
     ): ULong
 
-    fun account_fallback_key_length(
+    fun account_forget_old_fallback_key(account: OlmAccountPointer)
+
+    fun account_unpublished_fallback_key_length(
         account: OlmAccountPointer
     ): ULong
 
-    fun account_fallback_key(
+    fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
     ): ULong

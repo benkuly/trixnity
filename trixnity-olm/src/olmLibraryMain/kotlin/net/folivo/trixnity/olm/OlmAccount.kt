@@ -3,8 +3,7 @@ package net.folivo.trixnity.olm
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.olm.OlmLibrary.account
-import net.folivo.trixnity.olm.OlmLibrary.account_fallback_key
-import net.folivo.trixnity.olm.OlmLibrary.account_fallback_key_length
+import net.folivo.trixnity.olm.OlmLibrary.account_forget_old_fallback_key
 import net.folivo.trixnity.olm.OlmLibrary.account_generate_fallback_key
 import net.folivo.trixnity.olm.OlmLibrary.account_generate_fallback_key_random_length
 import net.folivo.trixnity.olm.OlmLibrary.account_generate_one_time_keys
@@ -18,6 +17,8 @@ import net.folivo.trixnity.olm.OlmLibrary.account_one_time_keys
 import net.folivo.trixnity.olm.OlmLibrary.account_one_time_keys_length
 import net.folivo.trixnity.olm.OlmLibrary.account_sign
 import net.folivo.trixnity.olm.OlmLibrary.account_signature_length
+import net.folivo.trixnity.olm.OlmLibrary.account_unpublished_fallback_key
+import net.folivo.trixnity.olm.OlmLibrary.account_unpublished_fallback_key_length
 import net.folivo.trixnity.olm.OlmLibrary.clear_account
 import net.folivo.trixnity.olm.OlmLibrary.create_account
 import net.folivo.trixnity.olm.OlmLibrary.create_account_random_length
@@ -62,10 +63,10 @@ actual class OlmAccount private constructor() : WantsToBeFree {
             return Json.decodeFromString(identityKeysString)
         }
 
-    actual val fallbackKey: OlmOneTimeKeys
+    actual val unpublishedFallbackKey: OlmOneTimeKeys
         get() {
-            val keys = ByteArray(account_fallback_key_length(ptr).toInt())
-            val size = checkResult { account_fallback_key(ptr, keys) }
+            val keys = ByteArray(account_unpublished_fallback_key_length(ptr).toInt())
+            val size = checkResult { account_unpublished_fallback_key(ptr, keys) }
             val keysString = keys.decodeToString(endIndex = size.toInt())
             return Json.decodeFromString(keysString)
         }
@@ -95,7 +96,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
         return signature.decodeToString()
     }
 
-    actual fun markOneTimeKeysAsPublished() {
+    actual fun markKeysAsPublished() {
         checkResult { account_mark_keys_as_published(ptr) }
     }
 
@@ -122,6 +123,9 @@ actual class OlmAccount private constructor() : WantsToBeFree {
         }
     }
 
-    private fun checkResult(block: () -> ULong): ULong = checkError(ptr, block(), ::account_last_error)
+    actual fun forgetOldFallbackKey() {
+        account_forget_old_fallback_key(ptr)
+    }
 
+    private fun checkResult(block: () -> ULong): ULong = checkError(ptr, block(), ::account_last_error)
 }

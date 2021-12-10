@@ -13,11 +13,9 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.datetime.Clock
@@ -53,6 +51,8 @@ import kotlin.test.assertNotNull
 
 @ExperimentalKotest
 class OlmEventServiceTest : ShouldSpec({
+    timeout = 30_000
+
     val json = createMatrixJson()
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
@@ -105,7 +105,7 @@ class OlmEventServiceTest : ShouldSpec({
             emptyMap(),
             mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
         )
-        bobAccount.markOneTimeKeysAsPublished()
+        bobAccount.markKeysAsPublished()
         coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } just Runs
         every { secureStore.olmPickleKey } returns ""
@@ -477,6 +477,10 @@ class OlmEventServiceTest : ShouldSpec({
                     "recipientKeys" to olmEvent.copy(recipientKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key")))
                 )
             ) { manipulatedOlmEvent ->
+                val job1 = launch {
+                    store.deviceKeys.outdatedKeys.first { it.isNotEmpty() }
+                    store.deviceKeys.outdatedKeys.value = setOf()
+                }
                 bobAccount.generateOneTimeKeys(1)
                 freeAfter(
                     OlmSession.createOutbound(
@@ -512,6 +516,7 @@ class OlmEventServiceTest : ShouldSpec({
                         )
                     }
                 }
+                job1.cancel()
             }
         }
     }

@@ -9,7 +9,7 @@ expect class OlmAccount : WantsToBeFree {
     }
 
     val identityKeys: OlmIdentityKeys
-    val fallbackKey: OlmOneTimeKeys
+    val unpublishedFallbackKey: OlmOneTimeKeys
     val oneTimeKeys: OlmOneTimeKeys
     val maxNumberOfOneTimeKeys: Long
 
@@ -17,9 +17,10 @@ expect class OlmAccount : WantsToBeFree {
     fun pickle(key: String): String
 
     fun sign(message: String): String
-    fun markOneTimeKeysAsPublished()
+    fun markKeysAsPublished()
     fun generateOneTimeKeys(numberOfKeys: Long)
     fun removeOneTimeKeys(session: OlmSession)
     fun generateFallbackKey()
+    fun forgetOldFallbackKey()
 
 }
