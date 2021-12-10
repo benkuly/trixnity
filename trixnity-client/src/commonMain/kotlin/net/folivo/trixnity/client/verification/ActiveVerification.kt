@@ -60,9 +60,13 @@ abstract class ActiveVerification(
 
     private fun lifecycleAlreadyStarted() = lifecycleStarted.getAndUpdate { true }
 
-    protected suspend fun handleIncomingVerificationStep(step: VerificationStep, sender: UserId) {
-        mutex.withLock { // we just want to be sure, that only one thread can access this simultaneously
-            handleVerificationStep(step, sender, sender == ownUserId)
+    protected suspend fun handleIncomingVerificationStep(
+        step: VerificationStep,
+        sender: UserId,
+        isOurOwn: Boolean
+    ) {
+        mutex.withLock { // we just want to be sure, that only one coroutine can access this simultaneously
+            handleVerificationStep(step, sender, isOurOwn)
         }
     }
 
