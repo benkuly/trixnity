@@ -10,8 +10,8 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmService.DecryptedOlmEvent
+import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
@@ -39,13 +39,10 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     lateinit var cut: ActiveDeviceVerification
 
-    lateinit var stepFlow: MutableSharedFlow<Event<VerificationStep>>
     lateinit var encryptedStepFlow: MutableSharedFlow<DecryptedOlmEvent>
 
     beforeTest {
-        stepFlow = MutableSharedFlow()
         encryptedStepFlow = MutableSharedFlow()
-        coEvery { api.sync.events<VerificationStep>() } returns stepFlow
         coEvery { api.json } returns mockk()
         coEvery { olm.decryptedOlmEvents } returns encryptedStepFlow
     }
@@ -69,10 +66,11 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     }
 
     should("handle verification step") {
+        val cancelEvent = CancelEventContent(User, "u", null, "t")
+        coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }
+            .coAnswers { lambda<EventSubscriber<VerificationStep>>().captured.invoke(ToDeviceEvent(cancelEvent, bob)) }
         createCut()
         cut.startLifecycle(this)
-        val cancelEvent = CancelEventContent(User, "u", null, "t")
-        stepFlow.emit(ToDeviceEvent(cancelEvent, bob))
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, bob)
     }
@@ -107,9 +105,13 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         }
     }
     should("stop lifecycle, when cancelled") {
+        coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }.coAnswers {
+            lambda<EventSubscriber<VerificationStep>>().captured.invoke(
+                ToDeviceEvent(CancelEventContent(User, "u", null, "t"), bob)
+            )
+        }
         createCut()
         cut.startLifecycle(this)
-        stepFlow.emit(ToDeviceEvent(CancelEventContent(User, "u", null, "t"), bob))
     }
     should("stop lifecycle, when timed out") {
         createCut(Clock.System.now() - Duration.minutes(9.9))

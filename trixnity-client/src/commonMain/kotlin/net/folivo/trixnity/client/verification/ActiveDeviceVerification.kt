@@ -60,11 +60,9 @@ class ActiveDeviceVerification(
     }
 
     override suspend fun lifecycle(scope: CoroutineScope) {
+        api.sync.subscribe(::handleVerificationStepEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        val job1 = scope.launch(start = UNDISPATCHED) {
-            api.sync.events<VerificationStep>().collect(::handleVerificationStepEvents)
-        }
-        val job2 = scope.launch(start = UNDISPATCHED) {
+        val job = scope.launch(start = UNDISPATCHED) {
             olm.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
         }
         scope.launch(start = UNDISPATCHED) {
@@ -72,8 +70,9 @@ class ActiveDeviceVerification(
             while (isVerificationRequestActive(timestamp, state.value)) {
                 delay(500)
             }
-            job1.cancel()
-            job2.cancel()
+            log.debug { "stop verification request lifecycle" }
+            job.cancel()
+            api.sync.unsubscribe(::handleVerificationStepEvents)
             if (state.value !is Cancel && state.value !is Done && !isVerificationRequestActive(timestamp)) {
                 cancel(Timeout, "verification timed out")
             }

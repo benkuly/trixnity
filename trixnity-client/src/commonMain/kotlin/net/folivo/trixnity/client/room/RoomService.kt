@@ -61,19 +61,15 @@ class RoomService(
 
     private val eventsInDecryption = MutableStateFlow(setOf<Pair<CoroutineScope, TimelineEvent>>())
 
-    suspend fun startEventHandling(scope: CoroutineScope) {
+    suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.events<RoomAccountDataEventContent>().collect(::setRoomAccountData)
-        }
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.events<EncryptionEventContent>().collect(::setEncryptionAlgorithm)
-        }
-        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setOwnMembership) }
-        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::setDirectRooms) }
-        scope.launch(start = UNDISPATCHED) { api.sync.events<RedactionEventContent>().collect(::redactTimelineEvent) }
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
-        scope.launch(start = UNDISPATCHED) { api.sync.syncResponses.collect(::handleSyncResponse) }
+        api.sync.subscribe(::setRoomAccountData)
+        api.sync.subscribe(::setEncryptionAlgorithm)
+        api.sync.subscribe(::setOwnMembership)
+        api.sync.subscribe(::setDirectRooms)
+        api.sync.subscribe(::redactTimelineEvent)
+        api.sync.subscribeSyncResponse(::handleSyncResponse)
     }
 
     // TODO test
@@ -439,7 +435,7 @@ class RoomService(
                         store.roomOutboxMessage.getByTransactionId(transactionId)?.let { roomOutboxMessage ->
                             it.copy(decryptedEvent = Result.success(MegolmEvent(roomOutboxMessage.content, roomId)))
                         }
-                    }?: it
+                    } ?: it
                 } else it
             }
             store.roomTimeline.addAll(replaceOwnMessagesWithOutboxContent)
@@ -649,7 +645,8 @@ class RoomService(
             val timelineEvent = it.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
-                val origEventsInDecryption = eventsInDecryption.getAndUpdate { events -> events + Pair(coroutineScope, timelineEvent) }
+                val origEventsInDecryption =
+                    eventsInDecryption.getAndUpdate { events -> events + Pair(coroutineScope, timelineEvent) }
                 if (origEventsInDecryption.contains(Pair(coroutineScope, timelineEvent))) return@also
                 coroutineScope.launch {
                     log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }

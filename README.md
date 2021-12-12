@@ -218,20 +218,10 @@ Example 2: You can receive different type of events from sync.
 
 ```kotlin
 coroutineScope {
-    // first register your event handlers
-    val textMessageEventFlow = matrixRestClient.sync.events<TextMessageEventContent>()
-    val memberEventFlow = matrixRestClient.sync.events<MemberEventContent>()
-    val allEventsFlow = matrixRestClient.sync.allEvents() // this is a shortcut for .events<EventContent>()
-
-    // wait for events in separate coroutines and print to console
-    launch {
-        textMessageEventFlow.collect { println(it.content.body) }
-    }
-    launch {
-        memberEventFlow.collect { println("${it.content.displayName} did ${it.content.membership}") }
-    }
-    launch {
-        allEventsFlow.collect { println(it) }
+    matrixRestClient.sync.subscribe<TextMessageEventContent> { println(it.content.body) }
+    matrixRestClient.sync.subscribe<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
+    matrixRestClient.sync.subscribeAllEvents { // this is a shortcut for .subscribe<EventContent> { }
+        println(it)
     }
 
     matrixRestClient.sync.start() // you need to start the sync to receive messages

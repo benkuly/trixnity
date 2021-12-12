@@ -273,46 +273,44 @@ class MatrixClient private constructor(
         olm.free()
     }
 
-    suspend fun stopSync() {
-        api.sync.stop()
-    }
+    private val isInitialized = MutableStateFlow(false)
 
     suspend fun startSync() {
-        val lastSuccessfulBatchToken = MutableStateFlow(store.account.syncBatchToken.value)
-
-        val handler = CoroutineExceptionHandler { _, exception ->
-            // TODO maybe log to some sort of backend
-            log.error(exception) { "There was an unexpected exception with handling sync data. Will cancel sync now. This should never happen!!!" }
-            scope.launch {
-                api.sync.stop(wait = true)
-                store.account.syncBatchToken.value = lastSuccessfulBatchToken.value
+        if (isInitialized.getAndUpdate { true }.not()) {
+            val handler = CoroutineExceptionHandler { _, exception ->
+                log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
+                scope.launch {
+                    api.sync.stop(wait = true)
+                }
             }
-        }
-        val everythingStarted = MutableStateFlow(false)
-        scope.launch(handler) {
-            olm.startEventHandling(this)
-            room.startEventHandling(this)
-            user.startEventHandling(this)
-            verification.startEventHandling(this)
-            everythingStarted.value = true
-        }
-        everythingStarted.first { it } // we wait until everything has started
+            val everythingStarted = MutableStateFlow(false)
+            scope.launch(handler) {
+                olm.start(this)
+                room.start(this)
+                user.start()
+                verification.start(this)
+                everythingStarted.value = true
+            }
+            everythingStarted.first { it } // we wait until everything has started
 
-        val myUserId = store.account.userId.value
-        requireNotNull(myUserId)
-        val filterId = store.account.filterId.value
-        if (filterId == null)
-            store.account.filterId.value = api.users.setFilter(
-                myUserId,
-                Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
-            )
-
+            val myUserId = store.account.userId.value
+            requireNotNull(myUserId)
+            val filterId = store.account.filterId.value
+            if (filterId == null)
+                store.account.filterId.value = api.users.setFilter(
+                    myUserId,
+                    Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
+                )
+        }
         api.sync.start(
             filter = store.account.filterId.value,
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = store.account.syncBatchToken,
-            lastSuccessfulBatchToken = lastSuccessfulBatchToken,
             scope = scope,
         )
+    }
+
+    suspend fun stopSync() {
+        api.sync.stop()
     }
 }

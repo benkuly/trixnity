@@ -82,24 +82,16 @@ class OlmService(
     internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
 
     @OptIn(FlowPreview::class)
-    internal suspend fun startEventHandling(scope: CoroutineScope) {
+    internal suspend fun start(scope: CoroutineScope) {
+        api.sync.subscribeSyncResponse { syncResponse ->
+            syncResponse.deviceOneTimeKeysCount?.also { handleDeviceOneTimeKeysCount(it) }
+            syncResponse.deviceLists?.also { handleDeviceLists(it) }
+        }
+        scope.launch { store.deviceKeys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys) }
+        api.sync.subscribe(::handleMemberEvents)
+        api.sync.subscribe(::handleEncryptionEvents)
+        api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.syncResponses.collect { syncResponse ->
-                syncResponse.deviceOneTimeKeysCount?.also { handleDeviceOneTimeKeysCount(it) }
-                syncResponse.deviceLists?.also { handleDeviceLists(it) }
-            }
-        }
-        scope.launch(start = UNDISPATCHED) {
-            store.deviceKeys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys)
-        }
-        scope.launch(start = UNDISPATCHED) { api.sync.events<MemberEventContent>().collect(::handleMemberEvents) }
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.events<EncryptionEventContent>().collect(::handleEncryptionEvents)
-        }
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.events<OlmEncryptedEventContent>().collect(::handleOlmEncryptedToDeviceEvents)
-        }
         scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
     }
 

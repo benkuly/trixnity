@@ -20,9 +20,12 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -30,7 +33,6 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import java.lang.RuntimeException
 import kotlin.test.*
 
 class SyncApiClientTest {
@@ -427,15 +429,14 @@ class SyncApiClientTest {
             filter = "someFilter",
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = currentBatchToken,
-            lastSuccessfulBatchToken = currentBatchToken,
             scope = scope,
             timeout = 300
         )
         stateResult.first { it == TIMEOUT }
-        assertEquals(listOf(STOPPED, INITIAL_SYNC, TIMEOUT), stateResult.replayCache)
+        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT), stateResult.replayCache)
         matrixRestClient.sync.stop(wait = true)
         delay(100) // wait for STOPPED
-        assertEquals(listOf(STOPPED, INITIAL_SYNC, TIMEOUT, STOPPING, STOPPED), stateResult.replayCache)
+        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT, STOPPING, STOPPED), stateResult.replayCache)
     }
 
     @Test
@@ -479,7 +480,6 @@ class SyncApiClientTest {
             filter = "someFilter",
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = currentBatchToken,
-            lastSuccessfulBatchToken = currentBatchToken,
             scope = scope,
             timeout = 100
         )
@@ -498,7 +498,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online",
+                                    "/_matrix/client/r0/sync",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -528,7 +528,6 @@ class SyncApiClientTest {
             filter = null,
             setPresence = null,
             currentBatchToken = currentBatchToken,
-            lastSuccessfulBatchToken = currentBatchToken,
             asUserId = null,
             scope = scope
         )
@@ -646,60 +645,17 @@ class SyncApiClientTest {
             })
 
         val currentBatchToken = MutableStateFlow<String?>(null)
-        val lastSuccessfulBatchToken = MutableStateFlow<String?>(null)
 
         val result = matrixRestClient.sync.syncLoop(
             filter = "someFilter",
             setPresence = PresenceEventContent.Presence.ONLINE,
             currentBatchToken = currentBatchToken,
-            lastSuccessfulBatchToken = lastSuccessfulBatchToken,
         ).take(3).toList()
 
         assertEquals(4, requestCount.value)
         assertEquals(serverResponse1, result[0])
         assertEquals(serverResponse2, result[1])
         assertEquals("nextBatch2", currentBatchToken.value)
-        assertEquals("nextBatch2", lastSuccessfulBatchToken.value)
-    }
-
-    @Test
-    fun shouldUseCorrectLastSuccessfulBatchToken() = runBlockingTest {
-        val matrixRestClient = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
-            baseHttpClient = HttpClient(MockEngine) {
-                engine {
-                    addHandler { request ->
-                        assertEquals(
-                            "/_matrix/client/r0/sync?filter=someFilter&set_presence=online",
-                            request.url.fullPath
-                        )
-                        assertEquals(HttpMethod.Get, request.method)
-                        respond(
-                            json.encodeToString(serverResponse3),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-                    }
-                }
-            })
-
-        val currentBatchToken = MutableStateFlow<String?>(null)
-        val lastSuccessfulBatchToken = MutableStateFlow<String?>(null)
-
-        scope.launch {
-            matrixRestClient.sync.events<GlobalAccountDataEventContent>().collect { throw RuntimeException("Oh no!")}
-        }
-        matrixRestClient.sync.start(
-            filter = "someFilter",
-            setPresence = PresenceEventContent.Presence.ONLINE,
-            currentBatchToken = currentBatchToken,
-            lastSuccessfulBatchToken = lastSuccessfulBatchToken,
-            scope = scope,
-            timeout = 100,
-        )
-        delay(300)
-        assertEquals("nextBatch3", currentBatchToken.value)
-        assertEquals(null, lastSuccessfulBatchToken.value)
     }
 
     @Test
@@ -839,57 +795,41 @@ class SyncApiClientTest {
             })
 
         coroutineScope {
-            val allEventsFlow = matrixRestClient.sync.allEvents()
-            val allEvents = async {
-                allEventsFlow.take(10).toList()
-            }
-            val messageEventsFlow = matrixRestClient.sync.events<RoomMessageEventContent>()
-            val messageEvents = async {
-                messageEventsFlow.take(2).toList()
-            }
-            val memberEventsFlow = matrixRestClient.sync.events<MemberEventContent>()
-            val memberEvents = async {
-                memberEventsFlow.take(3).toList()
-            }
-            val presenceEventsFlow = matrixRestClient.sync.events<PresenceEventContent>()
-            val presenceEvents = async {
-                presenceEventsFlow.take(1).toList()
-            }
-            val roomKeyEventsFlow = matrixRestClient.sync.events<RoomKeyEventContent>()
-            val roomKeyEvents = async {
-                roomKeyEventsFlow.take(1).toList()
-            }
-            val globalAccountDataEventsFlow = matrixRestClient.sync.events<GlobalAccountDataEventContent>()
-            val globalAccountDataEvents = async {
-                globalAccountDataEventsFlow.take(1).toList()
-            }
-            val roomAccountDataEventsFlow = matrixRestClient.sync.events<RoomAccountDataEventContent>()
-            val roomAccountDataEvents = async {
-                roomAccountDataEventsFlow.take(2).toList()
-            }
+            val allEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
 
-            launch {
-                matrixRestClient.sync.start(scope = scope)
-            }
+            val messageEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<RoomMessageEventContent> { messageEventsCount.update { it + 1 } }
+
+            val memberEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<MemberEventContent> { memberEventsCount.update { it + 1 } }
+
+            val presenceEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<PresenceEventContent> { presenceEventsCount.update { it + 1 } }
+
+            val roomKeyEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<RoomKeyEventContent> { roomKeyEventsCount.update { it + 1 } }
+
+            val globalAccountDataEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<GlobalAccountDataEventContent> { globalAccountDataEventsCount.update { it + 1 } }
+
+            val roomAccountDataEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribe<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
+
+            val currentSyncBatchToken = MutableStateFlow<String?>(null)
+            matrixRestClient.sync.start(scope = scope, currentBatchToken = currentSyncBatchToken)
 
             inChannel.send(response)
 
-            assertEquals(10, allEvents.await().count())
-            assertEquals(
-                listOf("event1", "event4"),
-                allEvents.await().filterIsInstance<Event.MessageEvent<*>>().map { it.id.full })
-            assertEquals(
-                listOf("event2", "event5"),
-                allEvents.await().filterIsInstance<Event.StateEvent<*>>().map { it.id.full })
-            assertEquals(
-                listOf("room3"),
-                allEvents.await().filterIsInstance<Event.StrippedStateEvent<*>>().map { it.roomId.localpart })
-            assertEquals(2, messageEvents.await().count())
-            assertEquals(3, memberEvents.await().count())
-            assertEquals(1, presenceEvents.await().count())
-            assertEquals(1, roomKeyEvents.await().count())
-            assertEquals(1, globalAccountDataEvents.await().count())
-            assertEquals(2, roomAccountDataEvents.await().count())
+            currentSyncBatchToken.first { it != null }
+
+            assertEquals(10, allEventsCount.value)
+            assertEquals(2, messageEventsCount.value)
+            assertEquals(3, memberEventsCount.value)
+            assertEquals(1, presenceEventsCount.value)
+            assertEquals(1, roomKeyEventsCount.value)
+            assertEquals(1, globalAccountDataEventsCount.value)
+            assertEquals(2, roomAccountDataEventsCount.value)
         }
     }
 
@@ -936,9 +876,8 @@ class SyncApiClientTest {
                 }
             })
 
-        val events = scope.async {
-            matrixRestClient.sync.events<EventContent>().take(2).toList()
-        }
+        val allEventsCount = MutableStateFlow(0)
+        matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
 
         scope.launch {
             matrixRestClient.sync.start(scope = this)
@@ -948,7 +887,7 @@ class SyncApiClientTest {
         inChannel.send(response)
         inChannel.send(response)
 
-        assertEquals(2, events.await().count())
+        allEventsCount.first { it == 2 }
         matrixRestClient.sync.stop()
         matrixRestClient.sync.stop()
     }

@@ -52,6 +52,7 @@ abstract class ActiveVerification(
     private val lifecycleStarted = atomic(false)
     protected abstract suspend fun lifecycle(scope: CoroutineScope)
     internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
+        log.debug { "start lifecycle of verification" }
         return if (!lifecycleAlreadyStarted()) {
             lifecycle(scope)
             true

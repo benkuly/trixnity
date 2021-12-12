@@ -9,7 +9,6 @@ import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -24,6 +23,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Request
+import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -55,26 +55,20 @@ class VerificationServiceTest : ShouldSpec({
     val bobDeviceId = "BBBBBB"
     val eventId = EventId("$1event")
     val roomId = RoomId("room", "server")
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixApiClient>(relaxed = true)
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
     val room = mockk<RoomService>()
     val user = mockk<UserService>(relaxUnitFun = true)
     val json = createMatrixJson()
-    lateinit var requestEventFlow: MutableSharedFlow<Event<RequestEventContent>>
-    lateinit var stepEventFlow: MutableSharedFlow<Event<VerificationStep>>
     lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEvent>
     lateinit var cut: VerificationService
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
-        requestEventFlow = MutableSharedFlow(replay = 1)
-        stepEventFlow = MutableSharedFlow(replay = 1)
         decryptedOlmEventFlow = MutableSharedFlow()
-        coEvery { api.sync.events<RequestEventContent>() } returns requestEventFlow
-        coEvery { api.sync.events<VerificationStep>() } returns stepEventFlow
         coEvery { olm.decryptedOlmEvents } returns decryptedOlmEventFlow
         coEvery { api.json } returns json
         cut = VerificationService(
@@ -92,11 +86,10 @@ class VerificationServiceTest : ShouldSpec({
         storeScope.cancel()
         clearAllMocks()
     }
-    context(VerificationService::startEventHandling.name) {
+    context(VerificationService::start.name) {
         lateinit var eventHandlingCoroutineScope: CoroutineScope
         beforeTest {
             eventHandlingCoroutineScope = CoroutineScope(Dispatchers.Default)
-            cut.startEventHandling(eventHandlingCoroutineScope)
         }
         afterTest {
             eventHandlingCoroutineScope.cancel()
@@ -104,7 +97,10 @@ class VerificationServiceTest : ShouldSpec({
         context("handleVerificationRequestEvents") {
             should("ignore request, that is timed out") {
                 val request = RequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
-                requestEventFlow.emit(ToDeviceEvent(request, bobUserId))
+                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                }
+                cut.start(eventHandlingCoroutineScope)
                 val activeDeviceVerifications = cut.activeDeviceVerifications.value
                 activeDeviceVerifications shouldHaveSize 0
             }
@@ -115,7 +111,10 @@ class VerificationServiceTest : ShouldSpec({
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                requestEventFlow.emit(ToDeviceEvent(request, bobUserId))
+                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                }
+                cut.start(eventHandlingCoroutineScope)
                 val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
                 activeDeviceVerifications shouldHaveSize 1
                 activeDeviceVerifications[0].state.value.shouldBeInstanceOf<Request>()
@@ -123,6 +122,7 @@ class VerificationServiceTest : ShouldSpec({
         }
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
             should("ignore request, that is timed out") {
+                cut.start(eventHandlingCoroutineScope)
                 val request = RequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
                     OlmService.DecryptedOlmEvent(
@@ -133,6 +133,7 @@ class VerificationServiceTest : ShouldSpec({
                 activeDeviceVerifications shouldHaveSize 0
             }
             should("add device verification") {
+                cut.start(eventHandlingCoroutineScope)
                 val request = RequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
@@ -157,15 +158,21 @@ class VerificationServiceTest : ShouldSpec({
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction"
                 )
-                delay(500) // TODO better solution to wait for startEventHandling
-                requestEventFlow.emit(ToDeviceEvent(request, bobUserId))
-                stepEventFlow.emit(
-                    ToDeviceEvent(
-                        CancelEventContent(Code.User, "user", null, "transaction"),
-                        bobUserId
-                    )
+                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                }
+                lateinit var verificationStepSubscriber: EventSubscriber<VerificationStep>
+                coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }.coAnswers {
+                    verificationStepSubscriber = lambda<EventSubscriber<VerificationStep>>().captured
+                }
+                cut.start(eventHandlingCoroutineScope)
+                val activeDeviceVerifications = cut.activeDeviceVerifications.first {
+                    println(it)
+                    it.isNotEmpty()
+                }
+                verificationStepSubscriber.invoke(
+                    ToDeviceEvent(CancelEventContent(Code.User, "user", null, "transaction"), bobUserId)
                 )
-                val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
                 activeDeviceVerifications[0].state.first { it is Cancel } shouldBe Cancel(
                     CancelEventContent(Code.User, "user", null, "transaction"),
                     bobUserId
@@ -173,6 +180,7 @@ class VerificationServiceTest : ShouldSpec({
                 cut.activeDeviceVerifications.first { it.isEmpty() } shouldHaveSize 0
             }
             should("start all lifecycles of user verifications") {
+                cut.start(eventHandlingCoroutineScope)
                 val nextEventId = EventId("$1nextEventId")
                 coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("$24event")
                 val timelineEvent = TimelineEvent(
