@@ -44,11 +44,9 @@ class VerificationService(
     val activeDeviceVerifications = _activeDeviceVerifications.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
 
-    internal suspend fun startEventHandling(scope: CoroutineScope) {
+    internal suspend fun start(scope: CoroutineScope) {
+        api.sync.subscribe(::handleDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) {
-            api.sync.events<RequestEventContent>().collect(::handleDeviceVerificationRequestEvents)
-        }
         scope.launch(start = UNDISPATCHED) {
             olm.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
@@ -84,7 +82,6 @@ class VerificationService(
             }
             else -> log.warning { "got new device verification request with an event type ${event::class.simpleName}, that we did not expected" }
         }
-
     }
 
     private fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
@@ -169,7 +166,7 @@ class VerificationService(
         api.rooms.sendMessageEvent(roomId, sendContent)
     }
 
-    suspend fun getActiveUserVerification(
+    fun getActiveUserVerification(
         timelineEvent: TimelineEvent
     ): ActiveUserVerification? {
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {

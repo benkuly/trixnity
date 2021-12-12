@@ -2,11 +2,7 @@ package net.folivo.trixnity.appservice.rest
 
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.appservice.rest.event.AppserviceEventTnxService
 import net.folivo.trixnity.appservice.rest.room.AppserviceRoomService
@@ -59,14 +55,12 @@ class DefaultAppserviceHandlerTest {
             1234L
         )
 
-        val emittedEventsFlow = cut.allEvents()
-        val emittedEvents = async { emittedEventsFlow.take(1).toList() }
-        launch {
-            cut.addTransactions("someTnxId1", flowOf(event))
-            cut.addTransactions("someTnxId2", flowOf(event))
-        }
+        var allEventsCount = 0
+        cut.subscribeAllEvents { allEventsCount++ }
+        cut.addTransactions("someTnxId1", flowOf(event))
+        cut.addTransactions("someTnxId2", flowOf(event))
 
-        emittedEvents.await().count().shouldBe(1)
+        allEventsCount shouldBe 1
         coVerify { appserviceEventTnxServiceMock.onEventTnxProcessed("someTnxId2") }
     }
 

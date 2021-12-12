@@ -42,7 +42,8 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessa
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
@@ -515,8 +516,7 @@ class RoomServiceTest : ShouldSpec({
                         }
                     }
                 }
-                delay(200)
-                coVerify(exactly = 2) { olmService.events.decryptMegolm(any()) }
+                coVerify(exactly = 2, timeout = 5_000) { olmService.events.decryptMegolm(any()) }
                 scope1.cancel()
                 scope2.cancel()
             }

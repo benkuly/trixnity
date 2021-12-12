@@ -11,8 +11,10 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
+import kotlin.coroutines.cancellation.CancellationException
 
-// TODO test sync state
+typealias SyncResponseSubscriber = suspend (SyncResponse) -> Unit
+
 class SyncApiClient(
     private val httpClient: MatrixHttpClient,
     loggerFactory: LoggerFactory
@@ -50,11 +52,9 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        lastSuccessfulBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
         asUserId: UserId? = null
     ): Flow<SyncResponse> {
-        val isInitialSync = MutableStateFlow(currentBatchToken.value == null)
         return flow {
             while (currentCoroutineContext().isActive && _currentSyncState.value != SyncState.STOPPING) {
                 try {
@@ -64,16 +64,14 @@ class SyncApiClient(
                         setPresence = setPresence,
                         fullState = false,
                         since = batchToken,
-                        timeout = if (isInitialSync.value) 0L else timeout,
+                        timeout = if (currentBatchToken.value == null) 0L else timeout,
                         asUserId = asUserId
                     )
-                    lastSuccessfulBatchToken.value = currentBatchToken.value
-                    currentBatchToken.value = response.nextBatch
                     emit(response)
-                    if (isInitialSync.value.not() && _currentSyncState.value != SyncState.STOPPING) {
+                    currentBatchToken.value = response.nextBatch
+                    if (_currentSyncState.value != SyncState.STOPPING) {
                         _currentSyncState.value = SyncState.RUNNING
                     }
-                    isInitialSync.value = false
                 } catch (error: Throwable) {
                     when (error) {
                         is HttpRequestTimeoutException -> if (_currentSyncState.value != SyncState.STOPPING) _currentSyncState.value =
@@ -99,8 +97,15 @@ class SyncApiClient(
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
     val currentSyncState = _currentSyncState.asStateFlow()
 
-    private val _syncResponses: MutableSharedFlow<SyncResponse> = MutableSharedFlow()
-    val syncResponses = _syncResponses.asSharedFlow()
+    private val syncResponseSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> = MutableStateFlow(setOf())
+
+    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) {
+        syncResponseSubscribers.update { it + subscriber }
+    }
+
+    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) {
+        syncResponseSubscribers.update { it - subscriber }
+    }
 
     enum class SyncState {
         INITIAL_SYNC,
@@ -116,7 +121,6 @@ class SyncApiClient(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        lastSuccessfulBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
@@ -127,33 +131,47 @@ class SyncApiClient(
             log.info { "started syncLoop" }
             val isInitialSync = currentBatchToken.value == null
             _currentSyncState.value =
-                if (isInitialSync && _currentSyncState.value != SyncState.STOPPING) SyncState.INITIAL_SYNC else SyncState.STARTED
+                if (isInitialSync && _currentSyncState.value != SyncState.STOPPING) SyncState.INITIAL_SYNC
+                else SyncState.STARTED
 
             try {
-                syncLoop(filter, setPresence, currentBatchToken, lastSuccessfulBatchToken, timeout, asUserId)
+                syncLoop(filter, setPresence, currentBatchToken, timeout, asUserId)
                     .collect { response ->
-                        // do it at first, to be able to decrypt stuff
-                        response.toDevice?.events?.forEach { emitEvent(it) }
-                        response.presence?.events?.forEach { emitEvent(it) }
-                        response.accountData?.events?.forEach { emitEvent(it) }
-                        response.room?.join?.forEach { (_, joinedRoom) ->
-                            joinedRoom.state?.events?.forEach { emitEvent(it) }
-                            joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                            joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                            joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                        // this scope forces, that we wait for processing events of all subscribers
+                        coroutineScope {
+                            // do it at first, to be able to decrypt stuff
+                            response.toDevice?.events?.forEach { emitEvent(it) }
+                            response.accountData?.events?.forEach { emitEvent(it) }
+                            launch { response.presence?.events?.forEach { emitEvent(it) } }
+                            launch {
+                                response.room?.join?.forEach { (_, joinedRoom) ->
+                                    joinedRoom.state?.events?.forEach { emitEvent(it) }
+                                    joinedRoom.timeline?.events?.forEach { emitEvent(it) }
+                                    joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                                    joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                                }
+                            }
+                            launch {
+                                response.room?.invite?.forEach { (_, invitedRoom) ->
+                                    invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
+                                }
+                            }
+                            launch {
+                                response.room?.knock?.forEach { (_, invitedRoom) ->
+                                    invitedRoom.knockState?.events?.forEach { emitEvent(it) }
+                                }
+                            }
+                            launch {
+                                response.room?.leave?.forEach { (_, leftRoom) ->
+                                    leftRoom.state?.events?.forEach { emitEvent(it) }
+                                    leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                                    leftRoom.accountData?.events?.forEach { emitEvent(it) }
+                                }
+                            }
+                            syncResponseSubscribers.value.forEach {
+                                launch { it.invoke(response) }
+                            }
                         }
-                        response.room?.invite?.forEach { (_, invitedRoom) ->
-                            invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                        }
-                        response.room?.knock?.forEach { (_, invitedRoom) ->
-                            invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                        }
-                        response.room?.leave?.forEach { (_, leftRoom) ->
-                            leftRoom.state?.events?.forEach { emitEvent(it) }
-                            leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                            leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                        }
-                        _syncResponses.emit(response)
                         log.debug { "processed sync response" }
                     }
             } catch (error: Throwable) {
@@ -168,7 +186,7 @@ class SyncApiClient(
 
     suspend fun stop(wait: Boolean = false) {
         if (syncJob != null) {
-            _currentSyncState.value = SyncState.STOPPING
+            _currentSyncState.value = SyncApiClient.SyncState.STOPPING
             if (wait) syncJob?.join()
         }
     }

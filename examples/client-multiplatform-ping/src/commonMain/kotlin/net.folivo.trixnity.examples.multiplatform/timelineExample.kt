@@ -56,32 +56,29 @@ suspend fun timelineExample() = coroutineScope {
         loggerFactory = loggerFactory
     )
 
-    val encrytpedEventFlow = matrixClient.api.sync.events<MegolmEncryptedEventContent>()
-
     val startTime = Clock.System.now()
 
-    val job1 = launch {
-        encrytpedEventFlow.collect { event ->
-            require(event is MessageEvent<MegolmEncryptedEventContent>)
-            if (event.roomId == roomId) {
-                if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
-                    delay(500)
-                    try {
-                        val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
-                        val content = decryptedEvent.content
-                        if (content is TextMessageEventContent && content.body.startsWith("ping")) {
-                            matrixClient.room.sendMessage(roomId) {
-                                text("pong to ${content.body}")
-                            }
+    matrixClient.api.sync.subscribe<MegolmEncryptedEventContent> { event ->
+        require(event is MessageEvent<MegolmEncryptedEventContent>)
+        if (event.roomId == roomId) {
+            if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
+                delay(500)
+                try {
+                    val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
+                    val content = decryptedEvent.content
+                    if (content is TextMessageEventContent && content.body.startsWith("ping")) {
+                        matrixClient.room.sendMessage(roomId) {
+                            text("pong to ${content.body}")
                         }
-                    } catch (_: Exception) {
-
                     }
+                } catch (_: Exception) {
+
                 }
             }
         }
     }
-    val job2 = launch {
+
+    val job = launch {
         matrixClient.room.getLastTimelineEvent(roomId, this).filterNotNull().collect { lastEvent ->
             val roomName = matrixClient.room.getById(roomId).value?.name
             println("------------------------- $roomName")
@@ -130,6 +127,5 @@ suspend fun timelineExample() = coroutineScope {
     delay(300000)
     scope.cancel()
 
-    job2.cancelAndJoin()
-    job1.cancelAndJoin()
+    job.cancelAndJoin()
 }
