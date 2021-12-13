@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.api.authentication.AuthenticationApiClient
+import net.folivo.trixnity.client.api.devices.DevicesApiClient
 import net.folivo.trixnity.client.api.keys.KeysApiClient
 import net.folivo.trixnity.client.api.media.MediaApiClient
 import net.folivo.trixnity.client.api.rooms.RoomsApiClient
@@ -37,6 +38,7 @@ class MatrixApiClient(
     val sync = SyncApiClient(httpClient, loggerFactory)
     val keys = KeysApiClient(httpClient)
     val media = MediaApiClient(httpClient)
+    val devices = DevicesApiClient(httpClient)
 }
 
 fun createMatrixApiClientEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =

@@ -191,7 +191,9 @@ class ActiveSasVerificationMethod private constructor(
                             shortCode[3].toInt() shr 2,
                             ((shortCode[3].toInt() and 0x3) shl 4) or (shortCode[4].toInt() shr 4),
                             ((shortCode[4].toInt() and 0xF) shl 2) or (shortCode[5].toInt() shr 6),
-                        ).mapNotNull { numberToEmojiMapping[it] }
+                        ).map {
+                            it to (numberToEmojiMapping[it] ?: throw IllegalStateException("Cannot find emoji for number $it."))
+                        }
                         _state.value = ComparisonByUser(
                             decimal = decimal, emojis = emojis,
                             ownUserId = ownUserId, ownDeviceId = ownDeviceId,
