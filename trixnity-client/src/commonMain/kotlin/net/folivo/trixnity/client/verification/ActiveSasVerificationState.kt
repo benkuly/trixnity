@@ -39,7 +39,7 @@ sealed interface ActiveSasVerificationState {
     data class WaitForKeys(val isOurOwn: Boolean) : ActiveSasVerificationState
     data class ComparisonByUser(
         val decimal: List<Int>,
-        val emojis: List<String>,
+        val emojis: List<Pair<Int, String>>,
         private val ownUserId: UserId,
         private val ownDeviceId: String,
         private val theirUserId: UserId,
