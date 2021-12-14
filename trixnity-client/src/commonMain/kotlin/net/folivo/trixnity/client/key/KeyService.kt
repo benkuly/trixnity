@@ -79,23 +79,25 @@ class KeyService(
         masterKey: Signed<CrossSigningKeys, UserId>
     ) {
         val oldMasterKey = store.keys.getCrossSigningKey(userId, MasterKey)
-        val signatureVerification = olmSignService.verify(masterKey)
-        if (signatureVerification == VerifyResult.Valid) {
-            val oldMasterKeyWasVerified = when (val trustLevel = oldMasterKey?.trustLevel) {
-                is Valid -> trustLevel.verified
-                else -> false
-            }
-            val newMasterKeyTrustLevel =
-                if (oldMasterKey == null) calculateCrossSigningKeysTrustLevel(masterKey)
-                else MasterKeyChangedRecently(oldMasterKeyWasVerified)
+        when (val signatureVerification = olmSignService.verify(masterKey)) {
+            VerifyResult.Valid, VerifyResult.MissingSignature -> {
+                val oldMasterKeyWasVerified = when (val trustLevel = oldMasterKey?.trustLevel) {
+                    is Valid -> trustLevel.verified
+                    else -> false
+                }
+                val newMasterKeyTrustLevel =
+                    if (oldMasterKey == null) calculateCrossSigningKeysTrustLevel(masterKey)
+                    else MasterKeyChangedRecently(oldMasterKeyWasVerified)
 
-            val newMasterKey = StoredCrossSigningKey(masterKey, newMasterKeyTrustLevel)
-            store.keys.updateCrossSigningKeys(userId) {
-                if (oldMasterKey != null) (it ?: setOf()) + newMasterKey - oldMasterKey
-                else (it ?: setOf()) + newMasterKey
+                val newMasterKey = StoredCrossSigningKey(masterKey, newMasterKeyTrustLevel)
+                store.keys.updateCrossSigningKeys(userId) {
+                    if (oldMasterKey != null) (it ?: setOf()) + newMasterKey - oldMasterKey
+                    else (it ?: setOf()) + newMasterKey
+                }
             }
-        } else {
-            log.warning { "Signatures from the master key of $userId were not valid: $signatureVerification!" }
+            else -> {
+                log.warning { "Signatures from the master key of $userId were not valid: $signatureVerification!" }
+            }
         }
     }
 
@@ -221,7 +223,11 @@ class KeyService(
     internal suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
         log.debug { "calculate trust level for ${crossSigningKeys.signed}" }
         val userId = crossSigningKeys.signed.userId
-        return calculateTrustLevel(userId, crossSigningKeys.signatures, crossSigningKeys.getVerificationState(userId))
+        return calculateTrustLevel(
+            userId,
+            crossSigningKeys.signatures,
+            crossSigningKeys.getVerificationState(userId)
+        )
     }
 
     private suspend fun calculateTrustLevel(
