@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -14,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.InMemoryStore
@@ -101,8 +101,8 @@ class VerificationServiceTest : ShouldSpec({
                     lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
                 }
                 cut.start(eventHandlingCoroutineScope)
-                val activeDeviceVerifications = cut.activeDeviceVerifications.value
-                activeDeviceVerifications shouldHaveSize 0
+                val activeDeviceVerifications = cut.activeDeviceVerification.value
+                activeDeviceVerifications shouldBe null
             }
             should("add device verification") {
                 val request = RequestEventContent(
@@ -115,9 +115,36 @@ class VerificationServiceTest : ShouldSpec({
                     lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
                 }
                 cut.start(eventHandlingCoroutineScope)
-                val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
-                activeDeviceVerifications shouldHaveSize 1
-                activeDeviceVerifications[0].state.value.shouldBeInstanceOf<Request>()
+                val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+                require(activeDeviceVerification != null)
+                activeDeviceVerification.state.value.shouldBeInstanceOf<Request>()
+            }
+            should("cancel second verification request") {
+                val request1 = RequestEventContent(
+                    bobDeviceId,
+                    setOf(Sas),
+                    Clock.System.now().toEpochMilliseconds(),
+                    "transaction1"
+                )
+                val request2 = RequestEventContent(
+                    aliceDeviceId,
+                    setOf(Sas),
+                    Clock.System.now().toEpochMilliseconds(),
+                    "transaction2"
+                )
+                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request1, bobUserId))
+                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request2, aliceUserId))
+                }
+                val olmEvents: OlmEventService = mockk(relaxed = true)
+                every { olm.events } returns olmEvents
+
+                cut.start(eventHandlingCoroutineScope)
+
+                val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+                require(activeDeviceVerification != null)
+                activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
+                coVerify { olmEvents.encryptOlm(match { it is CancelEventContent }, aliceUserId, aliceDeviceId) }
             }
         }
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
@@ -129,8 +156,7 @@ class VerificationServiceTest : ShouldSpec({
                         mockk(), Event.OlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
-                val activeDeviceVerifications = cut.activeDeviceVerifications.value
-                activeDeviceVerifications shouldHaveSize 0
+                cut.activeDeviceVerification.value shouldBe null
             }
             should("add device verification") {
                 cut.start(eventHandlingCoroutineScope)
@@ -145,9 +171,42 @@ class VerificationServiceTest : ShouldSpec({
                         mockk(), Event.OlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
-                val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
-                activeDeviceVerifications shouldHaveSize 1
-                activeDeviceVerifications[0].state.value.shouldBeInstanceOf<Request>()
+                val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+                require(activeDeviceVerification != null)
+                activeDeviceVerification.state.value.shouldBeInstanceOf<Request>()
+            }
+            should("cancel second device verification") {
+                val olmEvents: OlmEventService = mockk(relaxed = true)
+                every { olm.events } returns olmEvents
+
+                cut.start(eventHandlingCoroutineScope)
+
+                val request1 = RequestEventContent(
+                    bobDeviceId,
+                    setOf(Sas),
+                    Clock.System.now().toEpochMilliseconds(),
+                    "transaction1"
+                )
+                val request2 = RequestEventContent(
+                    aliceDeviceId,
+                    setOf(Sas),
+                    Clock.System.now().toEpochMilliseconds(),
+                    "transaction2"
+                )
+                decryptedOlmEventFlow.emit(
+                    OlmService.DecryptedOlmEvent(
+                        mockk(), Event.OlmEvent(request1, bobUserId, mockk(), mockk(), mockk())
+                    )
+                )
+                decryptedOlmEventFlow.emit(
+                    OlmService.DecryptedOlmEvent(
+                        mockk(), Event.OlmEvent(request2, aliceUserId, mockk(), mockk(), mockk())
+                    )
+                )
+                val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+                require(activeDeviceVerification != null)
+                activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
+                coVerify { olmEvents.encryptOlm(match { it is CancelEventContent }, aliceUserId, aliceDeviceId) }
             }
         }
         context("startLifecycleOfActiveVerifications") {
@@ -166,18 +225,16 @@ class VerificationServiceTest : ShouldSpec({
                     verificationStepSubscriber = lambda<EventSubscriber<VerificationStep>>().captured
                 }
                 cut.start(eventHandlingCoroutineScope)
-                val activeDeviceVerifications = cut.activeDeviceVerifications.first {
-                    println(it)
-                    it.isNotEmpty()
-                }
+                val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+                require(activeDeviceVerification != null)
                 verificationStepSubscriber.invoke(
                     ToDeviceEvent(CancelEventContent(Code.User, "user", null, "transaction"), bobUserId)
                 )
-                activeDeviceVerifications[0].state.first { it is Cancel } shouldBe Cancel(
+                activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
                     CancelEventContent(Code.User, "user", null, "transaction"),
                     bobUserId
                 )
-                cut.activeDeviceVerifications.first { it.isEmpty() } shouldHaveSize 0
+                cut.activeDeviceVerification.first { it == null } shouldBe null
             }
             should("start all lifecycles of user verifications") {
                 cut.start(eventHandlingCoroutineScope)
@@ -232,8 +289,8 @@ class VerificationServiceTest : ShouldSpec({
             coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } just Runs
             coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
             cut.createDeviceVerificationRequest(bobUserId, bobDeviceId)
-            val activeDeviceVerifications = cut.activeDeviceVerifications.first { it.isNotEmpty() }
-            activeDeviceVerifications shouldHaveSize 1
+            val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
+            require(activeDeviceVerification != null)
             coVerify {
                 api.users.sendToDevice<RequestEventContent>(withArg {
                     it shouldHaveSize 1
