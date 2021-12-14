@@ -15,6 +15,8 @@ import kotlin.coroutines.cancellation.CancellationException
 
 typealias SyncResponseSubscriber = suspend (SyncResponse) -> Unit
 
+typealias AfterSyncResponseSubscriber = suspend () -> Unit
+
 class SyncApiClient(
     private val httpClient: MatrixHttpClient,
     loggerFactory: LoggerFactory
@@ -107,6 +109,17 @@ class SyncApiClient(
         syncResponseSubscribers.update { it - subscriber }
     }
 
+    private val afterSyncResponseSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
+        MutableStateFlow(setOf())
+
+    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) {
+        afterSyncResponseSubscribers.update { it + subscriber }
+    }
+
+    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) {
+        afterSyncResponseSubscribers.update { it - subscriber }
+    }
+
     enum class SyncState {
         INITIAL_SYNC,
         STARTED,
@@ -142,35 +155,38 @@ class SyncApiClient(
                             // do it at first, to be able to decrypt stuff
                             response.toDevice?.events?.forEach { emitEvent(it) }
                             response.accountData?.events?.forEach { emitEvent(it) }
-                            launch { response.presence?.events?.forEach { emitEvent(it) } }
-                            launch {
-                                response.room?.join?.forEach { (_, joinedRoom) ->
-                                    joinedRoom.state?.events?.forEach { emitEvent(it) }
-                                    joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                                    joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                                    joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                            coroutineScope {
+                                launch { response.presence?.events?.forEach { emitEvent(it) } }
+                                launch {
+                                    response.room?.join?.forEach { (_, joinedRoom) ->
+                                        joinedRoom.state?.events?.forEach { emitEvent(it) }
+                                        joinedRoom.timeline?.events?.forEach { emitEvent(it) }
+                                        joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                                        joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                                    }
+                                }
+                                launch {
+                                    response.room?.invite?.forEach { (_, invitedRoom) ->
+                                        invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
+                                    }
+                                }
+                                launch {
+                                    response.room?.knock?.forEach { (_, invitedRoom) ->
+                                        invitedRoom.knockState?.events?.forEach { emitEvent(it) }
+                                    }
+                                }
+                                launch {
+                                    response.room?.leave?.forEach { (_, leftRoom) ->
+                                        leftRoom.state?.events?.forEach { emitEvent(it) }
+                                        leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                                        leftRoom.accountData?.events?.forEach { emitEvent(it) }
+                                    }
                                 }
                             }
-                            launch {
-                                response.room?.invite?.forEach { (_, invitedRoom) ->
-                                    invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                                }
+                            coroutineScope {
+                                syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
                             }
-                            launch {
-                                response.room?.knock?.forEach { (_, invitedRoom) ->
-                                    invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                                }
-                            }
-                            launch {
-                                response.room?.leave?.forEach { (_, leftRoom) ->
-                                    leftRoom.state?.events?.forEach { emitEvent(it) }
-                                    leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                                    leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                                }
-                            }
-                            syncResponseSubscribers.value.forEach {
-                                launch { it.invoke(response) }
-                            }
+                            afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
                         }
                         log.debug { "processed sync response" }
                     }

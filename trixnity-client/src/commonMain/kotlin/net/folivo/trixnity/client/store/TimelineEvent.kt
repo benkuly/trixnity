@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
-import net.folivo.trixnity.client.crypto.VerificationState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
@@ -13,7 +12,6 @@ data class TimelineEvent(
     val event: @Contextual RoomEvent<*>,
     @Transient
     val decryptedEvent: Result<MegolmEvent<*>>? = null,
-    val verificationState: VerificationState? = null,
 
     val roomId: RoomId,
     val eventId: EventId,

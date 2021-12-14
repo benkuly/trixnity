@@ -205,7 +205,7 @@ class KeysApiClientTest {
             token = "string"
         )
         assertEquals(mapOf(), result.failures)
-        val oneTimeKeyMap = result.deviceKeys.entries.firstOrNull()
+        val oneTimeKeyMap = result.deviceKeys?.entries?.firstOrNull()
         assertEquals(UserId("alice", "example.com"), oneTimeKeyMap?.key)
         val oneTimeKey = oneTimeKeyMap?.value?.entries?.firstOrNull()
         assertEquals("JLAFKJWSCS", oneTimeKey?.key)

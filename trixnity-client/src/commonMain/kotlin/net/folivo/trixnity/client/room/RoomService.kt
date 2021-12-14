@@ -64,12 +64,14 @@ class RoomService(
     suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
+        api.sync.subscribeSyncResponse(::handleSyncResponse)
         api.sync.subscribe(::setRoomAccountData)
         api.sync.subscribe(::setEncryptionAlgorithm)
         api.sync.subscribe(::setOwnMembership)
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::redactTimelineEvent)
-        api.sync.subscribeSyncResponse(::handleSyncResponse)
+        api.sync.subscribe<StateEventContent> { store.roomState.update(it) }
+        api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
     }
 
     // TODO test
@@ -77,6 +79,7 @@ class RoomService(
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
+            // TODO ^-- do we still have this problem or was it because async sync processing?
             store.room.update(roomId) { oldRoom ->
                 oldRoom ?: Room(
                     roomId = roomId,
@@ -84,8 +87,6 @@ class RoomService(
                 )
             }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
-            room.value.state?.events?.forEach { store.roomState.update(it) }
-            room.value.timeline?.events?.filterIsInstance<StateEvent<*>>()?.forEach { store.roomState.update(it) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = roomId,
@@ -98,7 +99,6 @@ class RoomService(
                     ?.also { event -> setLastMessageEvent(event) }
                 it.events?.forEach { event -> syncOutboxMessage(event) }
             }
-
             room.value.summary?.also {
                 setRoomDisplayName(
                     roomId,
@@ -109,8 +109,6 @@ class RoomService(
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
-            room.value.state?.events?.forEach { store.roomState.update(it) }
-            room.value.timeline?.events?.filterIsInstance<StateEvent<*>>()?.forEach { store.roomState.update(it) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = room.key,
@@ -121,13 +119,6 @@ class RoomService(
                 it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
             }
         }
-        syncResponse.room?.knock?.entries?.forEach { room ->
-            room.value.knockState?.events?.forEach { store.roomState.update(it) }
-        }
-        syncResponse.room?.invite?.entries?.forEach { room ->
-            room.value.inviteState?.events?.forEach { store.roomState.update(it) }
-        }
-        removeOldOutboxMessages()
     }
 
     internal suspend fun setRoomAccountData(accountDataEvent: Event<out RoomAccountDataEventContent>) {
@@ -662,14 +653,7 @@ class RoomService(
                             @Suppress("UNCHECKED_CAST")
                             val encryptedEvent = oldEvent.event as MessageEvent<MegolmEncryptedEventContent>
                             val decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
-                            val verificationState =
-                                if (decryptedEvent.isSuccess)
-                                    olm.sign.verifyEncryptedMegolm(encryptedEvent)
-                                else null
-                            timelineEvent.copy(
-                                decryptedEvent = decryptedEvent,
-                                verificationState = verificationState
-                            )
+                            timelineEvent.copy(decryptedEvent = decryptedEvent)
                         } else oldEvent
                     }
                 }
@@ -745,7 +729,7 @@ class RoomService(
 
     // we do this at the end of the sync, because it may be possible, that we missed events due to a gap
     @OptIn(ExperimentalTime::class)
-    private suspend fun removeOldOutboxMessages() {
+    internal suspend fun removeOldOutboxMessages() {
         val outboxMessages = store.roomOutboxMessage.getAll().value
         outboxMessages.forEach {
             val deleteBeforeTimestamp = Clock.System.now() - Duration.seconds(10)

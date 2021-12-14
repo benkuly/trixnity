@@ -15,14 +15,13 @@ import io.mockk.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
+import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.crypto.Key
-import net.folivo.trixnity.core.model.crypto.Keys
-import net.folivo.trixnity.core.model.crypto.keysOf
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
@@ -263,13 +262,17 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         context("current state is ${WaitForMacs::class.simpleName}") {
             var sasMacFromBob: VerificationStep? = null
             beforeTest {
-                coEvery { store.deviceKeys.get(bob) } returns mapOf(
-                    bobDevice to DeviceKeys(
-                        bob, bobDevice, setOf(Megolm),
-                        keysOf(
-                            Key.Ed25519Key(bobDevice, "bobKey"),
-                            Key.Ed25519Key("HUHU", "buh")
-                        )
+                coEvery { store.keys.getDeviceKeys(bob) } returns mapOf(
+                    bobDevice to StoredDeviceKeys(
+                        Signed(
+                            DeviceKeys(
+                                bob, bobDevice, setOf(Megolm),
+                                keysOf(
+                                    Key.Ed25519Key(bobDevice, "bobKey"),
+                                    Key.Ed25519Key("HUHU", "buh")
+                                )
+                            ), mapOf()
+                        ), Valid(true)
                     )
                 )
 
@@ -304,14 +307,20 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasKeyEventContent("key", null, "t"),
             )
             should("send ${DoneEventContent::class.simpleName}") {
-                coEvery { store.deviceKeys.markVerified(any(), any(), any()) } just Runs
+                coEvery { store.keys.saveKeyVerificationState(any(), any(), any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
                 sendVerificationStepFlow.replayCache shouldContain DoneEventContent(null, "t")
                 coVerify {
-                    store.deviceKeys.markVerified(Key.Ed25519Key(bobDevice, "bobKey"), bob, bobDevice)
-                    store.deviceKeys.markVerified(Key.Ed25519Key("HUHU", "buh"), bob, bobDevice)
+                    store.keys.saveKeyVerificationState(
+                        Key.Ed25519Key(bobDevice, "bobKey"), bob, bobDevice,
+                        KeyVerificationState.Verified("bobKey")
+                    )
+                    store.keys.saveKeyVerificationState(
+                        Key.Ed25519Key("HUHU", "buh"), bob, bobDevice,
+                        KeyVerificationState.Verified("buh")
+                    )
                 }
             }
             should("cancel when key mismatches") {

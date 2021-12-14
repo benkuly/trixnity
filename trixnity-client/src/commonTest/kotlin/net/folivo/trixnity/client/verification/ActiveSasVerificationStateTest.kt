@@ -7,12 +7,15 @@ import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.mockk
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.ComparisonByUser
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.SasStart
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
+import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.crypto.keysOf
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnknownMethod
@@ -71,17 +74,21 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                 freeAfter(OlmSAS.create(), OlmSAS.create()) { olmSas1, olmSas2 ->
                     olmSas1.setTheirPublicKey(olmSas2.publicKey)
                     val store = mockk<Store> {
-                        coEvery { deviceKeys.get(UserId("alice", "server")) }
+                        coEvery { keys.getDeviceKeys(UserId("alice", "server")) }
                             .returns(
                                 mapOf(
-                                    "AAAAAA" to DeviceKeys(
-                                        userId = UserId("alice", "server"),
-                                        deviceId = "AAAAAA",
-                                        algorithms = setOf(),
-                                        keys = keysOf(
-                                            Ed25519Key("AAKey1", "key1"),
-                                            Ed25519Key("AAKey2", "key2")
-                                        )
+                                    "AAAAAA" to StoredDeviceKeys(
+                                        Signed(
+                                            DeviceKeys(
+                                                userId = UserId("alice", "server"),
+                                                deviceId = "AAAAAA",
+                                                algorithms = setOf(),
+                                                keys = keysOf(
+                                                    Ed25519Key("AAKey1", "key1"),
+                                                    Ed25519Key("AAKey2", "key2")
+                                                )
+                                            ), mapOf()
+                                        ), KeySignatureTrustLevel.Valid(true)
                                     )
                                 )
                             )

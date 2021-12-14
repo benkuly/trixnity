@@ -56,7 +56,8 @@ class OlmEventService internal constructor(
         receiverId: UserId,
         deviceId: String
     ): OlmEncryptedEventContent {
-        val identityKey = store.deviceKeys.getKeyFromDevice<Curve25519Key>(receiverId, deviceId)
+        val identityKey = store.keys.getOrFetchKeyFromDevice<Curve25519Key>(receiverId, deviceId)
+            ?: throw KeyNotFoundException("could not find curve25519 key for $receiverId ($deviceId)")
         val storedSession = store.olm.getOlmSessions(identityKey)?.minByOrNull { it.sessionId }
 
         return if (storedSession == null) {
@@ -67,7 +68,7 @@ class OlmEventService internal constructor(
                 ?: throw OneTimeKeyNotFoundException(receiverId, deviceId)
             require(oneTimeKey is SignedCurve25519Key)
             val keyVerifyState = signService.verify(oneTimeKey)
-            if (keyVerifyState is KeyVerificationState.Invalid)
+            if (keyVerifyState is VerifyResult.Invalid)
                 throw KeyVerificationFailedException(keyVerifyState.reason)
             freeAfter(
                 OlmSession.createOutbound(
@@ -104,7 +105,8 @@ class OlmEventService internal constructor(
             senderKeys = keysOf(myEd25519Key.copy(keyId = null)),
             recipient = receiverId,
             recipientKeys = keysOf(
-                store.deviceKeys.getKeyFromDevice<Ed25519Key>(receiverId, deviceId).copy(keyId = null)
+                store.keys.getOrFetchKeyFromDevice<Ed25519Key>(receiverId, deviceId)?.copy(keyId = null)
+                    ?: throw KeyNotFoundException("could not find es25519 key for $receiverId ($deviceId)")
             )
         ).also { log.debug { "olm event: $it" } }
         requireNotNull(serializer)
@@ -126,7 +128,7 @@ class OlmEventService internal constructor(
         val ciphertext = encryptedContent.ciphertext[myCurve25519Key.value]
             ?: throw SessionException.SenderDidNotEncryptForThisDeviceException
         val senderIdentityKey =
-            store.deviceKeys.getDeviceKeyByValue<Curve25519Key>(senderId, encryptedContent.senderKey.value)
+            store.keys.getDeviceKeyByValue<Curve25519Key>(senderId, encryptedContent.senderKey.value)
                 ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
         val storedSessions = store.olm.getOlmSessions(senderIdentityKey)
         val decryptedContent = try {
@@ -176,8 +178,8 @@ class OlmEventService internal constructor(
                 }
         } catch (decryptError: Throwable) {
             val senderDeviceId =
-                store.deviceKeys.get(senderId)?.entries
-                    ?.find { it.value.keys.contains(senderIdentityKey) }?.key
+                store.keys.getDeviceKeys(senderId)?.entries
+                    ?.find { it.value.value.signed.keys.contains(senderIdentityKey) }?.key
                     ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
             try {
                 log.debug { "try recover corrupted olm session by sending a dummy event" }
@@ -198,7 +200,7 @@ class OlmEventService internal constructor(
             || decryptedEvent.recipient != myUserId
             || decryptedEvent.recipientKeys.get<Ed25519Key>()?.value != myEd25519Key.value
             || decryptedEvent.senderKeys.get<Ed25519Key>()?.value?.let {
-                store.deviceKeys.getDeviceKeyByValue<Ed25519Key>(senderId, it)
+                store.keys.getDeviceKeyByValue<Ed25519Key>(senderId, it)
             } == null
         ) throw SessionException.ValidationFailed
 
@@ -221,10 +223,10 @@ class OlmEventService internal constructor(
         ) {
             log.debug { "encrypt megolm event with new session" }
             val members = store.roomState.members(roomId, JOIN, INVITE)
-            store.deviceKeys.waitForUpdateOutdatedKey(*members.toTypedArray())
+            store.keys.waitForUpdateOutdatedKey(*members.toTypedArray())
             val newUserDevices =
                 members.mapNotNull { userId ->
-                    store.deviceKeys.get(userId)?.let { userId to it.keys }
+                    store.keys.getDeviceKeys(userId)?.let { userId to it.keys }
                 }.toMap()
             freeAfter(OlmOutboundGroupSession.create()) { session ->
                 store.olm.storeInboundMegolmSession(

@@ -81,7 +81,7 @@ class UserServiceTest : ShouldSpec({
             store.room.get(roomId).value?.membersLoaded shouldBe true
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            store.deviceKeys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
         }
     }
     context(UserService::setRoomUser.name) {

@@ -113,7 +113,7 @@ class UserService(
                 ).toList()
                 store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
                 memberEvents.forEach { setRoomUser(it) }
-                store.deviceKeys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
+                store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                 oldRoom.copy(membersLoaded = true)
             } else oldRoom
         }
