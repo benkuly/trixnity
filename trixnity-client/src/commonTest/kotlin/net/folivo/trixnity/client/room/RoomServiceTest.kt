@@ -500,7 +500,10 @@ class RoomServiceTest : ShouldSpec({
                 cut = RoomService(store, api, olmService, users, media, loggerFactory = LoggerFactory.default)
 
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
-                coEvery { olmService.events.decryptMegolm(any()) } returns expectedDecryptedEvent
+                coEvery { olmService.events.decryptMegolm(any()) }.coAnswers {
+                    delay(100)
+                    expectedDecryptedEvent
+                }
                 coEvery { olmService.sign.verifyEncryptedMegolm(any()) } returns VerificationState.Valid
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
 

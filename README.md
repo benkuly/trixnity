@@ -289,7 +289,9 @@ sdk.dir=/path/to/android/sdk
 
 ### Libraries for c-bindings
 
-Linux: You may need to install `libncurses5`.
+Linux: Install cmake `3.22.1` (e.g. by
+running `sudo ./cmake-3.22.1-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr
+`). You also may need to install `libncurses5`.
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`

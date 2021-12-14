@@ -21,7 +21,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file(olm.cMakeLists)
-            version = Versions.androidCMake
+            version = Versions.cmake
         }
     }
 }
@@ -147,7 +147,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile> {
 }
 
 tasks.withType<com.android.build.gradle.tasks.ExternalNativeCleanTask> {
-    dependsOn(":extractOlm")
+    enabled = false
 }
 
 tasks.withType<com.android.build.gradle.tasks.ExternalNativeBuildTask> {
