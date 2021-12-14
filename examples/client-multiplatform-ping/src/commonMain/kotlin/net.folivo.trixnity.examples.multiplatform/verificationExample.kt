@@ -4,6 +4,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
@@ -50,8 +51,7 @@ suspend fun verificationExample() = coroutineScope {
     )
 
     val job1 = launch {
-        val activeDeviceVerification =
-            matrixClient.verification.activeDeviceVerifications.first { it.isNotEmpty() }.first()
+        val activeDeviceVerification = matrixClient.verification.activeDeviceVerification.filterNotNull().first()
         activeDeviceVerification.state.collectLatest { state ->
             when (state) {
                 is Request -> {

@@ -40,8 +40,8 @@ class VerificationService(
 ) {
     private val log = newLogger(loggerFactory)
 
-    private val _activeDeviceVerifications = MutableStateFlow<List<ActiveDeviceVerification>>(listOf())
-    val activeDeviceVerifications = _activeDeviceVerifications.asStateFlow()
+    private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
+    val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
 
     internal suspend fun start(scope: CoroutineScope) {
@@ -54,18 +54,19 @@ class VerificationService(
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
         scope.launch(start = UNDISPATCHED) {
-            activeDeviceVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
+            activeDeviceVerification.collect { it?.let { startLifecycleOfActiveVerifications(listOf(it), this) } }
         }
     }
 
-    private fun handleDeviceVerificationRequestEvents(event: Event<RequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: Event<RequestEventContent>) {
         val content = event.content
         when (event) {
             is Event.ToDeviceEvent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.sender}" }
-                    _activeDeviceVerifications.update {
-                        it + ActiveDeviceVerification(
+                    if (_activeDeviceVerification.value != null) {
+                        log.info { "already have an active device verification -> cancelling new verification request" }
+                        ActiveDeviceVerification(
                             request = event.content,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
@@ -76,7 +77,21 @@ class VerificationService(
                             olm = olm,
                             store = store,
                             loggerFactory = loggerFactory
-                        )
+                        ).cancel()
+                    } else {
+                        _activeDeviceVerification.value =
+                            ActiveDeviceVerification(
+                                request = event.content,
+                                ownUserId = ownUserId,
+                                ownDeviceId = ownDeviceId,
+                                theirUserId = event.sender,
+                                theirDeviceId = content.fromDevice,
+                                supportedMethods = supportedMethods,
+                                api = api,
+                                olm = olm,
+                                store = store,
+                                loggerFactory = loggerFactory
+                            )
                     }
                 }
             }
@@ -84,13 +99,14 @@ class VerificationService(
         }
     }
 
-    private fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
+    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
         when (val content = event.decrypted.content) {
             is RequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.decrypted.sender}" }
-                    _activeDeviceVerifications.update {
-                        it + ActiveDeviceVerification(
+                    if (_activeDeviceVerification.value != null) {
+                        log.info { "already have an active device verification -> cancelling new verification request" }
+                        ActiveDeviceVerification(
                             request = content,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
@@ -101,7 +117,21 @@ class VerificationService(
                             olm = olm,
                             store = store,
                             loggerFactory = loggerFactory
-                        )
+                        ).cancel()
+                    } else {
+                        _activeDeviceVerification.value =
+                            ActiveDeviceVerification(
+                                request = content,
+                                ownUserId = ownUserId,
+                                ownDeviceId = ownDeviceId,
+                                theirUserId = event.decrypted.sender,
+                                theirDeviceId = content.fromDevice,
+                                supportedMethods = supportedMethods,
+                                api = api,
+                                olm = olm,
+                                store = store,
+                                loggerFactory = loggerFactory
+                            )
                     }
                 }
             }
@@ -119,7 +149,9 @@ class VerificationService(
                     verification.state.first { verification.state.value is Done || verification.state.value is Cancel }
                     when (verification) {
                         is ActiveUserVerification -> activeUserVerifications.update { it - verification }
-                        is ActiveDeviceVerification -> _activeDeviceVerifications.update { it - verification }
+                        is ActiveDeviceVerification -> {
+                            _activeDeviceVerification.update { null }
+                        }
                     }
                 }
         }
@@ -136,8 +168,8 @@ class VerificationService(
             request
         }
         api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to encryptedContent)))
-        _activeDeviceVerifications.update {
-            it + ActiveDeviceVerification(
+        val existingDeviceVerification = _activeDeviceVerification.getAndUpdate {
+            ActiveDeviceVerification(
                 request = request,
                 ownUserId = ownUserId,
                 ownDeviceId = ownDeviceId,
@@ -150,6 +182,7 @@ class VerificationService(
                 loggerFactory = loggerFactory
             )
         }
+        existingDeviceVerification?.cancel()
     }
 
     suspend fun createUserVerificationRequest(theirUserId: UserId) {
