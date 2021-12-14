@@ -27,5 +27,4 @@ class SqlDelightRoomTimelineRepository(
     override suspend fun delete(key: RoomTimelineKey) = withContext(context) {
         db.deleteTimelineEvent(key.eventId.full, key.roomId.full)
     }
-
 }

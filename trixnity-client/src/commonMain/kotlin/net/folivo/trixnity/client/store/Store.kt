@@ -9,7 +9,8 @@ abstract class Store(
     accountRepository: AccountRepository,
     outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
     deviceKeysRepository: DeviceKeysRepository,
-    verifiedKeysRepository: VerifiedKeysRepository,
+    crossSigningKeysRepository: CrossSigningKeysRepository,
+    keyVerificationStateRepository: KeyVerificationStateRepository,
     olmAccountRepository: OlmAccountRepository,
     olmSessionRepository: OlmSessionRepository,
     inboundMegolmSessionRepository: InboundMegolmSessionRepository,
@@ -27,7 +28,13 @@ abstract class Store(
     contentMappings: EventContentSerializerMappings,
 ) {
     val account = AccountStore(accountRepository, scope)
-    val deviceKeys = DeviceKeysStore(outdatedDeviceKeysRepository, deviceKeysRepository, verifiedKeysRepository, scope)
+    val keys = KeysStore(
+        outdatedDeviceKeysRepository,
+        deviceKeysRepository,
+        crossSigningKeysRepository,
+        keyVerificationStateRepository,
+        scope
+    )
     val olm = OlmStore(
         olmAccountRepository,
         olmSessionRepository,
@@ -47,7 +54,7 @@ abstract class Store(
 
     suspend fun init() {
         account.init()
-        deviceKeys.init()
+        keys.init()
         olm.init()
         room.init()
         roomOutboxMessage.init()

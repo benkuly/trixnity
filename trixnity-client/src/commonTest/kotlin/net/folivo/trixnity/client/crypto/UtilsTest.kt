@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.DeviceKeysStore
+import net.folivo.trixnity.client.store.KeysStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
@@ -18,14 +18,14 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
 
-    context(DeviceKeysStore::waitForUpdateOutdatedKey.name) {
+    context(KeysStore::waitForUpdateOutdatedKey.name) {
         should("wait until outdated does not contain anything") {
             val outdatedKeys = MutableStateFlow(setOf(UserId("alice", "server")))
             val store = mockk<Store> {
-                coEvery { deviceKeys.outdatedKeys } returns outdatedKeys
+                coEvery { keys.outdatedKeys } returns outdatedKeys
             }
             val job = launch(Dispatchers.Default) {
-                store.deviceKeys.waitForUpdateOutdatedKey()
+                store.keys.waitForUpdateOutdatedKey()
             }
             until(milliseconds(1_000), milliseconds(50).fixed()) {
                 job.isActive
@@ -39,10 +39,10 @@ class UtilsTest : ShouldSpec({
         should("wait until outdated does not contain ids") {
             val outdatedKeys = MutableStateFlow(setOf(UserId("alice", "server")))
             val store = mockk<Store> {
-                coEvery { deviceKeys.outdatedKeys } returns outdatedKeys
+                coEvery { keys.outdatedKeys } returns outdatedKeys
             }
             val job = launch(Dispatchers.Default) {
-                store.deviceKeys.waitForUpdateOutdatedKey(
+                store.keys.waitForUpdateOutdatedKey(
                     UserId("alice", "server"),
                     UserId("cedric", "server")
                 )

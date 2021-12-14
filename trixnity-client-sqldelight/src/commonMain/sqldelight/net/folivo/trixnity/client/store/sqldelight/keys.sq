@@ -15,6 +15,23 @@ deleteDeviceKeys:
 DELETE FROM sql_device_keys
 WHERE user_id = ?;
 
+CREATE TABLE sql_cross_signing_keys(
+  user_id TEXT PRIMARY KEY NOT NULL,
+  cross_signing_keys TEXT NOT NULL
+);
+
+getCrossSigningKeys:
+SELECT cross_signing_keys FROM sql_cross_signing_keys
+WHERE user_id = ?;
+
+saveCrossSigningKeys:
+INSERT OR REPLACE INTO sql_cross_signing_keys
+VALUES (?, ?);
+
+deleteCrossSigningKeys:
+DELETE FROM sql_cross_signing_keys
+WHERE user_id = ?;
+
 CREATE TABLE sql_outdated_device_keys (
   id INTEGER NOT NULL PRIMARY KEY,
   outdated_device_keys TEXT
@@ -32,23 +49,23 @@ deleteOutdatedDeviceKeys:
 DELETE FROM sql_outdated_device_keys
 WHERE id = ?;
 
-CREATE TABLE sql_verified_keys (
+CREATE TABLE sql_key_verification_state (
     user_id TEXT NOT NULL,
     device_id TEXT,
     key_id TEXT NOT NULL,
     key_algorithm TEXT NOT NULL,
-    key_value TEXT NOT NULL,
+    verification_state TEXT NOT NULL,
     PRIMARY KEY (user_id,device_id,key_algorithm,key_algorithm)
 );
 
-saveVerifiedKey:
-INSERT OR REPLACE INTO sql_verified_keys
+saveKeyVerificationState:
+INSERT OR REPLACE INTO sql_key_verification_state
 VALUES  ?;
 
-getVerifiedKey:
-SELECT key_value FROM sql_verified_keys
+getKeyVerificationState:
+SELECT verification_state FROM sql_key_verification_state
 WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
 
-deleteVerifiedKey:
-DELETE FROM sql_verified_keys
+deleteKeyVerificationState:
+DELETE FROM sql_key_verification_state
 WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;

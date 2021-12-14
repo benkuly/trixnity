@@ -15,14 +15,18 @@ import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerialize
 import net.folivo.trixnity.client.api.createMatrixApiClientJson
 import net.folivo.trixnity.client.api.users.Filters
 import net.folivo.trixnity.client.api.users.RoomFilter
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -51,6 +55,7 @@ class MatrixClient private constructor(
     val user: UserService
     val media: MediaService
     val verification: VerificationService
+    val keys: KeyService
 
     init {
         olm = OlmService(
@@ -90,6 +95,12 @@ class MatrixClient private constructor(
             user = user,
             loggerFactory = loggerFactory
         )
+        keys = KeyService(
+            store = store,
+            api = api,
+            olmSignService = olm.sign,
+            loggerFactory = loggerFactory
+        )
     }
 
     companion object {
@@ -106,53 +117,30 @@ class MatrixClient private constructor(
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
-        ): MatrixClient {
-            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
-
-            val store =
-                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
-            store.init()
-
-            val api = MatrixApiClient(
+        ): MatrixClient =
+            loginWith(
                 baseUrl = baseUrl,
-                baseHttpClient = baseHttpClient,
-                json = json,
-                eventContentSerializerMappings = eventContentSerializerMappings,
-                loggerFactory = loggerFactory
-            )
-
-            val (userId, newAccessToken, deviceId) = api.authentication.login(
-                identifier = identifier,
-                passwordOrToken = password,
-                type = LoginType.Password,
-                initialDeviceDisplayName = initialDeviceDisplayName
-            )
-            api.accessToken.value = newAccessToken
-            store.account.baseUrl.value = baseUrl
-            store.account.accessToken.value = newAccessToken
-            store.account.userId.value = userId
-            store.account.deviceId.value = deviceId
-
-            val matrixClient = MatrixClient(
-                userId = userId,
-                deviceId = deviceId,
-                api = api,
-                store = store,
-                json = json,
+                storeFactory = storeFactory,
                 secureStore = secureStore,
+                baseHttpClient = baseHttpClient,
+                customMappings = customMappings,
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                 scope = scope,
                 loggerFactory = loggerFactory
-            )
-
-            store.deviceKeys.update(userId) { mapOf(deviceId to matrixClient.olm.myDeviceKeys.signed) }
-            api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
-            store.deviceKeys.outdatedKeys.update { it + userId }
-
-            return matrixClient
-        }
+            ) {
+                val loginResponse = it.authentication.login(
+                    identifier = identifier,
+                    passwordOrToken = password,
+                    type = LoginType.Password,
+                    initialDeviceDisplayName = initialDeviceDisplayName
+                )
+                LoginInfo(
+                    userId = loginResponse.userId,
+                    accessToken = loginResponse.accessToken,
+                    deviceId = loginResponse.deviceId
+                )
+            }
 
         data class LoginInfo(
             val userId: UserId,
@@ -186,17 +174,17 @@ class MatrixClient private constructor(
                 eventContentSerializerMappings = eventContentSerializerMappings,
                 loggerFactory = loggerFactory
             )
-            val loginInfo = getLoginInfo(api)
+            val (userId, deviceId, accessToken) = getLoginInfo(api)
 
-            api.accessToken.value = loginInfo.accessToken
+            api.accessToken.value = accessToken
             store.account.baseUrl.value = baseUrl
-            store.account.accessToken.value = loginInfo.accessToken
-            store.account.userId.value = loginInfo.userId
-            store.account.deviceId.value = loginInfo.deviceId
+            store.account.accessToken.value = accessToken
+            store.account.userId.value = userId
+            store.account.deviceId.value = deviceId
 
             val matrixClient = MatrixClient(
-                userId = loginInfo.userId,
-                deviceId = loginInfo.deviceId,
+                userId = userId,
+                deviceId = deviceId,
                 api = api,
                 store = store,
                 json = json,
@@ -207,9 +195,16 @@ class MatrixClient private constructor(
                 loggerFactory = loggerFactory
             )
 
-            store.deviceKeys.update(loginInfo.userId) { mapOf(loginInfo.deviceId to matrixClient.olm.myDeviceKeys.signed) }
+            store.keys.updateDeviceKeys(userId) {
+                mapOf(deviceId to StoredDeviceKeys(matrixClient.olm.myDeviceKeys, Valid(true)))
+            }
+            matrixClient.olm.myDeviceKeys.signed.keys.forEach {
+                store.keys.saveKeyVerificationState(
+                    it, userId, deviceId, KeyVerificationState.Verified(it.value)
+                )
+            }
             api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
-            store.deviceKeys.outdatedKeys.update { it + loginInfo.userId }
+            store.keys.outdatedKeys.update { it + userId }
 
             return matrixClient
         }
@@ -285,6 +280,7 @@ class MatrixClient private constructor(
             }
             val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
+                keys.start(this)
                 olm.start(this)
                 room.start(this)
                 user.start()

@@ -69,12 +69,12 @@ class SqlDelightStoreFactory(
         val database = Database(driver)
 
         return SqlDelightStore(
-            database = database,
-            contentMappings = contentMappings,
-            json = json,
+            scope = scope,
             databaseCoroutineContext = databaseCoroutineContext,
             blockingTransactionCoroutineContext = blockingTransactionCoroutineContext,
-            scope = scope
+            json = json,
+            contentMappings = contentMappings,
+            database = database
         )
     }
 }

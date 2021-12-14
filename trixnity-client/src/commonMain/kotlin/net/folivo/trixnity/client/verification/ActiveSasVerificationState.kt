@@ -8,8 +8,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.crypto.Keys
 import net.folivo.trixnity.core.model.events.m.key.verification.*
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.MismatchedSas
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnknownMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
 import net.folivo.trixnity.olm.OlmSAS
 
@@ -61,13 +60,15 @@ sealed interface ActiveSasVerificationState {
                         ownUserId + ownDeviceId +
                         theirUserId + theirDeviceId +
                         actualTransactionId
-                val keysToMac = store.deviceKeys.getKeysFromUser<Ed25519Key>(ownUserId)
-                val keys = olmSas.calculateMac(
-                    keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(","),
-                    baseInfo + "KEY_IDS"
-                )
-                val macs = keysToMac.map { it.copy(value = olmSas.calculateMac(it.value, baseInfo + it.fullKeyId)) }
-                send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
+                val keysToMac = store.keys.getKeysFromUser<Ed25519Key>(ownUserId)
+                if (keysToMac != null) {
+                    val keys = olmSas.calculateMac(
+                        keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(","),
+                        baseInfo + "KEY_IDS"
+                    )
+                    val macs = keysToMac.map { it.copy(value = olmSas.calculateMac(it.value, baseInfo + it.fullKeyId)) }
+                    send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
+                } else send(CancelEventContent(InternalError, "no keys found", relatesTo, transactionId))
             } else send(
                 CancelEventContent(UnknownMethod, "message authentication code not supported", relatesTo, transactionId)
             )

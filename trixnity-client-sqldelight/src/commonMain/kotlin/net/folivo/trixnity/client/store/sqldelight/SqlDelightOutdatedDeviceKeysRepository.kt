@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.UserId
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightOutdatedDeviceKeysRepository(
-    private val db: DeviceKeysQueries,
+    private val db: KeysQueries,
     private val json: Json,
     private val context: CoroutineContext
 ) : OutdatedDeviceKeysRepository {

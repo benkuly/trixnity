@@ -8,23 +8,28 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
+import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.crypto.VerificationState.*
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredCrossSigningKey
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
+import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
@@ -34,34 +39,57 @@ class OlmSignServiceTest : ShouldSpec({
 
     val json = createMatrixJson()
     val account = OlmAccount.create()
-    val signingAccount = OlmAccount.create()
+    val aliceSigningAccount = OlmAccount.create()
+    val bobSigningAccount = OlmAccount.create()
     val utility = OlmUtility.create()
+    val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
-    val store = mockk<Store> {
-        every { this@mockk.account.userId } returns MutableStateFlow(UserId("me", "server"))
-        every { this@mockk.account.deviceId } returns MutableStateFlow("ABCDEF")
-        coEvery { deviceKeys.get(bob) } returns mapOf(
-            "BBBBBB" to DeviceKeys(
-                bob,
-                "BBBBBB",
-                setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                keysOf(
-                    Ed25519Key("BBBBBB", signingAccount.identityKeys.ed25519),
-                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519)
-                )
+    val store = mockk<Store>()
+
+    lateinit var cut: OlmSignService
+    lateinit var aliceSigningAccountSignService: OlmSignService
+    lateinit var bobSigningAccountSignService: OlmSignService
+
+
+    beforeTest {
+        aliceSigningAccountSignService = OlmSignService(json, mockk {
+            every { this@mockk.account.userId } returns MutableStateFlow(UserId("alice", "server"))
+            every { this@mockk.account.deviceId } returns MutableStateFlow("ALICE_DEVICE")
+        }, aliceSigningAccount, utility)
+        bobSigningAccountSignService = OlmSignService(json, mockk {
+            every { this@mockk.account.userId } returns MutableStateFlow(UserId("bob", "server"))
+            every { this@mockk.account.deviceId } returns MutableStateFlow("BBBBBB")
+        }, bobSigningAccount, utility)
+
+        every { store.account.userId } returns MutableStateFlow(UserId("me", "server"))
+        every { store.account.deviceId } returns MutableStateFlow("ABCDEF")
+        coEvery { store.keys.getDeviceKeys(bob) } returns mapOf(
+            "BBBBBB" to StoredDeviceKeys(
+                Signed(
+                    DeviceKeys(
+                        bob,
+                        "BBBBBB",
+                        setOf(Olm, Megolm),
+                        keysOf(
+                            Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519),
+                            Curve25519Key("BBBBBB", bobSigningAccount.identityKeys.curve25519)
+                        )
+                    ), mapOf()
+                ), Valid(true)
             )
         )
+        coEvery { store.keys.outdatedKeys } returns MutableStateFlow(setOf())
+        cut = OlmSignService(json, store, account, utility)
     }
 
-    val cut = OlmSignService(json, store, account, utility)
-    val signingAccountSignService = OlmSignService(json, mockk {
-        every { this@mockk.account.userId } returns MutableStateFlow(UserId("bob", "server"))
-        every { this@mockk.account.deviceId } returns MutableStateFlow("BBBBBB")
-    }, signingAccount, utility)
+    afterTest {
+        clearAllMocks()
+    }
 
     afterSpec {
         account.free()
-        signingAccount.free()
+        aliceSigningAccount.free()
+        bobSigningAccount.free()
         utility.free()
     }
 
@@ -153,7 +181,7 @@ class OlmSignServiceTest : ShouldSpec({
     }
     context("verify") {
         should("return valid") {
-            val signedObject = signingAccountSignService.sign(
+            val signedObject = bobSigningAccountSignService.sign(
                 Event.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
@@ -164,16 +192,61 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerificationState.Valid
+            cut.verify(signedObject) shouldBe VerifyResult.Valid
+        }
+        should("use cross signing key, when other key not found") {
+            coEvery { store.keys.getDeviceKeys(alice) } returns null
+            coEvery { store.keys.getCrossSigningKeys(alice) } returns setOf(
+                StoredCrossSigningKey(
+                    Signed(
+                        CrossSigningKeys(
+                            alice,
+                            setOf(MasterKey),
+                            keysOf(
+                                Ed25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.ed25519),
+                                Curve25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.curve25519)
+                            )
+                        ), mapOf()
+                    ), Valid(true)
+                )
+            )
+            val signedObject = aliceSigningAccountSignService.sign(
+                Event.StateEvent(
+                    NameEventContent("room name"),
+                    EventId("\$eventId"),
+                    UserId("their", "server"),
+                    RoomId("room", "server"),
+                    originTimestamp = 24,
+                    unsigned = UnsignedStateEventData(1234),
+                    stateKey = ""
+                )
+            )
+            cut.verify(signedObject) shouldBe VerifyResult.Valid
+        }
+        should("return MissingSignature, when no key found") {
+            coEvery { store.keys.getDeviceKeys(alice) } returns null
+            coEvery { store.keys.getCrossSigningKeys(alice) } returns null
+            val signedObject = aliceSigningAccountSignService.sign(
+                Event.StateEvent(
+                    NameEventContent("room name"),
+                    EventId("\$eventId"),
+                    UserId("their", "server"),
+                    RoomId("room", "server"),
+                    originTimestamp = 24,
+                    unsigned = UnsignedStateEventData(1234),
+                    stateKey = ""
+                )
+            )
+            cut.verify(signedObject) shouldBe VerifyResult.MissingSignature
         }
         should("verify SignedCurve25519Key") {
-            val signedObject = signingAccountSignService.signCurve25519Key(
+            val signedObject = bobSigningAccountSignService.signCurve25519Key(
                 Curve25519Key(
                     "AAAAAQ",
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerificationState.Valid
+            cut.verify(signedObject) shouldBe VerifyResult.Valid
         }
         should("return invalid") {
             val signedObject = Signed(
@@ -195,96 +268,67 @@ class OlmSignServiceTest : ShouldSpec({
                     )
                 )
             )
-            cut.verify(signedObject) shouldBe KeyVerificationState.Invalid("BAD_MESSAGE_MAC")
-        }
-        context("device keys") {
-            should("return valid") {
-                val toBeSigned = DeviceKeys(
-                    userId = UserId("me", "server"),
-                    deviceId = "ABCDEF",
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(
-                        keysOf(
-                            Ed25519Key("ABCDEF", account.identityKeys.ed25519),
-                            Curve25519Key("ABCDEF", account.identityKeys.curve25519)
-                        )
-                    ),
-                )
-                val signed = cut.sign(toBeSigned)
-                cut.verify(
-                    Signed(signed.signed, signed.signatures)
-                ) shouldBe KeyVerificationState.Valid
-            }
-            should("return invalid") {
-                cut.verify(
-                    Signed(
-                        DeviceKeys(
-                            userId = UserId("me", "server"),
-                            deviceId = "ABCDEF",
-                            algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                            keys = Keys(
-                                keysOf(
-                                    Ed25519Key("ABCDEF", "dQNKytk1H42od+JZAyjGtJS0IRIC5y9S8eE3peuV8Ew"),
-                                    Curve25519Key("ABCDEF", "CW6OxKFraxGEdMJsv/D+AcsExtyF3AZf/vi2h7l2tmU")
-                                )
-                            ),
-                        ),
-                        mapOf(
-                            UserId("me", "server") to keysOf(
-                                Ed25519Key(
-                                    "ABCDEF",
-                                    "qAwmMiFdBqJNVFnOcmIT1aIesjiecn6XHzutQZq2hGy1Z65FP7cMXRqarE/v9EinolFdli143bqwsl31fSPwBg"
-                                )
-                            )
-                        )
-                    )
-                ) shouldBe KeyVerificationState.Invalid("BAD_MESSAGE_MAC")
-            }
+            cut.verify(signedObject) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
         }
     }
-    context(OlmSignService::verifyEncryptedMegolm.name) {
-        should("be ${Invalid::class.simpleName} when no key found") {
-            val senderKey = Curve25519Key("BBBBBB", "keykeykey")
-            val event = Event.MessageEvent(
-                EncryptedEventContent.MegolmEncryptedEventContent("cipher cipher", senderKey, "BBBBBB", "sessionId"),
-                EventId("$1event"),
-                bob,
-                RoomId("room", "server"),
-                1234
-            )
-            cut.verifyEncryptedMegolm(event)::class shouldBe Invalid::class
-        }
-        should("be ${Valid::class.simpleName} when key found, but not marked as verified") {
-            coEvery { store.deviceKeys.isVerified(any(), any(), any()) } returns false
-            val event = Event.MessageEvent(
-                EncryptedEventContent.MegolmEncryptedEventContent(
-                    "cipher cipher",
-                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519),
-                    "BBBBBB",
-                    "sessionId"
+    context(OlmSignService::verifySelfSignedDeviceKeys.name) {
+        val deviceKeys = DeviceKeys(
+            userId = UserId("me", "server"),
+            deviceId = "MY_DEVICE",
+            algorithms = setOf(Olm, Megolm),
+            keys = Keys(
+                keysOf(
+                    Ed25519Key("MY_DEVICE", account.identityKeys.ed25519),
+                    Curve25519Key("MY_DEVICE", account.identityKeys.curve25519)
+                )
+            ),
+        )
+        val aliceDeviceKeys = aliceSigningAccountSignService.sign(
+            DeviceKeys(
+                userId = alice,
+                deviceId = "ALICE_DEVICE",
+                algorithms = setOf(Olm, Megolm),
+                keys = Keys(
+                    keysOf(
+                        Ed25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.ed25519),
+                        Curve25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.curve25519)
+                    )
                 ),
-                EventId("$1event"),
-                bob,
-                RoomId("room", "server"),
-                1234
             )
-            cut.verifyEncryptedMegolm(event) shouldBe Valid
+        )
+        should("return valid") {
+            val signedDeviceKeys = Signed(
+                deviceKeys,
+                cut.sign(deviceKeys).signatures + aliceSigningAccountSignService.sign(deviceKeys).signatures
+            )
+            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
+                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
+            )
+            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Valid
         }
-        should("be ${Verified::class.simpleName} when key found and marked as verified") {
-            coEvery { store.deviceKeys.isVerified(any(), any(), any()) } returns true
-            val event = Event.MessageEvent(
-                EncryptedEventContent.MegolmEncryptedEventContent(
-                    "cipher cipher",
-                    Curve25519Key("BBBBBB", signingAccount.identityKeys.curve25519),
-                    "BBBBBB",
-                    "sessionId"
-                ),
-                EventId("$1event"),
-                bob,
-                RoomId("room", "server"),
-                1234
+        should("return invalid when self signing signature is wrong") {
+            val signedDeviceKeys = Signed(
+                deviceKeys,
+                mapOf((UserId("me", "server") to keysOf(Ed25519Key("MY_DEVICE", "wrong signature")))) +
+                        aliceSigningAccountSignService.sign(deviceKeys).signatures
             )
-            cut.verifyEncryptedMegolm(event) shouldBe Verified
+            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
+                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
+            )
+
+            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
+        }
+        should("return invalid when others signature is wrong") {
+            val signedDeviceKeys = Signed(
+                deviceKeys,
+                cut.sign(deviceKeys).signatures +
+                        mapOf((alice to keysOf(Ed25519Key("ALICE_DEVICE", "wrong signature"))))
+            )
+            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
+                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
+            )
+
+            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
         }
     }
 })

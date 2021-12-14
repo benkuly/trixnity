@@ -189,7 +189,8 @@ class VerificationService(
         log.info { "create new user verification request to $theirUserId" }
         val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
         val roomId =
-            store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)?.firstOrNull()
+            store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
+                ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true)
         val sendContent = try {
             possiblyEncryptEvent(request, roomId, store, olm, user)

@@ -3,9 +3,10 @@ package net.folivo.trixnity.client.verification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.crypto.getKeysFromDevice
+import net.folivo.trixnity.client.crypto.getOrFetchKeysFromDevice
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
+import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -240,9 +241,9 @@ class ActiveSasVerificationMethod private constructor(
                             actualTransactionId
                     val theirMacs = theirMac.mac.keys.filterIsInstance<Key.Ed25519Key>()
                     val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-                    val keysToMac = store.deviceKeys.getKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
-                        .filter { theirMacIds.contains(it.fullKeyId) }
-                        .associateBy { it.fullKeyId }
+                    val keysToMac = store.keys.getOrFetchKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
+                        ?.filter { theirMacIds.contains(it.fullKeyId) }
+                        ?.associateBy { it.fullKeyId }
                     val input = theirMacIds.sortedBy { it }.joinToString(",")
                     val info = baseInfo + "KEY_IDS"
                     log.debug { "create keys mac from input $input and info $info" }
@@ -251,7 +252,7 @@ class ActiveSasVerificationMethod private constructor(
                         val containsMismatchedMac = theirMacs.asSequence()
                             .map { mac ->
                                 val calculatedMac =
-                                    keysToMac[mac.fullKeyId]?.value?.let { key ->
+                                    keysToMac?.get(mac.fullKeyId)?.value?.let { key ->
                                         log.debug { "create key mac from input $key and info ${baseInfo + mac.fullKeyId}" }
                                         olmSas.calculateMac(key, baseInfo + mac.fullKeyId)
                                     }
@@ -259,12 +260,16 @@ class ActiveSasVerificationMethod private constructor(
                                     calculatedMac == mac.value
                                 } else true // we ignore unknown (null) keys
                                         ).also {
-                                        if (!it) log.debug { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
+                                        if (!it) log.warning { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
                                     }
                             }.contains(false)
                         if (!containsMismatchedMac) {
-                            keysToMac.forEach { (_, key) ->
-                                store.deviceKeys.markVerified(key, theirUserId, theirDeviceId)
+                            keysToMac?.forEach { (_, key) ->
+                                store.keys.saveKeyVerificationState(
+                                    key,
+                                    theirUserId, theirDeviceId,
+                                    Verified(key.value)
+                                )
                             }
                             sendVerificationStep(DoneEventContent(relatesTo, transactionId))
                         } else {
@@ -273,7 +278,7 @@ class ActiveSasVerificationMethod private constructor(
                             )
                         }
                     } else {
-                        log.debug { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
+                        log.warning { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
                         sendVerificationStep(
                             CancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
                         )

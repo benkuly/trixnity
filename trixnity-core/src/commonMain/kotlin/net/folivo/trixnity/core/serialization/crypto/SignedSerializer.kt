@@ -19,8 +19,8 @@ class SignedSerializer<T, U>(
     override fun deserialize(decoder: Decoder): Signed<T, U> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val signatures = jsonObj["signatures"]
-        require(signatures != null && signatures is JsonObject)
+        val signatures = jsonObj["signatures"] ?: JsonObject(mapOf())
+        require(signatures is JsonObject)
         val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
         return Signed(
             signed = decoder.json.decodeFromJsonElement(valueSerializer, jsonObj),

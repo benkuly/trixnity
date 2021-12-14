@@ -26,7 +26,7 @@ fun Authentication.Configuration.matrixQueryParameter(
 
     provider.pipeline.intercept(AuthenticationPipeline.RequestAuthentication) { context ->
 
-        // FIXME simplify
+        // TODO simplify
         val credentials = call.request.queryParameters[field]
         val cause = when {
             credentials == null -> AuthenticationFailedCause.NoCredentials

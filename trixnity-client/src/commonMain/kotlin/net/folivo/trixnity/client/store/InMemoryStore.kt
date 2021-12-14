@@ -9,28 +9,29 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 
-class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
-    scope = storeCoroutineScope,
-    accountRepository = InMemoryMinimalStoreRepository(),
-    outdatedDeviceKeysRepository = InMemoryMinimalStoreRepository(),
-    deviceKeysRepository = InMemoryMinimalStoreRepository(),
-    verifiedKeysRepository = InMemoryMinimalStoreRepository(),
-    olmAccountRepository = InMemoryMinimalStoreRepository(),
-    olmSessionRepository = InMemoryMinimalStoreRepository(),
-    inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
-    inboundMegolmMessageIndexRepository = InMemoryMinimalStoreRepository(),
-    outboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
-    roomRepository = InMemoryRoomRepository(),
-    roomUserRepository = InMemoryRoomUserRepository(),
-    roomStateRepository = InMemoryRoomStateRepository(),
-    roomTimelineRepository = InMemoryMinimalStoreRepository(),
-    roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
-    mediaRepository = InMemoryMediaRepository(),
-    uploadMediaRepository = InMemoryMinimalStoreRepository(),
-    globalAccountDataRepository = InMemoryMinimalStoreRepository(),
-    roomAccountDataRepository = InMemoryMinimalStoreRepository(),
-    contentMappings = DefaultEventContentSerializerMappings
-) {
+class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store (
+        scope = storeCoroutineScope,
+        accountRepository = InMemoryMinimalStoreRepository(),
+        outdatedDeviceKeysRepository = InMemoryMinimalStoreRepository(),
+        deviceKeysRepository = InMemoryMinimalStoreRepository(),
+        crossSigningKeysRepository = InMemoryMinimalStoreRepository(),
+        keyVerificationStateRepository = InMemoryMinimalStoreRepository(),
+        olmAccountRepository = InMemoryMinimalStoreRepository(),
+        olmSessionRepository = InMemoryMinimalStoreRepository(),
+        inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
+        inboundMegolmMessageIndexRepository = InMemoryMinimalStoreRepository(),
+        outboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
+        roomRepository = InMemoryRoomRepository(),
+        roomUserRepository = InMemoryRoomUserRepository(),
+        roomStateRepository = InMemoryRoomStateRepository(),
+        roomTimelineRepository = InMemoryMinimalStoreRepository(),
+        roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
+        mediaRepository = InMemoryMediaRepository(),
+        uploadMediaRepository = InMemoryMinimalStoreRepository(),
+        globalAccountDataRepository = InMemoryMinimalStoreRepository(),
+        roomAccountDataRepository = InMemoryMinimalStoreRepository(),
+        contentMappings = DefaultEventContentSerializerMappings
+){
     override suspend fun <T : Any> databaseTransaction(block: suspend () -> T): T = block()
 }
 

@@ -5,7 +5,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
@@ -103,18 +102,18 @@ class OutboxIT {
         }
 
         try {
-            withTimeout(120_000) {
+            withTimeout(180_000) {
                 client.room.getOutbox()
                     .first { outbox -> outbox.none { it.sentAt != null } }
-                delay(10_000)
+                delay(20_000)
                 client.room.sendMessage(room) { text("finish") }
-                client.room.getOutbox().onEach { it.map { it.transactionId } }.first { it.isEmpty() }
+                client.room.getOutbox().first { it.isEmpty() }
             }
         } catch (error: TimeoutCancellationException) {
             throw error
         }
         scope.cancel()
-        delay(500) // let everything stop
+        delay(1_000) // let everything stop
         val database = Database(driver)
         database.roomOutboxMessageQueries.getAllRoomOutboxMessages().executeAsList() shouldHaveSize 0
     }

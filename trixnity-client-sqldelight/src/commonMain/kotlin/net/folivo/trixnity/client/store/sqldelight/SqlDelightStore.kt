@@ -18,14 +18,16 @@ class SqlDelightStore(
     scope = scope,
     accountRepository = SqlDelightAccountRepository(database.accountQueries, databaseCoroutineContext),
     outdatedDeviceKeysRepository = SqlDelightOutdatedDeviceKeysRepository(
-        database.deviceKeysQueries, json, databaseCoroutineContext
+        database.keysQueries, json, databaseCoroutineContext
     ),
     deviceKeysRepository = SqlDelightDeviceKeysRepository(
-        database.deviceKeysQueries, json, databaseCoroutineContext
+        database.keysQueries, json, databaseCoroutineContext
     ),
-    verifiedKeysRepository = SqlDelightVerifiedKeysRepository(
-        database.deviceKeysQueries,
-        databaseCoroutineContext
+    crossSigningKeysRepository = SqlDelightCrossSigningKeysRepository(
+        database.keysQueries, json, databaseCoroutineContext
+    ),
+    keyVerificationStateRepository = SqlDelightKeyVerificationStateRepository(
+        database.keysQueries, json, databaseCoroutineContext
     ),
     olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
     olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),

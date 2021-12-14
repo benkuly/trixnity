@@ -16,7 +16,7 @@ class SqlDelightOutdatedDeviceKeysRepositoryTest : ShouldSpec({
     beforeTest {
         driver = createDriverWithSchema()
         cut = SqlDelightOutdatedDeviceKeysRepository(
-            Database(driver).deviceKeysQueries,
+            Database(driver).keysQueries,
             createMatrixJson(),
             Dispatchers.Default
         )

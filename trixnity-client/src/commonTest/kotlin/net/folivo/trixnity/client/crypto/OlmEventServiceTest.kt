@@ -86,13 +86,17 @@ class OlmEventServiceTest : ShouldSpec({
         store = InMemoryStore(storeScope).apply { init() }
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDeviceId
-        store.deviceKeys.update(bob) {
+        store.keys.updateDeviceKeys(bob) {
             mapOf(
-                bobDeviceId to DeviceKeys(
-                    userId = bob,
-                    deviceId = bobDeviceId,
-                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-                    keys = Keys(keysOf(bobCurveKey, bobEdKey))
+                bobDeviceId to StoredDeviceKeys(
+                    Signed(
+                        DeviceKeys(
+                            userId = bob,
+                            deviceId = bobDeviceId,
+                            algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                            keys = Keys(keysOf(bobCurveKey, bobEdKey))
+                        ), mapOf(bob to keysOf(Ed25519Key("BOBD", "bobEdKey")))
+                    ), KeySignatureTrustLevel.Valid(true)
                 )
             )
         }
@@ -106,7 +110,7 @@ class OlmEventServiceTest : ShouldSpec({
             mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
         )
         bobAccount.markKeysAsPublished()
-        coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Valid
+        coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } just Runs
         every { secureStore.olmPickleKey } returns ""
 
@@ -161,7 +165,7 @@ class OlmEventServiceTest : ShouldSpec({
                 store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
             }
             should("throw exception when one time key is invalid") {
-                coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns KeyVerificationState.Invalid("dino")
+                coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Invalid("dino")
 
                 shouldThrow<KeyException.KeyVerificationFailedException> {
                     cut.encryptOlm(eventContent, bob, bobDeviceId).ciphertext.entries.first().value
@@ -478,8 +482,8 @@ class OlmEventServiceTest : ShouldSpec({
                 )
             ) { manipulatedOlmEvent ->
                 val job1 = launch {
-                    store.deviceKeys.outdatedKeys.first { it.isNotEmpty() }
-                    store.deviceKeys.outdatedKeys.value = setOf()
+                    store.keys.outdatedKeys.first { it.isNotEmpty() }
+                    store.keys.outdatedKeys.value = setOf()
                 }
                 bobAccount.generateOneTimeKeys(1)
                 freeAfter(
@@ -551,11 +555,11 @@ class OlmEventServiceTest : ShouldSpec({
             expectedMessageCount: Int
         ) {
             should("encrypt message") {
-                store.deviceKeys.outdatedKeys.value = setOf(bob)
+                store.keys.outdatedKeys.value = setOf(bob)
                 val asyncResult = async { cut.encryptMegolm(eventContent, room, settings) }
-                store.deviceKeys.outdatedKeys.subscriptionCount.takeWhile { it == 1 }.take(1).collect()
+                store.keys.outdatedKeys.subscriptionCount.takeWhile { it == 1 }.take(1).collect()
                 asyncResult.isActive shouldBe true
-                store.deviceKeys.outdatedKeys.value = setOf()
+                store.keys.outdatedKeys.value = setOf()
                 val result = asyncResult.await()
 
                 val storedOutboundSession = store.olm.getOutboundMegolmSession(room)

@@ -372,7 +372,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidjoin">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
      */
     suspend fun joinRoom(
         roomId: RoomId,
