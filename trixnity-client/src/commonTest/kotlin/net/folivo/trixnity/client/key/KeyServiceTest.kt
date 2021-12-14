@@ -115,6 +115,21 @@ class KeyServiceTest : ShouldSpec({
                 cut.handleOutdatedKeys(setOf(alice))
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
             }
+            should("add master key with missing signatures") {
+                val key = Signed<CrossSigningKeys, UserId>(
+                    CrossSigningKeys(alice, setOf(MasterKey), keysOf()), mapOf()
+                )
+                coEvery { olmSignService.verify(key) } returns VerifyResult.MissingSignature
+                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns QueryKeysResponse(
+                    mapOf(), mapOf(),
+                    mapOf(alice to key),
+                    mapOf(), mapOf()
+                )
+                cut.handleOutdatedKeys(setOf(alice))
+                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                    StoredCrossSigningKey(key, Valid(false))
+                )
+            }
             should("add master key") {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf()), mapOf()
