@@ -6,7 +6,7 @@ object Versions {
     const val kotlinxAtomicfu = "0.16.3" // https://github.com/Kotlin/kotlinx.atomicfu/releases
     const val kotlinxKover = "0.4.2" // https://github.com/Kotlin/kotlinx-kover
     const val dokka = "1.5.31" // https://github.com/Kotlin/dokka/releases
-    const val olm = "3.2.7" // https://gitlab.matrix.org/matrix-org/olm/-/releases
+    const val olm = "3.2.8" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.10.0" // https://github.com/java-native-access/jna/releases
     const val ktor = "1.6.5" // https://github.com/ktorio/ktor/releases
     const val mockk = "1.12.1" // https://github.com/mockk/mockk/releases
@@ -14,7 +14,7 @@ object Versions {
     const val kotest = "4.6.4" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
     const val kodeinLog = "0.11.1" // https://github.com/Kodein-Framework/Kodein-Log/releases
-    const val androidGradle = "4.2.2" // https://developer.android.com/reference/tools/gradle-api
+    const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val arrow = "1.0.0" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.2" // https://github.com/cashapp/sqldelight/releases
     const val thumbnailator = "0.4.14" // https://github.com/coobird/thumbnailator/releases
@@ -25,5 +25,5 @@ object Versions {
     const val androidMinSdk = 26
     const val androidBuildTools = "30.0.3"
     const val androidNdk = "23.1.7779620"
-    const val androidCMake = "3.10.2.4988404"
+    const val cmake = "3.22.1" // update this in README.md
 }
