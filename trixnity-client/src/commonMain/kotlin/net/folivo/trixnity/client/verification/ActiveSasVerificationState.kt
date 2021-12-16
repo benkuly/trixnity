@@ -13,9 +13,12 @@ import net.folivo.trixnity.core.model.events.m.key.verification.StartEventConten
 import net.folivo.trixnity.olm.OlmSAS
 
 sealed interface ActiveSasVerificationState {
-    data class SasStart(
-        val step: SasStartEventContent,
-        val canAccept: Boolean,
+    data class OwnSasStart(
+        val content: SasStartEventContent
+    ) : ActiveSasVerificationState
+
+    data class TheirSasStart(
+        val content: SasStartEventContent,
         private val olmSas: OlmSAS,
         private val json: Json,
         private val relatesTo: VerificationStepRelatesTo?,
@@ -24,9 +27,8 @@ sealed interface ActiveSasVerificationState {
     ) : ActiveSasVerificationState {
         @OptIn(ExperimentalSerializationApi::class)
         suspend fun accept() {
-            if (!canAccept) throw UnsupportedOperationException("you cannot accept, because you already started SAS")
-            if (step.hashes.contains("sha256")) {
-                val commitment = createSasCommitment(olmSas.publicKey, step, json)
+            if (content.hashes.contains("sha256")) {
+                val commitment = createSasCommitment(olmSas.publicKey, content, json)
                 send(SasAcceptEventContent(commitment, relatesTo = relatesTo, transactionId = transactionId))
             } else {
                 send(CancelEventContent(UnknownMethod, "we only support sha256", relatesTo, transactionId))

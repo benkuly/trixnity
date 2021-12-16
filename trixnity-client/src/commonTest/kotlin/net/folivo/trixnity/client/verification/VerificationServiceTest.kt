@@ -21,8 +21,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Request
+import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -117,7 +116,7 @@ class VerificationServiceTest : ShouldSpec({
                 cut.start(eventHandlingCoroutineScope)
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
-                activeDeviceVerification.state.value.shouldBeInstanceOf<Request>()
+                activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second verification request") {
                 val request1 = RequestEventContent(
@@ -173,7 +172,7 @@ class VerificationServiceTest : ShouldSpec({
                 )
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
-                activeDeviceVerification.state.value.shouldBeInstanceOf<Request>()
+                activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second device verification") {
                 val olmEvents: OlmEventService = mockk(relaxed = true)
@@ -244,7 +243,7 @@ class VerificationServiceTest : ShouldSpec({
                     event = Event.MessageEvent(
                         VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
                         eventId,
-                        bobUserId,
+                        aliceUserId,
                         roomId,
                         Clock.System.now().toEpochMilliseconds()
                     ),
@@ -371,7 +370,7 @@ class VerificationServiceTest : ShouldSpec({
                 event = Event.MessageEvent(
                     VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
                     eventId,
-                    bobUserId,
+                    aliceUserId,
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
@@ -391,7 +390,7 @@ class VerificationServiceTest : ShouldSpec({
                 event = Event.MessageEvent(
                     VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
                     eventId,
-                    bobUserId,
+                    aliceUserId,
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
@@ -404,7 +403,7 @@ class VerificationServiceTest : ShouldSpec({
             val result = cut.getActiveUserVerification(timelineEvent)
             val state = result?.state
             assertNotNull(state)
-            state.value.shouldBeInstanceOf<Request>()
+            state.value.shouldBeInstanceOf<OwnRequest>()
         }
     }
 })

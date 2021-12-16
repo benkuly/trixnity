@@ -51,7 +51,8 @@ suspend fun verificationExample() = coroutineScope {
         val activeDeviceVerification = matrixClient.verification.activeDeviceVerification.filterNotNull().first()
         activeDeviceVerification.state.collectLatest { state ->
             when (state) {
-                is Request -> {
+                is OwnRequest -> {}
+                is TheirRequest -> {
                     println("new verification request from ${activeDeviceVerification.theirUserId}(${activeDeviceVerification.theirDeviceId})")
                     state.ready()
                 }
@@ -65,10 +66,12 @@ suspend fun verificationExample() = coroutineScope {
                         is ActiveSasVerificationMethod -> {
                             method.state.collect { methodState ->
                                 when (methodState) {
-                                    is SasStart -> {
+                                    is OwnSasStart -> {
                                         println("sas started")
-                                        if (methodState.canAccept)
-                                            methodState.accept()
+                                    }
+                                    is TheirSasStart -> {
+                                        println("sas started")
+                                        methodState.accept()
                                     }
                                     is Accept -> {
                                         println("sas accepted")

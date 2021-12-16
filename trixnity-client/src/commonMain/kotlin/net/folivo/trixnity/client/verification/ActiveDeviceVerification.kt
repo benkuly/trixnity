@@ -22,6 +22,7 @@ import org.kodein.log.newLogger
 
 class ActiveDeviceVerification(
     request: RequestEventContent,
+    requestIsOurs: Boolean,
     ownUserId: UserId,
     ownDeviceId: String,
     theirUserId: UserId,
@@ -33,6 +34,7 @@ class ActiveDeviceVerification(
     loggerFactory: LoggerFactory
 ) : ActiveVerification(
     request,
+    requestIsOurs,
     ownUserId,
     ownDeviceId,
     theirUserId,

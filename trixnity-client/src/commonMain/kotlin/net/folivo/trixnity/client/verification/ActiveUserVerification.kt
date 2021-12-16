@@ -32,6 +32,7 @@ import org.kodein.log.newLogger
 
 class ActiveUserVerification(
     request: VerificationRequestMessageEventContent,
+    requestIsFromOurOwn: Boolean,
     val requestEventId: EventId,
     requestTimestamp: Long,
     ownUserId: UserId,
@@ -48,6 +49,7 @@ class ActiveUserVerification(
     loggerFactory: LoggerFactory
 ) : ActiveVerification(
     request,
+    requestIsFromOurOwn,
     ownUserId,
     ownDeviceId,
     theirUserId,

@@ -53,6 +53,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     fun createCut(timestamp: Instant = Clock.System.now()) {
         cut = ActiveDeviceVerification(
             request = RequestEventContent(bobDevice, setOf(Sas), timestamp.toEpochMilliseconds(), "t"),
+            requestIsOurs = false,
             ownUserId = alice,
             ownDeviceId = aliceDevice,
             theirUserId = bob,

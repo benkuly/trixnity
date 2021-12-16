@@ -103,7 +103,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         }
     }
     context("handleVerificationStep") {
-        context("current state is ${SasStart::class.simpleName}") {
+        context("current state is ${OwnSasStart::class.simpleName} or ${TheirSasStart::class.simpleName}") {
             checkNotAllowedStateChange(
                 SasKeyEventContent("key", null, "t"),
                 SasMacEventContent("keys", keysOf(), null, "t")

@@ -4,7 +4,12 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 
 sealed interface ActiveVerificationState {
-    data class Request(
+
+    data class OwnRequest(
+        val content: VerificationRequest,
+    ) : ActiveVerificationState
+
+    data class TheirRequest(
         val content: VerificationRequest,
         private val ownDeviceId: String,
         private val supportedMethods: Set<VerificationMethod>,

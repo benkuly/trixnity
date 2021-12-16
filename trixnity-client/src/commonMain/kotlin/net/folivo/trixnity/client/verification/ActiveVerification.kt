@@ -22,6 +22,7 @@ import org.kodein.log.newLogger
 
 abstract class ActiveVerification(
     request: VerificationRequest,
+    requestIsFromOurOwn: Boolean,
     protected val ownUserId: UserId,
     protected val ownDeviceId: String,
     val theirUserId: UserId,
@@ -43,7 +44,8 @@ abstract class ActiveVerification(
 
     private val _state: MutableStateFlow<ActiveVerificationState> =
         MutableStateFlow(
-            Request(
+            if (requestIsFromOurOwn) OwnRequest(request)
+            else TheirRequest(
                 request, ownDeviceId, supportedMethods, relatesTo, transactionId, ::sendVerificationStepAndHandleIt
             )
         )
@@ -81,7 +83,7 @@ abstract class ActiveVerification(
             val currentState = state.value
             when (step) {
                 is ReadyEventContent -> {
-                    if (currentState is Request)
+                    if (currentState is OwnRequest || currentState is TheirRequest)
                         onReady(step)
                     else cancelUnexpectedMessage(currentState)
                 }

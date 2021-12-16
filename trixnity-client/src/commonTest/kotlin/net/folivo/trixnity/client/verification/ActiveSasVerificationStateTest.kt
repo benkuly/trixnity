@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.ComparisonByUser
-import net.folivo.trixnity.client.verification.ActiveSasVerificationState.SasStart
+import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
@@ -30,14 +30,13 @@ import net.folivo.trixnity.olm.freeAfter
 class ActiveSasVerificationStateTest : ShouldSpec({
     timeout = 30_000
 
-    context(SasStart::class.simpleName ?: "SasStart") {
-        context(SasStart::accept.name) {
+    context(TheirSasStart::class.simpleName ?: "TheirSasStart") {
+        context(TheirSasStart::accept.name) {
             should("send ${SasAcceptEventContent::class.simpleName}") {
                 freeAfter(OlmSAS.create()) { olmSas ->
                     var step: VerificationStep? = null
-                    val cut = SasStart(
-                        step = SasStartEventContent("AAAAAA", transactionId = "t", relatesTo = null),
-                        canAccept = true,
+                    val cut = TheirSasStart(
+                        content = SasStartEventContent("AAAAAA", transactionId = "t", relatesTo = null),
                         olmSas = olmSas,
                         json = createMatrixJson(),
                         relatesTo = null,
@@ -52,9 +51,13 @@ class ActiveSasVerificationStateTest : ShouldSpec({
             should("cancel, when hash not supported") {
                 freeAfter(OlmSAS.create()) { olmSas ->
                     var step: VerificationStep? = null
-                    val cut = SasStart(
-                        step = SasStartEventContent("AAAAAA", hashes = setOf(), transactionId = "t", relatesTo = null),
-                        canAccept = true,
+                    val cut = TheirSasStart(
+                        content = SasStartEventContent(
+                            "AAAAAA",
+                            hashes = setOf(),
+                            transactionId = "t",
+                            relatesTo = null
+                        ),
                         olmSas = olmSas,
                         json = createMatrixJson(),
                         relatesTo = null,
