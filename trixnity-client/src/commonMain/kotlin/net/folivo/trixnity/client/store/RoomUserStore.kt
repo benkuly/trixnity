@@ -2,17 +2,18 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
 
 class RoomUserStore(
-    roomUserRepository: RoomUserRepository,
+    private val roomUserRepository: RoomUserRepository,
+    private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
-    private val roomUserCache = StateFlowCache(storeScope, roomUserRepository)
+    private val roomUserCache = RepositoryStateFlowCache(storeScope, roomUserRepository, rtm)
 
     suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> =
         roomUserCache.get(roomId, scope).map { it?.values?.toSet() }.stateIn(scope)
@@ -24,10 +25,9 @@ class RoomUserStore(
     private suspend fun retrieveFromRepoAndUpdateCache(
         userId: UserId,
         roomId: RoomId,
-        cacheValue: Map<UserId, RoomUser>?,
-        repository: RoomUserRepository
+        cacheValue: Map<UserId, RoomUser>?
     ): Map<UserId, RoomUser>? {
-        val roomUser = repository.getByUserId(userId, roomId)
+        val roomUser = rtm.transaction { roomUserRepository.getByUserId(userId, roomId) }
         return if (roomUser != null) cacheValue?.plus(userId to roomUser) ?: mapOf(userId to roomUser)
         else cacheValue
     }
@@ -36,8 +36,8 @@ class RoomUserStore(
         return roomUserCache.readWithCache(
             roomId,
             containsInCache = { containsInCache(userId, it) },
-            retrieveFromRepoAndUpdateCache = { cacheValue, repository ->
-                retrieveFromRepoAndUpdateCache(userId, roomId, cacheValue, repository)
+            retrieveAndUpdateCache = { cacheValue ->
+                retrieveFromRepoAndUpdateCache(userId, roomId, cacheValue)
             },
             scope
         ).map { it?.get(userId) }
@@ -63,13 +63,15 @@ class RoomUserStore(
                 else it?.minus(userId)
             },
             containsInCache = { containsInCache(userId, it) },
-            getFromRepositoryAndUpdateCache = { cacheValue, repository ->
-                retrieveFromRepoAndUpdateCache(userId, roomId, cacheValue, repository)
+            retrieveAndUpdateCache = { cacheValue ->
+                retrieveFromRepoAndUpdateCache(userId, roomId, cacheValue)
             },
-            persistIntoRepository = { newValue, repository ->
-                val roomUser = newValue?.get(userId)
-                if (roomUser == null) repository.deleteByUserId(userId, roomId)
-                else repository.saveByUserId(userId, roomId, roomUser)
+            persist = { newValue ->
+                rtm.transaction {
+                    val roomUser = newValue?.get(userId)
+                    if (roomUser == null) roomUserRepository.deleteByUserId(userId, roomId)
+                    else roomUserRepository.saveByUserId(userId, roomId, roomUser)
+                }
             })
     }
 

@@ -6,29 +6,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 
 class KeysStore(
-    private val outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
+    private val outdatedKeysRepository: OutdatedKeysRepository,
     deviceKeysRepository: DeviceKeysRepository,
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
+    private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
     val outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
-    private val deviceKeysCache = StateFlowCache(storeScope, deviceKeysRepository)
-    private val crossSigningKeysCache = StateFlowCache(storeScope, crossSigningKeysRepository)
-    private val keyVerificationStateCache = StateFlowCache(storeScope, keyVerificationStateRepository)
+    private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)
+    private val crossSigningKeysCache = RepositoryStateFlowCache(storeScope, crossSigningKeysRepository, rtm)
+    private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)
 
     suspend fun init() {
-        outdatedKeys.value = outdatedDeviceKeysRepository.get(1) ?: setOf()
+        outdatedKeys.value = rtm.transaction { outdatedKeysRepository.get(1) ?: setOf() }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
-            outdatedKeys.collect { outdatedDeviceKeysRepository.save(1, it) }
+            outdatedKeys.collect { rtm.transaction { outdatedKeysRepository.save(1, it) } }
         }
     }
 
@@ -44,7 +45,7 @@ class KeysStore(
     suspend fun updateDeviceKeys(
         userId: UserId,
         updater: suspend (Map<String, StoredDeviceKeys>?) -> Map<String, StoredDeviceKeys>?
-    ) = deviceKeysCache.update(userId, updater)
+    ) = deviceKeysCache.update(userId, updater = updater)
 
     suspend fun getCrossSigningKeys(
         userId: UserId,
@@ -58,7 +59,7 @@ class KeysStore(
     suspend fun updateCrossSigningKeys(
         userId: UserId,
         updater: suspend (Set<StoredCrossSigningKey>?) -> Set<StoredCrossSigningKey>?
-    ) = crossSigningKeysCache.update(userId, updater)
+    ) = crossSigningKeysCache.update(userId, updater = updater)
 
     suspend fun getKeyVerificationState(
         key: Key,

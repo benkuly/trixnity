@@ -367,7 +367,7 @@ class RoomService(
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             val previousEventId =
                 room.lastEventId?.also {
-                    store.roomTimeline.update(it, roomId) { oldEvent ->
+                    store.roomTimeline.update(it, roomId, withTransaction = false) { oldEvent ->
                         val nextEventIdForPreviousEvent = events[0].id
                         if (hasGapBefore)
                             oldEvent?.copy(nextEventId = nextEventIdForPreviousEvent)
@@ -429,7 +429,7 @@ class RoomService(
                     } ?: it
                 } else it
             }
-            store.roomTimeline.addAll(replaceOwnMessagesWithOutboxContent)
+            store.roomTimeline.addAll(replaceOwnMessagesWithOutboxContent, withTransaction = false)
         }
     }
 
@@ -440,7 +440,7 @@ class RoomService(
             if (startGap is GapBefore || startGap is GapBoth) {
                 log.debug { "fetch missing events before ${startEvent.eventId}" }
 
-                val previousEvent = store.roomTimeline.getPrevious(startEvent)
+                val previousEvent = store.roomTimeline.getPrevious(startEvent, withTransaction = false)
                 val destinationBatch = previousEvent?.gap?.batch
                 val response = api.rooms.getEvents(
                     roomId = roomId,
@@ -493,7 +493,11 @@ class RoomService(
                             }
                         }
                         if (index == 0)
-                            store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                            store.roomTimeline.update(
+                                startEvent.eventId,
+                                roomId,
+                                withTransaction = false
+                            ) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
                                     previousEventId = event.id,
@@ -505,7 +509,11 @@ class RoomService(
                                 )
                             }
                         if (index == events.lastIndex && previousEvent != null)
-                            store.roomTimeline.update(previousEvent.eventId, roomId) { oldPreviousEvent ->
+                            store.roomTimeline.update(
+                                previousEvent.eventId,
+                                roomId,
+                                withTransaction = false
+                            ) { oldPreviousEvent ->
                                 val oldGap = oldPreviousEvent?.gap
                                 oldPreviousEvent?.copy(
                                     nextEventId = event.id,
@@ -519,10 +527,14 @@ class RoomService(
                             }
                         timelineEvent
                     }
-                    store.roomTimeline.addAll(timelineEvents)
+                    store.roomTimeline.addAll(timelineEvents, withTransaction = false)
                 } else if (end == null || end == response.start) {
                     log.debug { "reached the start of visible timeline of $roomId" }
-                    store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                    store.roomTimeline.update(
+                        startEvent.eventId,
+                        roomId,
+                        withTransaction = false
+                    ) { oldStartEvent ->
                         val oldGap = oldStartEvent?.gap
                         oldStartEvent?.copy(
                             gap = when (oldGap) {
@@ -534,7 +546,7 @@ class RoomService(
                     }
                 }
             }
-            val nextEvent = store.roomTimeline.getNext(startEvent)
+            val nextEvent = store.roomTimeline.getNext(startEvent, withTransaction = false)
             if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
                 log.debug { "fetch missing events after ${startEvent.eventId}" }
 
@@ -589,7 +601,11 @@ class RoomService(
                             }
                         }
                         if (index == 0)
-                            store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+                            store.roomTimeline.update(
+                                startEvent.eventId,
+                                roomId,
+                                withTransaction = false
+                            ) { oldStartEvent ->
                                 val oldGap = oldStartEvent?.gap
                                 oldStartEvent?.copy(
                                     nextEventId = event.id,
@@ -601,7 +617,11 @@ class RoomService(
                                 )
                             }
                         if (index == events.lastIndex)
-                            store.roomTimeline.update(nextEvent.eventId, roomId) { oldNextEvent ->
+                            store.roomTimeline.update(
+                                nextEvent.eventId,
+                                roomId,
+                                withTransaction = false
+                            ) { oldNextEvent ->
                                 val oldGap = oldNextEvent?.gap
                                 oldNextEvent?.copy(
                                     previousEventId = event.id,
@@ -615,7 +635,7 @@ class RoomService(
                             }
                         timelineEvent
                     }
-                    store.roomTimeline.addAll(timelineEvents)
+                    store.roomTimeline.addAll(timelineEvents, withTransaction = false)
                 }
             }
         }
@@ -647,7 +667,7 @@ class RoomService(
                         content.senderKey,
                         this
                     )
-                    store.roomTimeline.update(eventId, roomId) { oldEvent ->
+                    store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
                         if (oldEvent?.canBeDecrypted() == true) {
                             log.debug { "try to decrypt event $eventId in $roomId" }
                             @Suppress("UNCHECKED_CAST")

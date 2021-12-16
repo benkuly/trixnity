@@ -7,5 +7,5 @@ data class StoredInboundMegolmSession(
     val senderKey: Key.Curve25519Key,
     val sessionId: String,
     val roomId: RoomId,
-    val pickle: String
+    val pickled: String
 )

@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.store.SecureStore
-import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -25,8 +24,6 @@ suspend fun verificationExample() = coroutineScope {
     val username = "username"
     val password = "password"
     val baseUrl = Url("https://example.org")
-    val storeFactory =
-        SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext(), blockingTransactionCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
@@ -35,7 +32,7 @@ suspend fun verificationExample() = coroutineScope {
         listOf(minimumLevel(Logger.Level.INFO)),
     )
     val matrixClient = MatrixClient.fromStore(
-        storeFactory = storeFactory,
+        storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
@@ -44,7 +41,7 @@ suspend fun verificationExample() = coroutineScope {
         IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
-        storeFactory = storeFactory,
+        storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory

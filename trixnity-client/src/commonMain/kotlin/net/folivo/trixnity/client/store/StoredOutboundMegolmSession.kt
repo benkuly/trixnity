@@ -12,5 +12,5 @@ data class StoredOutboundMegolmSession(
     val createdAt: Instant = Clock.System.now(),
     val encryptedMessageCount: Long = 1,
     val newDevices: Map<UserId, Set<String>> = mapOf(),
-    val pickle: String
+    val pickled: String
 )

@@ -1,15 +1,17 @@
 package net.folivo.trixnity.client.integrationtests
 
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
-import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
-import net.folivo.trixnity.client.store.sqldelight.db.Database
+import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.kodein.log.Logger
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
@@ -27,7 +29,7 @@ class OutboxIT {
 
     private lateinit var client: MatrixClient
     private lateinit var scope: CoroutineScope
-    private lateinit var driver: JdbcSqliteDriver
+    private lateinit var database: Database
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:latest"))
@@ -58,13 +60,8 @@ class OutboxIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        driver = JdbcSqliteDriver("jdbc:sqlite:outbox-it.db")
-        val storeFactory = SqlDelightStoreFactory(
-            driver,
-            scope,
-            newSingleThreadContext("sqlite"),
-            newSingleThreadContext("transactions")
-        )
+        database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
+        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -84,13 +81,12 @@ class OutboxIT {
     @AfterTest
     fun afterEach() {
         scope.cancel()
-        driver.close()
         deleteDbFiles()
     }
 
     private fun deleteDbFiles() {
         File("outbox-it.db").delete()
-        File("outbox-it.db-journal").delete()
+        File("outbox-it.mv.db").delete()
     }
 
     @Test
@@ -112,9 +108,16 @@ class OutboxIT {
         } catch (error: TimeoutCancellationException) {
             throw error
         }
+        delay(1_000)
         scope.cancel()
         delay(1_000) // let everything stop
-        val database = Database(driver)
-        database.roomOutboxMessageQueries.getAllRoomOutboxMessages().executeAsList() shouldHaveSize 0
+
+        val exposedRoomOutbox = object : Table("room_outbox") {
+            val transactionId = varchar("transaction_id", length = 65535)
+            override val primaryKey = PrimaryKey(transactionId)
+        }
+        newSuspendedTransaction(Dispatchers.IO, database) {
+            exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+        }
     }
 }

@@ -9,6 +9,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.milliseconds
@@ -24,7 +25,7 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        cut = RoomOutboxMessageStore(roomOutboxMessageRepository, storeScope)
+        cut = RoomOutboxMessageStore(roomOutboxMessageRepository, NoopRepositoryTransactionManager, storeScope)
     }
     afterTest {
         clearAllMocks()

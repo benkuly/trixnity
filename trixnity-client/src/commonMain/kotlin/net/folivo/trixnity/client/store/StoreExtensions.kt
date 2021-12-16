@@ -79,13 +79,15 @@ suspend inline fun RoomTimelineStore.getNext(
 
 suspend inline fun RoomTimelineStore.getNext(
     event: TimelineEvent,
+    withTransaction: Boolean = true
 ): TimelineEvent? =
-    event.nextEventId?.let { get(it, event.roomId) }
+    event.nextEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
 
 suspend inline fun RoomTimelineStore.getPrevious(
     event: TimelineEvent,
+    withTransaction: Boolean = true
 ): TimelineEvent? =
-    event.previousEventId?.let { get(it, event.roomId) }
+    event.previousEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
 
 suspend inline fun KeysStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId).isNullOrEmpty().not()

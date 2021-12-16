@@ -6,8 +6,10 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 
 abstract class Store(
     scope: CoroutineScope,
+    contentMappings: EventContentSerializerMappings,
+    private val rtm: RepositoryTransactionManager,
     accountRepository: AccountRepository,
-    outdatedDeviceKeysRepository: OutdatedDeviceKeysRepository,
+    outdatedKeysRepository: OutdatedKeysRepository,
     deviceKeysRepository: DeviceKeysRepository,
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
@@ -25,14 +27,14 @@ abstract class Store(
     uploadMediaRepository: UploadMediaRepository,
     globalAccountDataRepository: GlobalAccountDataRepository,
     roomAccountDataRepository: RoomAccountDataRepository,
-    contentMappings: EventContentSerializerMappings,
 ) {
-    val account = AccountStore(accountRepository, scope)
+    val account = AccountStore(accountRepository, rtm, scope)
     val keys = KeysStore(
-        outdatedDeviceKeysRepository,
+        outdatedKeysRepository,
         deviceKeysRepository,
         crossSigningKeysRepository,
         keyVerificationStateRepository,
+        rtm,
         scope
     )
     val olm = OlmStore(
@@ -41,16 +43,17 @@ abstract class Store(
         inboundMegolmSessionRepository,
         inboundMegolmMessageIndexRepository,
         outboundMegolmSessionRepository,
+        rtm,
         scope
     )
-    val room = RoomStore(roomRepository, scope)
-    val roomUser = RoomUserStore(roomUserRepository, scope)
-    val roomState = RoomStateStore(roomStateRepository, contentMappings, scope)
-    val roomTimeline = RoomTimelineStore(roomTimelineRepository, scope)
-    val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, scope)
-    val media = MediaStore(mediaRepository, uploadMediaRepository, scope)
-    val globalAccountData = GlobalAccountDataStore(globalAccountDataRepository, contentMappings, scope)
-    val roomAccountData = RoomAccountDataStore(roomAccountDataRepository, contentMappings, scope)
+    val room = RoomStore(roomRepository, rtm, scope)
+    val roomUser = RoomUserStore(roomUserRepository, rtm, scope)
+    val roomState = RoomStateStore(roomStateRepository, rtm, contentMappings, scope)
+    val roomTimeline = RoomTimelineStore(roomTimelineRepository, rtm, scope)
+    val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, rtm, scope)
+    val media = MediaStore(mediaRepository, uploadMediaRepository, rtm, scope)
+    val globalAccountData = GlobalAccountDataStore(globalAccountDataRepository, rtm, contentMappings, scope)
+    val roomAccountData = RoomAccountDataStore(roomAccountDataRepository, rtm, contentMappings, scope)
 
     suspend fun init() {
         account.init()
@@ -66,7 +69,7 @@ abstract class Store(
     }
 
     suspend fun <T : Any> transaction(block: suspend () -> T): T {
-        return databaseTransaction {
+        return rtm.transaction {
             try {
                 block()
             } catch (error: Throwable) {
@@ -75,6 +78,4 @@ abstract class Store(
             }
         }
     }
-
-    protected abstract suspend fun <T : Any> databaseTransaction(block: suspend () -> T): T
 }

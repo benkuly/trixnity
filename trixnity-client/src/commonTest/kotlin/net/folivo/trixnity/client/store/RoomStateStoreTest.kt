@@ -6,6 +6,7 @@ import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
@@ -24,7 +25,12 @@ class RoomStateStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        cut = RoomStateStore(roomStateRepository, DefaultEventContentSerializerMappings, storeScope)
+        cut = RoomStateStore(
+            roomStateRepository,
+            NoopRepositoryTransactionManager,
+            DefaultEventContentSerializerMappings,
+            storeScope
+        )
     }
     afterTest {
         clearAllMocks()

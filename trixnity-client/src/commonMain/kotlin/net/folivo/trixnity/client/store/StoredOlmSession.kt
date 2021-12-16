@@ -11,5 +11,5 @@ data class StoredOlmSession(
     val sessionId: String,
     val lastUsedAt: Instant,
     val createdAt: Instant = Clock.System.now(),
-    val pickle: String
+    val pickled: String
 )
