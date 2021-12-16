@@ -40,9 +40,9 @@ class ActiveSasVerificationMethod private constructor(
 
     private val _state: MutableStateFlow<ActiveSasVerificationState> =
         MutableStateFlow(
-            SasStart(
+            if (weStartedVerification) OwnSasStart(startEventContent)
+            else TheirSasStart(
                 startEventContent,
-                !weStartedVerification,
                 olmSas,
                 json,
                 relatesTo,
@@ -109,7 +109,7 @@ class ActiveSasVerificationMethod private constructor(
         val currentState = state.value
         when (step) {
             is SasAcceptEventContent -> {
-                if (currentState is SasStart)
+                if (currentState is OwnSasStart || currentState is TheirSasStart)
                     onAccept(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
@@ -193,7 +193,8 @@ class ActiveSasVerificationMethod private constructor(
                             ((shortCode[3].toInt() and 0x3) shl 4) or (shortCode[4].toInt() shr 4),
                             ((shortCode[4].toInt() and 0xF) shl 2) or (shortCode[5].toInt() shr 6),
                         ).map {
-                            it to (numberToEmojiMapping[it] ?: throw IllegalStateException("Cannot find emoji for number $it."))
+                            it to (numberToEmojiMapping[it]
+                                ?: throw IllegalStateException("Cannot find emoji for number $it."))
                         }
                         _state.value = ComparisonByUser(
                             decimal = decimal, emojis = emojis,

@@ -9,6 +9,8 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.verification.ActiveSasVerificationState.OwnSasStart
+import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -28,10 +30,9 @@ class ActiveVerificationTest : ShouldSpec({
     var lifecycleCalled = 0
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
 
-    val request = RequestEventContent(bobDevice, setOf(Sas), 1234, "t")
-
-    class TestActiveVerification : ActiveVerification(
+    class TestActiveVerification(request: RequestEventContent) : ActiveVerification(
         request = request,
+        requestIsFromOurOwn = request.fromDevice == aliceDevice,
         ownUserId = alice,
         ownDeviceId = aliceDevice,
         theirUserId = bob,
@@ -61,7 +62,7 @@ class ActiveVerificationTest : ShouldSpec({
     beforeTest {
         lifecycleCalled = 0
         sendVerificationStepFlow = MutableSharedFlow(replay = 10)
-        cut = TestActiveVerification()
+        cut = TestActiveVerification(RequestEventContent(bobDevice, setOf(Sas), 1234, "t"))
     }
 
     context(ActiveVerification::startLifecycle.name) {
@@ -108,17 +109,26 @@ class ActiveVerificationTest : ShouldSpec({
                 }
             }
         }
-        context("current state is ${Request::class.simpleName}") {
+        context("current state is ${OwnRequest::class.simpleName} or ${TheirRequest::class.simpleName}") {
             checkNotAllowedStateChange(
                 SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"),
                 DoneEventContent(null, "t"),
             )
-            should("handle ${ReadyEventContent::class.simpleName}") {
+            should("handle ${ReadyEventContent::class.simpleName} when ${OwnRequest::class.simpleName}") {
+                cut = TestActiveVerification(RequestEventContent(aliceDevice, setOf(Sas), 1234, "t"))
+                cut.state.value.shouldBeInstanceOf<OwnRequest>()
                 cut.handleStep(ReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"), bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<Ready>()
                 state.methods shouldBe setOf(Sas)
                 cut.theirDeviceId shouldBe bobDevice
+            }
+            should("handle ${ReadyEventContent::class.simpleName} when ${TheirRequest::class.simpleName}") {
+                cut.state.value.shouldBeInstanceOf<TheirRequest>()
+                cut.handleStep(ReadyEventContent(aliceDevice, setOf(Sas, Unknown("u")), null, "t"), alice, false)
+                val state = cut.state.value
+                state.shouldBeInstanceOf<Ready>()
+                state.methods shouldBe setOf(Sas)
             }
         }
         context("current state is ${Ready::class.simpleName}") {
@@ -140,8 +150,8 @@ class ActiveVerificationTest : ShouldSpec({
                 val method = state.method
                 method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                 val subState = method.state.value
-                subState.shouldBeInstanceOf<ActiveSasVerificationState.SasStart>()
-                subState.step shouldBe step
+                subState.shouldBeInstanceOf<TheirSasStart>()
+                subState.content shouldBe step
             }
         }
         context("current state is ${Start::class.simpleName}") {
@@ -165,8 +175,8 @@ class ActiveVerificationTest : ShouldSpec({
                     val method = state.method
                     method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                     val subState = method.state.value
-                    subState.shouldBeInstanceOf<ActiveSasVerificationState.SasStart>()
-                    subState.step shouldBe step
+                    subState.shouldBeInstanceOf<OwnSasStart>()
+                    subState.content shouldBe step
                 }
                 should("keep event from lexicographically smaller deviceId") {
                     cut.handleStep(SasStartEventContent("CCCCCC", relatesTo = null, transactionId = "t"), bob, false)
@@ -177,8 +187,8 @@ class ActiveVerificationTest : ShouldSpec({
                     val method = state.method
                     method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                     val subState = method.state.value
-                    subState.shouldBeInstanceOf<ActiveSasVerificationState.SasStart>()
-                    subState.step shouldBe SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t")
+                    subState.shouldBeInstanceOf<TheirSasStart>()
+                    subState.content shouldBe SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t")
                 }
                 should("override event from lexicographically smaller user ID") {
                     val step = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t")
@@ -190,8 +200,8 @@ class ActiveVerificationTest : ShouldSpec({
                     val method = state.method
                     method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                     val subState = method.state.value
-                    subState.shouldBeInstanceOf<ActiveSasVerificationState.SasStart>()
-                    subState.step shouldBe step
+                    subState.shouldBeInstanceOf<OwnSasStart>()
+                    subState.content shouldBe step
                 }
                 should("override event from lexicographically smaller deviceId") {
                     val step = SasStartEventContent("AAAAAA", relatesTo = null, transactionId = "t")
@@ -203,8 +213,8 @@ class ActiveVerificationTest : ShouldSpec({
                     val method = state.method
                     method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                     val subState = method.state.value
-                    subState.shouldBeInstanceOf<ActiveSasVerificationState.SasStart>()
-                    subState.step shouldBe step
+                    subState.shouldBeInstanceOf<TheirSasStart>()
+                    subState.content shouldBe step
                 }
             }
             should("handle ${DoneEventContent::class.simpleName}") {

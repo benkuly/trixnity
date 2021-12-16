@@ -65,6 +65,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     fun createCut(timestamp: Instant = Clock.System.now()) {
         cut = ActiveUserVerification(
             request = RoomMessageEventContent.VerificationRequestMessageEventContent(aliceDevice, bob, setOf(Sas)),
+            requestIsFromOurOwn = true,
             requestEventId = event,
             requestTimestamp = timestamp.toEpochMilliseconds(),
             ownUserId = alice,

@@ -68,6 +68,7 @@ class VerificationService(
                         log.info { "already have an active device verification -> cancelling new verification request" }
                         ActiveDeviceVerification(
                             request = event.content,
+                            requestIsOurs = false,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
                             theirUserId = event.sender,
@@ -82,6 +83,7 @@ class VerificationService(
                         _activeDeviceVerification.value =
                             ActiveDeviceVerification(
                                 request = event.content,
+                                requestIsOurs = false,
                                 ownUserId = ownUserId,
                                 ownDeviceId = ownDeviceId,
                                 theirUserId = event.sender,
@@ -108,6 +110,7 @@ class VerificationService(
                         log.info { "already have an active device verification -> cancelling new verification request" }
                         ActiveDeviceVerification(
                             request = content,
+                            requestIsOurs = false,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
                             theirUserId = event.decrypted.sender,
@@ -122,6 +125,7 @@ class VerificationService(
                         _activeDeviceVerification.value =
                             ActiveDeviceVerification(
                                 request = content,
+                                requestIsOurs = false,
                                 ownUserId = ownUserId,
                                 ownDeviceId = ownDeviceId,
                                 theirUserId = event.decrypted.sender,
@@ -171,6 +175,7 @@ class VerificationService(
         val existingDeviceVerification = _activeDeviceVerification.getAndUpdate {
             ActiveDeviceVerification(
                 request = request,
+                requestIsOurs = true,
                 ownUserId = ownUserId,
                 ownDeviceId = ownDeviceId,
                 theirUserId = theirUserId,
@@ -217,9 +222,13 @@ class VerificationService(
                         else null
                     }
                 val sender = timelineEvent.event.sender
-                if (request != null) {
+                if (request != null
+                    && (request.to == ownUserId || sender == ownUserId && request.fromDevice == ownDeviceId)
+                    && request.to != sender
+                ) {
                     ActiveUserVerification(
                         request = request,
+                        requestIsFromOurOwn = sender == ownUserId,
                         requestEventId = timelineEvent.eventId,
                         requestTimestamp = timelineEvent.event.originTimestamp,
                         ownUserId = ownUserId,
