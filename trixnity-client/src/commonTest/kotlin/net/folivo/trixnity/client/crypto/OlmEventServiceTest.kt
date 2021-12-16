@@ -569,7 +569,7 @@ class OlmEventServiceTest : ShouldSpec({
                     roomId shouldBe room
                 }
 
-                freeAfter(OlmOutboundGroupSession.unpickle("", storedOutboundSession.pickle)) { outboundSession ->
+                freeAfter(OlmOutboundGroupSession.unpickle("", storedOutboundSession.pickled)) { outboundSession ->
                     assertSoftly(result) {
                         senderKey shouldBe aliceCurveKey
                         deviceId shouldBe aliceDeviceId
@@ -611,7 +611,7 @@ class OlmEventServiceTest : ShouldSpec({
                         roomId shouldBe room
                     }
 
-                    freeAfter(OlmInboundGroupSession.unpickle("", storedInboundSession.pickle)) { inboundSession ->
+                    freeAfter(OlmInboundGroupSession.unpickle("", storedInboundSession.pickled)) { inboundSession ->
                         json.decodeFromString(
                             megolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
                         ) shouldBe megolmEvent
@@ -632,7 +632,7 @@ class OlmEventServiceTest : ShouldSpec({
                                 roomId = room,
                                 encryptedMessageCount = 23,
                                 newDevices = mapOf(bob to setOf(bobDeviceId)),
-                                pickle = session.pickle("")
+                                pickled = session.pickle("")
                             )
                         }
                         store.olm.storeInboundMegolmSession(
@@ -652,7 +652,7 @@ class OlmEventServiceTest : ShouldSpec({
                         StoredOutboundMegolmSession(
                             roomId = room,
                             createdAt = Clock.System.now().minus(24, DateTimeUnit.MILLISECOND),
-                            pickle = "is irrelevant"
+                            pickled = "is irrelevant"
                         )
                     }
                 }
@@ -664,7 +664,7 @@ class OlmEventServiceTest : ShouldSpec({
                         StoredOutboundMegolmSession(
                             roomId = room,
                             encryptedMessageCount = 24,
-                            pickle = "is irrelevant"
+                            pickled = "is irrelevant"
                         )
                     }
                 }

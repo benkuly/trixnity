@@ -45,7 +45,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation(project(":trixnity-client-sqldelight"))
+                implementation(project(":trixnity-client-store-exposed"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
                 implementation("io.mockk:mockk:${Versions.mockk}")
@@ -56,12 +56,12 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
                 implementation("org.testcontainers:testcontainers:${Versions.testContainers}")
                 implementation("org.testcontainers:junit-jupiter:${Versions.testContainers}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation("com.h2database:h2:${Versions.h2}")
             }
         }
 //        val jsTest by getting

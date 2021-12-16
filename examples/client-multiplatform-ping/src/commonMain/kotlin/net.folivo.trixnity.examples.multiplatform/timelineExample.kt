@@ -11,7 +11,6 @@ import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
-import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
@@ -31,8 +30,6 @@ suspend fun timelineExample() = coroutineScope {
     val password = "password"
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
-    val storeFactory =
-        SqlDelightStoreFactory(createDriver(), scope, databaseCoroutineContext(), blockingTransactionCoroutineContext())
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
@@ -41,7 +38,7 @@ suspend fun timelineExample() = coroutineScope {
         listOf(minimumLevel(Logger.Level.INFO)),
     )
     val matrixClient = MatrixClient.fromStore(
-        storeFactory = storeFactory,
+        storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
@@ -50,7 +47,7 @@ suspend fun timelineExample() = coroutineScope {
         User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
-        storeFactory = storeFactory,
+        storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory

@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
@@ -16,11 +16,12 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 import kotlin.reflect.KClass
 
 class RoomStateStore(
-    roomStateRepository: RoomStateRepository,
+    private val roomStateRepository: RoomStateRepository,
+    private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
-    private val roomStateCache = StateFlowCache(storeScope, roomStateRepository)
+    private val roomStateCache = RepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
 
     suspend fun update(event: Event<out StateEventContent>) {
         val roomId = event.getRoomId()
@@ -36,9 +37,11 @@ class RoomStateStore(
                 updater = { it?.plus(stateKey to event) ?: mapOf(stateKey to event) },
                 // We don't mind, what is stored in database, because we always override it.
                 containsInCache = { true },
-                getFromRepositoryAndUpdateCache = { _, _ -> null },
-                persistIntoRepository = { _, repository ->
-                    repository.saveByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
+                retrieveAndUpdateCache = { null },
+                persist = {
+                    rtm.transaction {
+                        roomStateRepository.saveByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
+                    }
                 })
         }
     }
@@ -83,8 +86,10 @@ class RoomStateStore(
         return roomStateCache.readWithCache(
             RoomStateRepositoryKey(roomId, eventType),
             containsInCache = { it?.containsKey(stateKey) ?: false },
-            retrieveFromRepoAndUpdateCache = { cacheValue, repo ->
-                val newValue = repo.getByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
+            retrieveAndUpdateCache = { cacheValue ->
+                val newValue = rtm.transaction {
+                    roomStateRepository.getByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
+                }
                 if (newValue != null) cacheValue?.plus(stateKey to newValue) ?: mapOf(stateKey to newValue)
                 else cacheValue
             },

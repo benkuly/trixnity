@@ -1,19 +1,19 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.MediaRepository
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 class MediaStore(
     private val mediaRepository: MediaRepository,
     uploadMediaRepository: UploadMediaRepository,
+    rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
     @OptIn(ExperimentalTime::class)
-    private val mediaCache = StateFlowCache(storeScope, mediaRepository, readCacheTime = Duration.minutes(1))
+    private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
 
     suspend fun addContent(uri: String, content: ByteArray) = mediaCache.update(uri) { content }
 
@@ -25,7 +25,7 @@ class MediaStore(
         mediaRepository.changeUri(oldUri, newUri)
     }
 
-    private val uploadMediaCache = StateFlowCache(storeScope, uploadMediaRepository)
+    private val uploadMediaCache = RepositoryStateFlowCache(storeScope, uploadMediaRepository, rtm)
 
     suspend fun getUploadMedia(cacheUri: String): UploadMedia? =
         uploadMediaCache.get(cacheUri)
@@ -33,5 +33,5 @@ class MediaStore(
     suspend fun updateUploadMedia(
         cacheUri: String,
         updater: suspend (oldUploadMedia: UploadMedia?) -> UploadMedia?
-    ) = uploadMediaCache.update(cacheUri, updater)
+    ) = uploadMediaCache.update(cacheUri, updater = updater)
 }

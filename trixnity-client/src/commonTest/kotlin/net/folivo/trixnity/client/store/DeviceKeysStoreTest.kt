@@ -9,14 +9,15 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
 import net.folivo.trixnity.client.store.repository.DeviceKeysRepository
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
-import net.folivo.trixnity.client.store.repository.OutdatedDeviceKeysRepository
+import net.folivo.trixnity.client.store.repository.OutdatedKeysRepository
 import net.folivo.trixnity.core.model.UserId
 
 class DeviceKeysStoreTest : ShouldSpec({
-    val outdatedDeviceKeysRepository = mockk<OutdatedDeviceKeysRepository>(relaxUnitFun = true)
+    val outdatedKeysRepository = mockk<OutdatedKeysRepository>(relaxUnitFun = true)
     val deviceKeysRepository = mockk<DeviceKeysRepository>(relaxUnitFun = true)
     val crossSigningKeysRepository = mockk<CrossSigningKeysRepository>(relaxUnitFun = true)
     val keyVerificationStateRepository = mockk<KeyVerificationStateRepository>(relaxUnitFun = true)
@@ -26,10 +27,11 @@ class DeviceKeysStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = KeysStore(
-            outdatedDeviceKeysRepository,
+            outdatedKeysRepository,
             deviceKeysRepository,
             crossSigningKeysRepository,
             keyVerificationStateRepository,
+            NoopRepositoryTransactionManager,
             storeScope
         )
     }
@@ -40,7 +42,7 @@ class DeviceKeysStoreTest : ShouldSpec({
 
     context(KeysStore::init.name) {
         should("load values from database") {
-            coEvery { outdatedDeviceKeysRepository.get(1) } returns setOf(
+            coEvery { outdatedKeysRepository.get(1) } returns setOf(
                 UserId("alice", "server"), UserId("bob", "server")
             )
 
@@ -49,14 +51,14 @@ class DeviceKeysStoreTest : ShouldSpec({
             cut.outdatedKeys.value shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
         }
         should("start job, which saves changes to database") {
-            coEvery { outdatedDeviceKeysRepository.get(1) } returns null
+            coEvery { outdatedKeysRepository.get(1) } returns null
 
             cut.init()
 
             cut.outdatedKeys.value = setOf(UserId("alice", "server"), UserId("bob", "server"))
 
             coVerify(timeout = 1_000) {
-                outdatedDeviceKeysRepository.save(
+                outdatedKeysRepository.save(
                     1, setOf(UserId("alice", "server"), UserId("bob", "server"))
                 )
             }

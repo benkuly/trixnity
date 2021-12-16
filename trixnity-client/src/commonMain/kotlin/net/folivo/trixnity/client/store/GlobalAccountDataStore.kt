@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
@@ -12,10 +12,11 @@ import kotlin.reflect.KClass
 
 class GlobalAccountDataStore(
     globalAccountDataRepository: GlobalAccountDataRepository,
+    rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
-    private val globalAccountDataCache = StateFlowCache(storeScope, globalAccountDataRepository)
+    private val globalAccountDataCache = RepositoryStateFlowCache(storeScope, globalAccountDataRepository, rtm)
 
     suspend fun <C : GlobalAccountDataEventContent> get(
         eventContentClass: KClass<C>,

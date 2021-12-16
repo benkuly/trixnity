@@ -7,6 +7,7 @@ import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -20,7 +21,7 @@ class RoomUserStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        cut = RoomUserStore(roomUserRepository, storeScope)
+        cut = RoomUserStore(roomUserRepository, NoopRepositoryTransactionManager, storeScope)
     }
     afterTest {
         clearAllMocks()

@@ -12,6 +12,7 @@ import net.folivo.trixnity.core.model.UserId
 
 class AccountStore(
     private val repository: AccountRepository,
+    private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
     val baseUrl = MutableStateFlow<Url?>(null)
@@ -22,7 +23,7 @@ class AccountStore(
     val filterId = MutableStateFlow<String?>(null)
 
     suspend fun init() {
-        val account = repository.get(1)
+        val account = rtm.transaction { repository.get(1) }
         baseUrl.value = account?.baseUrl
         userId.value = account?.userId
         deviceId.value = account?.deviceId
@@ -41,7 +42,7 @@ class AccountStore(
                     syncBatchToken = values[4] as String?,
                     filterId = values[5] as String?
                 )
-            }.collect { repository.save(1, it) }
+            }.collect { rtm.transaction { repository.save(1, it) } }
         }
     }
 }

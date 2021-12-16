@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
@@ -17,22 +17,25 @@ class OlmStore(
     inboundMegolmSessionRepository: InboundMegolmSessionRepository,
     inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
     outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
+    private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
     val account: MutableStateFlow<String?> = MutableStateFlow(null)
 
     suspend fun init() {
-        account.value = olmAccountRepository.get(1)
+        account.value = rtm.transaction { olmAccountRepository.get(1) }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
             account.collect {
-                if (it != null) olmAccountRepository.save(1, it)
-                else olmAccountRepository.delete(1)
+                rtm.transaction {
+                    if (it != null) olmAccountRepository.save(1, it)
+                    else olmAccountRepository.delete(1)
+                }
             }
         }
     }
 
-    private val olmSessionsCache = StateFlowCache(storeScope, olmSessionRepository)
+    private val olmSessionsCache = RepositoryStateFlowCache(storeScope, olmSessionRepository, rtm)
 
     suspend fun getOlmSessions(
         senderKey: Curve25519Key
@@ -41,9 +44,9 @@ class OlmStore(
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
         updater: suspend (oldSessions: Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
-    ) = olmSessionsCache.update(senderKey, updater)
+    ) = olmSessionsCache.update(senderKey, updater = updater)
 
-    private val inboundMegolmSessionCache = StateFlowCache(storeScope, inboundMegolmSessionRepository)
+    private val inboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, inboundMegolmSessionRepository, rtm)
 
     suspend fun getInboundMegolmSession(
         senderKey: Curve25519Key,
@@ -65,9 +68,13 @@ class OlmStore(
         sessionId: String,
         roomId: RoomId,
         updater: suspend (oldInboundMegolmSession: StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
-    ) = inboundMegolmSessionCache.update(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId), updater)
+    ) = inboundMegolmSessionCache.update(
+        InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId),
+        updater = updater
+    )
 
-    private val inboundMegolmSessionIndexCache = StateFlowCache(storeScope, inboundMegolmMessageIndexRepository)
+    private val inboundMegolmSessionIndexCache =
+        RepositoryStateFlowCache(storeScope, inboundMegolmMessageIndexRepository, rtm)
 
     suspend fun updateInboundMegolmMessageIndex(
         senderKey: Curve25519Key,
@@ -76,10 +83,10 @@ class OlmStore(
         messageIndex: Long,
         updater: suspend (oldMegolmSessionIndex: StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
     ) = inboundMegolmSessionIndexCache.update(
-        InboundMegolmMessageIndexRepositoryKey(senderKey, sessionId, roomId, messageIndex), updater
+        InboundMegolmMessageIndexRepositoryKey(senderKey, sessionId, roomId, messageIndex), updater = updater
     )
 
-    private val outboundMegolmSessionCache = StateFlowCache(storeScope, outboundMegolmSessionRepository)
+    private val outboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, outboundMegolmSessionRepository, rtm)
 
     suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
         outboundMegolmSessionCache.get(roomId)
@@ -87,5 +94,5 @@ class OlmStore(
     suspend fun updateOutboundMegolmSession(
         roomId: RoomId,
         updater: suspend (oldOutboundMegolmSession: StoredOutboundMegolmSession?) -> StoredOutboundMegolmSession?
-    ) = outboundMegolmSessionCache.update(roomId, updater)
+    ) = outboundMegolmSessionCache.update(roomId, updater = updater)
 }

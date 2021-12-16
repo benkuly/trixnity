@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.client.store.cache.StateFlowCache
+import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
@@ -14,10 +14,11 @@ import kotlin.reflect.KClass
 
 class RoomAccountDataStore(
     roomAccountDataRepository: RoomAccountDataRepository,
+    rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
-    private val roomAccountDataCache = StateFlowCache(storeScope, roomAccountDataRepository)
+    private val roomAccountDataCache = RepositoryStateFlowCache(storeScope, roomAccountDataRepository, rtm)
 
     suspend fun <C : RoomAccountDataEventContent> get(
         roomId: RoomId,

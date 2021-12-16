@@ -83,7 +83,7 @@ class OlmEventService internal constructor(
             }
         } else {
             log.debug { "encrypt olm event with existing session for device with key $identityKey" }
-            freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickle)) { session ->
+            freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
                 encryptWithOlmSession(session, content, receiverId, deviceId, identityKey).also {
                     store.olm.storeOlmSession(session, identityKey, secureStore.olmPickleKey)
                 }
@@ -134,7 +134,7 @@ class OlmEventService internal constructor(
         val decryptedContent = try {
             storedSessions?.sortedByDescending { it.lastUsedAt }
                 ?.mapNotNull { storedSession ->
-                    freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickle)) { olmSession ->
+                    freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { olmSession ->
                         if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
                             if (olmSession.matchesInboundSession(ciphertext.body)) {
                                 log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
@@ -240,7 +240,7 @@ class OlmEventService internal constructor(
             }
         } else {
             log.debug { "encrypt megolm event with existing session" }
-            freeAfter(OlmOutboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickle)) { session ->
+            freeAfter(OlmOutboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
                 encryptWithMegolmSession(session, content, roomId, storedSession.newDevices)
             }
         }
@@ -286,11 +286,11 @@ class OlmEventService internal constructor(
         store.olm.updateOutboundMegolmSession(roomId) { oldStoredSession ->
             oldStoredSession?.copy(
                 encryptedMessageCount = oldStoredSession.encryptedMessageCount + 1,
-                pickle = session.pickle(secureStore.olmPickleKey),
+                pickled = session.pickle(secureStore.olmPickleKey),
                 newDevices = emptyMap()
             ) ?: StoredOutboundMegolmSession(
                 roomId = roomId,
-                pickle = session.pickle(secureStore.olmPickleKey),
+                pickled = session.pickle(secureStore.olmPickleKey),
             )
         }
 
@@ -308,28 +308,22 @@ class OlmEventService internal constructor(
         val sessionId = encryptedContent.sessionId
         val senderKey = encryptedContent.senderKey
 
-        var decryptionResult: OlmInboundGroupMessage? = null
+        val storedSession = store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
+            ?: throw DecryptionException.SenderDidNotSendMegolmKeysToUs
 
-        store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { storedSession ->
-            if (storedSession == null) throw DecryptionException.SenderDidNotSendMegolmKeysToUs
-
-            try {
-                freeAfter(OlmInboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickle)) { session ->
-                    decryptionResult = session.decrypt(encryptedContent.ciphertext)
-                    storedSession.copy(pickle = session.pickle(secureStore.olmPickleKey))
-                }
-            } catch (e: OlmLibraryException) {
-                throw DecryptionException.SessionException(e)
+        val decryptionResult = try {
+            freeAfter(OlmInboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
+                session.decrypt(encryptedContent.ciphertext)
             }
+        } catch (e: OlmLibraryException) {
+            throw DecryptionException.SessionException(e)
         }
-        val actualDecryptionResult = decryptionResult
-        requireNotNull(actualDecryptionResult)
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)
         requireNotNull(serializer)
 
-        val decryptedEvent = json.decodeFromString(serializer, actualDecryptionResult.message)
-        val index = actualDecryptionResult.index
+        val decryptedEvent = json.decodeFromString(serializer, decryptionResult.message)
+        val index = decryptionResult.index
         store.olm.updateInboundMegolmMessageIndex(senderKey, sessionId, roomId, index) { storedIndex ->
             if (encryptedEvent.roomId != decryptedEvent.roomId
                 || storedIndex?.let { it.eventId != encryptedEvent.id || it.originTimestamp != encryptedEvent.originTimestamp } == true

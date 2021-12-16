@@ -4,7 +4,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
-import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -12,12 +11,11 @@ import kotlin.time.ExperimentalTime
 * This happens if V is a collection and readWithCache and writeWithCache are used to retrieve less values, than the collection actually
 * holds at the moment. If that causes issues of huge caches, we should make the removerJobs a bit smarter. */
 @OptIn(ExperimentalTime::class)
-class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
+open class StateFlowCache<K, V>(
     private val cacheScope: CoroutineScope,
-    private val repository: R,
-    private val infiniteCache: Boolean = false,
-    private val readCacheTime: Duration = Duration.seconds(5),
-    private val writeCacheTime: Duration = Duration.seconds(5)
+    val infiniteCache: Boolean = false,
+    private val readCacheTime: Duration = Duration.minutes(1),
+    private val writeCacheTime: Duration = Duration.minutes(1)
 ) {
     private val _cache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
     val cache = _cache
@@ -37,7 +35,7 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     suspend fun readWithCache(
         key: K,
         containsInCache: suspend (cacheValue: V?) -> Boolean,
-        retrieveFromRepoAndUpdateCache: suspend (cacheValue: V?, repository: R) -> V?,
+        retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         scope: CoroutineScope? = null
     ): StateFlow<V?> {
         val result = _cache.updateAndGet { oldCache ->
@@ -65,12 +63,12 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             val removerJob = if (job == null && infiniteCache.not()) removeFromCacheJob(key, readCacheTime) else null
 
             if (cacheValue == null) {
-                val databaseValue = MutableStateFlow(retrieveFromRepoAndUpdateCache(null, repository))
+                val databaseValue = MutableStateFlow(retrieveAndUpdateCache(null))
                 oldCache + (key to StateFlowCacheValue(databaseValue, newSubscribers, removerJob))
             } else {
                 cacheValue.removerJob?.cancelAndJoin()
                 cacheValue.value.update {
-                    if (containsInCache(it).not()) retrieveFromRepoAndUpdateCache(it, repository)
+                    if (containsInCache(it).not()) retrieveAndUpdateCache(it)
                     else it
                 }
                 oldCache + (key to cacheValue.copy(
@@ -84,59 +82,29 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         return result.value.asStateFlow()
     }
 
-    suspend fun get(key: K): V? {
-        return readWithCache(
-            key,
-            containsInCache = { it != null },
-            retrieveFromRepoAndUpdateCache = { _, repository -> repository.get(key) },
-            null
-        ).value
-    }
-
-    suspend fun get(key: K, scope: CoroutineScope): StateFlow<V?> {
-        return readWithCache(
-            key,
-            containsInCache = { it != null },
-            retrieveFromRepoAndUpdateCache = { _, repository -> repository.get(key) },
-            scope
-        )
-    }
-
-    suspend fun getWithInfiniteMode(key: K): StateFlow<V?> {
-        return readWithCache(
-            key,
-            containsInCache = { infiniteCache || it != null },
-            retrieveFromRepoAndUpdateCache = { cacheValue, repo ->
-                if (infiniteCache) cacheValue
-                else repo.get(key)
-            },
-            null
-        )
-    }
-
     suspend fun writeWithCache(
         key: K,
         updater: suspend (oldValue: V?) -> V?,
         containsInCache: suspend (cacheValue: V?) -> Boolean,
-        getFromRepositoryAndUpdateCache: suspend (cacheValue: V?, repository: R) -> V?,
-        persistIntoRepository: suspend (newValue: V?, repository: R) -> Unit
+        retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
+        persist: suspend (newValue: V?) -> Unit
     ) {
         val result = _cache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
             val removerJob = if (infiniteCache.not()) removeFromCacheJob(key, writeCacheTime) else null
             val newCacheValue: StateFlowCacheValue<V?>? = if (cacheValue == null) {
-                val valueFromDb = getFromRepositoryAndUpdateCache(null, repository)
+                val valueFromDb = retrieveAndUpdateCache(null)
                 val newValue = updater(valueFromDb)
-                    .also { persistIntoRepository(it, repository) }
+                    .also { persist(it) }
                 newValue?.let { StateFlowCacheValue(MutableStateFlow(newValue), setOf(), removerJob) }
             } else {
                 val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
                     val oldValue =
                         if (containsInCache(oldCacheValue).not())
-                            getFromRepositoryAndUpdateCache(oldCacheValue, repository)
+                            retrieveAndUpdateCache(oldCacheValue)
                         else oldCacheValue
                     updater(oldValue)
-                        .also { persistIntoRepository(it, repository) }
+                        .also { persist(it) }
                 }
                 cacheValue.removerJob?.cancelAndJoin()
                 newValue?.let { cacheValue.copy(removerJob = removerJob) }
@@ -145,19 +113,6 @@ class StateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             else oldCache + (key to newCacheValue)
         }[key]
         result?.removerJob?.start()
-    }
-
-    suspend fun update(key: K, updater: suspend (oldValue: V?) -> V?) {
-        writeWithCache(key, updater,
-            containsInCache = { infiniteCache || it != null },
-            getFromRepositoryAndUpdateCache = { cacheValue, repo ->
-                if (infiniteCache) cacheValue
-                else repo.get(key)
-            },
-            persistIntoRepository = { newValue, repo ->
-                if (newValue == null) repo.delete(key)
-                else repo.save(key, newValue)
-            })
     }
 
     private fun removeFromCacheJob(key: K, delay: Duration): Job {

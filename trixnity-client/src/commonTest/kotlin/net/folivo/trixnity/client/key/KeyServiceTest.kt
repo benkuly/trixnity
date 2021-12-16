@@ -392,9 +392,9 @@ class KeyServiceTest : ShouldSpec({
                     )
                 )
 
-                store.olm.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickle = "") }
+                store.olm.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
                 store.olm.updateOutboundMegolmSession(room3) {
-                    StoredOutboundMegolmSession(room3, newDevices = mapOf(cedric to setOf(cedricDevice)), pickle = "")
+                    StoredOutboundMegolmSession(room3, newDevices = mapOf(cedric to setOf(cedricDevice)), pickled = "")
                 }
 
                 cut.handleOutdatedKeys(setOf(cedric, alice))

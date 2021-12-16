@@ -1,19 +1,19 @@
 package net.folivo.trixnity.client.integrationtests
 
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
-import net.folivo.trixnity.client.store.sqldelight.SqlDelightStoreFactory
+import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
+import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -30,8 +30,8 @@ class TimelineEventIT {
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
     private lateinit var scope: CoroutineScope
-    private lateinit var driver1: JdbcSqliteDriver
-    private lateinit var driver2: JdbcSqliteDriver
+    private lateinit var database1: Database
+    private lateinit var database2: Database
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:latest"))
@@ -61,12 +61,10 @@ class TimelineEventIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        driver1 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        driver2 = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        val storeFactory1 =
-            SqlDelightStoreFactory(driver1, scope, Dispatchers.IO, newSingleThreadContext("transaction"))
-        val storeFactory2 =
-            SqlDelightStoreFactory(driver2, scope, Dispatchers.IO, newSingleThreadContext("transaction"))
+        database1 = Database.connect("jdbc:h2:mem:test1;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
+        database2 = Database.connect("jdbc:h2:mem:test2;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -96,8 +94,6 @@ class TimelineEventIT {
     @AfterTest
     fun afterEach() {
         scope.cancel()
-        driver1.close()
-        driver2.close()
     }
 
     @Test

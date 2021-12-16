@@ -137,7 +137,7 @@ internal suspend fun OlmStore.storeOlmSession(
                     StoredOlmSession(
                         sessionId = session.sessionId,
                         senderKey = identityKey,
-                        pickle = session.pickle(pickleKey),
+                        pickled = session.pickle(pickleKey),
                         lastUsedAt = Clock.System.now()
                     )
         if (newSessions.size > 9) {

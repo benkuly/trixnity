@@ -9,6 +9,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 
 class OlmStoreTest : ShouldSpec({
@@ -18,7 +19,15 @@ class OlmStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        cut = OlmStore(olmAccountRepository, mockk(), mockk(), mockk(), mockk(), storeScope)
+        cut = OlmStore(
+            olmAccountRepository,
+            mockk(),
+            mockk(),
+            mockk(),
+            mockk(),
+            NoopRepositoryTransactionManager,
+            storeScope
+        )
     }
     afterTest {
         clearAllMocks()
