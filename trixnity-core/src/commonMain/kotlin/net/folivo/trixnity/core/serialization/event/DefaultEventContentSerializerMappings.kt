@@ -35,6 +35,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
     )
     override val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>> = setOf(
         of<PresenceEventContent>("m.presence"),
+        of<TypingEventContent>("m.typing")
     )
 
     override val toDevice: Set<EventContentSerializerMapping<out ToDeviceEventContent>> = setOf(

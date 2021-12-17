@@ -1064,4 +1064,36 @@ class RoomsApiClientTest {
             UserId("alice", "example.com")
         )
     }
+
+    @Test
+    fun shouldSetUserIsTyping() = runBlockingTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/typing/%40alice%3Aexample%2Ecom",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"typing":true,"timeout":10000}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.setUserIsTyping(
+            RoomId("room", "server"),
+            UserId("alice", "example.com"),
+            typing = true,
+            timeout = 10_000,
+        )
+    }
 }
