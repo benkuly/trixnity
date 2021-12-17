@@ -550,4 +550,22 @@ class RoomsApiClient(
             body = content
         }
     }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidtypinguserid">matrix spec</a>
+     */
+    suspend fun setUserIsTyping(
+        roomId: RoomId,
+        userId: UserId,
+        typing: Boolean,
+        timeout: Int? = null,
+        asUserId: UserId? = null,
+    ) {
+        httpClient.request<Unit> {
+            method = Put
+            url("/_matrix/client/v3/rooms/${roomId.e()}/typing/${userId.e()}")
+            parameter("user_id", asUserId)
+            body = TypingRequest(typing, timeout)
+        }
+    }
 }

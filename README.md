@@ -291,7 +291,7 @@ sdk.dir=/path/to/android/sdk
 
 Linux: Install cmake `3.22.1` (e.g. by
 running `sudo ./cmake-3.22.1-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr
-`). You also may need to install `libncurses5`.
+`). You also may need to install `libncurses5` and `ninja-build`.
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
