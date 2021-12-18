@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Store
@@ -35,6 +36,7 @@ class VerificationService(
     private val olm: OlmService,
     private val room: RoomService,
     private val user: UserService,
+    private val key: KeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
     private val loggerFactory: LoggerFactory
 ) {
@@ -77,6 +79,7 @@ class VerificationService(
                             api = api,
                             olm = olm,
                             store = store,
+                            key = key,
                             loggerFactory = loggerFactory
                         ).cancel()
                     } else {
@@ -91,6 +94,7 @@ class VerificationService(
                                 supportedMethods = supportedMethods,
                                 api = api,
                                 olm = olm,
+                                key = key,
                                 store = store,
                                 loggerFactory = loggerFactory
                             )
@@ -118,6 +122,7 @@ class VerificationService(
                             supportedMethods = supportedMethods,
                             api = api,
                             olm = olm,
+                            key = key,
                             store = store,
                             loggerFactory = loggerFactory
                         ).cancel()
@@ -133,6 +138,7 @@ class VerificationService(
                                 supportedMethods = supportedMethods,
                                 api = api,
                                 olm = olm,
+                                key = key,
                                 store = store,
                                 loggerFactory = loggerFactory
                             )
@@ -183,6 +189,7 @@ class VerificationService(
                 supportedMethods = supportedMethods,
                 api = api,
                 olm = olm,
+                key = key,
                 store = store,
                 loggerFactory = loggerFactory
             )
@@ -242,6 +249,7 @@ class VerificationService(
                         olm = olm,
                         user = user,
                         room = room,
+                        key = key,
                         loggerFactory = loggerFactory
                     ).also { auv -> activeUserVerifications.update { it + auv } }
                 } else null

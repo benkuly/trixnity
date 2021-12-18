@@ -12,11 +12,12 @@ import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 
-class KeysStore(
+class KeyStore(
     private val outdatedKeysRepository: OutdatedKeysRepository,
     deviceKeysRepository: DeviceKeysRepository,
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
+    private val keyChainLinkRepository: KeyChainLinkRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
@@ -50,15 +51,15 @@ class KeysStore(
     suspend fun getCrossSigningKeys(
         userId: UserId,
         scope: CoroutineScope
-    ): StateFlow<Set<StoredCrossSigningKey>?> = crossSigningKeysCache.get(userId, scope)
+    ): StateFlow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId, scope)
 
     suspend fun getCrossSigningKeys(
         userId: UserId,
-    ): Set<StoredCrossSigningKey>? = crossSigningKeysCache.get(userId)
+    ): Set<StoredCrossSigningKeys>? = crossSigningKeysCache.get(userId)
 
     suspend fun updateCrossSigningKeys(
         userId: UserId,
-        updater: suspend (Set<StoredCrossSigningKey>?) -> Set<StoredCrossSigningKey>?
+        updater: suspend (Set<StoredCrossSigningKeys>?) -> Set<StoredCrossSigningKeys>?
     ) = crossSigningKeysCache.update(userId, updater = updater)
 
     suspend fun getKeyVerificationState(
@@ -94,4 +95,13 @@ class KeysStore(
             VerifiedKeysRepositoryKey(keyId = keyId, keyAlgorithm = key.algorithm, userId = userId, deviceId = deviceId)
         ) { state }
     }
+
+    suspend fun saveKeyChainLink(keyChainLink: KeyChainLink) =
+        rtm.transaction { keyChainLinkRepository.save(keyChainLink) }
+
+    suspend fun getKeyChainLinksBySigningKey(userId: UserId, signingKey: Key.Ed25519Key) =
+        rtm.transaction { keyChainLinkRepository.getBySigningKey(userId, signingKey) }
+
+    suspend fun deleteKeyChainLinksBySignedKey(userId: UserId, signedKey: Key.Ed25519Key) =
+        rtm.transaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
 }

@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlin.time.Duration
@@ -14,8 +13,7 @@ import kotlin.time.ExperimentalTime
 open class StateFlowCache<K, V>(
     private val cacheScope: CoroutineScope,
     val infiniteCache: Boolean = false,
-    private val readCacheTime: Duration = Duration.minutes(1),
-    private val writeCacheTime: Duration = Duration.minutes(1)
+    private val cacheDuration: Duration = Duration.minutes(1),
 ) {
     private val _cache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
     val cache = _cache
@@ -25,7 +23,15 @@ open class StateFlowCache<K, V>(
     fun init(initialValues: Map<K, V>) {
         require(infiniteCache) { "Cache cannot be initialized with values, when infiniteCache is disabled." }
         _cache.value =
-            initialValues.mapValues { StateFlowCacheValue<V?>(MutableStateFlow(it.value), setOf(), null) }.toMap()
+            initialValues.mapValues {
+                val removeTime = MutableStateFlow(Duration.INFINITE)
+                StateFlowCacheValue<V?>(
+                    MutableStateFlow(it.value),
+                    setOf(),
+                    removeTime,
+                    removeFromCacheJob(it.key, removeTime)
+                )
+            }.toMap()
     }
 
     fun reset() {
@@ -49,36 +55,39 @@ open class StateFlowCache<K, V>(
                 job?.invokeOnCompletion {
                     cacheScope.launch {
                         _cache.update {
-                            val currentValue = it[key]
-                            when {
-                                currentValue == null -> it
-                                currentValue.subscribers.size <= 1 && currentValue.removerJob == null -> it - key
-                                else -> it + (key to currentValue.copy(subscribers = currentValue.subscribers - scope))
+                            when (val currentValue = it[key]) {
+                                null -> it
+                                else -> {
+                                    currentValue.removeTimer.emit(cacheDuration)
+                                    it + (key to currentValue.copy(subscribers = currentValue.subscribers - scope))
+                                }
                             }
                         }
                     }
                 }
-            // If there is no job, we create one with a hard delay. If someone reads the cache value, the old job gets
-            // cancelled and a new one will be created.
-            val removerJob = if (job == null && infiniteCache.not()) removeFromCacheJob(key, readCacheTime) else null
 
             if (cacheValue == null) {
                 val databaseValue = MutableStateFlow(retrieveAndUpdateCache(null))
-                oldCache + (key to StateFlowCacheValue(databaseValue, newSubscribers, removerJob))
+                val removeTime = MutableStateFlow(cacheDuration)
+                oldCache + (key to StateFlowCacheValue(
+                    databaseValue,
+                    newSubscribers,
+                    removeTime,
+                    removeFromCacheJob(key, removeTime)
+                ))
             } else {
-                cacheValue.removerJob?.cancelAndJoin()
+                cacheValue.removeTimer.emit(cacheDuration)
                 cacheValue.value.update {
                     if (containsInCache(it).not()) retrieveAndUpdateCache(it)
                     else it
                 }
                 oldCache + (key to cacheValue.copy(
                     subscribers = cacheValue.subscribers + newSubscribers,
-                    removerJob = removerJob
                 ))
             }
         }[key]
+        result?.removerJob?.start()
         requireNotNull(result) { "We are sure, that it contains a value!" }
-        result.removerJob?.start()
         return result.value.asStateFlow()
     }
 
@@ -91,38 +100,48 @@ open class StateFlowCache<K, V>(
     ) {
         val result = _cache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
-            val removerJob = if (infiniteCache.not()) removeFromCacheJob(key, writeCacheTime) else null
-            val newCacheValue: StateFlowCacheValue<V?>? = if (cacheValue == null) {
-                val valueFromDb = retrieveAndUpdateCache(null)
-                val newValue = updater(valueFromDb)
-                    .also { persist(it) }
-                newValue?.let { StateFlowCacheValue(MutableStateFlow(newValue), setOf(), removerJob) }
-            } else {
-                val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
-                    val oldValue =
-                        if (containsInCache(oldCacheValue).not())
-                            retrieveAndUpdateCache(oldCacheValue)
-                        else oldCacheValue
-                    updater(oldValue)
+            val newCacheValue: StateFlowCacheValue<V?>? =
+                if (cacheValue == null) {
+                    val valueFromDb = retrieveAndUpdateCache(null)
+                    val newValue = updater(valueFromDb)
                         .also { persist(it) }
+                    val removeTime = MutableStateFlow(cacheDuration)
+                    newValue?.let {
+                        StateFlowCacheValue(
+                            MutableStateFlow(newValue),
+                            setOf(),
+                            removeTime,
+                            removeFromCacheJob(key, removeTime)
+                        )
+                    }
+                } else {
+                    val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
+                        val oldValue =
+                            if (containsInCache(oldCacheValue).not())
+                                retrieveAndUpdateCache(oldCacheValue)
+                            else oldCacheValue
+                        updater(oldValue)
+                            .also { persist(it) }
+                    }
+                    newValue?.let { cacheValue }
                 }
-                cacheValue.removerJob?.cancelAndJoin()
-                newValue?.let { cacheValue.copy(removerJob = removerJob) }
-            }
             if (newCacheValue == null) oldCache - key
             else oldCache + (key to newCacheValue)
         }[key]
         result?.removerJob?.start()
     }
 
-    private fun removeFromCacheJob(key: K, delay: Duration): Job {
-        return cacheScope.launch(start = LAZY) {
-            delay(delay)
-            _cache.update {
-                val currentValue = it[key]
-                if (currentValue?.subscribers?.size == 0) it - key
-                else it
-            }
+    private fun removeFromCacheJob(key: K, removeTimer: StateFlow<Duration>): Job {
+        return cacheScope.launch(start = CoroutineStart.LAZY) {
+            if (infiniteCache.not())
+                removeTimer.collectLatest { duration ->
+                    delay(duration)
+                    _cache.update {
+                        val currentValue = it[key]
+                        if (currentValue?.subscribers?.size == 0) it - key
+                        else it
+                    }
+                }
         }
     }
 }

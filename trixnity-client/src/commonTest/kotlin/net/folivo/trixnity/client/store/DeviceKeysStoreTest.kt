@@ -10,10 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
-import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
-import net.folivo.trixnity.client.store.repository.DeviceKeysRepository
-import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
-import net.folivo.trixnity.client.store.repository.OutdatedKeysRepository
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 
 class DeviceKeysStoreTest : ShouldSpec({
@@ -21,16 +18,18 @@ class DeviceKeysStoreTest : ShouldSpec({
     val deviceKeysRepository = mockk<DeviceKeysRepository>(relaxUnitFun = true)
     val crossSigningKeysRepository = mockk<CrossSigningKeysRepository>(relaxUnitFun = true)
     val keyVerificationStateRepository = mockk<KeyVerificationStateRepository>(relaxUnitFun = true)
+    val keyChainLinkRepository = mockk<KeyChainLinkRepository>(relaxUnitFun = true)
     lateinit var storeScope: CoroutineScope
-    lateinit var cut: KeysStore
+    lateinit var cut: KeyStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        cut = KeysStore(
+        cut = KeyStore(
             outdatedKeysRepository,
             deviceKeysRepository,
             crossSigningKeysRepository,
             keyVerificationStateRepository,
+            keyChainLinkRepository,
             NoopRepositoryTransactionManager,
             storeScope
         )
@@ -40,7 +39,7 @@ class DeviceKeysStoreTest : ShouldSpec({
         storeScope.cancel()
     }
 
-    context(KeysStore::init.name) {
+    context(KeyStore::init.name) {
         should("load values from database") {
             coEvery { outdatedKeysRepository.get(1) } returns setOf(
                 UserId("alice", "server"), UserId("bob", "server")

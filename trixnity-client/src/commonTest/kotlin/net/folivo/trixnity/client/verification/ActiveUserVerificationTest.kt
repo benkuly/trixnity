@@ -79,6 +79,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             store = store,
             user = mockk(relaxed = true),
             room = room,
+            key = mockk(),
             loggerFactory = LoggerFactory.default
         )
     }

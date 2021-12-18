@@ -82,5 +82,5 @@ sealed interface ActiveSasVerificationState {
         }
     }
 
-    data class WaitForMacs(val isOurOwn: Boolean) : ActiveSasVerificationState
+    object WaitForMacs : ActiveSasVerificationState
 }

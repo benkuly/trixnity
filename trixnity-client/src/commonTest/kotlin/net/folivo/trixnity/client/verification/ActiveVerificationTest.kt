@@ -43,6 +43,7 @@ class ActiveVerificationTest : ShouldSpec({
         "t",
         mockk(),
         mockk(),
+        mockk(),
         LoggerFactory.default
     ) {
         override suspend fun lifecycle(scope: CoroutineScope) {

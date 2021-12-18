@@ -4,7 +4,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.StoredCrossSigningKey
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
 import net.folivo.trixnity.core.model.UserId
 import kotlin.coroutines.CoroutineContext
@@ -14,13 +14,13 @@ class SqlDelightCrossSigningKeysRepository(
     private val json: Json,
     private val context: CoroutineContext
 ) : CrossSigningKeysRepository {
-    override suspend fun get(key: UserId): Set<StoredCrossSigningKey>? = withContext(context) {
+    override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? = withContext(context) {
         db.getCrossSigningKeys(key.full).executeAsOneOrNull()?.let {
-            json.decodeFromString<Set<StoredCrossSigningKey>>(it)
+            json.decodeFromString<Set<StoredCrossSigningKeys>>(it)
         }
     }
 
-    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKey>) = withContext(context) {
+    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) = withContext(context) {
         db.saveCrossSigningKeys(key.full, json.encodeToString(value))
     }
 

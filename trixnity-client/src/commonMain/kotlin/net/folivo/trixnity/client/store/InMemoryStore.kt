@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 
@@ -20,6 +21,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     deviceKeysRepository = InMemoryMinimalStoreRepository(),
     crossSigningKeysRepository = InMemoryMinimalStoreRepository(),
     keyVerificationStateRepository = InMemoryMinimalStoreRepository(),
+    keyChainLinkRepository = InMemoryKeyChainLinkRepository(),
     olmAccountRepository = InMemoryMinimalStoreRepository(),
     olmSessionRepository = InMemoryMinimalStoreRepository(),
     inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
@@ -90,4 +92,22 @@ class InMemoryMediaRepository : MediaRepository, InMemoryMinimalStoreRepository<
             it
         }
     }
+}
+
+class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
+    private val values = MutableStateFlow<Set<KeyChainLink>>(setOf())
+    override suspend fun save(keyChainLink: KeyChainLink) {
+        values.update { it + keyChainLink }
+    }
+
+    override suspend fun getBySigningKey(signingUserId: UserId, signingKey: Key.Ed25519Key): Set<KeyChainLink> {
+        return values.value.filter { it.signingUserId == signingUserId && it.signingKey == signingKey }.toSet()
+    }
+
+    override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key) {
+        values.update {
+            it.filter { value -> value.signedUserId == signedUserId && value.signedKey == signedKey }.toSet()
+        }
+    }
+
 }

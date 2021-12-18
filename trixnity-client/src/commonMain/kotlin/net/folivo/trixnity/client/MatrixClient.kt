@@ -55,7 +55,7 @@ class MatrixClient private constructor(
     val user: UserService
     val media: MediaService
     val verification: VerificationService
-    val keys: KeyService
+    val key: KeyService
 
     init {
         olm = OlmService(
@@ -85,6 +85,12 @@ class MatrixClient private constructor(
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
             loggerFactory = loggerFactory
         )
+        key = KeyService(
+            store = store,
+            api = api,
+            olmSignService = olm.sign,
+            loggerFactory = loggerFactory
+        )
         verification = VerificationService(
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -93,12 +99,7 @@ class MatrixClient private constructor(
             olm = olm,
             room = room,
             user = user,
-            loggerFactory = loggerFactory
-        )
-        keys = KeyService(
-            store = store,
-            api = api,
-            olmSignService = olm.sign,
+            key = key,
             loggerFactory = loggerFactory
         )
     }
@@ -280,7 +281,7 @@ class MatrixClient private constructor(
             }
             val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
-                keys.start(this)
+                key.start(this)
                 olm.start(this)
                 room.start(this)
                 user.start()
@@ -292,11 +293,13 @@ class MatrixClient private constructor(
             val myUserId = store.account.userId.value
             requireNotNull(myUserId)
             val filterId = store.account.filterId.value
-            if (filterId == null)
+            if (filterId == null) {
+                log.debug { "set new filter for sync" }
                 store.account.filterId.value = api.users.setFilter(
                     myUserId,
                     Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
                 )
+            }
         }
         api.sync.start(
             filter = store.account.filterId.value,

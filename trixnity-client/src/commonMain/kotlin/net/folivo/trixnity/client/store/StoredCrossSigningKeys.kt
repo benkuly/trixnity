@@ -5,7 +5,7 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.core.model.crypto.SignedCrossSigningKeys
 
 @Serializable
-data class StoredCrossSigningKey(
+data class StoredCrossSigningKeys(
     val value: SignedCrossSigningKeys,
     val trustLevel: KeySignatureTrustLevel
 )

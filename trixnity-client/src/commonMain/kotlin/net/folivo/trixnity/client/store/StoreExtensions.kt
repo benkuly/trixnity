@@ -89,7 +89,7 @@ suspend inline fun RoomTimelineStore.getPrevious(
 ): TimelineEvent? =
     event.previousEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
 
-suspend inline fun KeysStore.isTracked(userId: UserId): Boolean =
+suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId).isNullOrEmpty().not()
 
 suspend inline fun OlmStore.waitForInboundMegolmSession(

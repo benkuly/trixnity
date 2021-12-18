@@ -6,9 +6,7 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
@@ -82,6 +80,28 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             coEvery { repository.get("key") } returns "old"
             cut.update("key") { "value" }
             coVerify { repository.save("key", "value") }
+            transactionWasCalled.value shouldBe true
+        }
+        should("allow multiple writes") {
+            coEvery { repository.get("key") } returns "old"
+            val job1 = launch {
+                cut.update("key") {
+                    delay(200) // this ensures, that all updates are in here
+                    "value1"
+                }
+            }
+            val job2 = launch {
+                cut.update("key") {
+                    delay(200) // this ensures, that all updates are in here
+                    "value2"
+                }
+            }
+            job1.join()
+            job2.join()
+            coVerify {
+                repository.save("key", "value1")
+                repository.save("key", "value2")
+            }
             transactionWasCalled.value shouldBe true
         }
         should("remove from database") {

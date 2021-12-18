@@ -34,7 +34,7 @@ class TimelineEventIT {
     private lateinit var database2: Database
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:latest"))
+    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
         .apply {
             withEnv(
                 mapOf(
@@ -61,8 +61,8 @@ class TimelineEventIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database1 = Database.connect("jdbc:h2:mem:test1;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
-        database2 = Database.connect("jdbc:h2:mem:test2;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
+        database1 = Database.connect("jdbc:h2:mem:timeline-event-test1;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
+        database2 = Database.connect("jdbc:h2:mem:timeline-event-test2;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
         val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope)
         val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope)
         val secureStore = object : SecureStore {
@@ -98,22 +98,23 @@ class TimelineEventIT {
 
     @Test
     fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
-        val room = client1.api.rooms.createRoom(
-            invite = setOf(client2.userId),
-            initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
-        )
-        client2.room.getById(room).first { it?.membership == INVITE }
-        client2.api.rooms.joinRoom(room)
+        withTimeout(60_000) {
+            val room = client1.api.rooms.createRoom(
+                invite = setOf(client2.userId),
+                initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+            )
+            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.api.rooms.joinRoom(room)
 
-        client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
-        client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
+            client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
+            client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
 
-        client1.room.sendMessage(room) { text("Hello!") }
-        client2.room.sendMessage(room) { text("Hello to you, too!") }
-        client1.room.sendMessage(room) { text("How are you?") }
+            client1.room.sendMessage(room) { text("Hello!") }
+            client2.room.sendMessage(room) { text("Hello to you, too!") }
+            client1.room.sendMessage(room) { text("How are you?") }
 
-        val decryptedMessages = mutableSetOf<EventId>()
-        withTimeout(30_000) {
+            val decryptedMessages = mutableSetOf<EventId>()
+
             client2.room.getLastTimelineEvent(room, scope)
                 .filterNotNull()
                 .takeWhile { decryptedMessages.size < 3 }

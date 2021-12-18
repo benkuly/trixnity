@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.exposed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.store.StoredCrossSigningKey
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -24,7 +24,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
         val alice = UserId("alice", "server")
         val bob = UserId("bob", "server")
         val aliceCrossSigningKeys = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         alice,
@@ -33,7 +33,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
                     ), mapOf(bob to keysOf(Key.Ed25519Key("BOBDE", "keyValue")))
                 ), KeySignatureTrustLevel.Valid(true)
             ),
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         alice,
@@ -44,7 +44,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
             ),
         )
         val bobCrossSigningKeys = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         bob,
@@ -55,7 +55,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
             ),
         )
         val bobDeviceKeysCopy = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         bob,
