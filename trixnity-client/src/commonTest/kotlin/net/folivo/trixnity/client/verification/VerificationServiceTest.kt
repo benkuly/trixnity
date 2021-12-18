@@ -78,6 +78,7 @@ class VerificationServiceTest : ShouldSpec({
             olm = olm,
             room = room,
             user = user,
+            key = mockk(),
             loggerFactory = LoggerFactory.default
         )
     }

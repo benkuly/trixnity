@@ -155,13 +155,7 @@ class OlmEventService internal constructor(
                     }
                 }?.firstOrNull()
                 ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
-                    val now = Clock.System.now()
-                    val tooManyNewSessions = (storedSessions?.size ?: 0) >= 5 && storedSessions
-                        ?.sortedByDescending { it.createdAt }
-                        ?.takeLast(5)
-                        ?.map { it.createdAt.plus(1, DateTimeUnit.HOUR) <= now }
-                        ?.all { true } == true
-                    if (!tooManyNewSessions) {
+                    if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
                         log.debug { "decrypt olm event with new session for device with key $senderIdentityKey" }
                         freeAfter(
                             OlmSession.createInboundFrom(account, senderIdentityKey.value, ciphertext.body)
@@ -177,17 +171,21 @@ class OlmEventService internal constructor(
                     throw SessionException.CouldNotDecrypt
                 }
         } catch (decryptError: Throwable) {
-            val senderDeviceId =
-                store.keys.getDeviceKeys(senderId)?.entries
-                    ?.find { it.value.value.signed.keys.contains(senderIdentityKey) }?.key
-                    ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
-            try {
-                log.debug { "try recover corrupted olm session by sending a dummy event" }
-                api.users.sendToDevice(
-                    mapOf(senderId to mapOf(senderDeviceId to encryptOlm(DummyEventContent, senderId, senderDeviceId)))
-                )
-            } catch (sendError: Throwable) {
-                log.warning { "could not send m.dummy to $senderId ($senderDeviceId)" }
+            if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
+                val senderDeviceId =
+                    store.keys.getDeviceKeys(senderId)?.entries
+                        ?.find { it.value.value.signed.keys.contains(senderIdentityKey) }?.key
+                        ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
+                try {
+                    log.debug { "try recover corrupted olm session by sending a dummy event" }
+                    api.users.sendToDevice(
+                        mapOf(
+                            senderId to mapOf(senderDeviceId to encryptOlm(DummyEventContent, senderId, senderDeviceId))
+                        )
+                    )
+                } catch (sendError: Throwable) {
+                    log.warning { "could not send m.dummy to $senderId ($senderDeviceId)" }
+                }
             }
             throw decryptError
         }
@@ -335,5 +333,14 @@ class OlmEventService internal constructor(
         }
 
         return decryptedEvent.also { log.debug { "decrypted event: $it" } }
+    }
+
+    private fun hasCreatedTooManyOlmSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
+        val now = Clock.System.now()
+        return (storedSessions?.size ?: 0) >= 5 && storedSessions
+            ?.sortedByDescending { it.createdAt }
+            ?.takeLast(5)
+            ?.map { it.createdAt.plus(1, DateTimeUnit.HOUR) <= now }
+            ?.all { true } == true
     }
 }

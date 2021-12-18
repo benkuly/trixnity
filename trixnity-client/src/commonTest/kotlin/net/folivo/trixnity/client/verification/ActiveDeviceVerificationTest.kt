@@ -62,6 +62,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             api = api,
             olm = olm,
             store = mockk(),
+            key = mockk(),
             loggerFactory = LoggerFactory.default
         )
     }

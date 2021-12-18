@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
@@ -40,6 +41,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
     val bobDevice = "BBBBBB"
 
     val store = mockk<Store>()
+    val keyService = mockk<KeyService>()
     val json = createMatrixJson()
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
 
@@ -58,6 +60,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             transactionId = "t",
             sendVerificationStep = { sendVerificationStepFlow.emit(it) },
             store = store,
+            keyService = keyService,
             json = json,
             loggerFactory = LoggerFactory.default
         )
@@ -84,6 +87,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 transactionId = "t",
                 sendVerificationStep = { sendVerificationStepFlow.emit(it) },
                 store = store,
+                keyService = keyService,
                 json = json,
                 loggerFactory = LoggerFactory.default
             )
@@ -254,9 +258,14 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
                 SasKeyEventContent("key", null, "t")
             )
-            should("change state to ${WaitForMacs::class.simpleName}") {
+            should("change state to ${WaitForMacs::class.simpleName} when accepted") {
                 cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
-                cut.state.value shouldBe WaitForMacs(true)
+                cut.state.value shouldBe WaitForMacs
+            }
+            should("not change state to ${WaitForMacs::class.simpleName} when from other") {
+                val oldState = cut.state.value
+                cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), false)
+                cut.state.value shouldBe oldState
             }
         }
         context("current state is ${WaitForMacs::class.simpleName}") {
@@ -289,7 +298,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     )
                     cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
                     cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
-                    cut.state.value shouldBe WaitForMacs(true)
+                    cut.state.value shouldBe WaitForMacs
                     val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
 
                     bobOlmSas.setTheirPublicKey(alicePublicKey)
@@ -308,6 +317,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             )
             should("send ${DoneEventContent::class.simpleName}") {
                 coEvery { store.keys.saveKeyVerificationState(any(), any(), any(), any()) } just Runs
+                coEvery { keyService.updateTrustLevel(any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
@@ -321,6 +331,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                         Key.Ed25519Key("HUHU", "buh"), bob, bobDevice,
                         KeyVerificationState.Verified("buh")
                     )
+                    keyService.updateTrustLevel(bob, Key.Ed25519Key(bobDevice, "bobKey"))
+                    keyService.updateTrustLevel(bob, Key.Ed25519Key("HUHU", "buh"))
                 }
             }
             should("cancel when key mismatches") {

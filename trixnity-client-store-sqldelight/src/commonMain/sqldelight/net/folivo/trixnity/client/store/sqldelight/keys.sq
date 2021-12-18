@@ -69,3 +69,25 @@ WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
 deleteKeyVerificationState:
 DELETE FROM sql_key_verification_state
 WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
+
+CREATE TABLE sql_key_chain_link (
+    signing_user_id TEXT NOT NULL,
+    signing_key_id TEXT NOT NULL,
+    signing_key_value TEXT NOT NULL,
+    signed_user_id TEXT NOT NULL,
+    signed_key_id TEXT NOT NULL,
+    signed_key_value TEXT NOT NULL,
+    PRIMARY KEY (signing_user_id,signing_key_id,signing_key_value,signed_user_id,signed_key_id,signed_key_value)
+);
+
+saveKeyChainLink:
+INSERT OR REPLACE INTO sql_key_chain_link
+VALUES ?;
+
+getKeyChainLinkBySigningKey:
+SELECT * FROM sql_key_chain_link
+WHERE signing_user_id = ? AND signing_key_id = ? AND signing_key_value = ?;
+
+deleteKeyChainLinkBySignedgKey:
+DELETE FROM sql_key_chain_link
+WHERE signed_user_id = ? AND signed_key_id = ? AND signed_key_value = ?;

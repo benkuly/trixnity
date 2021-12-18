@@ -45,6 +45,7 @@ class SqlDelightStore(
     keyVerificationStateRepository = SqlDelightKeyVerificationStateRepository(
         database.keysQueries, json, databaseCoroutineContext
     ),
+    keyChainLinkRepository = SqlDelightKeyChainLinkRepository(database.keysQueries, databaseCoroutineContext),
     olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
     olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
     inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(

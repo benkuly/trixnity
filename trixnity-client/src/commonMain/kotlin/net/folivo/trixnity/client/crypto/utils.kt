@@ -13,21 +13,21 @@ import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
-internal suspend fun KeysStore.waitForUpdateOutdatedKey(vararg users: UserId) {
+internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
     withTimeoutOrNull(5_000) {
         outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
     }
 }
 
 
-internal suspend inline fun <reified T : Key> KeysStore.getFromDevice(
+internal suspend inline fun <reified T : Key> KeyStore.getFromDevice(
     userId: UserId,
     deviceId: String?
 ): T? {
     return getDeviceKeys(userId)?.get(deviceId)?.value?.get()
 }
 
-internal suspend inline fun <reified T : Key> KeysStore.getOrFetchKeyFromDevice(
+internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeyFromDevice(
     userId: UserId,
     deviceId: String?
 ): T? {
@@ -39,7 +39,7 @@ internal suspend inline fun <reified T : Key> KeysStore.getOrFetchKeyFromDevice(
     } else key
 }
 
-internal suspend inline fun <reified T : Key> KeysStore.getOrFetchKeysFromDevice(
+internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeysFromDevice(
     userId: UserId,
     deviceId: String?
 ): Set<T>? {
@@ -52,7 +52,7 @@ internal suspend inline fun <reified T : Key> KeysStore.getOrFetchKeysFromDevice
     return keys?.toSet()
 }
 
-internal suspend inline fun <reified T : Key> KeysStore.getDeviceKeyByValue(
+internal suspend inline fun <reified T : Key> KeyStore.getDeviceKeyByValue(
     userId: UserId,
     keyValue: String
 ): T? {
@@ -68,7 +68,7 @@ internal suspend inline fun <reified T : Key> KeysStore.getDeviceKeyByValue(
 }
 
 // TODO test
-internal suspend inline fun <reified T : Key> KeysStore.getKeysFromUser(
+internal suspend inline fun <reified T : Key> KeyStore.getKeysFromUser(
     userId: UserId
 ): Set<T>? {
     val userKeys = getDeviceKeys(userId) ?: run {
@@ -80,31 +80,37 @@ internal suspend inline fun <reified T : Key> KeysStore.getKeysFromUser(
     return keys?.toSet()
 }
 
-internal suspend inline fun KeysStore.getDeviceKey(userId: UserId, deviceId: String): StoredDeviceKeys? {
+internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String): StoredDeviceKeys? {
     return this.getDeviceKeys(userId)?.get(deviceId)
 }
 
-internal suspend inline fun KeysStore.getDeviceKey(userId: UserId, deviceId: String, scope: CoroutineScope) =
+internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String, scope: CoroutineScope) =
     this.getDeviceKeys(userId, scope).map { it?.get(deviceId) }.stateIn(scope)
 
-internal suspend inline fun KeysStore.getCrossSigningKey(
+internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,
     usage: CrossSigningKeysUsage
-): StoredCrossSigningKey? {
+): StoredCrossSigningKeys? {
     return this.getCrossSigningKeys(userId)?.firstOrNull { it.value.signed.usage.contains(usage) }
 }
 
-internal suspend inline fun KeysStore.getCrossSigningKey(
+internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,
     usage: CrossSigningKeysUsage,
     scope: CoroutineScope
-): StateFlow<StoredCrossSigningKey?> {
+): StateFlow<StoredCrossSigningKeys?> {
     return this.getCrossSigningKeys(userId, scope)
         .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(usage) } }.stateIn(scope)
 }
 
-internal suspend inline fun KeysStore.getCrossSigningKey(userId: UserId, keyId: String): StoredCrossSigningKey? {
-    return this.getCrossSigningKeys(userId)?.find { keys -> keys.value.signed.keys.keys.any { it.keyId == keyId } }
+internal suspend inline fun KeyStore.getCrossSigningKey(
+    userId: UserId,
+    keyId: String
+): Pair<Key.Ed25519Key, StoredCrossSigningKeys>? {
+    return this.getCrossSigningKeys(userId)?.firstNotNullOfOrNull { keys ->
+        keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().firstOrNull { it.keyId == keyId }
+            ?.let { it to keys }
+    }
 }
 
 internal fun OlmStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {

@@ -38,16 +38,18 @@ This project contains the following sub-projects, which can be used independentl
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
-- [trixnity-client-sqldelight](/trixnity-client-sqldelight) implements the database for trixnity-client
-  with [sqldelight](https://github.com/cashapp/sqldelight/).
+- [trixnity-client-store-exposed](/trixnity-client-store-exposed) implements a database for trixnity-client
+  with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM as platform.
+- [trixnity-client-store-sqldelight](/trixnity-client-store-sqldelight) implements a database for trixnity-client
+  with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained at the moment.
 
 If you want to see Trixnity in action, take a look into the [examples](/examples).
 
-We plan to add something like `trixnity-client-indexeddb` as a faster database backend for web in the future.
+We plan to add something like `trixnity-client-store-indexeddb` as a database backend for web in the future.
 
 ### Add Trixnity to you project
 
-Just add the following to your dependencies and fill `<sub-project>` (with e.g. `client-sqldelight`) and `<version>` (
+Just add the following to your dependencies and fill `<sub-project>` (with e.g. `client`) and `<version>` (
 with the current version):
 
 ```yml
@@ -66,7 +68,7 @@ e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a D
 secrets and a `CouroutineScope`, which will be used for the lifecycle of the client.
 
 ```kotlin
-val storeFactory = SqlDelightStoreFactory(createDriver(), databaseCoroutineContext())
+val storeFactory = createStoreFactory()
 val secureStore = object : SecureStore {
     override val olmPickleKey = ""
 }
@@ -261,14 +263,7 @@ The `DefaultAppserviceService` implements `AppserviceService`. It makes the impl
 abstract and easier. For that it uses `AppserviceEventService`, `AppserviceUserService` and `AppserviceRoomService`,
 which you need to implement.
 
-It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api). For example:
-
-```kotlin
-val textMessageEventFlow = defaultAppserviceService.events<TextMessageEventContent>()
-launch {
-    textMessageEventFlow.collect { println(it.content.body) }
-}
-```
+It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api).
 
 ## Build this project
 

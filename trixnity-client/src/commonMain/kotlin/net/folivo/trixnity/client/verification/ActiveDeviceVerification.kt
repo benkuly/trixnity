@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
@@ -30,6 +31,7 @@ class ActiveDeviceVerification(
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixApiClient,
     private val olm: OlmService,
+    key: KeyService,
     store: Store,
     loggerFactory: LoggerFactory
 ) : ActiveVerification(
@@ -44,6 +46,7 @@ class ActiveDeviceVerification(
     null,
     request.transactionId,
     store,
+    key,
     api.json,
     loggerFactory
 ) {

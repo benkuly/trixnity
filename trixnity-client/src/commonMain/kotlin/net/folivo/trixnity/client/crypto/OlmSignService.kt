@@ -78,8 +78,7 @@ class OlmSignService internal constructor(
                     signatureKeys.keys.filterIsInstance<Ed25519Key>().map { signatureKey ->
                         val key = signatureKey.keyId?.let {
                             store.keys.getFromDevice<Ed25519Key>(userId, it)?.value
-                                ?: store.keys.getCrossSigningKey(userId, it)?.value?.signed?.keys
-                                    ?.get<Ed25519Key>()?.value
+                                ?: store.keys.getCrossSigningKey(userId, it)?.first?.value
                         } ?: return VerifyResult.MissingSignature
                         try {
                             utility.verifyEd25519(

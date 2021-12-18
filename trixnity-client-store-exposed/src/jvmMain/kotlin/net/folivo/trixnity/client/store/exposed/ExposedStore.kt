@@ -27,6 +27,7 @@ class ExposedStore(
     deviceKeysRepository = ExposedDeviceKeysRepository(json),
     crossSigningKeysRepository = ExposedCrossSigningKeysRepository(json),
     keyVerificationStateRepository = ExposedKeyVerificationStateRepository(json),
+    keyChainLinkRepository = ExposedKeyChainLinkRepository(),
     olmAccountRepository = ExposedOlmAccountRepository(),
     olmSessionRepository = ExposedOlmSessionRepository(json),
     inboundMegolmSessionRepository = ExposedInboundMegolmSessionRepository(),

@@ -13,6 +13,7 @@ abstract class Store(
     deviceKeysRepository: DeviceKeysRepository,
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
+    keyChainLinkRepository: KeyChainLinkRepository,
     olmAccountRepository: OlmAccountRepository,
     olmSessionRepository: OlmSessionRepository,
     inboundMegolmSessionRepository: InboundMegolmSessionRepository,
@@ -29,11 +30,12 @@ abstract class Store(
     roomAccountDataRepository: RoomAccountDataRepository,
 ) {
     val account = AccountStore(accountRepository, rtm, scope)
-    val keys = KeysStore(
+    val keys = KeyStore(
         outdatedKeysRepository,
         deviceKeysRepository,
         crossSigningKeysRepository,
         keyVerificationStateRepository,
+        keyChainLinkRepository,
         rtm,
         scope
     )

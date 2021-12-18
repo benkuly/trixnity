@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoredCrossSigningKey
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -197,7 +197,7 @@ class OlmSignServiceTest : ShouldSpec({
         should("use cross signing key, when other key not found") {
             coEvery { store.keys.getDeviceKeys(alice) } returns null
             coEvery { store.keys.getCrossSigningKeys(alice) } returns setOf(
-                StoredCrossSigningKey(
+                StoredCrossSigningKeys(
                     Signed(
                         CrossSigningKeys(
                             alice,

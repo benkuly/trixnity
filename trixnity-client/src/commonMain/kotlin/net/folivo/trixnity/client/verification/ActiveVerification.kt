@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
@@ -32,6 +33,7 @@ abstract class ActiveVerification(
     val relatesTo: VerificationStepRelatesTo?,
     val transactionId: String?,
     protected val store: Store,
+    private val keyService: KeyService,
     protected val json: Json,
     private val loggerFactory: LoggerFactory
 ) {
@@ -144,6 +146,7 @@ abstract class ActiveVerification(
                         transactionId = transactionId,
                         sendVerificationStep = ::sendVerificationStepAndHandleIt,
                         store = store,
+                        keyService = keyService,
                         json = json,
                         loggerFactory = loggerFactory
                     )

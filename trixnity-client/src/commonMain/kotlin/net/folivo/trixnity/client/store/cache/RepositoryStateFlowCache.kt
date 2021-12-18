@@ -13,9 +13,8 @@ class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     private val repository: R,
     private val rtm: RepositoryTransactionManager,
     infiniteCache: Boolean = false,
-    readCacheTime: Duration = Duration.minutes(1),
-    writeCacheTime: Duration = Duration.minutes(1)
-) : StateFlowCache<K, V>(cacheScope, infiniteCache, readCacheTime, writeCacheTime) {
+    cacheDuration: Duration = Duration.minutes(1),
+) : StateFlowCache<K, V>(cacheScope, infiniteCache, cacheDuration) {
 
     suspend fun get(
         key: K,

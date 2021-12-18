@@ -1,24 +1,29 @@
 package net.folivo.trixnity.client.key
 
-sealed class UserTrustLevel {
+sealed interface UserTrustLevel {
 
     /**
      * The user has cross signing enabled and all devices are cross signed.
      */
-    data class CrossSigned(val verified: Boolean) : UserTrustLevel()
+    data class CrossSigned(val verified: Boolean) : UserTrustLevel
 
     /**
      * The user has cross signing enabled, but not all devices are cross signed.
      */
-    data class NotAllDevicesCrossSigned(val verified: Boolean) : UserTrustLevel()
+    data class NotAllDevicesCrossSigned(val verified: Boolean) : UserTrustLevel
 
     /**
      * The users master key changed recently. The user should be notified.
      */
-    data class MasterKeyChangedRecently(val previousMasterKeyWasVerified: Boolean) : UserTrustLevel()
+    data class MasterKeyChangedRecently(val previousMasterKeyWasVerified: Boolean) : UserTrustLevel
 
     /**
      * The users master key or a key, that signed this device key is blocked.
      */
-    object Blocked : UserTrustLevel()
+    object Blocked : UserTrustLevel
+
+    /**
+     * The trust level could not be calculated.
+     */
+    data class Invalid(val reason: String) : UserTrustLevel
 }

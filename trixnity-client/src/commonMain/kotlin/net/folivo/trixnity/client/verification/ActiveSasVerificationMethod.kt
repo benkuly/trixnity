@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.crypto.getOrFetchKeysFromDevice
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
@@ -27,6 +28,7 @@ class ActiveSasVerificationMethod private constructor(
     private val transactionId: String?,
     private val sendVerificationStep: suspend (step: VerificationStep) -> Unit,
     private val store: Store,
+    private val keyService: KeyService,
     private val json: Json,
     loggerFactory: LoggerFactory
 ) : ActiveVerificationMethod() {
@@ -80,6 +82,7 @@ class ActiveSasVerificationMethod private constructor(
             transactionId: String?,
             sendVerificationStep: suspend (step: VerificationStep) -> Unit,
             store: Store,
+            keyService: KeyService,
             json: Json,
             loggerFactory: LoggerFactory
         ): ActiveSasVerificationMethod? {
@@ -99,6 +102,7 @@ class ActiveSasVerificationMethod private constructor(
                 transactionId,
                 sendVerificationStep,
                 store,
+                keyService,
                 json,
                 loggerFactory
             )
@@ -228,63 +232,63 @@ class ActiveSasVerificationMethod private constructor(
 
     private suspend fun onMac(stepContent: SasMacEventContent, isOurOwn: Boolean) {
         if (!isOurOwn) theirMac = stepContent
+        val theirMac = theirMac
 
-        when (val currentState = state.value) {
-            is ComparisonByUser -> {
-                _state.value = WaitForMacs(isOurOwn)
-            }
-            is WaitForMacs -> {
-                val theirMac = theirMac
-                if (theirMac != null && currentState.isOurOwn != isOurOwn) {
-                    val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
-                            theirUserId + theirDeviceId +
-                            ownUserId + ownDeviceId +
-                            actualTransactionId
-                    val theirMacs = theirMac.mac.keys.filterIsInstance<Key.Ed25519Key>()
-                    val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-                    val keysToMac = store.keys.getOrFetchKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
-                        ?.filter { theirMacIds.contains(it.fullKeyId) }
-                        ?.associateBy { it.fullKeyId }
-                    val input = theirMacIds.sortedBy { it }.joinToString(",")
-                    val info = baseInfo + "KEY_IDS"
-                    log.debug { "create keys mac from input $input and info $info" }
-                    val keys = olmSas.calculateMac(input, info)
-                    if (keys == theirMac.keys) {
-                        val containsMismatchedMac = theirMacs.asSequence()
-                            .map { mac ->
-                                val calculatedMac =
-                                    keysToMac?.get(mac.fullKeyId)?.value?.let { key ->
-                                        log.debug { "create key mac from input $key and info ${baseInfo + mac.fullKeyId}" }
-                                        olmSas.calculateMac(key, baseInfo + mac.fullKeyId)
-                                    }
-                                (if (calculatedMac != null) {
-                                    calculatedMac == mac.value
-                                } else true // we ignore unknown (null) keys
-                                        ).also {
-                                        if (!it) log.warning { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
-                                    }
-                            }.contains(false)
-                        if (!containsMismatchedMac) {
-                            keysToMac?.forEach { (_, key) ->
-                                store.keys.saveKeyVerificationState(
-                                    key,
-                                    theirUserId, theirDeviceId,
-                                    Verified(key.value)
-                                )
-                            }
-                            sendVerificationStep(DoneEventContent(relatesTo, transactionId))
-                        } else {
-                            sendVerificationStep(
-                                CancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
+        when {
+            theirMac == null && state.value is ComparisonByUser -> _state.value = WaitForMacs
+            theirMac != null && (state.value == WaitForMacs || isOurOwn) -> {
+                val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
+                        theirUserId + theirDeviceId +
+                        ownUserId + ownDeviceId +
+                        actualTransactionId
+                val theirMacs = theirMac.mac.keys.filterIsInstance<Key.Ed25519Key>()
+                val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
+                val keysToMac = store.keys.getOrFetchKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
+                    ?.filter { theirMacIds.contains(it.fullKeyId) }
+                    ?.associateBy { it.fullKeyId }
+                val input = theirMacIds.sortedBy { it }.joinToString(",")
+                val info = baseInfo + "KEY_IDS"
+                log.debug { "create keys mac from input $input and info $info" }
+                val keys = olmSas.calculateMac(input, info)
+                if (keys == theirMac.keys) {
+                    val containsMismatchedMac = theirMacs.asSequence()
+                        .map { mac ->
+                            val calculatedMac =
+                                keysToMac?.get(mac.fullKeyId)?.value?.let { key ->
+                                    log.debug { "create key mac from input $key and info ${baseInfo + mac.fullKeyId}" }
+                                    olmSas.calculateMac(key, baseInfo + mac.fullKeyId)
+                                }
+                            (if (calculatedMac != null) {
+                                calculatedMac == mac.value
+                            } else true // we ignore unknown (null) keys
+                                    ).also {
+                                    if (!it) log.warning { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
+                                }
+                        }.contains(false)
+                    if (!containsMismatchedMac) {
+                        log.info { "trust keys: ${keysToMac?.values}" }
+                        keysToMac?.forEach { (_, key) ->
+                            store.keys.saveKeyVerificationState(
+                                key,
+                                theirUserId, theirDeviceId,
+                                Verified(key.value)
                             )
                         }
+                        keysToMac?.forEach { (_, key) ->
+                            keyService.updateTrustLevel(theirUserId, key)
+                        }
+                        sendVerificationStep(DoneEventContent(relatesTo, transactionId))
                     } else {
-                        log.warning { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
                         sendVerificationStep(
-                            CancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
+                            CancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
                         )
                     }
-                } else cancelUnexpectedMessage(currentState)
+                } else {
+                    log.warning { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
+                    sendVerificationStep(
+                        CancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
+                    )
+                }
             }
             else -> {}
         }

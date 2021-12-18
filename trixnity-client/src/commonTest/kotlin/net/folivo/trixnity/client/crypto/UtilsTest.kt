@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.KeysStore
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
@@ -18,7 +18,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
 
-    context(KeysStore::waitForUpdateOutdatedKey.name) {
+    context(KeyStore::waitForUpdateOutdatedKey.name) {
         should("wait until outdated does not contain anything") {
             val outdatedKeys = MutableStateFlow(setOf(UserId("alice", "server")))
             val store = mockk<Store> {

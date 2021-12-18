@@ -54,4 +54,11 @@ sealed class KeySignatureTrustLevel {
     @Serializable
     @SerialName("blocked")
     object Blocked : KeySignatureTrustLevel()
+
+    /**
+     * The trust level could not be calculated.
+     */
+    @Serializable
+    @SerialName("invalid")
+    data class Invalid(val reason: String) : KeySignatureTrustLevel()
 }

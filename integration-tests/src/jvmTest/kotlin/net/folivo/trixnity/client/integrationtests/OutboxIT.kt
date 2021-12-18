@@ -32,7 +32,7 @@ class OutboxIT {
     private lateinit var database: Database
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:latest"))
+    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
         .apply {
             withEnv(
                 mapOf(
@@ -91,33 +91,30 @@ class OutboxIT {
 
     @Test
     fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking {
-        val room = client.api.rooms.createRoom()
+        withTimeout(180_000) {
+            val room = client.api.rooms.createRoom()
 
-        repeat(30) {
-            client.room.sendMessage(room) { text("message $it") }
-        }
-
-        try {
-            withTimeout(180_000) {
-                client.room.getOutbox()
-                    .first { outbox -> outbox.none { it.sentAt != null } }
-                delay(20_000)
-                client.room.sendMessage(room) { text("finish") }
-                client.room.getOutbox().first { it.isEmpty() }
+            repeat(30) {
+                client.room.sendMessage(room) { text("message $it") }
             }
-        } catch (error: TimeoutCancellationException) {
-            throw error
-        }
-        delay(1_000)
-        scope.cancel()
-        delay(1_000) // let everything stop
 
-        val exposedRoomOutbox = object : Table("room_outbox") {
-            val transactionId = varchar("transaction_id", length = 65535)
-            override val primaryKey = PrimaryKey(transactionId)
-        }
-        newSuspendedTransaction(Dispatchers.IO, database) {
-            exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+            client.room.getOutbox()
+                .first { outbox -> outbox.none { it.sentAt != null } }
+            delay(20_000)
+            client.room.sendMessage(room) { text("finish") }
+            client.room.getOutbox().first { it.isEmpty() }
+
+            delay(1_000)
+            scope.cancel()
+            delay(1_000) // let everything stop
+
+            val exposedRoomOutbox = object : Table("room_outbox") {
+                val transactionId = varchar("transaction_id", length = 65535)
+                override val primaryKey = PrimaryKey(transactionId)
+            }
+            newSuspendedTransaction(Dispatchers.IO, database) {
+                exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+            }
         }
     }
 }

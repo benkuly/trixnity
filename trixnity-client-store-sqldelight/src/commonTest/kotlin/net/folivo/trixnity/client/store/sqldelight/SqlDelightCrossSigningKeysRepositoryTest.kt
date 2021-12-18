@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.store.StoredCrossSigningKey
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.UserId
@@ -28,7 +28,7 @@ class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
         val alice = UserId("alice", "server")
         val bob = UserId("bob", "server")
         val aliceCrossSigningKeys = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         alice,
@@ -37,7 +37,7 @@ class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
                     ), mapOf(bob to keysOf(Key.Ed25519Key("BOBDE", "keyValue")))
                 ), KeySignatureTrustLevel.Valid(true)
             ),
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         alice,
@@ -48,7 +48,7 @@ class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
             ),
         )
         val bobCrossSigningKeys = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         bob,
@@ -59,7 +59,7 @@ class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
             ),
         )
         val bobDeviceKeysCopy = setOf(
-            StoredCrossSigningKey(
+            StoredCrossSigningKeys(
                 Signed(
                     CrossSigningKeys(
                         bob,
