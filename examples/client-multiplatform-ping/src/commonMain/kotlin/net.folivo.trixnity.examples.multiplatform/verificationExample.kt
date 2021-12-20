@@ -45,7 +45,7 @@ suspend fun verificationExample() = coroutineScope {
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
-    )
+    ).getOrThrow()
 
     val job1 = launch {
         val activeDeviceVerification = matrixClient.verification.activeDeviceVerification.filterNotNull().first()

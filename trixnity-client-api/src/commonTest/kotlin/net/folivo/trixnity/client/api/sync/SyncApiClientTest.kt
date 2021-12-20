@@ -271,7 +271,7 @@ class SyncApiClientTest {
             setPresence = PresenceEventContent.Presence.ONLINE,
             since = "someSince",
             timeout = 1234
-        )
+        ).getOrThrow()
         assertEquals("s72595_4483_1934", result.nextBatch)
         assertEquals(1, result.presence?.events?.size)
         assertEquals(2, result.accountData?.events?.size)

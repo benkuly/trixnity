@@ -9,14 +9,10 @@ suspend inline fun <reified C : StateEventContent> RoomsApiClient.getStateEvent(
     roomId: RoomId,
     stateKey: String = "",
     asUserId: UserId? = null
-): C {
-    return getStateEvent(C::class, roomId, stateKey, asUserId)
-}
+): Result<C> = getStateEvent(C::class, roomId, stateKey, asUserId)
 
 suspend inline fun <reified C : RoomAccountDataEventContent> RoomsApiClient.getAccountData(
     roomId: RoomId,
     userId: UserId,
     asUserId: UserId? = null
-): C {
-    return getAccountData(C::class, roomId, userId, asUserId)
-}
+): Result<C> = getAccountData(C::class, roomId, userId, asUserId)

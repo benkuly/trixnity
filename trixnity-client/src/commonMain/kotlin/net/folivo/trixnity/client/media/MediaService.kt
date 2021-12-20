@@ -39,12 +39,13 @@ class MediaService(
     suspend fun getMedia(
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): ByteArray {
-        return when {
+    ): Result<ByteArray> = kotlin.runCatching {
+        when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> store.media.getContent(uri)
-                ?: api.media.download(uri, progress = progress).content.toByteArray().also { mediaDownload ->
-                    store.media.addContent(uri, mediaDownload)
-                }
+                ?: api.media.download(uri, progress = progress).getOrThrow().content.toByteArray()
+                    .also { mediaDownload ->
+                        store.media.addContent(uri, mediaDownload)
+                    }
             uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> store.media.getContent(uri)
                 ?: store.media.getUploadMedia(uri)?.mxcUri
                     ?.let { store.media.getContent(it) }
@@ -56,8 +57,8 @@ class MediaService(
     suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): ByteArray {
-        val media = getMedia(encryptedFile.url, progress)
+    ): Result<ByteArray> = kotlin.runCatching {
+        val media = getMedia(encryptedFile.url, progress).getOrThrow()
         val hash = freeAfter(OlmUtility.create()) {
             it.sha256(media)
         }
@@ -66,7 +67,7 @@ class MediaService(
             log.debug { "could not validate due to different hashes. Our hash: $hash, their hash: $originalHash" }
             throw DecryptionException.ValidationFailed
         }
-        return decryptAes256Ctr(
+        decryptAes256Ctr(
             Aes256CtrInfo(
                 encryptedContent = media,
                 initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),
@@ -83,10 +84,11 @@ class MediaService(
         height: UInt,
         method: ThumbnailResizingMethod = CROP,
         progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): ByteArray {
+    ): Result<ByteArray> = kotlin.runCatching {
         val thumbnailUrl = "$mxcUri/${width}x$height/${method.value}"
-        return store.media.getContent(thumbnailUrl)
-            ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress).content.toByteArray()
+        store.media.getContent(thumbnailUrl)
+            ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress)
+                .getOrThrow().content.toByteArray()
                 .also { mediaDownload ->
                     store.media.addContent(thumbnailUrl, mediaDownload)
                 }
@@ -103,7 +105,7 @@ class MediaService(
         val thumbnail = try {
             createThumbnail(content, contentType, 600, 600)
         } catch (e: ThumbnailCreationException) {
-            log.debug { "could not create thumbnail from file with content type $contentType" }
+            log.warning(e) { "could not create thumbnail from file with content type $contentType" }
             return null
         }
         val cacheUri = prepareUploadMedia(thumbnail.file, thumbnail.contentType)
@@ -154,7 +156,7 @@ class MediaService(
     suspend fun uploadMedia(
         cacheUri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): String {
+    ): Result<String> {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 
         val uploadMediaCache = store.media.getUploadMedia(cacheUri)
@@ -169,10 +171,12 @@ class MediaService(
                 contentLength = content.size.toLong(),
                 contentType = uploadMediaCache?.contentTyp ?: ContentType.Application.OctetStream,
                 progress = progress
-            ).contentUri.also { mxcUri ->
-                store.media.changeUri(cacheUri, mxcUri)
-                store.media.updateUploadMedia(cacheUri) { it?.copy(mxcUri = mxcUri) }
+            ).map {
+                it.contentUri.also { mxcUri ->
+                    store.media.changeUri(cacheUri, mxcUri)
+                    store.media.updateUploadMedia(cacheUri) { it?.copy(mxcUri = mxcUri) }
+                }
             }
-        } else cachedMxcUri
+        } else Result.success(cachedMxcUri)
     }
 }

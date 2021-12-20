@@ -197,19 +197,19 @@ class VerificationService(
         existingDeviceVerification?.cancel()
     }
 
-    suspend fun createUserVerificationRequest(theirUserId: UserId) {
+    suspend fun createUserVerificationRequest(theirUserId: UserId): Result<Unit> = kotlin.runCatching {
         log.info { "create new user verification request to $theirUserId" }
         val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
         val roomId =
             store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
-                ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true)
+                ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
             possiblyEncryptEvent(request, roomId, store, olm, user)
         } catch (olmError: OlmLibraryException) {
             request
         }
-        api.rooms.sendMessageEvent(roomId, sendContent)
+        api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
     }
 
     fun getActiveUserVerification(

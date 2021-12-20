@@ -39,21 +39,21 @@ suspend fun example() = coroutineScope {
                             matrixRestClient.rooms.getStateEvent<MemberEventContent>(
                                 roomId,
                                 event.sender.full
-                            ).avatarUrl
+                            ).getOrThrow().avatarUrl
                         if (senderAvatar != null) {
                             val senderAvatarDownload = matrixRestClient.media.downloadThumbnail(
                                 senderAvatar,
                                 64u,
                                 64u,
                                 ThumbnailResizingMethod.CROP
-                            )
+                            ).getOrThrow()
                             val contentLength = senderAvatarDownload.contentLength
                             requireNotNull(contentLength)
                             val uploadedUrl = matrixRestClient.media.upload(
                                 senderAvatarDownload.content,
                                 contentLength,
                                 senderAvatarDownload.contentType ?: ContentType.Application.OctetStream
-                            ).contentUri
+                            ).getOrThrow().contentUri
                             matrixRestClient.rooms.sendMessageEvent(
                                 roomId, ImageMessageEventContent(
                                     body = "avatar image of ${event.sender}",

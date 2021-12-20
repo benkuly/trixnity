@@ -105,13 +105,15 @@ class OlmEventServiceTest : ShouldSpec({
             Key.SignedCurve25519Key(bobDeviceId, bobAccount.oneTimeKeys.curve25519.values.first(), mapOf())
         coEvery {
             api.keys.claimKeys(mapOf(bob to mapOf(bobDeviceId to KeyAlgorithm.SignedCurve25519)))
-        } returns ClaimKeysResponse(
-            emptyMap(),
-            mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
+        } returns Result.success(
+            ClaimKeysResponse(
+                emptyMap(),
+                mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
+            )
         )
         bobAccount.markKeysAsPublished()
         coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Valid
-        coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } just Runs
+        coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
         every { secureStore.olmPickleKey } returns ""
 
         cut = OlmEventService(json, aliceAccount, store, secureStore, api, signService, LoggerFactory.default)

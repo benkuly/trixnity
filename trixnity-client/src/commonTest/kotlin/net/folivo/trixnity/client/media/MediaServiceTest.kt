@@ -38,21 +38,23 @@ class MediaServiceTest : ShouldSpec({
 
     beforeTest {
         clearAllMocks()
-        coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns UploadResponse(mxcUri)
+        coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns Result.success(UploadResponse(mxcUri))
         coEvery { store.media.getContent(any()) } returns null
     }
     context(MediaService::getMedia.name) {
         context("is mxc uri") {
             should("prefer cache") {
                 coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
-                cut.getMedia(mxcUri).decodeToString() shouldBe "test"
+                cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
                 coVerify { api wasNot Called }
             }
             should("download and cache") {
-                coEvery { api.media.download(any(), any()) } returns DownloadResponse(
-                    ByteReadChannel("test"), null, null, null
+                coEvery { api.media.download(any(), any()) } returns Result.success(
+                    DownloadResponse(
+                        ByteReadChannel("test"), null, null, null
+                    )
                 )
-                cut.getMedia(mxcUri).decodeToString() shouldBe "test"
+                cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
 
                 coVerify {
                     api.media.download(mxcUri)
@@ -63,13 +65,13 @@ class MediaServiceTest : ShouldSpec({
         context("is cache uri") {
             should("prefer cache") {
                 coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
-                cut.getMedia(cacheUri).decodeToString() shouldBe "test"
+                cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
                 coVerify { api wasNot Called }
             }
             should("prefer cache, but use mxcUri, when already uploaded") {
                 coEvery { store.media.getUploadMedia(cacheUri)?.mxcUri } returns mxcUri
                 coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
-                cut.getMedia(cacheUri).decodeToString() shouldBe "test"
+                cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
                 coVerify { api wasNot Called }
             }
         }
@@ -86,34 +88,38 @@ class MediaServiceTest : ShouldSpec({
         )
         should("prefer cache and decrypt") {
             coEvery { store.media.getContent(mxcUri) } returns rawFile
-            cut.getEncryptedMedia(encryptedFile).decodeToString() shouldBe "test"
+            cut.getEncryptedMedia(encryptedFile).getOrThrow().decodeToString() shouldBe "test"
         }
         should("download, cache and decrypt") {
-            coEvery { api.media.download(any(), any()) } returns DownloadResponse(
-                ByteReadChannel(rawFile), null, null, null
+            coEvery { api.media.download(any(), any()) } returns Result.success(
+                DownloadResponse(
+                    ByteReadChannel(rawFile), null, null, null
+                )
             )
-            cut.getEncryptedMedia(encryptedFile).decodeToString() shouldBe "test"
+            cut.getEncryptedMedia(encryptedFile).getOrThrow().decodeToString() shouldBe "test"
             coVerify { store.media.addContent(mxcUri, rawFile) }
         }
         should("validate hash") {
             coEvery { store.media.getContent(mxcUri) } returns rawFile
             val encryptedFileWIthWrongHash = encryptedFile.copy(hashes = mapOf("sha256" to "nope"))
             shouldThrow<DecryptionException.ValidationFailed> {
-                cut.getEncryptedMedia(encryptedFileWIthWrongHash).decodeToString()
+                cut.getEncryptedMedia(encryptedFileWIthWrongHash).getOrThrow().decodeToString()
             }
         }
     }
     context(MediaService::getThumbnail.name) {
         should("prefer cache") {
             coEvery { store.media.getContent("$mxcUri/32x32/crop") } returns "test".encodeToByteArray()
-            cut.getThumbnail(mxcUri, 32u, 32u).decodeToString() shouldBe "test"
+            cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
             coVerify { api wasNot Called }
         }
         should("download and cache") {
-            coEvery { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) } returns DownloadResponse(
-                ByteReadChannel("test"), null, null, null
+            coEvery { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) } returns Result.success(
+                DownloadResponse(
+                    ByteReadChannel("test"), null, null, null
+                )
             )
-            cut.getThumbnail(mxcUri, 32u, 32u).decodeToString() shouldBe "test"
+            cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
             coVerify {
                 api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP)
                 store.media.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
@@ -221,11 +227,17 @@ class MediaServiceTest : ShouldSpec({
     }
     context(MediaService::uploadMedia.name) {
         should("upload and add to cache") {
-            coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
+            coEvery {
+                api.media.upload(
+                    any(),
+                    any(),
+                    contentType = Plain
+                )
+            } returns Result.success(UploadResponse(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
             coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain)
 
-            cut.uploadMedia(cacheUri) shouldBe mxcUri
+            cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
             coVerify {
                 api.media.upload(any(), any(), any())
@@ -239,14 +251,20 @@ class MediaServiceTest : ShouldSpec({
 
         }
         should("not upload twice") {
-            coEvery { api.media.upload(any(), any(), contentType = Plain) } returns UploadResponse(mxcUri)
+            coEvery {
+                api.media.upload(
+                    any(),
+                    any(),
+                    contentType = Plain
+                )
+            } returns Result.success(UploadResponse(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
             coEvery { store.media.getUploadMedia(cacheUri) }
                 .returns(UploadMedia(cacheUri, null, Plain))
                 .andThen(UploadMedia(cacheUri, mxcUri, Plain))
 
-            cut.uploadMedia(cacheUri) shouldBe mxcUri
-            cut.uploadMedia(cacheUri) shouldBe mxcUri
+            cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
+            cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
             coVerify(exactly = 1) { api.media.upload(any(), any(), any()) }
         }

@@ -13,21 +13,24 @@ import org.kodein.log.LoggerFactory
 import org.kodein.log.filter.entry.minimumLevel
 import org.kodein.log.frontend.defaultLogFrontend
 
-val synapseVersion = "v1.49.0" // TODO you should update this from time to time.
+const val synapseVersion = "v1.49.0" // TODO you should update this from time to time.
 
-suspend fun MatrixApiClient.register(username: String? = null, password: String): MatrixClient.Companion.LoginInfo {
+suspend fun MatrixApiClient.register(
+    username: String? = null,
+    password: String
+): Result<MatrixClient.Companion.LoginInfo> {
     val registerStep = authentication.register(
         password = password,
         username = username,
         accountType = AccountType.USER,
-    )
+    ).getOrThrow()
     registerStep.shouldBeInstanceOf<UIA.UIAStep<RegisterResponse>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy)
     registerResult.shouldBeInstanceOf<UIA.UIASuccess<RegisterResponse>>()
     val (userId, deviceId, accessToken) = registerResult.value
     requireNotNull(deviceId)
     requireNotNull(accessToken)
-    return MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken)
+    return Result.success(MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken))
 }
 
 fun loggerFactory(prefix: String, level: Logger.Level = Logger.Level.DEBUG) = LoggerFactory(

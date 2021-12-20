@@ -77,7 +77,7 @@ class TimelineEventIT {
             scope = scope,
             loggerFactory = loggerFactory("user1 🔴"),
             getLoginInfo = { it.register("user1", password) }
-        )
+        ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
@@ -86,7 +86,7 @@ class TimelineEventIT {
             scope = scope,
             loggerFactory = loggerFactory("user2 🔵"),
             getLoginInfo = { it.register("user2", password) }
-        )
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
     }
@@ -102,9 +102,9 @@ class TimelineEventIT {
             val room = client1.api.rooms.createRoom(
                 invite = setOf(client2.userId),
                 initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
-            )
+            ).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room)
+            client2.api.rooms.joinRoom(room).getOrThrow()
 
             client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
             client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }

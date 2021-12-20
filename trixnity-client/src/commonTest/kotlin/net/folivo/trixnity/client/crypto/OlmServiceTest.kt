@@ -85,7 +85,13 @@ class OlmServiceTest : ShouldSpec({
 
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
         beforeTest {
-            coEvery { api.keys.uploadKeys(any(), any(), any()) } returns mapOf(KeyAlgorithm.SignedCurve25519 to 50)
+            coEvery {
+                api.keys.uploadKeys(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Result.success(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
         }
         context("server has 49 one time keys") {
             should("create and upload new keys") {
@@ -163,15 +169,17 @@ class OlmServiceTest : ShouldSpec({
 
                     coEvery {
                         api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
-                    } returns ClaimKeysResponse(
-                        emptyMap(),
-                        mapOf(
-                            alice to mapOf(
-                                aliceDevice to keysOf(
-                                    cutWithAccount.sign.signCurve25519Key(
-                                        Curve25519Key(
-                                            aliceDevice,
-                                            aliceAccount.oneTimeKeys.curve25519.values.first()
+                    } returns Result.success(
+                        ClaimKeysResponse(
+                            emptyMap(),
+                            mapOf(
+                                alice to mapOf(
+                                    aliceDevice to keysOf(
+                                        cutWithAccount.sign.signCurve25519Key(
+                                            Curve25519Key(
+                                                aliceDevice,
+                                                aliceAccount.oneTimeKeys.curve25519.values.first()
+                                            )
                                         )
                                     )
                                 )
@@ -278,15 +286,17 @@ class OlmServiceTest : ShouldSpec({
 
                 coEvery {
                     api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
-                } returns ClaimKeysResponse(
-                    emptyMap(),
-                    mapOf(
-                        alice to mapOf(
-                            aliceDevice to keysOf(
-                                cutWithAccount.sign.signCurve25519Key(
-                                    Curve25519Key(
-                                        aliceDevice,
-                                        aliceAccount.oneTimeKeys.curve25519.values.first()
+                } returns Result.success(
+                    ClaimKeysResponse(
+                        emptyMap(),
+                        mapOf(
+                            alice to mapOf(
+                                aliceDevice to keysOf(
+                                    cutWithAccount.sign.signCurve25519Key(
+                                        Curve25519Key(
+                                            aliceDevice,
+                                            aliceAccount.oneTimeKeys.curve25519.values.first()
+                                        )
                                     )
                                 )
                             )

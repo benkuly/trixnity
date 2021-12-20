@@ -1,6 +1,16 @@
 package net.folivo.trixnity.client
 
+import arrow.fx.coroutines.Schedule
+import arrow.fx.coroutines.retry
 import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
+import net.folivo.trixnity.client.api.sync.SyncApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
@@ -13,6 +23,9 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
 fun Event<*>?.getStateKey(): String? {
     return when (this) {
@@ -74,10 +87,38 @@ suspend fun possiblyEncryptEvent(
         // members Trixnity may not know all devices for encryption yet.
         // To ensure an easy usage of Trixnity and because
         // the impact on performance is minimal, we call it here for prevention.
-        user.loadMembers(roomId)
+        user.loadMembers(roomId).getOrThrow()
 
         val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
         requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
         olm.events.encryptMegolm(content, roomId, megolmSettings)
     } else content
+}
+
+@OptIn(ExperimentalTime::class)
+suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIsRunning(
+    onError: suspend (error: Throwable) -> Unit,
+    onCancel: suspend () -> Unit,
+    scope: CoroutineScope,
+    block: suspend () -> Unit
+) {
+    val isSyncRunning = this.map { it == SyncApiClient.SyncState.RUNNING }.stateIn(scope)
+    val schedule = Schedule.exponential<Throwable>(Duration.milliseconds(100))
+        .or(Schedule.spaced(Duration.minutes(5)))
+        .and(Schedule.doWhile { isSyncRunning.value }) // just stop, when we are not connected anymore
+        .logInput {
+            if (it is CancellationException) onCancel()
+            else onError(it)
+        }
+
+    while (currentCoroutineContext().isActive) {
+        isSyncRunning.first { it } // just wait, until we are connected again
+        try {
+            schedule.retry {
+                block()
+            }
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+        }
+    }
 }

@@ -211,7 +211,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(null)
         coEvery { store.room.get(roomId).value?.encryptionAlgorithm } returns Megolm
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
-        coEvery { api.rooms.sendMessageEvent(any(), any()) } returns EventId("$24")
+        coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
         val encrypted = mockk<MegolmEncryptedEventContent>()
         coEvery { olm.events.encryptMegolm(any(), any(), any()) } returns encrypted
         createCut()
@@ -225,7 +225,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(null)
         coEvery { store.room.get(roomId).value?.encryptionAlgorithm } returns Megolm
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
-        coEvery { api.rooms.sendMessageEvent(any(), any()) } returns EventId("$24")
+        coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
         coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)

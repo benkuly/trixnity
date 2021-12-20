@@ -33,7 +33,7 @@ class ServerApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.server.getVersions()
+        val result = matrixRestClient.server.getVersions().getOrThrow()
         assertEquals(response, result)
     }
 
@@ -63,7 +63,7 @@ class ServerApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.server.getCapabilities()
+        val result = matrixRestClient.server.getCapabilities().getOrThrow()
         assertEquals(response, result)
     }
 }

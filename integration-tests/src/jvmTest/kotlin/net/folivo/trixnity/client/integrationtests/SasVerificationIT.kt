@@ -80,7 +80,7 @@ class SasVerificationIT {
             scope = scope,
             loggerFactory = loggerFactory("user1 🔴"),
             getLoginInfo = { it.register("user1", password) }
-        )
+        ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
@@ -89,7 +89,7 @@ class SasVerificationIT {
             scope = scope,
             loggerFactory = loggerFactory("user2 🔵"),
             getLoginInfo = { it.register("user2", password) }
-        )
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
     }

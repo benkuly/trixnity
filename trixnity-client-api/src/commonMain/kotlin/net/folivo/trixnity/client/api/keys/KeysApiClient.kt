@@ -20,14 +20,13 @@ class KeysApiClient(
         deviceKeys: Signed<DeviceKeys, UserId>? = null,
         oneTimeKeys: Keys? = null,
         asUserId: UserId? = null
-    ): Map<KeyAlgorithm, Int> {
-        return httpClient.request<UploadKeysResponse> {
+    ): Result<Map<KeyAlgorithm, Int>> =
+        httpClient.request<UploadKeysResponse> {
             method = Post
             url("/_matrix/client/r0/keys/upload")
             parameter("user_id", asUserId)
             body = UploadKeysRequest(deviceKeys, oneTimeKeys)
-        }.oneTimeKeyCounts
-    }
+        }.mapCatching { it.oneTimeKeyCounts }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>
@@ -37,14 +36,13 @@ class KeysApiClient(
         token: String? = null,
         timeout: Int? = 10000,
         asUserId: UserId? = null
-    ): QueryKeysResponse {
-        return httpClient.request {
+    ): Result<QueryKeysResponse> =
+        httpClient.request {
             method = Post
             url("/_matrix/client/r0/keys/query")
             parameter("user_id", asUserId)
             body = QueryKeysRequest(deviceKeys, token, timeout)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
@@ -53,14 +51,13 @@ class KeysApiClient(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
         timeout: Int? = 10000,
         asUserId: UserId? = null
-    ): ClaimKeysResponse {
-        return httpClient.request {
+    ): Result<ClaimKeysResponse> =
+        httpClient.request {
             method = Post
             url("/_matrix/client/r0/keys/claim")
             parameter("user_id", asUserId)
             body = ClaimKeysRequest(oneTimeKeys, timeout)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3keyschanges">matrix spec</a>
@@ -69,13 +66,12 @@ class KeysApiClient(
         from: String,
         to: String,
         asUserId: UserId? = null
-    ): GetKeyChangesResponse {
-        return httpClient.request {
+    ): Result<GetKeyChangesResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/keys/changes")
             parameter("from", from)
             parameter("to", to)
             parameter("user_id", asUserId)
         }
-    }
 }

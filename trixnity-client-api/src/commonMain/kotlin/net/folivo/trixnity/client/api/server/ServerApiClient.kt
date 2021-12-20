@@ -9,21 +9,19 @@ class ServerApiClient(private val httpClient: MatrixHttpClient) {
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientversions">matrix spec</a>
      */
-    suspend fun getVersions(): VersionsResponse {
-        return httpClient.request {
+    suspend fun getVersions(): Result<VersionsResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/versions")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3capabilities">matrix spec</a>
      */
-    suspend fun getCapabilities(): CapabilitiesResponse {
-        return httpClient.request {
+    suspend fun getCapabilities(): Result<CapabilitiesResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/capabilities")
         }
-    }
 
 }

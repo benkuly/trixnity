@@ -62,7 +62,8 @@ class OlmEventService internal constructor(
 
         return if (storedSession == null) {
             log.debug { "encrypt olm event with new session for device with key $identityKey" }
-            val response = api.keys.claimKeys(mapOf(receiverId to mapOf(deviceId to KeyAlgorithm.SignedCurve25519)))
+            val response =
+                api.keys.claimKeys(mapOf(receiverId to mapOf(deviceId to KeyAlgorithm.SignedCurve25519))).getOrThrow()
             if (response.failures.isNotEmpty()) throw CouldNotReachRemoteServersException(response.failures.keys)
             val oneTimeKey = response.oneTimeKeys[receiverId]?.get(deviceId)?.keys?.firstOrNull()
                 ?: throw OneTimeKeyNotFoundException(receiverId, deviceId)

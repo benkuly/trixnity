@@ -658,8 +658,8 @@ class RoomServiceTest : ShouldSpec({
             val message2 = RoomOutboxMessage("transaction2", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message1)
             store.roomOutboxMessage.add(message2)
-            coEvery { media.uploadMedia(any(), any()) } returns mxcUrl
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event")
+            coEvery { media.uploadMedia(any(), any()) } returns Result.success(mxcUrl)
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns Result.success(EventId("event"))
             val syncState = MutableStateFlow(STARTED)
             coEvery { api.sync.currentSyncState } returns syncState
 
@@ -688,6 +688,8 @@ class RoomServiceTest : ShouldSpec({
             job.cancel()
         }
         should("encrypt events in encrypted rooms") {
+            val syncState = MutableStateFlow(RUNNING)
+            coEvery { api.sync.currentSyncState } returns syncState
             store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm) }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message)
@@ -701,10 +703,11 @@ class RoomServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             store.roomState.update(encryptionState)
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("event")
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns Result.success(EventId("event"))
             val megolmEventContent = mockk<MegolmEncryptedEventContent>()
             coEvery { olmService.events.encryptMegolm(any(), any(), any()) } returns megolmEventContent
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf()
+            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(flowOf())
+            coEvery { users.loadMembers(any()) } returns Result.success(Unit)
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
@@ -731,7 +734,7 @@ class RoomServiceTest : ShouldSpec({
             store.roomOutboxMessage.add(message)
             coEvery {
                 api.rooms.sendMessageEvent(any(), any(), any(), any())
-            } throws IllegalArgumentException("wtf") andThen EventId("event")
+            } returns Result.failure(IllegalArgumentException("wtf")) andThen Result.success(EventId("event"))
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
@@ -751,5 +754,4 @@ class RoomServiceTest : ShouldSpec({
             job.cancel()
         }
     }
-
 })

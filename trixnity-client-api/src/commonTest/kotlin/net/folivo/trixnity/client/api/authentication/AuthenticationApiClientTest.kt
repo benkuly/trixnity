@@ -75,7 +75,7 @@ class AuthenticationApiClientTest {
             deviceId = "someDeviceId",
             initialDeviceDisplayName = "someInitialDeviceDisplayName",
             inhibitLogin = true
-        )
+        ).getOrThrow()
         require(result is UIA.UIASuccess)
         assertEquals(response, result.value)
     }
@@ -117,7 +117,7 @@ class AuthenticationApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.authentication.getLoginTypes()
+        val result = matrixRestClient.authentication.getLoginTypes().getOrThrow()
         assertEquals(
             setOf(
                 LoginType.Unknown("m.login.sso"),
@@ -176,7 +176,7 @@ class AuthenticationApiClientTest {
             identifier = IdentifierType.User("cheeky_monkey"),
             passwordOrToken = "ilovebananas",
             initialDeviceDisplayName = "Jungle Phone"
-        )
+        ).getOrThrow()
         assertEquals(
             LoginResponse(
                 userId = UserId("@cheeky_monkey:matrix.org"),
@@ -250,7 +250,7 @@ class AuthenticationApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.authentication.deactivateAccount("id.host")
+        val result = matrixRestClient.authentication.deactivateAccount("id.host").getOrThrow()
         assertTrue { result is UIA.UIASuccess }
     }
 
@@ -275,7 +275,7 @@ class AuthenticationApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.authentication.changePassword("newPassword")
+        val result = matrixRestClient.authentication.changePassword("newPassword").getOrThrow()
         assertTrue { result is UIA.UIASuccess }
     }
 }

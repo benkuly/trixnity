@@ -61,7 +61,7 @@ class MatrixHttpClientTest {
             url("/path")
             parameter("param", "dino")
             body = mapOf("help" to "me")
-        } shouldBe OkResponse("ok")
+        }.getOrThrow() shouldBe OkResponse("ok")
     }
 
     @Test
@@ -89,7 +89,7 @@ class MatrixHttpClientTest {
             cut.request<OkResponse> {
                 method = Post
                 url("/path")
-            }
+            }.getOrThrow()
             fail("should throw ${MatrixServerException::class.simpleName}")
         } catch (error: MatrixServerException) {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
@@ -120,7 +120,7 @@ class MatrixHttpClientTest {
             cut.request<OkResponse> {
                 method = Post
                 url("/path")
-            }
+            }.getOrThrow()
             fail("should throw ${MatrixServerException::class.simpleName}")
         } catch (error: MatrixServerException) {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
@@ -160,7 +160,7 @@ class MatrixHttpClientTest {
                 url("/path")
                 parameter("param", "dino")
                 body = mapOf("help" to "me")
-            }
+            }.getOrThrow()
         }
     }
 
@@ -195,7 +195,7 @@ class MatrixHttpClientTest {
             method = Post
             url("/path")
             parameter("param", "dino")
-        } shouldBe UIA.UIASuccess(OkResponse("ok"))
+        }.getOrThrow() shouldBe UIA.UIASuccess(OkResponse("ok"))
     }
 
     @Test
@@ -224,7 +224,7 @@ class MatrixHttpClientTest {
                 method = Post
                 url("/path")
                 parameter("param", "dino")
-            }
+            }.getOrThrow()
         } catch (error: MatrixServerException) {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
             assertEquals(ErrorResponse.NotFound::class, error.errorResponse::class)
@@ -301,7 +301,7 @@ class MatrixHttpClientTest {
             method = Post
             url("/path")
             parameter("param", "dino")
-        }
+        }.getOrThrow()
         result.shouldBeInstanceOf<UIA.UIAStep<*>>()
         result.state shouldBe UIA.UIAState(
             completed = listOf(),
@@ -396,7 +396,7 @@ class MatrixHttpClientTest {
             method = Post
             url("/path")
             parameter("param", "dino")
-        }
+        }.getOrThrow()
         result.shouldBeInstanceOf<UIA.UIAError<*>>()
         result.state shouldBe UIA.UIAState(
             completed = listOf(),

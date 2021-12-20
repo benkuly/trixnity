@@ -57,22 +57,24 @@ class UserServiceTest : ShouldSpec({
             store.room.get(roomId).value shouldBe storedRoom
         }
         should("load members") {
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns flowOf(
-                StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("\$event1"),
-                    alice,
-                    roomId,
-                    1234,
-                    stateKey = alice.full
-                ),
-                StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("\$event2"),
-                    bob,
-                    roomId,
-                    1234,
-                    stateKey = bob.full
+            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
+                flowOf(
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event1"),
+                        alice,
+                        roomId,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event2"),
+                        bob,
+                        roomId,
+                        1234,
+                        stateKey = bob.full
+                    )
                 )
             )
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)

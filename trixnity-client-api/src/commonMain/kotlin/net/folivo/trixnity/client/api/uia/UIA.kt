@@ -13,14 +13,14 @@ sealed interface UIA<T> {
 
     data class UIAStep<T>(
         val state: UIAState,
-        val authenticate: suspend (AuthenticationRequest) -> UIA<T>,
+        val authenticate: suspend (AuthenticationRequest) -> Result<UIA<T>>,
         val getFallbackUrl: (AuthenticationType) -> Url
     ) : UIA<T>
 
     data class UIAError<T>(
         val state: UIAState,
         val errorResponse: ErrorResponse,
-        val authenticate: suspend (AuthenticationRequest) -> UIA<T>,
+        val authenticate: suspend (AuthenticationRequest) -> Result<UIA<T>>,
         val getFallbackUrl: (AuthenticationType) -> Url
     ) : UIA<T>
 

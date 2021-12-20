@@ -50,7 +50,7 @@ suspend fun simpleBenchmark() = coroutineScope {
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
-    )
+    ).getOrThrow()
 
     val startTime = Clock.System.now()
 

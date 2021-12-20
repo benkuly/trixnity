@@ -34,8 +34,8 @@ class SyncApiClient(
         setPresence: Presence? = null,
         timeout: Long = 0,
         asUserId: UserId? = null
-    ): SyncResponse {
-        return httpClient.request {
+    ): Result<SyncResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/sync")
             parameter("filter", filter)
@@ -48,7 +48,6 @@ class SyncApiClient(
                 requestTimeoutMillis = timeout + 5000
             }
         }
-    }
 
     internal fun syncLoop(
         filter: String? = null,
@@ -68,7 +67,7 @@ class SyncApiClient(
                         since = batchToken,
                         timeout = if (currentBatchToken.value == null) 0L else timeout,
                         asUserId = asUserId
-                    )
+                    ).getOrThrow()
                     emit(response)
                     currentBatchToken.value = response.nextBatch
                     if (_currentSyncState.value != SyncState.STOPPING) {
