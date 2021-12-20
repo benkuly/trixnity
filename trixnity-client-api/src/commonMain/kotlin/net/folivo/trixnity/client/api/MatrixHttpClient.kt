@@ -48,8 +48,8 @@ class MatrixHttpClient(
 
     suspend inline fun <reified T> request(
         requestBuilder: HttpRequestBuilder.() -> Unit
-    ): T {
-        return try {
+    ): Result<T> = kotlin.runCatching {
+        try {
             baseClient.request(requestBuilder)
         } catch (responseException: ResponseException) {
             val response = responseException.response
@@ -70,10 +70,10 @@ class MatrixHttpClient(
         bodySerializer: KSerializer<B>,
         responseSerializer: KSerializer<R>,
         requestBuilder: HttpRequestBuilder.() -> Unit
-    ): UIA<R> {
+    ): Result<UIA<R>> = kotlin.runCatching {
         val jsonBody = json.encodeToJsonElement(bodySerializer, body)
         require(jsonBody is JsonObject)
-        return try {
+        try {
             val plainResponse = baseClient.request<String> {
                 requestBuilder()
                 require(this.body == EmptyContent) { "body must not be set via HttpRequestBuilder" }
@@ -87,7 +87,7 @@ class MatrixHttpClient(
                 val responseObject = json.decodeFromString<JsonObject>(responseText)
                 val state = json.decodeFromJsonElement<UIA.UIAState>(responseObject)
                 val errorCode = responseObject["errcode"]
-                val authenticate: suspend (AuthenticationRequest) -> UIA<R> = { authenticationRequest ->
+                val authenticate: suspend (AuthenticationRequest) -> Result<UIA<R>> = { authenticationRequest ->
                     val authBody = JsonObject(
                         buildMap {
                             putAll(jsonBody)
@@ -108,7 +108,7 @@ class MatrixHttpClient(
                         state.session?.let { parameters.append("session", it) }
                     }.build()
                 }
-                return if (errorCode != null) {
+                if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
                     UIA.UIAError(state, error, authenticate, getFallbackUrl)
                 } else {
@@ -129,7 +129,7 @@ class MatrixHttpClient(
     suspend inline fun <reified B, reified R> uiaRequest(
         body: B,
         noinline requestBuilder: HttpRequestBuilder.() -> Unit
-    ): UIA<R> {
+    ): Result<UIA<R>> {
         return uiaRequest(
             body = body,
             bodySerializer = serializer(),
@@ -140,7 +140,7 @@ class MatrixHttpClient(
 
     suspend inline fun <reified R> uiaRequest(
         noinline requestBuilder: HttpRequestBuilder.() -> Unit
-    ): UIA<R> {
+    ): Result<UIA<R>> {
         return uiaRequest(
             body = JsonObject(mapOf()),
             bodySerializer = serializer(),

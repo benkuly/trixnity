@@ -51,7 +51,7 @@ suspend fun timelineExample() = coroutineScope {
         secureStore = secureStore,
         scope = scope,
         loggerFactory = loggerFactory
-    )
+    ).getOrThrow()
 
     val startTime = Clock.System.now()
 

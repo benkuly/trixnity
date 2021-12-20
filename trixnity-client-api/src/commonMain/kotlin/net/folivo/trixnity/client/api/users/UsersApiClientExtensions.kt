@@ -6,6 +6,4 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 suspend inline fun <reified C : GlobalAccountDataEventContent> UsersApiClient.getAccountData(
     userId: UserId,
     asUserId: UserId? = null
-): C {
-    return getAccountData(C::class, userId, asUserId)
-}
+): Result<C> = getAccountData(C::class, userId, asUserId)

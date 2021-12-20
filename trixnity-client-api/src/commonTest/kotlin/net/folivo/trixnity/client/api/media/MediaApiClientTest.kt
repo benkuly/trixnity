@@ -34,7 +34,7 @@ class MediaApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.media.getConfig()
+        val result = matrixRestClient.media.getConfig().getOrThrow()
         assertEquals(GetConfigResponse(maxUploadSize = 50000000), result)
     }
 
@@ -69,7 +69,7 @@ class MediaApiClientTest {
             contentType = ContentType.Text.Plain,
             filename = "testFile.txt",
             progress = progress
-        )
+        ).getOrThrow()
         result.contentUri shouldBe "mxc://example.com/AQwafuaFswefuhsfAFAgsw"
         progress.value shouldBe FileTransferProgress(4, 4)
     }
@@ -102,7 +102,7 @@ class MediaApiClientTest {
             mxcUri = "mxc://matrix.org/ascERGshawAWawugaAcauga",
             allowRemote = false,
             progress = progress
-        )
+        ).getOrThrow()
         result.content.toByteArray().decodeToString() shouldBe "test"
         result.contentLength shouldBe 4
         result.contentType shouldBe ContentType.Text.Plain
@@ -140,7 +140,7 @@ class MediaApiClientTest {
             method = ThumbnailResizingMethod.SCALE,
             allowRemote = false,
             progress = progress
-        )
+        ).getOrThrow()
         result.content.toByteArray().decodeToString() shouldBe "test"
         result.contentLength shouldBe 4
         result.contentType shouldBe ContentType.Text.Plain

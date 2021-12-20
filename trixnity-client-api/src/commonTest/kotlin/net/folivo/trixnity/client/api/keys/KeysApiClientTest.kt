@@ -135,7 +135,7 @@ class KeysApiClientTest {
                     )
                 )
             )
-        )
+        ).getOrThrow()
         assertEquals(mapOf(Curve25519 to 10, SignedCurve25519 to 20), result)
     }
 
@@ -203,7 +203,7 @@ class KeysApiClientTest {
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
             token = "string"
-        )
+        ).getOrThrow()
         assertEquals(mapOf(), result.failures)
         val oneTimeKeyMap = result.deviceKeys?.entries?.firstOrNull()
         assertEquals(UserId("alice", "example.com"), oneTimeKeyMap?.key)
@@ -266,7 +266,7 @@ class KeysApiClientTest {
         val result = matrixRestClient.keys.claimKeys(
             timeout = 10_000,
             oneTimeKeys = mapOf(UserId("alice", "example.com") to mapOf("JLAFKJWSCS" to SignedCurve25519))
-        )
+        ).getOrThrow()
         assertEquals(mapOf(), result.failures)
         val oneTimeKeyMap = result.oneTimeKeys.entries.firstOrNull()
         assertEquals(UserId("alice", "example.com"), oneTimeKeyMap?.key)
@@ -310,7 +310,7 @@ class KeysApiClientTest {
         val result = matrixRestClient.keys.getKeyChanges(
             from = "s72594_4483_1934",
             to = "s75689_5632_2435"
-        )
+        ).getOrThrow()
         assertEquals(
             GetKeyChangesResponse(
                 changed = setOf(UserId("@alice:example.com"), UserId("@bob:example.org")),

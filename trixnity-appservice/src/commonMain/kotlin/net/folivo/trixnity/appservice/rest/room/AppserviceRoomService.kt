@@ -33,7 +33,7 @@ interface AppserviceRoomService {
                 isDirect = createRoomParameter.isDirect,
                 powerLevelContentOverride = createRoomParameter.powerLevelContentOverride,
                 preset = createRoomParameter.preset
-            )
+            ).getOrThrow()
         onCreatedRoom(roomAlias, roomId)
     }
 }

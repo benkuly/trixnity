@@ -79,7 +79,7 @@ class RoomsApiClientTest {
             RoomId("room", "server"),
             EventId("\$event"),
             asUserId = UserId("user", "server")
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -117,7 +117,7 @@ class RoomsApiClientTest {
         val result: Event<*> = matrixRestClient.rooms.getEvent(
             RoomId("room", "server"),
             EventId("\$event")
-        )
+        ).getOrThrow()
         assertTrue(result is StateEvent && result.content is NameEventContent)
     }
 
@@ -144,7 +144,7 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.rooms.getStateEvent<NameEventContent>(
             roomId = RoomId("room", "server"),
-        )
+        ).getOrThrow()
         assertEquals(NameEventContent::class, result::class)
     }
 
@@ -191,7 +191,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.rooms.getState(RoomId("room", "server")).toList()
+        val result = matrixRestClient.rooms.getState(RoomId("room", "server")).getOrThrow().toList()
         assertEquals(2, result.size)
         assertEquals(NameEventContent::class, result[0].content::class)
         assertEquals(MemberEventContent::class, result[1].content::class)
@@ -243,7 +243,7 @@ class RoomsApiClientTest {
             roomId = RoomId("room", "server"),
             at = "someAt",
             membership = Membership.JOIN
-        ).toList()
+        ).getOrThrow().toList()
         assertEquals(2, result.size)
         assertEquals(MemberEventContent::class, result[0].content::class)
         assertEquals(MemberEventContent::class, result[1].content::class)
@@ -282,7 +282,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.rooms.getJoinedMembers(RoomId("room", "server"))
+        val result = matrixRestClient.rooms.getJoinedMembers(RoomId("room", "server")).getOrThrow()
         assertEquals(response, result)
     }
 
@@ -333,7 +333,7 @@ class RoomsApiClientTest {
             roomId = RoomId("room", "server"),
             from = "from",
             dir = Direction.FORWARD
-        )
+        ).getOrThrow()
         assertEquals(response, result)
     }
 
@@ -365,7 +365,7 @@ class RoomsApiClientTest {
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             stateKey = "someStateKey"
-        )
+        ).getOrThrow()
         assertEquals(EventId("event"), result)
     }
 
@@ -383,7 +383,7 @@ class RoomsApiClientTest {
                 roomId = RoomId("room", "server"),
                 eventContent = eventContent,
                 stateKey = "someStateKey"
-            )
+            ).getOrThrow()
         } catch (error: Throwable) {
             if (error !is IllegalArgumentException) {
                 fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
@@ -421,7 +421,7 @@ class RoomsApiClientTest {
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             txnId = "someTxnId"
-        )
+        ).getOrThrow()
         assertEquals(EventId("event"), result)
     }
 
@@ -438,7 +438,7 @@ class RoomsApiClientTest {
             matrixRestClient.rooms.sendMessageEvent(
                 roomId = RoomId("room", "server"),
                 eventContent = eventContent
-            )
+            ).getOrThrow()
         } catch (error: Throwable) {
             if (error !is IllegalArgumentException) {
                 fail("error should be of type ${IllegalArgumentException::class} but was ${error::class}")
@@ -473,7 +473,7 @@ class RoomsApiClientTest {
             eventId = EventId("\$eventToRedact"),
             reason = "someReason",
             txnId = "someTxnId"
-        )
+        ).getOrThrow()
         assertEquals(EventId("event"), result)
     }
 
@@ -517,7 +517,7 @@ class RoomsApiClientTest {
             isDirect = true,
             name = "someRoomName",
             invite3Pid = setOf(Invite3Pid("identityServer", "token", "email", "user2@example.org"))
-        )
+        ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }
 
@@ -545,7 +545,7 @@ class RoomsApiClientTest {
         matrixRestClient.rooms.setRoomAlias(
             roomId = RoomId("room", "server"),
             roomAliasId = RoomAliasId("unicorns", "server")
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -572,7 +572,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.rooms.getRoomAlias(RoomAliasId("unicorns", "server"))
+        val result = matrixRestClient.rooms.getRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
         assertEquals(response, result)
     }
 
@@ -596,7 +596,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        matrixRestClient.rooms.deleteRoomAlias(RoomAliasId("unicorns", "server"))
+        matrixRestClient.rooms.deleteRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
     }
 
     @Test
@@ -624,7 +624,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.rooms.getJoinedRooms().toSet()
+        val result = matrixRestClient.rooms.getJoinedRooms().getOrThrow().toSet()
         assertTrue { result.containsAll(setOf(RoomId("room1", "server"), RoomId("room2", "server"))) }
     }
 
@@ -649,7 +649,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        matrixRestClient.rooms.inviteUser(RoomId("room", "server"), UserId("user", "server"))
+        matrixRestClient.rooms.inviteUser(RoomId("room", "server"), UserId("user", "server")).getOrThrow()
     }
 
     @Test
@@ -775,7 +775,7 @@ class RoomsApiClientTest {
                             keysOf(Key.Ed25519Key("0", "some9signature"))
                 )
             )
-        )
+        ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }
 
@@ -830,7 +830,7 @@ class RoomsApiClientTest {
                             keysOf(Key.Ed25519Key("0", "some9signature"))
                 )
             )
-        )
+        ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }
 
@@ -866,7 +866,7 @@ class RoomsApiClientTest {
             roomId = RoomId("room", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             reason = "reason"
-        )
+        ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }
 
@@ -902,7 +902,7 @@ class RoomsApiClientTest {
             roomAliasId = RoomAliasId("alias", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             reason = "reason"
-        )
+        ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }
 
@@ -926,7 +926,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        matrixRestClient.rooms.leaveRoom(RoomId("room", "server"))
+        matrixRestClient.rooms.leaveRoom(RoomId("room", "server")).getOrThrow()
     }
 
     @Test
@@ -972,7 +972,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        matrixRestClient.rooms.setReceipt(RoomId("room", "server"), EventId("\$event"))
+        matrixRestClient.rooms.setReceipt(RoomId("room", "server"), EventId("\$event")).getOrThrow()
     }
 
     @Test
@@ -1003,7 +1003,7 @@ class RoomsApiClientTest {
                     }
                 }
             })
-        matrixRestClient.rooms.setReadMarkers(RoomId("room", "server"), EventId("\$event"))
+        matrixRestClient.rooms.setReadMarkers(RoomId("room", "server"), EventId("\$event")).getOrThrow()
     }
 
     @Test
@@ -1029,7 +1029,7 @@ class RoomsApiClientTest {
         matrixRestClient.rooms.getAccountData<FullyReadEventContent>(
             RoomId("room", "server"),
             UserId("alice", "example.com")
-        ).shouldBe(
+        ).getOrThrow().shouldBe(
             FullyReadEventContent(EventId("$1event"))
         )
     }
@@ -1062,7 +1062,7 @@ class RoomsApiClientTest {
             FullyReadEventContent(EventId("$1event")),
             RoomId("room", "server"),
             UserId("alice", "example.com")
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -1094,6 +1094,6 @@ class RoomsApiClientTest {
             UserId("alice", "example.com"),
             typing = true,
             timeout = 10_000,
-        )
+        ).getOrThrow()
     }
 }

@@ -118,7 +118,7 @@ class MatrixClient private constructor(
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default
-        ): MatrixClient =
+        ): Result<MatrixClient> =
             loginWith(
                 baseUrl = baseUrl,
                 storeFactory = storeFactory,
@@ -129,18 +129,19 @@ class MatrixClient private constructor(
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                 scope = scope,
                 loggerFactory = loggerFactory
-            ) {
-                val loginResponse = it.authentication.login(
+            ) { api ->
+                api.authentication.login(
                     identifier = identifier,
                     passwordOrToken = password,
                     type = LoginType.Password,
                     initialDeviceDisplayName = initialDeviceDisplayName
-                )
-                LoginInfo(
-                    userId = loginResponse.userId,
-                    accessToken = loginResponse.accessToken,
-                    deviceId = loginResponse.deviceId
-                )
+                ).map {
+                    LoginInfo(
+                        userId = it.userId,
+                        accessToken = it.accessToken,
+                        deviceId = it.deviceId
+                    )
+                }
             }
 
         data class LoginInfo(
@@ -159,8 +160,8 @@ class MatrixClient private constructor(
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
             loggerFactory: LoggerFactory = LoggerFactory.default,
-            getLoginInfo: suspend (MatrixApiClient) -> LoginInfo
-        ): MatrixClient {
+            getLoginInfo: suspend (MatrixApiClient) -> Result<LoginInfo>
+        ): Result<MatrixClient> = kotlin.runCatching {
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
 
@@ -175,7 +176,7 @@ class MatrixClient private constructor(
                 eventContentSerializerMappings = eventContentSerializerMappings,
                 loggerFactory = loggerFactory
             )
-            val (userId, deviceId, accessToken) = getLoginInfo(api)
+            val (userId, deviceId, accessToken) = getLoginInfo(api).getOrThrow()
 
             api.accessToken.value = accessToken
             store.account.baseUrl.value = baseUrl
@@ -207,7 +208,7 @@ class MatrixClient private constructor(
             api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
             store.keys.outdatedKeys.update { it + userId }
 
-            return matrixClient
+            matrixClient
         }
 
         suspend fun fromStore(
@@ -271,7 +272,7 @@ class MatrixClient private constructor(
 
     private val isInitialized = MutableStateFlow(false)
 
-    suspend fun startSync() {
+    suspend fun startSync(): Result<Unit> = kotlin.runCatching {
         if (isInitialized.getAndUpdate { true }.not()) {
             val handler = CoroutineExceptionHandler { _, exception ->
                 log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
@@ -298,7 +299,7 @@ class MatrixClient private constructor(
                 store.account.filterId.value = api.users.setFilter(
                     myUserId,
                     Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
-                )
+                ).getOrThrow()
             }
         }
         api.sync.start(

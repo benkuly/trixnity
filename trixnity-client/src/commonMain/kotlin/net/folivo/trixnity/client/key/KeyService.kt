@@ -6,6 +6,7 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
+import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
@@ -31,7 +32,7 @@ class KeyService(
         api.sync.subscribeSyncResponse { syncResponse ->
             syncResponse.deviceLists?.also { handleDeviceLists(it) }
         }
-        scope.launch { store.keys.outdatedKeys.debounce(200).collectLatest(::handleOutdatedKeys) }
+        scope.launch { handleOutdatedKeys() }
     }
 
     internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists) {
@@ -48,29 +49,38 @@ class KeyService(
         }
     }
 
-    internal suspend fun handleOutdatedKeys(userIds: Set<UserId>) = coroutineScope {
-        if (userIds.isNotEmpty()) {
-            log.debug { "update outdated device keys" }
-            val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { store.room.encryptedJoinedRooms() }
-            val keysResponse = api.keys.getKeys(
-                deviceKeys = userIds.associateWith { emptySet() },
-                token = store.account.syncBatchToken.value
-            )
+    @OptIn(FlowPreview::class)
+    internal suspend fun handleOutdatedKeys() = coroutineScope {
+        api.sync.currentSyncState.retryWhenSyncIsRunning(
+            onError = { log.warning(it) { "failed update outdated keys" } },
+            onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
+            scope = this
+        ) {
+            store.keys.outdatedKeys.debounce(100).collectLatest { userIds ->
+                if (userIds.isNotEmpty()) {
+                    log.debug { "try update outdated keys" }
+                    val keysResponse = api.keys.getKeys(
+                        deviceKeys = userIds.associateWith { emptySet() },
+                        token = store.account.syncBatchToken.value
+                    ).getOrThrow()
 
-            keysResponse.masterKeys?.forEach { (userId, masterKey) ->
-                handleOutdatedMasterKey(userId, masterKey)
+                    keysResponse.masterKeys?.forEach { (userId, masterKey) ->
+                        handleOutdatedMasterKey(userId, masterKey)
+                    }
+                    keysResponse.selfSigningKeys?.forEach { (userId, selfSigningKey) ->
+                        handleOutdatedSelfSigningKey(userId, selfSigningKey)
+                    }
+                    keysResponse.userSigningKeys?.forEach { (userId, userSigningKey) ->
+                        handleOutdatedUserSigningKey(userId, userSigningKey)
+                    }
+                    val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { store.room.encryptedJoinedRooms() }
+                    keysResponse.deviceKeys?.forEach { (userId, devices) ->
+                        handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
+                    }
+                    joinedEncryptedRooms.cancel()
+                    store.keys.outdatedKeys.update { it - userIds }
+                }
             }
-            keysResponse.selfSigningKeys?.forEach { (userId, selfSigningKey) ->
-                handleOutdatedSelfSigningKey(userId, selfSigningKey)
-            }
-            keysResponse.userSigningKeys?.forEach { (userId, userSigningKey) ->
-                handleOutdatedUserSigningKey(userId, userSigningKey)
-            }
-            keysResponse.deviceKeys?.forEach { (userId, devices) ->
-                handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
-            }
-            joinedEncryptedRooms.cancel()
-            store.keys.outdatedKeys.update { it - userIds }
         }
     }
 

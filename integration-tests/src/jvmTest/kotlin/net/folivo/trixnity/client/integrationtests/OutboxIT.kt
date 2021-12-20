@@ -74,7 +74,7 @@ class OutboxIT {
             scope = scope,
             loggerFactory = loggerFactory("user 🔴", Logger.Level.DEBUG),
             getLoginInfo = { it.register("user", password) }
-        )
+        ).getOrThrow()
         client.startSync()
     }
 
@@ -92,7 +92,7 @@ class OutboxIT {
     @Test
     fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking {
         withTimeout(180_000) {
-            val room = client.api.rooms.createRoom()
+            val room = client.api.rooms.createRoom().getOrThrow()
 
             repeat(30) {
                 client.room.sendMessage(room) { text("message $it") }

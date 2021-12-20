@@ -2,7 +2,10 @@ package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
@@ -86,7 +89,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     }
     should("send verification step and encrypt it") {
         val encrypted = mockk<EncryptedEventContent.OlmEncryptedEventContent>()
-        coEvery { api.users.sendToDevice<CancelEventContent>(any()) } just Runs
+        coEvery { api.users.sendToDevice<CancelEventContent>(any()) } returns Result.success(Unit)
         coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
         createCut()
         cut.startLifecycle(this)
@@ -97,7 +100,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         }
     }
     should("send verification step and use unencrypted when encrypt failed") {
-        coEvery { api.users.sendToDevice<CancelEventContent>(any()) } just Runs
+        coEvery { api.users.sendToDevice<CancelEventContent>(any()) } returns Result.success(Unit)
         coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)

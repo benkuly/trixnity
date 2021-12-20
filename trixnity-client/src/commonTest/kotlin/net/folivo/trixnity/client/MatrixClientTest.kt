@@ -33,112 +33,113 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-class MatrixClientTest : ShouldSpec(
-    {
-        val json = createMatrixJson()
+class MatrixClientTest : ShouldSpec({
+    val json = createMatrixJson()
 
-        val serverResponse = SyncResponse(
-            nextBatch = "nextBatch",
-            accountData = SyncResponse.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
-            deviceLists = SyncResponse.DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
-            presence = SyncResponse.Presence(emptyList()),
-            room = SyncResponse.Rooms(emptyMap(), emptyMap(), emptyMap()),
-            toDevice = SyncResponse.ToDevice(emptyList())
-        )
-        val userId = UserId("user", "localhost")
+    val serverResponse = SyncResponse(
+        nextBatch = "nextBatch",
+        accountData = SyncResponse.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
+        deviceLists = SyncResponse.DeviceLists(emptySet(), emptySet()),
+        deviceOneTimeKeysCount = emptyMap(),
+        presence = SyncResponse.Presence(emptyList()),
+        room = SyncResponse.Rooms(emptyMap(), emptyMap(), emptyMap()),
+        toDevice = SyncResponse.ToDevice(emptyList())
+    )
+    val userId = UserId("user", "localhost")
 
-        lateinit var scope: CoroutineScope
-        beforeTest {
-            scope = CoroutineScope(Dispatchers.Default)
-        }
-        afterTest {
-            scope.cancel()
-        }
+    lateinit var scope: CoroutineScope
+    beforeTest {
+        scope = CoroutineScope(Dispatchers.Default)
+    }
+    afterTest {
+        scope.cancel()
+    }
 
-        context(MatrixClient::startSync.name) {
-            should("write the last successfully processed batch token in the DB") {
-                val inMemoryStore = InMemoryStore(scope)
-                val cut = spyk(MatrixClient.loginWith(
-                    baseUrl = Url("http://matrix.home"),
-                    storeFactory = object : StoreFactory {
-                        override suspend fun createStore(
-                            contentMappings: EventContentSerializerMappings,
-                            json: Json,
-                            storeCoroutineContext: CoroutineContext,
-                            loggerFactory: LoggerFactory
-                        ): Store {
-                            return inMemoryStore
-                        }
-                    },
-                    secureStore = object : SecureStore {
-                        override val olmPickleKey: String = ""
-                    },
-                    baseHttpClient = HttpClient(MockEngine) {
-                        engine {
-                            addHandler { request ->
-                                when (request.url.fullPath) {
-                                    "/_matrix/client/r0/keys/upload" -> {
-                                        assertEquals(HttpMethod.Post, request.method)
-                                        respond(
-                                            """{"one_time_key_counts":{"ed25519":1}}""",
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
+    context(MatrixClient::startSync.name) {
+        should("write the last successfully processed batch token in the DB") {
+            val inMemoryStore = InMemoryStore(scope)
+            val cut = spyk(MatrixClient.loginWith(
+                baseUrl = Url("http://matrix.home"),
+                storeFactory = object : StoreFactory {
+                    override suspend fun createStore(
+                        contentMappings: EventContentSerializerMappings,
+                        json: Json,
+                        storeCoroutineContext: CoroutineContext,
+                        loggerFactory: LoggerFactory
+                    ): Store {
+                        return inMemoryStore
+                    }
+                },
+                secureStore = object : SecureStore {
+                    override val olmPickleKey: String = ""
+                },
+                baseHttpClient = HttpClient(MockEngine) {
+                    engine {
+                        addHandler { request ->
+                            when (request.url.fullPath) {
+                                "/_matrix/client/r0/keys/upload" -> {
+                                    assertEquals(HttpMethod.Post, request.method)
+                                    respond(
+                                        """{"one_time_key_counts":{"ed25519":1}}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
                                         )
-                                    }
-                                    "/_matrix/client/r0/user/${userId.e()}/filter" -> {
-                                        assertEquals(HttpMethod.Post, request.method)
-                                        respond(
-                                            """{"filter_id":"someFilter"}""",
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
+                                    )
+                                }
+                                "/_matrix/client/r0/user/${userId.e()}/filter" -> {
+                                    assertEquals(HttpMethod.Post, request.method)
+                                    respond(
+                                        """{"filter_id":"someFilter"}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
                                         )
-                                    }
-                                    "/_matrix/client/r0/sync?filter=someFilter&set_presence=online" -> {
-                                        assertEquals(HttpMethod.Get, request.method)
-                                        respond(
-                                            json.encodeToString(serverResponse),
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
+                                    )
+                                }
+                                "/_matrix/client/r0/sync?filter=someFilter&set_presence=online" -> {
+                                    assertEquals(HttpMethod.Get, request.method)
+                                    respond(
+                                        json.encodeToString(serverResponse),
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
                                         )
-                                    }
-                                    else -> {
-                                        respond(
-                                            "",
-                                            HttpStatusCode.BadRequest
-                                        )
-                                    }
+                                    )
+                                }
+                                else -> {
+                                    respond(
+                                        "",
+                                        HttpStatusCode.BadRequest
+                                    )
                                 }
                             }
                         }
-                    },
-                    scope = scope,
-                    getLoginInfo = {
+                    }
+                },
+                scope = scope,
+                getLoginInfo = {
+                    Result.success(
                         MatrixClient.Companion.LoginInfo(
                             userId,
                             "deviceId",
                             "accessToken"
                         )
-                    }
-                ))
-
-                val userServiceMock: UserService = spyk(cut.user)
-                every { cut.user } returns userServiceMock
-                coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
-
-                cut.startSync()
-                until(Duration.milliseconds(1_000), Duration.milliseconds(50).fixed()) {
-                    inMemoryStore.account.syncBatchToken.value == null
+                    )
                 }
+            ).getOrThrow())
+
+            val userServiceMock: UserService = spyk(cut.user)
+            every { cut.user } returns userServiceMock
+            coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
+
+            cut.startSync()
+            until(Duration.milliseconds(1_000), Duration.milliseconds(50).fixed()) {
+                inMemoryStore.account.syncBatchToken.value == null
             }
         }
-    })
+    }
+})

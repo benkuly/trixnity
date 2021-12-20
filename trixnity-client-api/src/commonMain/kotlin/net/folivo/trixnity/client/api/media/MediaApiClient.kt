@@ -17,14 +17,13 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3config">matrix spec</a>
      */
-    suspend fun getConfig(): GetConfigResponse {
-        return httpClient.request {
+    suspend fun getConfig(): Result<GetConfigResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/media/r0/config")
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixmediav3upload">matrix spec</a>
@@ -34,9 +33,10 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         contentLength: Long,
         contentType: ContentType,
         filename: String? = null,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
-    ): UploadResponse {
-        return httpClient.request {
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Long = 600_000
+    ): Result<UploadResponse> =
+        httpClient.request {
             method = Post
             url("/_matrix/media/r0/upload")
             accept(ContentType.Application.Json)
@@ -52,14 +52,13 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
                 }
             }
             timeout {
-                requestTimeoutMillis = 600000
+                requestTimeoutMillis = timeout
             }
             if (progress != null)
                 onUpload { transferred, total ->
                     progress.value = FileTransferProgress(transferred, total)
                 }
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
@@ -68,7 +67,8 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         mxcUri: String,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-    ): DownloadResponse {
+        timeout: Long = 600_000
+    ): Result<DownloadResponse> {
         val uri = Url(mxcUri)
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
         val response = httpClient.request<HttpResponse> {
@@ -76,19 +76,21 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
             url("/_matrix/media/r0/download/${uri.host}${uri.encodedPath}")
             parameter("allow_remote", allowRemote)
             timeout {
-                requestTimeoutMillis = 600000
+                requestTimeoutMillis = timeout
             }
             if (progress != null)
                 onDownload { transferred, total ->
                     progress.value = FileTransferProgress(transferred, total)
                 }
         }
-        return DownloadResponse(
-            content = response.receive(),
-            contentLength = response.contentLength(),
-            contentType = response.contentType(),
-            filename = response.headers[HttpHeaders.ContentDisposition]
-        )
+        return response.mapCatching {
+            DownloadResponse(
+                content = it.receive(),
+                contentLength = it.contentLength(),
+                contentType = it.contentType(),
+                filename = it.headers[HttpHeaders.ContentDisposition]
+            )
+        }
     }
 
     /**
@@ -101,7 +103,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         method: ThumbnailResizingMethod,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-    ): DownloadResponse {
+    ): Result<DownloadResponse> {
         val uri = Url(mxcUri)
         require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
         val response = httpClient.request<HttpResponse> {
@@ -119,11 +121,13 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
                     progress.value = FileTransferProgress(transferred, total)
                 }
         }
-        return DownloadResponse(
-            content = response.receive(),
-            contentLength = response.contentLength(),
-            contentType = response.contentType(),
-            filename = response.headers[HttpHeaders.ContentDisposition]
-        )
+        return response.mapCatching {
+            DownloadResponse(
+                content = it.receive(),
+                contentLength = it.contentLength(),
+                contentType = it.contentType(),
+                filename = it.headers[HttpHeaders.ContentDisposition]
+            )
+        }
     }
 }

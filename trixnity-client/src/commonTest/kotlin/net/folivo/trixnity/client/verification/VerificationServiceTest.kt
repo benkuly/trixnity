@@ -239,7 +239,14 @@ class VerificationServiceTest : ShouldSpec({
             should("start all lifecycles of user verifications") {
                 cut.start(eventHandlingCoroutineScope)
                 val nextEventId = EventId("$1nextEventId")
-                coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("$24event")
+                coEvery {
+                    api.rooms.sendMessageEvent(
+                        any(),
+                        any(),
+                        any(),
+                        any()
+                    )
+                } returns Result.success(EventId("$24event"))
                 val timelineEvent = TimelineEvent(
                     event = Event.MessageEvent(
                         VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
@@ -286,7 +293,7 @@ class VerificationServiceTest : ShouldSpec({
     }
     context(VerificationService::createDeviceVerificationRequest.name) {
         should("send request to device and save locally") {
-            coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } just Runs
+            coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } returns Result.success(Unit)
             coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
             cut.createDeviceVerificationRequest(bobUserId, bobDeviceId)
             val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -301,7 +308,14 @@ class VerificationServiceTest : ShouldSpec({
     }
     context(VerificationService::createUserVerificationRequest.name) {
         beforeTest {
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns EventId("$1event")
+            coEvery {
+                api.rooms.sendMessageEvent(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns Result.success(EventId("$1event"))
             store.room.update(roomId) {
                 Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm)
             }
@@ -315,12 +329,15 @@ class VerificationServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
+            coEvery { user.loadMembers(any()) } returns Result.success(Unit)
         }
         context("no direct room with user exists") {
             should("create room and send request into it") {
                 coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
-                coEvery { api.rooms.createRoom(invite = setOf(bobUserId), isDirect = true) } returns roomId
-                cut.createUserVerificationRequest(bobUserId)
+                coEvery { api.rooms.createRoom(invite = setOf(bobUserId), isDirect = true) } returns Result.success(
+                    roomId
+                )
+                cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 coVerify {
                     api.rooms.sendMessageEvent(
                         roomId,
@@ -336,7 +353,7 @@ class VerificationServiceTest : ShouldSpec({
                 store.globalAccountData.update(
                     Event.GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
-                cut.createUserVerificationRequest(bobUserId)
+                cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 coVerify {
                     api.rooms.sendMessageEvent(
                         roomId,

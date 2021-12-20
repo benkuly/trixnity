@@ -5,8 +5,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldHave
-import io.kotest.matchers.types.beOfType
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -28,9 +26,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import org.kodein.log.LoggerFactory
@@ -389,11 +385,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event2, event1),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2, event1),
+                            state = listOf()
+                        )
                     )
                     val startEvent = TimelineEvent(
                         event = event3,
@@ -440,11 +438,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event2),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2),
+                            state = listOf()
+                        )
                     )
                     val startEvent = TimelineEvent(
                         event = event3,
@@ -483,11 +483,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "start",
-                        chunk = listOf(),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "start",
+                            chunk = listOf(),
+                            state = listOf()
+                        )
                     )
                     val startEvent = TimelineEvent(
                         event = event3,
@@ -520,11 +522,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event2),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2),
+                            state = listOf()
+                        )
                     )
                     val previousEvent = TimelineEvent(
                         event = event1,
@@ -579,11 +583,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event2, event1.copy(originTimestamp = 24)),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2, event1.copy(originTimestamp = 24)),
+                            state = listOf()
+                        )
                     )
                     val previousEvent = TimelineEvent(
                         event = event1,
@@ -640,11 +646,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event2),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2),
+                            state = listOf()
+                        )
                     )
                     val previousEvent = TimelineEvent(
                         event = event1,
@@ -717,11 +725,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event3, event4),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event3, event4),
+                            state = listOf()
+                        )
                     )
                     val nextEvent = TimelineEvent(
                         event = event5,
@@ -784,11 +794,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event4, event5.copy(originTimestamp = 24)),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event4, event5.copy(originTimestamp = 24)),
+                            state = listOf()
+                        )
                     )
                     val nextEvent = TimelineEvent(
                         event = event5,
@@ -845,11 +857,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                             limit = 20,
                             filter = """{"lazy_load_members":true}"""
                         )
-                    } returns GetEventsResponse(
-                        start = "start",
-                        end = "end",
-                        chunk = listOf(event4),
-                        state = listOf()
+                    } returns Result.success(
+                        GetEventsResponse(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event4),
+                            state = listOf()
+                        )
                     )
                     val nextEvent = TimelineEvent(
                         event = event5,

@@ -103,14 +103,14 @@ class UserService(
         }
     }
 
-    suspend fun loadMembers(roomId: RoomId) {
+    suspend fun loadMembers(roomId: RoomId): Result<Unit> = kotlin.runCatching {
         store.room.update(roomId) { oldRoom ->
             requireNotNull(oldRoom) { "cannot load members of a room, that we don't know yet ($roomId)" }
             if (!oldRoom.membersLoaded) {
                 val memberEvents = api.rooms.getMembers(
                     roomId = roomId,
                     notMembership = Membership.LEAVE
-                ).toList()
+                ).getOrThrow().toList()
                 store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
                 memberEvents.forEach { setRoomUser(it) }
                 store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }

@@ -46,7 +46,7 @@ class AppserviceRoomServiceTest {
             .returns(CreateRoomParameter(name = "someName"))
 
         coEvery { matrixApiClientMock.rooms.createRoom(allAny()) }
-            .returns(RoomId("room", "server"))
+            .returns(Result.success(RoomId("room", "server")))
 
         runBlocking { cut.createManagedRoom(RoomAliasId("alias", "server")) }
 
@@ -86,7 +86,7 @@ class AppserviceRoomServiceTest {
             .throws(RuntimeException())
 
         coEvery { matrixApiClientMock.rooms.createRoom(allAny()) }
-            .returns(RoomId("room", "server"))
+            .returns(Result.success(RoomId("room", "server")))
 
         try {
             runBlocking { cut.createManagedRoom(RoomAliasId("alias", "server")) }

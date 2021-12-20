@@ -41,7 +41,7 @@ class DevicesApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.devices.getDevices()
+        val result = matrixRestClient.devices.getDevices().getOrThrow()
         assertEquals(
             GetDevicesResponse(
                 listOf(
@@ -82,7 +82,7 @@ class DevicesApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.devices.getDevice("ABCDEF")
+        val result = matrixRestClient.devices.getDevice("ABCDEF").getOrThrow()
         assertEquals(
             Device(
                 deviceId = "ABCDEF",
@@ -140,7 +140,7 @@ class DevicesApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.devices.deleteDevices(devices = listOf("ABCDEFG"))
+        val result = matrixRestClient.devices.deleteDevices(devices = listOf("ABCDEFG")).getOrThrow()
         assertTrue { result is UIA.UIASuccess }
     }
 
@@ -161,7 +161,7 @@ class DevicesApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.devices.deleteDevice(deviceId = "ABCDEFG")
+        val result = matrixRestClient.devices.deleteDevice(deviceId = "ABCDEFG").getOrThrow()
         assertTrue { result is UIA.UIASuccess }
     }
 }

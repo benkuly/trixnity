@@ -47,8 +47,8 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
-        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
+            .returns(Result.success(UIA.UIASuccess(RegisterResponse(UserId("user", "server")))))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } returns Result.success(Unit)
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
 
@@ -94,8 +94,8 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter("someDisplayName"))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
-        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
+            .returns(Result.success(UIA.UIASuccess(RegisterResponse(UserId("user", "server")))))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } returns Result.success(Unit)
 
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
             .throws(
@@ -130,9 +130,9 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter(displayName = "someDisplayName"))
 
-        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } returns Result.success(Unit)
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
+            .returns(Result.success(UIA.UIASuccess(RegisterResponse(UserId("user", "server")))))
 
         try {
             runBlocking { cut.registerManagedUser(UserId("user", "server")) }
@@ -154,8 +154,8 @@ class AppserviceUserServiceTest {
         coEvery { cut.getRegisterUserParameter(UserId("user", "server")) }
             .returns(RegisterUserParameter())
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
-        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } just Runs
+            .returns(Result.success(UIA.UIASuccess(RegisterResponse(UserId("user", "server")))))
+        coEvery { matrixApiClientMock.users.setDisplayName(allAny()) } returns Result.success(Unit)
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
 
@@ -168,7 +168,7 @@ class AppserviceUserServiceTest {
         coEvery { matrixApiClientMock.users.setDisplayName(allAny()) }
             .throws(MatrixServerException(HttpStatusCode.BadRequest, ErrorResponse.Unknown()))
         coEvery { matrixApiClientMock.authentication.register(allAny()) }
-            .returns(UIA.UIASuccess(RegisterResponse(UserId("user", "server"))))
+            .returns(Result.success(UIA.UIASuccess(RegisterResponse(UserId("user", "server")))))
 
         runBlocking { cut.registerManagedUser(UserId("user", "server")) }
     }

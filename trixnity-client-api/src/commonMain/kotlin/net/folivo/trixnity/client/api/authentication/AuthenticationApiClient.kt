@@ -15,13 +15,12 @@ class AuthenticationApiClient(
      */
     suspend fun isUsernameAvailable(
         username: String
-    ) {
-        httpClient.request<Unit> {
+    ): Result<Unit> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/register/available")
             parameter("username", username)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3register">matrix spec</a>
@@ -34,8 +33,8 @@ class AuthenticationApiClient(
         initialDeviceDisplayName: String? = null,
         inhibitLogin: Boolean? = null,
         isAppservice: Boolean = false // TODO why is the spec so inconsistent?
-    ): UIA<RegisterResponse> {
-        return httpClient.uiaRequest(
+    ): Result<UIA<RegisterResponse>> =
+        httpClient.uiaRequest(
             body = RegisterRequest(
                 username,
                 password,
@@ -49,17 +48,15 @@ class AuthenticationApiClient(
             url("/_matrix/client/r0/register")
             parameter("kind", accountType?.value)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3login">matrix spec</a>
      */
-    suspend fun getLoginTypes(): Set<LoginType> {
-        return httpClient.request<GetLoginTypesResponse> {
+    suspend fun getLoginTypes(): Result<Set<LoginType>> =
+        httpClient.request<GetLoginTypesResponse> {
             method = Get
             url("/_matrix/client/r0/login")
-        }.flows
-    }
+        }.mapCatching { it.flows }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3login">matrix spec</a>
@@ -70,8 +67,8 @@ class AuthenticationApiClient(
         type: LoginType = LoginType.Password,
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null
-    ): LoginResponse {
-        return httpClient.request {
+    ): Result<LoginResponse> =
+        httpClient.request {
             method = Post
             url("/_matrix/client/r0/login")
             body = LoginRequest(
@@ -83,41 +80,37 @@ class AuthenticationApiClient(
                 initialDeviceDisplayName
             )
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logout">matrix spec</a>
      */
-    suspend fun logout() {
-        return httpClient.request {
+    suspend fun logout(): Result<Unit> =
+        httpClient.request {
             method = Post
             url("/_matrix/client/r0/logout")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logoutall">matrix spec</a>
      */
-    suspend fun logoutAll() {
-        return httpClient.request {
+    suspend fun logoutAll(): Result<Unit> =
+        httpClient.request {
             method = Post
             url("/_matrix/client/r0/logout/all")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
      */
     suspend fun deactivateAccount(
         identityServer: String? = null
-    ): UIA<Unit> {
-        return httpClient.uiaRequest(
+    ): Result<UIA<Unit>> =
+        httpClient.uiaRequest(
             body = DeactivateAccountRequest(identityServer)
         ) {
             method = Post
             url("/_matrix/client/r0/account/deactivate")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
@@ -125,12 +118,11 @@ class AuthenticationApiClient(
     suspend fun changePassword(
         newPassword: String,
         logoutDevices: Boolean = false
-    ): UIA<Unit> {
-        return httpClient.uiaRequest(
+    ): Result<UIA<Unit>> =
+        httpClient.uiaRequest(
             body = ChangePasswordRequest(newPassword, logoutDevices),
         ) {
             method = Post
             url("/_matrix/client/r0/account/password")
         }
-    }
 }

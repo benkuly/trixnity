@@ -15,22 +15,20 @@ class DevicesApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3devicesdeviceid">matrix spec</a>
      */
-    suspend fun getDevices(): GetDevicesResponse {
-        return httpClient.request {
+    suspend fun getDevices(): Result<GetDevicesResponse> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/devices")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3devices">matrix spec</a>
      */
-    suspend fun getDevice(deviceId: String): Device {
-        return httpClient.request {
+    suspend fun getDevice(deviceId: String): Result<Device> =
+        httpClient.request {
             method = Get
             url("/_matrix/client/r0/devices/${deviceId}")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
@@ -38,37 +36,32 @@ class DevicesApiClient(
     suspend fun updateDevice(
         deviceId: String,
         displayName: String,
-    ) {
-        return httpClient.request {
+    ): Result<Unit> =
+        httpClient.request {
             method = Put
             url("/_matrix/client/r0/devices/${deviceId}")
             body = UpdateDeviceRequest(displayName)
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
      */
-    suspend fun deleteDevices(
-        devices: List<String>,
-    ): UIA<Unit> {
-        return httpClient.uiaRequest(
+    suspend fun deleteDevices(devices: List<String>): Result<UIA<Unit>> =
+        httpClient.uiaRequest(
             body = DeleteDevicesRequest(devices)
         ) {
             method = Post
             url("/_matrix/client/r0/delete_devices")
         }
-    }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3devicesdeviceid">matrix spec</a>
      */
     suspend fun deleteDevice(
         deviceId: String,
-    ): UIA<Unit> {
-        return httpClient.uiaRequest {
+    ): Result<UIA<Unit>> =
+        httpClient.uiaRequest {
             method = Delete
             url("/_matrix/client/r0/devices/${deviceId}")
         }
-    }
 }

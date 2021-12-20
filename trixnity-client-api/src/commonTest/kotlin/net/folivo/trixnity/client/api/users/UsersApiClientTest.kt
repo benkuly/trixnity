@@ -62,7 +62,7 @@ class UsersApiClientTest {
                     }
                 }
             })
-        assertEquals("someDisplayName", matrixRestClient.users.getDisplayName(UserId("user", "server")))
+        assertEquals("someDisplayName", matrixRestClient.users.getDisplayName(UserId("user", "server")).getOrThrow())
     }
 
     @Test
@@ -106,7 +106,10 @@ class UsersApiClientTest {
                     }
                 }
             })
-        assertEquals("mxc://localhost/123456", matrixRestClient.users.getAvatarUrl(UserId("user", "server")))
+        assertEquals(
+            "mxc://localhost/123456",
+            matrixRestClient.users.getAvatarUrl(UserId("user", "server")).getOrThrow()
+        )
     }
 
     @Test
@@ -128,7 +131,7 @@ class UsersApiClientTest {
             })
         assertEquals(
             GetProfileResponse("someDisplayName", "mxc://localhost/123456"),
-            matrixRestClient.users.getProfile(UserId("user", "server"))
+            matrixRestClient.users.getProfile(UserId("user", "server")).getOrThrow()
         )
     }
 
@@ -151,7 +154,7 @@ class UsersApiClientTest {
             })
         assertEquals(
             GetProfileResponse(null, null),
-            matrixRestClient.users.getProfile(UserId("user", "server"))
+            matrixRestClient.users.getProfile(UserId("user", "server")).getOrThrow()
         )
     }
 
@@ -173,8 +176,8 @@ class UsersApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.users.whoAmI()
-        assertEquals(UserId("user", "server"), result)
+        val result = matrixRestClient.users.whoAmI().getOrThrow()
+        assertEquals(WhoAmIResponse(UserId("user", "server"), "ABCDEF"), result)
     }
 
     @Test
@@ -204,7 +207,7 @@ class UsersApiClientTest {
             })
         matrixRestClient.users.setPresence(
             UserId("@user:server"), PresenceEventContent.Presence.ONLINE, "I am here."
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -229,7 +232,7 @@ class UsersApiClientTest {
                     }
                 }
             })
-        val result = matrixRestClient.users.getPresence(UserId("@user:server"))
+        val result = matrixRestClient.users.getPresence(UserId("@user:server")).getOrThrow()
         assertEquals(PresenceEventContent(PresenceEventContent.Presence.UNAVAILABLE, lastActiveAgo = 420845), result)
     }
 
@@ -278,7 +281,7 @@ class UsersApiClientTest {
                 )
             ),
             transactionId = "tnxId"
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -312,7 +315,7 @@ class UsersApiClientTest {
         val response = matrixRestClient.users.setFilter(
             UserId("dino", "server"),
             Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
-        )
+        ).getOrThrow()
         assertEquals("0", response)
     }
 
@@ -341,7 +344,7 @@ class UsersApiClientTest {
                     }
                 }
             })
-        val response = matrixRestClient.users.getFilter(UserId("dino", "server"), "0")
+        val response = matrixRestClient.users.getFilter(UserId("dino", "server"), "0").getOrThrow()
         assertEquals(Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true))), response)
     }
 
@@ -365,7 +368,7 @@ class UsersApiClientTest {
                     }
                 }
             })
-        matrixRestClient.users.getAccountData<DirectEventContent>(UserId("alice", "example.com"))
+        matrixRestClient.users.getAccountData<DirectEventContent>(UserId("alice", "example.com")).getOrThrow()
             .shouldBe(
                 DirectEventContent(
                     mapOf(
@@ -406,7 +409,7 @@ class UsersApiClientTest {
                 )
             ),
             UserId("alice", "example.com")
-        )
+        ).getOrThrow()
     }
 
     @Test
@@ -437,7 +440,7 @@ class UsersApiClientTest {
                     }
                 }
             })
-        matrixRestClient.users.searchUsers("bob", "de", 20) shouldBe
+        matrixRestClient.users.searchUsers("bob", "de", 20).getOrThrow() shouldBe
                 SearchUsersResponse(
                     limited = true,
                     results = listOf(SearchUser("mxc://localhost/123456", "bob", UserId("@bob:localhost")))
