@@ -27,7 +27,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/register/available?username=user", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/register/available?username=user", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             "{}",
@@ -57,7 +57,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/register?kind=user", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/register?kind=user", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
                         respond(
@@ -87,7 +87,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             """
@@ -134,7 +134,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/login", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/login", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         request.body.toByteArray().decodeToString().shouldEqualJson(
                             """
@@ -196,7 +196,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/logout", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/logout", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         respond(
                             "{}",
@@ -216,7 +216,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/logout/all", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/logout/all", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         respond(
                             "{}",
@@ -236,7 +236,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/account/deactivate", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/account/deactivate", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(
                             """{"id_server":"id.host"}""",
@@ -261,7 +261,7 @@ class AuthenticationApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/account/password", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/account/password", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(
                             """{"new_password":"newPassword","logout_devices":false}""",

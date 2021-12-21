@@ -18,7 +18,7 @@ class DevicesApiClient(
     suspend fun getDevices(): Result<GetDevicesResponse> =
         httpClient.request {
             method = Get
-            url("/_matrix/client/r0/devices")
+            url("/_matrix/client/v3/devices")
         }
 
     /**
@@ -27,7 +27,7 @@ class DevicesApiClient(
     suspend fun getDevice(deviceId: String): Result<Device> =
         httpClient.request {
             method = Get
-            url("/_matrix/client/r0/devices/${deviceId}")
+            url("/_matrix/client/v3/devices/${deviceId}")
         }
 
     /**
@@ -39,7 +39,7 @@ class DevicesApiClient(
     ): Result<Unit> =
         httpClient.request {
             method = Put
-            url("/_matrix/client/r0/devices/${deviceId}")
+            url("/_matrix/client/v3/devices/${deviceId}")
             body = UpdateDeviceRequest(displayName)
         }
 
@@ -51,7 +51,7 @@ class DevicesApiClient(
             body = DeleteDevicesRequest(devices)
         ) {
             method = Post
-            url("/_matrix/client/r0/delete_devices")
+            url("/_matrix/client/v3/delete_devices")
         }
 
     /**
@@ -62,6 +62,6 @@ class DevicesApiClient(
     ): Result<UIA<Unit>> =
         httpClient.uiaRequest {
             method = Delete
-            url("/_matrix/client/r0/devices/${deviceId}")
+            url("/_matrix/client/v3/devices/${deviceId}")
         }
 }

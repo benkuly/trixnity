@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-create">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroomredaction">matrix spec</a>
  */
 @Serializable
 data class RedactionEventContent(

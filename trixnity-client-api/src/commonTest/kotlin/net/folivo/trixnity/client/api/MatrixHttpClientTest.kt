@@ -322,7 +322,7 @@ class MatrixHttpClientTest {
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/r0/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
     }
 
     @Test
@@ -418,7 +418,7 @@ class MatrixHttpClientTest {
         result.errorResponse shouldBe ErrorResponse.NotFound()
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/r0/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         requestCount shouldBe 2
     }
 }

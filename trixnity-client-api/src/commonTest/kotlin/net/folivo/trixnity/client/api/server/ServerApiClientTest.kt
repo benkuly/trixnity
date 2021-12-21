@@ -53,7 +53,7 @@ class ServerApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/capabilities", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/capabilities", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             Json.encodeToString(response),
