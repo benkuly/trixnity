@@ -1,3 +1,7 @@
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
+import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
+
 plugins {
     kotlin("plugin.serialization")
     kotlin("multiplatform")
@@ -14,28 +18,19 @@ kotlin {
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            systemProperty("java.library.path", olm.build.canonicalPath)
-            systemProperty("jna.library.path", olm.build.canonicalPath)
+            when (HostManager.host) {
+                is LINUX_X64 -> {
+                    systemProperty("java.library.path", olm.build.canonicalPath)
+                    systemProperty("jna.library.path", olm.build.canonicalPath)
+                }
+                is MINGW_X64 -> {
+                    systemProperty("java.library.path", olm.buildWin.canonicalPath)
+                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
+                }
+                else -> {}
+            }
         }
     }
-//    js {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
-//    val hostOs = System.getProperty("os.name")
-//    val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-//    }
 
     sourceSets {
         all {
@@ -64,8 +59,6 @@ kotlin {
                 implementation("com.h2database:h2:${Versions.h2}")
             }
         }
-//        val jsTest by getting
-//        val nativeTest by getting
     }
 }
 

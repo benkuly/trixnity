@@ -3,17 +3,19 @@ package net.folivo.trixnity.client.api.devices
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.uia.UIA
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DevicesApiClientTest {
 
     @Test
-    fun shouldGetDevices() = runBlockingTest {
+    fun shouldGetDevices() = runTest {
         val response = """
             {
               "devices":[
@@ -58,7 +60,7 @@ class DevicesApiClientTest {
     }
 
     @Test
-    fun shouldGetDevice() = runBlockingTest {
+    fun shouldGetDevice() = runTest {
         val response = """
             {
               "device_id":"ABCDEF",
@@ -95,7 +97,7 @@ class DevicesApiClientTest {
     }
 
     @Test
-    fun shouldUpdateDevice() = runBlockingTest {
+    fun shouldUpdateDevice() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -116,7 +118,7 @@ class DevicesApiClientTest {
     }
 
     @Test
-    fun shouldDeleteDevices() = runBlockingTest {
+    fun shouldDeleteDevices() = runTest {
         val expectedRequest = """
             {
               "devices":[
@@ -145,7 +147,7 @@ class DevicesApiClientTest {
     }
 
     @Test
-    fun shouldDeleteDevice() = runBlockingTest {
+    fun shouldDeleteDevice() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {

@@ -13,9 +13,9 @@ actual class OlmPkSigning private constructor(
         @OptIn(InternalAPI::class)
         actual fun create(privateKey: String?): OlmPkSigning {
             val ptr: PkSigning = rethrow { js("new Olm.PkSigning()") }.unsafeCast<OlmPkSigningPointer>()
-            val privateKey = privateKey?.decodeUnpaddedBase64Bytes()?.unsafeCast<Uint8Array>() ?: ptr.generate_seed()
-            val publicKey = rethrow { ptr.init_with_seed(privateKey) }
-            return OlmPkSigning(ptr, privateKey.unsafeCast<ByteArray>().encodeUnpaddedBase64(), publicKey)
+            val newPrivateKey = privateKey?.decodeUnpaddedBase64Bytes()?.unsafeCast<Uint8Array>() ?: ptr.generate_seed()
+            val publicKey = rethrow { ptr.init_with_seed(newPrivateKey) }
+            return OlmPkSigning(ptr, newPrivateKey.unsafeCast<ByteArray>().encodeUnpaddedBase64(), publicKey)
         }
     }
 

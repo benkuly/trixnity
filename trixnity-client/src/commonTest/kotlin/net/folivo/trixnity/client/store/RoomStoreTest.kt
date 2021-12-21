@@ -13,9 +13,7 @@ import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class RoomStoreTest : ShouldSpec({
     val roomRepository = mockk<RoomRepository>(relaxUnitFun = true)
     lateinit var storeScope: CoroutineScope
@@ -42,7 +40,7 @@ class RoomStoreTest : ShouldSpec({
 
             cut.init()
 
-            retry(10, milliseconds(2_000), milliseconds(30)) {
+            retry(10, 2_000.milliseconds, 30.milliseconds) {
                 cut.getAll().value shouldContainExactly listOf(room1, room2)
             }
         }

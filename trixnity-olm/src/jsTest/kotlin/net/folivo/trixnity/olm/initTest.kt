@@ -1,9 +1,10 @@
 package net.folivo.trixnity.olm
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 
-actual fun initTest(block: suspend () -> Unit): dynamic = GlobalScope.promise {
+@OptIn(ExperimentalCoroutinesApi::class)
+actual fun initTest(block: suspend () -> Unit): dynamic = runTest {
     Init()
     block()
 }

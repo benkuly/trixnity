@@ -28,16 +28,16 @@ actual class OlmAccount private constructor() : WantsToBeFree {
 
     actual fun sign(message: String): String = rethrow { ptr.sign(message) }
 
-    actual fun markOneTimeKeysAsPublished() = rethrow { ptr.mark_keys_as_published() }
+    actual fun markKeysAsPublished() = rethrow { ptr.mark_keys_as_published() }
 
     actual fun generateOneTimeKeys(numberOfKeys: Long) {
-        if (numberOfKeys <= 0) throw OlmLibraryException("SHOULD_BE_POSIIVE")
+        require(numberOfKeys > 0) { "number of keys requested for generation must be positive" }
         rethrow { ptr.generate_one_time_keys(numberOfKeys) }
     }
 
     actual fun removeOneTimeKeys(session: OlmSession) = rethrow { ptr.remove_one_time_keys(session.ptr) }
 
-    actual fun forgetOldFallbackKey() = rethrow { ptr.forget_old_fallback_key(session.ptr) }
+    actual fun forgetOldFallbackKey() = rethrow { ptr.forget_old_fallback_key() }
 
     actual fun generateFallbackKey() = rethrow { ptr.generate_fallback_key() }
 

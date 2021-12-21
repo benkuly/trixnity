@@ -12,9 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
     timeout = 10_000
 
@@ -38,12 +37,12 @@ class UtilsTest : ShouldSpec({
                 }
             }
 
-            until(Duration.milliseconds(50), Duration.milliseconds(25).fixed()) {
+            until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
             blockCalled shouldBe 0
             syncState.value = SyncApiClient.SyncState.RUNNING
-            retry(10, Duration.milliseconds(500), Duration.milliseconds(50)) {
+            retry(10, 500.milliseconds, 50.milliseconds) {
                 blockCalled shouldBe 2
             }
             job.cancelAndJoin()

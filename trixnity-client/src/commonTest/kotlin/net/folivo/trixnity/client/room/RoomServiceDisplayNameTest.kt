@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.room
 
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerContext
 import io.kotest.matchers.shouldBe
@@ -27,7 +26,6 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 
-@OptIn(ExperimentalKotest::class)
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     lateinit var store: Store

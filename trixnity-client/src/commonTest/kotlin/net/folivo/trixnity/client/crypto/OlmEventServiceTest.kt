@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerContext
 import io.kotest.datatest.withData
@@ -49,7 +48,6 @@ import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
-@ExperimentalKotest
 class OlmEventServiceTest : ShouldSpec({
     timeout = 30_000
 

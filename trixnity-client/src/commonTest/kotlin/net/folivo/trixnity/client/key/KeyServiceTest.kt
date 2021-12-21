@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.timing.continually
 import io.kotest.assertions.until.fixed
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContainExactly
@@ -38,10 +37,8 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
-import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalKotest::class, ExperimentalTime::class)
 class KeyServiceTest : ShouldSpec({
     timeout = 30_000
 
@@ -112,7 +109,7 @@ class KeyServiceTest : ShouldSpec({
         }
         should("do nothing when no keys outdated") {
             store.keys.outdatedKeys.value = setOf()
-            continually(Duration.milliseconds(500), Duration.milliseconds(50).fixed()) {
+            continually(500.milliseconds, 50.milliseconds.fixed()) {
                 verify { api.keys wasNot Called }
             }
         }
@@ -300,7 +297,7 @@ class KeyServiceTest : ShouldSpec({
                     )
                 )
                 store.keys.outdatedKeys.value = setOf(alice)
-                continually(Duration.milliseconds(500), Duration.milliseconds(50).fixed()) {
+                continually(500.milliseconds, 50.milliseconds.fixed()) {
                     store.keys.getCrossSigningKeys(alice).shouldBeNull()
                 }
             }

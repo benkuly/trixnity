@@ -4,16 +4,15 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.minutes
 
 /* TODO Currently the cache has the limitation, that some calls to readWithCache and writeWithCache could keep the cache full of values.
 * This happens if V is a collection and readWithCache and writeWithCache are used to retrieve less values, than the collection actually
 * holds at the moment. If that causes issues of huge caches, we should make the removerJobs a bit smarter. */
-@OptIn(ExperimentalTime::class)
 open class StateFlowCache<K, V>(
     private val cacheScope: CoroutineScope,
     val infiniteCache: Boolean = false,
-    private val cacheDuration: Duration = Duration.minutes(1),
+    private val cacheDuration: Duration = 1.minutes,
 ) {
     private val _cache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
     val cache = _cache

@@ -4,12 +4,12 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.serialization.m.key.verification.VerificationMethodSerializer
 
 @Serializable(with = VerificationMethodSerializer::class)
-sealed interface VerificationMethod {
-    val value: String
+sealed class VerificationMethod {
+    abstract val value: String
 
-    object Sas : VerificationMethod {
+    object Sas : VerificationMethod() {
         override val value = "m.sas.v1"
     }
 
-    data class Unknown(override val value: String) : VerificationMethod
+    data class Unknown(override val value: String) : VerificationMethod()
 }

@@ -13,8 +13,8 @@ import net.folivo.trixnity.core.serialization.m.room.message.RoomMessageEventCon
  * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroommessage">matrix spec</a>
  */
 @Serializable(with = RoomMessageEventContentSerializer::class)
-sealed interface RoomMessageEventContent : MessageEventContent {
-    val body: String
+sealed class RoomMessageEventContent : MessageEventContent {
+    abstract val body: String
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mnotice">matrix spec</a>
@@ -24,7 +24,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.notice"
         }
@@ -38,7 +38,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.text"
         }
@@ -52,7 +52,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.emote"
         }
@@ -67,7 +67,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("info") val info: ImageInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.image"
         }
@@ -83,7 +83,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("info") val info: FileInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.file"
         }
@@ -98,7 +98,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("info") val info: AudioInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.audio"
         }
@@ -113,7 +113,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("info") val info: VideoInfo? = null,
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null
-    ) : RoomMessageEventContent {
+    ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.video"
         }
@@ -125,7 +125,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("to") val to: UserId,
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request. (m.key.verification.request) Apparently your client doesn't support this.",
-    ) : RoomMessageEventContent, VerificationRequest {
+    ) : RoomMessageEventContent(), VerificationRequest {
         companion object {
             const val type = "m.key.verification.request"
         }
@@ -135,6 +135,6 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         val type: String,
         override val body: String,
         val raw: JsonObject
-    ) : RoomMessageEventContent
+    ) : RoomMessageEventContent()
 }
 

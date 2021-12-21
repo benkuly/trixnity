@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
@@ -50,7 +49,6 @@ import net.folivo.trixnity.olm.freeAfter
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
-@OptIn(ExperimentalKotest::class)
 class OlmServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")

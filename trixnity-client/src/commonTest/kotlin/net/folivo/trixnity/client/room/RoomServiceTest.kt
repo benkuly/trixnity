@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
 import io.kotest.assertions.until.fixed
 import io.kotest.assertions.until.until
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContainExactly
@@ -50,10 +49,11 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
+@OptIn(ExperimentalTime::class)
 class RoomServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")
@@ -166,14 +166,14 @@ class RoomServiceTest : ShouldSpec({
     context(RoomService::removeOldOutboxMessages.name) {
         should("remove old outbox messages") {
             val outbox1 = RoomOutboxMessage("transaction1", room, mockk())
-            val outbox2 = RoomOutboxMessage("transaction2", room, mockk(), Clock.System.now() - Duration.seconds(10))
+            val outbox2 = RoomOutboxMessage("transaction2", room, mockk(), Clock.System.now() - 10.seconds)
             val outbox3 = RoomOutboxMessage("transaction3", room, mockk(), Clock.System.now())
 
             store.roomOutboxMessage.add(outbox1)
             store.roomOutboxMessage.add(outbox2)
             store.roomOutboxMessage.add(outbox3)
 
-            retry(100, milliseconds(3_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
                 store.roomOutboxMessage.getAll().value shouldContainExactly listOf(outbox1, outbox3)
             }
@@ -587,7 +587,7 @@ class RoomServiceTest : ShouldSpec({
             cut.sendMessage(room) {
                 this.content = content
             }
-            retry(100, milliseconds(3_000), milliseconds(30)) {// we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboundMessages = store.roomOutboxMessage.getAll().value
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
@@ -613,11 +613,7 @@ class RoomServiceTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(
-                100,
-                milliseconds(3_000),
-                milliseconds(30)
-            ) { // we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value shouldContainExactly listOf(roomOutboxMessage)
             }
         }
@@ -635,11 +631,7 @@ class RoomServiceTest : ShouldSpec({
                 UnsignedMessageEventData(transactionId = "transaction")
             )
             cut.syncOutboxMessage(event)
-            retry(
-                100,
-                milliseconds(3_000),
-                milliseconds(30)
-            ) { // we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 store.roomOutboxMessage.getAll().value.size shouldBe 0
             }
         }
@@ -665,7 +657,7 @@ class RoomServiceTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            until(milliseconds(50), milliseconds(25).fixed()) {
+            until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
             syncState.value = RUNNING
@@ -675,11 +667,7 @@ class RoomServiceTest : ShouldSpec({
                 api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
             }
-            retry(
-                100,
-                milliseconds(3_000),
-                milliseconds(30)
-            ) { // we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].sentAt shouldNotBe null

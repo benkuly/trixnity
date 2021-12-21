@@ -24,7 +24,8 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 fun Event<*>?.getStateKey(): String? {
@@ -103,8 +104,8 @@ suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIsRunning(
     block: suspend () -> Unit
 ) {
     val isSyncRunning = this.map { it == SyncApiClient.SyncState.RUNNING }.stateIn(scope)
-    val schedule = Schedule.exponential<Throwable>(Duration.milliseconds(100))
-        .or(Schedule.spaced(Duration.minutes(5)))
+    val schedule = Schedule.exponential<Throwable>(100.milliseconds)
+        .or(Schedule.spaced(5.minutes))
         .and(Schedule.doWhile { isSyncRunning.value }) // just stop, when we are not connected anymore
         .logInput {
             if (it is CancellationException) onCancel()

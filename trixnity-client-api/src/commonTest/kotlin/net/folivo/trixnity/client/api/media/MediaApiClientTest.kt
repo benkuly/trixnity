@@ -6,15 +6,17 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MediaApiClientTest {
     @Test
-    fun shouldGetConfig() = runBlockingTest {
+    fun shouldGetConfig() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -39,7 +41,7 @@ class MediaApiClientTest {
     }
 
     @Test
-    fun shouldUploadFile() = runBlockingTest {
+    fun shouldUploadFile() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -75,7 +77,7 @@ class MediaApiClientTest {
     }
 
     @Test
-    fun shouldDownloadFile() = runBlockingTest {
+    fun shouldDownloadFile() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -110,7 +112,7 @@ class MediaApiClientTest {
     }
 
     @Test
-    fun shouldDownloadThumbnail() = runBlockingTest {
+    fun shouldDownloadThumbnail() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {

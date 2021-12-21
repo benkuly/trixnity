@@ -1,5 +1,7 @@
 package net.folivo.trixnity.olm
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 
-actual fun initTest(block: suspend () -> Unit) = runBlocking { block() }
+@OptIn(ExperimentalCoroutinesApi::class)
+actual fun initTest(block: suspend () -> Unit) = runTest { block() }

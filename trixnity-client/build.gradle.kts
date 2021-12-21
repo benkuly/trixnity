@@ -1,3 +1,7 @@
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
+import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
+
 plugins {
     kotlin("plugin.serialization")
     kotlin("multiplatform")
@@ -11,28 +15,33 @@ kotlin {
     jvm {
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            systemProperty("java.library.path", olm.build.canonicalPath)
-            systemProperty("jna.library.path", olm.build.canonicalPath)
+            when (HostManager.host) {
+                is LINUX_X64 -> {
+                    systemProperty("java.library.path", olm.build.canonicalPath)
+                    systemProperty("jna.library.path", olm.build.canonicalPath)
+                }
+                is MINGW_X64 -> {
+                    systemProperty("java.library.path", olm.buildWin.canonicalPath)
+                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
+                }
+                else -> {}
+            }
         }
     }
-//    js {
+//    js(IR) {
 //        browser {
 //            testTask {
 //                useKarma {
 //                    useFirefoxHeadless()
+//                    useConfigDirectory(rootDir.resolve("karma.config.d"))
 //                }
 //            }
 //        }
 //        binaries.executable()
 //    }
-//    val hostOs = System.getProperty("os.name")
-//    val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-//    }
+
+//    linuxX64()
+//    mingwX64()
 
     sourceSets {
         all {
@@ -44,7 +53,7 @@ kotlin {
                 implementation(project(":trixnity-olm"))
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
@@ -57,6 +66,16 @@ kotlin {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
         }
+//        val jsMain by getting
+//        val nativeMain = create("nativeMain") {
+//            dependsOn(commonMain)
+//        }
+//        val linuxX64Main by getting {
+//            dependsOn(nativeMain)
+//        }
+//        val mingwX64Main by getting {
+//            dependsOn(nativeMain)
+//        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -74,6 +93,14 @@ kotlin {
             }
         }
 //        val jsTest by getting
-//        val nativeTest by getting
+//        val nativeTest = create("nativeTest") {
+//            dependsOn(commonTest)
+//        }
+//        val linuxX64Test by getting {
+//            dependsOn(nativeTest)
+//        }
+//        val mingwX64Test by getting {
+//            dependsOn(nativeTest)
+//        }
     }
 }

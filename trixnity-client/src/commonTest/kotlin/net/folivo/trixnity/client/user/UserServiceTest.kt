@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.user
 
-import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -26,7 +25,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 
-@OptIn(ExperimentalKotest::class, kotlin.time.ExperimentalTime::class)
 class UserServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")

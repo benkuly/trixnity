@@ -5,15 +5,14 @@ import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.minutes
 
-@OptIn(ExperimentalTime::class)
 class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     cacheScope: CoroutineScope,
     private val repository: R,
     private val rtm: RepositoryTransactionManager,
     infiniteCache: Boolean = false,
-    cacheDuration: Duration = Duration.minutes(1),
+    cacheDuration: Duration = 1.minutes,
 ) : StateFlowCache<K, V>(cacheScope, infiniteCache, cacheDuration) {
 
     suspend fun get(
