@@ -60,6 +60,8 @@ kotlin {
                 api("org.jetbrains.exposed:exposed-core:${Versions.exposed}")
                 implementation("org.jetbrains.exposed:exposed-dao:${Versions.exposed}")
                 implementation("org.jetbrains.exposed:exposed-jdbc:${Versions.exposed}")
+                implementation("org.liquibase:liquibase-core:${Versions.liquibase}")
+                implementation("org.yaml:snakeyaml:${Versions.snakeyml}")
             }
         }
         val jvmTest by getting {

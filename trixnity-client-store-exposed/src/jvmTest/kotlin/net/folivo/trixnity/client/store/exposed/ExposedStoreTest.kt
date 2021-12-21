@@ -67,7 +67,7 @@ class ExposedStoreTest : ShouldSpec({
             newSuspendedTransaction {
                 cut.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2))
             }
-            val timelineRepo = ExposedRoomTimelineRepository(createMatrixJson())
+            val timelineRepo = ExposedRoomTimelineEventRepository(createMatrixJson())
             newSuspendedTransaction {
                 timelineRepo.get(RoomTimelineKey(EventId("$1e"), RoomId("room", "server")))
                     .shouldBe(timelineEvent1)

@@ -8,11 +8,13 @@ import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.kodein.log.Logger
+import org.kodein.log.LoggerFactory
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -20,6 +22,7 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.io.File
+import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,7 +32,7 @@ class OutboxIT {
 
     private lateinit var client: MatrixClient
     private lateinit var scope: CoroutineScope
-    private lateinit var database: Database
+    private lateinit var dataSource: DataSource
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
@@ -60,8 +63,10 @@ class OutboxIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver")
-        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+        dataSource = JdbcDataSource().apply {
+            setURL("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
+        }
+        val storeFactory = ExposedStoreFactory(dataSource, Dispatchers.IO, scope, LoggerFactory.default)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -87,6 +92,7 @@ class OutboxIT {
     private fun deleteDbFiles() {
         File("outbox-it.db").delete()
         File("outbox-it.mv.db").delete()
+        File("outbox-it.trace.db").delete()
     }
 
     @Test
@@ -112,7 +118,7 @@ class OutboxIT {
                 val transactionId = varchar("transaction_id", length = 65535)
                 override val primaryKey = PrimaryKey(transactionId)
             }
-            newSuspendedTransaction(Dispatchers.IO, database) {
+            newSuspendedTransaction(Dispatchers.IO, Database.connect(dataSource)) {
                 exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
             }
         }

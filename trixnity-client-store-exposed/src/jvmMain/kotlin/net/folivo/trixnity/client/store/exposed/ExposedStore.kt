@@ -36,7 +36,7 @@ class ExposedStore(
     roomRepository = ExposedRoomRepository(json),
     roomUserRepository = ExposedRoomUserRepository(json),
     roomStateRepository = ExposedRoomStateRepository(json),
-    roomTimelineRepository = ExposedRoomTimelineRepository(json),
+    roomTimelineEventRepository = ExposedRoomTimelineEventRepository(json),
     roomOutboxMessageRepository = ExposedRoomOutboxMessageRepository(json, contentMappings),
     mediaRepository = ExposedMediaRepository(),
     uploadMediaRepository = ExposedUploadMediaRepository(),

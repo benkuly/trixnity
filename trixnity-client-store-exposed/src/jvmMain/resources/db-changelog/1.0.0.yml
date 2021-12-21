@@ -1,0 +1,423 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1.0.0
+      author: benkuly
+      changes:
+        - createTable:
+            tableName: account
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: base_url
+                  type: CLOB
+              - column:
+                  name: user_id
+                  type: CLOB
+              - column:
+                  name: device_id
+                  type: CLOB
+              - column:
+                  name: access_token
+                  type: CLOB
+              - column:
+                  name: sync_batch_token
+                  type: CLOB
+              - column:
+                  name: filter_id
+                  type: CLOB
+        - createTable:
+            tableName: cross_signing_keys
+            columns:
+              - column:
+                  name: user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: device_keys
+            columns:
+              - column:
+                  name: user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: global_account_data
+            columns:
+              - column:
+                  name: type
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: event
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: inbound_megolm_message_index
+            columns:
+              - column:
+                  name: sender_key
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: session_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: message_index
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: event_id
+                  type: CLOB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: origin_timestamp
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: inbound_megolm_session
+            columns:
+              - column:
+                  name: sender_key
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: session_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: pickled
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: key_chain_link
+            columns:
+              - column:
+                  name: signing_user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: signing_key_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: signing_key_value
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: signed_user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: signed_key_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: signed_key_value
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+        - createTable:
+            tableName: key_verification_state
+            columns:
+              - column:
+                  name: user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: device_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: key_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: key_algorithm
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: verification_state
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: media
+            columns:
+              - column:
+                  name: url
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: media
+                  type: BLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: olm_account
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: pickled
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: olm_session
+            columns:
+              - column:
+                  name: sender_key
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: outbound_megolm_session
+            columns:
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: outdated_keys
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: room_account_data
+            columns:
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: type
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: event
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: room_outbox
+            columns:
+              - column:
+                  name: transaction_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: CLOB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: CLOB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sent_at
+                  type: BIGINT
+        - createTable:
+            tableName: room
+            columns:
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: room_state
+            columns:
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: type
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: state_key
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: event
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: room_timeline_event
+            columns:
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: event_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: room_user
+            columns:
+              - column:
+                  name: user_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: room_id
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: CLOB
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: upload_media
+            columns:
+              - column:
+                  name: cache_uri
+                  type: VARCHAR(65535)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: mxc_uri
+                  type: CLOB
+              - column:
+                  name: content_type
+                  type: CLOB

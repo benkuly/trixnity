@@ -11,24 +11,24 @@ import org.jetbrains.exposed.sql.*
 internal object ExposedRoom : Table("room") {
     val roomId = varchar("room_id", length = 65535)
     override val primaryKey = PrimaryKey(roomId)
-    val room = text("room")
+    val value = text("value")
 }
 
 internal class ExposedRoomRepository(private val json: Json) : RoomRepository {
     override suspend fun getAll(): List<Room> {
-        return ExposedRoom.selectAll().map { json.decodeFromString(it[ExposedRoom.room]) }
+        return ExposedRoom.selectAll().map { json.decodeFromString(it[ExposedRoom.value]) }
     }
 
     override suspend fun get(key: RoomId): Room? {
         return ExposedRoom.select { ExposedRoom.roomId eq key.full }.firstOrNull()?.let {
-            json.decodeFromString(it[ExposedRoom.room])
+            json.decodeFromString(it[ExposedRoom.value])
         }
     }
 
     override suspend fun save(key: RoomId, value: Room) {
         ExposedRoom.replace {
             it[roomId] = key.full
-            it[room] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 

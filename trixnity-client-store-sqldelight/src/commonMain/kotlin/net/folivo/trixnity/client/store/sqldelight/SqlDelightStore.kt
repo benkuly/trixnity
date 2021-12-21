@@ -64,7 +64,7 @@ class SqlDelightStore(
         json,
         databaseCoroutineContext
     ),
-    roomTimelineRepository = SqlDelightRoomTimelineRepository(
+    roomTimelineEventRepository = SqlDelightRoomTimelineEventRepository(
         database.roomTimelineQueries, json, databaseCoroutineContext
     ),
     roomOutboxMessageRepository = SqlDelightRoomOutboxMessageRepository(

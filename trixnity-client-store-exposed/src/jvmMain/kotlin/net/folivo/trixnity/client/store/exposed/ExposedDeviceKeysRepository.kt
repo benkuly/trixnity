@@ -14,13 +14,13 @@ import org.jetbrains.exposed.sql.select
 internal object ExposedDeviceKeys : Table("device_keys") {
     val userId = varchar("user_id", length = 65535)
     override val primaryKey = PrimaryKey(userId)
-    val deviceKeys = text("device_keys")
+    val value = text("value")
 }
 
 internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysRepository {
     override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? {
         return ExposedDeviceKeys.select { ExposedDeviceKeys.userId eq key.full }.firstOrNull()?.let {
-            it[ExposedDeviceKeys.deviceKeys].let { deviceKeys ->
+            it[ExposedDeviceKeys.value].let { deviceKeys ->
                 json.decodeFromString<Map<String, StoredDeviceKeys>>(deviceKeys)
             }
         }
@@ -29,7 +29,7 @@ internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysR
     override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>) {
         ExposedDeviceKeys.replace {
             it[userId] = key.full
-            it[deviceKeys] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 

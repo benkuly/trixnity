@@ -14,21 +14,21 @@ import org.jetbrains.exposed.sql.select
 internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") {
     val roomId = varchar("room_id", length = 65535)
     override val primaryKey = PrimaryKey(roomId)
-    val outboundMegolmSession = text("outbound_megolm_session")
+    val value = text("value")
 }
 
 internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : OutboundMegolmSessionRepository {
     override suspend fun get(key: RoomId): StoredOutboundMegolmSession? {
         return ExposedOutboundMegolmSession.select { ExposedOutboundMegolmSession.roomId eq key.full }.firstOrNull()
             ?.let {
-                json.decodeFromString(it[ExposedOutboundMegolmSession.outboundMegolmSession])
+                json.decodeFromString(it[ExposedOutboundMegolmSession.value])
             }
     }
 
     override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession) {
         ExposedOutboundMegolmSession.replace {
             it[roomId] = key.full
-            it[outboundMegolmSession] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 
