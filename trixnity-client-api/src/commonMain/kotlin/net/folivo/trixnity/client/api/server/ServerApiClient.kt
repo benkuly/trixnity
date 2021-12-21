@@ -21,7 +21,7 @@ class ServerApiClient(private val httpClient: MatrixHttpClient) {
     suspend fun getCapabilities(): Result<CapabilitiesResponse> =
         httpClient.request {
             method = Get
-            url("/_matrix/client/r0/capabilities")
+            url("/_matrix/client/v3/capabilities")
         }
 
 }

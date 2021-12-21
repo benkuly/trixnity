@@ -62,7 +62,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/event/%24event?user_id=%40user%3Aserver",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event?user_id=%40user%3Aserver",
                             request.url.fullPath
                         )
                         respond(
@@ -101,7 +101,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/event/%24event",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -130,7 +130,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/state/m.room.name/",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -178,7 +178,7 @@ class RoomsApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/rooms/%21room%3Aserver/state", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/rooms/%21room%3Aserver/state", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             json.encodeToString(
@@ -227,7 +227,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/members?at=someAt&membership=join",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/members?at=someAt&membership=join",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -270,7 +270,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/joined_members",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/joined_members",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -317,7 +317,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/messages?from=from&dir=f&limit=10",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/messages?from=from&dir=f&limit=10",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -346,7 +346,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/state/m.room.name/someStateKey",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/someStateKey",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)
@@ -400,7 +400,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/send/m.room.message/someTxnId",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/send/m.room.message/someTxnId",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)
@@ -455,7 +455,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/redact/%24eventToRedact/someTxnId",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/redact/%24eventToRedact/someTxnId",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)
@@ -485,7 +485,7 @@ class RoomsApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/createRoom", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/createRoom", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(
                             """
@@ -529,7 +529,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/directory/room/%23unicorns%3Aserver",
+                            "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)
@@ -560,7 +560,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/directory/room/%23unicorns%3Aserver",
+                            "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -584,7 +584,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/directory/room/%23unicorns%3Aserver",
+                            "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Delete, request.method)
@@ -612,7 +612,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/joined_rooms",
+                            "/_matrix/client/v3/joined_rooms",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -636,7 +636,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/invite",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/invite",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -660,7 +660,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/kick",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/kick",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -684,7 +684,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/ban",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/ban",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -708,7 +708,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/unban",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/unban",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -733,7 +733,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
+                            "/_matrix/client/v3/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -788,7 +788,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/join/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
+                            "/_matrix/client/v3/join/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -843,7 +843,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/knock/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
+                            "/_matrix/client/v3/knock/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -879,7 +879,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/knock/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
+                            "/_matrix/client/v3/knock/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -914,7 +914,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/leave",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/leave",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -937,7 +937,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/forget",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/forget",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -960,7 +960,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/receipt/m.read/%24event",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -983,7 +983,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/rooms/%21room%3Aserver/read_markers",
+                            "/_matrix/client/v3/rooms/%21room%3Aserver/read_markers",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Post, request.method)
@@ -1014,7 +1014,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -1042,7 +1042,7 @@ class RoomsApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/r0/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)

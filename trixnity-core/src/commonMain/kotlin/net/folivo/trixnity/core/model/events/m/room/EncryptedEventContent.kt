@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.serialization.m.room.encrypted.EncryptedEventCon
 import net.folivo.trixnity.core.serialization.m.room.encrypted.OlmMessageTypeSerializer
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-encrypted">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
 sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {

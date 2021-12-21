@@ -77,7 +77,7 @@ class MatrixClientTest : ShouldSpec({
                     engine {
                         addHandler { request ->
                             when (request.url.fullPath) {
-                                "/_matrix/client/r0/keys/upload" -> {
+                                "/_matrix/client/v3/keys/upload" -> {
                                     assertEquals(HttpMethod.Post, request.method)
                                     respond(
                                         """{"one_time_key_counts":{"ed25519":1}}""",
@@ -88,7 +88,7 @@ class MatrixClientTest : ShouldSpec({
                                         )
                                     )
                                 }
-                                "/_matrix/client/r0/user/${userId.e()}/filter" -> {
+                                "/_matrix/client/v3/user/${userId.e()}/filter" -> {
                                     assertEquals(HttpMethod.Post, request.method)
                                     respond(
                                         """{"filter_id":"someFilter"}""",
@@ -99,7 +99,7 @@ class MatrixClientTest : ShouldSpec({
                                         )
                                     )
                                 }
-                                "/_matrix/client/r0/sync?filter=someFilter&set_presence=online" -> {
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online" -> {
                                     assertEquals(HttpMethod.Get, request.method)
                                     respond(
                                         json.encodeToString(serverResponse),

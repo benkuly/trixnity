@@ -100,7 +100,7 @@ class StateFlowCacheTest : ShouldSpec({
                     readScope1
                 ).value shouldBe "a new value"
                 readScope1.cancel()
-                delay(20)
+                delay(100)
                 cut.readWithCache(
                     key = "key",
                     containsInCache = { true },

@@ -104,7 +104,7 @@ class MatrixHttpClient(
                 }
                 val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
                     URLBuilder().takeFrom(baseUrl).apply {
-                        encodedPath += "/_matrix/client/r0/auth/${authenticationType.name}/fallback/web"
+                        encodedPath += "/_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
                         state.session?.let { parameters.append("session", it) }
                     }.build()
                 }

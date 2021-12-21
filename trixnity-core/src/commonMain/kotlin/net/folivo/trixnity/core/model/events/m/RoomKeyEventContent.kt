@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 
 /**
- * @see <a href="https://matrix.org/docs/spec/client_server/r0.6.1#m-room-key">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroom_key">matrix spec</a>
  */
 @Serializable
 data class RoomKeyEventContent(

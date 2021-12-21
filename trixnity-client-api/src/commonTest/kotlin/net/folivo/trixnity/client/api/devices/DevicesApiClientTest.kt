@@ -31,7 +31,7 @@ class DevicesApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/devices", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/devices", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             response,
@@ -72,7 +72,7 @@ class DevicesApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/devices/ABCDEF", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/devices/ABCDEF", request.url.fullPath)
                         assertEquals(HttpMethod.Get, request.method)
                         respond(
                             response,
@@ -101,7 +101,7 @@ class DevicesApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/devices/ABCDEF", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/devices/ABCDEF", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
                         assertEquals("""{"display_name":"desktop"}""", request.body.toByteArray().decodeToString())
                         respond(
@@ -129,7 +129,7 @@ class DevicesApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/delete_devices", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/delete_devices", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
                         assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
                         respond(
@@ -151,7 +151,7 @@ class DevicesApiClientTest {
             baseHttpClient = HttpClient(MockEngine) {
                 engine {
                     addHandler { request ->
-                        assertEquals("/_matrix/client/r0/devices/ABCDEFG", request.url.fullPath)
+                        assertEquals("/_matrix/client/v3/devices/ABCDEFG", request.url.fullPath)
                         assertEquals(HttpMethod.Delete, request.method)
                         respond(
                             "{}",
