@@ -6,6 +6,7 @@ class OlmDirs(buildDir: File) {
     val tmp = buildDir.resolve("tmp")
     val zip = tmp.resolve("olm-${Versions.olm}.zip")
     val build = root.resolve("build")
+    val buildWin = root.resolve("buildWin")
     val include = root.resolve("include")
     val cMakeLists = root.resolve("CMakeLists.txt")
 }

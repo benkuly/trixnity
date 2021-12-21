@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.MediaRepository
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
-import kotlin.time.ExperimentalTime
 
 class MediaStore(
     private val mediaRepository: MediaRepository,
@@ -12,7 +11,6 @@ class MediaStore(
     rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
-    @OptIn(ExperimentalTime::class)
     private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
 
     suspend fun addContent(uri: String, content: ByteArray) = mediaCache.update(uri) { content }

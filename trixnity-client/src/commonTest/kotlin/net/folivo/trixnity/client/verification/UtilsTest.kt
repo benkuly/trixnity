@@ -6,7 +6,7 @@ import io.mockk.mockk
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -15,10 +15,10 @@ class UtilsTest : ShouldSpec({
 
     context("isVerificationRequestActive") {
         should("return false, when older then 10 minutes") {
-            isVerificationRequestActive((Clock.System.now() - Duration.minutes(11)).toEpochMilliseconds()) shouldBe false
+            isVerificationRequestActive((Clock.System.now() - 11.minutes).toEpochMilliseconds()) shouldBe false
         }
         should("return false, when older newer 10 minutes") {
-            isVerificationRequestActive((Clock.System.now() + Duration.minutes(6)).toEpochMilliseconds()) shouldBe false
+            isVerificationRequestActive((Clock.System.now() + 6.minutes).toEpochMilliseconds()) shouldBe false
         }
         should("return false, when state is cancel") {
             isVerificationRequestActive(

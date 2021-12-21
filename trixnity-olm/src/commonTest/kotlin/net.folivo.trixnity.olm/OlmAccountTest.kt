@@ -8,9 +8,10 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 
-
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmAccountTest {
     @Test
     fun create_shouldCreateAndVerify() = initTest {
@@ -55,9 +56,9 @@ class OlmAccountTest {
     @Test
     fun generateOneTimeKeys_shouldFailWithZero() = initTest {
         freeAfter(OlmAccount.create()) { account ->
-            shouldThrow<OlmLibraryException> {
+            shouldThrow<IllegalArgumentException> {
                 account.generateOneTimeKeys(0)
-            }.message shouldBe "SHOULD_BE_POSIIVE"
+            }
             account.oneTimeKeys.curve25519 shouldHaveSize 0
         }
     }
@@ -65,9 +66,9 @@ class OlmAccountTest {
     @Test
     fun generateOneTimeKeys_shouldFailWithNegative() = initTest {
         freeAfter(OlmAccount.create()) { account ->
-            shouldThrow<OlmLibraryException> {
+            shouldThrow<IllegalArgumentException> {
                 account.generateOneTimeKeys(-50)
-            }.message shouldBe "SHOULD_BE_POSIIVE"
+            }
             account.oneTimeKeys.curve25519 shouldHaveSize 0
         }
     }

@@ -101,7 +101,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     }
 
     actual fun generateOneTimeKeys(numberOfKeys: Long) {
-        if (numberOfKeys <= 0) throw OlmLibraryException("SHOULD_BE_POSIIVE")
+        require(numberOfKeys > 0) { "number of keys requested for generation must be positive" }
         checkResult {
             withRandom(account_generate_one_time_keys_random_length(ptr, numberOfKeys.toULong())) { random ->
                 account_generate_one_time_keys(ptr, numberOfKeys.toULong(), random)

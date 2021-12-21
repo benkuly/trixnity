@@ -7,15 +7,12 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class RoomOutboxMessageStoreTest : ShouldSpec({
     timeout = 60_000
 
@@ -44,7 +41,7 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
 
             cut.init()
 
-            retry(10, milliseconds(2_000), milliseconds(30)) {
+            retry(10, 2_000.milliseconds, 30.milliseconds) {
                 cut.getAll().value shouldContainExactly listOf(message1, message2)
             }
         }

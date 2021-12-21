@@ -14,7 +14,7 @@ ARG ANDROID_SDK_MANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y docker.io wget unzip chromium-browser build-essential ninja-build libncurses5 libcurl4-openssl-dev openjdk-11-jre-headless
+    apt-get install -y docker.io wget unzip build-essential ninja-build mingw-w64 libncurses5 libcurl4-openssl-dev openjdk-11-jre-headless firefox
 RUN wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE}/cmake-${CMAKE}-linux-x86_64.sh" && \
     chmod +x cmake-${CMAKE}-linux-x86_64.sh && \
     ./cmake-${CMAKE}-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr && \

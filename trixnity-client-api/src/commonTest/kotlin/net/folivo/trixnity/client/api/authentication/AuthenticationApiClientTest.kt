@@ -1,27 +1,30 @@
 package net.folivo.trixnity.client.api.authentication
 
-import io.kotest.assertions.json.shouldEqualJson
+import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.HomeserverInformation
 import net.folivo.trixnity.client.api.authentication.LoginResponse.DiscoveryInformation.IdentityServerInformation
-import net.folivo.trixnity.client.api.runBlockingTest
+import net.folivo.trixnity.client.api.trimToFlatJson
 import net.folivo.trixnity.client.api.uia.UIA
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationApiClientTest {
 
     @Test
-    fun shouldIsUsernameAvailable() = runBlockingTest {
+    fun shouldIsUsernameAvailable() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -41,7 +44,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldRegister() = runBlockingTest {
+    fun shouldRegister() = runTest {
         val response = RegisterResponse(UserId("user", "server"))
         val expectedRequest = """
             {
@@ -51,7 +54,7 @@ class AuthenticationApiClientTest {
               "initial_device_display_name":"someInitialDeviceDisplayName",
               "inhibit_login":true
             }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimToFlatJson()
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -81,7 +84,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldGetLoginTypes() = runBlockingTest {
+    fun shouldGetLoginTypes() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -128,7 +131,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldLogin() = runBlockingTest {
+    fun shouldLogin() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -136,19 +139,17 @@ class AuthenticationApiClientTest {
                     addHandler { request ->
                         assertEquals("/_matrix/client/v3/login", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
-                        request.body.toByteArray().decodeToString().shouldEqualJson(
-                            """
+                        request.body.toByteArray().decodeToString() shouldBe """
                             {
-                              "type": "m.login.password",
-                              "identifier": {
-                                "type": "m.id.user",
-                                "user": "cheeky_monkey"
+                              "type":"m.login.password",
+                              "identifier":{
+                                "user":"cheeky_monkey",
+                                "type":"m.id.user"
                               },
-                              "password": "ilovebananas",
-                              "initial_device_display_name": "Jungle Phone"
+                              "password":"ilovebananas",
+                              "initial_device_display_name":"Jungle Phone"
                             }
-                        """.trimIndent()
-                        )
+                        """.trimToFlatJson()
                         respond(
                             """
                                 {
@@ -190,7 +191,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldLogout() = runBlockingTest {
+    fun shouldLogout() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -210,7 +211,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldLogoutAll() = runBlockingTest {
+    fun shouldLogoutAll() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -230,7 +231,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldDeactivateAccount() = runBlockingTest {
+    fun shouldDeactivateAccount() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -255,7 +256,7 @@ class AuthenticationApiClientTest {
     }
 
     @Test
-    fun shouldChangePassword() = runBlockingTest {
+    fun shouldChangePassword() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {

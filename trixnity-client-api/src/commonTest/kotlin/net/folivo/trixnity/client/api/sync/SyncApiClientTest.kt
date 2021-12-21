@@ -1,19 +1,23 @@
 package net.folivo.trixnity.client.api.sync
 
+import io.kotest.assertions.retry
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.features.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.runBlockingTest
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.*
 import net.folivo.trixnity.client.api.sync.SyncResponse.*
 import net.folivo.trixnity.core.model.EventId
@@ -33,14 +37,16 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest {
     private val json = createMatrixJson()
 
     data class RequestCounter(var value: Int)
-
-    lateinit var scope: CoroutineScope
 
     private val serverResponse1 = SyncResponse(
         nextBatch = "nextBatch1",
@@ -60,28 +66,9 @@ class SyncApiClientTest {
         room = Rooms(emptyMap(), emptyMap(), emptyMap()),
         toDevice = ToDevice(emptyList())
     )
-    private val serverResponse3 = SyncResponse(
-        nextBatch = "nextBatch3",
-        accountData = GlobalAccountData(listOf(GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
-        deviceLists = DeviceLists(emptySet(), emptySet()),
-        deviceOneTimeKeysCount = emptyMap(),
-        presence = Presence(emptyList()),
-        room = Rooms(emptyMap(), emptyMap(), emptyMap()),
-        toDevice = ToDevice(emptyList())
-    )
-
-    @BeforeTest
-    fun beforeTest() {
-        scope = CoroutineScope(Dispatchers.Default)
-    }
-
-    @AfterTest
-    fun afterTest() {
-        scope.cancel()
-    }
 
     @Test
-    fun shouldSyncOnce() = runBlockingTest {
+    fun shouldSyncOnce() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -281,7 +268,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncOnceAndHandleLongTimeout() = runBlockingTest {
+    fun shouldSyncOnceAndHandleLongTimeout() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -318,7 +305,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoop() = runBlockingTest {
+    fun shouldSyncLoop() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -378,7 +365,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runBlockingTest {
+    fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -420,27 +407,35 @@ class SyncApiClientTest {
                 }
             })
 
-        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 20)
-
-        stateResult.first { it == STOPPED }
-
+        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val collector = launch {
+            matrixRestClient.sync.currentSyncState.toCollection(stateResult)
+        }
+        matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>(null)
-        matrixRestClient.sync.start(
-            filter = "someFilter",
-            setPresence = PresenceEventContent.Presence.ONLINE,
-            currentBatchToken = currentBatchToken,
-            scope = scope,
-            timeout = 300
-        )
-        stateResult.first { it == TIMEOUT }
-        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT), stateResult.replayCache)
+        launch {
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = PresenceEventContent.Presence.ONLINE,
+                currentBatchToken = currentBatchToken,
+                scope = this,
+                timeout = 300
+            )
+        }
+        matrixRestClient.sync.currentSyncState.first { it == TIMEOUT }
+        retry(10, 50.milliseconds, 500.milliseconds) {
+            assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT), stateResult)
+        }
         matrixRestClient.sync.stop(wait = true)
-        delay(100) // wait for STOPPED
-        assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT, STOPPING, STOPPED), stateResult.replayCache)
+        matrixRestClient.sync.currentSyncState.first { it == STOPPED }
+        retry(10, 50.milliseconds, 500.milliseconds) {
+            assertEquals(listOf(STOPPED, INITIAL_SYNC, RUNNING, TIMEOUT, STOPPING, STOPPED), stateResult)
+        }
+        collector.cancel()
     }
 
     @Test
-    fun shouldSyncLoopWithoutInitialSyncState() = runBlockingTest {
+    fun shouldSyncLoopWithoutInitialSyncState() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -462,6 +457,7 @@ class SyncApiClientTest {
                                 )
                             }
                             else -> {
+                                delay(50)
                                 respond(
                                     json.encodeToString(serverResponse2),
                                     HttpStatusCode.OK,
@@ -473,22 +469,31 @@ class SyncApiClientTest {
                 }
             })
 
-        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 10)
-        stateResult.first { it == STOPPED }
+        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val collector = launch {
+            matrixRestClient.sync.currentSyncState.toCollection(stateResult)
+        }
+        matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>("ananas")
-        matrixRestClient.sync.start(
-            filter = "someFilter",
-            setPresence = PresenceEventContent.Presence.ONLINE,
-            currentBatchToken = currentBatchToken,
-            scope = scope,
-            timeout = 100
-        )
-        stateResult.first { it == RUNNING }
-        assertEquals(listOf(STOPPED, STARTED, RUNNING), stateResult.replayCache)
+        val sync = launch {
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = PresenceEventContent.Presence.ONLINE,
+                currentBatchToken = currentBatchToken,
+                scope = this,
+                timeout = 100
+            )
+        }
+        matrixRestClient.sync.currentSyncState.first { it == RUNNING }
+        retry(10, 50.milliseconds, 500.milliseconds) {
+            assertEquals(listOf(STOPPED, STARTED, RUNNING), stateResult)
+        }
+        sync.cancel()
+        collector.cancel()
     }
 
     @Test
-    fun shouldSyncLoopWithErrorState() = runBlockingTest {
+    fun shouldSyncLoopWithErrorState() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -521,22 +526,30 @@ class SyncApiClientTest {
                 }
             })
 
-        val stateResult = matrixRestClient.sync.currentSyncState.shareIn(scope, SharingStarted.Eagerly, 10)
-
+        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val collector = launch {
+            matrixRestClient.sync.currentSyncState.toCollection(stateResult)
+        }
         val currentBatchToken = MutableStateFlow<String?>(null)
-        matrixRestClient.sync.start(
-            filter = null,
-            setPresence = null,
-            currentBatchToken = currentBatchToken,
-            asUserId = null,
-            scope = scope
-        )
-        stateResult.first { it == ERROR }
-        assertContains(stateResult.replayCache, ERROR)
+        val sync = launch {
+            matrixRestClient.sync.start(
+                filter = null,
+                setPresence = null,
+                currentBatchToken = currentBatchToken,
+                asUserId = null,
+                scope = this
+            )
+        }
+        matrixRestClient.sync.currentSyncState.first { it == ERROR }
+        retry(10, 50.milliseconds, 500.milliseconds) {
+            assertContains(stateResult, ERROR)
+        }
+        sync.cancel()
+        collector.cancel()
     }
 
     @Test
-    fun shouldSyncLoopAndHandleTimeout() = runBlockingTest {
+    fun shouldSyncLoopAndHandleTimeout() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -585,7 +598,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldRetrySyncLoopOnError() = runBlockingTest {
+    fun shouldRetrySyncLoopOnError() = runTest {
         val requestCount = RequestCounter(1)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -659,7 +672,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldEmitEvents() = runBlockingTest {
+    fun shouldEmitEvents() = runTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
             accountData = GlobalAccountData(
@@ -817,7 +830,9 @@ class SyncApiClientTest {
             matrixRestClient.sync.subscribe<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
 
             val currentSyncBatchToken = MutableStateFlow<String?>(null)
-            matrixRestClient.sync.start(scope = scope, currentBatchToken = currentSyncBatchToken)
+            val sync = launch {
+                matrixRestClient.sync.start(scope = this, currentBatchToken = currentSyncBatchToken)
+            }
 
             inChannel.send(response)
 
@@ -830,11 +845,13 @@ class SyncApiClientTest {
             assertEquals(1, roomKeyEventsCount.value)
             assertEquals(1, globalAccountDataEventsCount.value)
             assertEquals(2, roomAccountDataEventsCount.value)
+
+            sync.cancel()
         }
     }
 
     @Test
-    fun shouldDealWithMultipleStartsAndStops() = runBlockingTest {
+    fun shouldDealWithMultipleStartsAndStops() = runTest {
         val response = SyncResponse(
             nextBatch = "nextBatch1",
             accountData = GlobalAccountData(emptyList()),
@@ -879,8 +896,10 @@ class SyncApiClientTest {
         val allEventsCount = MutableStateFlow(0)
         matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
 
-        scope.launch {
+        launch {
             matrixRestClient.sync.start(scope = this)
+        }
+        launch {
             matrixRestClient.sync.start(scope = this)
         }
 
@@ -888,6 +907,7 @@ class SyncApiClientTest {
         inChannel.send(response)
 
         allEventsCount.first { it == 2 }
+
         matrixRestClient.sync.stop()
         matrixRestClient.sync.stop()
     }

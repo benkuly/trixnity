@@ -4,16 +4,18 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.runBlockingTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ServerApiClientTest {
     @Test
-    fun shouldGetVersions() = runBlockingTest {
+    fun shouldGetVersions() = runTest {
         val response = VersionsResponse(
             versions = emptyList(),
             unstable_features = mapOf()
@@ -38,7 +40,7 @@ class ServerApiClientTest {
     }
 
     @Test
-    fun shouldGetCapabilities() = runBlockingTest {
+    fun shouldGetCapabilities() = runTest {
         val response = CapabilitiesResponse(
             capabilities = CapabilitiesResponse.Capabilities(
                 CapabilitiesResponse.ChangePasswordCapability(true),

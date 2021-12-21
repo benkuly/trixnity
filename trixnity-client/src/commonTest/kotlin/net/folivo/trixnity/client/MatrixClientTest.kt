@@ -28,10 +28,8 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertEquals
-import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalTime::class)
 class MatrixClientTest : ShouldSpec({
     val json = createMatrixJson()
 
@@ -135,7 +133,7 @@ class MatrixClientTest : ShouldSpec({
             coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
 
             cut.startSync()
-            until(Duration.milliseconds(1_000), Duration.milliseconds(50).fixed()) {
+            until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 inMemoryStore.account.syncBatchToken.value == null
             }
         }

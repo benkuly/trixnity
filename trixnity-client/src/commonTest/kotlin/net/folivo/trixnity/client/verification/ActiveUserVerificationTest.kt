@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.log.LoggerFactory
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -257,7 +257,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
     should("stop lifecycle, when timed out") {
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(null)
-        createCut(Clock.System.now() - Duration.minutes(9.9))
+        createCut(Clock.System.now() - 9.9.minutes)
         cut.startLifecycle(this)
     }
 })

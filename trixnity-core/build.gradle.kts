@@ -13,24 +13,20 @@ kotlin {
         }
         withJava()
     }
-//    js(IR) {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
-//    val hostOs = System.getProperty("os.name")
-//    val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-//    }
+    js(IR) {
+        browser {
+            testTask {
+                useKarma {
+                    useFirefoxHeadless()
+                }
+            }
+        }
+        nodejs()
+        binaries.executable()
+    }
+
+    linuxX64()
+    mingwX64()
 
     sourceSets {
         all {
@@ -39,17 +35,35 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.kodein.log:kodein-log:${Versions.kodeinLog}")
             }
         }
+        val nativeMain = create("nativeMain") {
+            dependsOn(commonMain)
+        }
+        val linuxX64Main by getting {
+            dependsOn(nativeMain)
+        }
+        val mingwX64Main by getting {
+            dependsOn(nativeMain)
+        }
+        val jsMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val jvmTest by getting { }
-//        val jsTest by getting
-//        val nativeTest by getting
+        val jvmTest by getting
+        val jsTest by getting
+        val nativeTest = create("nativeTest") {
+            dependsOn(commonTest)
+        }
+        val linuxX64Test by getting {
+            dependsOn(nativeTest)
+        }
+        val mingwX64Test by getting {
+            dependsOn(nativeTest)
+        }
     }
 }

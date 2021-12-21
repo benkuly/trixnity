@@ -10,9 +10,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class RepositoryStateFlowCacheTest : ShouldSpec({
     val repository = mockk<MinimalStoreRepository<String, String>>(relaxUnitFun = true)
     lateinit var cacheScope: CoroutineScope

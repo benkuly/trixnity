@@ -15,11 +15,11 @@ import net.folivo.trixnity.core.serialization.m.room.encrypted.OlmMessageTypeSer
  * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
-sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
-    val senderKey: Curve25519Key
-    val deviceId: String?
-    val sessionId: String?
-    val algorithm: EncryptionAlgorithm
+sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
+    abstract val senderKey: Curve25519Key
+    abstract val deviceId: String?
+    abstract val sessionId: String?
+    abstract val algorithm: EncryptionAlgorithm
 
     @Serializable
     data class MegolmEncryptedEventContent(
@@ -33,7 +33,7 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val sessionId: String,
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
-    ) : EncryptedEventContent
+    ) : EncryptedEventContent()
 
     @Serializable
     data class OlmEncryptedEventContent(
@@ -47,7 +47,7 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val sessionId: String? = null,
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
-    ) : EncryptedEventContent {
+    ) : EncryptedEventContent() {
         @Serializable
         data class CiphertextInfo(
             @SerialName("body")
@@ -84,5 +84,5 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val sessionId: String? = null,
         @SerialName("algorithm")
         override val algorithm: Unknown
-    ) : EncryptedEventContent
+    ) : EncryptedEventContent()
 }

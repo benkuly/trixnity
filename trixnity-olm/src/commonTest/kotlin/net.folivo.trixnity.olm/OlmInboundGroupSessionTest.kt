@@ -7,9 +7,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.string.shouldNotBeBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmInboundGroupSessionTest {
 
     private val sessionKey = "AgAAAAAwMTIzNDU2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMzQ1Njc4OUFCREVGM" +

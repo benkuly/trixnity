@@ -28,7 +28,7 @@ kotlin {
                 implementation("io.ktor:ktor-auth:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization:${Versions.ktor}")
 
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
 
                 implementation("org.kodein.log:kodein-log:${Versions.kodeinLog}")

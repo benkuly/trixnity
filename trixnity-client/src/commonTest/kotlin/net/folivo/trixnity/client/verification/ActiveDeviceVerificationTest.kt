@@ -25,7 +25,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.log.LoggerFactory
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -119,7 +119,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
     }
     should("stop lifecycle, when timed out") {
-        createCut(Clock.System.now() - Duration.minutes(9.9))
+        createCut(Clock.System.now() - 9.9.minutes)
         cut.startLifecycle(this)
     }
 })

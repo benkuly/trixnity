@@ -1,5 +1,5 @@
 import de.undercouch.gradle.tasks.download.Download
-import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.konan.target.HostManager
 
 buildscript {
     dependencies {
@@ -60,29 +60,51 @@ val extractOlm by tasks.registering(Copy::class) {
     dependsOn(downloadOlm)
 }
 
-val prepareBuildOlm by tasks.registering(Exec::class) {
+val prepareBuildOlmWindows by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olm.root)
-    if (OperatingSystem.current().isWindows) {
-        // TODO we disabled tests, because the linking of them fails
-        commandLine("cmake", ".", "-Bbuild", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF")
-    } else {
-        commandLine("cmake", ".", "-Bbuild")
-    }
+    // TODO we disabled tests, because the linking of them fails
+    commandLine("cmake", ".", "-BbuildWin", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF")
+    dependsOn(extractOlm)
+    outputs.cacheIf { true }
+    inputs.files(olm.cMakeLists)
+    outputs.dir(olm.buildWin)
+}
+
+val buildOlmWindows by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olm.root)
+    commandLine("cmake", "--build", "buildWin")
+    dependsOn(prepareBuildOlmWindows)
+    outputs.cacheIf { true }
+    inputs.files(olm.cMakeLists)
+    outputs.dir(olm.buildWin)
+}
+
+val prepareBuildOlmLinux by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olm.root)
+    commandLine("cmake", ".", "-Bbuild")
+    onlyIf { !HostManager.hostIsMingw }
     dependsOn(extractOlm)
     outputs.cacheIf { true }
     inputs.files(olm.cMakeLists)
     outputs.dir(olm.build)
 }
 
-val buildOlm by tasks.registering(Exec::class) {
+val buildOlmLinux by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olm.root)
     commandLine("cmake", "--build", "build")
-    dependsOn(prepareBuildOlm)
+    onlyIf { !HostManager.hostIsMingw }
+    dependsOn(prepareBuildOlmLinux)
     outputs.cacheIf { true }
     inputs.files(olm.cMakeLists)
     outputs.dir(olm.build)
+}
+
+val buildOlm by tasks.registering {
+    dependsOn(buildOlmLinux, buildOlmWindows)
 }
 
 subprojects {

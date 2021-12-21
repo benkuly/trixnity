@@ -34,7 +34,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import org.kodein.log.LoggerFactory
 import org.kodein.log.newLogger
 import kotlin.reflect.KClass
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 class RoomService(
@@ -335,7 +335,6 @@ class RoomService(
                                 decryptedEvent = null,
                             )
                         }
-                        else -> null
                     }
                 } else null
             }
@@ -747,7 +746,7 @@ class RoomService(
     internal suspend fun removeOldOutboxMessages() {
         val outboxMessages = store.roomOutboxMessage.getAll().value
         outboxMessages.forEach {
-            val deleteBeforeTimestamp = Clock.System.now() - Duration.seconds(10)
+            val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.warning { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
                 store.roomOutboxMessage.deleteByTransactionId(it.transactionId)
@@ -755,7 +754,6 @@ class RoomService(
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
         api.sync.currentSyncState.retryWhenSyncIsRunning(
             onError = { log.warning(it) { "failed sending outbox messages" } },

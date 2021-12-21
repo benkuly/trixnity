@@ -43,9 +43,7 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class VerificationServiceTest : ShouldSpec({
     timeout = 30_000
     val aliceUserId = UserId("alice", "server")

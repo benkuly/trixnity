@@ -1,4 +1,11 @@
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
+import com.android.build.gradle.tasks.ExternalNativeCleanTask
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest
+import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
+import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
 
 plugins {
     id("com.android.library")
@@ -33,33 +40,36 @@ kotlin {
     jvm {
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            systemProperty("java.library.path", olm.build.canonicalPath)
-            systemProperty("jna.library.path", olm.build.canonicalPath)
+            when (HostManager.host) {
+                is LINUX_X64 -> {
+                    systemProperty("java.library.path", olm.build.canonicalPath)
+                    systemProperty("jna.library.path", olm.build.canonicalPath)
+                }
+                is MINGW_X64 -> {
+                    systemProperty("java.library.path", olm.buildWin.canonicalPath)
+                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
+                }
+                else -> {}
+            }
         }
     }
     android {
         publishLibraryVariants("release")
     }
-//    js(IR) { // TODO enable
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-//                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    js(IR) {
+        browser {
+            testTask {
+                useKarma {
+                    useFirefoxHeadless()
+                    useConfigDirectory(rootDir.resolve("karma.config.d"))
+                }
+            }
+        }
+        binaries.executable()
     }
+
+    linuxX64()
+    mingwX64()
 
     sourceSets {
         all {
@@ -68,7 +78,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerializationJson}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("io.ktor:ktor-utils:${Versions.ktor}")
             }
         }
@@ -88,17 +98,24 @@ kotlin {
                 api("net.java.dev.jna:jna:${Versions.jna}@aar")
             }
         }
-        val nativeMain by getting {
+        val nativeMain = create("nativeMain") {
             dependsOn(olmLibraryMain)
         }
-//        val jsMain by getting {
-//            dependencies {
-//                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
-//            }
-//        }
+        val linuxX64Main by getting {
+            dependsOn(nativeMain)
+        }
+        val mingwX64Main by getting {
+            dependsOn(nativeMain)
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
@@ -109,8 +126,16 @@ kotlin {
                 implementation("androidx.test:runner:1.4.0")
             }
         }
-//        val jsTest by getting
-        val nativeTest by getting
+        val jsTest by getting
+        val nativeTest = create("nativeTest") {
+            dependsOn(commonTest)
+        }
+        val linuxX64Test by getting {
+            dependsOn(nativeTest)
+        }
+        val mingwX64Test by getting {
+            dependsOn(nativeTest)
+        }
     }
     targets.withType<KotlinNativeTarget> {
         compilations {
@@ -124,10 +149,15 @@ kotlin {
                     }
                 }
                 binaries.all {
-                    linkerOpts(
-                        "-rpath", olm.build.canonicalPath,
-                        "-L${olm.build}", "-lolm"
-                    )
+                    when (konanTarget) {
+                        LINUX_X64 -> linkerOpts(
+                            "-L${olm.build}", "-lolm"
+                        )
+                        MINGW_X64 -> linkerOpts(
+                            "-L${olm.buildWin}", "-lolm"
+                        )
+                        else -> {}
+                    }
                 }
                 defaultSourceSet {
                     kotlin.srcDir("src/nativeMain/kotlin")
@@ -140,17 +170,24 @@ kotlin {
     }
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile> {
+tasks.withType<Kotlin2JsCompile> {
     kotlinOptions {
         freeCompilerArgs += "-Xir-property-lazy-initialization"
     }
 }
 
-tasks.withType<com.android.build.gradle.tasks.ExternalNativeCleanTask> {
+tasks.withType<KotlinNativeHostTest> {
+    environment("LD_LIBRARY_PATH", olm.build)
+    if (HostManager.hostIsMingw) {
+        environment("Path", olm.buildWin)
+    }
+}
+
+tasks.withType<ExternalNativeCleanTask> {
     enabled = false
 }
 
-tasks.withType<com.android.build.gradle.tasks.ExternalNativeBuildTask> {
+tasks.withType<ExternalNativeBuildTask> {
     dependsOn(":extractOlm")
 }
 

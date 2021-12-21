@@ -13,9 +13,7 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
 
     context(KeyStore::waitForUpdateOutdatedKey.name) {
@@ -27,11 +25,11 @@ class UtilsTest : ShouldSpec({
             val job = launch(Dispatchers.Default) {
                 store.keys.waitForUpdateOutdatedKey()
             }
-            until(milliseconds(1_000), milliseconds(50).fixed()) {
+            until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 job.isActive
             }
             outdatedKeys.value = setOf()
-            until(milliseconds(1_000), milliseconds(50).fixed()) {
+            until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 !job.isActive
             }
             job.cancelAndJoin()
@@ -47,11 +45,11 @@ class UtilsTest : ShouldSpec({
                     UserId("cedric", "server")
                 )
             }
-            until(milliseconds(50), milliseconds(25).fixed()) {
+            until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
             outdatedKeys.value = setOf(UserId("bob", "server"))
-            until(milliseconds(50), milliseconds(25).fixed()) {
+            until(50.milliseconds, 25.milliseconds.fixed()) {
                 !job.isActive
             }
             job.cancelAndJoin()

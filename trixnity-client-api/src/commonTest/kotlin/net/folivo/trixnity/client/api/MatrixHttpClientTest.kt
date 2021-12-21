@@ -9,7 +9,9 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Post
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -22,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MatrixHttpClientTest {
 
     private val json = createMatrixJson()
@@ -32,7 +35,7 @@ class MatrixHttpClientTest {
     )
 
     @Test
-    fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runBlockingTest {
+    fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
@@ -65,7 +68,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
+    fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runTest {
         try {
             val cut = MatrixHttpClient(
                 baseUrl = Url("https://matrix.host"),
@@ -99,7 +102,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runBlockingTest {
+    fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         try {
             val cut = MatrixHttpClient(
                 baseUrl = Url("https://matrix.host"),
@@ -130,7 +133,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun uiaRequestShouldPreventUsageOfBodyInBuilder() = runBlockingTest {
+    fun uiaRequestShouldPreventUsageOfBodyInBuilder() = runTest {
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
@@ -165,7 +168,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun uiaRequestShouldReturnSuccess() = runBlockingTest {
+    fun uiaRequestShouldReturnSuccess() = runTest {
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
@@ -199,7 +202,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun uiaRequestShouldReturnError() = runBlockingTest {
+    fun uiaRequestShouldReturnError() = runTest {
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
             initialHttpClient = HttpClient(MockEngine) {
@@ -232,7 +235,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runBlockingTest {
+    fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
@@ -280,7 +283,7 @@ class MatrixHttpClientTest {
                                     "type":"m.login.password"
                                   }
                                 }
-                                """.trimIndent().lines().joinToString("") { it.trim() }
+                                """.trimToFlatJson()
                                 respond(
                                     """{"status":"ok"}""",
                                     HttpStatusCode.OK,
@@ -326,7 +329,7 @@ class MatrixHttpClientTest {
     }
 
     @Test
-    fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runBlockingTest {
+    fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixHttpClient(
             baseUrl = Url("https://matrix.host"),
@@ -375,7 +378,7 @@ class MatrixHttpClientTest {
                                     "type":"m.login.password"
                                   }
                                 }
-                                """.trimIndent().lines().joinToString("") { it.trim() }
+                                """.trimToFlatJson()
                                 respond(
                                     """{"status":"ok"}""",
                                     HttpStatusCode.OK,

@@ -1,15 +1,16 @@
 package net.folivo.trixnity.client.api.users
 
-import io.kotest.assertions.json.shouldEqualJson
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.runBlockingTest
+import net.folivo.trixnity.client.api.trimToFlatJson
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
@@ -19,10 +20,11 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class UsersApiClientTest {
 
     @Test
-    fun shouldSetDisplayName() = runBlockingTest {
+    fun shouldSetDisplayName() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -46,7 +48,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetDisplayName() = runBlockingTest {
+    fun shouldGetDisplayName() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -66,7 +68,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSetAvatarUrl() = runBlockingTest {
+    fun shouldSetAvatarUrl() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -90,7 +92,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetAvatarUrl() = runBlockingTest {
+    fun shouldGetAvatarUrl() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -113,7 +115,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetProfile() = runBlockingTest {
+    fun shouldGetProfile() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -136,7 +138,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSetNullForMissingProfileValues() = runBlockingTest {
+    fun shouldSetNullForMissingProfileValues() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -159,7 +161,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetWhoami() = runBlockingTest {
+    fun shouldGetWhoami() = runTest {
         val response = WhoAmIResponse(UserId("user", "server"), "ABCDEF")
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -181,7 +183,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSetPresence() = runBlockingTest {
+    fun shouldSetPresence() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -189,14 +191,12 @@ class UsersApiClientTest {
                     addHandler { request ->
                         assertEquals("/_matrix/client/v3/presence/%40user%3Aserver/status", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
-                        request.body.toByteArray().decodeToString().shouldEqualJson(
-                            """
+                        request.body.toByteArray().decodeToString() shouldBe """
                                 {
-                                  "presence": "online",
-                                  "status_msg": "I am here."
+                                  "presence":"online",
+                                  "status_msg":"I am here."
                                 }
-                            """.trimIndent()
-                        )
+                            """.trimToFlatJson()
                         respond(
                             "{}",
                             HttpStatusCode.OK,
@@ -211,7 +211,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetPresence() = runBlockingTest {
+    fun shouldGetPresence() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -237,7 +237,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSendToDevice() = runBlockingTest {
+    fun shouldSendToDevice() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -245,22 +245,20 @@ class UsersApiClientTest {
                     addHandler { request ->
                         assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/tnxId", request.url.fullPath)
                         assertEquals(HttpMethod.Put, request.method)
-                        request.body.toByteArray().decodeToString().shouldEqualJson(
-                            """
+                        request.body.toByteArray().decodeToString() shouldBe """
                                 {
-                                  "messages": {
-                                    "@alice:example.com": {
-                                      "TLLBEANAAG": {
-                                        "algorithm": "m.megolm.v1.aes-sha2",
-                                        "room_id": "!Cuyf34gef24t:localhost",
-                                        "session_id": "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                                        "session_key": "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
+                                  "messages":{
+                                    "@alice:example.com":{
+                                      "TLLBEANAAG":{
+                                        "room_id":"!Cuyf34gef24t:localhost",
+                                        "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                                        "algorithm":"m.megolm.v1.aes-sha2"
                                       }
                                     }
                                   }
                                 }
-                            """.trimIndent()
-                        )
+                            """.trimToFlatJson()
                         respond(
                             "{}",
                             HttpStatusCode.OK,
@@ -285,7 +283,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSetFilter() = runBlockingTest {
+    fun shouldSetFilter() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -293,8 +291,7 @@ class UsersApiClientTest {
                     addHandler { request ->
                         assertEquals("/_matrix/client/v3/user/%40dino%3Aserver/filter", request.url.fullPath)
                         assertEquals(HttpMethod.Post, request.method)
-                        request.body.toByteArray().decodeToString().shouldEqualJson(
-                            """
+                        request.body.toByteArray().decodeToString() shouldBe """
                                 {
                                     "room":{
                                         "state":{
@@ -302,8 +299,7 @@ class UsersApiClientTest {
                                         }
                                     }
                                 }
-                            """.trimIndent()
-                        )
+                            """.trimToFlatJson()
                         respond(
                             """{"filter_id":"0"}""",
                             HttpStatusCode.OK,
@@ -320,7 +316,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetFilter() = runBlockingTest {
+    fun shouldGetFilter() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -349,7 +345,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldGetAccountData() = runBlockingTest {
+    fun shouldGetAccountData() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -379,7 +375,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSetAccountData() = runBlockingTest {
+    fun shouldSetAccountData() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -413,7 +409,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSearchUsers() = runBlockingTest {
+    fun shouldSearchUsers() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
