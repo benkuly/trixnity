@@ -6,14 +6,14 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomTimelineKey
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.repository.RoomTimelineRepository
+import net.folivo.trixnity.client.store.repository.RoomTimelineEventRepository
 import kotlin.coroutines.CoroutineContext
 
-class SqlDelightRoomTimelineRepository(
+class SqlDelightRoomTimelineEventRepository(
     private val db: RoomTimelineQueries,
     private val json: Json,
     private val context: CoroutineContext
-) : RoomTimelineRepository {
+) : RoomTimelineEventRepository {
     override suspend fun get(key: RoomTimelineKey): TimelineEvent? = withContext(context) {
         db.getTimelineEvent(key.eventId.full, key.roomId.full).executeAsOneOrNull()?.let {
             json.decodeFromString(it)

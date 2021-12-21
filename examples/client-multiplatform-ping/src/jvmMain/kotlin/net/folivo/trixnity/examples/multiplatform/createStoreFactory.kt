@@ -4,12 +4,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
-import org.jetbrains.exposed.sql.Database
+import org.h2.jdbcx.JdbcDataSource
+import org.kodein.log.LoggerFactory
 
 actual fun createStoreFactory(): StoreFactory {
     return ExposedStoreFactory(
-        database = Database.connect("jdbc:h2:./test;DB_CLOSE_DELAY=-1;", driver = "org.h2.Driver"),
+        dataSource = JdbcDataSource().apply {
+            setURL("jdbc:h2:./test;DB_CLOSE_DELAY=-1;")
+        },
         transactionDispatcher = Dispatchers.IO,
-        scope = CoroutineScope(Dispatchers.Default)
+        scope = CoroutineScope(Dispatchers.Default),
+        loggerFactory = LoggerFactory.default
     )
 }

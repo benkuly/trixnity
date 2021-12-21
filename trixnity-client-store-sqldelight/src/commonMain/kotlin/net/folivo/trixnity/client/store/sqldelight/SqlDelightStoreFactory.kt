@@ -24,7 +24,6 @@ class SqlDelightStoreFactory(
     override suspend fun createStore(
         contentMappings: EventContentSerializerMappings,
         json: Json,
-        storeCoroutineContext: CoroutineContext,
         loggerFactory: LoggerFactory
     ): Store {
         val log = newLogger(loggerFactory)

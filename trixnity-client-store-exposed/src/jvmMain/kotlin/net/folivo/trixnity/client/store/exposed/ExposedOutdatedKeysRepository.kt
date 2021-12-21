@@ -11,20 +11,20 @@ import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedOutdatedKeys : LongIdTable("outdated_keys") {
-    val outdatedKeys = text("outdated_keys")
+    val value = text("value")
 }
 
 internal class ExposedOutdatedKeysRepository(private val json: Json) : OutdatedKeysRepository {
     override suspend fun get(key: Long): Set<UserId>? {
         return ExposedOutdatedKeys.select { ExposedOutdatedKeys.id eq key }.firstOrNull()?.let {
-            it[ExposedOutdatedKeys.outdatedKeys].let { outdated -> json.decodeFromString<Set<UserId>>(outdated) }
+            it[ExposedOutdatedKeys.value].let { outdated -> json.decodeFromString<Set<UserId>>(outdated) }
         }
     }
 
     override suspend fun save(key: Long, value: Set<UserId>) {
         ExposedOutdatedKeys.replace {
             it[id] = key
-            it[outdatedKeys] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 

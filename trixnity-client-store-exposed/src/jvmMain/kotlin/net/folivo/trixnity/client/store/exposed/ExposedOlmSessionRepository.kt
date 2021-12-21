@@ -14,19 +14,19 @@ import org.jetbrains.exposed.sql.select
 internal object ExposedOlmSession : Table("olm_session") {
     val senderKey = varchar("sender_key", length = 65535)
     override val primaryKey = PrimaryKey(senderKey)
-    val pickled = text("pickled")
+    val value = text("value")
 }
 
 internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionRepository {
     override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? {
         return ExposedOlmSession.select { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
-            ?.let { json.decodeFromString(it[ExposedOlmSession.pickled]) }
+            ?.let { json.decodeFromString(it[ExposedOlmSession.value]) }
     }
 
     override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>) {
         ExposedOlmSession.replace {
             it[senderKey] = key.value
-            it[pickled] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 

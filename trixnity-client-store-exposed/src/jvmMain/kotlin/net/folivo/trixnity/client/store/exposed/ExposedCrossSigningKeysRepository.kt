@@ -14,13 +14,13 @@ import org.jetbrains.exposed.sql.select
 internal object ExposedCrossSigningKeys : Table("cross_signing_keys") {
     val userId = varchar("user_id", length = 65535)
     override val primaryKey = PrimaryKey(userId)
-    val crossSigningKeys = text("cross_signing_keys")
+    val value = text("value")
 }
 
 internal class ExposedCrossSigningKeysRepository(private val json: Json) : CrossSigningKeysRepository {
     override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? {
         return ExposedCrossSigningKeys.select { ExposedCrossSigningKeys.userId eq key.full }.firstOrNull()?.let {
-            it[ExposedCrossSigningKeys.crossSigningKeys].let { deviceKeys ->
+            it[ExposedCrossSigningKeys.value].let { deviceKeys ->
                 json.decodeFromString<Set<StoredCrossSigningKeys>>(deviceKeys)
             }
         }
@@ -29,7 +29,7 @@ internal class ExposedCrossSigningKeysRepository(private val json: Json) : Cross
     override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) {
         ExposedCrossSigningKeys.replace {
             it[userId] = key.full
-            it[crossSigningKeys] = json.encodeToString(value)
+            it[this.value] = json.encodeToString(value)
         }
     }
 

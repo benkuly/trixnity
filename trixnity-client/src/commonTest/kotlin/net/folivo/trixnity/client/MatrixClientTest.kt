@@ -27,7 +27,6 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.kodein.log.LoggerFactory
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -64,7 +63,6 @@ class MatrixClientTest : ShouldSpec({
                     override suspend fun createStore(
                         contentMappings: EventContentSerializerMappings,
                         json: Json,
-                        storeCoroutineContext: CoroutineContext,
                         loggerFactory: LoggerFactory
                     ): Store {
                         return inMemoryStore

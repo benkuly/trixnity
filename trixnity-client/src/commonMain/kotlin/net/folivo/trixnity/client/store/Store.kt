@@ -22,7 +22,7 @@ abstract class Store(
     roomRepository: RoomRepository,
     roomUserRepository: RoomUserRepository,
     roomStateRepository: RoomStateRepository,
-    roomTimelineRepository: RoomTimelineRepository,
+    roomTimelineEventRepository: RoomTimelineEventRepository,
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
     mediaRepository: MediaRepository,
     uploadMediaRepository: UploadMediaRepository,
@@ -51,7 +51,7 @@ abstract class Store(
     val room = RoomStore(roomRepository, rtm, scope)
     val roomUser = RoomUserStore(roomUserRepository, rtm, scope)
     val roomState = RoomStateStore(roomStateRepository, rtm, contentMappings, scope)
-    val roomTimeline = RoomTimelineStore(roomTimelineRepository, rtm, scope)
+    val roomTimeline = RoomTimelineStore(roomTimelineEventRepository, rtm, scope)
     val roomOutboxMessage = RoomOutboxMessageStore(roomOutboxMessageRepository, rtm, scope)
     val media = MediaStore(mediaRepository, uploadMediaRepository, rtm, scope)
     val globalAccountData = GlobalAccountDataStore(globalAccountDataRepository, rtm, contentMappings, scope)

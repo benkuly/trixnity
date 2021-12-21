@@ -30,7 +30,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     roomRepository = InMemoryRoomRepository(),
     roomUserRepository = InMemoryRoomUserRepository(),
     roomStateRepository = InMemoryRoomStateRepository(),
-    roomTimelineRepository = InMemoryMinimalStoreRepository(),
+    roomTimelineEventRepository = InMemoryMinimalStoreRepository(),
     roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
     mediaRepository = InMemoryMediaRepository(),
     uploadMediaRepository = InMemoryMinimalStoreRepository(),

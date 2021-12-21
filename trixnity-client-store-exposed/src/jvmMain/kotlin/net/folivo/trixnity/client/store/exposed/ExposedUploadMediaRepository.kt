@@ -9,15 +9,15 @@ import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedUploadMedia : Table("upload_media") {
-    val cacheUrl = varchar("cache_url", length = 65535)
-    override val primaryKey = PrimaryKey(cacheUrl)
+    val cacheUri = varchar("cache_uri", length = 65535)
+    override val primaryKey = PrimaryKey(cacheUri)
     val mxcUri = text("mxc_uri").nullable()
     val contentType = text("content_type").nullable()
 }
 
 internal class ExposedUploadMediaRepository : UploadMediaRepository {
     override suspend fun get(key: String): UploadMedia? {
-        return ExposedUploadMedia.select { ExposedUploadMedia.cacheUrl eq key }.firstOrNull()?.let {
+        return ExposedUploadMedia.select { ExposedUploadMedia.cacheUri eq key }.firstOrNull()?.let {
             UploadMedia(
                 key,
                 it[ExposedUploadMedia.mxcUri],
@@ -27,13 +27,13 @@ internal class ExposedUploadMediaRepository : UploadMediaRepository {
 
     override suspend fun save(key: String, value: UploadMedia) {
         ExposedUploadMedia.replace {
-            it[cacheUrl] = key
+            it[cacheUri] = key
             it[mxcUri] = value.mxcUri
             it[contentType] = value.contentTyp.toString()
         }
     }
 
     override suspend fun delete(key: String) {
-        ExposedUploadMedia.deleteWhere { ExposedUploadMedia.cacheUrl eq key }
+        ExposedUploadMedia.deleteWhere { ExposedUploadMedia.cacheUri eq key }
     }
 }
