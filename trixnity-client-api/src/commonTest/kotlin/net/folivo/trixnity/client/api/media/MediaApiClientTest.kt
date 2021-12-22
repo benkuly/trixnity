@@ -84,7 +84,7 @@ class MediaApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/media/v3/download/matrix.org/ascERGshawAWawugaAcauga?allow_remote=false",
+                            "/_matrix/media/v3/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -101,7 +101,7 @@ class MediaApiClientTest {
             })
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         val result = matrixRestClient.media.download(
-            mxcUri = "mxc://matrix.org/ascERGshawAWawugaAcauga",
+            mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
             allowRemote = false,
             progress = progress
         ).getOrThrow()
@@ -119,7 +119,7 @@ class MediaApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/media/v3/thumbnail/matrix.org/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
+                            "/_matrix/media/v3/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -136,7 +136,7 @@ class MediaApiClientTest {
             })
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         val result = matrixRestClient.media.downloadThumbnail(
-            mxcUri = "mxc://matrix.org/ascERGshawAWawugaAcauga",
+            mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
             width = 64u,
             height = 64u,
             method = ThumbnailResizingMethod.SCALE,

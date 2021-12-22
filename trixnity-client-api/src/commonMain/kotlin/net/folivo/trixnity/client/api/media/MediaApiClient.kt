@@ -70,10 +70,11 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         timeout: Long = 600_000
     ): Result<DownloadResponse> {
         val uri = Url(mxcUri)
-        require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
+        if(uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
+        val downloadUri = mxcUri.removePrefix("mxc://")
         val response = httpClient.request<HttpResponse> {
             method = Get
-            url("/_matrix/media/v3/download/${uri.host}${uri.encodedPath}")
+            url("/_matrix/media/v3/download/${downloadUri}")
             parameter("allow_remote", allowRemote)
             timeout {
                 requestTimeoutMillis = timeout
@@ -105,10 +106,11 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         progress: MutableStateFlow<FileTransferProgress?>? = null,
     ): Result<DownloadResponse> {
         val uri = Url(mxcUri)
-        require(uri.protocol.name == "mxc") { "uri protocol was not mxc" }
+        if(uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
+        val downloadUri = mxcUri.removePrefix("mxc://")
         val response = httpClient.request<HttpResponse> {
             this.method = Get
-            url("/_matrix/media/v3/thumbnail/${uri.host}${uri.encodedPath}")
+            url("/_matrix/media/v3/thumbnail/${downloadUri}")
             parameter("width", width)
             parameter("height", height)
             parameter("method", method.value)
