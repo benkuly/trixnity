@@ -10,18 +10,17 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.UnknownRoomEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class MegolmEventSerializer(
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<MegolmEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MegolmEventSerializer")
 
     private val eventsContentLookupByType = roomEventContentSerializers.associate { it.type to it.serializer }
@@ -36,7 +35,7 @@ class MegolmEventSerializer(
         return try {
             decoder.json.decodeFromJsonElement(MegolmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 MegolmEvent.serializer(
                     UnknownEventContentSerializer(

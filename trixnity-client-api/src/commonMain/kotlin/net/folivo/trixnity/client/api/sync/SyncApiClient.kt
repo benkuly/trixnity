@@ -7,25 +7,23 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixHttpClient
 import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.*
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import kotlin.coroutines.cancellation.CancellationException
 
 typealias SyncResponseSubscriber = suspend (SyncResponse) -> Unit
 
 typealias AfterSyncResponseSubscriber = suspend () -> Unit
 
+private val log = KotlinLogging.logger {}
+
 class SyncApiClient(
     private val httpClient: MatrixHttpClient,
-    loggerFactory: LoggerFactory
 ) : EventEmitter() {
-
-    private val log = newLogger(loggerFactory)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3sync">matrix spec</a>

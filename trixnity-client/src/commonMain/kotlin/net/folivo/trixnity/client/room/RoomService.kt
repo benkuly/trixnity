@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Direction
@@ -31,11 +32,11 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+
+private val log = KotlinLogging.logger {}
 
 class RoomService(
     private val store: Store,
@@ -45,10 +46,7 @@ class RoomService(
     private val media: MediaService,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
@@ -748,7 +746,7 @@ class RoomService(
         outboxMessages.forEach {
             val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
-                log.warning { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
+                log.warn { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
                 store.roomOutboxMessage.deleteByTransactionId(it.transactionId)
             }
         }
@@ -756,7 +754,7 @@ class RoomService(
 
     internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
         api.sync.currentSyncState.retryWhenSyncIsRunning(
-            onError = { log.warning(it) { "failed sending outbox messages" } },
+            onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this
         ) {

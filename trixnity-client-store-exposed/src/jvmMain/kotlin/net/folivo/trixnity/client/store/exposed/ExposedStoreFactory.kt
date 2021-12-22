@@ -4,28 +4,26 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class ExposedStoreFactory(
     private val database: Database,
     private val transactionDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val scope: CoroutineScope,
-    loggerFactory: LoggerFactory
 ) : StoreFactory {
 
-    private val log = newLogger(loggerFactory)
 
     override suspend fun createStore(
         contentMappings: EventContentSerializerMappings,
         json: Json,
-        loggerFactory: LoggerFactory
     ): Store {
         log.info { "create missing tables and columns" }
         newSuspendedTransaction(transactionDispatcher, database) {

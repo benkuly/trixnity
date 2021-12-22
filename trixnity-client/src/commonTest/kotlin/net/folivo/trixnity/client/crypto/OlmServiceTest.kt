@@ -46,7 +46,6 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
 class OlmServiceTest : ShouldSpec({
@@ -69,7 +68,7 @@ class OlmServiceTest : ShouldSpec({
         store.account.userId.value = alice
         store.account.deviceId.value = aliceDevice
         coEvery { secureStore.olmPickleKey } returns ""
-        cut = OlmService(store, secureStore, api, json, LoggerFactory.default)
+        cut = OlmService(store, secureStore, api, json)
     }
 
     afterTest {
@@ -119,13 +118,13 @@ class OlmServiceTest : ShouldSpec({
                 val bobStore = InMemoryStore(storeScope).apply { init() }
                 bobStore.account.userId.value = bob
                 bobStore.account.deviceId.value = bobDevice
-                val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)
+                val bobOlmService = OlmService(bobStore, secureStore, api, json)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
-                    val cutWithAccount = OlmService(store, secureStore, api, json, LoggerFactory.default)
+                    val cutWithAccount = OlmService(store, secureStore, api, json)
                     store.keys.updateDeviceKeys(bob) {
                         mapOf(
                             bobDevice to StoredDeviceKeys(
@@ -236,13 +235,13 @@ class OlmServiceTest : ShouldSpec({
             val bobStore = InMemoryStore(storeScope).apply { init() }
             bobStore.account.userId.value = bob
             bobStore.account.deviceId.value = bobDevice
-            val bobOlmService = OlmService(bobStore, secureStore, api, json, LoggerFactory.default)
+            val bobOlmService = OlmService(bobStore, secureStore, api, json)
             freeAfter(
                 OlmAccount.create()
             ) { aliceAccount ->
                 aliceAccount.generateOneTimeKeys(1)
                 store.olm.storeAccount(aliceAccount, "")
-                val cutWithAccount = OlmService(store, secureStore, api, json, LoggerFactory.default)
+                val cutWithAccount = OlmService(store, secureStore, api, json)
                 store.keys.updateDeviceKeys(bob) {
                     mapOf(
                         bobDevice to StoredDeviceKeys(

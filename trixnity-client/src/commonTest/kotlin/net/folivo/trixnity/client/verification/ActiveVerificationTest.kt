@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventConte
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Unknown
-import org.kodein.log.LoggerFactory
 
 class ActiveVerificationTest : ShouldSpec({
     timeout = 30_000
@@ -44,7 +43,6 @@ class ActiveVerificationTest : ShouldSpec({
         mockk(),
         mockk(),
         mockk(),
-        LoggerFactory.default
     ) {
         override suspend fun lifecycle(scope: CoroutineScope) {
             lifecycleCalled++

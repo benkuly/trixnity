@@ -29,7 +29,6 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import org.kodein.log.LoggerFactory
 
 class RoomServiceTimelineTest : ShouldSpec({
     val room = RoomId("room", "server")
@@ -42,7 +41,7 @@ class RoomServiceTimelineTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olm, mockk(), mockk(), loggerFactory = LoggerFactory.default)
+        cut = RoomService(store, api, olm, mockk(), mockk())
     }
 
     afterTest {
@@ -294,7 +293,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
                 store = spyk(InMemoryStore(storeScope).apply { init() })
-                cut = RoomService(store, api, olm, mockk(), mockk(), loggerFactory = LoggerFactory.default)
+                cut = RoomService(store, api, olm, mockk(), mockk())
                 store.room.update(room) {
                     Room(
                         roomId = room,

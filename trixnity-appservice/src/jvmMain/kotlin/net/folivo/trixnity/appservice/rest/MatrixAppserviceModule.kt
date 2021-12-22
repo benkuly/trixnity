@@ -7,23 +7,23 @@ import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
+import io.ktor.util.*
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.ErrorResponse
 import net.folivo.trixnity.client.api.ErrorResponseSerializer
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 fun Application.matrixAppserviceModule(
     properties: MatrixAppserviceProperties,
     appserviceService: AppserviceService,
-    loggerFactory: LoggerFactory = LoggerFactory.default,
     customMappings: EventContentSerializerMappings? = null
 ) {
-    val log = newLogger(loggerFactory)
-    val json = createMatrixJson(DefaultEventContentSerializerMappings + customMappings, loggerFactory = loggerFactory)
+    val json = createMatrixJson(DefaultEventContentSerializerMappings + customMappings)
     install(ContentNegotiation) {
         json(json)
     }

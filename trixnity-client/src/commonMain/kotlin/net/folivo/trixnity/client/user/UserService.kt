@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
@@ -15,17 +16,14 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import kotlin.reflect.KClass
+
+private val log = KotlinLogging.logger {}
 
 class UserService(
     private val store: Store,
     private val api: MatrixApiClient,
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     suspend fun start() {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)

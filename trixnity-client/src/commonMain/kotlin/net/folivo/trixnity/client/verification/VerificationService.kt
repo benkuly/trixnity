@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
@@ -25,8 +26,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class VerificationService(
     private val ownUserId: UserId,
@@ -38,10 +39,7 @@ class VerificationService(
     private val user: UserService,
     private val key: KeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
-    private val loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
     val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
@@ -80,7 +78,6 @@ class VerificationService(
                             olm = olm,
                             store = store,
                             key = key,
-                            loggerFactory = loggerFactory
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -96,12 +93,11 @@ class VerificationService(
                                 olm = olm,
                                 key = key,
                                 store = store,
-                                loggerFactory = loggerFactory
                             )
                     }
                 }
             }
-            else -> log.warning { "got new device verification request with an event type ${event::class.simpleName}, that we did not expected" }
+            else -> log.warn { "got new device verification request with an event type ${event::class.simpleName}, that we did not expected" }
         }
     }
 
@@ -124,7 +120,6 @@ class VerificationService(
                             olm = olm,
                             key = key,
                             store = store,
-                            loggerFactory = loggerFactory
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -140,7 +135,6 @@ class VerificationService(
                                 olm = olm,
                                 key = key,
                                 store = store,
-                                loggerFactory = loggerFactory
                             )
                     }
                 }
@@ -191,7 +185,6 @@ class VerificationService(
                 olm = olm,
                 key = key,
                 store = store,
-                loggerFactory = loggerFactory
             )
         }
         existingDeviceVerification?.cancel()
@@ -250,7 +243,6 @@ class VerificationService(
                         user = user,
                         room = room,
                         key = key,
-                        loggerFactory = loggerFactory
                     ).also { auv -> activeUserVerifications.update { it + auv } }
                 } else null
             }

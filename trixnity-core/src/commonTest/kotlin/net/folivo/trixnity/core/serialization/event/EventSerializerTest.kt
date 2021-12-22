@@ -20,7 +20,6 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import org.kodein.log.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -56,7 +55,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
-                LoggerFactory.default
             ), content
         )
         assertEquals(expectedResult, result)
@@ -82,7 +80,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
-                LoggerFactory.default
             ), input
         )
         assertEquals(
@@ -123,7 +120,7 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message, LoggerFactory.default),
+            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
         )
         assertEquals(expectedResult, result)
@@ -149,7 +146,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                LoggerFactory.default
             ), input
         )
         assertEquals(
@@ -225,7 +221,6 @@ class EventSerializerTest {
                 ListSerializer(
                     StateEventSerializer(
                         DefaultEventContentSerializerMappings.state,
-                        LoggerFactory.default
                     )
                 ),
                 content
@@ -260,7 +255,7 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message, LoggerFactory.default),
+            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
         )
         assertEquals(expectedResult, result)
@@ -298,7 +293,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                LoggerFactory.default
             ), input
         )
         assertEquals(
@@ -369,7 +363,7 @@ class EventSerializerTest {
         }
     """.trimIndent().lines().joinToString("") { it.trim() }
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message, LoggerFactory.default),
+            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
         )
         assertEquals(expectedResult, result)

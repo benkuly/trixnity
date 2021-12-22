@@ -24,12 +24,11 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
-import org.kodein.log.LoggerFactory
 
 class MediaServiceTest : ShouldSpec({
     val api: MatrixApiClient = mockk()
     val store = mockk<Store>(relaxUnitFun = true)
-    val cut = MediaService(api, store, LoggerFactory.default)
+    val cut = MediaService(api, store)
 
     val mxcUri = "mxc://example.com/abc"
     val cacheUri = "cache://some-string"

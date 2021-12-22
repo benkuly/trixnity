@@ -36,7 +36,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("org.kodein.log:kodein-log:${Versions.kodeinLog}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val nativeMain = create("nativeMain") {

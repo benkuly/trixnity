@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.authentication.IdentifierType
 import net.folivo.trixnity.client.api.authentication.LoginType
@@ -31,9 +32,8 @@ import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 
+private val log = KotlinLogging.logger {}
 
 // TODO test
 class MatrixClient private constructor(
@@ -46,10 +46,7 @@ class MatrixClient private constructor(
     setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     private val scope: CoroutineScope,
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     val olm: OlmService
     val room: RoomService
     val user: UserService
@@ -63,17 +60,14 @@ class MatrixClient private constructor(
             secureStore = secureStore,
             api = api,
             json = json,
-            loggerFactory = loggerFactory
         )
         media = MediaService(
             api = api,
             store = store,
-            loggerFactory = loggerFactory
         )
         user = UserService(
             api = api,
             store = store,
-            loggerFactory = loggerFactory
         )
         room = RoomService(
             store = store,
@@ -83,13 +77,11 @@ class MatrixClient private constructor(
             media = media,
             setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
-            loggerFactory = loggerFactory
         )
         key = KeyService(
             store = store,
             api = api,
             olmSignService = olm.sign,
-            loggerFactory = loggerFactory
         )
         verification = VerificationService(
             ownUserId = userId,
@@ -100,7 +92,6 @@ class MatrixClient private constructor(
             room = room,
             user = user,
             key = key,
-            loggerFactory = loggerFactory
         )
     }
 
@@ -117,7 +108,6 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
-            loggerFactory: LoggerFactory = LoggerFactory.default
         ): Result<MatrixClient> =
             loginWith(
                 baseUrl = baseUrl,
@@ -128,7 +118,6 @@ class MatrixClient private constructor(
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                 scope = scope,
-                loggerFactory = loggerFactory
             ) { api ->
                 api.authentication.login(
                     identifier = identifier,
@@ -159,14 +148,13 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
-            loggerFactory: LoggerFactory = LoggerFactory.default,
             getLoginInfo: suspend (MatrixApiClient) -> Result<LoginInfo>
         ): Result<MatrixClient> = kotlin.runCatching {
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
+            val json = createMatrixApiClientJson(eventContentSerializerMappings)
 
             val store =
-                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
+                storeFactory.createStore(eventContentSerializerMappings, json)
             store.init()
 
             val api = MatrixApiClient(
@@ -174,7 +162,6 @@ class MatrixClient private constructor(
                 baseHttpClient = baseHttpClient,
                 json = json,
                 eventContentSerializerMappings = eventContentSerializerMappings,
-                loggerFactory = loggerFactory
             )
             val (userId, deviceId, accessToken) = getLoginInfo(api).getOrThrow()
 
@@ -194,7 +181,6 @@ class MatrixClient private constructor(
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                 scope = scope,
-                loggerFactory = loggerFactory
             )
 
             store.keys.updateDeviceKeys(userId) {
@@ -219,13 +205,12 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
-            loggerFactory: LoggerFactory = LoggerFactory.default
         ): MatrixClient? {
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory)
+            val json = createMatrixApiClientJson(eventContentSerializerMappings)
 
             val store =
-                storeFactory.createStore(eventContentSerializerMappings, json, loggerFactory = loggerFactory)
+                storeFactory.createStore(eventContentSerializerMappings, json)
             store.init()
 
             val baseUrl = store.account.baseUrl.value
@@ -239,7 +224,6 @@ class MatrixClient private constructor(
                     baseHttpClient = baseHttpClient,
                     json = json,
                     eventContentSerializerMappings = eventContentSerializerMappings,
-                    loggerFactory = loggerFactory
                 )
                 api.accessToken.value = accessToken
                 MatrixClient(
@@ -252,7 +236,6 @@ class MatrixClient private constructor(
                     setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                     customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                     scope = scope,
-                    loggerFactory = loggerFactory
                 )
             } else null
         }

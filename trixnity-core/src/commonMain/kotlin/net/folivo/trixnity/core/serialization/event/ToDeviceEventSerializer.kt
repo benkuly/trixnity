@@ -10,18 +10,17 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.UnknownToDeviceEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class ToDeviceEventSerializer(
     private val toDeviceEventContentSerializers: Set<EventContentSerializerMapping<out ToDeviceEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<ToDeviceEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ToDeviceEventSerializer")
 
     private val eventsContentLookupByType = toDeviceEventContentSerializers.associate { it.type to it.serializer }
@@ -38,7 +37,7 @@ class ToDeviceEventSerializer(
                 ToDeviceEvent.serializer(contentSerializer), jsonObj
             )
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 ToDeviceEvent.serializer(UnknownEventContentSerializer(UnknownToDeviceEventContent.serializer(), type)),
                 jsonObj

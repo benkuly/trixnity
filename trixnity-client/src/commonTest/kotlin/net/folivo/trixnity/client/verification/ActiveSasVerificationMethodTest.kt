@@ -29,7 +29,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.StartEventConten
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmSAS
 import net.folivo.trixnity.olm.freeAfter
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
 class ActiveSasVerificationMethodTest : ShouldSpec({
@@ -62,7 +61,6 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             store = store,
             keyService = keyService,
             json = json,
-            loggerFactory = LoggerFactory.default
         )
         assertNotNull(method)
         cut = method
@@ -89,7 +87,6 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 store = store,
                 keyService = keyService,
                 json = json,
-                loggerFactory = LoggerFactory.default
             )
             method shouldBe null
             val result = sendVerificationStepFlow.first()

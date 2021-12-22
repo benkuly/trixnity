@@ -9,8 +9,6 @@ import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriver
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
-import org.kodein.log.LoggerFactory
-import org.kodein.log.frontend.defaultLogFrontend
 
 class SqlDelightStoreFactoryTest : ShouldSpec({
     lateinit var driver: SqlDriver
@@ -29,7 +27,6 @@ class SqlDelightStoreFactoryTest : ShouldSpec({
         cut.createStore(
             DefaultEventContentSerializerMappings,
             createMatrixJson(),
-            loggerFactory = LoggerFactory(listOf(defaultLogFrontend))
         )
         (driver.executeQuery(
             null, """
@@ -42,12 +39,10 @@ class SqlDelightStoreFactoryTest : ShouldSpec({
         cut.createStore(
             DefaultEventContentSerializerMappings,
             createMatrixJson(),
-            loggerFactory = LoggerFactory(listOf(defaultLogFrontend))
         )
         cut.createStore(
             DefaultEventContentSerializerMappings,
             createMatrixJson(),
-            loggerFactory = LoggerFactory(listOf(defaultLogFrontend))
         )
     }
 })

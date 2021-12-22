@@ -24,7 +24,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
-import org.kodein.log.LoggerFactory
 
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
@@ -42,7 +41,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, mockk(), mockk(), mockk(), loggerFactory = LoggerFactory.default)
+        cut = RoomService(store, api, mockk(), mockk(), mockk())
     }
 
     afterTest {

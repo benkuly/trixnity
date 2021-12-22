@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.verification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.getOrFetchKeysFromDevice
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
@@ -14,8 +15,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
 import net.folivo.trixnity.olm.OlmSAS
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class ActiveSasVerificationMethod private constructor(
     override val startEventContent: SasStartEventContent,
@@ -30,9 +31,7 @@ class ActiveSasVerificationMethod private constructor(
     private val store: Store,
     private val keyService: KeyService,
     private val json: Json,
-    loggerFactory: LoggerFactory
 ) : ActiveVerificationMethod() {
-    private val log = newLogger(loggerFactory)
 
     private val actualTransactionId = relatesTo?.eventId?.full
         ?: transactionId
@@ -84,7 +83,6 @@ class ActiveSasVerificationMethod private constructor(
             store: Store,
             keyService: KeyService,
             json: Json,
-            loggerFactory: LoggerFactory
         ): ActiveSasVerificationMethod? {
             return if (!startEventContent.keyAgreementProtocols.contains("curve25519-hkdf-sha256")) {
                 sendVerificationStep(
@@ -104,7 +102,6 @@ class ActiveSasVerificationMethod private constructor(
                 store,
                 keyService,
                 json,
-                loggerFactory
             )
         }
     }
@@ -262,7 +259,7 @@ class ActiveSasVerificationMethod private constructor(
                                 calculatedMac == mac.value
                             } else true // we ignore unknown (null) keys
                                     ).also {
-                                    if (!it) log.warning { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
+                                    if (!it) log.warn { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
                                 }
                         }.contains(false)
                     if (!containsMismatchedMac) {
@@ -284,7 +281,7 @@ class ActiveSasVerificationMethod private constructor(
                         )
                     }
                 } else {
-                    log.warning { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
+                    log.warn { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
                     sendVerificationStep(
                         CancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
                     )

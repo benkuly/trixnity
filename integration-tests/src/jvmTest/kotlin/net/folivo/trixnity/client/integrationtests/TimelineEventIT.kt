@@ -14,7 +14,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import org.jetbrains.exposed.sql.Database
-import org.kodein.log.LoggerFactory
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -54,7 +53,7 @@ class TimelineEventIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
-    fun beforeEach() = runBlocking {
+    fun beforeEach(): Unit = runBlocking {
         scope = CoroutineScope(Dispatchers.Default)
         val password = "user$1passw0rd"
         val baseUrl = URLBuilder(
@@ -65,8 +64,8 @@ class TimelineEventIT {
         database1 = Database.connect("jdbc:h2:mem:timeline-event-test1;DB_CLOSE_DELAY=-1;")
         database2 = Database.connect("jdbc:h2:mem:timeline-event-test2;DB_CLOSE_DELAY=-1;")
 
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope, LoggerFactory.default)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope, LoggerFactory.default)
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -77,7 +76,6 @@ class TimelineEventIT {
             storeFactory = storeFactory1,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user1 🔴"),
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
@@ -86,7 +84,6 @@ class TimelineEventIT {
             storeFactory = storeFactory2,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user2 🔵"),
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
         client1.startSync()

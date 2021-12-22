@@ -48,7 +48,7 @@ kotlin {
                 api("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-serialization:${Versions.ktor}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
-                api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
 //        val nativeMain = create("nativeMain") {

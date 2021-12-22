@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
@@ -80,7 +79,6 @@ class ActiveUserVerificationTest : ShouldSpec({
             user = mockk(relaxed = true),
             room = room,
             key = mockk(),
-            loggerFactory = LoggerFactory.default
         )
     }
 

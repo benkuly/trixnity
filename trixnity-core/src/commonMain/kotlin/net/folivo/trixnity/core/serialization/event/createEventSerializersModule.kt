@@ -2,25 +2,23 @@ package net.folivo.trixnity.core.serialization.event
 
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import org.kodein.log.LoggerFactory
 
 fun createEventSerializersModule(
     mappings: EventContentSerializerMappings,
-    loggerFactory: LoggerFactory
 ): SerializersModule {
     val basicEventSerializer = BasicEventSerializer()
-    val messageEventSerializer = MessageEventSerializer(mappings.message, loggerFactory)
-    val stateEventSerializer = StateEventSerializer(mappings.state, loggerFactory)
-    val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer, loggerFactory)
-    val strippedStateEventSerializer = StrippedStateEventSerializer(mappings.state, loggerFactory)
-    val initialStateEventSerializer = InitialStateEventSerializer(mappings.state, loggerFactory)
-    val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral, loggerFactory)
-    val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice, loggerFactory)
+    val messageEventSerializer = MessageEventSerializer(mappings.message)
+    val stateEventSerializer = StateEventSerializer(mappings.state)
+    val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer)
+    val strippedStateEventSerializer = StrippedStateEventSerializer(mappings.state)
+    val initialStateEventSerializer = InitialStateEventSerializer(mappings.state)
+    val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral)
+    val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice)
     val olmEventSerializer =
-        OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice, loggerFactory)
-    val megolmEventSerializer = MegolmEventSerializer(mappings.message, loggerFactory)
-    val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData, loggerFactory)
-    val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData, loggerFactory)
+        OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice)
+    val megolmEventSerializer = MegolmEventSerializer(mappings.message)
+    val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData)
+    val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData)
     val eventSerializer = EventSerializer(
         basicEventSerializer,
         roomEventSerializer,
@@ -31,8 +29,7 @@ fun createEventSerializersModule(
         olmEventSerializer,
         megolmEventSerializer,
         globalAccountDataEventSerializer,
-        roomAccountDataEventSerializer,
-        loggerFactory
+        roomAccountDataEventSerializer
     )
     return SerializersModule {
         contextual(basicEventSerializer)

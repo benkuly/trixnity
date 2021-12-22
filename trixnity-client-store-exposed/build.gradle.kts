@@ -24,7 +24,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("com.squareup.sqldelight:coroutines-extensions:${Versions.sqlDelight}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
-                api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {
