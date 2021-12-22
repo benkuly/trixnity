@@ -8,7 +8,6 @@ import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
-import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
@@ -22,7 +21,6 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.io.File
-import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,7 +30,7 @@ class OutboxIT {
 
     private lateinit var client: MatrixClient
     private lateinit var scope: CoroutineScope
-    private lateinit var dataSource: DataSource
+    private lateinit var database: Database
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
@@ -63,10 +61,8 @@ class OutboxIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        dataSource = JdbcDataSource().apply {
-            setURL("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
-        }
-        val storeFactory = ExposedStoreFactory(dataSource, Dispatchers.IO, scope, LoggerFactory.default)
+        database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
+        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope, LoggerFactory.default)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -118,7 +114,7 @@ class OutboxIT {
                 val transactionId = varchar("transaction_id", length = 65535)
                 override val primaryKey = PrimaryKey(transactionId)
             }
-            newSuspendedTransaction(Dispatchers.IO, Database.connect(dataSource)) {
+            newSuspendedTransaction(Dispatchers.IO, database) {
                 exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
             }
         }
