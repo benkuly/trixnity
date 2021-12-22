@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
@@ -16,17 +17,14 @@ import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class KeyService(
     private val store: Store,
     private val olmSignService: OlmSignService,
     private val api: MatrixApiClient,
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeSyncResponse { syncResponse ->
@@ -52,7 +50,7 @@ class KeyService(
     @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
         api.sync.currentSyncState.retryWhenSyncIsRunning(
-            onError = { log.warning(it) { "failed update outdated keys" } },
+            onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
             scope = this
         ) {
@@ -106,7 +104,7 @@ class KeyService(
                 }
             }
             else -> {
-                log.warning { "Signatures from the master key of $userId were not valid: $signatureVerification!" }
+                log.warn { "Signatures from the master key of $userId were not valid: $signatureVerification!" }
             }
         }
     }
@@ -125,7 +123,7 @@ class KeyService(
                         + newSelfSigningKey)
             }
         } else {
-            log.warning { "Signatures from the self signing key of $userId were not valid: $signatureVerification!" }
+            log.warn { "Signatures from the self signing key of $userId were not valid: $signatureVerification!" }
         }
     }
 
@@ -143,7 +141,7 @@ class KeyService(
                         + newUserSigningKey)
             }
         } else {
-            log.warning { "Signatures from the user signing key of $userId were not valid: $signatureVerification!" }
+            log.warn { "Signatures from the user signing key of $userId were not valid: $signatureVerification!" }
         }
     }
 
@@ -159,7 +157,7 @@ class KeyService(
             (userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                     && signatureVerification == VerifyResult.Valid)
                 .also {
-                    if (!it) log.warning {
+                    if (!it) log.warn {
                         "ignore device keys from $userId ($deviceId) with signature verification " +
                                 "result $signatureVerification. This prevents attacks from a malicious or compromised homeserver."
                     }
@@ -257,8 +255,8 @@ class KeyService(
                     } else oldCrossSigningKeys
                 }
             }
-            if (foundKey.value.not()) log.warning { "could not find device or cross signing keys of $key" }
-        } else log.warning { "could not update trust level, because key id of $key was null" }
+            if (foundKey.value.not()) log.warn { "could not find device or cross signing keys of $key" }
+        } else log.warn { "could not update trust level, because key id of $key was null" }
     }
 
     internal suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {

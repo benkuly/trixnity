@@ -23,7 +23,6 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
-import org.kodein.log.LoggerFactory
 
 class UserServiceTest : ShouldSpec({
     timeout = 30_000
@@ -39,7 +38,7 @@ class UserServiceTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = UserService(store, api, loggerFactory = LoggerFactory.default)
+        cut = UserService(store, api)
     }
 
     afterTest {

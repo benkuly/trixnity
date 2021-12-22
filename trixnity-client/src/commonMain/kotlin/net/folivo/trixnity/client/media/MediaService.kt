@@ -5,6 +5,7 @@ import io.ktor.http.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.media.FileTransferProgress
 import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod
@@ -21,16 +22,13 @@ import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class MediaService(
     private val api: MatrixApiClient,
     private val store: Store,
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     companion object {
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
         const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"
@@ -105,7 +103,7 @@ class MediaService(
         val thumbnail = try {
             createThumbnail(content, contentType, 600, 600)
         } catch (e: ThumbnailCreationException) {
-            log.warning(e) { "could not create thumbnail from file with content type $contentType" }
+            log.warn(e) { "could not create thumbnail from file with content type $contentType" }
             return null
         }
         val cacheUri = prepareUploadMedia(thumbnail.file, thumbnail.contentType)

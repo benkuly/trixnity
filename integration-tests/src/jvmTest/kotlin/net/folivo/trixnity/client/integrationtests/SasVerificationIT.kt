@@ -15,7 +15,6 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import org.jetbrains.exposed.sql.Database
-import org.kodein.log.LoggerFactory
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -56,7 +55,7 @@ class SasVerificationIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
-    fun beforeEach() = runBlocking {
+    fun beforeEach(): Unit = runBlocking {
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         val password = "user$1passw0rd"
@@ -67,8 +66,8 @@ class SasVerificationIT {
         ).build()
         database1 = Database.connect("jdbc:h2:mem:sas-verification-test1;DB_CLOSE_DELAY=-1;")
         database2 = Database.connect("jdbc:h2:mem:sas-verification-test2;DB_CLOSE_DELAY=-1;")
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, storeScope, LoggerFactory.default)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, storeScope, LoggerFactory.default)
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, storeScope)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, storeScope)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -79,7 +78,6 @@ class SasVerificationIT {
             storeFactory = storeFactory1,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user1 🔴"),
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
@@ -88,7 +86,6 @@ class SasVerificationIT {
             storeFactory = storeFactory2,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user2 🔵"),
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
         client1.startSync()

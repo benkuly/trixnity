@@ -10,18 +10,17 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class RoomAccountDataEventSerializer(
     private val messageEventContentSerializers: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<Event.RoomAccountDataEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
 
     private val eventsContentLookupByType = messageEventContentSerializers.associate { it.type to it.serializer }
@@ -36,7 +35,7 @@ class RoomAccountDataEventSerializer(
         return try {
             decoder.json.decodeFromJsonElement(Event.RoomAccountDataEvent.serializer(contentSerializer), jsonObj)
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 Event.RoomAccountDataEvent.serializer(
                     UnknownEventContentSerializer(

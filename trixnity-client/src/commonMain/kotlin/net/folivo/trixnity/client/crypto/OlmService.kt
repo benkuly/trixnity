@@ -4,10 +4,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.store.*
@@ -26,18 +26,15 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class OlmService(
     private val store: Store,
     private val secureStore: SecureStore,
     private val api: MatrixApiClient,
     val json: Json,
-    loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     private val account: OlmAccount =
         store.olm.account.value?.let { OlmAccount.unpickle(secureStore.olmPickleKey, it) }
             ?: OlmAccount.create().also { store.olm.account.value = it.pickle(secureStore.olmPickleKey) }
@@ -75,7 +72,6 @@ class OlmService(
         secureStore = secureStore,
         api = api,
         signService = sign,
-        loggerFactory = loggerFactory
     )
 
     data class DecryptedOlmEvent(val encrypted: Event<OlmEncryptedEventContent>, val decrypted: OlmEvent<*>)

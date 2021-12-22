@@ -10,20 +10,19 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class StrippedStateEventSerializer(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<StrippedStateEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StrippedStateEventSerializer")
 
     private val eventsContentLookupByType = stateEventContentSerializers.map { Pair(it.type, it.serializer) }.toMap()
@@ -45,7 +44,7 @@ class StrippedStateEventSerializer(
                 jsonObj
             )
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 StrippedStateEvent.serializer(
                     UnknownEventContentSerializer(

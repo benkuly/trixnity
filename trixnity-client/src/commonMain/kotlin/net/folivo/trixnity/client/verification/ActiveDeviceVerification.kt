@@ -3,8 +3,8 @@ package net.folivo.trixnity.client.verification
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
@@ -18,8 +18,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.RequestEventCont
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class ActiveDeviceVerification(
     request: RequestEventContent,
@@ -33,7 +33,6 @@ class ActiveDeviceVerification(
     private val olm: OlmService,
     key: KeyService,
     store: Store,
-    loggerFactory: LoggerFactory
 ) : ActiveVerification(
     request,
     requestIsOurs,
@@ -48,10 +47,7 @@ class ActiveDeviceVerification(
     store,
     key,
     api.json,
-    loggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId

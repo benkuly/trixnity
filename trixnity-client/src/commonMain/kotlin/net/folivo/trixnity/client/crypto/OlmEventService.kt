@@ -6,6 +6,7 @@ import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
 import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.KeyException.*
 import net.folivo.trixnity.client.store.*
@@ -30,8 +31,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 @OptIn(ExperimentalSerializationApi::class)
 class OlmEventService internal constructor(
@@ -41,11 +42,7 @@ class OlmEventService internal constructor(
     private val secureStore: SecureStore,
     private val api: MatrixApiClient,
     private val signService: OlmSignService,
-    loggerFactory: LoggerFactory
 ) {
-
-    private val log = newLogger(loggerFactory)
-
     private val myUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
     private val myDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
     private val myEd25519Key = Ed25519Key(myDeviceId, account.identityKeys.ed25519)
@@ -149,7 +146,7 @@ class OlmEventService internal constructor(
                                 log.debug { "try decrypt ordinary olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
                                 olmSession.decrypt(OlmMessage(ciphertext.body, ORDINARY))
                             } catch (error: Throwable) {
-                                log.warning { "could not decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey. Reason: ${error.message}" }
+                                log.warn { "could not decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey. Reason: ${error.message}" }
                                 null
                             }
                         }?.also { store.olm.storeOlmSession(olmSession, senderIdentityKey, secureStore.olmPickleKey) }
@@ -185,7 +182,7 @@ class OlmEventService internal constructor(
                         )
                     )
                 } catch (sendError: Throwable) {
-                    log.warning { "could not send m.dummy to $senderId ($senderDeviceId)" }
+                    log.warn { "could not send m.dummy to $senderId ($senderDeviceId)" }
                 }
             }
             throw decryptError

@@ -9,15 +9,13 @@ import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappin
 import net.folivo.trixnity.core.serialization.event.createEventSerializersModule
 import net.folivo.trixnity.core.serialization.m.room.encrypted.createEncryptedEventContentSerializersModule
 import net.folivo.trixnity.core.serialization.m.room.message.createMessageEventContentSerializersModule
-import org.kodein.log.LoggerFactory
 
 @OptIn(ExperimentalSerializationApi::class)
 fun createMatrixJson(
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     customModule: SerializersModule? = null,
-    loggerFactory: LoggerFactory = LoggerFactory.default
 ): Json {
-    val modules = (createEventSerializersModule(eventContentSerializerMappings, loggerFactory)
+    val modules = (createEventSerializersModule(eventContentSerializerMappings)
             + createMessageEventContentSerializersModule()
             + createEncryptedEventContentSerializersModule())
 

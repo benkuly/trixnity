@@ -10,19 +10,18 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class GlobalAccountDataEventSerializer(
     private val messageEventContentSerializers: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<GlobalAccountDataEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GlobalAccountDataEventSerializer")
 
     private val eventsContentLookupByType = messageEventContentSerializers.associate { it.type to it.serializer }
@@ -37,7 +36,7 @@ class GlobalAccountDataEventSerializer(
         return try {
             decoder.json.decodeFromJsonElement(GlobalAccountDataEvent.serializer(contentSerializer), jsonObj)
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 GlobalAccountDataEvent.serializer(
                     UnknownEventContentSerializer(

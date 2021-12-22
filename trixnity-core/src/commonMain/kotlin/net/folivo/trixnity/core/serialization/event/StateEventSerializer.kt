@@ -10,19 +10,18 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class StateEventSerializer(
     private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<StateEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StateEventSerializer")
 
     private val eventsContentLookupByType = stateEventContentSerializers.associate { it.type to it.serializer }
@@ -43,7 +42,7 @@ class StateEventSerializer(
                 StateEvent.serializer(contentSerializer), jsonObj
             )
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 StateEvent.serializer(UnknownEventContentSerializer(UnknownStateEventContent.serializer(), type)),
                 jsonObj

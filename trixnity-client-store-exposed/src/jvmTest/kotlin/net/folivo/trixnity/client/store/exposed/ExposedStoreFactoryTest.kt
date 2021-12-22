@@ -12,7 +12,6 @@ import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerialize
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.kodein.log.LoggerFactory
 
 class ExposedStoreFactoryTest : ShouldSpec({
 
@@ -29,18 +28,15 @@ class ExposedStoreFactoryTest : ShouldSpec({
         val cut = ExposedStoreFactory(
             database = database,
             scope = scope,
-            loggerFactory = LoggerFactory.default
         )
 
         val store = cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
             json = createMatrixJson(),
-            loggerFactory = LoggerFactory.default
         )
         cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
             json = createMatrixJson(),
-            loggerFactory = LoggerFactory.default
         )
         val room = Room(RoomId("room", "server"))
         store.room.update(room.roomId) { room }
@@ -51,13 +47,11 @@ class ExposedStoreFactoryTest : ShouldSpec({
         val cut = ExposedStoreFactory(
             database = database,
             scope = scope,
-            loggerFactory = LoggerFactory.default
         )
 
         cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
             json = createMatrixJson(),
-            loggerFactory = LoggerFactory.default
         )
         newSuspendedTransaction(Dispatchers.IO, database) {
             with(TransactionManager.current()) {
@@ -67,7 +61,6 @@ class ExposedStoreFactoryTest : ShouldSpec({
         val store = cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
             json = createMatrixJson(),
-            loggerFactory = LoggerFactory.default
         )
         val room = Room(RoomId("room", "server"))
         store.room.update(room.roomId) { room }

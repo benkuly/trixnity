@@ -5,13 +5,11 @@ import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import org.jetbrains.exposed.sql.Database
-import org.kodein.log.LoggerFactory
 
 actual fun createStoreFactory(): StoreFactory {
     return ExposedStoreFactory(
         database = Database.connect("jdbc:h2:./test;DB_CLOSE_DELAY=-1;"),
         transactionDispatcher = Dispatchers.IO,
         scope = CoroutineScope(Dispatchers.Default),
-        loggerFactory = LoggerFactory.default
     )
 }

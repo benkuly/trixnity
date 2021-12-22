@@ -31,7 +31,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
 
-                implementation("org.kodein.log:kodein-log:${Versions.kodeinLog}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

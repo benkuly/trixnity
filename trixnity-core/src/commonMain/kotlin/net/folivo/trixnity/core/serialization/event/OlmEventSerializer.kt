@@ -10,18 +10,17 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EmptyEventContent
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class OlmEventSerializer(
     private val eventContentSerializers: Set<EventContentSerializerMapping<out EventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<OlmEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("OlmEventSerializer")
 
     private val eventsContentLookupByType = eventContentSerializers.associate { it.type to it.serializer }
@@ -36,7 +35,7 @@ class OlmEventSerializer(
         return try {
             decoder.json.decodeFromJsonElement(OlmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 OlmEvent.serializer(
                     UnknownEventContentSerializer(

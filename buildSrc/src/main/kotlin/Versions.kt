@@ -13,7 +13,7 @@ object Versions {
     const val uuid = "0.3.1" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.0.3" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
-    const val kodeinLog = "0.11.1" // https://github.com/Kodein-Framework/Kodein-Log/releases
+    const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases

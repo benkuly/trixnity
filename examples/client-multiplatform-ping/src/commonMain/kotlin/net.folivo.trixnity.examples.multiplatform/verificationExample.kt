@@ -2,7 +2,6 @@ package net.folivo.trixnity.examples.multiplatform
 
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -13,10 +12,6 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
-import org.kodein.log.Logger
-import org.kodein.log.LoggerFactory
-import org.kodein.log.filter.entry.minimumLevel
-import org.kodein.log.frontend.defaultLogFrontend
 
 suspend fun verificationExample() = coroutineScope {
     val scope = CoroutineScope(Dispatchers.Default)
@@ -27,15 +22,10 @@ suspend fun verificationExample() = coroutineScope {
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
-    val loggerFactory = LoggerFactory(
-        listOf(defaultLogFrontend),
-        listOf(minimumLevel(Logger.Level.INFO)),
-    )
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
-        loggerFactory = loggerFactory
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
         IdentifierType.User(username),
@@ -44,7 +34,6 @@ suspend fun verificationExample() = coroutineScope {
         storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
-        loggerFactory = loggerFactory
     ).getOrThrow()
 
     val job1 = launch {

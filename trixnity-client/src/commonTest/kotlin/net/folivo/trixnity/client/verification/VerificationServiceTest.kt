@@ -41,7 +41,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
 class VerificationServiceTest : ShouldSpec({
@@ -77,7 +76,6 @@ class VerificationServiceTest : ShouldSpec({
             room = room,
             user = user,
             key = mockk(),
-            loggerFactory = LoggerFactory.default
         )
     }
     afterTest {

@@ -3,17 +3,19 @@ package net.folivo.trixnity.client.store.sqldelight
 import com.squareup.sqldelight.db.SqlDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
 import kotlin.coroutines.CoroutineContext
+
+private val log = KotlinLogging.logger {}
 
 /**
  * databaseCoroutineContext and blockingTransactionCoroutineContext should each be a single threaded CoroutineContext
  */
+
 class SqlDelightStoreFactory(
     private val driver: SqlDriver,
     private val scope: CoroutineScope,
@@ -24,9 +26,7 @@ class SqlDelightStoreFactory(
     override suspend fun createStore(
         contentMappings: EventContentSerializerMappings,
         json: Json,
-        loggerFactory: LoggerFactory
     ): Store {
-        val log = newLogger(loggerFactory)
 
         log.debug { "create schema version table, if it does not exists" }
         driver.execute(

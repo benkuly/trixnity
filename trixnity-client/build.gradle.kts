@@ -58,7 +58,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
-                api("org.kodein.log:kodein-log:${Versions.kodeinLog}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val jvmMain by getting {

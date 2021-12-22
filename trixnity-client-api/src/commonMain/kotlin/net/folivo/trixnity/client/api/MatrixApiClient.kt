@@ -18,14 +18,12 @@ import net.folivo.trixnity.client.api.users.UsersApiClient
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
-import org.kodein.log.LoggerFactory
 
 class MatrixApiClient(
     baseUrl: Url,
     baseHttpClient: HttpClient = HttpClient(),
     val eventContentSerializerMappings: EventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(),
-    loggerFactory: LoggerFactory = LoggerFactory.default,
-    val json: Json = createMatrixApiClientJson(eventContentSerializerMappings, loggerFactory),
+    val json: Json = createMatrixApiClientJson(eventContentSerializerMappings),
 ) {
     val accessToken = MutableStateFlow<String?>(null)
 
@@ -35,7 +33,7 @@ class MatrixApiClient(
     val server = ServerApiClient(httpClient)
     val users = UsersApiClient(httpClient, json, eventContentSerializerMappings)
     val rooms = RoomsApiClient(httpClient, json, eventContentSerializerMappings)
-    val sync = SyncApiClient(httpClient, loggerFactory)
+    val sync = SyncApiClient(httpClient)
     val keys = KeysApiClient(httpClient)
     val media = MediaApiClient(httpClient)
     val devices = DevicesApiClient(httpClient)
@@ -46,10 +44,8 @@ fun createMatrixApiClientEventContentSerializerMappings(customMappings: EventCon
 
 fun createMatrixApiClientJson(
     eventContentSerializerMappings: EventContentSerializerMappings,
-    loggerFactory: LoggerFactory
 ): Json =
     createMatrixJson(
         eventContentSerializerMappings,
         SerializersModule { contextual(SyncResponseSerializer) },
-        loggerFactory
     )

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -18,8 +19,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventConte
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 abstract class ActiveVerification(
     request: VerificationRequest,
@@ -35,10 +36,7 @@ abstract class ActiveVerification(
     protected val store: Store,
     private val keyService: KeyService,
     protected val json: Json,
-    private val loggerFactory: LoggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     var theirDeviceId: String? = theirInitialDeviceId
         private set
 
@@ -148,7 +146,6 @@ abstract class ActiveVerification(
                         store = store,
                         keyService = keyService,
                         json = json,
-                        loggerFactory = loggerFactory
                     )
             }
             if (method != null) // the method already called cancel

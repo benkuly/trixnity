@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
@@ -17,14 +18,12 @@ import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class MessageEventSerializer(
     private val messageEventContentSerializers: Set<EventContentSerializerMapping<out MessageEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<MessageEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
 
     private val eventsContentLookupByType = messageEventContentSerializers.associate { it.type to it.serializer }
@@ -49,7 +48,7 @@ class MessageEventSerializer(
                 ), jsonObj
             )
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 MessageEvent.serializer(
                     UnknownEventContentSerializer(

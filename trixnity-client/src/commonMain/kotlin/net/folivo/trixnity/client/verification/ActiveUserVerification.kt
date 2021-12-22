@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
@@ -28,8 +29,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class ActiveUserVerification(
     request: VerificationRequestMessageEventContent,
@@ -48,7 +49,6 @@ class ActiveUserVerification(
     private val user: UserService,
     private val room: RoomService,
     key: KeyService,
-    loggerFactory: LoggerFactory
 ) : ActiveVerification(
     request,
     requestIsFromOurOwn,
@@ -63,10 +63,7 @@ class ActiveUserVerification(
     store,
     key,
     api.json,
-    loggerFactory
 ) {
-    private val log = newLogger(loggerFactory)
-
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val sendContent = try {

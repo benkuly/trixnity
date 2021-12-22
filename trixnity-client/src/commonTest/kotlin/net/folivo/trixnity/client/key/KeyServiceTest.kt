@@ -35,7 +35,6 @@ import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -55,7 +54,7 @@ class KeyServiceTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeyService(store, olmSignService, api, LoggerFactory.default)
+        cut = KeyService(store, olmSignService, api)
         coEvery { olmSignService.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
     }
 

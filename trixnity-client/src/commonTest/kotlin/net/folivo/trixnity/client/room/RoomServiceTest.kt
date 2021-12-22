@@ -47,7 +47,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -70,7 +69,7 @@ class RoomServiceTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olmService, users, media, loggerFactory = LoggerFactory.default)
+        cut = RoomService(store, api, olmService, users, media)
     }
 
     afterTest {
@@ -520,7 +519,7 @@ class RoomServiceTest : ShouldSpec({
                 coEvery { olmStoreMock.getInboundMegolmSession(any(), any(), any(), any()) } returns MutableStateFlow(
                     StoredInboundMegolmSession(senderKey, session, room, "pickle")
                 )
-                cut = RoomService(store, api, olmService, users, media, loggerFactory = LoggerFactory.default)
+                cut = RoomService(store, api, olmService, users, media)
 
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) }.coAnswers {

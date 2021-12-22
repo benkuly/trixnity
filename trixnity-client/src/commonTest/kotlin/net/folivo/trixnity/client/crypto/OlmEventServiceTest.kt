@@ -45,7 +45,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
-import org.kodein.log.LoggerFactory
 import kotlin.test.assertNotNull
 
 class OlmEventServiceTest : ShouldSpec({
@@ -114,7 +113,7 @@ class OlmEventServiceTest : ShouldSpec({
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
         every { secureStore.olmPickleKey } returns ""
 
-        cut = OlmEventService(json, aliceAccount, store, secureStore, api, signService, LoggerFactory.default)
+        cut = OlmEventService(json, aliceAccount, store, secureStore, api, signService)
     }
 
     afterTest {

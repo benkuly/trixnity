@@ -24,7 +24,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.log.LoggerFactory
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
@@ -66,7 +65,6 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             olm = olm,
             store = mockk(),
             key = mockk(),
-            loggerFactory = LoggerFactory.default
         )
     }
 

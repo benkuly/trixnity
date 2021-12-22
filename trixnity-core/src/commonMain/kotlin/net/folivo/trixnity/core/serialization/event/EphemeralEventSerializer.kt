@@ -10,18 +10,17 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
 import net.folivo.trixnity.core.model.events.Event.EphemeralEvent
 import net.folivo.trixnity.core.model.events.UnknownEphemeralEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import org.kodein.log.LoggerFactory
-import org.kodein.log.newLogger
+
+private val log = KotlinLogging.logger {}
 
 class EphemeralEventSerializer(
     private val ephemeralEventContentSerializers: Set<EventContentSerializerMapping<out EphemeralEventContent>>,
-    loggerFactory: LoggerFactory
 ) : KSerializer<EphemeralEvent<*>> {
-    private val log = newLogger(loggerFactory)
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EphemeralEventSerializer")
 
     private val eventsContentLookupByType = ephemeralEventContentSerializers.associate { it.type to it.serializer }
@@ -38,7 +37,7 @@ class EphemeralEventSerializer(
                 EphemeralEvent.serializer(contentSerializer), jsonObj
             )
         } catch (error: SerializationException) {
-            log.warning(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 EphemeralEvent.serializer(
                     UnknownEventContentSerializer(

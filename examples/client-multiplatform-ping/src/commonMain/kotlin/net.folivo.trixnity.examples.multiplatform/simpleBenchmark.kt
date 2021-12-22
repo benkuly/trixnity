@@ -16,10 +16,6 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import org.kodein.log.Logger
-import org.kodein.log.LoggerFactory
-import org.kodein.log.filter.entry.minimumLevel
-import org.kodein.log.frontend.defaultLogFrontend
 import kotlin.random.Random
 
 suspend fun simpleBenchmark() = coroutineScope {
@@ -32,15 +28,10 @@ suspend fun simpleBenchmark() = coroutineScope {
     val secureStore = object : SecureStore {
         override val olmPickleKey = ""
     }
-    val loggerFactory = LoggerFactory(
-        listOf(defaultLogFrontend),
-        listOf(minimumLevel(Logger.Level.INFO)),
-    )
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
-        loggerFactory = loggerFactory
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
         User(username),
@@ -49,7 +40,6 @@ suspend fun simpleBenchmark() = coroutineScope {
         storeFactory = createStoreFactory(),
         secureStore = secureStore,
         scope = scope,
-        loggerFactory = loggerFactory
     ).getOrThrow()
 
     val startTime = Clock.System.now()

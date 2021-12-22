@@ -12,8 +12,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.kodein.log.Logger
-import org.kodein.log.LoggerFactory
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -52,7 +50,7 @@ class OutboxIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
-    fun beforeEach() = runBlocking {
+    fun beforeEach(): Unit = runBlocking {
         deleteDbFiles()
         scope = CoroutineScope(Dispatchers.Default)
         val password = "user$1passw0rd"
@@ -62,7 +60,7 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
-        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope, LoggerFactory.default)
+        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
@@ -73,7 +71,6 @@ class OutboxIT {
             storeFactory = storeFactory,
             secureStore = secureStore,
             scope = scope,
-            loggerFactory = loggerFactory("user 🔴", Logger.Level.DEBUG),
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()
         client.startSync()
