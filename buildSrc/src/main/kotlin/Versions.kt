@@ -18,8 +18,6 @@ object Versions {
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.36.2" // https://github.com/JetBrains/Exposed/releases
-    const val liquibase = "4.6.2" // https://github.com/liquibase/liquibase/releases
-    const val snakeyml = "1.30" // https://search.maven.org/artifact/org.yaml/snakeyaml
     const val h2 = "1.4.200" // https://github.com/h2database/h2database/releases
     const val thumbnailator = "0.4.15" // https://github.com/coobird/thumbnailator/releases
     const val logback = "1.2.8" // https://github.com/qos-ch/logback/tags

@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import org.h2.jdbcx.JdbcDataSource
+import org.jetbrains.exposed.sql.Database
 import org.kodein.log.LoggerFactory
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
@@ -21,7 +21,6 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import javax.sql.DataSource
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -32,8 +31,8 @@ class TimelineEventIT {
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
     private lateinit var scope: CoroutineScope
-    private lateinit var dataSource1: DataSource
-    private lateinit var dataSource2: DataSource
+    private lateinit var database1: Database
+    private lateinit var database2: Database
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
@@ -63,15 +62,11 @@ class TimelineEventIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        dataSource1 = JdbcDataSource().apply {
-            setURL("jdbc:h2:mem:timeline-event-test1;DB_CLOSE_DELAY=-1;")
-        }
-        dataSource2 = JdbcDataSource().apply {
-            setURL("jdbc:h2:mem:timeline-event-test2;DB_CLOSE_DELAY=-1;")
-        }
+        database1 = Database.connect("jdbc:h2:mem:timeline-event-test1;DB_CLOSE_DELAY=-1;")
+        database2 = Database.connect("jdbc:h2:mem:timeline-event-test2;DB_CLOSE_DELAY=-1;")
 
-        val storeFactory1 = ExposedStoreFactory(dataSource1, Dispatchers.IO, scope, LoggerFactory.default)
-        val storeFactory2 = ExposedStoreFactory(dataSource2, Dispatchers.IO, scope, LoggerFactory.default)
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope, LoggerFactory.default)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope, LoggerFactory.default)
         val secureStore = object : SecureStore {
             override val olmPickleKey = ""
         }
