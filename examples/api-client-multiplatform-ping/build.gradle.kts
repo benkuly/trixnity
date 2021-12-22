@@ -35,6 +35,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsMain by getting {

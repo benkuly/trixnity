@@ -13,14 +13,14 @@ object Versions {
     const val uuid = "0.3.1" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.0.3" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
-    const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.36.2" // https://github.com/JetBrains/Exposed/releases
     const val h2 = "1.4.200" // https://github.com/h2database/h2database/releases
     const val thumbnailator = "0.4.15" // https://github.com/coobird/thumbnailator/releases
-    const val logback = "1.2.8" // https://github.com/qos-ch/logback/tags
+    const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
+    const val logback = "1.2.9" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
     const val androidTargetSdk = 30

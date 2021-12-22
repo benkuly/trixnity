@@ -37,6 +37,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
                 implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
                 implementation("com.h2database:h2:${Versions.h2}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsMain by getting {

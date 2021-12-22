@@ -32,6 +32,10 @@ This project contains the following sub-projects, which can be used independentl
     - [x] fast cache on top of the database
     - [x] E2E (olm, megolm)
     - [x] verification
+    - [x] cross signing
+        - [x] trust level calculation
+        - [ ] SSSS
+        - [ ] signing of other keys
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
@@ -59,7 +63,13 @@ implementation("net.folivo:trixnity-<sub-project>:<version>")
 For Trixnity-Client and Trixnity-Client-API you also need to add a client engine to your project, that you can
 find [here](https://ktor.io/docs/http-client-engines.html).
 
-## [Trixnity-Client](/trixnity-client)
+#### Olm-Library
+
+If you are using `trixnity-client` or `trixnity-olm` with JVM, you will need to install olm. You can
+[Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm) and then make it available by your JVM (e.g.
+with `-Djna.library.path="build/olm/3.2.8/build"`)
+
+## Trixnity-Client
 
 ### Create MatrixClient
 
@@ -191,13 +201,13 @@ matrixClient.room.sendMessage(roomId) {
 }
 ```
 
-## [Trixnity-Client-API](/trixnity-client-api)
+## Trixnity-Client-API
 
 ### Usage
 
 #### Create MatrixApiClient
 
-Here is a typical example, how to create a `MatrixRestClient`:
+Here is a typical example, how to create a `MatrixApiClient`:
 
 ```kotlin
 val matrixRestClient = MatrixApiClient(
@@ -232,7 +242,7 @@ coroutineScope {
 }
 ```
 
-## [Trixnity-Appservice](/trixnity-appservice)
+## Trixnity-Appservice
 
 The appservice module of Trixnity contains a webserver, which hosts the Matrix Application-Service API.
 
@@ -264,6 +274,11 @@ abstract and easier. For that it uses `AppserviceEventService`, `AppserviceUserS
 which you need to implement.
 
 It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api).
+
+## Logging
+
+This project uses [kotlin-logging](https://github.com/MicroUtils/kotlin-logging). On JVM this needs a logging backend.
+You can use for example ` implementation("ch.qos.logback:logback-classic:<version>")`.
 
 ## Build this project
 
