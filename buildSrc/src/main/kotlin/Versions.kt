@@ -14,6 +14,7 @@ object Versions {
     const val kotest = "5.0.3" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
+    const val gradleNexusPublishPlugin = "1.1.0" // https://github.com/gradle-nexus/publish-plugin/releases
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.36.2" // https://github.com/JetBrains/Exposed/releases

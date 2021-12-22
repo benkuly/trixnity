@@ -79,4 +79,5 @@ publish:
     - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
   script:
     - ./gradlew buildOlm
-    - ./gradlew publish --stacktrace
+    - ./gradlew build --stacktrace
+    - ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository --stacktrace

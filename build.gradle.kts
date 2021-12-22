@@ -2,21 +2,22 @@ import de.undercouch.gradle.tasks.download.Download
 import org.jetbrains.kotlin.konan.target.HostManager
 
 buildscript {
-    dependencies {
-        classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
-        classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.kotlinxAtomicfu}")
-    }
     repositories {
         google()
         mavenCentral()
         maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
+        classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.kotlinxAtomicfu}")
     }
 }
 
 plugins {
     `maven-publish`
     signing
+    id("io.github.gradle-nexus.publish-plugin") version Versions.gradleNexusPublishPlugin
     id("org.jetbrains.dokka") version Versions.dokka
     kotlin("multiplatform") version Versions.kotlin apply false
     kotlin("jvm") version Versions.kotlin apply false
@@ -144,18 +145,7 @@ subprojects {
                     }
                 }
             }
-            repositories {
-                maven {
-                    name = "OSSRH"
-                    url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
-                    }
-                }
-            }
         }
-
         signing {
             isRequired = isRelease
             useInMemoryPgpKeys(
@@ -163,6 +153,15 @@ subprojects {
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
             sign(publishing.publications)
+        }
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            username.set(System.getenv("OSSRH_USERNAME"))
+            password.set(System.getenv("OSSRH_PASSWORD"))
         }
     }
 }
