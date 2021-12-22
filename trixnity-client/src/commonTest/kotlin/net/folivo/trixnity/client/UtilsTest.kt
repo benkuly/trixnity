@@ -1,14 +1,12 @@
 package net.folivo.trixnity.client
 
-import io.kotest.assertions.retry
 import io.kotest.assertions.until.fixed
 import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.sync.SyncApiClient
 import kotlin.time.Duration
@@ -21,18 +19,17 @@ class UtilsTest : ShouldSpec({
         should("wait until connected, retry on error") {
             val syncState = MutableStateFlow(SyncApiClient.SyncState.STARTED)
 
-            var onErrorCalled = 0
-            var onCancelCalled = 0
-            var blockCalled = 0
+            val onErrorCalled = MutableStateFlow(0)
+            val onCancelCalled = MutableStateFlow(0)
+            val blockCalled = MutableStateFlow(0)
 
             val job = launch {
                 syncState.retryWhenSyncIsRunning(
-                    onError = { onErrorCalled++ },
-                    onCancel = { onCancelCalled++ },
+                    onError = { onErrorCalled.update { it + 1 } },
+                    onCancel = { onCancelCalled.update { it + 1 } },
                     scope = this,
                 ) {
-                    blockCalled++
-                    if (blockCalled == 1) throw RuntimeException("oh no")
+                    if (blockCalled.updateAndGet { it + 1 } == 1) throw RuntimeException("oh no")
                     delay(Duration.INFINITE)
                 }
             }
@@ -40,14 +37,12 @@ class UtilsTest : ShouldSpec({
             until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
-            blockCalled shouldBe 0
+            blockCalled.value shouldBe 0
             syncState.value = SyncApiClient.SyncState.RUNNING
-            retry(10, 500.milliseconds, 50.milliseconds) {
-                blockCalled shouldBe 2
-            }
+            blockCalled.first { it == 2 } shouldBe 2
             job.cancelAndJoin()
-            onErrorCalled shouldBe 1
-            onCancelCalled shouldBe 1
+            onErrorCalled.value shouldBe 1
+            onCancelCalled.value shouldBe 1
         }
     }
 })

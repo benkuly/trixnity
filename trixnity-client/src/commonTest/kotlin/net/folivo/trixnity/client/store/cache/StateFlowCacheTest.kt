@@ -8,6 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.milliseconds
 
 class StateFlowCacheTest : ShouldSpec({
@@ -86,7 +87,8 @@ class StateFlowCacheTest : ShouldSpec({
         }
         context("with coroutine scope") {
             should("remove from cache") {
-                cut = StateFlowCache(cacheScope, cacheDuration = 10.milliseconds)
+                cut = StateFlowCache(cacheScope, cacheDuration = 50.milliseconds)
+                val cache = cut.cache.stateIn(cacheScope)
                 val readScope1 = CoroutineScope(Dispatchers.Default)
                 val readScope2 = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
@@ -98,7 +100,7 @@ class StateFlowCacheTest : ShouldSpec({
                     readScope1
                 ).value shouldBe "a new value"
                 readScope1.cancel()
-                cut.cache.first { it.isEmpty() }
+                cache.first { it.isEmpty() }
                 cut.readWithCache(
                     key = "key",
                     containsInCache = { true },
