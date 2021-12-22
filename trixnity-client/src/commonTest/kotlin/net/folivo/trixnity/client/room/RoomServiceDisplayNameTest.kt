@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContainerContext
+import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -101,7 +101,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         beforeTest {
             store.room.update(roomId) { simpleRoom.copy(roomId = roomId) }
         }
-        suspend fun ShouldSpecContainerContext.testWithoutNameFromNameEvent() {
+        suspend fun ShouldSpecContainerScope.testWithoutNameFromNameEvent() {
             context("with an existent Canonical Alias Event") {
                 should("set room name to the alias field value") {
                     val heroes = listOf(user1, user2)

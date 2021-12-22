@@ -7,6 +7,7 @@ import io.mockk.clearAllMocks
 import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlin.time.Duration.Companion.milliseconds
 
 class StateFlowCacheTest : ShouldSpec({
@@ -97,7 +98,7 @@ class StateFlowCacheTest : ShouldSpec({
                     readScope1
                 ).value shouldBe "a new value"
                 readScope1.cancel()
-                delay(100)
+                cut.cache.first { it.isEmpty() }
                 cut.readWithCache(
                     key = "key",
                     containsInCache = { true },

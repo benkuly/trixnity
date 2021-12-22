@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContainerContext
+import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -92,7 +92,7 @@ class ActiveVerificationTest : ShouldSpec({
                 sendVerificationStepFlow.first().shouldBeInstanceOf<CancelEventContent>()
             }
         }
-        suspend fun ShouldSpecContainerContext.checkNotAllowedStateChange(vararg steps: VerificationStep) {
+        suspend fun ShouldSpecContainerScope.checkNotAllowedStateChange(vararg steps: VerificationStep) {
             steps.forEach {
                 should("cancel unexpected message ${it::class.simpleName}") {
                     val stateBefore = cut.state.value

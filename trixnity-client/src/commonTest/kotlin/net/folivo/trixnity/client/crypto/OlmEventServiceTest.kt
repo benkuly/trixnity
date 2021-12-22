@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.crypto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContainerContext
+import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
@@ -549,7 +549,7 @@ class OlmEventServiceTest : ShouldSpec({
                 )
             )
         }
-        suspend fun ShouldSpecContainerContext.testEncryption(
+        suspend fun ShouldSpecContainerScope.testEncryption(
             settings: EncryptionEventContent,
             expectedMessageCount: Int
         ) {

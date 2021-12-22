@@ -704,11 +704,7 @@ class RoomServiceTest : ShouldSpec({
                 olmService.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
                 users.loadMembers(room)
             }
-            retry(
-                100,
-                milliseconds(3_000),
-                milliseconds(30)
-            ) { // we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
@@ -729,11 +725,7 @@ class RoomServiceTest : ShouldSpec({
             coVerify(exactly = 2, timeout = 5_000) {
                 api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
             }
-            retry(
-                100,
-                milliseconds(3_000),
-                milliseconds(30)
-            ) { // we need this, because the cache may not be fast enough
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
