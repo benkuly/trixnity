@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 class MediaStore(
     private val mediaRepository: MediaRepository,
     uploadMediaRepository: UploadMediaRepository,
-    rtm: RepositoryTransactionManager,
+    private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
     private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
@@ -19,7 +19,7 @@ class MediaStore(
 
     suspend fun deleteContent(uri: String) = mediaCache.update(uri) { null }
 
-    suspend fun changeUri(oldUri: String, newUri: String) {
+    suspend fun changeUri(oldUri: String, newUri: String) = rtm.transaction {
         mediaRepository.changeUri(oldUri, newUri)
     }
 
