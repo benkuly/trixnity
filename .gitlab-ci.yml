@@ -46,8 +46,8 @@ build-linux:
   cache: *build-cache
   variables: *docker-variables
   artifacts: *artifact-reports
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  only:
+    - merge_requests
   script:
     - ./gradlew buildOlm
     - ./gradlew build --stacktrace
