@@ -6,6 +6,20 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("multiplatform")
     id("kotlinx-atomicfu")
+    id("com.android.library")
+}
+
+android {
+    compileSdk = Versions.androidTargetSdk
+    buildToolsVersion = Versions.androidBuildTools
+    defaultConfig {
+        minSdk = Versions.androidMinSdk
+        targetSdk = Versions.androidTargetSdk
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets.getByName("main") {
+        manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    }
 }
 
 kotlin {
@@ -27,6 +41,9 @@ kotlin {
                 else -> {}
             }
         }
+    }
+    android {
+        publishLibraryVariants("release")
     }
 //    js(IR) {
 //        browser {
@@ -61,10 +78,17 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
+        val androidAndJvmMain = create("androidAndJvmMain") {
+            dependsOn(commonMain)
+        }
         val jvmMain by getting {
+            dependsOn(androidAndJvmMain)
             dependencies {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
+        }
+        val androidMain by getting {
+            dependsOn(androidAndJvmMain)
         }
 //        val jsMain by getting
 //        val nativeMain = create("nativeMain") {
