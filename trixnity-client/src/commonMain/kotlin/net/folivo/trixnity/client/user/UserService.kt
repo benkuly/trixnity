@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.user
 
+import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
@@ -24,9 +25,12 @@ class UserService(
     private val store: Store,
     private val api: MatrixApiClient,
 ) {
+    private val reloadOwnProfile = MutableStateFlow(false)
+
     suspend fun start() {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
+        api.sync.subscribeAfterSyncResponse(::reloadProfile)
     }
 
     private fun calculateUserDisplayName(
@@ -97,6 +101,29 @@ class UserService(
                     name = calculatedName,
                     event = event
                 )
+            }
+
+            shouldReloadOwnProfile(userId)
+        }
+    }
+
+    private fun shouldReloadOwnProfile(userId: UserId) {
+        if (userId == store.account.userId.value) {
+            // only reload profile once, even if there are multiple events in multiple rooms
+            reloadOwnProfile.value = true
+        }
+    }
+
+    private suspend fun reloadProfile() {
+        if (reloadOwnProfile.value) {
+            reloadOwnProfile.value = false
+
+            store.account.userId.value?.let { userId ->
+                api.users.getProfile(userId)
+                    .onSuccess {
+                        store.account.displayName.value = it.displayName
+                        store.account.avatarUrl.value = it.avatarUrl?.let { url -> Url(url) }
+                    }.getOrThrow()
             }
         }
     }

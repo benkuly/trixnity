@@ -16,6 +16,8 @@ internal object ExposedAccount : LongIdTable("account") {
     val accessToken = text("access_token").nullable()
     val syncBatchToken = text("sync_batch_token").nullable()
     val filterId = text("filter_id").nullable()
+    val displayName = text("display_name").nullable()
+    val avatarUrl = text("avatar_url").nullable()
 }
 
 internal class ExposedAccountRepository : AccountRepository {
@@ -27,7 +29,9 @@ internal class ExposedAccountRepository : AccountRepository {
                 deviceId = it[ExposedAccount.deviceId],
                 accessToken = it[ExposedAccount.accessToken],
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
-                filterId = it[ExposedAccount.filterId]
+                filterId = it[ExposedAccount.filterId],
+                displayName = it[ExposedAccount.displayName],
+                avatarUrl = it[ExposedAccount.avatarUrl]?.let { it1 -> Url(it1) },
             )
         }
     }
@@ -41,6 +45,8 @@ internal class ExposedAccountRepository : AccountRepository {
             it[accessToken] = value.accessToken
             it[syncBatchToken] = value.syncBatchToken
             it[filterId] = value.filterId
+            it[displayName] = value.displayName
+            it[avatarUrl] = value.avatarUrl?.toString()
         }
     }
 

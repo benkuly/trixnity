@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SetAvatarUrlRequest (
-    @SerialName("avatar_url") val avatarUrl: String
+    @SerialName("avatar_url") val avatarUrl: String? = null
 )

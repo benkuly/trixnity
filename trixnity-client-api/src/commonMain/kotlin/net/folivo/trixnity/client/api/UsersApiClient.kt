@@ -69,7 +69,7 @@ class UsersApiClient(
      */
     suspend fun setAvatarUrl(
         userId: UserId,
-        avatarUrl: String,
+        avatarUrl: String?,
         asUserId: UserId? = null,
     ): Result<Unit> =
         httpClient.request {

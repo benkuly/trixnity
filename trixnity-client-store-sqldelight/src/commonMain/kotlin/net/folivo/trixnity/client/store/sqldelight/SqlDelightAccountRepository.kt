@@ -19,7 +19,9 @@ class SqlDelightAccountRepository(
                 deviceId = it.device_id,
                 accessToken = it.access_token,
                 syncBatchToken = it.sync_batch_token,
-                filterId = it.filter_id
+                filterId = it.filter_id,
+                displayName = it.display_name,
+                avatarUrl = it.avatar_url?.let { it1 -> Url(it1) },
             )
         }
     }
@@ -33,7 +35,9 @@ class SqlDelightAccountRepository(
                 device_id = value.deviceId,
                 access_token = value.accessToken,
                 sync_batch_token = value.syncBatchToken,
-                filter_id = value.filterId
+                filter_id = value.filterId,
+                display_name = value.displayName,
+                avatar_url = value.avatarUrl?.toString(),
             )
         )
     }

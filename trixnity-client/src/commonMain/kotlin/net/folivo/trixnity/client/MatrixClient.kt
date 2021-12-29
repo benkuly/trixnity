@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client
 
+import arrow.core.flatMap
 import io.ktor.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -47,6 +48,8 @@ class MatrixClient private constructor(
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     private val scope: CoroutineScope,
 ) {
+    val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
+    val avatarUrl: StateFlow<Url?> = store.account.avatarUrl.asStateFlow()
     val olm: OlmService
     val room: RoomService
     val user: UserService
@@ -93,6 +96,7 @@ class MatrixClient private constructor(
             user = user,
             key = key,
         )
+
     }
 
     companion object {
@@ -124,12 +128,16 @@ class MatrixClient private constructor(
                     passwordOrToken = password,
                     type = LoginType.Password,
                     initialDeviceDisplayName = initialDeviceDisplayName
-                ).map {
-                    LoginInfo(
-                        userId = it.userId,
-                        accessToken = it.accessToken,
-                        deviceId = it.deviceId
-                    )
+                ).flatMap { login ->
+                    api.users.getProfile(login.userId).map { profile ->
+                        LoginInfo(
+                            userId = login.userId,
+                            accessToken = login.accessToken,
+                            deviceId = login.deviceId,
+                            displayName = profile.displayName,
+                            avatarUrl = profile.avatarUrl?.let { Url(it) }
+                        )
+                    }
                 }
             }
 
@@ -137,6 +145,8 @@ class MatrixClient private constructor(
             val userId: UserId,
             val deviceId: String,
             val accessToken: String,
+            val displayName: String?,
+            val avatarUrl: Url?,
         )
 
         suspend fun loginWith(
@@ -163,13 +173,15 @@ class MatrixClient private constructor(
                 json = json,
                 eventContentSerializerMappings = eventContentSerializerMappings,
             )
-            val (userId, deviceId, accessToken) = getLoginInfo(api).getOrThrow()
+            val (userId, deviceId, accessToken, displayName, avatarUrl) = getLoginInfo(api).getOrThrow()
 
             api.accessToken.value = accessToken
             store.account.baseUrl.value = baseUrl
             store.account.accessToken.value = accessToken
             store.account.userId.value = userId
             store.account.deviceId.value = deviceId
+            store.account.displayName.value = displayName
+            store.account.avatarUrl.value = avatarUrl
 
             val matrixClient = MatrixClient(
                 userId = userId,
@@ -295,5 +307,17 @@ class MatrixClient private constructor(
 
     suspend fun stopSync() {
         api.sync.stop()
+    }
+
+    suspend fun setDisplayName(displayName: String?): Result<Unit> {
+        return api.users.setDisplayName(userId, displayName).map {
+            store.account.displayName.value = displayName
+        }
+    }
+
+    suspend fun setAvatarUrl(avatarUrl: Url?): Result<Unit> {
+        return api.users.setAvatarUrl(userId, avatarUrl?.toString()).map {
+            store.account.avatarUrl.value = avatarUrl
+        }
     }
 }
