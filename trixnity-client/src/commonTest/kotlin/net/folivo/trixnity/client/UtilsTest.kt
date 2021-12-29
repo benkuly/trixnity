@@ -8,7 +8,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.api.sync.SyncApiClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 

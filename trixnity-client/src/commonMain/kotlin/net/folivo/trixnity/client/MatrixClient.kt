@@ -10,12 +10,12 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.authentication.IdentifierType
-import net.folivo.trixnity.client.api.authentication.LoginType
+import net.folivo.trixnity.client.api.model.authentication.IdentifierType
+import net.folivo.trixnity.client.api.model.authentication.LoginType
 import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerializerMappings
 import net.folivo.trixnity.client.api.createMatrixApiClientJson
-import net.folivo.trixnity.client.api.users.Filters
-import net.folivo.trixnity.client.api.users.RoomFilter
+import net.folivo.trixnity.client.api.model.users.Filters
+import net.folivo.trixnity.client.api.model.users.RoomFilter
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService

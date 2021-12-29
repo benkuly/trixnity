@@ -9,8 +9,8 @@ import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.rooms.Direction
-import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.api.model.rooms.Direction
+import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder

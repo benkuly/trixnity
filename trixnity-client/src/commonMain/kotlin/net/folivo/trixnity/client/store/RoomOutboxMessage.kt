@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.api.media.FileTransferProgress
+import net.folivo.trixnity.client.api.model.media.FileTransferProgress
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 

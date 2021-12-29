@@ -1,6 +1,6 @@
 package net.folivo.trixnity.appservice.rest.user
 
-import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.core.model.UserId

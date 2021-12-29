@@ -4,7 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.retryWhenSyncIsRunning

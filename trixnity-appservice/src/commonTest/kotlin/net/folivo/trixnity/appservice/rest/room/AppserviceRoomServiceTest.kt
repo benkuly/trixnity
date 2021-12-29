@@ -3,10 +3,10 @@ package net.folivo.trixnity.appservice.rest.room
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.client.api.rooms.Visibility
+import net.folivo.trixnity.client.api.model.rooms.Visibility
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.test.BeforeTest

@@ -24,6 +24,8 @@ This project contains the following sub-projects, which can be used independentl
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/JS/Native.
 - [trixnity-client-api](/trixnity-client-api) implements
   the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
+- [trixnity-client-api-model](/trixnity-client-api-model) provides 
+[Client-Server API](https://spec.matrix.org/latest/client-server-api/) model classes.
 - [trixnity-appservice](/trixnity-appservice) implements
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
@@ -309,3 +311,4 @@ Linux:
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
 . **Important:** Run this command and all gradle tasks within the msys2 **mingw64** shell!
+

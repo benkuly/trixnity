@@ -16,9 +16,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.keys.QueryKeysResponse
-import net.folivo.trixnity.client.api.sync.SyncApiClient
-import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.api.SyncApiClient
+import net.folivo.trixnity.client.api.model.keys.QueryKeysResponse
+import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult

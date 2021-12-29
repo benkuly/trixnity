@@ -14,9 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.rooms.Direction.BACKWARDS
-import net.folivo.trixnity.client.api.rooms.Direction.FORWARD
-import net.folivo.trixnity.client.api.rooms.GetEventsResponse
+import net.folivo.trixnity.client.api.model.rooms.Direction.BACKWARDS
+import net.folivo.trixnity.client.api.model.rooms.Direction.FORWARD
+import net.folivo.trixnity.client.api.model.rooms.GetEventsResponse
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*

@@ -3,11 +3,11 @@ package net.folivo.trixnity.appservice.rest.user
 import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.api.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.client.api.authentication.RegisterResponse
-import net.folivo.trixnity.client.api.uia.UIA
+import net.folivo.trixnity.client.api.model.authentication.RegisterResponse
+import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.BeforeTest
 import kotlin.test.Test

@@ -9,8 +9,8 @@ import io.ktor.routing.*
 import io.ktor.serialization.*
 import io.ktor.util.*
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.ErrorResponse
-import net.folivo.trixnity.client.api.ErrorResponseSerializer
+import net.folivo.trixnity.client.api.model.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponseSerializer
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
