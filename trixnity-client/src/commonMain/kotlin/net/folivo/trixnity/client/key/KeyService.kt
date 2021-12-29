@@ -453,4 +453,13 @@ class KeyService(
             }?.let { emit(it) } ?: emit(UserTrustLevel.Invalid("could not determine trust level"))
         }.stateIn(scope)
     }
+
+    suspend fun getDeviceKeys(
+        userId: UserId,
+        scope: CoroutineScope,
+    ): StateFlow<List<DeviceKeys>?> {
+        return store.keys.getDeviceKeys(userId, scope).map {
+            it?.values?.map { storedDeviceKeys -> storedDeviceKeys.value.signed }
+        }.stateIn(scope)
+    }
 }
