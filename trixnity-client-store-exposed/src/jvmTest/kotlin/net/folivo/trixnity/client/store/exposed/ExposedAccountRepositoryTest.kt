@@ -20,7 +20,14 @@ class ExposedAccountRepositoryTest : ShouldSpec({
     }
     should("save, get and delete") {
         val account = Account(
-            Url("http://host"), UserId("alice", "server"), "aliceDevice", "accessToken", "syncToken", "filterId"
+            Url("http://host"),
+            UserId("alice", "server"),
+            "aliceDevice",
+            "accessToken",
+            "syncToken",
+            "filterId",
+            "displayName",
+            Url("mxc://localhost/123456"),
         )
         newSuspendedTransaction {
             cut.save(1, account)

@@ -9,5 +9,7 @@ data class Account(
     val deviceId: String?,
     val accessToken: String?,
     val syncBatchToken: String?,
-    val filterId: String?
+    val filterId: String?,
+    val displayName: String?,
+    val avatarUrl: Url?,
 )

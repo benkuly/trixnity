@@ -36,7 +36,9 @@ class AccountStoreTest : ShouldSpec({
                 "device",
                 "access_token",
                 "sync_token",
-                "filter_id"
+                "filter_id",
+                "display_name",
+                Url("mxc://localhost/123456"),
             )
 
             cut.init()
@@ -47,6 +49,8 @@ class AccountStoreTest : ShouldSpec({
             cut.accessToken.value shouldBe "access_token"
             cut.syncBatchToken.value shouldBe "sync_token"
             cut.filterId.value shouldBe "filter_id"
+            cut.displayName.value shouldBe "display_name"
+            cut.avatarUrl.value shouldBe Url("mxc://localhost/123456")
         }
         should("start job, which saves changes to database") {
             coEvery { repository.get(1) } returns null
@@ -62,7 +66,9 @@ class AccountStoreTest : ShouldSpec({
                         null,
                         null,
                         null,
-                        null
+                        null,
+                        null,
+                        null,
                     )
                 )
             }

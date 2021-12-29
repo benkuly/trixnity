@@ -25,5 +25,5 @@ suspend fun MatrixApiClient.register(
     val (userId, deviceId, accessToken) = registerResult.value
     requireNotNull(deviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken))
+    return Result.success(MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken, "displayName", null))
 }

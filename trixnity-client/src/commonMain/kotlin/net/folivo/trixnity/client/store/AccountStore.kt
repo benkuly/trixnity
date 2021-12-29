@@ -21,6 +21,8 @@ class AccountStore(
     val accessToken = MutableStateFlow<String?>(null)
     val syncBatchToken = MutableStateFlow<String?>(null)
     val filterId = MutableStateFlow<String?>(null)
+    val displayName = MutableStateFlow<String?>(null)
+    val avatarUrl = MutableStateFlow<Url?>(null)
 
     suspend fun init() {
         val account = rtm.transaction { repository.get(1) }
@@ -30,17 +32,21 @@ class AccountStore(
         accessToken.value = account?.accessToken
         syncBatchToken.value = account?.syncBatchToken
         filterId.value = account?.filterId
+        displayName.value = account?.displayName
+        avatarUrl.value = account?.avatarUrl
 
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
-            combine(baseUrl, userId, deviceId, accessToken, syncBatchToken, filterId) { values ->
+            combine(baseUrl, userId, deviceId, accessToken, syncBatchToken, filterId, displayName, avatarUrl) { values ->
                 Account(
                     baseUrl = values[0] as Url?,
                     userId = values[1] as UserId?,
                     deviceId = values[2] as String?,
                     accessToken = values[3] as String?,
                     syncBatchToken = values[4] as String?,
-                    filterId = values[5] as String?
+                    filterId = values[5] as String?,
+                    displayName = values[6] as String?,
+                    avatarUrl = values[7] as Url?,
                 )
             }.collect { rtm.transaction { repository.save(1, it) } }
         }
