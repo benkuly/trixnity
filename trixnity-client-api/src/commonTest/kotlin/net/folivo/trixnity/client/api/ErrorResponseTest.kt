@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.api
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.client.api.model.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponseSerializer
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals

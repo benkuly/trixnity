@@ -17,10 +17,10 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.media.FileTransferProgress
-import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.sync.SyncApiClient.SyncState.STARTED
-import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.STARTED
+import net.folivo.trixnity.client.api.model.media.FileTransferProgress
+import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService

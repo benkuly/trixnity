@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
-import net.folivo.trixnity.client.api.sync.SyncApiClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey

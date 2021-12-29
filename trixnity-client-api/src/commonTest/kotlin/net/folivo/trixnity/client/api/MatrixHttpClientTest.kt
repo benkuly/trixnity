@@ -15,10 +15,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.api.authentication.IdentifierType
-import net.folivo.trixnity.client.api.uia.AuthenticationRequest
-import net.folivo.trixnity.client.api.uia.AuthenticationType
-import net.folivo.trixnity.client.api.uia.UIA
+import net.folivo.trixnity.client.api.model.ErrorResponse
+import net.folivo.trixnity.client.api.model.authentication.IdentifierType
+import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
+import net.folivo.trixnity.client.api.model.uia.AuthenticationType
+import net.folivo.trixnity.client.api.model.uia.UIAState
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -306,11 +307,11 @@ class MatrixHttpClientTest {
             parameter("param", "dino")
         }.getOrThrow()
         result.shouldBeInstanceOf<UIA.UIAStep<*>>()
-        result.state shouldBe UIA.UIAState(
+        result.state shouldBe UIAState(
             completed = listOf(),
             flows = setOf(
-                UIA.FlowInformation(listOf(AuthenticationType.Password)),
-                UIA.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
+                UIAState.FlowInformation(listOf(AuthenticationType.Password)),
+                UIAState.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
             ),
             parameter = JsonObject(
                 mapOf(
@@ -401,11 +402,11 @@ class MatrixHttpClientTest {
             parameter("param", "dino")
         }.getOrThrow()
         result.shouldBeInstanceOf<UIA.UIAError<*>>()
-        result.state shouldBe UIA.UIAState(
+        result.state shouldBe UIAState(
             completed = listOf(),
             flows = setOf(
-                UIA.FlowInformation(listOf(AuthenticationType.Password)),
-                UIA.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
+                UIAState.FlowInformation(listOf(AuthenticationType.Password)),
+                UIAState.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
             ),
             parameter = JsonObject(
                 mapOf(

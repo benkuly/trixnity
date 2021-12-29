@@ -7,9 +7,9 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.media.FileTransferProgress
-import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod
-import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod.CROP
+import net.folivo.trixnity.client.api.model.media.FileTransferProgress
+import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod
+import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.client.crypto.Aes256CtrInfo
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr

@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.sync.DeviceOneTimeKeysCount
+import net.folivo.trixnity.client.api.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*

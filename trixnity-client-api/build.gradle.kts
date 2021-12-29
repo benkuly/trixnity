@@ -42,6 +42,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-core"))
+                api(project(":trixnity-client-api-model"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")

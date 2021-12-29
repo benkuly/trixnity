@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.rooms.Membership
+import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.RoomUser

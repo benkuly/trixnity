@@ -1,7 +1,7 @@
 object Versions {
     const val kotlin = "1.6.10" // https://kotlinlang.org/
     const val kotlinxCoroutines = "1.6.0" // https://github.com/Kotlin/kotlinx.coroutines/releases
-    const val kotlinxSerialization = "1.3.1" // https://github.com/Kotlin/kotlinx.serialization/releases
+    const val kotlinxSerialization = "1.3.2" // https://github.com/Kotlin/kotlinx.serialization/releases
     const val kotlinxDatetime = "0.3.1" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val kotlinxAtomicfu = "0.17.0" // https://github.com/Kotlin/kotlinx.atomicfu/releases
     const val kotlinxKover = "0.4.4" // https://github.com/Kotlin/kotlinx-kover/releases

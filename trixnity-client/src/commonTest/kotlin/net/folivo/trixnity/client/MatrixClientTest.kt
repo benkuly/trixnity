@@ -15,7 +15,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
-import net.folivo.trixnity.client.api.sync.SyncResponse
+import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store

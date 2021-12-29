@@ -15,10 +15,10 @@ import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
 import io.mockk.*
+import net.folivo.trixnity.client.api.DownloadResponse
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.media.DownloadResponse
-import net.folivo.trixnity.client.api.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.client.api.media.UploadResponse
+import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod.CROP
+import net.folivo.trixnity.client.api.model.media.UploadResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadMedia

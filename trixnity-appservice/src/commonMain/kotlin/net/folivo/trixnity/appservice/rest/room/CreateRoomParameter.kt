@@ -1,7 +1,7 @@
 package net.folivo.trixnity.appservice.rest.room
 
-import net.folivo.trixnity.client.api.rooms.CreateRoomRequest
-import net.folivo.trixnity.client.api.rooms.Visibility
+import net.folivo.trixnity.client.api.model.rooms.CreateRoomRequest
+import net.folivo.trixnity.client.api.model.rooms.Visibility
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent

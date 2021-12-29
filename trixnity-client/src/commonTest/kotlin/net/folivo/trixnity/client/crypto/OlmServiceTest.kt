@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.keys.ClaimKeysResponse
+import net.folivo.trixnity.client.api.model.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore

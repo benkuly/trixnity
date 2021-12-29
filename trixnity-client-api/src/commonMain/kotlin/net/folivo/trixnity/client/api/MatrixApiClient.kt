@@ -6,15 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import net.folivo.trixnity.client.api.authentication.AuthenticationApiClient
-import net.folivo.trixnity.client.api.devices.DevicesApiClient
-import net.folivo.trixnity.client.api.keys.KeysApiClient
-import net.folivo.trixnity.client.api.media.MediaApiClient
-import net.folivo.trixnity.client.api.rooms.RoomsApiClient
-import net.folivo.trixnity.client.api.server.ServerApiClient
-import net.folivo.trixnity.client.api.sync.SyncApiClient
-import net.folivo.trixnity.client.api.sync.SyncResponseSerializer
-import net.folivo.trixnity.client.api.users.UsersApiClient
+import net.folivo.trixnity.client.api.model.sync.SyncResponseSerializer
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings

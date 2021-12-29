@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.authentication.IdentifierType.User
+import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent

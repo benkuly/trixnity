@@ -15,10 +15,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
-import net.folivo.trixnity.client.api.uia.AuthenticationRequest
-import net.folivo.trixnity.client.api.uia.AuthenticationRequestSerializer
-import net.folivo.trixnity.client.api.uia.AuthenticationType
-import net.folivo.trixnity.client.api.uia.UIA
+import net.folivo.trixnity.client.api.model.ErrorResponse
+import net.folivo.trixnity.client.api.model.ErrorResponseSerializer
+import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
+import net.folivo.trixnity.client.api.model.uia.AuthenticationRequestSerializer
+import net.folivo.trixnity.client.api.model.uia.AuthenticationType
+import net.folivo.trixnity.client.api.model.uia.UIAState
 
 class MatrixHttpClient(
     initialHttpClient: HttpClient,
@@ -85,7 +87,7 @@ class MatrixHttpClient(
             val responseText = response.readText()
             if (response.status == HttpStatusCode.Unauthorized) {
                 val responseObject = json.decodeFromString<JsonObject>(responseText)
-                val state = json.decodeFromJsonElement<UIA.UIAState>(responseObject)
+                val state = json.decodeFromJsonElement<UIAState>(responseObject)
                 val errorCode = responseObject["errcode"]
                 val authenticate: suspend (AuthenticationRequest) -> Result<UIA<R>> = { authenticationRequest ->
                     val authBody = JsonObject(
