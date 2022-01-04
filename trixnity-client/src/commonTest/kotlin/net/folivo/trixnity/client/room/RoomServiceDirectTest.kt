@@ -3,21 +3,19 @@ package net.folivo.trixnity.client.room
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -246,28 +244,37 @@ class RoomServiceDirectTest : ShouldSpec({
         }
     }
 
-    context(RoomService::isDirectRoom.name) {
-        should("return 'true' when room is found in user's direct room data") {
-            coEvery { users.getAccountData<DirectEventContent>(any()) } returns MutableStateFlow(
+    context(RoomService::setRoomIsDirect.name) {
+        should("set the room to direct == 'true' when a DirectEventContent is found for the room") {
+            store.room.update(room) { Room(room, isDirect = false) }
+            val event = Event.GlobalAccountDataEvent(
                 DirectEventContent(
                     mappings = mapOf(
                         UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"), room)
                     )
                 )
             )
-            val scope = CoroutineScope(Dispatchers.Default)
-            cut.isDirectRoom(room, scope).value shouldBe true
+
+            cut.setRoomIsDirect(event)
+
+            store.room.get(room).value?.isDirect shouldBe true
         }
-        should("return 'false' when room is not found in user's room data") {
-            coEvery { users.getAccountData<DirectEventContent>(any()) } returns MutableStateFlow(
+        should("set the room to direct == 'false' when no DirectEventContent is found for the room") {
+            val room2 = RoomId("room2", "localhost")
+            store.room.update(room) { Room(room, isDirect = true) }
+            store.room.update(room2) { Room(room, isDirect = true) }
+            val event = Event.GlobalAccountDataEvent(
                 DirectEventContent(
                     mappings = mapOf(
-                        UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"))
+                        UserId("user1", "localhost") to setOf(room2)
                     )
                 )
             )
-            val scope = CoroutineScope(Dispatchers.Default)
-            cut.isDirectRoom(room, scope).value shouldBe false
+
+            cut.setRoomIsDirect(event)
+
+            store.room.get(room).value?.isDirect shouldBe false
+            store.room.get(room2).value?.isDirect shouldBe true
         }
     }
 

@@ -11,6 +11,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 data class Room(
     val roomId: RoomId,
     val name: RoomDisplayName? = null,
+    val avatarUrl: String? = null,
+    val isDirect: Boolean = false,
     val lastMessageEventAt: Instant? = null,
     val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventId !!!
     val lastMessageEventId: EventId? = null,

@@ -1,37 +1,58 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
-import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.rooms.Direction
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.getSender
+import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.possiblyEncryptEvent
+import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
+import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -62,6 +83,10 @@ class RoomService(
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe<StateEventContent> { store.roomState.update(it) }
+        api.sync.subscribe(::setRoomIsDirect)
+        api.sync.subscribe(::setAvatarUrlForDirectRooms)
+        api.sync.subscribe(::setAvatarUrlForMemberUpdates)
+        api.sync.subscribe(::setAvatarUrlForAvatarEvents)
         api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
     }
 
@@ -69,8 +94,6 @@ class RoomService(
     internal suspend fun handleSyncResponse(syncResponse: SyncResponse) {
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
-            // it is possible, that we didn't get our own JOIN event yet, because of lazy loading members
-            // TODO ^-- do we still have this problem or was it because async sync processing?
             store.room.update(roomId) { oldRoom ->
                 oldRoom ?: Room(
                     roomId = roomId,
@@ -100,6 +123,7 @@ class RoomService(
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
+            store.room.update(room.key) { oldRoom -> oldRoom ?: Room(room.key, membership = LEAVE) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = room.key,
@@ -109,6 +133,12 @@ class RoomService(
                 )
                 it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
             }
+        }
+        syncResponse.room?.knock?.entries?.forEach { (room, _) ->
+            store.room.update(room) { oldRoom -> oldRoom ?: Room(room, membership = KNOCK) }
+        }
+        syncResponse.room?.invite?.entries?.forEach { (room, _) ->
+            store.room.update(room) { oldRoom -> oldRoom ?: Room(room, membership = INVITE) }
         }
     }
 
@@ -817,12 +847,68 @@ class RoomService(
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 
-    suspend fun isDirectRoom(roomId: RoomId, scope: CoroutineScope): StateFlow<Boolean> {
-        val isDirect = user.getAccountData<DirectEventContent>(scope).map { direct ->
-            direct?.mappings?.any { (_, rooms) ->
-                rooms?.contains(roomId) ?: false
-            } ?: false
+    internal suspend fun setRoomIsDirect(directEvent: Event<DirectEventContent>) {
+        val allDirectRooms = directEvent.content.mappings.entries.flatMap { (_, rooms) ->
+            rooms ?: emptySet()
+        }.toSet()
+        allDirectRooms.forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
+
+        val allRooms = store.room.getAll().value.map { it.roomId }.toSet()
+        allRooms.subtract(allDirectRooms)
+            .forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
+    }
+
+    internal suspend fun setAvatarUrlForDirectRooms(directEvent: Event<DirectEventContent>) {
+        directEvent.content.mappings.entries.forEach { (userId, rooms) ->
+            rooms?.forEach { room ->
+                if (store.roomState.getByStateKey<AvatarEventContent>(room)?.content?.url.isNullOrEmpty()) {
+                    val avatarUrl =
+                        store.roomState.getByStateKey<MemberEventContent>(
+                            room,
+                            stateKey = userId.full
+                        )?.content?.avatarUrl
+                    store.room.update(room) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
+                }
+            }
         }
-        return isDirect.stateIn(scope)
+    }
+
+    internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
+        memberEvent.getRoomId()?.let { roomId ->
+            val room = store.room.get(roomId).value
+            val ownUserId = store.account.userId.value
+            if (room?.isDirect == true && ownUserId != memberEvent.getSender()) {
+                store.room.update(roomId) { oldRoom ->
+                    oldRoom?.copy(avatarUrl = memberEvent.content.avatarUrl?.ifEmpty { null })
+                }
+            }
+        }
+    }
+
+    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: Event<AvatarEventContent>) {
+        avatarEvent.getRoomId()?.let { roomId ->
+            val avatarUrl = avatarEvent.content.url
+            val room = store.room.get(roomId).value
+            if (room?.isDirect?.not() == true || avatarUrl.isNotEmpty()) {
+                store.room.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl.ifEmpty { null }) }
+            } else if (avatarUrl.isEmpty()) {
+                store.globalAccountData.get(DirectEventContent::class)?.content?.mappings?.let { mappings ->
+                    mappings.entries.forEach { (userId, rooms) ->
+                        rooms
+                            ?.filter { room -> room == roomId }
+                            ?.forEach { room ->
+                                val newAvatarUrl =
+                                    store.roomState.getByStateKey<MemberEventContent>(
+                                        room,
+                                        stateKey = userId.full
+                                    )?.content?.avatarUrl
+                                store.room.update(room) { oldRoom ->
+                                    oldRoom?.copy(avatarUrl = newAvatarUrl?.ifEmpty { null })
+                                }
+                            }
+                    }
+                }
+            }
+        }
     }
 }

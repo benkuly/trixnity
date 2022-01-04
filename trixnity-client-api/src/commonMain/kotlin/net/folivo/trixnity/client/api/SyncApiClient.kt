@@ -146,6 +146,9 @@ class SyncApiClient(
                         .collect { response ->
                             // this scope forces, that we wait for processing events of all subscribers
                             coroutineScope {
+                                coroutineScope {
+                                    syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
+                                }
                                 // do it at first, to be able to decrypt stuff
                                 response.toDevice?.events?.forEach { emitEvent(it) }
                                 response.accountData?.events?.forEach { emitEvent(it) }
@@ -176,9 +179,6 @@ class SyncApiClient(
                                             leftRoom.accountData?.events?.forEach { emitEvent(it) }
                                         }
                                     }
-                                }
-                                coroutineScope {
-                                    syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
                                 }
                                 afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
                             }
