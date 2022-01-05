@@ -25,7 +25,7 @@ class GlobalAccountDataStore(
             else -> contentMappings.globalAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
             ?: throw IllegalArgumentException("Cannot update account data event $event, because it is not supported. You need to register it first.")
-        globalAccountDataCache.updateBySecondKey(eventType, event.key, event)
+        globalAccountDataCache.updateBySecondKey(eventType, event.key) { event }
     }
 
     suspend fun <C : GlobalAccountDataEventContent> get(

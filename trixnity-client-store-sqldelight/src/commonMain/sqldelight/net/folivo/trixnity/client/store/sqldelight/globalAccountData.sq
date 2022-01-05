@@ -20,3 +20,7 @@ VALUES (?, ?, ?);
 deleteGlobalAccountData:
 DELETE FROM sql_global_account_data
 WHERE  type = ?;
+
+deleteGlobalAccountDataByKey:
+DELETE FROM sql_global_account_data
+WHERE type = ? AND key = ?;

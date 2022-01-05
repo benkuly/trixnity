@@ -28,7 +28,7 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun update(event: Event<out StateEventContent>) {
+    suspend fun update(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
@@ -38,12 +38,10 @@ class RoomStateStore(
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
-            roomStateCache.updateBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
+            roomStateCache.updateBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey) {
+                if (skipWhenAlreadyPresent && it != null) it else event
+            }
         }
-    }
-
-    suspend fun updateAll(events: List<Event<out StateEventContent>>) {
-        events.forEach { update(it) }
     }
 
     suspend fun <C : StateEventContent> get(

@@ -21,3 +21,7 @@ VALUES (?, ?, ?, ?);
 deleteRoomAccountData:
 DELETE FROM sql_room_account_data
 WHERE room_id = ? AND type = ?;
+
+deleteRoomAccountDataByKey:
+DELETE FROM sql_room_account_data
+WHERE room_id = ? AND type = ? AND key = ?;

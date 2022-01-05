@@ -26,16 +26,22 @@ class TwoDimensionsRepositoryStateFlowCache<K, V, R : TwoDimensionsStoreReposito
     suspend fun updateBySecondKey(
         firstKey: K,
         secondKey: String,
-        value: V
+        updater: suspend (V?) -> V?
     ) = writeWithCache(
         key = firstKey,
-        updater = { it?.plus(secondKey to value) ?: mapOf(secondKey to value) },
+        updater = {
+            val value = updater(it?.get(secondKey))
+            if (value == null) it?.minus(secondKey)
+            else it?.plus(secondKey to value) ?: mapOf(secondKey to value)
+        },
         // We don't mind, what is stored in database, because we always override it.
         containsInCache = { true },
         retrieveAndUpdateCache = { null },
         persist = {
+            val value = it?.get(secondKey)
             rtm.transaction {
-                repository.saveBySecondKey(firstKey, secondKey, value)
+                if (value == null) repository.deleteBySecondKey(firstKey, secondKey)
+                else repository.saveBySecondKey(firstKey, secondKey, value)
             }
         })
 

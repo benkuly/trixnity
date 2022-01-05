@@ -358,7 +358,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             } returns Result.success(EventId("$1event"))
             store.room.update(roomId) {
-                Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm)
+                Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm, membersLoaded = true)
             }
             store.roomState.update(
                 Event.StateEvent(
@@ -370,7 +370,6 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = ""
                 )
             )
-            coEvery { user.loadMembers(any()) } returns Result.success(Unit)
         }
         context("no direct room with user exists") {
             should("create room and send request into it") {

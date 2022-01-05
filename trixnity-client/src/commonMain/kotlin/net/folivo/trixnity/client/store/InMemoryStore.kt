@@ -59,6 +59,10 @@ class InMemoryTwoDimensionsStoreRepository<K, V> : TwoDimensionsStoreRepository<
     override suspend fun saveBySecondKey(firstKey: K, secondKey: String, value: V) {
         content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) + (secondKey to value))) }
     }
+
+    override suspend fun deleteBySecondKey(firstKey: K, secondKey: String) {
+        content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) - secondKey)) }
+    }
 }
 
 class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,

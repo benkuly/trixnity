@@ -38,14 +38,20 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
 
     context("updateBySecondKey") {
         should("always save") {
-            cut.updateBySecondKey("firstKey", "secondKey", "value")
+            cut.updateBySecondKey("firstKey", "secondKey") { "value" }
             coVerify { repository.saveBySecondKey("firstKey", "secondKey", "value") }
             cut.get("firstKey") shouldBe mapOf("secondKey" to "value")
         }
+        should("always delete") {
+            coEvery { repository.get("firstKey") } returns null
+            cut.updateBySecondKey("firstKey", "secondKey") { null }
+            coVerify { repository.deleteBySecondKey("firstKey", "secondKey") }
+            cut.get("firstKey") shouldBe null
+        }
         should("update existing cache value") {
-            cut.updateBySecondKey("firstKey", "secondKey1", "value1")
+            cut.updateBySecondKey("firstKey", "secondKey1") { "value1" }
             cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
-            cut.updateBySecondKey("firstKey", "secondKey2", "value2")
+            cut.updateBySecondKey("firstKey", "secondKey2") { "value2" }
             cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
         }
     }

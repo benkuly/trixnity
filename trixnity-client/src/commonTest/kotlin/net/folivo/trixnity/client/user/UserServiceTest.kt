@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.user
 
+import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -10,8 +11,12 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
@@ -22,7 +27,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import kotlin.time.Duration.Companion.milliseconds
 
 class UserServiceTest : ShouldSpec({
     timeout = 30_000
@@ -36,6 +43,7 @@ class UserServiceTest : ShouldSpec({
 
     beforeTest {
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
+        coEvery { api.sync.currentSyncState } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
         cut = UserService(store, api)
@@ -46,12 +54,16 @@ class UserServiceTest : ShouldSpec({
         storeScope.cancel()
     }
 
-    context(UserService::loadMembers.name) {
+    context(UserService::handleLoadMembersQueue.name) {
         should("do nothing when members already loaded") {
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            store.room.get(roomId).value shouldBe storedRoom
+            val job = launch { cut.handleLoadMembersQueue() }
+            continually(500.milliseconds) {
+                store.room.get(roomId).value shouldBe storedRoom
+            }
+            job.cancel()
         }
         should("load members") {
             coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
@@ -77,10 +89,53 @@ class UserServiceTest : ShouldSpec({
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            store.room.get(roomId).value?.membersLoaded shouldBe true
+            val job = launch { cut.handleLoadMembersQueue() }
+            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
             store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+            job.cancel()
+        }
+        should("skip members, that are already stored") {
+            store.roomState.update(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    roomId,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
+                flowOf(
+                    StateEvent(
+                        MemberEventContent(membership = LEAVE),
+                        EventId("\$event1"),
+                        alice,
+                        roomId,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event2"),
+                        bob,
+                        roomId,
+                        1234,
+                        stateKey = bob.full
+                    )
+                )
+            )
+            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
+            store.room.update(roomId) { storedRoom }
+            cut.loadMembers(roomId)
+            val job = launch { cut.handleLoadMembersQueue() }
+            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
+            store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
+            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+            job.cancel()
         }
     }
     context(UserService::setRoomUser.name) {
@@ -129,6 +184,20 @@ class UserServiceTest : ShouldSpec({
                     )
                 )
             }
+        }
+        should("skip when user already present") {
+            val event = user1Event.copy(
+                content = MemberEventContent(
+                    displayName = "U1",
+                    membership = JOIN
+                )
+            )
+            cut.setRoomUser(event)
+            cut.setRoomUser(
+                event.copy(content = event.content.copy(displayName = "CHANGED!!!")),
+                skipWhenAlreadyPresent = true
+            )
+            store.roomUser.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
         }
         context("user is new member") {
             should("set our displayName to 'DisplayName'") {
@@ -304,7 +373,7 @@ class UserServiceTest : ShouldSpec({
             }
             should("set our displayName to 'DisplayName (@user:server)'") {
                 val event = user1Event.copy(
-                    content = MemberEventContent(displayName = "OLD", membership = MemberEventContent.Membership.LEAVE)
+                    content = MemberEventContent(displayName = "OLD", membership = LEAVE)
                 )
                 cut.setRoomUser(event)
                 store.roomUser.get(user1, roomId) shouldBe RoomUser(
@@ -343,7 +412,7 @@ class UserServiceTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(
                             displayName = "U1",
-                            membership = MemberEventContent.Membership.LEAVE
+                            membership = LEAVE
                         )
                     )
                     cut.setRoomUser(event)

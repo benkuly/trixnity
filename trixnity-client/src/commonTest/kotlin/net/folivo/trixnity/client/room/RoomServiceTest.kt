@@ -677,7 +677,7 @@ class RoomServiceTest : ShouldSpec({
         should("encrypt events in encrypted rooms") {
             val syncState = MutableStateFlow(RUNNING)
             coEvery { api.sync.currentSyncState } returns syncState
-            store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm) }
+            store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm, membersLoaded = true) }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.add(message)
             val encryptionState =
@@ -694,7 +694,6 @@ class RoomServiceTest : ShouldSpec({
             val megolmEventContent = mockk<MegolmEncryptedEventContent>()
             coEvery { olmService.events.encryptMegolm(any(), any(), any()) } returns megolmEventContent
             coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(flowOf())
-            coEvery { users.loadMembers(any()) } returns Result.success(Unit)
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }

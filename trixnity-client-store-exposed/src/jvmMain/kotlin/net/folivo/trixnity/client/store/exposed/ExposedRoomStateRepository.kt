@@ -60,4 +60,12 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
     override suspend fun delete(key: RoomStateRepositoryKey) {
         ExposedRoomState.deleteWhere { ExposedRoomState.roomId.eq(key.roomId.full) and ExposedRoomState.type.eq(key.type) }
     }
+
+    override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String) {
+        ExposedRoomState.deleteWhere {
+            ExposedRoomState.roomId.eq(firstKey.roomId.full) and
+                    ExposedRoomState.type.eq(firstKey.type) and
+                    ExposedRoomState.stateKey.eq(secondKey)
+        }
+    }
 }

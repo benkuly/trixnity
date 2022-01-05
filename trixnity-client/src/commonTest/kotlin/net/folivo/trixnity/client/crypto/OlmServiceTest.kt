@@ -509,26 +509,24 @@ class OlmServiceTest : ShouldSpec({
     }
     context(OlmService::handleEncryptionEvents.name) {
         should("mark all joined and invited users as outdated") {
-            store.roomState.updateAll(
-                listOf(
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event1"),
-                        alice,
-                        RoomId("room", "server"),
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = INVITE),
-                        EventId("\$event2"),
-                        bob,
-                        RoomId("room", "server"),
-                        1234,
-                        stateKey = bob.full
-                    ),
-                )
-            )
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
             cut.handleEncryptionEvents(
                 StateEvent(
                     EncryptionEventContent(),
@@ -544,26 +542,24 @@ class OlmServiceTest : ShouldSpec({
         should("not mark joined or invited users as outdated, when keys already tracked") {
             store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
             store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to mockk()) }
-            store.roomState.updateAll(
-                listOf(
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event1"),
-                        alice,
-                        RoomId("room", "server"),
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = INVITE),
-                        EventId("\$event2"),
-                        bob,
-                        RoomId("room", "server"),
-                        1234,
-                        stateKey = bob.full
-                    ),
-                )
-            )
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
             cut.handleEncryptionEvents(
                 StateEvent(
                     EncryptionEventContent(),
