@@ -1,10 +1,10 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
+import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
@@ -12,16 +12,21 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
 class RoomStateStore(
-    private val roomStateRepository: RoomStateRepository,
-    private val rtm: RepositoryTransactionManager,
+    roomStateRepository: RoomStateRepository,
+    rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
-    private val roomStateCache = RepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
+    private val roomStateCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
+
+    private fun <C : StateEventContent> findType(eventContentClass: KClass<C>): String {
+        return contentMappings.state.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
+    }
 
     suspend fun update(event: Event<out StateEventContent>) {
         val roomId = event.getRoomId()
@@ -32,17 +37,8 @@ class RoomStateStore(
                 is RedactedStateEventContent -> content.eventType
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
-            requireNotNull(eventType)
-            roomStateCache.writeWithCache(RoomStateRepositoryKey(roomId, eventType),
-                updater = { it?.plus(stateKey to event) ?: mapOf(stateKey to event) },
-                // We don't mind, what is stored in database, because we always override it.
-                containsInCache = { true },
-                retrieveAndUpdateCache = { null },
-                persist = {
-                    rtm.transaction {
-                        roomStateRepository.saveByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
-                    }
-                })
+                ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
+            roomStateCache.updateBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
         }
     }
 
@@ -55,49 +51,18 @@ class RoomStateStore(
         eventContentClass: KClass<C>,
         scope: CoroutineScope
     ): StateFlow<Map<String, Event<C>>?> {
-        val eventType = contentMappings.state.find { it.kClass == eventContentClass }?.type
-            ?: throw IllegalArgumentException("Cannot get state event, because it is not supported. You need to register it first.")
+        val eventType = findType(eventContentClass)
         @Suppress("UNCHECKED_CAST")
-        return roomStateCache.get(
-            RoomStateRepositoryKey(roomId, eventType), scope
-        ) as StateFlow<Map<String, Event<C>>?>
+        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType), scope) as StateFlow<Map<String, Event<C>>?>
     }
 
     suspend fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>
     ): Map<String, Event<C>>? {
-        val eventType = contentMappings.state.find { it.kClass == eventContentClass }?.type
-            ?: throw IllegalArgumentException("Cannot get state event, because it is not supported. You need to register it first.")
+        val eventType = findType(eventContentClass)
         @Suppress("UNCHECKED_CAST")
-        return roomStateCache.get(
-            RoomStateRepositoryKey(roomId, eventType)
-        ) as Map<String, Event<C>>?
-    }
-
-    private suspend fun <C : StateEventContent> getByStateKeyAsFlow(
-        roomId: RoomId,
-        stateKey: String,
-        eventContentClass: KClass<C>,
-        scope: CoroutineScope? = null
-    ): Flow<Event<C>?> {
-        val eventType = contentMappings.state.find { it.kClass == eventContentClass }?.type
-            ?: throw IllegalArgumentException("Cannot get state event, because it is not supported. You need to register it first.")
-        return roomStateCache.readWithCache(
-            RoomStateRepositoryKey(roomId, eventType),
-            containsInCache = { it?.containsKey(stateKey) ?: false },
-            retrieveAndUpdateCache = { cacheValue ->
-                val newValue = rtm.transaction {
-                    roomStateRepository.getByStateKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
-                }
-                if (newValue != null) cacheValue?.plus(stateKey to newValue) ?: mapOf(stateKey to newValue)
-                else cacheValue
-            },
-            scope
-        ).map {
-            @Suppress("UNCHECKED_CAST")
-            it?.get(stateKey) as Event<C>?
-        }
+        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType)) as Map<String, Event<C>>?
     }
 
     suspend fun <C : StateEventContent> getByStateKey(
@@ -106,7 +71,11 @@ class RoomStateStore(
         eventContentClass: KClass<C>,
         scope: CoroutineScope
     ): StateFlow<Event<C>?> {
-        return getByStateKeyAsFlow(roomId, stateKey, eventContentClass, scope).stateIn(scope)
+        val eventType = findType(eventContentClass)
+        @Suppress("UNCHECKED_CAST")
+        return roomStateCache.getBySecondKey(
+            RoomStateRepositoryKey(roomId, eventType), stateKey, scope
+        ) as StateFlow<Event<C>?>
     }
 
     suspend fun <C : StateEventContent> getByStateKey(
@@ -114,6 +83,8 @@ class RoomStateStore(
         stateKey: String,
         eventContentClass: KClass<C>,
     ): Event<C>? {
-        return getByStateKeyAsFlow(roomId, stateKey, eventContentClass).firstOrNull()
+        val eventType = findType(eventContentClass)
+        @Suppress("UNCHECKED_CAST")
+        return roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey) as Event<C>?
     }
 }

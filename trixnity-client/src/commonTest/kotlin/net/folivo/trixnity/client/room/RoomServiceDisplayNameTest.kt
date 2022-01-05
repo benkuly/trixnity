@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")

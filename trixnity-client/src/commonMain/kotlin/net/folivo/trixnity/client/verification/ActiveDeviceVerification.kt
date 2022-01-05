@@ -13,21 +13,21 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.Timeout
-import net.folivo.trixnity.core.model.events.m.key.verification.RequestEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
+import net.folivo.trixnity.core.model.events.m.key.verification.*
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
 
 class ActiveDeviceVerification(
-    request: RequestEventContent,
+    request: VerificationRequestEventContent,
     requestIsOurs: Boolean,
     ownUserId: UserId,
     ownDeviceId: String,
     theirUserId: UserId,
-    theirDeviceId: String,
+    theirDeviceId: String? = null,
+    private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixApiClient,
     private val olm: OlmService,
@@ -96,6 +96,24 @@ class ActiveDeviceVerification(
         if (eventTransactionId != null && eventTransactionId == transactionId
             && isVerificationRequestActive(timestamp, state.value)
         ) {
+            if (step is VerificationReadyEventContent) {
+                val cancelDeviceIds = theirDeviceIds - step.fromDevice
+                if (cancelDeviceIds.isNotEmpty()) {
+                    val cancelEvent =
+                        VerificationCancelEventContent(Accepted, "accepted by other device", relatesTo, transactionId)
+                    try {
+                        api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
+                            try {
+                                olm.events.encryptOlm(cancelEvent, theirUserId, it)
+                            } catch (olmError: OlmLibraryException) {
+                                cancelEvent
+                            }
+                        }))
+                    } catch (error: Throwable) {
+                        log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }
+                    }
+                }
+            }
             handleIncomingVerificationStep(step, sender, false)
         }
     }

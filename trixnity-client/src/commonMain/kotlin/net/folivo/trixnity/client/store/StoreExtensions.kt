@@ -37,15 +37,18 @@ suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
 
 suspend inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
+    key: String = "",
     scope: CoroutineScope
-): StateFlow<RoomAccountDataEvent<C>?> = get(roomId, C::class, scope)
+): StateFlow<RoomAccountDataEvent<C>?> = get(roomId, C::class, key, scope)
 
 suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
+    key: String = "",
     scope: CoroutineScope
-): StateFlow<GlobalAccountDataEvent<C>?> = get(C::class, scope)
+): StateFlow<GlobalAccountDataEvent<C>?> = get(C::class, key, scope)
 
 suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
-): GlobalAccountDataEvent<C>? = get(C::class)
+    key: String = ""
+): GlobalAccountDataEvent<C>? = get(C::class, key)
 
 // TODO test
 suspend inline fun RoomStateStore.members(

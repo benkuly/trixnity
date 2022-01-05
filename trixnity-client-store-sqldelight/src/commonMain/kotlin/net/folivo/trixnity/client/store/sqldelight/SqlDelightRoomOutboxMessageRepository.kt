@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.coroutines.CoroutineContext
 
 

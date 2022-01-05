@@ -1,10 +1,13 @@
 package net.folivo.trixnity.client.crypto
 
-class Aes256CtrInfo(
-    val encryptedContent: ByteArray,
-    val initialisationVector: ByteArray,
-    val key: ByteArray
-)
+internal expect suspend fun encryptAes256Ctr(
+    content: ByteArray,
+    key: ByteArray,
+    initialisationVector: ByteArray
+): ByteArray
 
-expect suspend fun encryptAes256Ctr(content: ByteArray): Aes256CtrInfo
-expect suspend fun decryptAes256Ctr(content: Aes256CtrInfo): ByteArray
+internal expect suspend fun decryptAes256Ctr(
+    encryptedContent: ByteArray,
+    key: ByteArray,
+    initialisationVector: ByteArray
+): ByteArray

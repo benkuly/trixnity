@@ -98,8 +98,8 @@ suspend fun possiblyEncryptEvent(
 
 @OptIn(ExperimentalTime::class)
 suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIsRunning(
-    onError: suspend (error: Throwable) -> Unit,
-    onCancel: suspend () -> Unit,
+    onError: suspend (error: Throwable) -> Unit = {},
+    onCancel: suspend () -> Unit = {},
     scope: CoroutineScope,
     block: suspend () -> Unit
 ) {

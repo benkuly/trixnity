@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreTest : ShouldSpec({
     lateinit var driver: SqlDriver

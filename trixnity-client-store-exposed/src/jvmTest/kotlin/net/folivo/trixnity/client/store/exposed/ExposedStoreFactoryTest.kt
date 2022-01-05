@@ -8,7 +8,7 @@ import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction

@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.sqldelight
 
 import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.JsonObject
@@ -36,15 +37,18 @@ class SqlDelightRoomAccountDataRepositoryTest : ShouldSpec({
         val roomId2 = RoomId("room2", "server")
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
-        val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1)
-        val accountDataEvent2 = RoomAccountDataEvent(
-            UnknownRoomAccountDataEventContent(
-                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                "org.example.mynamespace"
-            ),
-            roomId2,
+        val accountDataEvent1 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, ""))
+        val accountDataEvent2 = mapOf(
+            "" to RoomAccountDataEvent(
+                UnknownRoomAccountDataEventContent(
+                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                    "org.example.mynamespace"
+                ),
+                roomId2,
+                ""
+            )
         )
-        val accountDataEvent3 = accountDataEvent2.copy(roomId = roomId1)
+        val accountDataEvent3 = mapOf("" to accountDataEvent2[""]!!.copy(roomId = roomId1))
 
         cut.save(key1, accountDataEvent1)
         cut.save(key2, accountDataEvent2)
@@ -53,6 +57,13 @@ class SqlDelightRoomAccountDataRepositoryTest : ShouldSpec({
         cut.save(key2, accountDataEvent3)
         cut.get(key2) shouldBe accountDataEvent3
         cut.delete(key1)
-        cut.get(key1) shouldBe null
+        cut.get(key1)?.shouldHaveSize(0)
+    }
+    should("save and get by second key") {
+        val roomId = RoomId("someRoom", "server")
+        val key = RoomAccountDataRepositoryKey(roomId, "m.fully_read")
+        val accountDataEvent = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId, "")
+        cut.saveBySecondKey(key, "", accountDataEvent)
+        cut.getBySecondKey(key, "") shouldBe accountDataEvent
     }
 })

@@ -8,8 +8,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.crypto.Keys
 import net.folivo.trixnity.core.model.events.m.key.verification.*
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.olm.OlmSAS
 
 sealed interface ActiveSasVerificationState {
@@ -31,7 +31,7 @@ sealed interface ActiveSasVerificationState {
                 val commitment = createSasCommitment(olmSas.publicKey, content, json)
                 send(SasAcceptEventContent(commitment, relatesTo = relatesTo, transactionId = transactionId))
             } else {
-                send(CancelEventContent(UnknownMethod, "we only support sha256", relatesTo, transactionId))
+                send(VerificationCancelEventContent(UnknownMethod, "we only support sha256", relatesTo, transactionId))
             }
         }
     }
@@ -70,15 +70,20 @@ sealed interface ActiveSasVerificationState {
                     )
                     val macs = keysToMac.map { it.copy(value = olmSas.calculateMac(it.value, baseInfo + it.fullKeyId)) }
                     send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
-                } else send(CancelEventContent(InternalError, "no keys found", relatesTo, transactionId))
+                } else send(VerificationCancelEventContent(InternalError, "no keys found", relatesTo, transactionId))
             } else send(
-                CancelEventContent(UnknownMethod, "message authentication code not supported", relatesTo, transactionId)
+                VerificationCancelEventContent(
+                    UnknownMethod,
+                    "message authentication code not supported",
+                    relatesTo,
+                    transactionId
+                )
             )
         }
 
 
         suspend fun noMatch() {
-            send(CancelEventContent(MismatchedSas, "no match of SAS", relatesTo, transactionId))
+            send(VerificationCancelEventContent(MismatchedSas, "no match of SAS", relatesTo, transactionId))
         }
     }
 

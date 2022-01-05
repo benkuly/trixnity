@@ -61,9 +61,7 @@ class OutboxIT {
         ).build()
         database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
         val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
-        val secureStore = object : SecureStore {
-            override val olmPickleKey = ""
-        }
+        val secureStore = SecureStore()
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,

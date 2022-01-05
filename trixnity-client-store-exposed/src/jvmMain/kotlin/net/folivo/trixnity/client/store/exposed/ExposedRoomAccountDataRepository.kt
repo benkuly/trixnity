@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.*
 internal object ExposedRoomAccountData : Table("room_account_data") {
     val roomId = varchar("room_id", length = 65535)
     val type = varchar("type", length = 65535)
+    val key = varchar("key", length = 65535)
     override val primaryKey = PrimaryKey(roomId, type)
     val event = text("event")
 }
@@ -19,20 +20,21 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: RoomAccountDataRepositoryKey): Event.RoomAccountDataEvent<*>? {
+    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> {
         return ExposedRoomAccountData.select {
             ExposedRoomAccountData.roomId.eq(key.roomId.full) and
                     ExposedRoomAccountData.type.eq(key.type)
-        }.firstOrNull()?.let {
-            json.decodeFromString(serializer, it[ExposedRoomAccountData.event])
+        }.associate {
+            it[ExposedRoomAccountData.key] to json.decodeFromString(serializer, it[ExposedRoomAccountData.event])
         }
     }
 
-    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Event.RoomAccountDataEvent<*>) {
-        ExposedRoomAccountData.replace {
-            it[roomId] = key.roomId.full
-            it[type] = key.type
-            it[event] = json.encodeToString(serializer, value)
+    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Map<String, Event.RoomAccountDataEvent<*>>) {
+        ExposedRoomAccountData.batchReplace(value.entries) { (secondKey, event) ->
+            this[ExposedRoomAccountData.roomId] = key.roomId.full
+            this[ExposedRoomAccountData.type] = key.type
+            this[ExposedRoomAccountData.key] = secondKey
+            this[ExposedRoomAccountData.event] = json.encodeToString(serializer, event)
         }
     }
 
@@ -40,6 +42,32 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         ExposedRoomAccountData.deleteWhere {
             ExposedRoomAccountData.roomId.eq(key.roomId.full) and
                     ExposedRoomAccountData.type.eq(key.type)
+        }
+    }
+
+    override suspend fun getBySecondKey(
+        firstKey: RoomAccountDataRepositoryKey,
+        secondKey: String
+    ): Event.RoomAccountDataEvent<*>? {
+        return ExposedRoomAccountData.select {
+            ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
+                    ExposedRoomAccountData.type.eq(firstKey.type) and
+                    ExposedRoomAccountData.key.eq(secondKey)
+        }.firstOrNull()?.let {
+            json.decodeFromString(serializer, it[ExposedRoomAccountData.event])
+        }
+    }
+
+    override suspend fun saveBySecondKey(
+        firstKey: RoomAccountDataRepositoryKey,
+        secondKey: String,
+        value: Event.RoomAccountDataEvent<*>
+    ) {
+        ExposedRoomAccountData.replace {
+            it[this.roomId] = firstKey.roomId.full
+            it[this.type] = firstKey.type
+            it[this.key] = secondKey
+            it[this.event] = json.encodeToString(serializer, value)
         }
     }
 

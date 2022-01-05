@@ -65,10 +65,8 @@ class OlmServiceTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
         store.init()
-        store.account.userId.value = alice
-        store.account.deviceId.value = aliceDevice
         coEvery { secureStore.olmPickleKey } returns ""
-        cut = OlmService(store, secureStore, api, json)
+        cut = OlmService(alice, aliceDevice, store, secureStore, api, json)
     }
 
     afterTest {
@@ -116,15 +114,13 @@ class OlmServiceTest : ShouldSpec({
         context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
                 val bobStore = InMemoryStore(storeScope).apply { init() }
-                bobStore.account.userId.value = bob
-                bobStore.account.deviceId.value = bobDevice
-                val bobOlmService = OlmService(bobStore, secureStore, api, json)
+                val bobOlmService = OlmService(bob, bobDevice, bobStore, secureStore, api, json)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
-                    val cutWithAccount = OlmService(store, secureStore, api, json)
+                    val cutWithAccount = OlmService(alice, aliceDevice, store, secureStore, api, json)
                     store.keys.updateDeviceKeys(bob) {
                         mapOf(
                             bobDevice to StoredDeviceKeys(
@@ -135,8 +131,8 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                bobOlmService.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                                bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                                bobOlmService.ownDeviceKeys.signed.get<Curve25519Key>()!!,
+                                                bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!
                                             )
                                         )
                                     ), mapOf()
@@ -154,8 +150,8 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                cutWithAccount.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                                cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                                cutWithAccount.ownDeviceKeys.signed.get<Curve25519Key>()!!,
+                                                cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!
                                             )
                                         )
                                     ), mapOf()
@@ -205,23 +201,23 @@ class OlmServiceTest : ShouldSpec({
                             Event.OlmEvent(
                                 eventContent,
                                 bob,
-                                keysOf(bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!),
+                                keysOf(bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!),
                                 alice,
-                                keysOf(cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!)
+                                keysOf(cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!)
                             )
                         )
                     )
 
                     assertSoftly(
                         store.olm.getInboundMegolmSession(
-                            bobOlmService.myDeviceKeys.signed.get()!!,
+                            bobOlmService.ownDeviceKeys.signed.get()!!,
                             outboundSession.sessionId,
                             RoomId("room", "server")
                         )!!
                     ) {
                         roomId shouldBe RoomId("room", "server")
                         sessionId shouldBe outboundSession.sessionId
-                        senderKey shouldBe bobOlmService.myDeviceKeys.signed.get()!!
+                        senderKey shouldBe bobOlmService.ownDeviceKeys.signed.get()!!
                     }
 
                     bobOlmService.free()
@@ -233,15 +229,13 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleOlmEncryptedToDeviceEvents.name) {
         should("emit decrypted events") {
             val bobStore = InMemoryStore(storeScope).apply { init() }
-            bobStore.account.userId.value = bob
-            bobStore.account.deviceId.value = bobDevice
-            val bobOlmService = OlmService(bobStore, secureStore, api, json)
+            val bobOlmService = OlmService(bob, bobDevice, bobStore, secureStore, api, json)
             freeAfter(
                 OlmAccount.create()
             ) { aliceAccount ->
                 aliceAccount.generateOneTimeKeys(1)
                 store.olm.storeAccount(aliceAccount, "")
-                val cutWithAccount = OlmService(store, secureStore, api, json)
+                val cutWithAccount = OlmService(alice, aliceDevice, store, secureStore, api, json)
                 store.keys.updateDeviceKeys(bob) {
                     mapOf(
                         bobDevice to StoredDeviceKeys(
@@ -252,8 +246,8 @@ class OlmServiceTest : ShouldSpec({
                                     algorithms = setOf(Olm, Megolm),
                                     keys = Keys(
                                         keysOf(
-                                            bobOlmService.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                            bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                            bobOlmService.ownDeviceKeys.signed.get<Curve25519Key>()!!,
+                                            bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!
                                         )
                                     )
                                 ), mapOf()
@@ -271,8 +265,8 @@ class OlmServiceTest : ShouldSpec({
                                     algorithms = setOf(Olm, Megolm),
                                     keys = Keys(
                                         keysOf(
-                                            cutWithAccount.myDeviceKeys.signed.get<Curve25519Key>()!!,
-                                            cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!
+                                            cutWithAccount.ownDeviceKeys.signed.get<Curve25519Key>()!!,
+                                            cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!
                                         )
                                     )
                                 ), mapOf()
@@ -329,9 +323,9 @@ class OlmServiceTest : ShouldSpec({
                     decrypted shouldBe Event.OlmEvent(
                         eventContent,
                         bob,
-                        keysOf(bobOlmService.myDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null)),
+                        keysOf(bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null)),
                         alice,
-                        keysOf(cutWithAccount.myDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null))
+                        keysOf(cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null))
                     )
                 }
                 scope.cancel()

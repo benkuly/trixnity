@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 @Serializable
 data class RoomKeyRequestEventContent(
     @SerialName("action")
-    val action: Action,
+    val action: KeyRequestAction,
     @SerialName("requesting_device_id")
     val requestingDeviceId: String,
     @SerialName("request_id")
@@ -20,14 +20,6 @@ data class RoomKeyRequestEventContent(
     @SerialName("body")
     val body: RequestedKeyInfo? = null
 ) : ToDeviceEventContent {
-    @Serializable
-    enum class Action {
-        @SerialName("request")
-        REQUEST,
-
-        @SerialName("request_cancellation")
-        REQUEST_CANCELLATION
-    }
 
     @Serializable
     data class RequestedKeyInfo(

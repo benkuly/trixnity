@@ -46,7 +46,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds

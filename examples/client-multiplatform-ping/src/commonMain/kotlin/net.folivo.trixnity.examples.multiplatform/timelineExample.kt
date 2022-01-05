@@ -26,9 +26,7 @@ suspend fun timelineExample() = coroutineScope {
     val password = "password"
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
-    val secureStore = object : SecureStore {
-        override val olmPickleKey = ""
-    }
+    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         secureStore = secureStore,

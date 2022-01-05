@@ -81,8 +81,6 @@ class OlmEventServiceTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        store.account.userId.value = alice
-        store.account.deviceId.value = aliceDeviceId
         store.keys.updateDeviceKeys(bob) {
             mapOf(
                 bobDeviceId to StoredDeviceKeys(
@@ -113,7 +111,7 @@ class OlmEventServiceTest : ShouldSpec({
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
         every { secureStore.olmPickleKey } returns ""
 
-        cut = OlmEventService(json, aliceAccount, store, secureStore, api, signService)
+        cut = OlmEventService(alice, aliceDeviceId, json, aliceAccount, store, secureStore, api, signService)
     }
 
     afterTest {

@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import kotlin.test.assertNotNull

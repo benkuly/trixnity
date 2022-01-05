@@ -10,7 +10,6 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.media.FileTransferProgress
 import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.client.crypto.Aes256CtrInfo
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
@@ -22,6 +21,7 @@ import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
+import kotlin.random.Random
 
 private val log = KotlinLogging.logger {}
 
@@ -66,13 +66,11 @@ class MediaService(
             throw DecryptionException.ValidationFailed
         }
         decryptAes256Ctr(
-            Aes256CtrInfo(
-                encryptedContent = media,
-                initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),
-                // url-safe base64 is given
-                key = encryptedFile.key.key.replace("-", "+").replace("_", "/")
-                    .decodeUnpaddedBase64Bytes()
-            )
+            encryptedContent = media,
+            initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),
+            // url-safe base64 is given
+            key = encryptedFile.key.key.replace("-", "+").replace("_", "/")
+                .decodeUnpaddedBase64Bytes()
         )
     }
 
@@ -116,18 +114,21 @@ class MediaService(
     }
 
     suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
-        val encrypted = encryptAes256Ctr(content)
-        val cacheUri = prepareUploadMedia(encrypted.encryptedContent, ContentType.Application.OctetStream)
+        val key = Random.nextBytes(32)
+        val nonce = Random.nextBytes(8)
+        val initialisationVector = nonce + ByteArray(8)
+        val encrypted = encryptAes256Ctr(content = content, key = key, initialisationVector = initialisationVector)
+        val cacheUri = prepareUploadMedia(encrypted, ContentType.Application.OctetStream)
         val hash = freeAfter(OlmUtility.create()) {
-            it.sha256(encrypted.encryptedContent)
+            it.sha256(encrypted)
         }
         return EncryptedFile(
             url = cacheUri,
             key = EncryptedFile.JWK(
                 // url-safe base64 is required
-                key = encrypted.key.encodeUnpaddedBase64().replace("+", "-").replace("/", "_")
+                key = key.encodeUnpaddedBase64().replace("+", "-").replace("/", "_")
             ),
-            initialisationVector = encrypted.initialisationVector.encodeUnpaddedBase64(),
+            initialisationVector = initialisationVector.encodeUnpaddedBase64(),
             hashes = mapOf("sha256" to hash)
         )
     }

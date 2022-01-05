@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
 class RoomsApiClient(
@@ -497,13 +497,15 @@ class RoomsApiClient(
         accountDataEventContentClass: KClass<C>,
         roomId: RoomId,
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
     ): Result<C> {
         val mapping = contentMappings.roomAccountData.find { it.kClass == accountDataEventContentClass }
             ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val eventType = if (key.isEmpty()) mapping.type else mapping.type + key
         return httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/${mapping.type}")
+            url("/_matrix/client/v3/user/${userId.e()}/rooms/${roomId.e()}/account_data/$eventType")
             parameter("user_id", asUserId)
         }.mapCatching {
             @Suppress("UNCHECKED_CAST")
@@ -518,8 +520,9 @@ class RoomsApiClient(
     suspend inline fun <reified C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
-    ): Result<C> = getAccountData(C::class, roomId, userId, asUserId)
+    ): Result<C> = getAccountData(C::class, roomId, userId, key, asUserId)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
@@ -528,10 +531,12 @@ class RoomsApiClient(
         content: C,
         roomId: RoomId,
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
     ): Result<Unit> {
         val eventType =
             contentMappings.roomAccountData.find { it.kClass.isInstance(content) }?.type
+                ?.let { type -> if (key.isEmpty()) type else type + key }
                 ?: throw IllegalArgumentException(unsupportedEventType(content::class))
         return httpClient.request {
             method = Put

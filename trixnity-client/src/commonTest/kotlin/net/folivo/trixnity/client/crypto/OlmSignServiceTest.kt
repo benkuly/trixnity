@@ -10,7 +10,6 @@ import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
@@ -52,17 +51,11 @@ class OlmSignServiceTest : ShouldSpec({
 
 
     beforeTest {
-        aliceSigningAccountSignService = OlmSignService(json, mockk {
-            every { this@mockk.account.userId } returns MutableStateFlow(UserId("alice", "server"))
-            every { this@mockk.account.deviceId } returns MutableStateFlow("ALICE_DEVICE")
-        }, aliceSigningAccount, utility)
-        bobSigningAccountSignService = OlmSignService(json, mockk {
-            every { this@mockk.account.userId } returns MutableStateFlow(UserId("bob", "server"))
-            every { this@mockk.account.deviceId } returns MutableStateFlow("BBBBBB")
-        }, bobSigningAccount, utility)
+        aliceSigningAccountSignService =
+            OlmSignService(UserId("alice", "server"), "ALICE_DEVICE", json, mockk(), aliceSigningAccount, utility)
+        bobSigningAccountSignService =
+            OlmSignService(UserId("bob", "server"), "BBBBBB", json, mockk(), bobSigningAccount, utility)
 
-        every { store.account.userId } returns MutableStateFlow(UserId("me", "server"))
-        every { store.account.deviceId } returns MutableStateFlow("ABCDEF")
         coEvery { store.keys.getDeviceKeys(bob) } returns mapOf(
             "BBBBBB" to StoredDeviceKeys(
                 Signed(
@@ -79,7 +72,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
         )
         coEvery { store.keys.outdatedKeys } returns MutableStateFlow(setOf())
-        cut = OlmSignService(json, store, account, utility)
+        cut = OlmSignService(UserId("me", "server"), "ABCDEF", json, store, account, utility)
     }
 
     afterTest {

@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class RoomStateStoreTest : ShouldSpec({
     val roomStateRepository = mockk<RoomStateRepository>(relaxUnitFun = true)
@@ -61,12 +61,12 @@ class RoomStateStoreTest : ShouldSpec({
             cut.update(event2)
 
             coVerifyAll {
-                roomStateRepository.saveByStateKey(
+                roomStateRepository.saveBySecondKey(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@user:server",
                     event1
                 )
-                roomStateRepository.saveByStateKey(
+                roomStateRepository.saveBySecondKey(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@alice:server",
                     event2
@@ -95,18 +95,18 @@ class RoomStateStoreTest : ShouldSpec({
     context("getByStateKey") {
         should("return matching event") {
             coEvery {
-                roomStateRepository.getByStateKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
+                roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
             } returns event1
             cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
         }
         should("prefer cache") {
             coEvery {
-                roomStateRepository.getByStateKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
+                roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
             } returns event1
             cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
             cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
             coVerify(exactly = 1) {
-                roomStateRepository.getByStateKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
+                roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
             }
         }
     }

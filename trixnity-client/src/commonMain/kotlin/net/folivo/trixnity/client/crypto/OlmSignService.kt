@@ -17,20 +17,19 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 
 class OlmSignService internal constructor(
+    private val ownUserId: UserId,
+    private val ownDeviceId: String,
     private val json: Json,
     private val store: Store,
     private val account: OlmAccount,
     private val utility: OlmUtility,
 ) {
-    private val myUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
-    private val myDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
-
     fun signatures(jsonObject: JsonObject): Signatures<UserId> {
         val signature = account.sign(canonicalFilteredJson(jsonObject))
         return mapOf(
-            myUserId to keysOf(
+            ownUserId to keysOf(
                 Ed25519Key(
-                    keyId = myDeviceId,
+                    keyId = ownDeviceId,
                     value = signature
                 )
             )

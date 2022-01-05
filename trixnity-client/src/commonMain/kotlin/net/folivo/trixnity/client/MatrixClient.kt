@@ -11,10 +11,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.api.model.authentication.LoginType
 import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerializerMappings
 import net.folivo.trixnity.client.api.createMatrixApiClientJson
+import net.folivo.trixnity.client.api.model.authentication.IdentifierType
+import net.folivo.trixnity.client.api.model.authentication.LoginType
 import net.folivo.trixnity.client.api.model.users.Filters
 import net.folivo.trixnity.client.api.model.users.RoomFilter
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
@@ -32,7 +32,7 @@ import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 private val log = KotlinLogging.logger {}
 
@@ -59,6 +59,8 @@ class MatrixClient private constructor(
 
     init {
         olm = OlmService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
             store = store,
             secureStore = secureStore,
             api = api,
@@ -83,18 +85,19 @@ class MatrixClient private constructor(
         )
         key = KeyService(
             store = store,
+            secureStore = secureStore,
             api = api,
-            olmSignService = olm.sign,
+            olm = olm,
         )
         verification = VerificationService(
             ownUserId = userId,
             ownDeviceId = deviceId,
             api = api,
             store = store,
-            olm = olm,
-            room = room,
-            user = user,
-            key = key,
+            olmService = olm,
+            roomService = room,
+            userService = user,
+            keyService = key,
         )
 
     }
@@ -196,14 +199,14 @@ class MatrixClient private constructor(
             )
 
             store.keys.updateDeviceKeys(userId) {
-                mapOf(deviceId to StoredDeviceKeys(matrixClient.olm.myDeviceKeys, Valid(true)))
+                mapOf(deviceId to StoredDeviceKeys(matrixClient.olm.ownDeviceKeys, Valid(true)))
             }
-            matrixClient.olm.myDeviceKeys.signed.keys.forEach {
+            matrixClient.olm.ownDeviceKeys.signed.keys.forEach {
                 store.keys.saveKeyVerificationState(
                     it, userId, deviceId, KeyVerificationState.Verified(it.value)
                 )
             }
-            api.keys.uploadKeys(deviceKeys = matrixClient.olm.myDeviceKeys)
+            api.keys.uploadKeys(deviceKeys = matrixClient.olm.ownDeviceKeys)
             store.keys.outdatedKeys.update { it + userId }
 
             matrixClient
@@ -286,13 +289,13 @@ class MatrixClient private constructor(
             }
             everythingStarted.first { it } // we wait until everything has started
 
-            val myUserId = store.account.userId.value
-            requireNotNull(myUserId)
+            val ownUserId = store.account.userId.value
+            requireNotNull(ownUserId)
             val filterId = store.account.filterId.value
             if (filterId == null) {
                 log.debug { "set new filter for sync" }
                 store.account.filterId.value = api.users.setFilter(
-                    myUserId,
+                    ownUserId,
                     Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
                 ).getOrThrow()
             }

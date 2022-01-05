@@ -19,9 +19,7 @@ suspend fun verificationExample() = coroutineScope {
     val username = "username"
     val password = "password"
     val baseUrl = Url("https://example.org")
-    val secureStore = object : SecureStore {
-        override val olmPickleKey = ""
-    }
+    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         secureStore = secureStore,

@@ -1036,6 +1036,35 @@ class RoomsApiClientTest {
     }
 
     @Test
+    fun shouldGetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_readkey",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"event_id":"$1event"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.getAccountData<FullyReadEventContent>(
+            RoomId("room", "server"),
+            UserId("alice", "example.com"),
+            key = "key"
+        ).getOrThrow().shouldBe(
+            FullyReadEventContent(EventId("$1event"))
+        )
+    }
+
+    @Test
     fun shouldSetAccountData() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -1063,6 +1092,38 @@ class RoomsApiClientTest {
             FullyReadEventContent(EventId("$1event")),
             RoomId("room", "server"),
             UserId("alice", "example.com")
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldSetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_readkey",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"event_id":"$1event"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.rooms.setAccountData(
+            FullyReadEventContent(EventId("$1event")),
+            RoomId("room", "server"),
+            UserId("alice", "example.com"),
+            key = "key"
         ).getOrThrow()
     }
 

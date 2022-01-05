@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
@@ -26,7 +26,7 @@ fun isVerificationRequestActive(timestamp: Long, state: ActiveVerificationState)
 
 internal suspend fun createSasCommitment(
     publicKey: String,
-    content: StartEventContent,
+    content: VerificationStartEventContent,
     json: Json
 ): String {
     val jsonObject = json.encodeToJsonElement(content)

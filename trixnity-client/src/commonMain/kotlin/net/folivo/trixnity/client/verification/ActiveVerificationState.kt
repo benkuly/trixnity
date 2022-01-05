@@ -18,7 +18,7 @@ sealed interface ActiveVerificationState {
         private val send: suspend (VerificationStep) -> Unit
     ) : ActiveVerificationState {
         suspend fun ready() {
-            send(ReadyEventContent(ownDeviceId, supportedMethods, relatesTo, transactionId))
+            send(VerificationReadyEventContent(ownDeviceId, supportedMethods, relatesTo, transactionId))
         }
     }
 
@@ -31,7 +31,7 @@ sealed interface ActiveVerificationState {
     ) : ActiveVerificationState {
         suspend fun start(method: VerificationMethod) {
             val content = when (method) {
-                is VerificationMethod.Sas -> StartEventContent.SasStartEventContent(
+                is VerificationMethod.Sas -> VerificationStartEventContent.SasStartEventContent(
                     fromDevice = ownDeviceId,
                     relatesTo = relatesTo,
                     transactionId = transactionId
@@ -51,5 +51,5 @@ sealed interface ActiveVerificationState {
     data class PartlyDone(val isOurOwn: Boolean) : ActiveVerificationState
 
     object Done : ActiveVerificationState
-    data class Cancel(val content: CancelEventContent, val sender: UserId) : ActiveVerificationState
+    data class Cancel(val content: VerificationCancelEventContent, val sender: UserId) : ActiveVerificationState
 }

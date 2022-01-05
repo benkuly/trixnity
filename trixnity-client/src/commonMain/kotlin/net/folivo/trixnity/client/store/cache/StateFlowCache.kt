@@ -14,14 +14,14 @@ open class StateFlowCache<K, V>(
     val infiniteCache: Boolean = false,
     private val cacheDuration: Duration = 1.minutes,
 ) {
-    private val _cache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
-    val cache = _cache
+    protected val internalCache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
+    val cache = internalCache
         .map { value -> value.mapValues { it.value.value.asStateFlow() } }
         .stateIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0), mapOf())
 
     fun init(initialValues: Map<K, V>) {
         require(infiniteCache) { "Cache cannot be initialized with values, when infiniteCache is disabled." }
-        _cache.value =
+        internalCache.value =
             initialValues.mapValues {
                 val removeTime = MutableStateFlow(Duration.INFINITE)
                 StateFlowCacheValue<V?>(
@@ -34,7 +34,7 @@ open class StateFlowCache<K, V>(
     }
 
     fun reset() {
-        _cache.value = emptyMap()
+        internalCache.value = emptyMap()
     }
 
     suspend fun readWithCache(
@@ -43,7 +43,7 @@ open class StateFlowCache<K, V>(
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         scope: CoroutineScope? = null
     ): StateFlow<V?> {
-        val result = _cache.updateAndGet { oldCache ->
+        val result = internalCache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
 
             val job = scope?.coroutineContext?.get(Job)
@@ -53,7 +53,7 @@ open class StateFlowCache<K, V>(
             if (infiniteCache.not())
                 job?.invokeOnCompletion {
                     cacheScope.launch {
-                        _cache.update {
+                        internalCache.update {
                             when (val currentValue = it[key]) {
                                 null -> it
                                 else -> {
@@ -97,7 +97,7 @@ open class StateFlowCache<K, V>(
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         persist: suspend (newValue: V?) -> Unit
     ) {
-        val result = _cache.updateAndGet { oldCache ->
+        val result = internalCache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
             val newCacheValue: StateFlowCacheValue<V?>? =
                 if (cacheValue == null) {
@@ -135,7 +135,7 @@ open class StateFlowCache<K, V>(
             if (infiniteCache.not())
                 removeTimer.collectLatest { duration ->
                     delay(duration)
-                    _cache.update {
+                    internalCache.update {
                         val currentValue = it[key]
                         if (currentValue?.subscribers?.size == 0) it - key
                         else it

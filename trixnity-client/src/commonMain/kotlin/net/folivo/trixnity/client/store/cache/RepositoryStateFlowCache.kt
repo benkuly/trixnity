@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
+open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     cacheScope: CoroutineScope,
     private val repository: R,
     private val rtm: RepositoryTransactionManager,

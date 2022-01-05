@@ -25,9 +25,7 @@ suspend fun simpleBenchmark() = coroutineScope {
     val password = "Tr1xn1ty!"
     val roomId = RoomId("!mZtvIlkjtKWuxTEmmw:localhost:8008")
     val baseUrl = Url("http://localhost:8008")
-    val secureStore = object : SecureStore {
-        override val olmPickleKey = ""
-    }
+    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         secureStore = secureStore,

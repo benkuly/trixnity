@@ -10,6 +10,8 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.createEncryptedEventContentSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

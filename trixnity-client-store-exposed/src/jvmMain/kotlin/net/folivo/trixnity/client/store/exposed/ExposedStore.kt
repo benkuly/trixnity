@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -28,6 +28,7 @@ class ExposedStore(
     crossSigningKeysRepository = ExposedCrossSigningKeysRepository(json),
     keyVerificationStateRepository = ExposedKeyVerificationStateRepository(json),
     keyChainLinkRepository = ExposedKeyChainLinkRepository(),
+    secretKeyRequestRepository = ExposedSecretKeyRequestRepository(json),
     olmAccountRepository = ExposedOlmAccountRepository(),
     olmSessionRepository = ExposedOlmSessionRepository(json),
     inboundMegolmSessionRepository = ExposedInboundMegolmSessionRepository(),

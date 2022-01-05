@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
@@ -18,13 +19,17 @@ import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
+import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
+import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.RequestEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
@@ -34,10 +39,10 @@ class VerificationService(
     private val ownDeviceId: String,
     private val api: MatrixApiClient,
     private val store: Store,
-    private val olm: OlmService,
-    private val room: RoomService,
-    private val user: UserService,
-    private val key: KeyService,
+    private val olmService: OlmService,
+    private val roomService: RoomService,
+    private val userService: UserService,
+    private val keyService: KeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
 ) {
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
@@ -48,7 +53,7 @@ class VerificationService(
         api.sync.subscribe(::handleDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
-            olm.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
+            olmService.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
         scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
@@ -58,7 +63,7 @@ class VerificationService(
         }
     }
 
-    private suspend fun handleDeviceVerificationRequestEvents(event: Event<RequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: Event<VerificationRequestEventContent>) {
         val content = event.content
         when (event) {
             is Event.ToDeviceEvent -> {
@@ -75,9 +80,9 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olm = olm,
+                            olm = olmService,
                             store = store,
-                            key = key,
+                            key = keyService,
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -90,8 +95,8 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olm = olm,
-                                key = key,
+                                olm = olmService,
+                                key = keyService,
                                 store = store,
                             )
                     }
@@ -103,7 +108,7 @@ class VerificationService(
 
     private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
         when (val content = event.decrypted.content) {
-            is RequestEventContent -> {
+            is VerificationRequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.decrypted.sender}" }
                     if (_activeDeviceVerification.value != null) {
@@ -117,8 +122,8 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olm = olm,
-                            key = key,
+                            olm = olmService,
+                            key = keyService,
                             store = store,
                         ).cancel()
                     } else {
@@ -132,8 +137,8 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olm = olm,
-                                key = key,
+                                olm = olmService,
+                                key = keyService,
                                 store = store,
                             )
                     }
@@ -161,17 +166,18 @@ class VerificationService(
         }
     }
 
-    suspend fun createDeviceVerificationRequest(theirUserId: UserId, theirDeviceId: String) {
-        log.info { "create new device verification request to $theirUserId ($theirDeviceId)" }
-        val request = RequestEventContent(
+    suspend fun createDeviceVerificationRequest(theirUserId: UserId, vararg theirDeviceIds: String) {
+        log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
+        val request = VerificationRequestEventContent(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
         )
-        val encryptedContent = try {
-            olm.events.encryptOlm(request, theirUserId, theirDeviceId)
-        } catch (olmError: OlmLibraryException) {
-            request
-        }
-        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to encryptedContent)))
+        api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
+            try {
+                olmService.events.encryptOlm(request, theirUserId, it)
+            } catch (olmError: OlmLibraryException) {
+                request
+            }
+        }))
         val existingDeviceVerification = _activeDeviceVerification.getAndUpdate {
             ActiveDeviceVerification(
                 request = request,
@@ -179,11 +185,11 @@ class VerificationService(
                 ownUserId = ownUserId,
                 ownDeviceId = ownDeviceId,
                 theirUserId = theirUserId,
-                theirDeviceId = theirDeviceId,
+                theirDeviceIds = theirDeviceIds.toSet(),
                 supportedMethods = supportedMethods,
                 api = api,
-                olm = olm,
-                key = key,
+                olm = olmService,
+                key = keyService,
                 store = store,
             )
         }
@@ -198,11 +204,38 @@ class VerificationService(
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
-            possiblyEncryptEvent(request, roomId, store, olm, user)
+            possiblyEncryptEvent(request, roomId, store, olmService, userService)
         } catch (olmError: OlmLibraryException) {
             request
         }
         api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
+    }
+
+    suspend fun getSelfVerificationMethods(): Set<SelfVerificationMethod> {
+        val deviceVerificationMethod = store.keys.getDeviceKeys(ownUserId)?.entries
+            ?.filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
+            ?.map { it.key }
+            ?.let {
+                setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
+                    createDeviceVerificationRequest(ownUserId, *(it - ownDeviceId).toTypedArray())
+                })
+            } ?: setOf()
+
+        val defaultKeyId = store.globalAccountData.get<DefaultSecretKeyEventContent>()?.content?.key
+        val recoveryKeyMethods = when (val defaultKey =
+            defaultKeyId?.let { store.globalAccountData.get<SecretKeyEventContent>(it)?.content }) {
+            is SecretKeyEventContent.AesHmacSha2Key -> when (defaultKey.passphrase) {
+                is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 ->
+                    setOf(
+                        AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, defaultKeyId, defaultKey),
+                        AesHmacSha2RecoveryKey(keyService, defaultKeyId, defaultKey)
+                    )
+                is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown, null ->
+                    setOf(AesHmacSha2RecoveryKey(keyService, defaultKeyId, defaultKey))
+            }
+            is SecretKeyEventContent.Unknown, null -> setOf()
+        }
+        return recoveryKeyMethods + deviceVerificationMethod
     }
 
     fun getActiveUserVerification(
@@ -239,10 +272,10 @@ class VerificationService(
                         supportedMethods = supportedMethods,
                         api = api,
                         store = store,
-                        olm = olm,
-                        user = user,
-                        room = room,
-                        key = key,
+                        olm = olmService,
+                        user = userService,
+                        room = roomService,
+                        key = keyService,
                     ).also { auv -> activeUserVerifications.update { it + auv } }
                 } else null
             }

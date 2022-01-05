@@ -24,8 +24,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.m.key.verification.*
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmSAS
 import net.folivo.trixnity.olm.freeAfter
@@ -90,7 +90,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             )
             method shouldBe null
             val result = sendVerificationStepFlow.first()
-            result.shouldBeInstanceOf<CancelEventContent>()
+            result.shouldBeInstanceOf<VerificationCancelEventContent>()
             result.code shouldBe UnknownMethod
         }
     }
@@ -98,7 +98,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         steps.forEach {
             should("cancel unexpected message ${it::class.simpleName}") {
                 cut.handleVerificationStep(it, false)
-                val result = sendVerificationStepFlow.replayCache.filterIsInstance<CancelEventContent>().first()
+                val result =
+                    sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
                 result.code shouldBe UnexpectedMessage
             }
         }
@@ -139,7 +140,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     ), false
                 )
                 val result = sendVerificationStepFlow.first()
-                result.shouldBeInstanceOf<CancelEventContent>()
+                result.shouldBeInstanceOf<VerificationCancelEventContent>()
                 result.code shouldBe UnknownMethod
             }
         }
@@ -183,7 +184,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 should("cancel when sender it not expected") {
                     cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
                     val result = sendVerificationStepFlow.first()
-                    result.shouldBeInstanceOf<CancelEventContent>()
+                    result.shouldBeInstanceOf<VerificationCancelEventContent>()
                     result.code shouldBe UnexpectedMessage
                 }
             }
@@ -223,12 +224,14 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             }
             should("cancel when commitment does not match") {
                 cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), false)
-                val result = sendVerificationStepFlow.replayCache.filterIsInstance<CancelEventContent>().first()
+                val result =
+                    sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
                 result.code shouldBe MismatchedCommitment
             }
             should("cancel when sender it not expected") {
                 cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
-                val result = sendVerificationStepFlow.replayCache.filterIsInstance<CancelEventContent>().first()
+                val result =
+                    sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
                 result.code shouldBe UnexpectedMessage
             }
         }
@@ -312,13 +315,13 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
                 SasKeyEventContent("key", null, "t"),
             )
-            should("send ${DoneEventContent::class.simpleName}") {
+            should("send ${VerificationDoneEventContent::class.simpleName}") {
                 coEvery { store.keys.saveKeyVerificationState(any(), any(), any(), any()) } just Runs
                 coEvery { keyService.updateTrustLevel(any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
-                sendVerificationStepFlow.replayCache shouldContain DoneEventContent(null, "t")
+                sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
                 coVerify {
                     store.keys.saveKeyVerificationState(
                         Key.Ed25519Key(bobDevice, "bobKey"), bob, bobDevice,
@@ -336,7 +339,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent.copy(keys = "dino"), false)
-                val result = sendVerificationStepFlow.replayCache.filterIsInstance<CancelEventContent>().first()
+                val result =
+                    sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
                 result.code shouldBe KeyMismatch
                 result.reason shouldBe "keys mac did not match"
             }
@@ -349,7 +353,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                         mac = Keys(sasMacEventContent.mac - firstMac + Key.Ed25519Key(firstMac.keyId, "dino"))
                     ), false
                 )
-                val result = sendVerificationStepFlow.replayCache.filterIsInstance<CancelEventContent>().first()
+                val result =
+                    sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
                 result.code shouldBe KeyMismatch
                 result.reason shouldBe "macs did not match"
             }

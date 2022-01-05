@@ -9,9 +9,10 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 
 suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
+    key: String = "",
     scope: CoroutineScope
 ): StateFlow<C?> {
-    return getAccountData(roomId, C::class, scope)
+    return getAccountData(roomId, C::class, key, scope)
 }
 
 suspend inline fun <reified C : StateEventContent> RoomService.getState(

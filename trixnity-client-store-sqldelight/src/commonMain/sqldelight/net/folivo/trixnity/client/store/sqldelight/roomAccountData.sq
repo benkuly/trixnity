@@ -1,17 +1,22 @@
 CREATE TABLE sql_room_account_data (
     room_id TEXT NOT NULL,
     type TEXT NOT NULL,
+    key TEXT NOT NULL,
     event TEXT NOT NULL,
-    PRIMARY KEY (room_id, type)
+    PRIMARY KEY (room_id, type, key)
 );
 
 getRoomAccountData:
 SELECT * FROM sql_room_account_data
 WHERE room_id = ? AND type = ?;
 
+getRoomAccountDataByKey:
+SELECT * FROM sql_room_account_data
+WHERE room_id = ? AND type = ? AND key = ?;
+
 saveRoomAccountData:
 INSERT OR REPLACE INTO sql_room_account_data
-VALUES (?, ?, ?);
+VALUES (?, ?, ?, ?);
 
 deleteRoomAccountData:
 DELETE FROM sql_room_account_data

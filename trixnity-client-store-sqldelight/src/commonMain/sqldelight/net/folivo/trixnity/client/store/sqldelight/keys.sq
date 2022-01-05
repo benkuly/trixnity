@@ -91,3 +91,23 @@ WHERE signing_user_id = ? AND signing_key_id = ? AND signing_key_value = ?;
 deleteKeyChainLinkBySignedgKey:
 DELETE FROM sql_key_chain_link
 WHERE signed_user_id = ? AND signed_key_id = ? AND signed_key_value = ?;
+
+CREATE TABLE sql_secret_key_request (
+  id TEXT PRIMARY KEY NOT NULL,
+  secret_key_request TEXT NOT NULL
+);
+
+getAllSecretKeyRequests:
+SELECT * FROM sql_secret_key_request;
+
+getSecretKeyRequest:
+SELECT * FROM sql_secret_key_request
+WHERE id = ?;
+
+saveSecretKeyRequest:
+INSERT OR REPLACE INTO sql_secret_key_request
+VALUES (?, ?);
+
+deleteSecretKeyRequest:
+DELETE FROM sql_secret_key_request
+WHERE id = ?;

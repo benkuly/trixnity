@@ -12,8 +12,8 @@ import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
 import net.folivo.trixnity.core.model.events.m.key.verification.*
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.*
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.olm.OlmSAS
 
 private val log = KotlinLogging.logger {}
@@ -86,7 +86,12 @@ class ActiveSasVerificationMethod private constructor(
         ): ActiveSasVerificationMethod? {
             return if (!startEventContent.keyAgreementProtocols.contains("curve25519-hkdf-sha256")) {
                 sendVerificationStep(
-                    CancelEventContent(UnknownMethod, "key agreement protocol not supported", relatesTo, transactionId)
+                    VerificationCancelEventContent(
+                        UnknownMethod,
+                        "key agreement protocol not supported",
+                        relatesTo,
+                        transactionId
+                    )
                 )
                 null
             } else return ActiveSasVerificationMethod(
@@ -124,7 +129,7 @@ class ActiveSasVerificationMethod private constructor(
                     onMac(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
-            is CancelEventContent -> {
+            is VerificationCancelEventContent -> {
                 onCancel()
             }
         }
@@ -132,7 +137,7 @@ class ActiveSasVerificationMethod private constructor(
 
     private suspend fun cancelUnexpectedMessage(currentState: ActiveSasVerificationState) {
         sendVerificationStep(
-            CancelEventContent(
+            VerificationCancelEventContent(
                 UnexpectedMessage,
                 "this verification is at SAS step ${currentState::class.simpleName}",
                 relatesTo,
@@ -150,7 +155,12 @@ class ActiveSasVerificationMethod private constructor(
                 sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
             } else {
                 sendVerificationStep(
-                    CancelEventContent(UnknownMethod, "key agreement protocol not supported", relatesTo, transactionId)
+                    VerificationCancelEventContent(
+                        UnknownMethod,
+                        "key agreement protocol not supported",
+                        relatesTo,
+                        transactionId
+                    )
                 )
             }
         }
@@ -217,7 +227,12 @@ class ActiveSasVerificationMethod private constructor(
                             theirPublicKey = stepContent.key
                             createComparison()
                         } else sendVerificationStep(
-                            CancelEventContent(MismatchedCommitment, "mismatched commitment", relatesTo, transactionId)
+                            VerificationCancelEventContent(
+                                MismatchedCommitment,
+                                "mismatched commitment",
+                                relatesTo,
+                                transactionId
+                            )
                         )
                     } else createComparison()
 
@@ -242,48 +257,42 @@ class ActiveSasVerificationMethod private constructor(
                 val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
                 val keysToMac = store.keys.getOrFetchKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
                     ?.filter { theirMacIds.contains(it.fullKeyId) }
-                    ?.associateBy { it.fullKeyId }
                 val input = theirMacIds.sortedBy { it }.joinToString(",")
                 val info = baseInfo + "KEY_IDS"
                 log.debug { "create keys mac from input $input and info $info" }
                 val keys = olmSas.calculateMac(input, info)
                 if (keys == theirMac.keys) {
-                    val containsMismatchedMac = theirMacs.asSequence()
-                        .map { mac ->
+                    val containsMismatchedMac = keysToMac?.asSequence()
+                        ?.map { keyToMac ->
+                            log.debug { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }
                             val calculatedMac =
-                                keysToMac?.get(mac.fullKeyId)?.value?.let { key ->
-                                    log.debug { "create key mac from input $key and info ${baseInfo + mac.fullKeyId}" }
-                                    olmSas.calculateMac(key, baseInfo + mac.fullKeyId)
-                                }
-                            (if (calculatedMac != null) {
-                                calculatedMac == mac.value
-                            } else true // we ignore unknown (null) keys
-                                    ).also {
-                                    if (!it) log.warn { "macs from them (${mac}) did not match our calculated ($calculatedMac)" }
-                                }
-                        }.contains(false)
+                                olmSas.calculateMac(keyToMac.value, baseInfo + keyToMac.fullKeyId)
+                            (calculatedMac == theirMac.mac.find { it.fullKeyId == keyToMac.fullKeyId }?.value).also {
+                                if (!it) log.warn { "macs from them (${keyToMac}) did not match our calculated ($calculatedMac)" }
+                            }
+                        }?.contains(false) ?: true
                     if (!containsMismatchedMac) {
-                        log.info { "trust keys: ${keysToMac?.values}" }
-                        keysToMac?.forEach { (_, key) ->
+                        log.info { "trust keys: $keysToMac" }
+                        keysToMac?.forEach { key ->
                             store.keys.saveKeyVerificationState(
                                 key,
                                 theirUserId, theirDeviceId,
                                 Verified(key.value)
                             )
                         }
-                        keysToMac?.forEach { (_, key) ->
+                        keysToMac?.forEach { key ->
                             keyService.updateTrustLevel(theirUserId, key)
                         }
-                        sendVerificationStep(DoneEventContent(relatesTo, transactionId))
+                        sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
                     } else {
                         sendVerificationStep(
-                            CancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
+                            VerificationCancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
                         )
                     }
                 } else {
                     log.warn { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
                     sendVerificationStep(
-                        CancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
+                        VerificationCancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
                     )
                 }
             }

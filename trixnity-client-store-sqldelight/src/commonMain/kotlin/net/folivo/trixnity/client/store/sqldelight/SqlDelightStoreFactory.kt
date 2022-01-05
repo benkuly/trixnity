@@ -7,7 +7,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.sqldelight.db.Database
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.coroutines.CoroutineContext
 
 private val log = KotlinLogging.logger {}

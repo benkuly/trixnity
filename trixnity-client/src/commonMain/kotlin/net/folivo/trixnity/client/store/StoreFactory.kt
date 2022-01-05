@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 interface StoreFactory {
     suspend fun createStore(

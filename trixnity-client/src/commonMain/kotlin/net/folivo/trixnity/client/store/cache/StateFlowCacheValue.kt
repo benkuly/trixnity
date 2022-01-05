@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.time.Duration
 
-internal data class StateFlowCacheValue<T>(
+data class StateFlowCacheValue<T>(
     val value: MutableStateFlow<T>,
     val subscribers: Set<CoroutineScope>,
     val removeTimer: MutableSharedFlow<Duration>,
