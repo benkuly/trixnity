@@ -36,7 +36,7 @@ This project contains the following sub-projects, which can be used independentl
     - [x] verification
     - [x] cross signing
         - [x] trust level calculation
-        - [ ] SSSS
+        - [x] SSSS
         - [ ] signing of other keys
     - [x] room list
     - [x] timelines
@@ -291,7 +291,6 @@ Install the Android SDK with the following packages:
 - platforms;android-30
 - build-tools
 - ndk
-- cmake
 
 Add a file named `local.properties` with the following content in the project root:
 
