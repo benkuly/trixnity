@@ -70,7 +70,7 @@ class ExposedRoomStateRepositoryTest : ShouldSpec({
             cut.get(key1) shouldHaveSize 0
         }
     }
-    should("save and get by state key") {
+    should("save and get by second key") {
         val key = RoomStateRepositoryKey(RoomId("room3", "server"), "m.room.member")
         val event = StateEvent(
             MemberEventContent(membership = JOIN),
@@ -82,8 +82,8 @@ class ExposedRoomStateRepositoryTest : ShouldSpec({
         )
 
         newSuspendedTransaction {
-            cut.saveByStateKey(key, "@cedric:server", event)
-            cut.getByStateKey(key, "@cedric:server") shouldBe event
+            cut.saveBySecondKey(key, "@cedric:server", event)
+            cut.getBySecondKey(key, "@cedric:server") shouldBe event
         }
     }
 })

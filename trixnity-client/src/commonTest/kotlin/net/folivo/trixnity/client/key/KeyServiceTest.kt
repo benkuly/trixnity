@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.model.keys.QueryKeysResponse
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmSignService
+import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
@@ -38,24 +38,34 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
-class KeyServiceTest : ShouldSpec({
+class KeyServiceTest : ShouldSpec(body)
+
+private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
+    val aliceDevice = "ALICEDEVICE"
     val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olmSignService = mockk<OlmSignService>()
+    lateinit var secureStore: SecureStore
+    val olm = mockk<OlmService>()
     val api = mockk<MatrixApiClient>()
 
     lateinit var cut: KeyService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(scope).apply { init() }
-        cut = KeyService(store, olmSignService, api)
-        coEvery { olmSignService.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
+        store = InMemoryStore(scope).apply {
+            init()
+            account.userId.value = alice
+            account.deviceId.value = aliceDevice
+        }
+        secureStore = SecureStore("", MutableStateFlow(mapOf()))
+        cut = KeyService(store, secureStore, olm, api)
+        coEvery { olm.sign.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
+
     }
 
     afterTest {
@@ -100,8 +110,8 @@ class KeyServiceTest : ShouldSpec({
         )
         beforeTest {
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
-            coEvery { olmSignService.verify<DeviceKeys>(any()) } returns VerifyResult.Valid
-            coEvery { olmSignService.verify<CrossSigningKeys>(any()) } returns VerifyResult.Valid
+            coEvery { olm.sign.verify<DeviceKeys>(any()) } returns VerifyResult.Valid
+            coEvery { olm.sign.verify<CrossSigningKeys>(any()) } returns VerifyResult.Valid
             scope.launch {
                 cut.handleOutdatedKeys()
             }
@@ -118,7 +128,7 @@ class KeyServiceTest : ShouldSpec({
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olmSignService.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(),
@@ -134,7 +144,7 @@ class KeyServiceTest : ShouldSpec({
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { olmSignService.verify(key) } returns VerifyResult.MissingSignature
+                coEvery { olm.sign.verify(key) } returns VerifyResult.MissingSignature
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(),
@@ -227,7 +237,7 @@ class KeyServiceTest : ShouldSpec({
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olmSignService.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(), mapOf(),
@@ -288,7 +298,7 @@ class KeyServiceTest : ShouldSpec({
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olmSignService.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(), mapOf(), mapOf(),
@@ -346,7 +356,10 @@ class KeyServiceTest : ShouldSpec({
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(),
-                        mapOf(cedric to mapOf(cedricDevice to cedricKey1), alice to mapOf(aliceDevice2 to aliceKey2)),
+                        mapOf(
+                            cedric to mapOf(cedricDevice to cedricKey1),
+                            alice to mapOf(aliceDevice2 to aliceKey2)
+                        ),
                         mapOf(), mapOf(), mapOf()
                     )
                 ) andThen Result.success(
@@ -386,7 +399,10 @@ class KeyServiceTest : ShouldSpec({
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(),
-                        mapOf(cedric to mapOf(cedricDevice to cedricKey1), alice to mapOf(aliceDevice2 to aliceKey2)),
+                        mapOf(
+                            cedric to mapOf(cedricDevice to cedricKey1),
+                            alice to mapOf(aliceDevice2 to aliceKey2)
+                        ),
                         mapOf(), mapOf(), mapOf()
                     )
                 )
@@ -450,7 +466,11 @@ class KeyServiceTest : ShouldSpec({
 
                 store.olm.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
                 store.olm.updateOutboundMegolmSession(room3) {
-                    StoredOutboundMegolmSession(room3, newDevices = mapOf(cedric to setOf(cedricDevice)), pickled = "")
+                    StoredOutboundMegolmSession(
+                        room3,
+                        newDevices = mapOf(cedric to setOf(cedricDevice)),
+                        pickled = ""
+                    )
                 }
 
                 store.keys.outdatedKeys.value = setOf(cedric, alice)
@@ -578,7 +598,7 @@ class KeyServiceTest : ShouldSpec({
             }
             context("manipulation of ") {
                 should("signature") {
-                    coEvery { olmSignService.verifySelfSignedDeviceKeys(cedricKey1) } returns VerifyResult.Invalid("")
+                    coEvery { olm.sign.verifySelfSignedDeviceKeys(cedricKey1) } returns VerifyResult.Invalid("")
                     coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                         QueryKeysResponse(
                             mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
@@ -753,7 +773,9 @@ class KeyServiceTest : ShouldSpec({
                         "ALICE_DEVICE" to StoredDeviceKeys(
                             Signed(
                                 DeviceKeys(
-                                    alice, "ALICE_DEVICE", setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
+                                    alice,
+                                    "ALICE_DEVICE",
+                                    setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
                                     keysOf(
                                         Ed25519Key("ALICE_DEVICE", "..."),
                                         Key.Curve25519Key("ALICE_DEVICE", "...")
@@ -789,4 +811,4 @@ class KeyServiceTest : ShouldSpec({
             }
         }
     }
-})
+}

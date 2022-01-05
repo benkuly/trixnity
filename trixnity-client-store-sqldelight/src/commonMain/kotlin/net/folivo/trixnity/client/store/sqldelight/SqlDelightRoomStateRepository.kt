@@ -18,16 +18,16 @@ class SqlDelightRoomStateRepository(
     private val serializer = json.serializersModule.getContextual(Event::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun getByStateKey(key: RoomStateRepositoryKey, stateKey: String): Event<*>? =
+    override suspend fun getBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? =
         withContext(context) {
-            db.getRoomStateByStateKey(key.roomId.full, key.type, stateKey).executeAsOneOrNull()?.let {
+            db.getRoomStateByStateKey(firstKey.roomId.full, firstKey.type, secondKey).executeAsOneOrNull()?.let {
                 json.decodeFromString(serializer, it)
             }
         }
 
-    override suspend fun saveByStateKey(key: RoomStateRepositoryKey, stateKey: String, event: Event<*>) =
+    override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>) =
         withContext(context) {
-            db.saveRoomState(key.roomId.full, key.type, stateKey, json.encodeToString(serializer, event))
+            db.saveRoomState(firstKey.roomId.full, firstKey.type, secondKey, json.encodeToString(serializer, value))
         }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -38,7 +38,7 @@ class SqlDelightRoomStateRepository(
     }
 
     override suspend fun save(key: RoomStateRepositoryKey, value: Map<String, Event<*>>) = withContext(context) {
-        value.forEach { saveByStateKey(key, it.key, it.value) }
+        value.forEach { saveBySecondKey(key, it.key, it.value) }
     }
 
     override suspend fun delete(key: RoomStateRepositoryKey) = withContext(context) {

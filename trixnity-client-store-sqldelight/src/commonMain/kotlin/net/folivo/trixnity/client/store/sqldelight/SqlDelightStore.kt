@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.sqldelight.db.Database
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightStore(
@@ -46,6 +46,9 @@ class SqlDelightStore(
         database.keysQueries, json, databaseCoroutineContext
     ),
     keyChainLinkRepository = SqlDelightKeyChainLinkRepository(database.keysQueries, databaseCoroutineContext),
+    secretKeyRequestRepository = SqlDelightSecretKeyRequestRepository(
+        database.keysQueries, json, databaseCoroutineContext
+    ),
     olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
     olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
     inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(

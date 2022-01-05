@@ -144,7 +144,7 @@ class UserService(
         }
     }
 
-    internal suspend fun setGlobalAccountData(accountDataEvent: Event<out GlobalAccountDataEventContent>) {
+    internal suspend fun setGlobalAccountData(accountDataEvent: Event<GlobalAccountDataEventContent>) {
         if (accountDataEvent is Event.GlobalAccountDataEvent) {
             store.globalAccountData.update(accountDataEvent)
         }
@@ -160,9 +160,10 @@ class UserService(
 
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
+        key: String = "",
         scope: CoroutineScope
     ): StateFlow<C?> {
-        return store.globalAccountData.get(eventContentClass, scope)
+        return store.globalAccountData.get(eventContentClass, key, scope)
             .map { it?.content }
             .stateIn(scope)
     }

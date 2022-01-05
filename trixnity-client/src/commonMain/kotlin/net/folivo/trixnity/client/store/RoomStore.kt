@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
@@ -13,10 +14,9 @@ class RoomStore(
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
-
     private val roomCache = RepositoryStateFlowCache(storeScope, roomRepository, rtm, infiniteCache = true)
 
-    @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val allRooms =
         roomCache.cache
             .flatMapLatest {

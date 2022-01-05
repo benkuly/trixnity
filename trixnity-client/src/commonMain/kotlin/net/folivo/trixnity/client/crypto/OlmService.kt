@@ -30,6 +30,8 @@ import net.folivo.trixnity.olm.OlmUtility
 private val log = KotlinLogging.logger {}
 
 class OlmService(
+    private val ownUserId: UserId,
+    private val ownDeviceId: String,
     private val store: Store,
     private val secureStore: SecureStore,
     private val api: MatrixApiClient,
@@ -45,27 +47,29 @@ class OlmService(
         utility.free()
     }
 
-    private val myUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
-    private val myDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
-    val myDeviceKeys: Signed<DeviceKeys, UserId>
+    val ownDeviceKeys: Signed<DeviceKeys, UserId>
         get() = sign.sign(
             DeviceKeys(
-                userId = myUserId,
-                deviceId = myDeviceId,
+                userId = ownUserId,
+                deviceId = ownDeviceId,
                 algorithms = setOf(Olm, Megolm),
-                keys = Keys(keysOf(myEd25519Key, myCurve25519Key))
+                keys = Keys(keysOf(ownEd25519Key, ownCurve25519Key))
             )
         )
-    private val myEd25519Key = Ed25519Key(myDeviceId, account.identityKeys.ed25519)
-    private val myCurve25519Key = Curve25519Key(myDeviceId, account.identityKeys.curve25519)
+    private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
+    private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
 
     val sign = OlmSignService(
+        ownUserId = ownUserId,
+        ownDeviceId = ownDeviceId,
         json = json,
         store = store,
         account = account,
         utility = utility,
     )
     val events = OlmEventService(
+        ownUserId = ownUserId,
+        ownDeviceId = ownDeviceId,
         json = json,
         account = account,
         store = store,

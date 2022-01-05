@@ -21,22 +21,22 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
     private val serializer = json.serializersModule.getContextual(Event::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun getByStateKey(key: RoomStateRepositoryKey, stateKey: String): Event<*>? {
+    override suspend fun getBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? {
         return ExposedRoomState.select {
-            ExposedRoomState.roomId.eq(key.roomId.full) and
-                    ExposedRoomState.type.eq(key.type) and
-                    ExposedRoomState.stateKey.eq(stateKey)
+            ExposedRoomState.roomId.eq(firstKey.roomId.full) and
+                    ExposedRoomState.type.eq(firstKey.type) and
+                    ExposedRoomState.stateKey.eq(secondKey)
         }.firstOrNull()?.let {
             json.decodeFromString(serializer, it[ExposedRoomState.event])
         }
     }
 
-    override suspend fun saveByStateKey(key: RoomStateRepositoryKey, stateKey: String, event: Event<*>) {
+    override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>) {
         ExposedRoomState.replace {
-            it[this.roomId] = key.roomId.full
-            it[this.type] = key.type
-            it[this.stateKey] = stateKey
-            it[this.event] = json.encodeToString(serializer, event)
+            it[this.roomId] = firstKey.roomId.full
+            it[this.type] = firstKey.type
+            it[this.stateKey] = secondKey
+            it[this.event] = json.encodeToString(serializer, value)
         }
     }
 

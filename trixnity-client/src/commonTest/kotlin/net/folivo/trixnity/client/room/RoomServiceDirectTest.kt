@@ -8,6 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.media.MediaService
@@ -24,6 +25,7 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 
 class RoomServiceDirectTest : ShouldSpec({
+    timeout = 30_000
 
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
@@ -254,15 +256,17 @@ class RoomServiceDirectTest : ShouldSpec({
                     )
                 )
             )
+            cut.getAll().first { it.size == 1 }
 
             cut.setRoomIsDirect(event)
 
             store.room.get(room).value?.isDirect shouldBe true
         }
         should("set the room to direct == 'false' when no DirectEventContent is found for the room") {
+            val room1 = RoomId("room1", "localhost")
             val room2 = RoomId("room2", "localhost")
-            store.room.update(room) { Room(room, isDirect = true) }
-            store.room.update(room2) { Room(room, isDirect = true) }
+            store.room.update(room1) { Room(room1, isDirect = true) }
+            store.room.update(room2) { Room(room2, isDirect = true) }
             val event = Event.GlobalAccountDataEvent(
                 DirectEventContent(
                     mappings = mapOf(
@@ -270,10 +274,11 @@ class RoomServiceDirectTest : ShouldSpec({
                     )
                 )
             )
+            cut.getAll().first { it.size == 2 }
 
             cut.setRoomIsDirect(event)
 
-            store.room.get(room).value?.isDirect shouldBe false
+            store.room.get(room1).value?.isDirect shouldBe false
             store.room.get(room2).value?.isDirect shouldBe true
         }
     }

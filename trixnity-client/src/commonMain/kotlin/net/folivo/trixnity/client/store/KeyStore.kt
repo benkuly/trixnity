@@ -2,9 +2,8 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
@@ -18,6 +17,7 @@ class KeyStore(
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
     private val keyChainLinkRepository: KeyChainLinkRepository,
+    private val secretKeyRequestRepository: SecretKeyRequestRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
@@ -25,6 +25,7 @@ class KeyStore(
     private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)
     private val crossSigningKeysCache = RepositoryStateFlowCache(storeScope, crossSigningKeysRepository, rtm)
     private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)
+    private val secretKeyRequestCache = RepositoryStateFlowCache(storeScope, secretKeyRequestRepository, rtm, true)
 
     suspend fun init() {
         outdatedKeys.value = rtm.transaction { outdatedKeysRepository.get(1) ?: setOf() }
@@ -32,6 +33,8 @@ class KeyStore(
         storeScope.launch(start = UNDISPATCHED) {
             outdatedKeys.collect { rtm.transaction { outdatedKeysRepository.save(1, it) } }
         }
+        secretKeyRequestCache.init(rtm.transaction { secretKeyRequestRepository.getAll() }
+            .associateBy { it.content.requestId })
     }
 
     suspend fun getDeviceKeys(
@@ -104,4 +107,21 @@ class KeyStore(
 
     suspend fun deleteKeyChainLinksBySignedKey(userId: UserId, signedKey: Key.Ed25519Key) =
         rtm.transaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val allSecretKeyRequests = secretKeyRequestCache.cache
+        .flatMapLatest {
+            if (it.isEmpty()) flowOf(arrayOf())
+            else combine(it.values) { transform -> transform }
+        }
+        .mapLatest { it.filterNotNull().toSet() }
+        .stateIn(storeScope, SharingStarted.Eagerly, setOf())
+
+    suspend fun addSecretKeyRequest(request: StoredSecretKeyRequest) {
+        secretKeyRequestCache.update(request.content.requestId) { request }
+    }
+
+    suspend fun deleteSecretKeyRequest(requestId: String) {
+        secretKeyRequestCache.update(requestId) { null }
+    }
 }

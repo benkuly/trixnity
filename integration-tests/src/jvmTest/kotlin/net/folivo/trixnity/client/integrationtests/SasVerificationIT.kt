@@ -68,15 +68,14 @@ class SasVerificationIT {
         database2 = Database.connect("jdbc:h2:mem:sas-verification-test2;DB_CLOSE_DELAY=-1;")
         val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, storeScope)
         val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, storeScope)
-        val secureStore = object : SecureStore {
-            override val olmPickleKey = ""
-        }
+        val secureStore1 = SecureStore()
+        val secureStore2 = SecureStore()
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory1,
-            secureStore = secureStore,
+            secureStore = secureStore1,
             scope = scope,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
@@ -84,7 +83,7 @@ class SasVerificationIT {
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory2,
-            secureStore = secureStore,
+            secureStore = secureStore2,
             scope = scope,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()

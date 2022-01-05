@@ -81,7 +81,7 @@ class SqlDelightRoomStateRepositoryTest : ShouldSpec({
             1234,
             stateKey = "@cedric:server"
         )
-        cut.saveByStateKey(key, "@cedric:server", event)
-        cut.getByStateKey(key, "@cedric:server") shouldBe event
+        cut.saveBySecondKey(key, "@cedric:server", event)
+        cut.getBySecondKey(key, "@cedric:server") shouldBe event
     }
 })

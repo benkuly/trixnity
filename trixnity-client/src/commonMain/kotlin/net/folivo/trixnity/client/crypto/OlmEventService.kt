@@ -36,6 +36,8 @@ private val log = KotlinLogging.logger {}
 
 @OptIn(ExperimentalSerializationApi::class)
 class OlmEventService internal constructor(
+    private val ownUserId: UserId,
+    private val ownDeviceId: String,
     private val json: Json,
     private val account: OlmAccount,
     private val store: Store,
@@ -43,10 +45,8 @@ class OlmEventService internal constructor(
     private val api: MatrixApiClient,
     private val signService: OlmSignService,
 ) {
-    private val myUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
-    private val myDeviceId = store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
-    private val myEd25519Key = Ed25519Key(myDeviceId, account.identityKeys.ed25519)
-    private val myCurve25519Key = Curve25519Key(myDeviceId, account.identityKeys.curve25519)
+    private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
+    private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
 
     suspend fun encryptOlm(
         content: EventContent,
@@ -99,8 +99,8 @@ class OlmEventService internal constructor(
         val serializer = json.serializersModule.getContextual(OlmEvent::class)
         val event = OlmEvent(
             content = content,
-            sender = myUserId,
-            senderKeys = keysOf(myEd25519Key.copy(keyId = null)),
+            sender = ownUserId,
+            senderKeys = keysOf(ownEd25519Key.copy(keyId = null)),
             recipient = receiverId,
             recipientKeys = keysOf(
                 store.keys.getOrFetchKeyFromDevice<Ed25519Key>(receiverId, deviceId)?.copy(keyId = null)
@@ -117,13 +117,13 @@ class OlmEventService internal constructor(
                     OlmMessageType.of(encryptedContent.type.value)
                 )
             ),
-            senderKey = myCurve25519Key
+            senderKey = ownCurve25519Key
         ).also { log.debug { "encrypted event: $it" } }
     }
 
     suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): OlmEvent<*> {
         log.debug { "start decrypt olm event $encryptedContent" }
-        val ciphertext = encryptedContent.ciphertext[myCurve25519Key.value]
+        val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value]
             ?: throw SessionException.SenderDidNotEncryptForThisDeviceException
         val senderIdentityKey =
             store.keys.getDeviceKeyByValue<Curve25519Key>(senderId, encryptedContent.senderKey.value)
@@ -193,8 +193,8 @@ class OlmEventService internal constructor(
         val decryptedEvent = json.decodeFromString(serializer, decryptedContent)
 
         if (decryptedEvent.sender != senderId
-            || decryptedEvent.recipient != myUserId
-            || decryptedEvent.recipientKeys.get<Ed25519Key>()?.value != myEd25519Key.value
+            || decryptedEvent.recipient != ownUserId
+            || decryptedEvent.recipientKeys.get<Ed25519Key>()?.value != ownEd25519Key.value
             || decryptedEvent.senderKeys.get<Ed25519Key>()?.value?.let {
                 store.keys.getDeviceKeyByValue<Ed25519Key>(senderId, it)
             } == null
@@ -227,7 +227,7 @@ class OlmEventService internal constructor(
             freeAfter(OlmOutboundGroupSession.create()) { session ->
                 store.olm.storeInboundMegolmSession(
                     roomId = roomId,
-                    senderKey = myCurve25519Key,
+                    senderKey = ownCurve25519Key,
                     sessionId = session.sessionId,
                     sessionKey = session.sessionKey,
                     pickleKey = secureStore.olmPickleKey
@@ -249,7 +249,7 @@ class OlmEventService internal constructor(
         newUserDevices: Map<UserId, Set<String>>
     ): MegolmEncryptedEventContent {
         val newUserDevicesWithoutUs = newUserDevices
-            .mapValues { (userId, deviceIds) -> if (userId == myUserId) deviceIds - myDeviceId else deviceIds }
+            .mapValues { (userId, deviceIds) -> if (userId == ownUserId) deviceIds - ownDeviceId else deviceIds }
             .filterValues { it.isNotEmpty() }
         if (newUserDevicesWithoutUs.isNotEmpty()) {
             val roomKeyEventContent = RoomKeyEventContent(
@@ -261,7 +261,7 @@ class OlmEventService internal constructor(
             log.debug { "send megolm key to devices: $newUserDevicesWithoutUs" }
             api.users.sendToDevice(
                 newUserDevicesWithoutUs.mapValues { (user, devices) ->
-                    devices.filterNot { user == myUserId && it == myDeviceId }
+                    devices.filterNot { user == ownUserId && it == ownDeviceId }
                         .mapNotNull { deviceName ->
                             try {
                                 deviceName to encryptOlm(roomKeyEventContent, user, deviceName)
@@ -292,8 +292,8 @@ class OlmEventService internal constructor(
 
         return MegolmEncryptedEventContent(
             ciphertext = encryptedContent,
-            senderKey = myCurve25519Key,
-            deviceId = myDeviceId,
+            senderKey = ownCurve25519Key,
+            deviceId = ownDeviceId,
             sessionId = session.sessionId,
         ).also { log.debug { "encrypted event: $it" } }
     }

@@ -5,8 +5,8 @@ import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Ready
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
-import net.folivo.trixnity.core.model.events.m.key.verification.ReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 
@@ -15,11 +15,11 @@ class ActiveVerificationStateTest : ShouldSpec({
 
     context(TheirRequest::class.simpleName ?: "Request") {
         context(TheirRequest::ready.name) {
-            should("send ${ReadyEventContent::class.simpleName}") {
+            should("send ${VerificationReadyEventContent::class.simpleName}") {
                 var step: VerificationStep? = null
                 val cut = TheirRequest(mockk(), "AAAAAA", setOf(Sas), null, "t") { step = it }
                 cut.ready()
-                step shouldBe ReadyEventContent("AAAAAA", setOf(Sas), null, "t")
+                step shouldBe VerificationReadyEventContent("AAAAAA", setOf(Sas), null, "t")
             }
         }
     }

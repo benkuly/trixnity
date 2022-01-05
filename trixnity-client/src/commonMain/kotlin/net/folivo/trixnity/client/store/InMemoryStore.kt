@@ -7,8 +7,7 @@ import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.Key
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     scope = storeCoroutineScope,
@@ -22,6 +21,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     crossSigningKeysRepository = InMemoryMinimalStoreRepository(),
     keyVerificationStateRepository = InMemoryMinimalStoreRepository(),
     keyChainLinkRepository = InMemoryKeyChainLinkRepository(),
+    secretKeyRequestRepository = InMemorySecretKeyRequestRepository(),
     olmAccountRepository = InMemoryMinimalStoreRepository(),
     olmSessionRepository = InMemoryMinimalStoreRepository(),
     inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
@@ -29,13 +29,13 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     outboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
     roomRepository = InMemoryRoomRepository(),
     roomUserRepository = InMemoryRoomUserRepository(),
-    roomStateRepository = InMemoryRoomStateRepository(),
+    roomStateRepository = InMemoryTwoDimensionsStoreRepository(),
     roomTimelineEventRepository = InMemoryMinimalStoreRepository(),
     roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
     mediaRepository = InMemoryMediaRepository(),
     uploadMediaRepository = InMemoryMinimalStoreRepository(),
-    globalAccountDataRepository = InMemoryMinimalStoreRepository(),
-    roomAccountDataRepository = InMemoryMinimalStoreRepository()
+    globalAccountDataRepository = InMemoryTwoDimensionsStoreRepository(),
+    roomAccountDataRepository = InMemoryTwoDimensionsStoreRepository()
 )
 
 open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
@@ -49,6 +49,21 @@ open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
     override suspend fun delete(key: K) {
         content.update { it - key }
     }
+}
+
+class InMemoryTwoDimensionsStoreRepository<K, V> : TwoDimensionsStoreRepository<K, V>,
+    InMemoryMinimalStoreRepository<K, Map<String, V>>() {
+    override suspend fun getBySecondKey(firstKey: K, secondKey: String): V? =
+        get(firstKey)?.get(secondKey)
+
+    override suspend fun saveBySecondKey(firstKey: K, secondKey: String, value: V) {
+        content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) + (secondKey to value))) }
+    }
+}
+
+class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,
+    InMemoryMinimalStoreRepository<String, StoredSecretKeyRequest>() {
+    override suspend fun getAll(): List<StoredSecretKeyRequest> = content.value.values.toList()
 }
 
 class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<RoomId, Room>() {
@@ -66,16 +81,6 @@ class InMemoryRoomUserRepository : RoomUserRepository,
 
     override suspend fun deleteByUserId(userId: UserId, roomId: RoomId) {
         content.update { it + (roomId to ((it[roomId] ?: mapOf()) - userId)) }
-    }
-}
-
-class InMemoryRoomStateRepository : RoomStateRepository,
-    InMemoryMinimalStoreRepository<RoomStateRepositoryKey, Map<String, Event<*>>>() {
-    override suspend fun getByStateKey(key: RoomStateRepositoryKey, stateKey: String): Event<*>? =
-        get(key)?.get(stateKey)
-
-    override suspend fun saveByStateKey(key: RoomStateRepositoryKey, stateKey: String, event: Event<*>) {
-        content.update { it + (key to ((it[key] ?: mapOf()) + (stateKey to event))) }
     }
 }
 

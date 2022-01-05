@@ -7,7 +7,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -36,6 +36,7 @@ class ExposedStoreFactory(
                 ExposedInboundMegolmSession,
                 ExposedKeyChainLink,
                 ExposedKeyVerificationState,
+                ExposedSecretKeyRequest,
                 ExposedMedia,
                 ExposedOlmAccount,
                 ExposedOlmSession,

@@ -16,6 +16,7 @@ import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -374,6 +375,31 @@ class UsersApiClientTest {
     }
 
     @Test
+    fun shouldGetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        respond(
+                            """{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.getAccountData<SecretKeyEventContent>(
+            UserId("alice", "example.com"), key = "key1"
+        ).getOrThrow().shouldBe(SecretKeyEventContent.AesHmacSha2Key("name"))
+    }
+
+    @Test
     fun shouldSetAccountData() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
@@ -404,6 +430,37 @@ class UsersApiClientTest {
                 )
             ),
             UserId("alice", "example.com")
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldSetAccountDataWithKey() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        assertEquals(
+                            """{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}""",
+                            request.body.toByteArray().decodeToString()
+                        )
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            })
+        matrixRestClient.users.setAccountData(
+            SecretKeyEventContent.AesHmacSha2Key("name"),
+            UserId("alice", "example.com"),
+            key = "key1"
         ).getOrThrow()
     }
 

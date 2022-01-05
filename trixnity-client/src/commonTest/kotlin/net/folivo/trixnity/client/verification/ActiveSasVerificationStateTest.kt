@@ -17,11 +17,11 @@ import net.folivo.trixnity.core.model.crypto.DeviceKeys
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.crypto.Signed
 import net.folivo.trixnity.core.model.crypto.keysOf
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnknownMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.SasAcceptEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMacEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmSAS
@@ -65,7 +65,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                     ) { step = it }
                     cut.accept()
                     val result = step
-                    result.shouldBeInstanceOf<CancelEventContent>()
+                    result.shouldBeInstanceOf<VerificationCancelEventContent>()
                     result.code shouldBe UnknownMethod
                 }
             }
@@ -134,7 +134,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                 ) { step = it }
                 cut.match()
                 val result = step
-                result.shouldBeInstanceOf<CancelEventContent>()
+                result.shouldBeInstanceOf<VerificationCancelEventContent>()
                 result.code shouldBe UnknownMethod
             }
         }
@@ -155,8 +155,8 @@ class ActiveSasVerificationStateTest : ShouldSpec({
             ) { step = it }
             cut.noMatch()
             val result = step
-            result.shouldBeInstanceOf<CancelEventContent>()
-            result.code shouldBe CancelEventContent.Code.MismatchedSas
+            result.shouldBeInstanceOf<VerificationCancelEventContent>()
+            result.code shouldBe VerificationCancelEventContent.Code.MismatchedSas
         }
     }
 })

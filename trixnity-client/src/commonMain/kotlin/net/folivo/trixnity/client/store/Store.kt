@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 abstract class Store(
     scope: CoroutineScope,
@@ -14,6 +14,7 @@ abstract class Store(
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
     keyChainLinkRepository: KeyChainLinkRepository,
+    secretKeyRequestRepository: SecretKeyRequestRepository,
     olmAccountRepository: OlmAccountRepository,
     olmSessionRepository: OlmSessionRepository,
     inboundMegolmSessionRepository: InboundMegolmSessionRepository,
@@ -36,6 +37,7 @@ abstract class Store(
         crossSigningKeysRepository,
         keyVerificationStateRepository,
         keyChainLinkRepository,
+        secretKeyRequestRepository,
         rtm,
         scope
     )

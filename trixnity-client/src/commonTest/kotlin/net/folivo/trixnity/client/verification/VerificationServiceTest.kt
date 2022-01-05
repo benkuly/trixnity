@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -13,37 +14,43 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
+import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code
-import net.folivo.trixnity.core.model.events.m.key.verification.RequestEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStepRelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.test.assertNotNull
 
-class VerificationServiceTest : ShouldSpec({
+class VerificationServiceTest : ShouldSpec(body)
+
+private val body: ShouldSpec.() -> Unit = {
+
     timeout = 30_000
     val aliceUserId = UserId("alice", "server")
     val aliceDeviceId = "AAAAAA"
@@ -57,6 +64,7 @@ class VerificationServiceTest : ShouldSpec({
     val olm = mockk<OlmService>()
     val room = mockk<RoomService>()
     val user = mockk<UserService>(relaxUnitFun = true)
+    val keyService = mockk<KeyService>()
     val json = createMatrixJson()
     lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEvent>
     lateinit var cut: VerificationService
@@ -72,10 +80,10 @@ class VerificationServiceTest : ShouldSpec({
             ownDeviceId = aliceDeviceId,
             api = api,
             store = store,
-            olm = olm,
-            room = room,
-            user = user,
-            key = mockk(),
+            olmService = olm,
+            roomService = room,
+            userService = user,
+            keyService = keyService,
         )
     }
     afterTest {
@@ -92,23 +100,33 @@ class VerificationServiceTest : ShouldSpec({
         }
         context("handleVerificationRequestEvents") {
             should("ignore request, that is timed out") {
-                val request = RequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
-                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
+                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
+                        ToDeviceEvent(
+                            request,
+                            bobUserId
+                        )
+                    )
                 }
                 cut.start(eventHandlingCoroutineScope)
                 val activeDeviceVerifications = cut.activeDeviceVerification.value
                 activeDeviceVerifications shouldBe null
             }
             should("add device verification") {
-                val request = RequestEventContent(
+                val request = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
+                        ToDeviceEvent(
+                            request,
+                            bobUserId
+                        )
+                    )
                 }
                 cut.start(eventHandlingCoroutineScope)
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -116,21 +134,31 @@ class VerificationServiceTest : ShouldSpec({
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second verification request") {
-                val request1 = RequestEventContent(
+                val request1 = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                val request2 = RequestEventContent(
+                val request2 = VerificationRequestEventContent(
                     aliceDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction2"
                 )
-                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request1, bobUserId))
-                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request2, aliceUserId))
+                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
+                        ToDeviceEvent(
+                            request1,
+                            bobUserId
+                        )
+                    )
+                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
+                        ToDeviceEvent(
+                            request2,
+                            aliceUserId
+                        )
+                    )
                 }
                 val olmEvents: OlmEventService = mockk(relaxed = true)
                 every { olm.events } returns olmEvents
@@ -140,13 +168,19 @@ class VerificationServiceTest : ShouldSpec({
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
-                coVerify { olmEvents.encryptOlm(match { it is CancelEventContent }, aliceUserId, aliceDeviceId) }
+                coVerify {
+                    olmEvents.encryptOlm(
+                        match { it is VerificationCancelEventContent },
+                        aliceUserId,
+                        aliceDeviceId
+                    )
+                }
             }
         }
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
             should("ignore request, that is timed out") {
                 cut.start(eventHandlingCoroutineScope)
-                val request = RequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
+                val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
                     OlmService.DecryptedOlmEvent(
                         mockk(), Event.OlmEvent(request, bobUserId, mockk(), mockk(), mockk())
@@ -156,7 +190,7 @@ class VerificationServiceTest : ShouldSpec({
             }
             should("add device verification") {
                 cut.start(eventHandlingCoroutineScope)
-                val request = RequestEventContent(
+                val request = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -177,13 +211,13 @@ class VerificationServiceTest : ShouldSpec({
 
                 cut.start(eventHandlingCoroutineScope)
 
-                val request1 = RequestEventContent(
+                val request1 = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                val request2 = RequestEventContent(
+                val request2 = VerificationRequestEventContent(
                     aliceDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -202,19 +236,30 @@ class VerificationServiceTest : ShouldSpec({
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
-                coVerify { olmEvents.encryptOlm(match { it is CancelEventContent }, aliceUserId, aliceDeviceId) }
+                coVerify {
+                    olmEvents.encryptOlm(
+                        match { it is VerificationCancelEventContent },
+                        aliceUserId,
+                        aliceDeviceId
+                    )
+                }
             }
         }
         context("startLifecycleOfActiveVerifications") {
             should("start all lifecycles of device verifications") {
-                val request = RequestEventContent(
+                val request = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction"
                 )
-                coEvery { api.sync.subscribe<RequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<RequestEventContent>>().captured.invoke(ToDeviceEvent(request, bobUserId))
+                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
+                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
+                        ToDeviceEvent(
+                            request,
+                            bobUserId
+                        )
+                    )
                 }
                 lateinit var verificationStepSubscriber: EventSubscriber<VerificationStep>
                 coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }.coAnswers {
@@ -224,10 +269,10 @@ class VerificationServiceTest : ShouldSpec({
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 verificationStepSubscriber.invoke(
-                    ToDeviceEvent(CancelEventContent(Code.User, "user", null, "transaction"), bobUserId)
+                    ToDeviceEvent(VerificationCancelEventContent(Code.User, "user", null, "transaction"), bobUserId)
                 )
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
-                    CancelEventContent(Code.User, "user", null, "transaction"),
+                    VerificationCancelEventContent(Code.User, "user", null, "transaction"),
                     bobUserId
                 )
                 cut.activeDeviceVerification.first { it == null } shouldBe null
@@ -261,7 +306,7 @@ class VerificationServiceTest : ShouldSpec({
                 coEvery { room.getNextTimelineEvent(any(), any()) } returns MutableStateFlow(
                     TimelineEvent(
                         event = Event.MessageEvent(
-                            CancelEventContent(
+                            VerificationCancelEventContent(
                                 Code.User, "user",
                                 transactionId = null,
                                 relatesTo = VerificationStepRelatesTo(eventId)
@@ -281,7 +326,7 @@ class VerificationServiceTest : ShouldSpec({
                 val result = cut.getActiveUserVerification(timelineEvent)?.state
                 assertNotNull(result)
                 result.first { it is Cancel } shouldBe Cancel(
-                    CancelEventContent(Code.User, "user", VerificationStepRelatesTo(eventId), null),
+                    VerificationCancelEventContent(Code.User, "user", VerificationStepRelatesTo(eventId), null),
                     bobUserId
                 )
             }
@@ -295,7 +340,7 @@ class VerificationServiceTest : ShouldSpec({
             val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
             require(activeDeviceVerification != null)
             coVerify {
-                api.users.sendToDevice<RequestEventContent>(withArg {
+                api.users.sendToDevice<VerificationRequestEventContent>(withArg {
                     it shouldHaveSize 1
                     it[bobUserId]?.get(bobDeviceId)?.fromDevice shouldBe aliceDeviceId
                 }, any(), any())
@@ -347,7 +392,7 @@ class VerificationServiceTest : ShouldSpec({
             should("send request to existing room") {
                 coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
                 store.globalAccountData.update(
-                    Event.GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
+                    GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 coVerify {
@@ -358,6 +403,49 @@ class VerificationServiceTest : ShouldSpec({
                     )
                 }
             }
+        }
+    }
+    context(VerificationService::getSelfVerificationMethods.name) {
+        should("add ${CrossSignedDeviceVerification::class.simpleName}") {
+            val spyCut = spyk(cut)
+            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
+                    "DEV2" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
+                    "DEV3" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false))
+                )
+            }
+            val result = spyCut.getSelfVerificationMethods()
+            result shouldHaveSize 1
+            val firstResult = result.first()
+            firstResult.shouldBeInstanceOf<CrossSignedDeviceVerification>()
+            firstResult.createDeviceVerification()
+            coVerify { spyCut.createDeviceVerificationRequest(aliceUserId, "DEV2") }
+        }
+        should("add ${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
+            val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
+                name = "default key",
+                passphrase = null,
+            )
+            store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
+            store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            val result = cut.getSelfVerificationMethods()
+            result shouldBe setOf(AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey))
+        }
+        should("add ${AesHmacSha2RecoveryKey::class.simpleName}") {
+            val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
+                name = "default key",
+                passphrase = SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2("salt", 300_000),
+            )
+            store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
+            store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            val result = cut.getSelfVerificationMethods()
+            result shouldHaveSize 2
+            result shouldBe setOf(
+                AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey),
+                AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", defaultKey)
+            )
         }
     }
     context(VerificationService::getActiveUserVerification.name) {
@@ -420,4 +508,4 @@ class VerificationServiceTest : ShouldSpec({
             state.value.shouldBeInstanceOf<OwnRequest>()
         }
     }
-})
+}

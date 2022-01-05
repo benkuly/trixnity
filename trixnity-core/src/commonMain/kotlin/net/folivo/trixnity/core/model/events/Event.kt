@@ -105,10 +105,14 @@ sealed interface Event<C : EventContent> {
     data class RoomAccountDataEvent<C : RoomAccountDataEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("room_id") val roomId: RoomId,
+        // This does not actually exist. We use it to circumvent inconsistent spec.
+        @SerialName("key") val key: String = ""
     ) : Event<C>
 
     @Serializable
     data class GlobalAccountDataEvent<C : GlobalAccountDataEventContent>(
         @SerialName("content") override val content: C,
+        // This does not actually exist. We use it to circumvent inconsistent spec.
+        @SerialName("key") val key: String = ""
     ) : Event<C>
 }

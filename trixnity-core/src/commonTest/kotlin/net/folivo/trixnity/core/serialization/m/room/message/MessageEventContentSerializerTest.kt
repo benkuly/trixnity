@@ -6,6 +6,8 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.createMessageEventContentSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

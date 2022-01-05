@@ -142,7 +142,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setRoomAccountData(accountDataEvent: Event<out RoomAccountDataEventContent>) {
+    internal suspend fun setRoomAccountData(accountDataEvent: Event<RoomAccountDataEventContent>) {
         if (accountDataEvent is RoomAccountDataEvent) {
             store.roomAccountData.update(accountDataEvent)
         }
@@ -829,9 +829,10 @@ class RoomService(
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
+        key: String = "",
         scope: CoroutineScope
     ): StateFlow<C?> {
-        return store.roomAccountData.get(roomId, eventContentClass, scope)
+        return store.roomAccountData.get(roomId, eventContentClass, key, scope)
             .map { it?.content }
             .stateIn(scope)
     }

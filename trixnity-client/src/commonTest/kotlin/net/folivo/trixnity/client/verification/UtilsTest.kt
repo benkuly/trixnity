@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
@@ -43,7 +43,11 @@ class UtilsTest : ShouldSpec({
         should("create sas commitment") {
             createSasCommitment(
                 "publicKey",
-                StartEventContent.SasStartEventContent("AAAAAA", transactionId = "transaction", relatesTo = null),
+                VerificationStartEventContent.SasStartEventContent(
+                    "AAAAAA",
+                    transactionId = "transaction",
+                    relatesTo = null
+                ),
                 createMatrixJson()
             ) shouldBe "+w/v2hp3vXNFmn3RKqUKzq/BzSRwE8WzX5fNC83LFLE"
         }

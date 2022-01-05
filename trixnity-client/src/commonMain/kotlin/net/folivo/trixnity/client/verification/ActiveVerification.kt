@@ -5,7 +5,6 @@ import kotlinx.atomicfu.getAndUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -15,10 +14,10 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.*
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnexpectedMessage
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.UnknownMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.StartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 
 private val log = KotlinLogging.logger {}
 
@@ -82,22 +81,22 @@ abstract class ActiveVerification(
                 cancel(Code.UnknownTransaction, "transaction is unknown")
             val currentState = state.value
             when (step) {
-                is ReadyEventContent -> {
+                is VerificationReadyEventContent -> {
                     if (currentState is OwnRequest || currentState is TheirRequest)
                         onReady(step)
                     else cancelUnexpectedMessage(currentState)
                 }
-                is StartEventContent -> {
+                is VerificationStartEventContent -> {
                     if (currentState is Ready || currentState is Start)
                         onStart(step, sender, isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
-                is DoneEventContent -> {
+                is VerificationDoneEventContent -> {
                     if (currentState is Start || currentState is PartlyDone)
                         onDone(isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
-                is CancelEventContent -> {
+                is VerificationCancelEventContent -> {
                     onCancel(step, sender, isOurOwn)
                 }
                 else -> when (currentState) {
@@ -114,7 +113,7 @@ abstract class ActiveVerification(
         cancel(UnexpectedMessage, "this verification is at step ${currentState::class.simpleName}")
     }
 
-    private fun onReady(step: ReadyEventContent) {
+    private fun onReady(step: VerificationReadyEventContent) {
         if (theirDeviceId == null && step.fromDevice != ownDeviceId) theirDeviceId = step.fromDevice
         _state.value = Ready(
             ownDeviceId,
@@ -125,7 +124,7 @@ abstract class ActiveVerification(
         )
     }
 
-    private suspend fun onStart(step: StartEventContent, sender: UserId, isOurOwn: Boolean) {
+    private suspend fun onStart(step: VerificationStartEventContent, sender: UserId, isOurOwn: Boolean) {
         val senderDevice = step.fromDevice
         val currentState = state.value
         suspend fun setNewStartEvent() {
@@ -173,13 +172,14 @@ abstract class ActiveVerification(
     }
 
     private fun onDone(isOurOwn: Boolean) {
-        _state.update { oldState ->
+        val oldState = _state.value
+        val newState =
             if (oldState is PartlyDone && (isOurOwn && !oldState.isOurOwn || !isOurOwn && oldState.isOurOwn)) Done
             else PartlyDone(isOurOwn)
-        }
+        _state.value = newState
     }
 
-    private suspend fun onCancel(step: CancelEventContent, sender: UserId, isOurOwn: Boolean) {
+    private suspend fun onCancel(step: VerificationCancelEventContent, sender: UserId, isOurOwn: Boolean) {
         _state.value = Cancel(step, sender)
         when (val currentState = state.value) {
             is Start -> {
@@ -193,7 +193,7 @@ abstract class ActiveVerification(
 
     private suspend fun sendVerificationStepAndHandleIt(step: VerificationStep) {
         when (step) {
-            is CancelEventContent -> {
+            is VerificationCancelEventContent -> {
                 if (state.value !is Cancel)
                     try {
                         sendVerificationStep(step)
@@ -209,7 +209,12 @@ abstract class ActiveVerification(
             } catch (error: Throwable) {
                 log.debug { "could not send step $step because: ${error.message}" }
                 handleVerificationStep(
-                    CancelEventContent(Code.InternalError, "problem sending step", relatesTo, transactionId), ownUserId,
+                    VerificationCancelEventContent(
+                        Code.InternalError,
+                        "problem sending step",
+                        relatesTo,
+                        transactionId
+                    ), ownUserId,
                     true
                 )
             }
@@ -217,7 +222,7 @@ abstract class ActiveVerification(
     }
 
     protected suspend fun cancel(code: Code, reason: String) {
-        sendVerificationStepAndHandleIt(CancelEventContent(code, reason, relatesTo, transactionId))
+        sendVerificationStepAndHandleIt(VerificationCancelEventContent(code, reason, relatesTo, transactionId))
     }
 
     suspend fun cancel() {

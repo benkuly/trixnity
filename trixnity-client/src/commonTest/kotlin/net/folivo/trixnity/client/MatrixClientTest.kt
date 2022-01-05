@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.assertEquals
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
@@ -72,9 +72,7 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = object : SecureStore {
-                    override val olmPickleKey: String = ""
-                },
+                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -162,9 +160,7 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = object : SecureStore {
-                    override val olmPickleKey: String = ""
-                },
+                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -251,9 +247,7 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = object : SecureStore {
-                    override val olmPickleKey: String = ""
-                },
+                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->

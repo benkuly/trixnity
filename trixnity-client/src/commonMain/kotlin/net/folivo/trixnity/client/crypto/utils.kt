@@ -156,6 +156,10 @@ internal inline fun <reified T : Key> DeviceKeys.get(): T? {
     return keys.keys.filterIsInstance<T>().firstOrNull()
 }
 
+internal inline fun <reified T : Key> CrossSigningKeys.get(): T? {
+    return keys.keys.filterIsInstance<T>().firstOrNull()
+}
+
 internal inline fun <reified T : Key> Keys.get(): T? {
     return keys.filterIsInstance<T>().firstOrNull()
 }

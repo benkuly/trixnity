@@ -22,9 +22,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.MismatchedSas
-import net.folivo.trixnity.core.model.events.m.key.verification.CancelEventContent.Code.User
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.MismatchedSas
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.User
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStepRelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -83,7 +83,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
 
     should("handle verification step") {
-        val cancelEvent = CancelEventContent(User, "u", relatesTo, null)
+        val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(mockk())
         coEvery { room.getNextTimelineEvent(any(), any()) }.returnsMany(
             MutableStateFlow( // ignore event, that is no VerificationStep
@@ -99,7 +99,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore own event
                 TimelineEvent(
                     event = MessageEvent(
-                        CancelEventContent(MismatchedSas, "", relatesTo, null),
+                        VerificationCancelEventContent(MismatchedSas, "", relatesTo, null),
                         EventId("$2"), alice, roomId, 1234
                     ),
                     roomId = roomId, eventId = event,
@@ -109,7 +109,12 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event with other relates to
                 TimelineEvent(
                     event = MessageEvent(
-                        CancelEventContent(MismatchedSas, "", VerificationStepRelatesTo(EventId("$0")), null),
+                        VerificationCancelEventContent(
+                            MismatchedSas,
+                            "",
+                            VerificationStepRelatesTo(EventId("$0")),
+                            null
+                        ),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     roomId = roomId, eventId = event,
@@ -133,7 +138,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, bob)
     }
     should("handle encrypted verification step") {
-        val cancelEvent = CancelEventContent(User, "u", relatesTo, null)
+        val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
         val cancelFlow = MutableStateFlow(
             TimelineEvent(
                 event = MessageEvent(
@@ -166,7 +171,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                         EventId("$2"), alice, roomId, 1234
                     ),
                     decryptedEvent = Result.success(
-                        MegolmEvent(CancelEventContent(MismatchedSas, "", relatesTo, null), roomId)
+                        MegolmEvent(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null), roomId)
                     ),
                     roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
@@ -180,7 +185,12 @@ class ActiveUserVerificationTest : ShouldSpec({
                     ),
                     decryptedEvent = Result.success(
                         MegolmEvent(
-                            CancelEventContent(MismatchedSas, "", VerificationStepRelatesTo(EventId("$0")), null),
+                            VerificationCancelEventContent(
+                                MismatchedSas,
+                                "",
+                                VerificationStepRelatesTo(EventId("$0")),
+                                null
+                            ),
                             roomId
                         )
                     ),
@@ -231,7 +241,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         coVerify {
             api.rooms.sendMessageEvent(
                 roomId,
-                CancelEventContent(User, "user cancelled verification", relatesTo, null),
+                VerificationCancelEventContent(User, "user cancelled verification", relatesTo, null),
                 any(), any()
             )
         }
@@ -242,7 +252,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        CancelEventContent(User, "r", relatesTo, null),
+                        VerificationCancelEventContent(User, "r", relatesTo, null),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     roomId = roomId, eventId = event,

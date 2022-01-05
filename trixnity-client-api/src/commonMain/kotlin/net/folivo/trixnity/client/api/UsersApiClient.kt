@@ -5,8 +5,7 @@ import io.ktor.client.request.*
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpMethod.Companion.Put
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.model.users.*
 import net.folivo.trixnity.core.model.UserId
@@ -14,7 +13,7 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
 class UsersApiClient(
@@ -131,6 +130,12 @@ class UsersApiClient(
             parameter("user_id", asUserId)
         }
 
+    @Serializable
+    data class SendToDeviceRequest<C : ToDeviceEventContent>(
+        @SerialName("messages") val messages: Map<UserId, Map<String, @Contextual C>>
+    )
+
+
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
      */
@@ -189,10 +194,12 @@ class UsersApiClient(
     suspend fun <C : GlobalAccountDataEventContent> setAccountData(
         content: C,
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
     ): Result<Unit> {
         val eventType =
             contentMappings.globalAccountData.find { it.kClass.isInstance(content) }?.type
+                ?.let { type -> if (key.isEmpty()) type else type + key }
                 ?: throw IllegalArgumentException(unsupportedEventType(content::class))
         return httpClient.request {
             method = Put
@@ -209,13 +216,15 @@ class UsersApiClient(
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         accountDataEventContentClass: KClass<C>,
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
     ): Result<C> {
         val mapping = contentMappings.globalAccountData.find { it.kClass == accountDataEventContentClass }
             ?: throw IllegalArgumentException(unsupportedEventType(accountDataEventContentClass))
+        val eventType = if (key.isEmpty()) mapping.type else mapping.type + key
         return httpClient.request<String> {
             method = Get
-            url("/_matrix/client/v3/user/${userId.e()}/account_data/${mapping.type}")
+            url("/_matrix/client/v3/user/${userId.e()}/account_data/$eventType")
             parameter("user_id", asUserId)
         }.mapCatching {
             @Suppress("UNCHECKED_CAST")
@@ -229,8 +238,9 @@ class UsersApiClient(
      */
     suspend inline fun <reified C : GlobalAccountDataEventContent> getAccountData(
         userId: UserId,
+        key: String = "",
         asUserId: UserId? = null
-    ): Result<C> = getAccountData(C::class, userId, asUserId)
+    ): Result<C> = getAccountData(C::class, userId, key, asUserId)
 
     /**
      *  @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3user_directorysearch">matrix spec</a>

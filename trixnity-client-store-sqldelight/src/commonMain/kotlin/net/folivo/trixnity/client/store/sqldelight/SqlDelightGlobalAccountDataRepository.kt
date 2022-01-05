@@ -16,18 +16,29 @@ class SqlDelightGlobalAccountDataRepository(
     private val serializer = json.serializersModule.getContextual(GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: String): GlobalAccountDataEvent<*>? = withContext(context) {
-        db.getGlobalAccountData(key).executeAsOneOrNull()?.let {
-            json.decodeFromString(serializer, it.event)
+    override suspend fun get(key: String): Map<String, GlobalAccountDataEvent<*>>? = withContext(context) {
+        db.getGlobalAccountData(key).executeAsList().associate {
+            it.key to json.decodeFromString(serializer, it.event)
         }
     }
 
-    override suspend fun save(key: String, value: GlobalAccountDataEvent<*>) = withContext(context) {
-        db.saveGlobalAccountData(key, json.encodeToString(serializer, value))
+    override suspend fun save(key: String, value: Map<String, GlobalAccountDataEvent<*>>) = withContext(context) {
+        value.forEach { saveBySecondKey(key, it.key, it.value) }
     }
 
     override suspend fun delete(key: String) = withContext(context) {
         db.deleteGlobalAccountData(key)
     }
 
+    override suspend fun getBySecondKey(firstKey: String, secondKey: String): GlobalAccountDataEvent<*>? =
+        withContext(context) {
+            db.getGlobalAccountDataByKey(firstKey, secondKey).executeAsOneOrNull()?.let {
+                json.decodeFromString(serializer, it.event)
+            }
+        }
+
+    override suspend fun saveBySecondKey(firstKey: String, secondKey: String, value: GlobalAccountDataEvent<*>) =
+        withContext(context) {
+            db.saveGlobalAccountData(firstKey, secondKey, json.encodeToString(serializer, value))
+        }
 }

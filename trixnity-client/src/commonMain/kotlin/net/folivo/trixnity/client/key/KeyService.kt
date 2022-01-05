@@ -1,7 +1,13 @@
 package net.folivo.trixnity.client.key
 
+import com.benasher44.uuid.uuid4
+import io.ktor.util.*
+import io.ktor.util.reflect.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
+import kotlinx.serialization.json.decodeFromJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
@@ -9,28 +15,55 @@ import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.SecureStore.AllowedSecretType.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.KeyRequestAction
+import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
+import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
+import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
+import net.folivo.trixnity.olm.OlmPkSigning
+import net.folivo.trixnity.olm.freeAfter
+import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 private val log = KotlinLogging.logger {}
 
 class KeyService(
     private val store: Store,
-    private val olmSignService: OlmSignService,
+    private val secureStore: SecureStore,
+    private val olm: OlmService,
     private val api: MatrixApiClient,
 ) {
+    private val ownUserId = store.account.userId.value ?: throw IllegalArgumentException("userId must not be null")
+    private val ownDeviceId =
+        store.account.deviceId.value ?: throw IllegalArgumentException("deviceId must not be null")
+
     @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeSyncResponse { syncResponse ->
             syncResponse.deviceLists?.also { handleDeviceLists(it) }
         }
-        scope.launch { handleOutdatedKeys() }
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleIncomingKeyRequests) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
+        api.sync.subscribeAfterSyncResponse {
+            processIncomingKeyRequests()
+            cancelOldOutgoingKeyRequests()
+        }
+        api.sync.subscribe<SecretEventContent>(::handleChangedSecrets)
     }
 
     internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists) {
@@ -87,7 +120,7 @@ class KeyService(
         masterKey: Signed<CrossSigningKeys, UserId>
     ) {
         val oldMasterKey = store.keys.getCrossSigningKey(userId, MasterKey)
-        when (val signatureVerification = olmSignService.verify(masterKey)) {
+        when (val signatureVerification = olm.sign.verify(masterKey)) {
             VerifyResult.Valid, VerifyResult.MissingSignature -> {
                 val oldMasterKeyWasVerified = when (val trustLevel = oldMasterKey?.trustLevel) {
                     is Valid -> trustLevel.verified
@@ -113,7 +146,7 @@ class KeyService(
         userId: UserId,
         selfSigningKey: Signed<CrossSigningKeys, UserId>
     ) {
-        val signatureVerification = olmSignService.verify(selfSigningKey)
+        val signatureVerification = olm.sign.verify(selfSigningKey)
         if (signatureVerification == VerifyResult.Valid) {
             val newSelfSigningKey =
                 StoredCrossSigningKeys(selfSigningKey, calculateCrossSigningKeysTrustLevel(selfSigningKey))
@@ -131,7 +164,7 @@ class KeyService(
         userId: UserId,
         userSigningKey: Signed<CrossSigningKeys, UserId>
     ) {
-        val signatureVerification = olmSignService.verify(userSigningKey)
+        val signatureVerification = olm.sign.verify(userSigningKey)
         if (signatureVerification == VerifyResult.Valid) {
             val newUserSigningKey =
                 StoredCrossSigningKeys(userSigningKey, calculateCrossSigningKeysTrustLevel(userSigningKey))
@@ -153,7 +186,7 @@ class KeyService(
         log.debug { "update received outdated device keys for user $userId" }
         val oldDevices = store.keys.getDeviceKeys(userId)
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
-            val signatureVerification = olmSignService.verifySelfSignedDeviceKeys(deviceKeys)
+            val signatureVerification = olm.sign.verifySelfSignedDeviceKeys(deviceKeys)
             (userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                     && signatureVerification == VerifyResult.Valid)
                 .also {
@@ -383,6 +416,241 @@ class KeyService(
     private suspend fun SignedDeviceKeys.getVerificationState(userId: UserId, deviceId: String) =
         this.signed.keys.getVerificationState(userId, deviceId)
 
+    private val incomingSecretKeyRequests = MutableStateFlow<Set<SecretKeyRequestEventContent>>(setOf())
+
+    internal fun handleIncomingKeyRequests(event: OlmService.DecryptedOlmEvent) {
+        val content = event.decrypted.content
+        if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
+            when (content.action) {
+                KeyRequestAction.REQUEST -> incomingSecretKeyRequests.update { it + content }
+                KeyRequestAction.REQUEST_CANCELLATION -> incomingSecretKeyRequests
+                    .update { oldRequests -> oldRequests.filterNot { it.requestId == content.requestId }.toSet() }
+            }
+        }
+    }
+
+    internal suspend fun processIncomingKeyRequests() {
+        incomingSecretKeyRequests.value.forEach { request ->
+            val senderTrustLevel = store.keys.getDeviceKey(ownUserId, request.requestingDeviceId)?.trustLevel
+            if (senderTrustLevel is CrossSigned && senderTrustLevel.verified || senderTrustLevel is Valid && senderTrustLevel.verified) {
+                val requestedSecret = request.name
+                    ?.let { SecureStore.AllowedSecretType.ofId(it) }
+                    ?.let { secureStore.secrets.value[it] }
+                if (requestedSecret != null) {
+                    log.info { "send incoming key request answer to device ${request.requestingDeviceId}" }
+                    api.users.sendToDevice(
+                        mapOf(
+                            ownUserId to mapOf(
+                                request.requestingDeviceId to SecretKeySendEventContent(
+                                    request.requestId, requestedSecret.decryptedPrivateKey
+                                )
+                            )
+                        )
+                    ).getOrThrow()
+                } else log.info { "got a key request (${request.name}) from ${request.requestingDeviceId}, but we do not have that secret cached" }
+            }
+            incomingSecretKeyRequests.update { it - request }
+        }
+    }
+
+    internal suspend fun handleOutgoingKeyRequestAnswer(event: OlmService.DecryptedOlmEvent) {
+        val content = event.decrypted.content
+        if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
+            log.debug { "handle outgoing key request answer $content" }
+            val (senderDeviceId, senderTrustLevel) = store.keys.getDeviceKeys(ownUserId)?.firstNotNullOfOrNull {
+                if (it.value.value.get<Key.Ed25519Key>() == event.decrypted.senderKeys.get<Key.Ed25519Key>())
+                    it.key to it.value.trustLevel
+                else null
+            } ?: (null to null)
+            if (senderDeviceId == null) {
+                log.warn { "could not derive sender device id from keys ${event.decrypted.senderKeys}" }
+                return
+            }
+            if (!(senderTrustLevel is CrossSigned && senderTrustLevel.verified || senderTrustLevel is Valid && senderTrustLevel.verified)) {
+                log.warn { "received a key from $senderDeviceId, but we don't trust that device ($senderTrustLevel)" }
+                return
+            }
+            val request = store.keys.allSecretKeyRequests.value
+                .firstOrNull { it.content.requestId == content.requestId }
+            if (request?.receiverDeviceIds?.contains(senderDeviceId) != true) {
+                log.warn { "received a key from $senderDeviceId, that we did not requested (or request is too old and we already deleted it)" }
+                return
+            }
+            val generatedPublicKey = try {
+                freeAfter(OlmPkSigning.create(content.secret)) { it.publicKey }
+            } catch (error: Throwable) {
+                log.warn(error) { "could not generate public key from received secret" }
+                return
+            }
+            val secretType = request.content.name?.let { SecureStore.AllowedSecretType.ofId(it) }
+            val originalPublicKey = when (secretType) {
+                M_CROSS_SIGNING_USER_SIGNING ->
+                    store.keys.getCrossSigningKey(ownUserId, CrossSigningKeysUsage.UserSigningKey)
+                        ?.value?.signed?.get<Key.Ed25519Key>()?.value
+                M_CROSS_SIGNING_SELF_SIGNING ->
+                    store.keys.getCrossSigningKey(ownUserId, CrossSigningKeysUsage.SelfSigningKey)
+                        ?.value?.signed?.get<Key.Ed25519Key>()?.value
+                M_MEGOLM_BACKUP_V1 -> null // TODO
+                null -> null
+            }
+            if (secretType == null || originalPublicKey == null || generatedPublicKey != originalPublicKey) {
+                log.warn { "received public key $generatedPublicKey of secret ${request.content.name} did not match the original $originalPublicKey" }
+                return
+            }
+            val encryptedSecret = secretType.getEncrytedSecret()
+            if (encryptedSecret == null) {
+                log.warn { "could not find encrypted secret" }
+                return
+            }
+            secureStore.secrets.update {
+                it + (secretType to StoredSecret(encryptedSecret, content.secret))
+            }
+            val cancelRequestTo = request.receiverDeviceIds - senderDeviceId
+            if (cancelRequestTo.isNotEmpty()) {
+                api.users.sendToDevice(
+                    mapOf(
+                        ownUserId to cancelRequestTo.associateWith { request.content.copy(action = KeyRequestAction.REQUEST_CANCELLATION) }
+                    )
+                ).getOrThrow()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    internal suspend fun cancelOldOutgoingKeyRequests() {
+        store.keys.allSecretKeyRequests.value.forEach {
+            if ((fromEpochMilliseconds(it.creationTimestamp) + 1.days) < Clock.System.now()) {
+                cancelStoredSecretKeyRequest(it)
+            }
+        }
+    }
+
+    private suspend fun cancelStoredSecretKeyRequest(request: StoredSecretKeyRequest) {
+        val cancelRequest = request.content.copy(action = KeyRequestAction.REQUEST_CANCELLATION)
+        log.info { "cancel old outgoing key request $request" }
+        api.users.sendToDevice(mapOf(ownUserId to request.receiverDeviceIds.associateWith { cancelRequest }))
+            .onSuccess {
+                store.keys.deleteSecretKeyRequest(cancelRequest.requestId)
+            }.getOrThrow()
+    }
+
+    private suspend fun SecureStore.AllowedSecretType.getEncrytedSecret() = when (this) {
+        M_CROSS_SIGNING_USER_SIGNING -> store.globalAccountData.get<UserSigningKeyEventContent>()
+        M_CROSS_SIGNING_SELF_SIGNING -> store.globalAccountData.get<SelfSigningKeyEventContent>()
+        M_MEGOLM_BACKUP_V1 -> null // TODO
+    }
+
+    internal suspend fun requestSecretKeys() {
+        val missingSecrets = SecureStore.AllowedSecretType.values()
+            .subtract(secureStore.secrets.value.keys)
+            .subtract(store.keys.allSecretKeyRequests.value.mapNotNull { request ->
+                request.content.name?.let { SecureStore.AllowedSecretType.ofId(it) }
+            }.toSet())
+        if (missingSecrets.isEmpty()) {
+            log.debug { "there are no missing secrets or they are already requested" }
+            return
+        }
+        val receiverDeviceIds = store.keys.getDeviceKeys(ownUserId)
+            ?.filter { it.value.trustLevel == CrossSigned(true) }
+            ?.map { it.value.value.signed.deviceId }?.minus(ownDeviceId)?.toSet()
+        if (receiverDeviceIds.isNullOrEmpty()) {
+            log.debug { "there are no receivers, that we can request secret keys from" }
+            return
+        }
+        missingSecrets.map { missingSecret ->
+            val requestId = uuid4().toString()
+            val request = SecretKeyRequestEventContent(
+                name = missingSecret.id,
+                action = KeyRequestAction.REQUEST,
+                requestingDeviceId = ownDeviceId,
+                requestId = requestId
+            )
+            log.debug { "send secret key request (${missingSecret.id}) to $receiverDeviceIds" }
+            api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
+                .onSuccess {
+                    store.keys.addSecretKeyRequest(
+                        StoredSecretKeyRequest(request, receiverDeviceIds, Clock.System.now().toEpochMilliseconds())
+                    )
+                }.getOrThrow()
+        }
+    }
+
+    internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
+        api.sync.currentSyncState.retryWhenSyncIsRunning(
+            onError = { log.warn(it) { "failed request secrets" } },
+            scope = this
+        ) {
+            store.keys.getDeviceKey(ownUserId, ownDeviceId, this).collect { deviceKeys ->
+                if (deviceKeys?.trustLevel == CrossSigned(true)) {
+                    requestSecretKeys()
+                }
+            }
+        }
+    }
+
+    internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
+        val secretType =
+            api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }
+                ?.let { SecureStore.AllowedSecretType.ofId(it.type) }
+        if (secretType != null) {
+            val storedSecret = secureStore.secrets.value[secretType]
+            if (storedSecret?.event != event) {
+                store.keys.allSecretKeyRequests.value.filter { it.content.name == secretType.id }
+                    .forEach { cancelStoredSecretKeyRequest(it) }
+                secureStore.secrets.update { it - secretType }
+            }
+        }
+    }
+
+    internal suspend fun decryptSecret(
+        key: ByteArray,
+        keyId: String,
+        keyInfo: SecretKeyEventContent,
+        secretName: String,
+        secret: SecretEventContent
+    ): ByteArray? {
+        val encryptedSecret = secret.encrypted[keyId] ?: return null
+        return when (keyInfo) {
+            is SecretKeyEventContent.AesHmacSha2Key -> {
+                try {
+                    val encryptedData = api.json.decodeFromJsonElement<AesHmacSha2EncryptedData>(encryptedSecret)
+                    decryptAesHmacSha2(
+                        content = encryptedData,
+                        key = key,
+                        name = secretName
+                    )
+                } catch (error: Throwable) {
+                    log.warn(error) { "could not decrypt secret $secretName ($secret)" }
+                    null
+                }
+            }
+            is SecretKeyEventContent.Unknown -> null
+        }
+    }
+
+    @OptIn(InternalAPI::class)
+    internal suspend fun decryptMissingSecrets(
+        key: ByteArray,
+        keyId: String,
+        keyInfo: SecretKeyEventContent,
+    ) {
+        val decryptedSecrets = SecureStore.AllowedSecretType.values()
+            .subtract(secureStore.secrets.value.keys)
+            .mapNotNull { allowedSecret ->
+                val event = allowedSecret.getEncrytedSecret()
+                if (event != null) {
+                    decryptSecret(key, keyId, keyInfo, allowedSecret.id, event.content)
+                        ?.let { allowedSecret to StoredSecret(event, it.encodeBase64()) }
+                } else {
+                    log.warn { "could not find secret ${allowedSecret.id} to encrypt and cache" }
+                    null
+                }
+            }.toMap()
+        secureStore.secrets.update {
+            it + decryptedSecrets
+        }
+    }
+
     /**
      * @return the trust level of a device.
      */
@@ -433,7 +701,7 @@ class KeyService(
     }
 
     /**
-     * @return the trust level of a user. This will only be present, if the user has cross signing enabled.
+     * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getTrustLevel(

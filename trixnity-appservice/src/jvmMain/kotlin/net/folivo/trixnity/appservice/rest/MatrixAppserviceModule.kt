@@ -13,8 +13,8 @@ import net.folivo.trixnity.client.api.model.ErrorResponse
 import net.folivo.trixnity.client.api.model.ErrorResponseSerializer
 import net.folivo.trixnity.client.api.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.event.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.event.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 private val log = KotlinLogging.logger {}
 

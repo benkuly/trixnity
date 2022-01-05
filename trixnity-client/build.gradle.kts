@@ -3,10 +3,10 @@ import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
 import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
 
 plugins {
+    id("com.android.library")
     kotlin("plugin.serialization")
     kotlin("multiplatform")
     id("kotlinx-atomicfu")
-    id("com.android.library")
 }
 
 android {
