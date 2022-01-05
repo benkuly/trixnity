@@ -14,6 +14,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
@@ -76,7 +77,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             api = api,
             olm = olm,
             store = store,
-            user = mockk(relaxed = true),
+            user = mockk(relaxUnitFun = true),
             room = room,
             key = mockk(),
         )
@@ -217,7 +218,9 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
     should("send verification step and encrypt it") {
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(null)
-        coEvery { store.room.get(roomId).value?.encryptionAlgorithm } returns Megolm
+        coEvery { store.room.get(roomId) } returns MutableStateFlow(
+            simpleRoom.copy(encryptionAlgorithm = Megolm, membersLoaded = true)
+        )
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
         coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
         val encrypted = mockk<MegolmEncryptedEventContent>()
@@ -231,7 +234,9 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
     should("send verification step and use unencrypted when encrypt failed") {
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(null)
-        coEvery { store.room.get(roomId).value?.encryptionAlgorithm } returns Megolm
+        coEvery { store.room.get(roomId) } returns MutableStateFlow(
+            simpleRoom.copy(encryptionAlgorithm = Megolm, membersLoaded = true)
+        )
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
         coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
         coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "hu")

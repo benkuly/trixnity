@@ -49,4 +49,9 @@ class SqlDelightRoomAccountDataRepository(
         db.saveRoomAccountData(firstKey.roomId.full, firstKey.type, secondKey, json.encodeToString(serializer, value))
     }
 
+    override suspend fun deleteBySecondKey(firstKey: RoomAccountDataRepositoryKey, secondKey: String) =
+        withContext(context) {
+            db.deleteRoomAccountDataByKey(firstKey.roomId.full, firstKey.type, secondKey)
+        }
+
 }

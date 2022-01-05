@@ -283,19 +283,17 @@ class MatrixClient private constructor(
                 key.start(this)
                 olm.start(this)
                 room.start(this)
-                user.start()
+                user.start(this)
                 verification.start(this)
                 everythingStarted.value = true
             }
             everythingStarted.first { it } // we wait until everything has started
 
-            val ownUserId = store.account.userId.value
-            requireNotNull(ownUserId)
             val filterId = store.account.filterId.value
             if (filterId == null) {
                 log.debug { "set new filter for sync" }
                 store.account.filterId.value = api.users.setFilter(
-                    ownUserId,
+                    userId,
                     Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
                 ).getOrThrow()
             }

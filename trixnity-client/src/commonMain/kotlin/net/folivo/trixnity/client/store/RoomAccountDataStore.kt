@@ -26,7 +26,9 @@ class RoomAccountDataStore(
             else -> contentMappings.roomAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        roomAccountDataCache.updateBySecondKey(RoomAccountDataRepositoryKey(event.roomId, eventType), event.key, event)
+        roomAccountDataCache.updateBySecondKey(
+            RoomAccountDataRepositoryKey(event.roomId, eventType), event.key
+        ) { event }
     }
 
     suspend fun <C : RoomAccountDataEventContent> get(

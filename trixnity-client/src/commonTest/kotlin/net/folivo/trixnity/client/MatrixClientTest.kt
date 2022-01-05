@@ -14,6 +14,7 @@ import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
@@ -38,6 +39,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientTest : ShouldSpec({
+    timeout = 30_000
+
     val json = createMatrixJson()
 
     val serverResponse = SyncResponse(
@@ -351,14 +354,16 @@ class MatrixClientTest : ShouldSpec({
                 scope = scope,
             )
 
-            cut?.displayName?.value shouldBe "bob"
-            cut?.avatarUrl?.value shouldBe Url("mxc://localhost/123456")
+            while (cut == null) delay(10)
 
-            cut?.startSync()
+            cut.displayName.value shouldBe "bob"
+            cut.avatarUrl.value shouldBe Url("mxc://localhost/123456")
+
+            cut.startSync()
 
             eventually(3.seconds) {
-                cut?.displayName?.value shouldBe "bobby"
-                cut?.avatarUrl?.value shouldBe Url("mxc://localhost/abcdef")
+                cut.displayName.value shouldBe "bobby"
+                cut.avatarUrl.value shouldBe Url("mxc://localhost/abcdef")
             }
         }
     }

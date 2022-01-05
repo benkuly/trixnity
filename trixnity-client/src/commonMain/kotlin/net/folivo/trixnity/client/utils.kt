@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
@@ -84,11 +85,10 @@ suspend fun possiblyEncryptEvent(
     user: UserService
 ): MessageEventContent {
     return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
-        // The UI should do that, when a room gets opened, because of lazy loading
-        // members Trixnity may not know all devices for encryption yet.
-        // To ensure an easy usage of Trixnity and because
-        // the impact on performance is minimal, we call it here for prevention.
-        user.loadMembers(roomId).getOrThrow()
+        user.loadMembers(roomId)
+        withTimeout(30_000) {
+            store.room.get(roomId).first { it?.membersLoaded == true }
+        }
 
         val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
         requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }

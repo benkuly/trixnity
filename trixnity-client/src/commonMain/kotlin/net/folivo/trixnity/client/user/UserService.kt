@@ -2,12 +2,16 @@ package net.folivo.trixnity.client.user
 
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
+import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.originalName
@@ -15,7 +19,6 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import kotlin.reflect.KClass
 
@@ -26,11 +29,14 @@ class UserService(
     private val api: MatrixApiClient,
 ) {
     private val reloadOwnProfile = MutableStateFlow(false)
+    private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
 
-    suspend fun start() {
+    suspend fun start(scope: CoroutineScope) {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
         api.sync.subscribeAfterSyncResponse(::reloadProfile)
+        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { handleLoadMembersQueue() }
     }
 
     private fun calculateUserDisplayName(
@@ -69,11 +75,13 @@ class UserService(
         return usersWithSameDisplayName.isNotEmpty()
     }
 
-    internal suspend fun setRoomUser(event: Event<MemberEventContent>) {
+    internal suspend fun setRoomUser(event: Event<MemberEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
             val userId = UserId(stateKey)
+            val storedRoomUser = store.roomUser.get(userId, roomId)
+            if (skipWhenAlreadyPresent && storedRoomUser != null) return
             val membership = event.content.membership
             val newDisplayName = event.content.displayName
 
@@ -92,7 +100,8 @@ class UserService(
             log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
 
             store.roomUser.update(userId, roomId) { oldRoomUser ->
-                oldRoomUser?.copy(
+                if (skipWhenAlreadyPresent && oldRoomUser != null) oldRoomUser
+                else oldRoomUser?.copy(
                     name = calculatedName,
                     event = event
                 ) ?: RoomUser(
@@ -128,19 +137,30 @@ class UserService(
         }
     }
 
-    suspend fun loadMembers(roomId: RoomId): Result<Unit> = kotlin.runCatching {
-        store.room.update(roomId) { oldRoom ->
-            requireNotNull(oldRoom) { "cannot load members of a room, that we don't know yet ($roomId)" }
-            if (!oldRoom.membersLoaded) {
-                val memberEvents = api.rooms.getMembers(
-                    roomId = roomId,
-                    notMembership = Membership.LEAVE
-                ).getOrThrow().toList()
-                store.roomState.updateAll(memberEvents.filterIsInstance<Event<StateEventContent>>())
-                memberEvents.forEach { setRoomUser(it) }
-                store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
-                oldRoom.copy(membersLoaded = true)
-            } else oldRoom
+    fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
+
+    internal suspend fun handleLoadMembersQueue() = coroutineScope {
+        api.sync.currentSyncState.retryWhenSyncIsRunning(
+            onError = { log.warn(it) { "failed loading members" } },
+            scope = this
+        ) {
+            loadMembersQueue.collect { roomIds ->
+                roomIds.forEach { roomId ->
+                    if (store.room.get(roomId).value?.membersLoaded != true) {
+                        val memberEvents = api.rooms.getMembers(
+                            roomId = roomId,
+                            notMembership = Membership.LEAVE
+                        ).getOrThrow().toList()
+                        memberEvents.forEach {
+                            store.roomState.update(event = it, skipWhenAlreadyPresent = true)
+                            setRoomUser(event = it, skipWhenAlreadyPresent = true)
+                        }
+                        store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
+                        store.room.update(roomId) { it?.copy(membersLoaded = true) }
+                    }
+                    loadMembersQueue.update { it - roomId }
+                }
+            }
         }
     }
 

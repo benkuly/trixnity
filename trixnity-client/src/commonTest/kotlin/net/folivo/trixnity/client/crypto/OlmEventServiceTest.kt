@@ -526,26 +526,24 @@ class OlmEventServiceTest : ShouldSpec({
         val room = RoomId("room", "server")
         val megolmEvent = MegolmEvent(eventContent, room)
         beforeTest {
-            store.roomState.updateAll(
-                listOf(
-                    StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                        EventId("\$event1"),
-                        alice,
-                        room,
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                        EventId("\$event2"),
-                        bob,
-                        room,
-                        1235,
-                        stateKey = bob.full
-                    )
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    EventId("\$event2"),
+                    bob,
+                    room,
+                    1235,
+                    stateKey = bob.full
                 )
-            )
+            ).forEach { store.roomState.update(it) }
         }
         suspend fun ShouldSpecContainerScope.testEncryption(
             settings: EncryptionEventContent,

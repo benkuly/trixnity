@@ -21,3 +21,7 @@ WHERE room_id = ? AND type = ?;
 getRoomStateByStateKey:
 SELECT event FROM sql_room_state
 WHERE room_id = ? AND type = ? AND state_key = ?;
+
+deleteRoomStateByStateKey:
+DELETE FROM sql_room_state
+WHERE room_id = ? AND type = ? AND state_key = ?;

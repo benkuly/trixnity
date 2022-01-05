@@ -427,42 +427,40 @@ private val body: ShouldSpec.() -> Unit = {
                         encryptionAlgorithm = EncryptionAlgorithm.Megolm
                     )
                 }
-                store.roomState.updateAll(
-                    listOf(
-                        Event.StateEvent(
-                            MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                            EventId("\$event1"),
-                            alice,
-                            room1,
-                            1234,
-                            stateKey = alice.full
-                        ),
-                        Event.StateEvent(
-                            MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                            EventId("\$event2"),
-                            alice,
-                            room2,
-                            1234,
-                            stateKey = alice.full
-                        ),
-                        Event.StateEvent(
-                            MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                            EventId("\$event3"),
-                            alice,
-                            room3,
-                            1234,
-                            stateKey = alice.full
-                        ),
-                        Event.StateEvent(
-                            MemberEventContent(membership = MemberEventContent.Membership.JOIN),
-                            EventId("\$event4"),
-                            cedric,
-                            room1,
-                            1234,
-                            stateKey = cedric.full
-                        ),
-                    )
-                )
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event1"),
+                        alice,
+                        room1,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    Event.StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event2"),
+                        alice,
+                        room2,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    Event.StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event3"),
+                        alice,
+                        room3,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    Event.StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event4"),
+                        cedric,
+                        room1,
+                        1234,
+                        stateKey = cedric.full
+                    ),
+                ).forEach { store.roomState.update(it) }
 
                 store.olm.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
                 store.olm.updateOutboundMegolmSession(room3) {

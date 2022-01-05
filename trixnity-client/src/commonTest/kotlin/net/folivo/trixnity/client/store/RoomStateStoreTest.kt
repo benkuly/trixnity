@@ -73,6 +73,20 @@ class RoomStateStoreTest : ShouldSpec({
                 )
             }
         }
+        context("skipWhenAlreadyPresent is true") {
+            should("only change, when already present") {
+                cut.update(event1, true)
+                cut.update(event1.copy(originTimestamp = 0), true)
+                coVerify(exactly = 2) {
+                    roomStateRepository.saveBySecondKey(
+                        RoomStateRepositoryKey(roomId, "m.room.member"),
+                        "@user:server",
+                        event1
+                    )
+                }
+            }
+        }
+
     }
     context("get") {
         should("return matching event") {

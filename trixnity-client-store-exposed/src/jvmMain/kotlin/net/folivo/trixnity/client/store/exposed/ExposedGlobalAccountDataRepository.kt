@@ -52,4 +52,11 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
             it[this.event] = json.encodeToString(serializer, value)
         }
     }
+
+    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String) {
+        ExposedGlobalAccountData.deleteWhere {
+            ExposedGlobalAccountData.type.eq(firstKey) and
+                    ExposedGlobalAccountData.key.eq(secondKey)
+        }
+    }
 }

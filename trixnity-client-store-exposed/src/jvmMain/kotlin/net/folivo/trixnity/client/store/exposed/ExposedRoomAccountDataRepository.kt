@@ -71,4 +71,12 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         }
     }
 
+    override suspend fun deleteBySecondKey(firstKey: RoomAccountDataRepositoryKey, secondKey: String) {
+        ExposedRoomAccountData.deleteWhere {
+            ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
+                    ExposedRoomAccountData.type.eq(firstKey.type) and
+                    ExposedRoomAccountData.key.eq(secondKey)
+        }
+    }
+
 }

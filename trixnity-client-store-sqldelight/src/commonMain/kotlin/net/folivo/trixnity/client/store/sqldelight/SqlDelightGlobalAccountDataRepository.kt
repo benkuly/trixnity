@@ -41,4 +41,8 @@ class SqlDelightGlobalAccountDataRepository(
         withContext(context) {
             db.saveGlobalAccountData(firstKey, secondKey, json.encodeToString(serializer, value))
         }
+
+    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String) = withContext(context) {
+        db.deleteGlobalAccountDataByKey(firstKey, secondKey)
+    }
 }
