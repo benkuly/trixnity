@@ -4,6 +4,7 @@ import io.ktor.http.*
 import net.folivo.trixnity.core.model.UserId
 
 data class Account(
+    val olmPickleKey: String?,
     val baseUrl: Url?,
     val userId: UserId?,
     val deviceId: String?,

@@ -21,7 +21,6 @@ import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.user.UserService
@@ -75,7 +74,6 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -163,7 +161,6 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -233,6 +230,7 @@ class MatrixClientTest : ShouldSpec({
         }
         should("use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates") {
             val inMemoryStore = InMemoryStore(scope).apply { init() }
+            inMemoryStore.account.olmPickleKey.value = ""
             inMemoryStore.account.accessToken.value = "abcdef"
             inMemoryStore.account.userId.value = userId
             inMemoryStore.account.deviceId.value = "deviceId"
@@ -250,7 +248,6 @@ class MatrixClientTest : ShouldSpec({
                         return inMemoryStore
                     }
                 },
-                secureStore = SecureStore(),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->

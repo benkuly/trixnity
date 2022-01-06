@@ -17,11 +17,13 @@ class KeyStore(
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
     private val keyChainLinkRepository: KeyChainLinkRepository,
+    private val secretsRepository: SecretsRepository,
     private val secretKeyRequestRepository: SecretKeyRequestRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
     val outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
+    val secrets = MutableStateFlow<Map<AllowedSecretType, StoredSecret>>(mapOf())
     private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)
     private val crossSigningKeysCache = RepositoryStateFlowCache(storeScope, crossSigningKeysRepository, rtm)
     private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)
@@ -29,9 +31,13 @@ class KeyStore(
 
     suspend fun init() {
         outdatedKeys.value = rtm.transaction { outdatedKeysRepository.get(1) ?: setOf() }
+        secrets.value = rtm.transaction { secretsRepository.get(1) ?: mapOf() }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
             outdatedKeys.collect { rtm.transaction { outdatedKeysRepository.save(1, it) } }
+        }
+        storeScope.launch(start = UNDISPATCHED) {
+            secrets.collect { rtm.transaction { secretsRepository.save(1, it) } }
         }
         secretKeyRequestCache.init(rtm.transaction { secretKeyRequestRepository.getAll() }
             .associateBy { it.content.requestId })

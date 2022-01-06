@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -19,10 +18,8 @@ suspend fun verificationExample() = coroutineScope {
     val username = "username"
     val password = "password"
     val baseUrl = Url("https://example.org")
-    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
@@ -30,7 +27,6 @@ suspend fun verificationExample() = coroutineScope {
         password,
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ).getOrThrow()
 

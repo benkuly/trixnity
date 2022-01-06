@@ -23,7 +23,6 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -38,12 +37,12 @@ private val log = KotlinLogging.logger {}
 
 // TODO test
 class MatrixClient private constructor(
+    olmPickleKey: String,
     val userId: UserId,
     val deviceId: String,
     val api: MatrixApiClient,
     private val store: Store,
     json: Json,
-    secureStore: SecureStore,
     setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
     private val scope: CoroutineScope,
@@ -59,10 +58,10 @@ class MatrixClient private constructor(
 
     init {
         olm = OlmService(
+            olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
             store = store,
-            secureStore = secureStore,
             api = api,
             json = json,
         )
@@ -85,7 +84,6 @@ class MatrixClient private constructor(
         )
         key = KeyService(
             store = store,
-            secureStore = secureStore,
             api = api,
             olm = olm,
         )
@@ -109,7 +107,6 @@ class MatrixClient private constructor(
             password: String,
             initialDeviceDisplayName: String? = null,
             storeFactory: StoreFactory,
-            secureStore: SecureStore,
             baseHttpClient: HttpClient = HttpClient(),
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
@@ -119,7 +116,6 @@ class MatrixClient private constructor(
             loginWith(
                 baseUrl = baseUrl,
                 storeFactory = storeFactory,
-                secureStore = secureStore,
                 baseHttpClient = baseHttpClient,
                 customMappings = customMappings,
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
@@ -155,7 +151,6 @@ class MatrixClient private constructor(
         suspend fun loginWith(
             baseUrl: Url,
             storeFactory: StoreFactory,
-            secureStore: SecureStore,
             baseHttpClient: HttpClient = HttpClient(),
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
@@ -177,8 +172,10 @@ class MatrixClient private constructor(
                 eventContentSerializerMappings = eventContentSerializerMappings,
             )
             val (userId, deviceId, accessToken, displayName, avatarUrl) = getLoginInfo(api).getOrThrow()
+            val olmPickleKey = ""
 
             api.accessToken.value = accessToken
+            store.account.olmPickleKey.value = olmPickleKey
             store.account.baseUrl.value = baseUrl
             store.account.accessToken.value = accessToken
             store.account.userId.value = userId
@@ -187,12 +184,12 @@ class MatrixClient private constructor(
             store.account.avatarUrl.value = avatarUrl
 
             val matrixClient = MatrixClient(
+                olmPickleKey = olmPickleKey,
                 userId = userId,
                 deviceId = deviceId,
                 api = api,
                 store = store,
                 json = json,
-                secureStore = secureStore,
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                 scope = scope,
@@ -214,7 +211,6 @@ class MatrixClient private constructor(
 
         suspend fun fromStore(
             storeFactory: StoreFactory,
-            secureStore: SecureStore,
             baseHttpClient: HttpClient = HttpClient(),
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
@@ -232,8 +228,9 @@ class MatrixClient private constructor(
             val accessToken = store.account.accessToken.value
             val userId = store.account.userId.value
             val deviceId = store.account.deviceId.value
+            val olmPickleKey = store.account.olmPickleKey.value
 
-            return if (accessToken != null && userId != null && deviceId != null && baseUrl != null) {
+            return if (olmPickleKey != null && accessToken != null && userId != null && deviceId != null && baseUrl != null) {
                 val api = MatrixApiClient(
                     baseUrl = baseUrl,
                     baseHttpClient = baseHttpClient,
@@ -242,12 +239,12 @@ class MatrixClient private constructor(
                 )
                 api.accessToken.value = accessToken
                 MatrixClient(
+                    olmPickleKey = olmPickleKey,
                     userId = userId,
                     deviceId = deviceId,
                     api = api,
                     store = store,
                     json = json,
-                    secureStore = secureStore,
                     setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                     customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
                     scope = scope,

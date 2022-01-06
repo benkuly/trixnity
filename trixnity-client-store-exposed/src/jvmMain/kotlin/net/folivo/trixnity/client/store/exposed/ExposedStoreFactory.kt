@@ -36,6 +36,7 @@ class ExposedStoreFactory(
                 ExposedInboundMegolmSession,
                 ExposedKeyChainLink,
                 ExposedKeyVerificationState,
+                ExposedSecrets,
                 ExposedSecretKeyRequest,
                 ExposedMedia,
                 ExposedOlmAccount,

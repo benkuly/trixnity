@@ -28,6 +28,7 @@ class ExposedStore(
     crossSigningKeysRepository = ExposedCrossSigningKeysRepository(json),
     keyVerificationStateRepository = ExposedKeyVerificationStateRepository(json),
     keyChainLinkRepository = ExposedKeyChainLinkRepository(),
+    secretsRepository = ExposedSecretsRepository(json),
     secretKeyRequestRepository = ExposedSecretKeyRequestRepository(json),
     olmAccountRepository = ExposedOlmAccountRepository(),
     olmSessionRepository = ExposedOlmSessionRepository(json),

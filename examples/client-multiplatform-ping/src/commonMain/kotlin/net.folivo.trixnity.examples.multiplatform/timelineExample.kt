@@ -8,7 +8,6 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
 import net.folivo.trixnity.core.model.RoomId
@@ -26,10 +25,8 @@ suspend fun timelineExample() = coroutineScope {
     val password = "password"
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
-    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
@@ -37,7 +34,6 @@ suspend fun timelineExample() = coroutineScope {
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ).getOrThrow()
 

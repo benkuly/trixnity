@@ -4,7 +4,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.AccountRepository
@@ -15,6 +14,7 @@ class AccountStore(
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
+    val olmPickleKey = MutableStateFlow<String?>(null)
     val baseUrl = MutableStateFlow<Url?>(null)
     val userId = MutableStateFlow<UserId?>(null)
     val deviceId = MutableStateFlow<String?>(null)
@@ -26,6 +26,7 @@ class AccountStore(
 
     suspend fun init() {
         val account = rtm.transaction { repository.get(1) }
+        olmPickleKey.value = account?.olmPickleKey
         baseUrl.value = account?.baseUrl
         userId.value = account?.userId
         deviceId.value = account?.deviceId
@@ -37,16 +38,27 @@ class AccountStore(
 
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
-            combine(baseUrl, userId, deviceId, accessToken, syncBatchToken, filterId, displayName, avatarUrl) { values ->
+            combine(
+                olmPickleKey,
+                baseUrl,
+                userId,
+                deviceId,
+                accessToken,
+                syncBatchToken,
+                filterId,
+                displayName,
+                avatarUrl
+            ) { values ->
                 Account(
-                    baseUrl = values[0] as Url?,
-                    userId = values[1] as UserId?,
-                    deviceId = values[2] as String?,
-                    accessToken = values[3] as String?,
-                    syncBatchToken = values[4] as String?,
-                    filterId = values[5] as String?,
-                    displayName = values[6] as String?,
-                    avatarUrl = values[7] as Url?,
+                    olmPickleKey = values[0] as String?,
+                    baseUrl = values[1] as Url?,
+                    userId = values[2] as UserId?,
+                    deviceId = values[3] as String?,
+                    accessToken = values[4] as String?,
+                    syncBatchToken = values[5] as String?,
+                    filterId = values[6] as String?,
+                    displayName = values[7] as String?,
+                    avatarUrl = values[8] as Url?,
                 )
             }.collect { rtm.transaction { repository.save(1, it) } }
         }

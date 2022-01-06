@@ -14,6 +14,7 @@ class SqlDelightAccountRepository(
     override suspend fun get(key: Long): Account? = withContext(context) {
         db.getAccount(key).executeAsOneOrNull()?.let {
             Account(
+                olmPickleKey = it.olm_pickle_key,
                 baseUrl = it.base_url?.let { it1 -> Url(it1) },
                 userId = it.user_id?.let { it1 -> UserId(it1) },
                 deviceId = it.device_id,
@@ -30,6 +31,7 @@ class SqlDelightAccountRepository(
         db.saveAccount(
             Sql_account(
                 id = key,
+                olm_pickle_key = value.olmPickleKey,
                 base_url = value.baseUrl?.toString(),
                 user_id = value.userId?.full,
                 device_id = value.deviceId,

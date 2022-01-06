@@ -14,6 +14,7 @@ abstract class Store(
     crossSigningKeysRepository: CrossSigningKeysRepository,
     keyVerificationStateRepository: KeyVerificationStateRepository,
     keyChainLinkRepository: KeyChainLinkRepository,
+    secretsRepository: SecretsRepository,
     secretKeyRequestRepository: SecretKeyRequestRepository,
     olmAccountRepository: OlmAccountRepository,
     olmSessionRepository: OlmSessionRepository,
@@ -37,6 +38,7 @@ abstract class Store(
         crossSigningKeysRepository,
         keyVerificationStateRepository,
         keyChainLinkRepository,
+        secretsRepository,
         secretKeyRequestRepository,
         rtm,
         scope

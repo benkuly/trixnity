@@ -15,7 +15,6 @@ import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.SecureStore.AllowedSecretType.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -41,7 +40,6 @@ private val log = KotlinLogging.logger {}
 
 class KeyService(
     private val store: Store,
-    private val secureStore: SecureStore,
     private val olm: OlmService,
     private val api: MatrixApiClient,
 ) {
@@ -434,8 +432,8 @@ class KeyService(
             val senderTrustLevel = store.keys.getDeviceKey(ownUserId, request.requestingDeviceId)?.trustLevel
             if (senderTrustLevel is CrossSigned && senderTrustLevel.verified || senderTrustLevel is Valid && senderTrustLevel.verified) {
                 val requestedSecret = request.name
-                    ?.let { SecureStore.AllowedSecretType.ofId(it) }
-                    ?.let { secureStore.secrets.value[it] }
+                    ?.let { AllowedSecretType.ofId(it) }
+                    ?.let { store.keys.secrets.value[it] }
                 if (requestedSecret != null) {
                     log.info { "send incoming key request answer to device ${request.requestingDeviceId}" }
                     api.users.sendToDevice(
@@ -482,15 +480,15 @@ class KeyService(
                 log.warn(error) { "could not generate public key from received secret" }
                 return
             }
-            val secretType = request.content.name?.let { SecureStore.AllowedSecretType.ofId(it) }
+            val secretType = request.content.name?.let { AllowedSecretType.ofId(it) }
             val originalPublicKey = when (secretType) {
-                M_CROSS_SIGNING_USER_SIGNING ->
+                AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING ->
                     store.keys.getCrossSigningKey(ownUserId, CrossSigningKeysUsage.UserSigningKey)
                         ?.value?.signed?.get<Key.Ed25519Key>()?.value
-                M_CROSS_SIGNING_SELF_SIGNING ->
+                AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING ->
                     store.keys.getCrossSigningKey(ownUserId, CrossSigningKeysUsage.SelfSigningKey)
                         ?.value?.signed?.get<Key.Ed25519Key>()?.value
-                M_MEGOLM_BACKUP_V1 -> null // TODO
+                AllowedSecretType.M_MEGOLM_BACKUP_V1 -> null // TODO
                 null -> null
             }
             if (secretType == null || originalPublicKey == null || generatedPublicKey != originalPublicKey) {
@@ -502,7 +500,7 @@ class KeyService(
                 log.warn { "could not find encrypted secret" }
                 return
             }
-            secureStore.secrets.update {
+            store.keys.secrets.update {
                 it + (secretType to StoredSecret(encryptedSecret, content.secret))
             }
             val cancelRequestTo = request.receiverDeviceIds - senderDeviceId
@@ -534,17 +532,17 @@ class KeyService(
             }.getOrThrow()
     }
 
-    private suspend fun SecureStore.AllowedSecretType.getEncrytedSecret() = when (this) {
-        M_CROSS_SIGNING_USER_SIGNING -> store.globalAccountData.get<UserSigningKeyEventContent>()
-        M_CROSS_SIGNING_SELF_SIGNING -> store.globalAccountData.get<SelfSigningKeyEventContent>()
-        M_MEGOLM_BACKUP_V1 -> null // TODO
+    private suspend fun AllowedSecretType.getEncrytedSecret() = when (this) {
+        AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING -> store.globalAccountData.get<UserSigningKeyEventContent>()
+        AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING -> store.globalAccountData.get<SelfSigningKeyEventContent>()
+        AllowedSecretType.M_MEGOLM_BACKUP_V1 -> null // TODO
     }
 
     internal suspend fun requestSecretKeys() {
-        val missingSecrets = SecureStore.AllowedSecretType.values()
-            .subtract(secureStore.secrets.value.keys)
+        val missingSecrets = AllowedSecretType.values()
+            .subtract(store.keys.secrets.value.keys)
             .subtract(store.keys.allSecretKeyRequests.value.mapNotNull { request ->
-                request.content.name?.let { SecureStore.AllowedSecretType.ofId(it) }
+                request.content.name?.let { AllowedSecretType.ofId(it) }
             }.toSet())
         if (missingSecrets.isEmpty()) {
             log.debug { "there are no missing secrets or they are already requested" }
@@ -591,13 +589,13 @@ class KeyService(
     internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
         val secretType =
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }
-                ?.let { SecureStore.AllowedSecretType.ofId(it.type) }
+                ?.let { AllowedSecretType.ofId(it.type) }
         if (secretType != null) {
-            val storedSecret = secureStore.secrets.value[secretType]
+            val storedSecret = store.keys.secrets.value[secretType]
             if (storedSecret?.event != event) {
                 store.keys.allSecretKeyRequests.value.filter { it.content.name == secretType.id }
                     .forEach { cancelStoredSecretKeyRequest(it) }
-                secureStore.secrets.update { it - secretType }
+                store.keys.secrets.update { it - secretType }
             }
         }
     }
@@ -634,8 +632,8 @@ class KeyService(
         keyId: String,
         keyInfo: SecretKeyEventContent,
     ) {
-        val decryptedSecrets = SecureStore.AllowedSecretType.values()
-            .subtract(secureStore.secrets.value.keys)
+        val decryptedSecrets = AllowedSecretType.values()
+            .subtract(store.keys.secrets.value.keys)
             .mapNotNull { allowedSecret ->
                 val event = allowedSecret.getEncrytedSecret()
                 if (event != null) {
@@ -646,7 +644,7 @@ class KeyService(
                     null
                 }
             }.toMap()
-        secureStore.secrets.update {
+        store.keys.secrets.update {
             it + decryptedSecrets
         }
     }
