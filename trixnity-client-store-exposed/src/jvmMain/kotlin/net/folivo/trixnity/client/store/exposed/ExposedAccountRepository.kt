@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedAccount : LongIdTable("account") {
+    val olmPickleKey = text("olm_pickle_key").nullable()
     val baseUrl = text("base_url").nullable()
     val userId = text("user_id").nullable()
     val deviceId = text("device_id").nullable()
@@ -24,6 +25,7 @@ internal class ExposedAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? {
         return ExposedAccount.select { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
+                olmPickleKey = it[ExposedAccount.olmPickleKey],
                 baseUrl = it[ExposedAccount.baseUrl]?.let { it1 -> Url(it1) },
                 userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) },
                 deviceId = it[ExposedAccount.deviceId],
@@ -39,6 +41,7 @@ internal class ExposedAccountRepository : AccountRepository {
     override suspend fun save(key: Long, value: Account) {
         ExposedAccount.replace {
             it[id] = key
+            it[olmPickleKey] = value.olmPickleKey
             it[baseUrl] = value.baseUrl?.toString()
             it[userId] = value.userId?.full
             it[deviceId] = value.deviceId

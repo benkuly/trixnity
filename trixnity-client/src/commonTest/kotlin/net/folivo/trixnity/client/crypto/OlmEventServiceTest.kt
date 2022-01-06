@@ -59,7 +59,6 @@ class OlmEventServiceTest : ShouldSpec({
     val bobAccount = OlmAccount.create()
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val secureStore = mockk<SecureStore>()
 
     val api = mockk<MatrixApiClient>()
     val signService = mockk<OlmSignService>()
@@ -109,9 +108,8 @@ class OlmEventServiceTest : ShouldSpec({
         bobAccount.markKeysAsPublished()
         coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
-        every { secureStore.olmPickleKey } returns ""
 
-        cut = OlmEventService(alice, aliceDeviceId, json, aliceAccount, store, secureStore, api, signService)
+        cut = OlmEventService("", alice, aliceDeviceId, json, aliceAccount, store, api, signService)
     }
 
     afterTest {

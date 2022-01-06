@@ -92,6 +92,23 @@ deleteKeyChainLinkBySignedgKey:
 DELETE FROM sql_key_chain_link
 WHERE signed_user_id = ? AND signed_key_id = ? AND signed_key_value = ?;
 
+CREATE TABLE sql_secrets (
+  id INTEGER NOT NULL PRIMARY KEY,
+  secrets TEXT
+);
+
+saveSecrets:
+INSERT OR REPLACE INTO sql_secrets
+VALUES  ?;
+
+getSecrets:
+SELECT secrets FROM sql_secrets
+WHERE id = ?;
+
+deleteSecrets:
+DELETE FROM sql_secrets
+WHERE id = ?;
+
 CREATE TABLE sql_secret_key_request (
   id TEXT PRIMARY KEY NOT NULL,
   secret_key_request TEXT NOT NULL

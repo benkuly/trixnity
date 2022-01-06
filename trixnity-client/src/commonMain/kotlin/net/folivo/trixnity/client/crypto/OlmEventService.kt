@@ -36,12 +36,12 @@ private val log = KotlinLogging.logger {}
 
 @OptIn(ExperimentalSerializationApi::class)
 class OlmEventService internal constructor(
+    private val olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val json: Json,
     private val account: OlmAccount,
     private val store: Store,
-    private val secureStore: SecureStore,
     private val api: MatrixApiClient,
     private val signService: OlmSignService,
 ) {
@@ -76,14 +76,14 @@ class OlmEventService internal constructor(
                 )
             ) { session ->
                 encryptWithOlmSession(session, content, receiverId, deviceId, identityKey).also {
-                    store.olm.storeOlmSession(session, identityKey, secureStore.olmPickleKey)
+                    store.olm.storeOlmSession(session, identityKey, olmPickleKey)
                 }
             }
         } else {
             log.debug { "encrypt olm event with existing session for device with key $identityKey" }
-            freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
+            freeAfter(OlmSession.unpickle(olmPickleKey, storedSession.pickled)) { session ->
                 encryptWithOlmSession(session, content, receiverId, deviceId, identityKey).also {
-                    store.olm.storeOlmSession(session, identityKey, secureStore.olmPickleKey)
+                    store.olm.storeOlmSession(session, identityKey, olmPickleKey)
                 }
             }
         }
@@ -109,7 +109,7 @@ class OlmEventService internal constructor(
         ).also { log.debug { "olm event: $it" } }
         requireNotNull(serializer)
         val encryptedContent = olmSession.encrypt(json.encodeToString(serializer, event))
-        store.olm.storeOlmSession(olmSession, identityKey, secureStore.olmPickleKey)
+        store.olm.storeOlmSession(olmSession, identityKey, olmPickleKey)
         return OlmEncryptedEventContent(
             ciphertext = mapOf(
                 identityKey.value to CiphertextInfo(
@@ -132,7 +132,7 @@ class OlmEventService internal constructor(
         val decryptedContent = try {
             storedSessions?.sortedByDescending { it.lastUsedAt }
                 ?.mapNotNull { storedSession ->
-                    freeAfter(OlmSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { olmSession ->
+                    freeAfter(OlmSession.unpickle(olmPickleKey, storedSession.pickled)) { olmSession ->
                         if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
                             if (olmSession.matchesInboundSession(ciphertext.body)) {
                                 log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
@@ -149,7 +149,7 @@ class OlmEventService internal constructor(
                                 log.warn { "could not decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey. Reason: ${error.message}" }
                                 null
                             }
-                        }?.also { store.olm.storeOlmSession(olmSession, senderIdentityKey, secureStore.olmPickleKey) }
+                        }?.also { store.olm.storeOlmSession(olmSession, senderIdentityKey, olmPickleKey) }
                     }
                 }?.firstOrNull()
                 ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
@@ -160,8 +160,8 @@ class OlmEventService internal constructor(
                         ) { olmSession ->
                             val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
                             account.removeOneTimeKeys(olmSession)
-                            store.olm.storeAccount(account, secureStore.olmPickleKey)
-                            store.olm.storeOlmSession(olmSession, senderIdentityKey, secureStore.olmPickleKey)
+                            store.olm.storeAccount(account, olmPickleKey)
+                            store.olm.storeOlmSession(olmSession, senderIdentityKey, olmPickleKey)
                             decrypted
                         }
                     } else throw SessionException.PreventToManySessions
@@ -230,13 +230,13 @@ class OlmEventService internal constructor(
                     senderKey = ownCurve25519Key,
                     sessionId = session.sessionId,
                     sessionKey = session.sessionKey,
-                    pickleKey = secureStore.olmPickleKey
+                    pickleKey = olmPickleKey
                 )
                 encryptWithMegolmSession(session, content, roomId, newUserDevices)
             }
         } else {
             log.debug { "encrypt megolm event with existing session" }
-            freeAfter(OlmOutboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
+            freeAfter(OlmOutboundGroupSession.unpickle(olmPickleKey, storedSession.pickled)) { session ->
                 encryptWithMegolmSession(session, content, roomId, storedSession.newDevices)
             }
         }
@@ -282,11 +282,11 @@ class OlmEventService internal constructor(
         store.olm.updateOutboundMegolmSession(roomId) { oldStoredSession ->
             oldStoredSession?.copy(
                 encryptedMessageCount = oldStoredSession.encryptedMessageCount + 1,
-                pickled = session.pickle(secureStore.olmPickleKey),
+                pickled = session.pickle(olmPickleKey),
                 newDevices = emptyMap()
             ) ?: StoredOutboundMegolmSession(
                 roomId = roomId,
-                pickled = session.pickle(secureStore.olmPickleKey),
+                pickled = session.pickle(olmPickleKey),
             )
         }
 
@@ -308,7 +308,7 @@ class OlmEventService internal constructor(
             ?: throw DecryptionException.SenderDidNotSendMegolmKeysToUs
 
         val decryptionResult = try {
-            freeAfter(OlmInboundGroupSession.unpickle(secureStore.olmPickleKey, storedSession.pickled)) { session ->
+            freeAfter(OlmInboundGroupSession.unpickle(olmPickleKey, storedSession.pickled)) { session ->
                 session.decrypt(encryptedContent.ciphertext)
             }
         } catch (e: OlmLibraryException) {

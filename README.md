@@ -24,8 +24,8 @@ This project contains the following sub-projects, which can be used independentl
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/JS/Native.
 - [trixnity-client-api](/trixnity-client-api) implements
   the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
-- [trixnity-client-api-model](/trixnity-client-api-model) provides 
-[Client-Server API](https://spec.matrix.org/latest/client-server-api/) model classes.
+- [trixnity-client-api-model](/trixnity-client-api-model) provides
+  [Client-Server API](https://spec.matrix.org/latest/client-server-api/) model classes.
 - [trixnity-appservice](/trixnity-appservice) implements
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
@@ -76,26 +76,23 @@ with `-Djna.library.path="build/olm/3.2.8/build"`)
 ### Create MatrixClient
 
 With `MatrixClient` you have access to the whole library. It can be instantiated by various static functions,
-e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database, a `SecureStore` for storing
-secrets and a `CouroutineScope`, which will be used for the lifecycle of the client.
+e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database and a `CouroutineScope`, which
+will be used for the lifecycle of the client.
+
+Secrets are stored in the store. Therefore you should encrypt the store!
 
 ```kotlin
 val storeFactory = createStoreFactory()
-val secureStore = object : SecureStore {
-    override val olmPickleKey = ""
-}
 val scope = CoroutineScope(Dispatchers.Default)
 
 val matrixClient = MatrixClient.fromStore(
     storeFactory = storeFactory,
-    secureStore = secureStore,
     scope = scope,
 ) ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
     storeFactory = storeFactory,
-    secureStore = secureStore,
     scope = scope,
 )
 ```

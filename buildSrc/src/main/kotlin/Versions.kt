@@ -19,7 +19,7 @@ object Versions {
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.37.3" // https://github.com/JetBrains/Exposed/releases
     const val h2 = "1.4.200" // https://github.com/h2database/h2database/releases
-    const val thumbnailator = "0.4.15" // https://github.com/coobird/thumbnailator/releases
+    const val thumbnailator = "0.4.16" // https://github.com/coobird/thumbnailator/releases
     const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
     const val logback = "1.2.10" // https://github.com/qos-ch/logback/tags
 

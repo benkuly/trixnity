@@ -30,16 +30,16 @@ import net.folivo.trixnity.olm.OlmUtility
 private val log = KotlinLogging.logger {}
 
 class OlmService(
+    private val olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val secureStore: SecureStore,
     private val api: MatrixApiClient,
     val json: Json,
 ) {
     private val account: OlmAccount =
-        store.olm.account.value?.let { OlmAccount.unpickle(secureStore.olmPickleKey, it) }
-            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(secureStore.olmPickleKey) }
+        store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
+            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) }
     private val utility = OlmUtility.create()
 
     fun free() {
@@ -68,12 +68,12 @@ class OlmService(
         utility = utility,
     )
     val events = OlmEventService(
+        olmPickleKey = olmPickleKey,
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
         json = json,
         account = account,
         store = store,
-        secureStore = secureStore,
         api = api,
         signService = sign,
     )
@@ -106,7 +106,7 @@ class OlmService(
             log.debug { "generate and upload $generateOneTimeKeysCount one time keys: $signedOneTimeKeys" }
             api.keys.uploadKeys(oneTimeKeys = signedOneTimeKeys)
             account.markKeysAsPublished()
-            store.olm.storeAccount(account, secureStore.olmPickleKey)
+            store.olm.storeAccount(account, olmPickleKey)
         }
     }
 
@@ -133,7 +133,7 @@ class OlmService(
                 senderKey = event.encrypted.content.senderKey,
                 sessionId = content.sessionId,
                 sessionKey = content.sessionKey,
-                pickleKey = secureStore.olmPickleKey
+                pickleKey = olmPickleKey
             )
         }
     }

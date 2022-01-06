@@ -24,7 +24,7 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.SecureStore.AllowedSecretType.*
+import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.events.Event
@@ -61,7 +61,6 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    lateinit var secureStore: SecureStore
     val olm = mockk<OlmService>()
     val api = mockk<MatrixApiClient>()
 
@@ -74,8 +73,7 @@ private val body: ShouldSpec.() -> Unit = {
             account.userId.value = alice
             account.deviceId.value = aliceDevice
         }
-        secureStore = SecureStore("", MutableStateFlow(mapOf()))
-        cut = KeyService(store, secureStore, olm, api)
+        cut = KeyService(store, olm, api)
         coEvery { olm.sign.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
         coEvery { api.json } returns json
     }
@@ -92,7 +90,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(aliceDevice to mockk { every { trustLevel } returns Valid(true) })
             }
             coEvery { api.users.sendToDevice<SecretKeySendEventContent>(any(), any()) } returns Result.success(Unit)
-            secureStore.secrets.value =
+            store.keys.secrets.value =
                 mapOf(M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "secretUserSigningKey"))
         }
         should("ignore request from other user") {
@@ -164,7 +162,7 @@ private val body: ShouldSpec.() -> Unit = {
         beforeTest {
             store.account.userId.value = alice
             coEvery { api.users.sendToDevice<SecretKeySendEventContent>(any(), any()) } returns Result.success(Unit)
-            secureStore.secrets.value =
+            store.keys.secrets.value =
                 mapOf(M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "secretUserSigningKey"))
         }
         suspend fun ShouldSpecContainerScope.answerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
@@ -285,7 +283,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("ignore when sender was not requested") {
@@ -300,7 +298,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("ignore when sender is not trusted") {
@@ -314,7 +312,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("ignore when public key cannot be generated") {
@@ -330,7 +328,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("ignore when public key does not match") {
@@ -348,7 +346,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("ignore when encrypted secret could not be found") {
@@ -364,7 +362,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             continually(500.milliseconds) {
-                secureStore.secrets.value shouldBe mapOf()
+                store.keys.secrets.value shouldBe mapOf()
             }
         }
         should("save secret") {
@@ -382,7 +380,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            secureStore.secrets.first { it.size == 1 } shouldBe mapOf(
+            store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, privateKey)
             )
         }
@@ -402,7 +400,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            secureStore.secrets.first { it.size == 1 } shouldBe mapOf(
+            store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, privateKey)
             )
             coVerify {
@@ -465,7 +463,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeyService::requestSecretKeys.name) {
         should("ignore when there are no missing secrets") {
-            secureStore.secrets.value = mapOf(
+            store.keys.secrets.value = mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "key1"),
                 M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(mockk(), "key2"),
                 M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "key3")
@@ -475,7 +473,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("send requests to verified cross signed devices") {
             coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
-            secureStore.secrets.value = mapOf(
+            store.keys.secrets.value = mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "key3")
             )
             store.keys.addSecretKeyRequest(
@@ -569,10 +567,10 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("do nothing when secret is not allowed to cache") {
             val crossSigningPrivateKeys = mapOf(M_CROSS_SIGNING_USER_SIGNING to mockk<StoredSecret>())
-            secureStore.secrets.value = crossSigningPrivateKeys
+            store.keys.secrets.value = crossSigningPrivateKeys
             cut.handleChangedSecrets(GlobalAccountDataEvent(MasterKeyEventContent(mapOf())))
             coVerify(exactly = 0) { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any(), any()) }
-            secureStore.secrets.value shouldBe crossSigningPrivateKeys
+            store.keys.secrets.value shouldBe crossSigningPrivateKeys
         }
         should("do nothing when event did not change") {
             val event = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
@@ -581,13 +579,13 @@ private val body: ShouldSpec.() -> Unit = {
                     event, "bla"
                 )
             )
-            secureStore.secrets.value = crossSigningPrivateKeys
+            store.keys.secrets.value = crossSigningPrivateKeys
             cut.handleChangedSecrets(event)
             coVerify(exactly = 0) { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any(), any()) }
-            secureStore.secrets.value shouldBe crossSigningPrivateKeys
+            store.keys.secrets.value shouldBe crossSigningPrivateKeys
         }
         should("remove cached secret and cancel ongoing requests when event did change") {
-            secureStore.secrets.value = mapOf(
+            store.keys.secrets.value = mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "bla")
             )
             cut.handleChangedSecrets(GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())))
@@ -604,7 +602,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }, any())
             }
-            secureStore.secrets.value shouldBe mapOf()
+            store.keys.secrets.value shouldBe mapOf()
         }
     }
     context(KeyService::decryptSecret.name) {
@@ -650,7 +648,7 @@ private val body: ShouldSpec.() -> Unit = {
                     GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())), "key3"
                 )
             )
-            secureStore.secrets.value = existingPrivateKeys
+            store.keys.secrets.value = existingPrivateKeys
 
             val key = Random.nextBytes(32)
             val secret = Random.nextBytes(32)
@@ -666,7 +664,7 @@ private val body: ShouldSpec.() -> Unit = {
             store.globalAccountData.update(event)
 
             cut.decryptMissingSecrets(key, "KEY", SecretKeyEventContent.AesHmacSha2Key())
-            secureStore.secrets.value shouldBe existingPrivateKeys + mapOf(
+            store.keys.secrets.value shouldBe existingPrivateKeys + mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(event, secret.encodeBase64()),
             )
         }

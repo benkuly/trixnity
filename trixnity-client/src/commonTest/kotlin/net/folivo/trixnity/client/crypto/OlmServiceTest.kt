@@ -23,7 +23,6 @@ import net.folivo.trixnity.client.api.model.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.EventId
@@ -56,7 +55,6 @@ class OlmServiceTest : ShouldSpec({
     val bobDevice = "BOBDEVICE"
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val secureStore = mockk<SecureStore>()
     val api = mockk<MatrixApiClient>()
     val json = createMatrixJson()
     lateinit var cut: OlmService
@@ -65,8 +63,7 @@ class OlmServiceTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
         store.init()
-        coEvery { secureStore.olmPickleKey } returns ""
-        cut = OlmService(alice, aliceDevice, store, secureStore, api, json)
+        cut = OlmService("", alice, aliceDevice, store, api, json)
     }
 
     afterTest {
@@ -114,13 +111,13 @@ class OlmServiceTest : ShouldSpec({
         context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
                 val bobStore = InMemoryStore(storeScope).apply { init() }
-                val bobOlmService = OlmService(bob, bobDevice, bobStore, secureStore, api, json)
+                val bobOlmService = OlmService("", bob, bobDevice, bobStore, api, json)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
-                    val cutWithAccount = OlmService(alice, aliceDevice, store, secureStore, api, json)
+                    val cutWithAccount = OlmService("", alice, aliceDevice, store, api, json)
                     store.keys.updateDeviceKeys(bob) {
                         mapOf(
                             bobDevice to StoredDeviceKeys(
@@ -229,13 +226,13 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleOlmEncryptedToDeviceEvents.name) {
         should("emit decrypted events") {
             val bobStore = InMemoryStore(storeScope).apply { init() }
-            val bobOlmService = OlmService(bob, bobDevice, bobStore, secureStore, api, json)
+            val bobOlmService = OlmService("", bob, bobDevice, bobStore, api, json)
             freeAfter(
                 OlmAccount.create()
             ) { aliceAccount ->
                 aliceAccount.generateOneTimeKeys(1)
                 store.olm.storeAccount(aliceAccount, "")
-                val cutWithAccount = OlmService(alice, aliceDevice, store, secureStore, api, json)
+                val cutWithAccount = OlmService("", alice, aliceDevice, store, api, json)
                 store.keys.updateDeviceKeys(bob) {
                     mapOf(
                         bobDevice to StoredDeviceKeys(

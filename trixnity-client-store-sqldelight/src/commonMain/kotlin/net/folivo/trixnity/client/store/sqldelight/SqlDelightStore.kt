@@ -46,6 +46,7 @@ class SqlDelightStore(
         database.keysQueries, json, databaseCoroutineContext
     ),
     keyChainLinkRepository = SqlDelightKeyChainLinkRepository(database.keysQueries, databaseCoroutineContext),
+    secretsRepository = SqlDelightSecretsRepository(database.keysQueries, json, databaseCoroutineContext),
     secretKeyRequestRepository = SqlDelightSecretKeyRequestRepository(
         database.keysQueries, json, databaseCoroutineContext
     ),

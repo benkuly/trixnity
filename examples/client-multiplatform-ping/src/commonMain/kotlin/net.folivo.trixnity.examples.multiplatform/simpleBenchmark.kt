@@ -9,7 +9,6 @@ import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
 import net.folivo.trixnity.core.model.RoomId
@@ -25,10 +24,8 @@ suspend fun simpleBenchmark() = coroutineScope {
     val password = "Tr1xn1ty!"
     val roomId = RoomId("!mZtvIlkjtKWuxTEmmw:localhost:8008")
     val baseUrl = Url("http://localhost:8008")
-    val secureStore = SecureStore()
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ) ?: MatrixClient.login(
         baseUrl = baseUrl,
@@ -36,7 +33,6 @@ suspend fun simpleBenchmark() = coroutineScope {
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
         storeFactory = createStoreFactory(),
-        secureStore = secureStore,
         scope = scope,
     ).getOrThrow()
 

@@ -49,7 +49,6 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    lateinit var secureStore: SecureStore
     val olm = mockk<OlmService>()
     val api = mockk<MatrixApiClient>()
 
@@ -62,8 +61,7 @@ private val body: ShouldSpec.() -> Unit = {
             account.userId.value = alice
             account.deviceId.value = aliceDevice
         }
-        secureStore = SecureStore("", MutableStateFlow(mapOf()))
-        cut = KeyService(store, secureStore, olm, api)
+        cut = KeyService(store, olm, api)
         coEvery { olm.sign.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
 
     }

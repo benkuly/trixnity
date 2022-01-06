@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
@@ -66,14 +65,11 @@ class TimelineEventIT {
 
         val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope)
         val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope)
-        val secureStore1 = SecureStore()
-        val secureStore2 = SecureStore()
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory1,
-            secureStore = secureStore1,
             scope = scope,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
@@ -81,7 +77,6 @@ class TimelineEventIT {
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory2,
-            secureStore = secureStore2,
             scope = scope,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()

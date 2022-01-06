@@ -31,6 +31,7 @@ class AccountStoreTest : ShouldSpec({
     context(AccountStore::init.name) {
         should("load values from database") {
             coEvery { repository.get(1) } returns Account(
+                "",
                 Url("http://localhost"),
                 UserId("user", "server"),
                 "device",
@@ -43,6 +44,7 @@ class AccountStoreTest : ShouldSpec({
 
             cut.init()
 
+            cut.olmPickleKey.value shouldBe ""
             cut.baseUrl.value shouldBe Url("http://localhost")
             cut.userId.value shouldBe UserId("user", "server")
             cut.deviceId.value shouldBe "device"
@@ -61,6 +63,7 @@ class AccountStoreTest : ShouldSpec({
             coVerify(timeout = 5_000) {
                 repository.save(
                     1, Account(
+                        null,
                         null,
                         UserId("user", "server"),
                         null,

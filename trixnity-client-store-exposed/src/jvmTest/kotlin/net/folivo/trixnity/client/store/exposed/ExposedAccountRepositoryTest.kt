@@ -20,6 +20,7 @@ class ExposedAccountRepositoryTest : ShouldSpec({
     }
     should("save, get and delete") {
         val account = Account(
+            "",
             Url("http://host"),
             UserId("alice", "server"),
             "aliceDevice",

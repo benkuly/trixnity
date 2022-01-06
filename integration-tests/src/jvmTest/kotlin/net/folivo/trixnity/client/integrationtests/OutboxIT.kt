@@ -6,7 +6,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.SecureStore
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -61,13 +60,11 @@ class OutboxIT {
         ).build()
         database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
         val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
-        val secureStore = SecureStore()
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
 //            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory,
-            secureStore = secureStore,
             scope = scope,
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()

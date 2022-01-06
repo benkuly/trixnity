@@ -21,6 +21,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     crossSigningKeysRepository = InMemoryMinimalStoreRepository(),
     keyVerificationStateRepository = InMemoryMinimalStoreRepository(),
     keyChainLinkRepository = InMemoryKeyChainLinkRepository(),
+    secretsRepository = InMemoryMinimalStoreRepository(),
     secretKeyRequestRepository = InMemorySecretKeyRequestRepository(),
     olmAccountRepository = InMemoryMinimalStoreRepository(),
     olmSessionRepository = InMemoryMinimalStoreRepository(),
