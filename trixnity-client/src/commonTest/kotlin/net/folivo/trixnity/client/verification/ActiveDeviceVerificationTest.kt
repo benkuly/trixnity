@@ -77,7 +77,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         createCut()
         cut.startLifecycle(this)
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
-        result shouldBe ActiveVerificationState.Cancel(cancelEvent, bob)
+        result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
     should("handle encrypted verification step") {
         createCut()
@@ -85,7 +85,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
         encryptedStepFlow.emit(DecryptedOlmEvent(mockk(), OlmEvent(cancelEvent, bob, mockk(), mockk(), mockk())))
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
-        result shouldBe ActiveVerificationState.Cancel(cancelEvent, bob)
+        result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
     should("send verification step and encrypt it") {
         val encrypted = mockk<EncryptedEventContent.OlmEncryptedEventContent>()

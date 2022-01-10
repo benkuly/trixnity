@@ -23,7 +23,7 @@ class UtilsTest : ShouldSpec({
         should("return false, when state is cancel") {
             isVerificationRequestActive(
                 Clock.System.now().toEpochMilliseconds(),
-                ActiveVerificationState.Cancel(mockk(), mockk())
+                ActiveVerificationState.Cancel(mockk(), false)
             ) shouldBe false
         }
         should("return false, when state is done") {

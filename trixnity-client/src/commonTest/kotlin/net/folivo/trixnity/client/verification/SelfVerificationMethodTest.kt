@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.ktor.util.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import net.folivo.trixnity.client.key.KeyService
@@ -18,10 +20,19 @@ import kotlin.random.Random
 class SelfVerificationMethodTest : ShouldSpec({
     timeout = 30_000
 
+    val keyService = mockk<KeyService>(relaxUnitFun = true)
+
+    beforeTest {
+        coEvery {
+            keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(any(), any(), any())
+        } returns Result.success(Unit)
+    }
+    afterTest {
+        clearAllMocks()
+    }
     context("${AesHmacSha2RecoveryKey::class.simpleName}") {
         context(AesHmacSha2RecoveryKey::verify.name) {
             should("decode recovery key and decrypt missing keys with it") {
-                val keyService = mockk<KeyService>(relaxUnitFun = true)
                 val key = Random.nextBytes(32)
                 val iv = Random.nextBytes(16)
                 val mac = encryptAesHmacSha2(
@@ -39,13 +50,13 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val cut = AesHmacSha2RecoveryKey(keyService, "KEY", info)
                 cut.verify(encodeRecoveryKey(key)).getOrThrow()
                 coVerify { keyService.decryptMissingSecrets(key, "KEY", info) }
+                coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
             }
         }
     }
     context("${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
         context(AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::verify.name) {
             should("decode recovery key and decrypt missing keys with it") {
-                val keyService = mockk<KeyService>(relaxUnitFun = true)
                 val iv = Random.nextBytes(16)
                 val salt = Random.nextBytes(32)
                 val key = generatePbkdf2Sha512(
@@ -68,6 +79,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val cut = AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", info)
                 cut.verify("password").getOrThrow()
                 coVerify { keyService.decryptMissingSecrets(key, "KEY", info) }
+                coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
             }
         }
     }

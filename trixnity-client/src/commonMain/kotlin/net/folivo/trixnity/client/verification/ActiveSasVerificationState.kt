@@ -2,9 +2,10 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.crypto.getKeysFromUser
+import net.folivo.trixnity.client.crypto.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.crypto.Keys
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -62,8 +63,8 @@ sealed interface ActiveSasVerificationState {
                         ownUserId + ownDeviceId +
                         theirUserId + theirDeviceId +
                         actualTransactionId
-                val keysToMac = store.keys.getKeysFromUser<Ed25519Key>(ownUserId)
-                if (keysToMac != null) {
+                val keysToMac = store.keys.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
+                if (keysToMac.isNotEmpty()) {
                     val keys = olmSas.calculateMac(
                         keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(","),
                         baseInfo + "KEY_IDS"

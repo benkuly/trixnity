@@ -50,6 +50,7 @@ sealed interface ActiveVerificationState {
 
     data class PartlyDone(val isOurOwn: Boolean) : ActiveVerificationState
 
+    object AcceptedByOtherDevice : ActiveVerificationState
     object Done : ActiveVerificationState
-    data class Cancel(val content: VerificationCancelEventContent, val sender: UserId) : ActiveVerificationState
+    data class Cancel(val content: VerificationCancelEventContent, val isOurOwn: Boolean) : ActiveVerificationState
 }

@@ -9,18 +9,17 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.ComparisonByUser
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
+import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
-import net.folivo.trixnity.core.model.crypto.Signed
-import net.folivo.trixnity.core.model.crypto.keysOf
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.SasAcceptEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMacEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -73,7 +72,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
     }
     context(ComparisonByUser::class.simpleName ?: "ComparisonByUser") {
         context(ComparisonByUser::match.name) {
-            should("send ${SasMacEventContent::class.simpleName}") {
+            should("send ${SasMacEventContent::class.simpleName} with own device key and master key") {
                 freeAfter(OlmSAS.create(), OlmSAS.create()) { olmSas1, olmSas2 ->
                     olmSas1.setTheirPublicKey(olmSas2.publicKey)
                     val store = mockk<Store> {
@@ -92,6 +91,46 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                                                 )
                                             ), mapOf()
                                         ), KeySignatureTrustLevel.Valid(true)
+                                    ),
+                                    "AAAAAA_OTHER" to StoredDeviceKeys(
+                                        Signed(
+                                            DeviceKeys(
+                                                userId = UserId("alice", "server"),
+                                                deviceId = "AAAAAA_OTHER",
+                                                algorithms = setOf(),
+                                                keys = keysOf(
+                                                    Ed25519Key("AAKey1_Other", "key1_other"),
+                                                    Ed25519Key("AAKey2_Other", "key2_other")
+                                                )
+                                            ), mapOf()
+                                        ), KeySignatureTrustLevel.Valid(true)
+                                    )
+                                )
+                            )
+                        coEvery { keys.getCrossSigningKeys(UserId("alice", "server")) }
+                            .returns(
+                                setOf(
+                                    StoredCrossSigningKeys(
+                                        Signed(
+                                            CrossSigningKeys(
+                                                userId = UserId("alice", "server"),
+                                                usage = setOf(CrossSigningKeysUsage.MasterKey),
+                                                keys = keysOf(
+                                                    Ed25519Key("AAKey3", "key3")
+                                                )
+                                            ), mapOf()
+                                        ), KeySignatureTrustLevel.Valid(false)
+                                    ),
+                                    StoredCrossSigningKeys(
+                                        Signed(
+                                            CrossSigningKeys(
+                                                userId = UserId("alice", "server"),
+                                                usage = setOf(CrossSigningKeysUsage.SelfSigningKey),
+                                                keys = keysOf(
+                                                    Ed25519Key("AAKey3_other", "key3_other")
+                                                )
+                                            ), mapOf()
+                                        ), KeySignatureTrustLevel.Valid(false)
                                     )
                                 )
                             )
@@ -114,7 +153,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                     val result = step
                     result.shouldBeInstanceOf<SasMacEventContent>()
                     result.keys.shouldNotBeBlank()
-                    result.mac shouldHaveSize 2
+                    result.mac shouldHaveSize 3
                 }
             }
             should("cancel, when message authentication code is not supported") {

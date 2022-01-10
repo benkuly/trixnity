@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
+import io.ktor.util.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -7,14 +8,21 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.serializer
+import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.*
+import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
+import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.SelfSigningKey
+import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.UserSigningKey
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
 import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmAccount
+import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.OlmUtility
+import net.folivo.trixnity.olm.freeAfter
 
 class OlmSignService internal constructor(
     private val ownUserId: UserId,
@@ -24,29 +32,78 @@ class OlmSignService internal constructor(
     private val account: OlmAccount,
     private val utility: OlmUtility,
 ) {
-    fun signatures(jsonObject: JsonObject): Signatures<UserId> {
-        val signature = account.sign(canonicalFilteredJson(jsonObject))
-        return mapOf(
-            ownUserId to keysOf(
-                Ed25519Key(
-                    keyId = ownDeviceId,
-                    value = signature
+    enum class SignWith {
+        DEVICE_KEY,
+        SELF_SIGNING_KEY,
+        USER_SIGNING_KEY;
+    }
+
+    @OptIn(InternalAPI::class)
+    suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = DEVICE_KEY): Signatures<UserId> {
+        val stringToSign = canonicalFilteredJson(jsonObject)
+        return when (signWith) {
+            DEVICE_KEY -> {
+                mapOf(
+                    ownUserId to keysOf(
+                        Ed25519Key(
+                            keyId = ownDeviceId,
+                            value = account.sign(stringToSign)
+                        )
+                    )
                 )
-            )
-        )
+            }
+            SELF_SIGNING_KEY -> {
+                val privateKey = store.keys.secrets.value[M_CROSS_SIGNING_SELF_SIGNING]?.decryptedPrivateKey
+                requireNotNull(privateKey) { "could not find self signing private key" }
+                val publicKey =
+                    store.keys.getCrossSigningKey(ownUserId, SelfSigningKey)?.value?.signed?.get<Ed25519Key>()?.keyId
+                requireNotNull(publicKey) { "could not find self signing public key" }
+                mapOf(
+                    ownUserId to keysOf(
+                        Ed25519Key(
+                            keyId = publicKey,
+                            value = freeAfter(OlmPkSigning.create(privateKey)) {
+                                it.sign(stringToSign)
+                            }
+                        )
+                    )
+                )
+            }
+            USER_SIGNING_KEY -> {
+                val privateKey = store.keys.secrets.value[M_CROSS_SIGNING_USER_SIGNING]?.decryptedPrivateKey
+                requireNotNull(privateKey) { "could not find user signing private key" }
+                val publicKey =
+                    store.keys.getCrossSigningKey(ownUserId, UserSigningKey)?.value?.signed?.get<Ed25519Key>()?.keyId
+                requireNotNull(publicKey) { "could not find user signing public key" }
+                mapOf(
+                    ownUserId to keysOf(
+                        Ed25519Key(
+                            keyId = publicKey,
+                            value = freeAfter(OlmPkSigning.create(privateKey)) {
+                                it.sign(stringToSign)
+                            }
+                        )
+                    )
+                )
+            }
+        }
     }
 
-    inline fun <reified T> sign(unsignedObject: T): Signed<T, UserId> {
-        return sign(unsignedObject, serializer())
+    suspend inline fun <reified T> sign(unsignedObject: T, signWith: SignWith = DEVICE_KEY): Signed<T, UserId> {
+        return sign(unsignedObject, serializer(), signWith)
     }
 
-    fun <T> sign(unsignedObject: T, serializer: KSerializer<T>): Signed<T, UserId> {
+    suspend fun <T> sign(
+        unsignedObject: T,
+        serializer: KSerializer<T>,
+        signWith: SignWith = DEVICE_KEY
+    ): Signed<T, UserId> {
         val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
         require(jsonObject is JsonObject)
-        return Signed(unsignedObject, signatures(jsonObject))
+        return Signed(unsignedObject, signatures(jsonObject, signWith))
     }
 
-    fun signCurve25519Key(key: Curve25519Key): Key.SignedCurve25519Key {
+    suspend fun signCurve25519Key(key: Curve25519Key): Key.SignedCurve25519Key {
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
@@ -65,8 +122,8 @@ class OlmSignService internal constructor(
 
     suspend fun <T> verify(signedObject: Signed<T, UserId>, serializer: KSerializer<T>): VerifyResult {
         val signed = signedObject.signed
-        return when {
-            signedObject is Key.SignedCurve25519Key -> verify(
+        return when (signedObject) {
+            is Key.SignedCurve25519Key -> verify(
                 Signed(VerifySignedKeyWrapper(signedObject.signed.value), signedObject.signatures)
             )
             else -> {
@@ -77,7 +134,7 @@ class OlmSignService internal constructor(
                     signatureKeys.keys.filterIsInstance<Ed25519Key>().map { signatureKey ->
                         val key = signatureKey.keyId?.let {
                             store.keys.getFromDevice<Ed25519Key>(userId, it)?.value
-                                ?: store.keys.getCrossSigningKey(userId, it)?.first?.value
+                                ?: store.keys.getCrossSigningKey(userId, it)?.value?.signed?.get<Ed25519Key>()?.value
                         } ?: return VerifyResult.MissingSignature
                         try {
                             utility.verifyEd25519(

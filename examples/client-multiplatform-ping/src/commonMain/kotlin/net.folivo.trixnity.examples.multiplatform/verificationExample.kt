@@ -85,7 +85,7 @@ suspend fun verificationExample() = coroutineScope {
                     println("we are done!")
                 }
                 is Cancel -> {
-                    println("cancelled because ${state.content} from ${state.sender}")
+                    println("cancelled because ${state.content} (isOurOwn=${state.isOurOwn})")
                 }
             }
         }

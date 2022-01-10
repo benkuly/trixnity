@@ -15,9 +15,9 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Unknown
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 
 class ActiveVerificationTest : ShouldSpec({
     timeout = 30_000
@@ -55,6 +55,10 @@ class ActiveVerificationTest : ShouldSpec({
         suspend fun handleStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
             super.handleIncomingVerificationStep(step, sender, isOurOwn)
         }
+
+        fun setState(state: ActiveVerificationState) {
+            mutableState.value = state
+        }
     }
 
     lateinit var cut: TestActiveVerification
@@ -77,7 +81,7 @@ class ActiveVerificationTest : ShouldSpec({
                 VerificationCancelEventContent(Code.User, "user cancelled verification", null, "t")
             cut.cancel()
             sendVerificationStepFlow.first() shouldBe expectedCancelEvent
-            cut.state.value shouldBe Cancel(expectedCancelEvent, alice)
+            cut.state.value shouldBe Cancel(expectedCancelEvent, true)
         }
     }
     context("handleVerificationStep") {
@@ -95,6 +99,20 @@ class ActiveVerificationTest : ShouldSpec({
             should("cancel") {
                 cut.handleStep(VerificationReadyEventContent(aliceDevice, setOf(), null, null), alice, true)
                 sendVerificationStepFlow.first().shouldBeInstanceOf<VerificationCancelEventContent>()
+            }
+        }
+        context("current state is ${AcceptedByOtherDevice::class.simpleName}") {
+            beforeTest {
+                cut.setState(AcceptedByOtherDevice)
+            }
+            should("set state to ${Done::class.simpleName} when done") {
+                cut.handleStep(VerificationDoneEventContent(null, "t"), alice, false)
+                cut.state.value shouldBe Done
+            }
+            should("set state to ${Cancel::class.simpleName} when cancel") {
+                val cancelEvent = VerificationCancelEventContent(Code.User, "user", null, "t")
+                cut.handleStep(cancelEvent, alice, false)
+                cut.state.value shouldBe Cancel(cancelEvent, false)
             }
         }
         suspend fun ShouldSpecContainerScope.checkNotAllowedStateChange(vararg steps: VerificationStep) {

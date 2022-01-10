@@ -7,17 +7,18 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.api.model.keys.AddSignaturesResponse
 import net.folivo.trixnity.client.api.model.keys.GetKeyChangesResponse
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
+import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.crypto.Key.*
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm.Curve25519
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm.SignedCurve25519
-import net.folivo.trixnity.core.model.crypto.Signed
-import net.folivo.trixnity.core.model.crypto.keysOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -26,7 +27,7 @@ import kotlin.test.assertNotNull
 class KeysApiClientTest {
 
     @Test
-    fun shouldUploadKeys() = runTest {
+    fun shouldSetDeviceKeys() = runTest {
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -93,7 +94,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.uploadKeys(
+        val result = matrixRestClient.keys.setDeviceKeys(
             deviceKeys = Signed(
                 DeviceKeys(
                     userId = UserId("alice", "example.com"),
@@ -312,6 +313,254 @@ class KeysApiClientTest {
             GetKeyChangesResponse(
                 changed = setOf(UserId("@alice:example.com"), UserId("@bob:example.org")),
                 left = setOf(UserId("@clara:example.com"), UserId("@doug:example.org"))
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldSetCrossSigningKeys() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/keys/device_signing/upload",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "master_key":{
+                                "user_id":"@alice:example.com",
+                                "usage":["master"],
+                                "keys":{
+                                  "ed25519:alice+base64+public+key":"alice+base64+public+key"
+                                },
+                                "signatures":{
+                                  "@alice:example.com":{
+                                    "ed25519:alice+base64+master+key":"signature+of+key"
+                                  }
+                                }
+                              },
+                              "self_signing_key":{
+                                "user_id":"@alice:example.com",
+                                "usage":["self_signing"],
+                                "keys":{
+                                  "ed25519:alice+base64+public+key":"alice+base64+public+key"
+                                },
+                                "signatures":{
+                                  "@alice:example.com":{
+                                    "ed25519:alice+base64+master+key":"signature+of+key",
+                                    "ed25519:base64+master+public+key":"signature+of+self+signing+key"
+                                  }
+                                }
+                              },
+                              "user_signing_key":{
+                                "user_id":"@alice:example.com",
+                                "usage":["user_signing"],
+                                "keys":{
+                                  "ed25519:alice+base64+public+key":"alice+base64+public+key"
+                                },
+                                "signatures":{
+                                  "@alice:example.com":{
+                                    "ed25519:alice+base64+master+key":"signature+of+key",
+                                    "ed25519:base64+master+public+key":"signature+of+user+signing+key"
+                                  }
+                                }
+                              }
+                            }
+                    """.trimToFlatJson()
+                        respond(
+                            "{}",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setCrossSigningKeys(
+            masterKey = Signed(
+                CrossSigningKeys(
+                    keys = keysOf(Ed25519Key("alice+base64+public+key", "alice+base64+public+key")),
+                    usage = setOf(MasterKey),
+                    userId = UserId("@alice:example.com"),
+                ),
+                mapOf(
+                    UserId("@alice:example.com") to keysOf(
+                        Ed25519Key("alice+base64+master+key", "signature+of+key")
+                    )
+                )
+            ),
+            selfSigningKey = Signed(
+                CrossSigningKeys(
+                    keys = keysOf(Ed25519Key("alice+base64+public+key", "alice+base64+public+key")),
+                    usage = setOf(SelfSigningKey),
+                    userId = UserId("@alice:example.com"),
+                ),
+                mapOf(
+                    UserId("@alice:example.com") to keysOf(
+                        Ed25519Key("alice+base64+master+key", "signature+of+key"),
+                        Ed25519Key("base64+master+public+key", "signature+of+self+signing+key")
+                    )
+                )
+            ),
+            userSigningKey = Signed(
+                CrossSigningKeys(
+                    keys = keysOf(Ed25519Key("alice+base64+public+key", "alice+base64+public+key")),
+                    usage = setOf(UserSigningKey),
+                    userId = UserId("@alice:example.com"),
+                ),
+                mapOf(
+                    UserId("@alice:example.com") to keysOf(
+                        Ed25519Key("alice+base64+master+key", "signature+of+key"),
+                        Ed25519Key("base64+master+public+key", "signature+of+user+signing+key")
+                    )
+                )
+            ),
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldAddSignatures() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/keys/signatures/upload",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        request.body.toByteArray().decodeToString() shouldBe """
+                           {
+                              "@alice:example.com":{
+                                "HIJKLMN":{
+                                  "user_id":"@alice:example.com",
+                                  "device_id":"HIJKLMN",
+                                  "algorithms":[
+                                    "m.olm.v1.curve25519-aes-sha2",
+                                    "m.megolm.v1.aes-sha2"
+                                  ],
+                                  "keys":{
+                                    "ed25519:HIJKLMN":"base64+ed25519+key",
+                                    "curve25519:HIJKLMN":"base64+curve25519+key"
+                                  },
+                                  "signatures":{
+                                    "@alice:example.com":{
+                                      "ed25519:base64+self+signing+public+key":"base64+signature+of+HIJKLMN"
+                                    }
+                                  }
+                                },
+                                "base64+master+public+key":{
+                                  "user_id":"@alice:example.com",
+                                  "usage":["master"],
+                                  "keys":{
+                                    "ed25519:base64+master+public+key":"base64+master+public+key"
+                                  },
+                                  "signatures":{
+                                    "@alice:example.com":{
+                                      "ed25519:HIJKLMN":"base64+signature+of+master+key"
+                                    }
+                                  }
+                                }
+                              },
+                              "@bob:example.com":{
+                                "bobs+base64+master+public+key":{
+                                  "user_id":"@bob:example.com",
+                                  "usage":["master"],
+                                  "keys":{
+                                    "ed25519:bobs+base64+master+public+key":"bobs+base64+master+public+key"
+                                  },
+                                  "signatures":{
+                                    "@alice:example.com":{
+                                      "ed25519:base64+user+signing+public+key":"base64+signature+of+bobs+master+key"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                    """.trimToFlatJson()
+                        respond(
+                            """
+                                {
+                                  "failures": {
+                                    "@alice:example.com": {
+                                      "HIJKLMN": {
+                                        "errcode": "M_INVALID_SIGNATURE",
+                                        "error": "Invalid signature"
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        val result = matrixRestClient.keys.addSignatures(
+            signedCrossSigningKeys = setOf(
+                Signed(
+                    CrossSigningKeys(
+                        keys = keysOf(Ed25519Key("base64+master+public+key", "base64+master+public+key")),
+                        usage = setOf(MasterKey),
+                        userId = UserId("@alice:example.com"),
+                    ),
+                    mapOf(
+                        UserId("@alice:example.com") to keysOf(
+                            Ed25519Key("HIJKLMN", "base64+signature+of+master+key")
+                        )
+                    )
+                ),
+                Signed(
+                    CrossSigningKeys(
+                        keys = keysOf(Ed25519Key("bobs+base64+master+public+key", "bobs+base64+master+public+key")),
+                        usage = setOf(MasterKey),
+                        userId = UserId("@bob:example.com"),
+                    ),
+                    mapOf(
+                        UserId("@alice:example.com") to keysOf(
+                            Ed25519Key("base64+user+signing+public+key", "base64+signature+of+bobs+master+key")
+                        )
+                    )
+                )
+            ),
+            signedDeviceKeys = setOf(
+                Signed(
+                    DeviceKeys(
+                        userId = UserId("@alice:example.com"),
+                        deviceId = "HIJKLMN",
+                        keys = keysOf(
+                            Ed25519Key("HIJKLMN", "base64+ed25519+key"),
+                            Curve25519Key("HIJKLMN", "base64+curve25519+key")
+                        ),
+                        algorithms = setOf(Olm, Megolm)
+                    ),
+                    mapOf(
+                        UserId("@alice:example.com") to keysOf(
+                            Ed25519Key("base64+self+signing+public+key", "base64+signature+of+HIJKLMN")
+                        )
+                    )
+                )
+            )
+        ).getOrThrow()
+        assertEquals(
+            AddSignaturesResponse(
+                mapOf(
+                    UserId("@alice:example.com") to mapOf(
+                        "HIJKLMN" to JsonObject(
+                            mapOf(
+                                "errcode" to JsonPrimitive("M_INVALID_SIGNATURE"),
+                                "error" to JsonPrimitive("Invalid signature")
+                            )
+                        )
+                    )
+                )
             ), result
         )
     }

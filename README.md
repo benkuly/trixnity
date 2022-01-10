@@ -37,13 +37,16 @@ This project contains the following sub-projects, which can be used independentl
     - [x] cross signing
         - [x] trust level calculation
         - [x] SSSS
-        - [ ] signing of other keys
+        - [x] signing of other keys
+        - [ ] bootstrapping
+    - [ ] room key backup
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
+    - [ ] push notifications
 - [trixnity-client-store-exposed](/trixnity-client-store-exposed) implements a database for trixnity-client
   with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM as platform.
 - [trixnity-client-store-sqldelight](/trixnity-client-store-sqldelight) implements a database for trixnity-client

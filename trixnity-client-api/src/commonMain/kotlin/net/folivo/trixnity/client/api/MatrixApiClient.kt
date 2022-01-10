@@ -26,7 +26,7 @@ class MatrixApiClient(
     val users = UsersApiClient(httpClient, json, eventContentSerializerMappings)
     val rooms = RoomsApiClient(httpClient, json, eventContentSerializerMappings)
     val sync = SyncApiClient(httpClient)
-    val keys = KeysApiClient(httpClient)
+    val keys = KeysApiClient(httpClient, json)
     val media = MediaApiClient(httpClient)
     val devices = DevicesApiClient(httpClient)
 }

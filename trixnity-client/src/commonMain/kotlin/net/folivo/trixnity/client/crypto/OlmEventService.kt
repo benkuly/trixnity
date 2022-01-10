@@ -106,7 +106,7 @@ class OlmEventService internal constructor(
                 store.keys.getOrFetchKeyFromDevice<Ed25519Key>(receiverId, deviceId)?.copy(keyId = null)
                     ?: throw KeyNotFoundException("could not find es25519 key for $receiverId ($deviceId)")
             )
-        ).also { log.debug { "olm event: $it" } }
+        ).also { log.trace { "olm event: $it" } }
         requireNotNull(serializer)
         val encryptedContent = olmSession.encrypt(json.encodeToString(serializer, event))
         store.olm.storeOlmSession(olmSession, identityKey, olmPickleKey)
@@ -118,7 +118,7 @@ class OlmEventService internal constructor(
                 )
             ),
             senderKey = ownCurve25519Key
-        ).also { log.debug { "encrypted event: $it" } }
+        ).also { log.trace { "encrypted event: $it" } }
     }
 
     suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): OlmEvent<*> {
@@ -200,7 +200,7 @@ class OlmEventService internal constructor(
             } == null
         ) throw SessionException.ValidationFailed
 
-        return decryptedEvent.also { log.debug { "decrypted event: $it" } }
+        return decryptedEvent.also { log.trace { "decrypted event: $it" } }
     }
 
     suspend fun encryptMegolm(
@@ -275,7 +275,7 @@ class OlmEventService internal constructor(
         }
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)
-        val event = MegolmEvent(content, roomId).also { log.debug { "megolm event: $it" } }
+        val event = MegolmEvent(content, roomId).also { log.trace { "megolm event: $it" } }
         requireNotNull(serializer)
 
         val encryptedContent = session.encrypt(json.encodeToString(serializer, event))
@@ -295,7 +295,7 @@ class OlmEventService internal constructor(
             senderKey = ownCurve25519Key,
             deviceId = ownDeviceId,
             sessionId = session.sessionId,
-        ).also { log.debug { "encrypted event: $it" } }
+        ).also { log.trace { "encrypted event: $it" } }
     }
 
     suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): MegolmEvent<*> {
@@ -330,7 +330,7 @@ class OlmEventService internal constructor(
             )
         }
 
-        return decryptedEvent.also { log.debug { "decrypted event: $it" } }
+        return decryptedEvent.also { log.trace { "decrypted event: $it" } }
     }
 
     private fun hasCreatedTooManyOlmSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
