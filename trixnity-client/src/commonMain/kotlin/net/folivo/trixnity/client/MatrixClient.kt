@@ -195,15 +195,16 @@ class MatrixClient private constructor(
                 scope = scope,
             )
 
+            val selfSignedDeviceKeys = matrixClient.olm.getSelfSignedDeviceKeys()
             store.keys.updateDeviceKeys(userId) {
-                mapOf(deviceId to StoredDeviceKeys(matrixClient.olm.ownDeviceKeys, Valid(true)))
+                mapOf(deviceId to StoredDeviceKeys(selfSignedDeviceKeys, Valid(true)))
             }
-            matrixClient.olm.ownDeviceKeys.signed.keys.forEach {
+            selfSignedDeviceKeys.signed.keys.forEach {
                 store.keys.saveKeyVerificationState(
                     it, userId, deviceId, KeyVerificationState.Verified(it.value)
                 )
             }
-            api.keys.uploadKeys(deviceKeys = matrixClient.olm.ownDeviceKeys)
+            api.keys.setDeviceKeys(deviceKeys = selfSignedDeviceKeys)
             store.keys.outdatedKeys.update { it + userId }
 
             matrixClient

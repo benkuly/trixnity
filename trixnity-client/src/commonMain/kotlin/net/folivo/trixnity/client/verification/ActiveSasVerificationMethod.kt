@@ -4,13 +4,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.getOrFetchKeysFromDevice
+import net.folivo.trixnity.client.crypto.getAllKeysFromUser
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
-import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
@@ -253,36 +252,26 @@ class ActiveSasVerificationMethod private constructor(
                         theirUserId + theirDeviceId +
                         ownUserId + ownDeviceId +
                         actualTransactionId
-                val theirMacs = theirMac.mac.keys.filterIsInstance<Key.Ed25519Key>()
+                val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
                 val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-                val keysToMac = store.keys.getOrFetchKeysFromDevice<Key.Ed25519Key>(theirUserId, theirDeviceId)
-                    ?.filter { theirMacIds.contains(it.fullKeyId) }
+                val allKeysOfDevice = store.keys.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
+                val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
                 val input = theirMacIds.sortedBy { it }.joinToString(",")
                 val info = baseInfo + "KEY_IDS"
                 log.debug { "create keys mac from input $input and info $info" }
                 val keys = olmSas.calculateMac(input, info)
                 if (keys == theirMac.keys) {
-                    val containsMismatchedMac = keysToMac?.asSequence()
-                        ?.map { keyToMac ->
+                    val containsMismatchedMac = keysToMac.asSequence()
+                        .map { keyToMac ->
                             log.debug { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }
                             val calculatedMac =
                                 olmSas.calculateMac(keyToMac.value, baseInfo + keyToMac.fullKeyId)
                             (calculatedMac == theirMac.mac.find { it.fullKeyId == keyToMac.fullKeyId }?.value).also {
                                 if (!it) log.warn { "macs from them (${keyToMac}) did not match our calculated ($calculatedMac)" }
                             }
-                        }?.contains(false) ?: true
+                        }.contains(false)
                     if (!containsMismatchedMac) {
-                        log.info { "trust keys: $keysToMac" }
-                        keysToMac?.forEach { key ->
-                            store.keys.saveKeyVerificationState(
-                                key,
-                                theirUserId, theirDeviceId,
-                                Verified(key.value)
-                            )
-                        }
-                        keysToMac?.forEach { key ->
-                            keyService.updateTrustLevel(theirUserId, key)
-                        }
+                        keyService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
                         sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
                     } else {
                         sendVerificationStep(

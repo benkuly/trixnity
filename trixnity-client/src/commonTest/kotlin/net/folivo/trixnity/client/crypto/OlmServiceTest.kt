@@ -78,7 +78,7 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
         beforeTest {
             coEvery {
-                api.keys.uploadKeys(
+                api.keys.setDeviceKeys(
                     any(),
                     any(),
                     any()
@@ -92,7 +92,7 @@ class OlmServiceTest : ShouldSpec({
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
 
-                coVerify { api.keys.uploadKeys(oneTimeKeys = capture(uploadedKeys)) }
+                coVerify { api.keys.setDeviceKeys(oneTimeKeys = capture(uploadedKeys)) }
                 uploadedKeys[0] shouldHaveSize 26
                 uploadedKeys[1] shouldHaveSize 26
 
@@ -128,8 +128,8 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                bobOlmService.ownDeviceKeys.signed.get<Curve25519Key>()!!,
-                                                bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!
+                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
+                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
                                             )
                                         )
                                     ), mapOf()
@@ -147,8 +147,8 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                cutWithAccount.ownDeviceKeys.signed.get<Curve25519Key>()!!,
-                                                cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!
+                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
+                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
                                             )
                                         )
                                     ), mapOf()
@@ -198,23 +198,23 @@ class OlmServiceTest : ShouldSpec({
                             Event.OlmEvent(
                                 eventContent,
                                 bob,
-                                keysOf(bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!),
+                                keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!),
                                 alice,
-                                keysOf(cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!)
+                                keysOf(cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!)
                             )
                         )
                     )
 
                     assertSoftly(
                         store.olm.getInboundMegolmSession(
-                            bobOlmService.ownDeviceKeys.signed.get()!!,
+                            bobOlmService.getSelfSignedDeviceKeys().signed.get()!!,
                             outboundSession.sessionId,
                             RoomId("room", "server")
                         )!!
                     ) {
                         roomId shouldBe RoomId("room", "server")
                         sessionId shouldBe outboundSession.sessionId
-                        senderKey shouldBe bobOlmService.ownDeviceKeys.signed.get()!!
+                        senderKey shouldBe bobOlmService.getSelfSignedDeviceKeys().signed.get()!!
                     }
 
                     bobOlmService.free()
@@ -243,8 +243,8 @@ class OlmServiceTest : ShouldSpec({
                                     algorithms = setOf(Olm, Megolm),
                                     keys = Keys(
                                         keysOf(
-                                            bobOlmService.ownDeviceKeys.signed.get<Curve25519Key>()!!,
-                                            bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
                                         )
                                     )
                                 ), mapOf()
@@ -262,8 +262,8 @@ class OlmServiceTest : ShouldSpec({
                                     algorithms = setOf(Olm, Megolm),
                                     keys = Keys(
                                         keysOf(
-                                            cutWithAccount.ownDeviceKeys.signed.get<Curve25519Key>()!!,
-                                            cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!
+                                            cutWithAccount.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
+                                            cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
                                         )
                                     )
                                 ), mapOf()
@@ -320,9 +320,9 @@ class OlmServiceTest : ShouldSpec({
                     decrypted shouldBe Event.OlmEvent(
                         eventContent,
                         bob,
-                        keysOf(bobOlmService.ownDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null)),
+                        keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!.copy(keyId = null)),
                         alice,
-                        keysOf(cutWithAccount.ownDeviceKeys.signed.get<Ed25519Key>()!!.copy(keyId = null))
+                        keysOf(cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!.copy(keyId = null))
                     )
                 }
                 scope.cancel()

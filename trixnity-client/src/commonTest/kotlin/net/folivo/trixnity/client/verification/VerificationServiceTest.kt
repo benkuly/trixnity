@@ -273,7 +273,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", null, "transaction"),
-                    bobUserId
+                    false
                 )
                 cut.activeDeviceVerification.first { it == null } shouldBe null
             }
@@ -327,7 +327,7 @@ private val body: ShouldSpec.() -> Unit = {
                 assertNotNull(result)
                 result.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", VerificationStepRelatesTo(eventId), null),
-                    bobUserId
+                    false
                 )
             }
         }

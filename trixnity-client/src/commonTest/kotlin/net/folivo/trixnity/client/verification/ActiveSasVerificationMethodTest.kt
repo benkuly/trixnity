@@ -18,11 +18,13 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
@@ -277,13 +279,29 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                             DeviceKeys(
                                 bob, bobDevice, setOf(Megolm),
                                 keysOf(
-                                    Key.Ed25519Key(bobDevice, "bobKey"),
-                                    Key.Ed25519Key("HUHU", "buh")
+                                    Ed25519Key(bobDevice, "bobKey"),
+                                    Ed25519Key("HUHU", "buh")
                                 )
                             ), mapOf()
                         ), Valid(true)
                     )
                 )
+                coEvery { store.keys.getCrossSigningKeys(bob) }
+                    .returns(
+                        setOf(
+                            StoredCrossSigningKeys(
+                                Signed(
+                                    CrossSigningKeys(
+                                        userId = bob,
+                                        usage = setOf(CrossSigningKeysUsage.MasterKey),
+                                        keys = keysOf(
+                                            Ed25519Key("AAKey3", "key3")
+                                        )
+                                    ), mapOf()
+                                ), Valid(false)
+                            )
+                        )
+                    )
 
                 freeAfter(OlmSAS.create()) { bobOlmSas ->
                     cut.handleVerificationStep(
@@ -316,23 +334,20 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasKeyEventContent("key", null, "t"),
             )
             should("send ${VerificationDoneEventContent::class.simpleName}") {
-                coEvery { store.keys.saveKeyVerificationState(any(), any(), any(), any()) } just Runs
-                coEvery { keyService.updateTrustLevel(any(), any()) } just Runs
+                coEvery { keyService.trustAndSignKeys(any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
                 sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
                 coVerify {
-                    store.keys.saveKeyVerificationState(
-                        Key.Ed25519Key(bobDevice, "bobKey"), bob, bobDevice,
-                        KeyVerificationState.Verified("bobKey")
+                    keyService.trustAndSignKeys(
+                        setOf(
+                            Ed25519Key(bobDevice, "bobKey"),
+                            Ed25519Key("HUHU", "buh"),
+                            Ed25519Key("AAKey3", "key3")
+                        ),
+                        bob
                     )
-                    store.keys.saveKeyVerificationState(
-                        Key.Ed25519Key("HUHU", "buh"), bob, bobDevice,
-                        KeyVerificationState.Verified("buh")
-                    )
-                    keyService.updateTrustLevel(bob, Key.Ed25519Key(bobDevice, "bobKey"))
-                    keyService.updateTrustLevel(bob, Key.Ed25519Key("HUHU", "buh"))
                 }
             }
             should("cancel when key mismatches") {
@@ -350,7 +365,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 val firstMac = sasMacEventContent.mac.first()
                 cut.handleVerificationStep(
                     sasMacEventContent.copy(
-                        mac = Keys(sasMacEventContent.mac - firstMac + Key.Ed25519Key(firstMac.keyId, "dino"))
+                        mac = Keys(sasMacEventContent.mac - firstMac + Ed25519Key(firstMac.keyId, "dino"))
                     ), false
                 )
                 val result =

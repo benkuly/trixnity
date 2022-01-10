@@ -24,6 +24,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStepRelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
@@ -34,7 +35,7 @@ private val log = KotlinLogging.logger {}
 
 class ActiveUserVerification(
     request: VerificationRequestMessageEventContent,
-    requestIsFromOurOwn: Boolean,
+    private val requestIsFromOurOwn: Boolean,
     val requestEventId: EventId,
     requestTimestamp: Long,
     ownUserId: UserId,
@@ -107,8 +108,17 @@ class ActiveUserVerification(
                     }
                 }.first { it is IsVerificationStep || it is NoVerificationStep }
                 if (searchResult is IsVerificationStep) {
+                    val stepContent = searchResult.stepContent
+                    // mark request as already accepted
+                    if (!requestIsFromOurOwn && searchResult.sender == ownUserId
+                        && stepContent is VerificationReadyEventContent && stepContent.fromDevice != ownDeviceId
+                    ) {
+                        mutableState.value = ActiveVerificationState.AcceptedByOtherDevice
+                    }
                     // we just ignore our own events (we already processed them)
-                    if (searchResult.sender != ownUserId && searchResult.stepContent.relatesTo == relatesTo)
+                    if ((searchResult.sender != ownUserId || state.value == ActiveVerificationState.AcceptedByOtherDevice)
+                        && searchResult.stepContent.relatesTo == relatesTo
+                    )
                         handleIncomingVerificationStep(
                             searchResult.stepContent,
                             searchResult.sender,

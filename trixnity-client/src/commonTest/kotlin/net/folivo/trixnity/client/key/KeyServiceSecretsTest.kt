@@ -40,6 +40,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.olm.OlmPkSigning
+import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.random.Random
 import kotlin.test.assertNotNull
@@ -83,7 +84,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(KeyService::handleIncomingKeyRequests.name) {
+    context(KeyService::handleEncryptedIncomingKeyRequests.name) {
         beforeTest {
             store.account.userId.value = alice
             store.keys.updateDeviceKeys(alice) {
@@ -94,7 +95,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "secretUserSigningKey"))
         }
         should("ignore request from other user") {
-            cut.handleIncomingKeyRequests(
+            cut.handleEncryptedIncomingKeyRequests(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
                         SecretKeyRequestEventContent(
@@ -111,7 +112,7 @@ private val body: ShouldSpec.() -> Unit = {
             coVerify { api wasNot Called }
         }
         should("add request on request") {
-            cut.handleIncomingKeyRequests(
+            cut.handleEncryptedIncomingKeyRequests(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
                         SecretKeyRequestEventContent(
@@ -128,7 +129,7 @@ private val body: ShouldSpec.() -> Unit = {
             coVerify { api.users.sendToDevice<SecretKeySendEventContent>(any(), any(), any()) }
         }
         should("remove request on request cancellation") {
-            cut.handleIncomingKeyRequests(
+            cut.handleEncryptedIncomingKeyRequests(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
                         SecretKeyRequestEventContent(
@@ -141,7 +142,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.handleIncomingKeyRequests(
+            cut.handleEncryptedIncomingKeyRequests(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
                         SecretKeyRequestEventContent(
@@ -170,7 +171,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.updateDeviceKeys(alice) {
                     mapOf(aliceDevice to mockk { every { trustLevel } returns returnedTrustLevel })
                 }
-                cut.handleIncomingKeyRequests(
+                cut.handleEncryptedIncomingKeyRequests(
                     OlmService.DecryptedOlmEvent(
                         mockk(), Event.OlmEvent(
                             SecretKeyRequestEventContent(
@@ -206,7 +207,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.updateDeviceKeys(alice) {
                     mapOf(aliceDevice to mockk { every { trustLevel } returns returnedTrustLevel })
                 }
-                cut.handleIncomingKeyRequests(
+                cut.handleEncryptedIncomingKeyRequests(
                     OlmService.DecryptedOlmEvent(
                         mockk(), Event.OlmEvent(
                             SecretKeyRequestEventContent(
@@ -667,6 +668,83 @@ private val body: ShouldSpec.() -> Unit = {
             store.keys.secrets.value shouldBe existingPrivateKeys + mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(event, secret.encodeBase64()),
             )
+        }
+    }
+    context(KeyService::checkOwnAdvertisedMasterKeyAndVerifySelf.name) {
+        lateinit var spyCut: KeyService
+        beforeTest {
+            spyCut = spyk(cut)
+            coEvery { spyCut.trustAndSignKeys(any(), any()) } just Runs
+        }
+        should("fail when master key cannot be found") {
+            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+        }
+        should("fail when master key does not match") {
+            val encryptedMasterKey = MasterKeyEventContent(mapOf())
+            store.globalAccountData.update(GlobalAccountDataEvent(encryptedMasterKey))
+            val publicKey = Random.nextBytes(32).encodeUnpaddedBase64()
+            store.keys.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        SignedCrossSigningKeys(
+                            CrossSigningKeys(
+                                alice, setOf(CrossSigningKeysUsage.UserSigningKey), keysOf(
+                                    Key.Ed25519Key(publicKey, publicKey)
+                                )
+                            ), mapOf()
+                        ), CrossSigned(true)
+                    )
+                )
+            }
+
+            coEvery { spyCut.decryptSecret(any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
+
+            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+        }
+        should("be success, when master key matches") {
+            val encryptedMasterKey = MasterKeyEventContent(mapOf())
+            store.globalAccountData.update(GlobalAccountDataEvent(encryptedMasterKey))
+            val privateKey = Random.nextBytes(32)
+            val publicKey = freeAfter(OlmPkSigning.create(privateKey.encodeBase64())) { it.publicKey }
+            store.keys.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        SignedCrossSigningKeys(
+                            CrossSigningKeys(
+                                alice, setOf(CrossSigningKeysUsage.MasterKey), keysOf(
+                                    Key.Ed25519Key(publicKey, publicKey)
+                                )
+                            ), mapOf()
+                        ), Valid(false)
+                    )
+                )
+            }
+            store.keys.updateDeviceKeys(alice) {
+                mapOf(
+                    aliceDevice to StoredDeviceKeys(
+                        SignedDeviceKeys(
+                            DeviceKeys(
+                                alice, aliceDevice, setOf(),
+                                keysOf(Key.Ed25519Key(aliceDevice, "dev"))
+                            ), mapOf()
+                        ),
+                        Valid(false)
+                    )
+                )
+            }
+
+            coEvery { spyCut.decryptSecret(any(), any(), any(), any(), any()) } returns privateKey
+
+            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).getOrThrow()
+
+            coVerify {
+                spyCut.trustAndSignKeys(
+                    setOf(
+                        Key.Ed25519Key(publicKey, publicKey),
+                        Key.Ed25519Key(aliceDevice, "dev")
+                    ), alice
+                )
+            }
         }
     }
 }

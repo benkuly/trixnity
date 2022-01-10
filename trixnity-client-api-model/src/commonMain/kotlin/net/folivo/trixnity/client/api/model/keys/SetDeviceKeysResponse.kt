@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
 
 @Serializable
-data class UploadKeysResponse(
+data class SetDeviceKeysResponse(
     @SerialName("one_time_key_counts")
     val oneTimeKeyCounts: Map<KeyAlgorithm, Int>,
 )

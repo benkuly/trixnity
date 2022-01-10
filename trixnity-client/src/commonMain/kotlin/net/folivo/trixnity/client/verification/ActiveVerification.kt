@@ -41,14 +41,14 @@ abstract class ActiveVerification(
 
     private val mutex = Mutex()
 
-    private val _state: MutableStateFlow<ActiveVerificationState> =
+    protected val mutableState: MutableStateFlow<ActiveVerificationState> =
         MutableStateFlow(
             if (requestIsFromOurOwn) OwnRequest(request)
             else TheirRequest(
                 request, ownDeviceId, supportedMethods, relatesTo, transactionId, ::sendVerificationStepAndHandleIt
             )
         )
-    val state = _state.asStateFlow()
+    val state = mutableState.asStateFlow()
 
     private val lifecycleStarted = atomic(false)
     protected abstract suspend fun lifecycle(scope: CoroutineScope)
@@ -80,7 +80,14 @@ abstract class ActiveVerification(
             if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
                 cancel(Code.UnknownTransaction, "transaction is unknown")
             val currentState = state.value
-            when (step) {
+            if (currentState is AcceptedByOtherDevice) {
+                if (step is VerificationDoneEventContent) {
+                    mutableState.value = Done
+                }
+                if (step is VerificationCancelEventContent) {
+                    mutableState.value = Cancel(step, isOurOwn)
+                }
+            } else when (step) {
                 is VerificationReadyEventContent -> {
                     if (currentState is OwnRequest || currentState is TheirRequest)
                         onReady(step)
@@ -97,7 +104,7 @@ abstract class ActiveVerification(
                     else cancelUnexpectedMessage(currentState)
                 }
                 is VerificationCancelEventContent -> {
-                    onCancel(step, sender, isOurOwn)
+                    onCancel(step, isOurOwn)
                 }
                 else -> when (currentState) {
                     is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
@@ -115,7 +122,7 @@ abstract class ActiveVerification(
 
     private fun onReady(step: VerificationReadyEventContent) {
         if (theirDeviceId == null && step.fromDevice != ownDeviceId) theirDeviceId = step.fromDevice
-        _state.value = Ready(
+        mutableState.value = Ready(
             ownDeviceId,
             step.methods.intersect(supportedMethods),
             relatesTo,
@@ -148,7 +155,7 @@ abstract class ActiveVerification(
                     )
             }
             if (method != null) // the method already called cancel
-                _state.value = Start(method, sender, senderDevice)
+                mutableState.value = Start(method, sender, senderDevice)
         }
         if (currentState is Start) {
             val currentStartContent = currentState.method.startEventContent
@@ -172,15 +179,15 @@ abstract class ActiveVerification(
     }
 
     private fun onDone(isOurOwn: Boolean) {
-        val oldState = _state.value
+        val oldState = mutableState.value
         val newState =
             if (oldState is PartlyDone && (isOurOwn && !oldState.isOurOwn || !isOurOwn && oldState.isOurOwn)) Done
             else PartlyDone(isOurOwn)
-        _state.value = newState
+        mutableState.value = newState
     }
 
-    private suspend fun onCancel(step: VerificationCancelEventContent, sender: UserId, isOurOwn: Boolean) {
-        _state.value = Cancel(step, sender)
+    private suspend fun onCancel(step: VerificationCancelEventContent, isOurOwn: Boolean) {
+        mutableState.value = Cancel(step, isOurOwn)
         when (val currentState = state.value) {
             is Start -> {
                 currentState.method.handleVerificationStep(step, isOurOwn)

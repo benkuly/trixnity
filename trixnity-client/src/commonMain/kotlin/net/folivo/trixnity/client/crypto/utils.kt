@@ -68,16 +68,21 @@ internal suspend inline fun <reified T : Key> KeyStore.getDeviceKeyByValue(
 }
 
 // TODO test
-internal suspend inline fun <reified T : Key> KeyStore.getKeysFromUser(
-    userId: UserId
-): Set<T>? {
-    val userKeys = getDeviceKeys(userId) ?: run {
+internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
+    userId: UserId,
+    filterDeviceId: String? = null,
+    filterUsage: CrossSigningKeysUsage? = null
+): Set<T> {
+    val deviceKeys = (getDeviceKeys(userId) ?: run {
         outdatedKeys.update { it + userId }
         waitForUpdateOutdatedKey(userId)
         getDeviceKeys(userId)
-    }
-    val keys = userKeys?.values?.flatMap { it.value.signed.keys }?.filterIsInstance<T>()
-    return keys?.toSet()
+    })?.entries?.filter { if (filterDeviceId != null) it.key == filterDeviceId else true }
+        ?.flatMap { it.value.value.signed.keys.filterIsInstance<T>() } ?: listOf()
+    val crossSigningKeys =
+        getCrossSigningKeys(userId)?.filter { if (filterUsage != null) it.value.signed.usage.contains(filterUsage) else true }
+            ?.flatMap { it.value.signed.keys.filterIsInstance<T>() } ?: listOf()
+    return (deviceKeys + crossSigningKeys).toSet()
 }
 
 internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String): StoredDeviceKeys? {
@@ -106,10 +111,9 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
 internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,
     keyId: String
-): Pair<Key.Ed25519Key, StoredCrossSigningKeys>? {
-    return this.getCrossSigningKeys(userId)?.firstNotNullOfOrNull { keys ->
-        keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().firstOrNull { it.keyId == keyId }
-            ?.let { it to keys }
+): StoredCrossSigningKeys? {
+    return this.getCrossSigningKeys(userId)?.find { keys ->
+        keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.keyId == keyId }
     }
 }
 

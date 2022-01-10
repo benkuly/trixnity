@@ -47,15 +47,15 @@ class OlmService(
         utility.free()
     }
 
-    val ownDeviceKeys: Signed<DeviceKeys, UserId>
-        get() = sign.sign(
-            DeviceKeys(
-                userId = ownUserId,
-                deviceId = ownDeviceId,
-                algorithms = setOf(Olm, Megolm),
-                keys = Keys(keysOf(ownEd25519Key, ownCurve25519Key))
-            )
+    suspend fun getSelfSignedDeviceKeys() = sign.sign(
+        DeviceKeys(
+            userId = ownUserId,
+            deviceId = ownDeviceId,
+            algorithms = setOf(Olm, Megolm),
+            keys = Keys(keysOf(ownEd25519Key, ownCurve25519Key))
         )
+    )
+
     private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
     private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
 
@@ -104,7 +104,7 @@ class OlmService(
                 sign.signCurve25519Key(Key.Curve25519Key(keyId = it.key, value = it.value))
             }.toSet())
             log.debug { "generate and upload $generateOneTimeKeysCount one time keys: $signedOneTimeKeys" }
-            api.keys.uploadKeys(oneTimeKeys = signedOneTimeKeys)
+            api.keys.setDeviceKeys(oneTimeKeys = signedOneTimeKeys)
             account.markKeysAsPublished()
             store.olm.storeAccount(account, olmPickleKey)
         }

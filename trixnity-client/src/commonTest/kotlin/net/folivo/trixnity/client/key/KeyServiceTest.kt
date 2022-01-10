@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.timing.continually
 import io.kotest.assertions.until.fixed
 import io.kotest.core.spec.style.ShouldSpec
@@ -15,18 +16,22 @@ import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient
+import net.folivo.trixnity.client.api.model.keys.AddSignaturesResponse
 import net.folivo.trixnity.client.api.model.keys.QueryKeysResponse
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
+import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -663,7 +668,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.keys.updateCrossSigningKeys(bob) { setOf(key) }
             cut.updateTrustLevel(alice, signingKey)
-            store.keys.getCrossSigningKeys(bob)?.firstOrNull() shouldBe key.copy(trustLevel = Valid(false))
+            store.keys.getCrossSigningKeys(bob)?.firstOrNull() shouldBe key.copy(trustLevel = NotCrossSigned)
         }
     }
     context("calculateTrustLevel") {
@@ -678,10 +683,28 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
                 mapOf()
             )
+            should("be ${NotCrossSigned::class.simpleName}, when key is verified, when master key exists") {
+                store.keys.updateCrossSigningKeys(alice) {
+                    setOf(
+                        StoredCrossSigningKeys(
+                            Signed(
+                                CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
+                                mapOf()
+                            ),
+                            Valid(false)
+                        )
+                    )
+                }
+                store.keys.saveKeyVerificationState(
+                    Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
+                    Verified("edKeyValue")
+                )
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
+            }
             should("be ${Valid::class.simpleName} + verified, when key is verified") {
                 store.keys.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
-                    KeyVerificationState.Verified("edKeyValue")
+                    Verified("edKeyValue")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(true)
             }
@@ -786,7 +809,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("be ${CrossSigned::class.simpleName} + verified, when there is a verified key in key chain") {
                 store.keys.saveKeyVerificationState(
                     Ed25519Key("ALICE_DEVICE", "..."), alice, "ALICE_DEVICE",
-                    KeyVerificationState.Verified("...")
+                    Verified("...")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe CrossSigned(true)
                 store.keys.getKeyChainLinksBySigningKey(alice, Ed25519Key("ALICE_MSK", "...")) shouldBe setOf(
@@ -805,6 +828,151 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
+        }
+    }
+    context(KeyService::trustAndSignKeys.name) {
+        lateinit var spyCut: KeyService
+        beforeTest {
+            spyCut = spyk(cut)
+            coEvery { olm.sign.sign<DeviceKeys>(any(), any<SignWith>()) }.coAnswers {
+                Signed(firstArg(), mapOf())
+            }
+            coEvery { olm.sign.sign<CrossSigningKeys>(any(), any<SignWith>()) }.coAnswers {
+                Signed(firstArg(), mapOf())
+            }
+
+            coEvery { spyCut.updateTrustLevel(any(), any()) } just Runs
+        }
+        should("handle own account keys") {
+            coEvery {
+                api.keys.addSignatures(any(), any(), any())
+            } returns Result.success(AddSignaturesResponse(mapOf()))
+
+            val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
+            val ownMasterEdKey = Ed25519Key("A-MASTER", "valueMasterA")
+            val otherCrossSigningEdKey = Ed25519Key("A-SELF_SIGN", "valueSelfSignA") // should be ignored
+
+            val ownAccountsDeviceKey = DeviceKeys(
+                userId = alice,
+                deviceId = "AAAAAA",
+                algorithms = setOf(),
+                keys = keysOf(ownAccountsDeviceEdKey)
+            )
+            val ownMasterKey = CrossSigningKeys(
+                userId = alice,
+                usage = setOf(MasterKey),
+                keys = keysOf(ownMasterEdKey)
+            )
+            val otherCrossSigningKey = CrossSigningKeys(
+                userId = alice,
+                usage = setOf(UserSigningKey),
+                keys = keysOf(otherCrossSigningEdKey)
+            )
+            store.keys.updateDeviceKeys(alice) {
+                mapOf("AAAAAA" to StoredDeviceKeys(Signed(ownAccountsDeviceKey, mapOf()), Valid(false)))
+            }
+            store.keys.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(Signed(ownMasterKey, mapOf()), Valid(false)),
+                    StoredCrossSigningKeys(Signed(otherCrossSigningKey, mapOf()), Valid(false))
+                )
+            }
+
+            spyCut.trustAndSignKeys(
+                keys = setOf(ownAccountsDeviceEdKey, ownMasterEdKey, otherCrossSigningEdKey),
+                userId = alice,
+            )
+
+            coVerify {
+                api.keys.addSignatures(
+                    setOf(Signed(ownAccountsDeviceKey, mapOf())),
+                    setOf(Signed(ownMasterKey, mapOf()))
+                )
+                spyCut.updateTrustLevel(alice, ownAccountsDeviceEdKey)
+                spyCut.updateTrustLevel(alice, ownMasterEdKey)
+                spyCut.updateTrustLevel(alice, otherCrossSigningEdKey)
+            }
+            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
+                .shouldBe(Verified(ownAccountsDeviceEdKey.value))
+            store.keys.getKeyVerificationState(ownMasterEdKey, alice, null)
+                .shouldBe(Verified(ownMasterEdKey.value))
+            store.keys.getKeyVerificationState(otherCrossSigningEdKey, alice, null)
+                .shouldBe(Verified(otherCrossSigningEdKey.value))
+        }
+        should("handle others account keys") {
+            coEvery {
+                api.keys.addSignatures(any(), any(), any())
+            } returns Result.success(AddSignaturesResponse(mapOf()))
+
+            val othersDeviceEdKey = Ed25519Key("BBBBBB", "valueB") // should be ignored
+            val othersMasterEdKey = Ed25519Key("B-MASTER", "valueMasterB")
+
+            val othersDeviceKey = DeviceKeys(
+                userId = bob,
+                deviceId = "BBBBBB",
+                algorithms = setOf(),
+                keys = keysOf(othersDeviceEdKey)
+            )
+            val othersMasterKey = CrossSigningKeys(
+                userId = bob,
+                usage = setOf(MasterKey),
+                keys = keysOf(othersMasterEdKey)
+            )
+
+            store.keys.updateDeviceKeys(bob) {
+                mapOf("BBBBBB" to StoredDeviceKeys(Signed(othersDeviceKey, mapOf()), Valid(false)))
+            }
+            store.keys.updateCrossSigningKeys(bob) {
+                setOf(StoredCrossSigningKeys(Signed(othersMasterKey, mapOf()), Valid(false)))
+            }
+
+            spyCut.trustAndSignKeys(
+                keys = setOf(othersDeviceEdKey, othersMasterEdKey),
+                userId = bob,
+            )
+
+            coVerify {
+                api.keys.addSignatures(
+                    setOf(),
+                    setOf(Signed(othersMasterKey, mapOf()))
+                )
+                spyCut.updateTrustLevel(bob, othersDeviceEdKey)
+                spyCut.updateTrustLevel(bob, othersMasterEdKey)
+            }
+            store.keys.getKeyVerificationState(othersDeviceEdKey, bob, "BBBBBB")
+                .shouldBe(Verified(othersDeviceEdKey.value))
+            store.keys.getKeyVerificationState(othersMasterEdKey, bob, null)
+                .shouldBe(Verified(othersMasterEdKey.value))
+        }
+        should("throw exception, when signature upload fails") {
+            coEvery {
+                api.keys.addSignatures(any(), any(), any())
+            } returns Result.success(AddSignaturesResponse(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh")))))
+
+            val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
+
+            val ownAccountsDeviceKey = DeviceKeys(
+                userId = alice,
+                deviceId = "AAAAAA",
+                algorithms = setOf(),
+                keys = keysOf(ownAccountsDeviceEdKey)
+            )
+            store.keys.updateDeviceKeys(alice) {
+                mapOf("AAAAAA" to StoredDeviceKeys(Signed(ownAccountsDeviceKey, mapOf()), Valid(false)))
+            }
+
+            shouldThrow<UploadSignaturesException> {
+                spyCut.trustAndSignKeys(
+                    keys = setOf(ownAccountsDeviceEdKey),
+                    userId = alice,
+                )
+            }
+
+            coVerify {
+                spyCut.updateTrustLevel(alice, ownAccountsDeviceEdKey)
+            }
+            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
+                .shouldBe(Verified(ownAccountsDeviceEdKey.value))
         }
     }
 }
