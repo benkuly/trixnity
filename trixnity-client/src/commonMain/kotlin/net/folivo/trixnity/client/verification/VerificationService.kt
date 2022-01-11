@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -211,14 +212,24 @@ class VerificationService(
         api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
     }
 
+    /**
+     * This should be called on login (after sync!). If it is empty, it means that cross signing needs to be bootstrapped.
+     * This can be done with [KeyService][net.folivo.trixnity.client.key.KeyService].
+     */
     suspend fun getSelfVerificationMethods(): Set<SelfVerificationMethod> {
+        withTimeout(30_000) {
+            store.keys.outdatedKeys.first { !it.contains(ownUserId) }
+        }
         val deviceVerificationMethod = store.keys.getDeviceKeys(ownUserId)?.entries
             ?.filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
             ?.map { it.key }
             ?.let {
-                setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
-                    createDeviceVerificationRequest(ownUserId, *(it - ownDeviceId).toTypedArray())
-                })
+                val sendToDevices = it - ownDeviceId
+                if (sendToDevices.isNotEmpty())
+                    setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
+                        createDeviceVerificationRequest(ownUserId, *sendToDevices.toTypedArray())
+                    })
+                else setOf()
             } ?: setOf()
 
         val defaultKeyId = store.globalAccountData.get<DefaultSecretKeyEventContent>()?.content?.key

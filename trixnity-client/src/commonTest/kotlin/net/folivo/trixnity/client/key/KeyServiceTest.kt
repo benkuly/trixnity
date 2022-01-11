@@ -733,6 +733,59 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
         }
+        context("with master key but only self signing key chain: BOB_DEVICE <- BOB_DEVICE") {
+            val deviceKeys = Signed(
+                DeviceKeys(
+                    bob, "BOB_DEVICE", setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
+                    keysOf(
+                        Ed25519Key("BOB_DEVICE", "..."),
+                        Key.Curve25519Key("BOB_DEVICE", "...")
+                    )
+                ),
+                mapOf(
+                    bob to keysOf(Ed25519Key("BOB_DEVICE", "..."))
+                )
+            )
+            beforeTest {
+                store.keys.updateCrossSigningKeys(bob) {
+                    setOf(
+                        StoredCrossSigningKeys(
+                            Signed(
+                                CrossSigningKeys(
+                                    bob, setOf(MasterKey), keysOf(Ed25519Key("BOB_MSK", "..."))
+                                ),
+                                mapOf()
+                            ), Valid(false)
+                        )
+                    )
+                }
+                store.keys.updateDeviceKeys(bob) {
+                    mapOf(
+                        "BOB_DEVICE" to StoredDeviceKeys(
+                            Signed(
+                                DeviceKeys(
+                                    bob,
+                                    "BOB_DEVICE",
+                                    setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
+                                    keysOf(
+                                        Ed25519Key("BOB_DEVICE", "..."),
+                                        Key.Curve25519Key("BOB_DEVICE", "...")
+                                    )
+                                ),
+                                mapOf()
+                            ), Valid(true)
+                        )
+                    )
+                }
+                store.keys.saveKeyVerificationState(
+                    Ed25519Key("BOB_DEVICE", "..."), bob, "BOB_DEVICE",
+                    Verified("...")
+                )
+            }
+            should("be ${NotCrossSigned::class.simpleName}") {
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
+            }
+        }
         context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK <- ALICE_USK <- ALICE_MSK <- ALICE_DEVICE") {
             val deviceKeys = Signed(
                 DeviceKeys(
@@ -806,6 +859,17 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
             }
+            should("be ${CrossSigned::class.simpleName}, when there is a master key in key chain") {
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe CrossSigned(false)
+                store.keys.getKeyChainLinksBySigningKey(alice, Ed25519Key("ALICE_MSK", "...")) shouldBe setOf(
+                    KeyChainLink(
+                        signingUserId = alice,
+                        signingKey = Ed25519Key(keyId = "ALICE_MSK", value = "..."),
+                        signedUserId = alice,
+                        signedKey = Ed25519Key(keyId = "ALICE_USK", value = "...")
+                    )
+                )
+            }
             should("be ${CrossSigned::class.simpleName} + verified, when there is a verified key in key chain") {
                 store.keys.saveKeyVerificationState(
                     Ed25519Key("ALICE_DEVICE", "..."), alice, "ALICE_DEVICE",
@@ -827,6 +891,67 @@ private val body: ShouldSpec.() -> Unit = {
                     KeyVerificationState.Blocked("...")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
+            }
+        }
+        context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK") {
+            val deviceKeys = Signed(
+                DeviceKeys(
+                    bob, "BOB_DEVICE", setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
+                    keysOf(
+                        Ed25519Key("BOB_DEVICE", "..."),
+                        Key.Curve25519Key("BOB_DEVICE", "...")
+                    )
+                ),
+                mapOf(
+                    bob to keysOf(Ed25519Key("BOB_SSK", "..."))
+                )
+            )
+            beforeTest {
+                store.keys.updateCrossSigningKeys(bob) {
+                    setOf(
+                        StoredCrossSigningKeys(
+                            Signed(
+                                CrossSigningKeys(
+                                    bob, setOf(SelfSigningKey), keysOf(Ed25519Key("BOB_SSK", "..."))
+                                ),
+                                mapOf(bob to keysOf(Ed25519Key("BOB_MSK", "...")))
+                            ), Valid(false)
+                        ),
+                        StoredCrossSigningKeys(
+                            Signed(
+                                CrossSigningKeys(
+                                    bob, setOf(MasterKey), keysOf(Ed25519Key("BOB_MSK", "..."))
+                                ),
+                                mapOf()
+                            ), Valid(false)
+                        )
+                    )
+                }
+                store.keys.updateDeviceKeys(bob) {
+                    mapOf(
+                        "BOB_DEVICE" to StoredDeviceKeys(
+                            Signed(
+                                DeviceKeys(
+                                    bob,
+                                    "BOB_DEVICE",
+                                    setOf(EncryptionAlgorithm.Megolm, EncryptionAlgorithm.Olm),
+                                    keysOf(
+                                        Ed25519Key("BOB_DEVICE", "..."),
+                                        Key.Curve25519Key("BOB_DEVICE", "...")
+                                    )
+                                ),
+                                mapOf()
+                            ), Valid(true)
+                        )
+                    )
+                }
+                store.keys.saveKeyVerificationState(
+                    Ed25519Key("BOB_DEVICE", "..."), bob, "BOB_DEVICE",
+                    Verified("...")
+                )
+            }
+            should("be ${CrossSigned::class.simpleName}, when there is a master key in key chain") {
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe CrossSigned(false)
             }
         }
     }

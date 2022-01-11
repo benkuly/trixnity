@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client
 
-import io.kotest.assertions.timing.eventually
 import io.kotest.assertions.until.fixed
 import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
@@ -15,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.e
@@ -33,9 +33,9 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientTest : ShouldSpec({
     timeout = 30_000
@@ -139,7 +139,7 @@ class MatrixClientTest : ShouldSpec({
             every { cut.user } returns userServiceMock
             coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
 
-            cut.startSync()
+            cut.startSync().getOrThrow()
             until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 inMemoryStore.account.syncBatchToken.value == null
             }
@@ -148,7 +148,7 @@ class MatrixClientTest : ShouldSpec({
 
     context(MatrixClient::displayName.name) {
         should("get the display name and avatar URL from the profile API when initially logging in") {
-            val inMemoryStore = InMemoryStore(scope).apply { init() }
+            val inMemoryStore = InMemoryStore(scope)
             MatrixClient.login(
                 baseUrl = Url("http://matrix.home"),
                 identifier = IdentifierType.User(userId.full),
@@ -230,6 +230,7 @@ class MatrixClientTest : ShouldSpec({
         }
         should("use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates") {
             val inMemoryStore = InMemoryStore(scope).apply { init() }
+            delay(50) // wait for init
             inMemoryStore.account.olmPickleKey.value = ""
             inMemoryStore.account.accessToken.value = "abcdef"
             inMemoryStore.account.userId.value = userId
@@ -350,18 +351,15 @@ class MatrixClientTest : ShouldSpec({
                 },
                 scope = scope,
             )
+            assertNotNull(cut)
 
-            while (cut == null) delay(10)
+            cut.displayName.first { it != null } shouldBe "bob"
+            cut.avatarUrl.first { it != null } shouldBe Url("mxc://localhost/123456")
 
-            cut.displayName.value shouldBe "bob"
-            cut.avatarUrl.value shouldBe Url("mxc://localhost/123456")
+            cut.startSync().getOrThrow()
 
-            cut.startSync()
-
-            eventually(3.seconds) {
-                cut.displayName.value shouldBe "bobby"
-                cut.avatarUrl.value shouldBe Url("mxc://localhost/abcdef")
-            }
+            cut.displayName.first { it == "bobby" } shouldBe "bobby"
+            cut.avatarUrl.first { it == Url("mxc://localhost/abcdef") } shouldBe Url("mxc://localhost/abcdef")
         }
     }
 })

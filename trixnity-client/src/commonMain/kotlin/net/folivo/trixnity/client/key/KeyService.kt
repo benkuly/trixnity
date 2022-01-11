@@ -344,6 +344,7 @@ class KeyService(
         visitedKeys: MutableSet<Key> = mutableSetOf()
     ): KeySignatureTrustLevel? {
         log.trace { "search in signatures for trust level: $signatures" }
+        visitedKeys.add(signedKey)
         store.keys.deleteKeyChainLinksBySignedKey(signedUserId, signedKey)
         val states = signatures.flatMap { (signingUserId, signatureKeys) ->
             signatureKeys.flatMap { signatureKey ->
@@ -351,11 +352,8 @@ class KeyService(
                     signatureKey.keyId?.let { store.keys.getCrossSigningKey(signingUserId, it) }?.value
                 val signingCrossSigningKey = crossSigningKey?.signed?.get<Ed25519Key>()
                 val crossSigningKeyState =
-                    if (signingCrossSigningKey != null && crossSigningKey.signed.keys.keys.none {
-                            visitedKeys.contains(
-                                it
-                            )
-                        }
+                    if (signingCrossSigningKey != null
+                        && crossSigningKey.signed.keys.keys.none { visitedKeys.contains(it) }
                     ) {
                         crossSigningKey.signed.keys.keys.let { visitedKeys.addAll(it) }
                         when (crossSigningKey.getVerificationState(signingUserId)) {

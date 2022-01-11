@@ -221,8 +221,7 @@ class MatrixClient private constructor(
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixApiClientJson(eventContentSerializerMappings)
 
-            val store =
-                storeFactory.createStore(eventContentSerializerMappings, json)
+            val store = storeFactory.createStore(eventContentSerializerMappings, json)
             store.init()
 
             val baseUrl = store.account.baseUrl.value
