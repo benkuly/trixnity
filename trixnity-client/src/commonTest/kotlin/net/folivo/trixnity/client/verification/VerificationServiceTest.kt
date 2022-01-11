@@ -422,6 +422,17 @@ private val body: ShouldSpec.() -> Unit = {
             firstResult.createDeviceVerification()
             coVerify { spyCut.createDeviceVerificationRequest(aliceUserId, "DEV2") }
         }
+        should("don't add ${CrossSignedDeviceVerification::class.simpleName} when there are no cross signed devices") {
+            val spyCut = spyk(cut)
+            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false)),
+                )
+            }
+            val result = spyCut.getSelfVerificationMethods()
+            result shouldHaveSize 0
+        }
         should("add ${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
                 name = "default key",
