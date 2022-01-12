@@ -4,11 +4,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventContent
 import kotlin.reflect.KClass
 
 typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
+
+private val log = KotlinLogging.logger {  }
 
 abstract class EventEmitter {
     private val eventSubscribers =
@@ -20,7 +23,10 @@ abstract class EventEmitter {
                 it.isInstance(event.content)
             }
             .forEach { (_, subscribers) ->
-                subscribers.forEach { launch { it.invoke(event) } }
+                subscribers.forEach { launch {
+                    log.trace { "called subscriber: $it" }
+                    it.invoke(event) }
+                }
             }
     }
 
@@ -36,6 +42,9 @@ abstract class EventEmitter {
         }
     }
 
+    /**
+     * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
+     */
     inline fun <reified T : EventContent> subscribe(noinline subscriber: EventSubscriber<T>) {
         subscribe(T::class, subscriber)
     }
