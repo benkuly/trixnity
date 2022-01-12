@@ -16,16 +16,20 @@ internal fun encodeRecoveryKey(recoveryKey: ByteArray): String {
 internal suspend fun decodeRecoveryKey(encodedRecoveryKey: String, info: SecretKeyEventContent): Result<ByteArray> {
     when (info) {
         is SecretKeyEventContent.AesHmacSha2Key -> {
-            val recoveryKey = encodedRecoveryKey.filterNot { it.isWhitespace() }.decodeBase58()
+            val recoveryKey = try {
+                encodedRecoveryKey.filterNot { it.isWhitespace() }.decodeBase58()
+            } catch (exc: Throwable) {
+                return Result.failure(exc)
+            }
             recoveryKeyPrefix.forEachIndexed { index, prefix ->
                 if (recoveryKey.getOrNull(index) != prefix)
-                    return Result.failure(IllegalArgumentException("wrong prefix"))
+                    return Result.failure(RecoveryKeyInvalidException("wrong prefix"))
             }
             if (recoveryKey.fold(0x00) { parity, byte -> parity xor byte.toInt() } != 0)
-                return Result.failure(IllegalArgumentException("wrong parity"))
+                return Result.failure(RecoveryKeyInvalidException("wrong parity"))
             val recoveryKeyLength = 32
             if (recoveryKey.size != recoveryKeyLength + recoveryKeyPrefix.size + 1)
-                return Result.failure(IllegalArgumentException("wrong recovery key length"))
+                return Result.failure(RecoveryKeyInvalidException("wrong recovery key length"))
             val result = recoveryKey.copyOfRange(recoveryKeyPrefix.size, recoveryKey.size - 1)
             return checkRecoveryKey(result, info)
         }

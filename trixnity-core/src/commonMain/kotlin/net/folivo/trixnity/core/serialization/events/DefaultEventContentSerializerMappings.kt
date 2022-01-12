@@ -62,7 +62,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
     )
     override val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>> = setOf(
         of<DirectEventContent>("m.direct"),
-        of<DefaultSecretKeyEventContent>("m.secret_storage.key.default_key"),
+        of<DefaultSecretKeyEventContent>("m.secret_storage.default_key"),
         of<SecretKeyEventContent>("m.secret_storage.key."),
         of<MasterKeyEventContent>("m.cross_signing.master"),
         of<SelfSigningKeyEventContent>("m.cross_signing.self_signing"),
