@@ -47,6 +47,7 @@ kotlin {
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+                implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
         val jvmTest by getting {

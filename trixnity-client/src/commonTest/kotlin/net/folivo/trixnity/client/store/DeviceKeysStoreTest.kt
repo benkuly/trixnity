@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
@@ -63,7 +64,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             val storedSecretKeyRequest = StoredSecretKeyRequest(
                 SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
                 setOf("DEV1", "DEV2"),
-                1234
+                Instant.fromEpochMilliseconds(1234)
             )
             coEvery { secretKeyRequestRepository.getAll() } returns listOf(storedSecretKeyRequest)
 

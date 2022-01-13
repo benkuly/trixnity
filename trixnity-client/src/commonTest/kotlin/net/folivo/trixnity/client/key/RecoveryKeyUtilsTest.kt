@@ -97,11 +97,7 @@ class RecoveryKeyUtilsTest : ShouldSpec({
                 initialisationVector = iv
             ).mac
             recoveryKeyFromPassphrase(
-                "super secret passphrase", AesHmacSha2Key(
-                    passphrase = Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8),
-                    iv = iv.encodeBase64(),
-                    mac = mac
-                )
+                "super secret passphrase", Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8)
             ).getOrThrow() shouldBe key
         }
     }

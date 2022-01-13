@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -16,8 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.SELF_SIGNING_KEY
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.USER_SIGNING_KEY
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.client.store.Store
@@ -28,7 +27,6 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
@@ -129,7 +127,10 @@ class OlmSignServiceTest : ShouldSpec({
                     ), Valid(true)
                 )
             )
-            val result = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))), SELF_SIGNING_KEY)
+            val result = cut.signatures(
+                JsonObject(mapOf("key" to JsonPrimitive("value"))),
+                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING)
+            )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {
                 key shouldBe ownUserId
@@ -161,7 +162,10 @@ class OlmSignServiceTest : ShouldSpec({
                     ), Valid(true)
                 )
             )
-            val result = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))), USER_SIGNING_KEY)
+            val result = cut.signatures(
+                JsonObject(mapOf("key" to JsonPrimitive("value"))),
+                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING)
+            )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {
                 key shouldBe ownUserId
@@ -258,36 +262,10 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
-            cut.verify(signedObject) shouldBe VerifyResult.Valid
-        }
-        should("use cross signing key, when other key not found") {
-            coEvery { store.keys.getDeviceKeys(alice) } returns null
-            coEvery { store.keys.getCrossSigningKeys(alice) } returns setOf(
-                StoredCrossSigningKeys(
-                    Signed(
-                        CrossSigningKeys(
-                            alice,
-                            setOf(MasterKey),
-                            keysOf(
-                                Ed25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.ed25519),
-                                Curve25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.curve25519)
-                            )
-                        ), mapOf()
-                    ), Valid(true)
-                )
-            )
-            val signedObject = aliceSigningAccountSignService.sign(
-                Event.StateEvent(
-                    NameEventContent("room name"),
-                    EventId("\$eventId"),
-                    UserId("their", "server"),
-                    RoomId("room", "server"),
-                    originTimestamp = 24,
-                    unsigned = UnsignedStateEventData(1234),
-                    stateKey = ""
-                )
-            )
-            cut.verify(signedObject) shouldBe VerifyResult.Valid
+            cut.verify(
+                signedObject,
+                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+            ) shouldBe VerifyResult.Valid
         }
         should("return MissingSignature, when no key found") {
             coEvery { store.keys.getDeviceKeys(alice) } returns null
@@ -303,7 +281,24 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
-            cut.verify(signedObject) shouldBe VerifyResult.MissingSignature
+            cut.verify(signedObject, mapOf(bob to setOf())).shouldBeInstanceOf<VerifyResult.MissingSignature>()
+        }
+        should("return MissingSignature when no signature found for sigining keys") {
+            coEvery { store.keys.getDeviceKeys(alice) } returns null
+            coEvery { store.keys.getCrossSigningKeys(alice) } returns null
+            val signedObject = aliceSigningAccountSignService.sign(
+                Event.StateEvent(
+                    NameEventContent("room name"),
+                    EventId("\$eventId"),
+                    UserId("their", "server"),
+                    RoomId("room", "server"),
+                    originTimestamp = 24,
+                    unsigned = UnsignedStateEventData(1234),
+                    stateKey = ""
+                )
+            )
+            cut.verify(signedObject, mapOf(bob to setOf(Ed25519Key("OTHER_DEVCE", "..."))))
+                .shouldBeInstanceOf<VerifyResult.MissingSignature>()
         }
         should("verify SignedCurve25519Key") {
             val signedObject = bobSigningAccountSignService.signCurve25519Key(
@@ -312,7 +307,10 @@ class OlmSignServiceTest : ShouldSpec({
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
                 )
             )
-            cut.verify(signedObject) shouldBe VerifyResult.Valid
+            cut.verify(
+                signedObject,
+                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+            ) shouldBe VerifyResult.Valid
         }
         should("return invalid") {
             val signedObject = Signed(
@@ -334,67 +332,10 @@ class OlmSignServiceTest : ShouldSpec({
                     )
                 )
             )
-            cut.verify(signedObject) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
-        }
-    }
-    context(OlmSignService::verifySelfSignedDeviceKeys.name) {
-        val deviceKeys = DeviceKeys(
-            userId = ownUserId,
-            deviceId = "MY_DEVICE",
-            algorithms = setOf(Olm, Megolm),
-            keys = Keys(
-                keysOf(
-                    Ed25519Key("MY_DEVICE", account.identityKeys.ed25519),
-                    Curve25519Key("MY_DEVICE", account.identityKeys.curve25519)
-                )
-            ),
-        )
-        val aliceDeviceKeys = aliceSigningAccountSignService.sign(
-            DeviceKeys(
-                userId = alice,
-                deviceId = "ALICE_DEVICE",
-                algorithms = setOf(Olm, Megolm),
-                keys = Keys(
-                    keysOf(
-                        Ed25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.ed25519),
-                        Curve25519Key("ALICE_DEVICE", aliceSigningAccount.identityKeys.curve25519)
-                    )
-                ),
-            )
-        )
-        should("return valid") {
-            val signedDeviceKeys = Signed(
-                deviceKeys,
-                cut.sign(deviceKeys).signatures + aliceSigningAccountSignService.sign(deviceKeys).signatures
-            )
-            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
-                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
-            )
-            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Valid
-        }
-        should("return invalid when self signing signature is wrong") {
-            val signedDeviceKeys = Signed(
-                deviceKeys,
-                mapOf((ownUserId to keysOf(Ed25519Key("MY_DEVICE", "wrong signature")))) +
-                        aliceSigningAccountSignService.sign(deviceKeys).signatures
-            )
-            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
-                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
-            )
-
-            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
-        }
-        should("return invalid when others signature is wrong") {
-            val signedDeviceKeys = Signed(
-                deviceKeys,
-                cut.sign(deviceKeys).signatures +
-                        mapOf((alice to keysOf(Ed25519Key("ALICE_DEVICE", "wrong signature"))))
-            )
-            coEvery { store.keys.getDeviceKeys(alice) } returns mapOf(
-                "ALICE_DEVICE" to StoredDeviceKeys(aliceDeviceKeys, Valid(false))
-            )
-
-            cut.verifySelfSignedDeviceKeys(signedDeviceKeys) shouldBe VerifyResult.Invalid("BAD_MESSAGE_MAC")
+            cut.verify(
+                signedObject,
+                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+            ).shouldBeInstanceOf<VerifyResult.Invalid>()
         }
     }
 })

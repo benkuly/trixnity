@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.key
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-internal actual fun generatePbkdf2Sha512(
+internal actual suspend fun generatePbkdf2Sha512(
     password: String,
     salt: ByteArray,
     iterationCount: Int,

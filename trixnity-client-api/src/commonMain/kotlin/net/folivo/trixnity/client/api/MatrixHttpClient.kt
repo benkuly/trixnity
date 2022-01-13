@@ -112,9 +112,9 @@ class MatrixHttpClient(
                 }
                 if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
-                    UIA.UIAError(state, error, authenticate, getFallbackUrl)
+                    UIA.UIAError(state, error, getFallbackUrl, authenticate)
                 } else {
-                    UIA.UIAStep(state, authenticate, getFallbackUrl)
+                    UIA.UIAStep(state, getFallbackUrl, authenticate)
                 }
             } else {
                 val errorResponse =

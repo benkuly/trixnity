@@ -47,7 +47,6 @@ class OutboxIT {
             waitingFor(Wait.forHealthcheck())
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
         deleteDbFiles()
@@ -58,12 +57,11 @@ class OutboxIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database = Database.connect("jdbc:h2:./outbox-it;DB_CLOSE_DELAY=-1;")
+        database = newDatabase()
         val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
-//            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory,
             scope = scope,
             getLoginInfo = { it.register("user", password) }

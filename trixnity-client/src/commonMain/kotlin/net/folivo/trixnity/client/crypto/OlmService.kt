@@ -103,7 +103,7 @@ class OlmService(
             val signedOneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
                 sign.signCurve25519Key(Key.Curve25519Key(keyId = it.key, value = it.value))
             }.toSet())
-            log.debug { "generate and upload $generateOneTimeKeysCount one time keys: $signedOneTimeKeys" }
+            log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
             api.keys.setDeviceKeys(oneTimeKeys = signedOneTimeKeys)
             account.markKeysAsPublished()
             store.olm.storeAccount(account, olmPickleKey)

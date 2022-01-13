@@ -12,6 +12,7 @@ sealed class KeySignatureTrustLevel {
 
     /**
      * The key is valid or verified.
+     * This level will never be set on master keys.
      */
     @Serializable
     @SerialName("valid")
@@ -19,6 +20,7 @@ sealed class KeySignatureTrustLevel {
 
     /**
      * The key is cross signed. The cross signing key could be verified and so this key is.
+     * When set on master key, this means, that this key signs all devices.
      */
     @Serializable
     @SerialName("cross_signed")
@@ -31,14 +33,6 @@ sealed class KeySignatureTrustLevel {
     @Serializable
     @SerialName("not_cross_signed")
     object NotCrossSigned : KeySignatureTrustLevel()
-
-    /**
-     * The master key changed recently. The user should be notified.
-     * This level gets only set on master keys.
-     */
-    @Serializable
-    @SerialName("master_key_changed_recently")
-    data class MasterKeyChangedRecently(val previousMasterKeyWasVerified: Boolean) : KeySignatureTrustLevel()
 
     /**
      * Not all keys are signed by the master key.

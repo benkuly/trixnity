@@ -13,11 +13,6 @@ sealed interface UserTrustLevel {
     data class NotAllDevicesCrossSigned(val verified: Boolean) : UserTrustLevel
 
     /**
-     * The users master key changed recently. The user should be notified.
-     */
-    data class MasterKeyChangedRecently(val previousMasterKeyWasVerified: Boolean) : UserTrustLevel
-
-    /**
      * The users master key or a key, that signed this device key is blocked.
      */
     object Blocked : UserTrustLevel

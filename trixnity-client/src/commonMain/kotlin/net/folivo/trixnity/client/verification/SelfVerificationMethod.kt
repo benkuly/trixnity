@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import arrow.core.flatMap
 import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.checkRecoveryKey
 import net.folivo.trixnity.client.key.decodeRecoveryKey
 import net.folivo.trixnity.client.key.recoveryKeyFromPassphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -29,9 +30,13 @@ sealed interface SelfVerificationMethod {
         private val info: SecretKeyEventContent.AesHmacSha2Key,
     ) : SelfVerificationMethod {
         suspend fun verify(passphrase: String): Result<Unit> {
-            return recoveryKeyFromPassphrase(passphrase, info).onSuccess {
-                keyService.decryptMissingSecrets(it, keyId, info)
-            }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
+            val passphraseInfo = info.passphrase
+                ?: return Result.failure(IllegalArgumentException("missing passphrase"))
+            return recoveryKeyFromPassphrase(passphrase, passphraseInfo)
+                .flatMap { checkRecoveryKey(it, info) }
+                .onSuccess {
+                    keyService.decryptMissingSecrets(it, keyId, info)
+                }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
         }
     }
 }

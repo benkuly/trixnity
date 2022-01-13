@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import arrow.core.flatMap
 import io.ktor.util.*
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 
@@ -38,37 +37,32 @@ internal suspend fun decodeRecoveryKey(encodedRecoveryKey: String, info: SecretK
 }
 
 @OptIn(InternalAPI::class)
-internal suspend fun recoveryKeyFromPassphrase(passphrase: String, info: SecretKeyEventContent): Result<ByteArray> {
+internal suspend fun recoveryKeyFromPassphrase(
+    passphrase: String,
+    info: SecretKeyEventContent.SecretStorageKeyPassphrase
+): Result<ByteArray> {
     return when (info) {
-        is SecretKeyEventContent.AesHmacSha2Key -> when (val passphraseInfo = info.passphrase) {
-            is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 -> {
-                runCatching {
-                    generatePbkdf2Sha512(
-                        password = passphrase,
-                        salt = passphraseInfo.salt.decodeBase64Bytes(),
-                        iterationCount = passphraseInfo.iterations,
-                        keyBitLength = passphraseInfo.bits ?: (32 * 8)
-                    )
-                }.flatMap { checkRecoveryKey(it, info) }
+        is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 -> {
+            runCatching {
+                generatePbkdf2Sha512(
+                    password = passphrase,
+                    salt = info.salt.decodeBase64Bytes(),
+                    iterationCount = info.iterations,
+                    keyBitLength = info.bits ?: (32 * 8)
+                )
             }
-            is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown ->
-                Result.failure(IllegalArgumentException("unknown algorithm not supported"))
-            null -> Result.failure(IllegalArgumentException("recovery key from passphrase not supported"))
         }
-        is SecretKeyEventContent.Unknown -> Result.failure(IllegalArgumentException("unknown algorithm not supported"))
+        is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown ->
+            Result.failure(IllegalArgumentException("unknown algorithm not supported"))
     }
 }
 
 @OptIn(InternalAPI::class)
-private suspend fun checkRecoveryKey(key: ByteArray, info: SecretKeyEventContent.AesHmacSha2Key): Result<ByteArray> {
-    val encrypted = encryptAesHmacSha2(
-        content = ByteArray(32),
-        key = key,
-        name = "",
-        initialisationVector = info.iv?.decodeBase64Bytes()
+internal suspend fun checkRecoveryKey(key: ByteArray, info: SecretKeyEventContent.AesHmacSha2Key): Result<ByteArray> {
+    val mac = createAesHmacSha2MacFromKey(
+        key, info.iv?.decodeBase64Bytes()
             ?: return Result.failure(IllegalArgumentException("iv was null"))
     )
-    return if (info.mac != encrypted.mac) Result.failure(RecoveryKeyInvalidException("expected mac ${encrypted.mac}, but got ${info.mac}"))
+    return if (info.mac != mac) Result.failure(RecoveryKeyInvalidException("expected mac ${mac}, but got ${info.mac}"))
     else Result.success(key)
 }
-

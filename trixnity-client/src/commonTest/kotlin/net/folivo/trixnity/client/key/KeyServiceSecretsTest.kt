@@ -6,22 +6,29 @@ import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
-import io.kotest.matchers.string.beBlank
+import io.kotest.matchers.string.beEmpty
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
 import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient
+import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
@@ -35,8 +42,10 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventC
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -75,7 +84,7 @@ private val body: ShouldSpec.() -> Unit = {
             account.deviceId.value = aliceDevice
         }
         cut = KeyService(store, olm, api)
-        coEvery { olm.sign.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
+        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { api.json } returns json
     }
 
@@ -253,7 +262,7 @@ private val body: ShouldSpec.() -> Unit = {
                         KeyRequestAction.REQUEST,
                         "OWN_ALICE_DEVICE",
                         "requestId"
-                    ), receiverDeviceIds, Clock.System.now().toEpochMilliseconds()
+                    ), receiverDeviceIds, Clock.System.now()
                 )
             )
             store.keys.allSecretKeyRequests.first { it.size == 1 }
@@ -429,7 +438,7 @@ private val body: ShouldSpec.() -> Unit = {
                     KeyRequestAction.REQUEST,
                     "OWN_ALICE_DEVICE",
                     "requestId1"
-                ), setOf(), Clock.System.now().toEpochMilliseconds()
+                ), setOf(), Clock.System.now()
             )
             val request2 = StoredSecretKeyRequest(
                 SecretKeyRequestEventContent(
@@ -437,7 +446,7 @@ private val body: ShouldSpec.() -> Unit = {
                     KeyRequestAction.REQUEST,
                     "OWN_ALICE_DEVICE",
                     "requestId2"
-                ), setOf(aliceDevice), (Clock.System.now() - 1.days).toEpochMilliseconds()
+                ), setOf(aliceDevice), (Clock.System.now() - 1.days)
             )
             store.keys.addSecretKeyRequest(request1)
             store.keys.addSecretKeyRequest(request2)
@@ -484,7 +493,7 @@ private val body: ShouldSpec.() -> Unit = {
                         KeyRequestAction.REQUEST,
                         aliceDevice,
                         "requestId1"
-                    ), setOf("DEVICE_2"), Clock.System.now().toEpochMilliseconds()
+                    ), setOf("DEVICE_2"), Clock.System.now()
                 )
             )
             store.keys.allSecretKeyRequests.first { it.size == 1 }
@@ -510,7 +519,7 @@ private val body: ShouldSpec.() -> Unit = {
                         this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
                         this.action shouldBe KeyRequestAction.REQUEST
                         this.requestingDeviceId shouldBe aliceDevice
-                        this.requestId shouldNot beBlank()
+                        this.requestId shouldNot beEmpty()
                     }
                 }, any())
             }
@@ -561,7 +570,7 @@ private val body: ShouldSpec.() -> Unit = {
                         KeyRequestAction.REQUEST,
                         aliceDevice,
                         "requestId1"
-                    ), setOf("DEVICE_2"), Clock.System.now().toEpochMilliseconds()
+                    ), setOf("DEVICE_2"), Clock.System.now()
                 )
             )
             store.keys.allSecretKeyRequests.first { it.size == 1 }
@@ -609,9 +618,9 @@ private val body: ShouldSpec.() -> Unit = {
     context(KeyService::decryptSecret.name) {
         should("decrypt ${SecretKeyEventContent.AesHmacSha2Key::class.simpleName}") {
             val key = Random.nextBytes(32)
-            val secret = Random.nextBytes(32)
+            val secret = Random.nextBytes(32).encodeBase64()
             val encryptedData = encryptAesHmacSha2(
-                content = secret,
+                content = secret.encodeToByteArray(),
                 key = key,
                 name = "m.cross_signing.user_signing"
             )
@@ -652,9 +661,9 @@ private val body: ShouldSpec.() -> Unit = {
             store.keys.secrets.value = existingPrivateKeys
 
             val key = Random.nextBytes(32)
-            val secret = Random.nextBytes(32)
+            val secret = Random.nextBytes(32).encodeBase64()
             val encryptedData = encryptAesHmacSha2(
-                content = secret,
+                content = secret.encodeToByteArray(),
                 key = key,
                 name = "m.cross_signing.user_signing"
             )
@@ -666,7 +675,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             cut.decryptMissingSecrets(key, "KEY", SecretKeyEventContent.AesHmacSha2Key())
             store.keys.secrets.value shouldBe existingPrivateKeys + mapOf(
-                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(event, secret.encodeBase64()),
+                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(event, secret),
             )
         }
     }
@@ -698,14 +707,15 @@ private val body: ShouldSpec.() -> Unit = {
             }
 
             coEvery { spyCut.decryptSecret(any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
+                .encodeBase64()
 
             spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
         }
         should("be success, when master key matches") {
             val encryptedMasterKey = MasterKeyEventContent(mapOf())
             store.globalAccountData.update(GlobalAccountDataEvent(encryptedMasterKey))
-            val privateKey = Random.nextBytes(32)
-            val publicKey = freeAfter(OlmPkSigning.create(privateKey.encodeBase64())) { it.publicKey }
+            val privateKey = Random.nextBytes(32).encodeBase64()
+            val publicKey = freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
                     StoredCrossSigningKeys(
@@ -744,6 +754,185 @@ private val body: ShouldSpec.() -> Unit = {
                         Key.Ed25519Key(aliceDevice, "dev")
                     ), alice
                 )
+            }
+        }
+    }
+    context(KeyService::bootstrapCrossSigning.name) {
+        context("successfull") {
+            lateinit var spyCut: KeyService
+            beforeTest {
+                spyCut = spyk(cut)
+
+                coEvery { api.json } returns createMatrixJson()
+                coEvery { api.users.setAccountData<SecretKeyEventContent>(any(), any(), any()) }
+                    .returns(Result.success(Unit))
+                coEvery { api.users.setAccountData<DefaultSecretKeyEventContent>(any(), any()) }
+                    .returns(Result.success(Unit))
+                coEvery { api.users.setAccountData<MasterKeyEventContent>(any(), any()) }
+                    .returns(Result.success(Unit))
+                coEvery { api.users.setAccountData<SelfSigningKeyEventContent>(any(), any()) }
+                    .returns(Result.success(Unit))
+                coEvery { api.users.setAccountData<UserSigningKeyEventContent>(any(), any()) }
+                    .returns(Result.success(Unit))
+                coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
+                    Signed(firstArg(), mapOf())
+                }
+                coEvery { api.keys.setCrossSigningKeys(any(), any(), any()) }
+                    .returns(Result.success(UIA.UIASuccess(Unit)))
+                coEvery { spyCut.trustAndSignKeys(any(), any()) } just Runs
+                store.keys.updateCrossSigningKeys(alice) {
+                    setOf(
+                        StoredCrossSigningKeys(
+                            SignedCrossSigningKeys(
+                                CrossSigningKeys(
+                                    alice, setOf(CrossSigningKeysUsage.MasterKey), keysOf(
+                                        Key.Ed25519Key("A_MSK", "A_MSK")
+                                    )
+                                ), mapOf()
+                            ), Valid(false)
+                        )
+                    )
+                }
+                store.keys.updateDeviceKeys(alice) {
+                    mapOf(
+                        aliceDevice to StoredDeviceKeys(
+                            SignedDeviceKeys(
+                                DeviceKeys(
+                                    alice, aliceDevice, setOf(),
+                                    keysOf(Key.Ed25519Key(aliceDevice, "dev"))
+                                ), mapOf()
+                            ),
+                            Valid(false)
+                        )
+                    )
+                }
+            }
+            should("bootstrap") {
+                val result = async { spyCut.bootstrapCrossSigning() }
+                store.keys.outdatedKeys.first { it.contains(alice) }
+                store.keys.outdatedKeys.value = setOf()
+
+                assertSoftly(result.await()) {
+                    this.recoveryKey shouldNot beEmpty()
+                    this.result shouldBe Result.success(UIA.UIASuccess(Unit))
+                }
+                coVerify {
+                    api.users.setAccountData<SecretKeyEventContent>(
+                        content = coWithArg {
+                            it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
+                            it.iv shouldNot beEmpty()
+                            it.mac shouldNot beEmpty()
+                            it.passphrase shouldBe null
+                        },
+                        userId = alice,
+                        key = coWithArg { it.length shouldBeGreaterThan 10 }
+                    )
+                    api.users.setAccountData<DefaultSecretKeyEventContent>(
+                        content = coWithArg { it.key.length shouldBeGreaterThan 10 },
+                        userId = alice
+                    )
+                    api.users.setAccountData<MasterKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.users.setAccountData<SelfSigningKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.users.setAccountData<UserSigningKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.keys.setCrossSigningKeys(any(), any(), any())
+                    spyCut.trustAndSignKeys(
+                        setOf(
+                            Key.Ed25519Key("A_MSK", "A_MSK"),
+                            Key.Ed25519Key(aliceDevice, "dev")
+                        ), alice
+                    )
+                }
+                store.keys.secrets.value.keys shouldBe setOf(M_CROSS_SIGNING_SELF_SIGNING, M_CROSS_SIGNING_USER_SIGNING)
+            }
+            should("bootstrap from passphrase") {
+                val result = async { spyCut.bootstrapCrossSigningFromPassphrase("super secret. not.") }
+                store.keys.outdatedKeys.first { it.contains(alice) }
+                store.keys.outdatedKeys.value = setOf()
+
+                assertSoftly(result.await()) {
+                    this.recoveryKey shouldNot beEmpty()
+                    this.result shouldBe Result.success(UIA.UIASuccess(Unit))
+                }
+                coVerify {
+                    api.users.setAccountData<SecretKeyEventContent>(
+                        content = coWithArg {
+                            it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
+                            it.iv shouldNot beEmpty()
+                            it.mac shouldNot beEmpty()
+                            assertSoftly(it.passphrase) {
+                                this.shouldBeInstanceOf<Pbkdf2>()
+                                this.bits shouldBe 32 * 8
+                                this.iterations shouldBeGreaterThanOrEqual 500_000
+                                this.salt shouldNot beEmpty()
+                            }
+                        },
+                        userId = alice,
+                        key = coWithArg { it.length shouldBeGreaterThan 10 }
+                    )
+                    api.users.setAccountData<DefaultSecretKeyEventContent>(
+                        content = coWithArg { it.key.length shouldBeGreaterThan 10 },
+                        userId = alice
+                    )
+                    api.users.setAccountData<MasterKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.users.setAccountData<SelfSigningKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.users.setAccountData<UserSigningKeyEventContent>(
+                        content = coWithArg {
+                            val encrypted = it.encrypted.values.first()
+                            encrypted.shouldBeInstanceOf<JsonObject>()
+                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        },
+                        userId = alice
+                    )
+                    api.keys.setCrossSigningKeys(any(), any(), any())
+                    spyCut.trustAndSignKeys(
+                        setOf(
+                            Key.Ed25519Key("A_MSK", "A_MSK"),
+                            Key.Ed25519Key(aliceDevice, "dev")
+                        ), alice
+                    )
+                }
+                store.keys.secrets.value.keys shouldBe setOf(M_CROSS_SIGNING_SELF_SIGNING, M_CROSS_SIGNING_USER_SIGNING)
             }
         }
     }

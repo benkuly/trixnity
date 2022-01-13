@@ -13,9 +13,12 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient
@@ -67,8 +70,8 @@ private val body: ShouldSpec.() -> Unit = {
             account.deviceId.value = aliceDevice
         }
         cut = KeyService(store, olm, api)
-        coEvery { olm.sign.verifySelfSignedDeviceKeys(any()) } returns VerifyResult.Valid
-
+        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
+        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
     }
 
     afterTest {
@@ -113,8 +116,6 @@ private val body: ShouldSpec.() -> Unit = {
         )
         beforeTest {
             coEvery { api.sync.currentSyncState } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
-            coEvery { olm.sign.verify<DeviceKeys>(any()) } returns VerifyResult.Valid
-            coEvery { olm.sign.verify<CrossSigningKeys>(any()) } returns VerifyResult.Valid
             scope.launch {
                 cut.handleOutdatedKeys()
             }
@@ -131,7 +132,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(),
@@ -142,24 +143,6 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
-            }
-            should("add master key with missing signatures") {
-                val key = Signed<CrossSigningKeys, UserId>(
-                    CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
-                )
-                coEvery { olm.sign.verify(key) } returns VerifyResult.MissingSignature
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf(), mapOf()
-                    )
-                )
-                store.keys.outdatedKeys.value = setOf(alice)
-                store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
-                    StoredCrossSigningKeys(key, Valid(false))
-                )
             }
             should("add master key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -175,62 +158,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
-                    StoredCrossSigningKeys(key, Valid(false))
-                )
-            }
-            should("replace old master key and set trust level to ${MasterKeyChangedRecently::class.simpleName}") {
-                val key = Signed<CrossSigningKeys, UserId>(
-                    CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
-                )
-                store.keys.updateCrossSigningKeys(alice) {
-                    setOf(
-                        StoredCrossSigningKeys(
-                            Signed(key.signed, mapOf(alice to keysOf())),
-                            Valid(false)
-                        )
-                    )
-                }
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf(), mapOf()
-                    )
-                )
-                store.keys.outdatedKeys.value = setOf(alice)
-                store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
-                    StoredCrossSigningKeys(key, MasterKeyChangedRecently(false))
-                )
-
-                delay(100) // due to debounce
-                store.keys.updateCrossSigningKeys(alice) {
-                    setOf(
-                        StoredCrossSigningKeys(
-                            Signed(key.signed, mapOf(alice to keysOf())),
-                            MasterKeyChangedRecently(false)
-                        )
-                    )
-                }
-                store.keys.outdatedKeys.value = setOf(alice)
-                store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
-                    StoredCrossSigningKeys(key, MasterKeyChangedRecently(false))
-                )
-
-                delay(100) // due to debounce
-                store.keys.updateCrossSigningKeys(alice) {
-                    setOf(
-                        StoredCrossSigningKeys(
-                            Signed(key.signed, mapOf(alice to keysOf())),
-                            Valid(true)
-                        )
-                    )
-                }
-                store.keys.outdatedKeys.value = setOf(alice)
-                store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
-                    StoredCrossSigningKeys(key, MasterKeyChangedRecently(true))
+                    StoredCrossSigningKeys(key, CrossSigned(false))
                 )
             }
         }
@@ -240,7 +168,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(), mapOf(),
@@ -301,7 +229,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey) } returns VerifyResult.Invalid("")
+                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                     QueryKeysResponse(
                         mapOf(), mapOf(), mapOf(), mapOf(),
@@ -490,10 +418,9 @@ private val body: ShouldSpec.() -> Unit = {
                 context("at least one device key is not cross signed") {
                     context("mark master key as ${NotAllDeviceKeysCrossSigned::class.simpleName}") {
                         withData(
-                            Valid(false),
-                            CrossSigned(false),
-                            NotAllDeviceKeysCrossSigned(false)
-                        ) { levelBefore ->
+                            CrossSigned(true) to true,
+                            CrossSigned(false) to false,
+                        ) { (levelBefore, expectedVerified) ->
                             coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                                 QueryKeysResponse(
                                     mapOf(),
@@ -518,12 +445,17 @@ private val body: ShouldSpec.() -> Unit = {
                             store.keys.outdatedKeys.value = setOf(alice)
                             store.keys.outdatedKeys.first { it.isEmpty() }
                             store.keys.getCrossSigningKey(alice, MasterKey)
-                                ?.trustLevel shouldBe NotAllDeviceKeysCrossSigned(false)
+                                ?.trustLevel shouldBe NotAllDeviceKeysCrossSigned(expectedVerified)
                         }
                     }
                     context("keep trust level") {
                         withData(
-                            MasterKeyChangedRecently(false),
+                            Valid(false),
+                            Valid(true),
+                            NotAllDeviceKeysCrossSigned(true),
+                            NotAllDeviceKeysCrossSigned(false),
+                            NotCrossSigned,
+                            Invalid(""),
                             Blocked
                         ) { levelBefore ->
                             coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
@@ -577,16 +509,7 @@ private val body: ShouldSpec.() -> Unit = {
                             )
                         )
                     }
-                    should("calculate trust level of master key when his trust level is ${NotAllDeviceKeysCrossSigned::class.simpleName}") {
-                        store.keys.updateCrossSigningKeys(alice) {
-                            setOf(StoredCrossSigningKeys(aliceMasterKey, NotAllDeviceKeysCrossSigned(false)))
-                        }
-                        store.keys.outdatedKeys.value = setOf(alice)
-                        store.keys.outdatedKeys.first { it.isEmpty() }
-                        store.keys.getCrossSigningKey(alice, MasterKey)
-                            ?.trustLevel shouldBe Valid(false)
-                    }
-                    should("do nothing when his trust level is not ${NotAllDeviceKeysCrossSigned::class.simpleName}") {
+                    should("do nothing when his trust level is ${CrossSigned::class.simpleName}") {
                         store.keys.updateCrossSigningKeys(alice) {
                             setOf(StoredCrossSigningKeys(aliceMasterKey, CrossSigned(true)))
                         }
@@ -599,7 +522,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("manipulation of ") {
                 should("signature") {
-                    coEvery { olm.sign.verifySelfSignedDeviceKeys(cedricKey1) } returns VerifyResult.Invalid("")
+                    coEvery { olm.sign.verify(cedricKey1, any()) } returns VerifyResult.Invalid("")
                     coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
                         QueryKeysResponse(
                             mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
@@ -668,7 +591,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.keys.updateCrossSigningKeys(bob) { setOf(key) }
             cut.updateTrustLevel(alice, signingKey)
-            store.keys.getCrossSigningKeys(bob)?.firstOrNull() shouldBe key.copy(trustLevel = NotCrossSigned)
+            store.keys.getCrossSigningKeys(bob)?.firstOrNull() shouldBe key.copy(trustLevel = CrossSigned(false))
         }
     }
     context("calculateTrustLevel") {
@@ -682,6 +605,11 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 ),
                 mapOf()
+            )
+            val masterKey = Signed<CrossSigningKeys, UserId>(
+                CrossSigningKeys(
+                    alice, setOf(MasterKey), keysOf(Ed25519Key("edKeyValue", "edKeyValue"))
+                ), mapOf()
             )
             should("be ${NotCrossSigned::class.simpleName}, when key is verified, when master key exists") {
                 store.keys.updateCrossSigningKeys(alice) {
@@ -708,6 +636,13 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(true)
             }
+            should("be ${CrossSigned::class.simpleName} + verified, when key is verified and a master key") {
+                store.keys.saveKeyVerificationState(
+                    Ed25519Key("edKeyValue", "edKeyValue"), alice, null,
+                    Verified("edKeyValue")
+                )
+                cut.calculateCrossSigningKeysTrustLevel(masterKey) shouldBe CrossSigned(true)
+            }
             should("be ${Blocked::class.simpleName}, when key is blocked") {
                 store.keys.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
@@ -717,6 +652,9 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("be ${Valid::class.simpleName}, when there is no master key") {
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(false)
+            }
+            should("be ${CrossSigned::class.simpleName}, when it is a master key") {
+                cut.calculateCrossSigningKeysTrustLevel(masterKey) shouldBe CrossSigned(false)
             }
             should("be ${NotCrossSigned::class.simpleName}, when there is a master key") {
                 store.keys.updateCrossSigningKeys(alice) {

@@ -18,7 +18,7 @@ internal inline fun <T : Any> withRandom(
     random: Random = Random.Default,
     block: (randomBytes: ByteArray?) -> T
 ): T {
-    val randomBytes = if (size > 0u) random.nextBytes(ByteArray(size.toInt())) else null
+    val randomBytes = if (size > 0u) random.nextBytes(size.toInt()) else null
     return try {
         block(randomBytes)
     } finally {

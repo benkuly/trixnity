@@ -57,3 +57,12 @@ internal suspend fun decryptAesHmacSha2(
         initialisationVector = content.iv.decodeBase64Bytes()
     )
 }
+
+internal suspend fun createAesHmacSha2MacFromKey(key: ByteArray, iv: ByteArray): String {
+    return encryptAesHmacSha2(
+        content = ByteArray(32),
+        key = key,
+        name = "",
+        initialisationVector = iv
+    ).mac
+}
