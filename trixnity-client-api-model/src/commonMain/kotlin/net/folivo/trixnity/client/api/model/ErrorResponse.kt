@@ -218,7 +218,7 @@ sealed class ErrorResponse {
     data class MissingParam(override val error: String? = null) : ErrorResponse()
 
     /**
-     * A parameter that was specified has the wrong value.For example, the server expected an integer and instead
+     * A parameter that was specified has the wrong value. For example, the server expected an integer and instead
      * received a string.
      */
     @Serializable

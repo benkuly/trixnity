@@ -28,7 +28,8 @@ class TimelineEventIT {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
-    private lateinit var scope: CoroutineScope
+    private lateinit var scope1: CoroutineScope
+    private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
 
@@ -50,34 +51,32 @@ class TimelineEventIT {
             waitingFor(Wait.forHealthcheck())
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
-        scope = CoroutineScope(Dispatchers.Default)
+        scope1 = CoroutineScope(Dispatchers.Default) + CoroutineName("client1")
+        scope2 = CoroutineScope(Dispatchers.Default) + CoroutineName("client2")
         val password = "user$1passw0rd"
         val baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database1 = Database.connect("jdbc:h2:mem:timeline-event-test1;DB_CLOSE_DELAY=-1;")
-        database2 = Database.connect("jdbc:h2:mem:timeline-event-test2;DB_CLOSE_DELAY=-1;")
+        database1 = newDatabase()
+        database2 = newDatabase()
 
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope)
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-//            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory1,
-            scope = scope,
+            scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-//            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory2,
-            scope = scope,
+            scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
         client1.startSync()
@@ -86,7 +85,8 @@ class TimelineEventIT {
 
     @AfterTest
     fun afterEach() {
-        scope.cancel()
+        scope1.cancel()
+        scope2.cancel()
     }
 
     @Test
@@ -108,7 +108,7 @@ class TimelineEventIT {
 
             val decryptedMessages = mutableSetOf<EventId>()
 
-            client2.room.getLastTimelineEvent(room, scope)
+            client2.room.getLastTimelineEvent(room, scope2)
                 .filterNotNull()
                 .takeWhile { decryptedMessages.size < 3 }
                 .collectLatest { lastTimelineEvent ->
@@ -125,7 +125,7 @@ class TimelineEventIT {
 
                         currentTimelineEvent = currentTimelineEvent
                             .filterNotNull()
-                            .map { client2.room.getPreviousTimelineEvent(it, scope) }
+                            .map { client2.room.getPreviousTimelineEvent(it, scope2) }
                             .filterNotNull()
                             .first()
                     }

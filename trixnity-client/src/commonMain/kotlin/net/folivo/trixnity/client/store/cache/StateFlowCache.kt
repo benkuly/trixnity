@@ -12,9 +12,9 @@ import kotlin.time.Duration.Companion.minutes
 open class StateFlowCache<K, V>(
     private val cacheScope: CoroutineScope,
     val infiniteCache: Boolean = false,
-    private val cacheDuration: Duration = 1.minutes,
+    val cacheDuration: Duration = 1.minutes,
 ) {
-    protected val internalCache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
+    private val internalCache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
     val cache = internalCache
         .map { value -> value.mapValues { it.value.value.asStateFlow() } }
         .stateIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0), mapOf())
@@ -85,8 +85,8 @@ open class StateFlowCache<K, V>(
                 ))
             }
         }[key]
-        result?.removerJob?.start()
         requireNotNull(result) { "We are sure, that it contains a value!" }
+        result.removerJob.start()
         return result.value.asStateFlow()
     }
 
@@ -136,8 +136,7 @@ open class StateFlowCache<K, V>(
                 removeTimer.collectLatest { duration ->
                     delay(duration)
                     internalCache.update {
-                        val currentValue = it[key]
-                        if (currentValue?.subscribers?.size == 0) it - key
+                        if (it[key]?.subscribers?.size == 0) it - key
                         else it
                     }
                 }

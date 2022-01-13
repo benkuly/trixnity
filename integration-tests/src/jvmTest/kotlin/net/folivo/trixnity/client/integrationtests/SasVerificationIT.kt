@@ -29,8 +29,8 @@ class SasVerificationIT {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
-    private lateinit var scope: CoroutineScope
-    private lateinit var storeScope: CoroutineScope
+    private lateinit var scope1: CoroutineScope
+    private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
 
@@ -52,34 +52,31 @@ class SasVerificationIT {
             waitingFor(Wait.forHealthcheck())
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        scope = CoroutineScope(Dispatchers.Default)
+        scope1 = CoroutineScope(Dispatchers.Default) + CoroutineName("client1")
+        scope2 = CoroutineScope(Dispatchers.Default) + CoroutineName("client2")
         val password = "user$1passw0rd"
         val baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database1 = Database.connect("jdbc:h2:mem:sas-verification-test1;DB_CLOSE_DELAY=-1;")
-        database2 = Database.connect("jdbc:h2:mem:sas-verification-test2;DB_CLOSE_DELAY=-1;")
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, storeScope)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, storeScope)
+        database1 = newDatabase()
+        database2 = newDatabase()
+        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
+        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-//            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory1,
-            scope = scope,
+            scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-//            baseHttpClient = HttpClient(Java) { install(Logging) { level = LogLevel.INFO } },
             storeFactory = storeFactory2,
-            scope = scope,
+            scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
         client1.startSync()
@@ -88,7 +85,8 @@ class SasVerificationIT {
 
     @AfterTest
     fun afterEach() {
-        scope.cancel()
+        scope1.cancel()
+        scope2.cancel()
     }
 
     @Test
@@ -130,7 +128,7 @@ class SasVerificationIT {
                 .shouldBeInstanceOf<ActiveVerificationState.Done>()
         }
 
-        client1.key.getTrustLevel(client2.userId, client2.deviceId, scope).value shouldBe DeviceTrustLevel.Verified
-        client2.key.getTrustLevel(client1.userId, client1.deviceId, scope).value shouldBe DeviceTrustLevel.Verified
+        client1.key.getTrustLevel(client2.userId, client2.deviceId, scope1).value shouldBe DeviceTrustLevel.Verified
+        client2.key.getTrustLevel(client1.userId, client1.deviceId, scope2).value shouldBe DeviceTrustLevel.Verified
     }
 }

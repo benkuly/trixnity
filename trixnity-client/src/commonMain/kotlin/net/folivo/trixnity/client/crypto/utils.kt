@@ -1,7 +1,10 @@
 package net.folivo.trixnity.client.crypto
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.*
@@ -14,11 +17,10 @@ import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
-    withTimeoutOrNull(5_000) {
+    withTimeoutOrNull(15_000) {
         outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
     }
 }
-
 
 internal suspend inline fun <reified T : Key> KeyStore.getFromDevice(
     userId: UserId,
@@ -97,15 +99,6 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
     usage: CrossSigningKeysUsage
 ): StoredCrossSigningKeys? {
     return this.getCrossSigningKeys(userId)?.firstOrNull { it.value.signed.usage.contains(usage) }
-}
-
-internal suspend inline fun KeyStore.getCrossSigningKey(
-    userId: UserId,
-    usage: CrossSigningKeysUsage,
-    scope: CoroutineScope
-): StateFlow<StoredCrossSigningKeys?> {
-    return this.getCrossSigningKeys(userId, scope)
-        .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(usage) } }.stateIn(scope)
 }
 
 internal suspend inline fun KeyStore.getCrossSigningKey(

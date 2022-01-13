@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.exposed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
 import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
@@ -26,14 +27,14 @@ class ExposedSecretKeyRequestRepositoryTest : ShouldSpec({
         val secretKeyRequest1 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
             setOf("DEV1", "DEV2"),
-            1234
+            Instant.fromEpochMilliseconds(1234)
         )
         val secretKeyRequest2 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
             setOf("DEV1"),
-            23
+            Instant.fromEpochMilliseconds(23)
         )
-        val secretKeyRequest2Copy = secretKeyRequest2.copy(creationTimestamp = 24)
+        val secretKeyRequest2Copy = secretKeyRequest2.copy(createdAt = Instant.fromEpochMilliseconds(24))
 
         newSuspendedTransaction {
             cut.save(key1, secretKeyRequest1)
@@ -52,12 +53,12 @@ class ExposedSecretKeyRequestRepositoryTest : ShouldSpec({
         val secretKeyRequest1 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
             setOf("DEV1", "DEV2"),
-            1234
+            Instant.fromEpochMilliseconds(1234)
         )
         val secretKeyRequest2 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
             setOf("DEV1"),
-            23
+            Instant.fromEpochMilliseconds(23)
         )
 
         newSuspendedTransaction {

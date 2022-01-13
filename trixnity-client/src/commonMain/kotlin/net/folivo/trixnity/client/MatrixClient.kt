@@ -17,7 +17,6 @@ import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.api.model.authentication.LoginType
 import net.folivo.trixnity.client.api.model.users.Filters
 import net.folivo.trixnity.client.api.model.users.RoomFilter
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
@@ -25,7 +24,6 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
-import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
@@ -196,9 +194,6 @@ class MatrixClient private constructor(
             )
 
             val selfSignedDeviceKeys = matrixClient.olm.getSelfSignedDeviceKeys()
-            store.keys.updateDeviceKeys(userId) {
-                mapOf(deviceId to StoredDeviceKeys(selfSignedDeviceKeys, Valid(true)))
-            }
             selfSignedDeviceKeys.signed.keys.forEach {
                 store.keys.saveKeyVerificationState(
                     it, userId, deviceId, KeyVerificationState.Verified(it.value)

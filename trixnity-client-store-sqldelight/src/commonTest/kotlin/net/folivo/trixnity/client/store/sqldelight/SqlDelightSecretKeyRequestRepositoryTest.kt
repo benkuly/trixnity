@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
@@ -29,14 +30,14 @@ class SqlDelightSecretKeyRequestRepositoryTest : ShouldSpec({
         val secretKeyRequest1 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
             setOf("DEV1", "DEV2"),
-            1234
+            Instant.fromEpochMilliseconds(1234)
         )
         val secretKeyRequest2 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
             setOf("DEV1"),
-            23
+            Instant.fromEpochMilliseconds(23)
         )
-        val secretKeyRequest2Copy = secretKeyRequest2.copy(creationTimestamp = 24)
+        val secretKeyRequest2Copy = secretKeyRequest2.copy(createdAt = Instant.fromEpochMilliseconds(24))
 
         cut.save(key1, secretKeyRequest1)
         cut.save(key2, secretKeyRequest2)
@@ -53,12 +54,12 @@ class SqlDelightSecretKeyRequestRepositoryTest : ShouldSpec({
         val secretKeyRequest1 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
             setOf("DEV1", "DEV2"),
-            1234
+            Instant.fromEpochMilliseconds(1234)
         )
         val secretKeyRequest2 = StoredSecretKeyRequest(
             SecretKeyRequestEventContent("2", KeyRequestAction.REQUEST, "A", "r2"),
             setOf("DEV1"),
-            23
+            Instant.fromEpochMilliseconds(23)
         )
 
         cut.save(key1, secretKeyRequest1)

@@ -47,7 +47,9 @@ import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
 import kotlin.test.assertNotNull
 
-class OlmEventServiceTest : ShouldSpec({
+class OlmEventServiceTest : ShouldSpec(body)
+
+private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixJson()
@@ -106,7 +108,7 @@ class OlmEventServiceTest : ShouldSpec({
             )
         )
         bobAccount.markKeysAsPublished()
-        coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Valid
+        coEvery { signService.verify(any<Key.SignedCurve25519Key>(), any()) } returns VerifyResult.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
 
         cut = OlmEventService("", alice, aliceDeviceId, json, aliceAccount, store, api, signService)
@@ -160,7 +162,12 @@ class OlmEventServiceTest : ShouldSpec({
                 store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
             }
             should("throw exception when one time key is invalid") {
-                coEvery { signService.verify(any<Key.SignedCurve25519Key>()) } returns VerifyResult.Invalid("dino")
+                coEvery {
+                    signService.verify(
+                        any<Key.SignedCurve25519Key>(),
+                        any()
+                    )
+                } returns VerifyResult.Invalid("dino")
 
                 shouldThrow<KeyException.KeyVerificationFailedException> {
                     cut.encryptOlm(eventContent, bob, bobDeviceId).ciphertext.entries.first().value
@@ -840,4 +847,4 @@ class OlmEventServiceTest : ShouldSpec({
             }
         }
     }
-})
+}

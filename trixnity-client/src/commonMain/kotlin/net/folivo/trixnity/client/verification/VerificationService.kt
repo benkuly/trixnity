@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.verification
 import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -20,8 +20,6 @@ import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
-import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
-import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -213,40 +211,56 @@ class VerificationService(
     }
 
     /**
-     * This should be called on login (after sync!). If it is empty, it means that cross signing needs to be bootstrapped.
-     * This can be done with [KeyService][net.folivo.trixnity.client.key.KeyService].
+     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculated available methods.
+     * If it is empty, it means that cross signing needs to be bootstrapped.
+     * Bootstrapping can be done with [KeyService][net.folivo.trixnity.client.key.KeyService].
      */
-    suspend fun getSelfVerificationMethods(): Set<SelfVerificationMethod> {
-        withTimeout(30_000) {
-            store.keys.outdatedKeys.first { !it.contains(ownUserId) }
-        }
-        val deviceVerificationMethod = store.keys.getDeviceKeys(ownUserId)?.entries
-            ?.filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
-            ?.map { it.key }
-            ?.let {
-                val sendToDevices = it - ownDeviceId
-                if (sendToDevices.isNotEmpty())
-                    setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
-                        createDeviceVerificationRequest(ownUserId, *sendToDevices.toTypedArray())
-                    })
-                else setOf()
-            } ?: setOf()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
+        return combine(
+            store.keys.getDeviceKeys(ownUserId, scope),
+            store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
+                .flatMapLatest { event ->
+                    event?.content?.key?.let { store.globalAccountData.get<SecretKeyEventContent>(it, scope) }
+                        ?: flowOf(null)
+                },
+        ) { deviceKeys, defaultKey ->
+            if (deviceKeys == null) return@combine null
 
-        val defaultKeyId = store.globalAccountData.get<DefaultSecretKeyEventContent>()?.content?.key
-        val recoveryKeyMethods = when (val defaultKey =
-            defaultKeyId?.let { store.globalAccountData.get<SecretKeyEventContent>(it)?.content }) {
-            is SecretKeyEventContent.AesHmacSha2Key -> when (defaultKey.passphrase) {
-                is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 ->
-                    setOf(
-                        AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, defaultKeyId, defaultKey),
-                        AesHmacSha2RecoveryKey(keyService, defaultKeyId, defaultKey)
-                    )
-                is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown, null ->
-                    setOf(AesHmacSha2RecoveryKey(keyService, defaultKeyId, defaultKey))
+            if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned)
+                return@combine setOf()
+
+            val deviceVerificationMethod = deviceKeys.entries
+                .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
+                .map { it.key }
+                .let {
+                    val sendToDevices = it - ownDeviceId
+                    if (sendToDevices.isNotEmpty())
+                        setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
+                            createDeviceVerificationRequest(ownUserId, *sendToDevices.toTypedArray())
+                        })
+                    else setOf()
+                }
+
+            val recoveryKeyMethods = when (val content = defaultKey?.content) {
+                is SecretKeyEventContent.AesHmacSha2Key -> when (content.passphrase) {
+                    is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 ->
+                        setOf(
+                            SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
+                                keyService,
+                                defaultKey.key,
+                                content
+                            ),
+                            SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content)
+                        )
+                    is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown, null ->
+                        setOf(SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content))
+                }
+                is SecretKeyEventContent.Unknown, null -> setOf()
             }
-            is SecretKeyEventContent.Unknown, null -> setOf()
-        }
-        return recoveryKeyMethods + deviceVerificationMethod
+
+            return@combine recoveryKeyMethods + deviceVerificationMethod
+        }.stateIn(scope)
     }
 
     fun getActiveUserVerification(

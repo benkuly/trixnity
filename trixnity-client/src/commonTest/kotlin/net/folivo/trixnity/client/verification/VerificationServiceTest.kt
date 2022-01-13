@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -405,19 +405,36 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(VerificationService::getSelfVerificationMethods.name) {
+        lateinit var scope: CoroutineScope
+        beforeTest { scope = CoroutineScope(Dispatchers.Default) }
+        afterTest { scope.cancel() }
+        should("return null, when device keys not fetched yet") {
+            val result = cut.getSelfVerificationMethods(scope)
+            result.value shouldBe null
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+            }
+            cut.getSelfVerificationMethods(scope).first { it?.isEmpty() == true }.shouldBeEmpty()
+        }
+        should("return empty set, when not ${KeySignatureTrustLevel.NotCrossSigned::class.simpleName}") {
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+            }
+            cut.getSelfVerificationMethods(scope).value.shouldBeEmpty()
+        }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             val spyCut = spyk(cut)
             coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
-                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
+                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),
                     "DEV2" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
                     "DEV3" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false))
                 )
             }
-            val result = spyCut.getSelfVerificationMethods()
-            result shouldHaveSize 1
-            val firstResult = result.first()
+            val result = spyCut.getSelfVerificationMethods(scope).value
+            result?.size shouldBe 1
+            val firstResult = result!!.first()
             firstResult.shouldBeInstanceOf<CrossSignedDeviceVerification>()
             firstResult.createDeviceVerification()
             coVerify { spyCut.createDeviceVerificationRequest(aliceUserId, "DEV2") }
@@ -426,12 +443,9 @@ private val body: ShouldSpec.() -> Unit = {
             val spyCut = spyk(cut)
             coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(
-                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false)),
-                )
+                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
             }
-            val result = spyCut.getSelfVerificationMethods()
-            result shouldHaveSize 0
+            spyCut.getSelfVerificationMethods(scope).value?.size shouldBe 0
         }
         should("add ${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
@@ -440,8 +454,12 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
-            val result = cut.getSelfVerificationMethods()
-            result shouldBe setOf(AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey))
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+            }
+            cut.getSelfVerificationMethods(scope).value shouldBe setOf(
+                AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey)
+            )
         }
         should("add ${AesHmacSha2RecoveryKey::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
@@ -450,9 +468,10 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
-            val result = cut.getSelfVerificationMethods()
-            result shouldHaveSize 2
-            result shouldBe setOf(
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+            }
+            cut.getSelfVerificationMethods(scope).value shouldBe setOf(
                 AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey),
                 AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", defaultKey)
             )
