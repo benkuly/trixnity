@@ -43,10 +43,17 @@ class SyncApiClient(
             if (fullState) parameter("full_state", true)
             parameter("set_presence", setPresence?.value)
             parameter("since", since)
-            if (timeout > 0) parameter("timeout", timeout)
             parameter("user_id", asUserId)
-            timeout {
-                requestTimeoutMillis = timeout + 5000
+            if (timeout > 0L) {
+                parameter("timeout", timeout)
+                timeout {
+                    requestTimeoutMillis = timeout + 5000
+                }
+            }
+            if (timeout == 0L) {
+                timeout {
+                    requestTimeoutMillis = 300_000
+                }
             }
         }
 
@@ -180,7 +187,9 @@ class SyncApiClient(
                                         }
                                     }
                                 }
-                                afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
+                                coroutineScope {
+                                    afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
+                                }
                             }
                             log.debug { "processed sync response" }
                         }

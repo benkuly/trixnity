@@ -155,7 +155,6 @@ class UserService(
                             store.roomState.update(event = it, skipWhenAlreadyPresent = true)
                             setRoomUser(event = it, skipWhenAlreadyPresent = true)
                         }
-                        store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
                         store.room.update(roomId) { it?.copy(membersLoaded = true) }
                     }
                     loadMembersQueue.update { it - roomId }

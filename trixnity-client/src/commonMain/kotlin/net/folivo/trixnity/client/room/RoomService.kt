@@ -1,31 +1,19 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.transformLatest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.rooms.Direction
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
+import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.getRoomId
-import net.folivo.trixnity.client.getSender
-import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.client.possiblyEncryptEvent
-import net.folivo.trixnity.client.retryWhenSyncIsRunning
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
@@ -36,23 +24,14 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
-import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -87,7 +66,10 @@ class RoomService(
         api.sync.subscribe(::setAvatarUrlForDirectRooms)
         api.sync.subscribe(::setAvatarUrlForMemberUpdates)
         api.sync.subscribe(::setAvatarUrlForAvatarEvents)
+        api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
+        api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
         api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
+        api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
     }
 
     // TODO test
@@ -113,13 +95,8 @@ class RoomService(
                     ?.also { event -> setLastMessageEvent(event) }
                 it.events?.forEach { event -> syncOutboxMessage(event) }
             }
-            room.value.summary?.also {
-                setRoomDisplayName(
-                    roomId,
-                    it.heroes,
-                    it.joinedMemberCount,
-                    it.invitedMemberCount,
-                )
+            room.value.summary?.also { roomSummary ->
+                setRoomDisplayNamesQueue.update { it + (roomId to roomSummary) }
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
@@ -148,28 +125,68 @@ class RoomService(
         }
     }
 
+    internal fun setRoomDisplayNameFromNameEvent(event: Event<NameEventContent>) {
+        val roomId = event.getRoomId()
+        if (roomId != null) setRoomDisplayNamesQueue.update {
+            if (it.containsKey(roomId)) it else it + (roomId to null)
+        }
+    }
+
+    internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: Event<CanonicalAliasEventContent>) {
+        val roomId = event.getRoomId()
+        if (roomId != null) setRoomDisplayNamesQueue.update {
+            if (it.containsKey(roomId)) it else it + (roomId to null)
+        }
+    }
+
+    private val setRoomDisplayNamesQueue = MutableStateFlow(mapOf<RoomId, RoomSummary?>())
+
+    internal suspend fun handleSetRoomDisplayNamesQueue() {
+        setRoomDisplayNamesQueue.value.forEach { (roomId, roomSummary) ->
+            setRoomDisplayName(roomId, roomSummary)
+        }
+        setRoomDisplayNamesQueue.value = mapOf()
+    }
+
     internal suspend fun setRoomDisplayName(
         roomId: RoomId,
-        heroes: List<UserId>?,
-        joinedMemberCountFromSync: Int?,
-        invitedMemberCountFromSync: Int?,
+        roomSummary: RoomSummary?,
     ) {
+        val oldRoomSummary = store.room.get(roomId).value?.name?.summary
+
+        val mergedRoomSummary = RoomSummary(
+            heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
+            joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
+            invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
+        )
+
+        val heroesFromSync = roomSummary?.heroes
+        val joinedMemberCountFromSync = roomSummary?.joinedMemberCount
+        val invitedMemberCountFromSync = roomSummary?.invitedMemberCount
+
         val nameFromNameEvent = store.roomState.getByStateKey<NameEventContent>(roomId)?.content?.name
-        val nameFromCanonicalAliasEvent =
-            store.roomState.getByStateKey<CanonicalAliasEventContent>(roomId)?.content?.alias
+        val nameFromAliasEvent =
+            store.roomState.getByStateKey<CanonicalAliasEventContent>(roomId)?.content?.alias?.full
 
         val roomName = when {
-            !nameFromNameEvent.isNullOrEmpty() -> RoomDisplayName(explicitName = nameFromNameEvent)
-            nameFromCanonicalAliasEvent != null -> RoomDisplayName(explicitName = nameFromCanonicalAliasEvent.full)
+            nameFromNameEvent.isNullOrEmpty().not() ->
+                RoomDisplayName(explicitName = nameFromNameEvent, summary = mergedRoomSummary)
+            nameFromAliasEvent.isNullOrEmpty().not() ->
+                RoomDisplayName(explicitName = nameFromAliasEvent, summary = mergedRoomSummary)
             else -> {
-                val joinedMemberCount = joinedMemberCountFromSync ?: store.roomState.membersCount(roomId, JOIN)
-                val invitedMemberCount = invitedMemberCountFromSync ?: store.roomState.membersCount(roomId, INVITE)
+                val heroes = mergedRoomSummary.heroes
+                val joinedMemberCount =
+                    mergedRoomSummary.joinedMemberCount ?: store.roomState.membersCount(roomId, JOIN)
+                val invitedMemberCount =
+                    mergedRoomSummary.invitedMemberCount ?: store.roomState.membersCount(roomId, INVITE)
                 val us = 1
+
+                log.debug { "calculate room display name of $roomId (heroes=$heroes, joinedMemberCount=$joinedMemberCount, invitedMemberCount=$invitedMemberCount)" }
 
                 if (joinedMemberCount + invitedMemberCount <= 1) {
                     // the room contains us or nobody
                     when {
-                        heroes.isNullOrEmpty() -> RoomDisplayName(isEmpty = true)
+                        heroes.isNullOrEmpty() -> RoomDisplayName(isEmpty = true, summary = mergedRoomSummary)
                         else -> {
                             val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
                             val leftMembersCount =
@@ -178,13 +195,13 @@ class RoomService(
                                 leftMembersCount <= heroes.size ->
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroes = heroes
+                                        summary = mergedRoomSummary
                                     )
                                 else -> {
                                     RoomDisplayName(
                                         isEmpty = true,
-                                        heroes = heroes,
-                                        otherUsersCount = leftMembersCount - heroes.size
+                                        otherUsersCount = leftMembersCount - heroes.size,
+                                        summary = mergedRoomSummary
                                     )
                                 }
                             }
@@ -195,16 +212,17 @@ class RoomService(
                         //case ist not specified in the Spec, so this catches server misbehavior
                         heroes.isNullOrEmpty() ->
                             RoomDisplayName(
-                                otherUsersCount = joinedMemberCount + invitedMemberCount - us
+                                otherUsersCount = joinedMemberCount + invitedMemberCount - us,
+                                summary = mergedRoomSummary
                             )
                         joinedMemberCount + invitedMemberCount - us <= heroes.size ->
                             RoomDisplayName(
-                                heroes = heroes
+                                summary = mergedRoomSummary
                             )
                         else ->
                             RoomDisplayName(
-                                heroes = heroes,
-                                otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us
+                                otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us,
+                                summary = mergedRoomSummary
                             )
                     }
                 }

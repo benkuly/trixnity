@@ -13,7 +13,7 @@ data class JoinRulesEventContent(
     val joinRule: JoinRule
 ) : StateEventContent {
     @Serializable
-    enum class JoinRule {
+    enum class JoinRule { // TODO add unknown
         @SerialName("public")
         PUBLIC,
 

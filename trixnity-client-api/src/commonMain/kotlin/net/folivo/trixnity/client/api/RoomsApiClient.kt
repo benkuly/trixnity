@@ -8,6 +8,8 @@ import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpMethod.Companion.Put
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
@@ -114,7 +116,14 @@ class RoomsApiClient(
             parameter("membership", membership?.value)
             parameter("not_membership", notMembership?.value)
             parameter("user_id", asUserId)
-        }.mapCatching { it.chunk.asFlow() }
+        }.mapCatching { response ->
+            response.chunk.asFlow()
+                .filter { it.content is MemberEventContent }
+                .map {
+                    @Suppress("UNCHECKED_CAST")
+                    it as StateEvent<MemberEventContent>
+                }
+        }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidjoined_members">matrix spec</a>
