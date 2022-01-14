@@ -112,7 +112,7 @@ class KeyService(
                     ).getOrThrow()
 
                     keysResponse.masterKeys?.forEach { (userId, masterKey) ->
-                        handleOutdatedCrossSigningKey(userId, masterKey, MasterKey, masterKey.getSelfSigningKey())
+                        handleOutdatedCrossSigningKey(userId, masterKey, MasterKey, masterKey.getSelfSigningKey(), true)
                     }
                     keysResponse.selfSigningKeys?.forEach { (userId, selfSigningKey) ->
                         handleOutdatedCrossSigningKey(
@@ -141,12 +141,15 @@ class KeyService(
         userId: UserId,
         crossSigningKey: Signed<CrossSigningKeys, UserId>,
         usage: CrossSigningKeysUsage,
-        signingKeyForVerification: Ed25519Key?
+        signingKeyForVerification: Ed25519Key?,
+        signingOptional: Boolean = false
     ) {
         log.debug { "update outdated master key for user $userId" }
         val signatureVerification =
             olm.sign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
-        if (signatureVerification == VerifyResult.Valid) {
+        if (signatureVerification == VerifyResult.Valid
+            || signingOptional && signatureVerification is VerifyResult.MissingSignature
+        ) {
             val newKey = StoredCrossSigningKeys(crossSigningKey, calculateCrossSigningKeysTrustLevel(crossSigningKey))
             store.keys.updateCrossSigningKeys(userId) { oldKeys ->
                 ((oldKeys?.filterNot { it.value.signed.usage.contains(usage) }

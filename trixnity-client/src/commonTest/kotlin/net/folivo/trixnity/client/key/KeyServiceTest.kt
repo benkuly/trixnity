@@ -127,6 +127,24 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         context("master keys") {
+            should("allow missing signature") {
+                val key = Signed<CrossSigningKeys, UserId>(
+                    CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
+                )
+                coEvery { olm.sign.verify(key, any()) } returns VerifyResult.MissingSignature("")
+                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
+                    QueryKeysResponse(
+                        mapOf(), mapOf(),
+                        mapOf(alice to key),
+                        mapOf(), mapOf()
+                    )
+                )
+                store.keys.outdatedKeys.value = setOf(alice)
+                store.keys.outdatedKeys.first { it.isEmpty() }
+                store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                    StoredCrossSigningKeys(key, CrossSigned(false))
+                )
+            }
             should("ignore when signatures are invalid") {
                 val invalidKey = Signed(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
