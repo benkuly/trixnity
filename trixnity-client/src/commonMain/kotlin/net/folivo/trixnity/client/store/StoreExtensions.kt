@@ -50,26 +50,26 @@ suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountData
     key: String = ""
 ): GlobalAccountDataEvent<C>? = get(C::class, key)
 
-// TODO test
 suspend inline fun RoomStateStore.members(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Set<UserId> =
-    get<MemberEventContent>(roomId)
-        ?.filter { entry ->
-            (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
-        }?.map { UserId(it.key) }?.toSet() ?: setOf()
+): Set<UserId> {
+    val allMemberships = moreMemberships.toList() + membership
+    return get<MemberEventContent>(roomId)
+        ?.filter { allMemberships.contains(it.value.content.membership) }
+        ?.map { UserId(it.key) }?.toSet() ?: setOf()
+}
 
-// TODO test
 suspend inline fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Int = get<MemberEventContent>(roomId)
-    ?.filter { entry ->
-        (moreMemberships.toList() + membership).map { entry.value.content.membership == it }.find { it } ?: false
-    }?.count() ?: 0
+): Int {
+    val allMemberships = moreMemberships.toList() + membership
+    return get<MemberEventContent>(roomId)
+        ?.count { allMemberships.contains(it.value.content.membership) } ?: 0
+}
 
 fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
     getAll().value.filter { it.encryptionAlgorithm != null && it.membership == Membership.JOIN }.map { it.roomId }

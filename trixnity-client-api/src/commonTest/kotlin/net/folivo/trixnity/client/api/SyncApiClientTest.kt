@@ -562,7 +562,7 @@ class SyncApiClientTest {
                         when (requestCount.value) {
                             1 -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync",
+                                    "/_matrix/client/v3/sync?since=a&timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -576,7 +576,7 @@ class SyncApiClientTest {
                             }
                             else -> {
                                 assertEquals(
-                                    "/_matrix/client/v3/sync", // no timeout since first request fails
+                                    "/_matrix/client/v3/sync?since=a&timeout=100",
                                     request.url.fullPath
                                 )
                                 assertEquals(HttpMethod.Get, request.method)
@@ -593,7 +593,7 @@ class SyncApiClientTest {
                 }
             })
 
-        matrixRestClient.sync.syncLoop(timeout = 100).take(1).toList()
+        matrixRestClient.sync.syncLoop(timeout = 100, currentBatchToken = MutableStateFlow("a")).take(1).toList()
         requestCount.value shouldBe 3 // is 3 because flow will stop, when he tries to emit
     }
 

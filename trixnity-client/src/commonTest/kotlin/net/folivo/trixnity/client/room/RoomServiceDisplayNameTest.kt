@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomDisplayName
@@ -104,7 +105,6 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         suspend fun ShouldSpecContainerScope.testWithoutNameFromNameEvent() {
             context("with an existent Canonical Alias Event") {
                 should("set room name to the alias field value") {
-                    val heroes = listOf(user1, user2)
                     listOf(
                         canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
                         memberEvent(3, user1, "User1-Display", JOIN),
@@ -112,13 +112,16 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         memberEvent(5, user3, "User3-Display", BAN),
                         memberEvent(6, user4, "User4-Display", LEAVE)
                     ).forEach { store.roomState.update(it) }
-                    cut.setRoomDisplayName(
-                        heroes = heroes,
-                        joinedMemberCountFromSync = 1,
-                        invitedMemberCountFromSync = 1,
-                        roomId = roomId
+                    val roomSummary = RoomSummary(
+                        heroes = listOf(user1, user2),
+                        joinedMemberCount = 1,
+                        invitedMemberCount = 1,
                     )
-                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(explicitName = "#somewhere:localhost")
+                    cut.setRoomDisplayName(roomId, roomSummary)
+                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                        explicitName = "#somewhere:localhost",
+                        summary = roomSummary
+                    )
                 }
             }
             context("with a non-existent Canonical Alias Event") {
@@ -139,29 +142,27 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         }
                         context("|heroes| = 1") {
                             should("set room name to the display name of the hero") {
-                                val heroes = listOf(user1)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 1,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 1,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    heroes = listOf(user1)
+                                    summary = roomSummary
                                 )
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the display names of the heroes concatenate with an 'und'") {
-                                val heroes = listOf(user1, user2)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 1,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1, user2),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 1,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    heroes = listOf(user1, user2)
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -175,43 +176,43 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         }
                         context("|heroes| = 0") {
                             should("set room name to the count of the invited and joined users") {
-                                val heroes = listOf<UserId>()
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 2,
-                                    invitedMemberCountFromSync = 2,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(),
+                                    joinedMemberCount = 2,
+                                    invitedMemberCount = 2,
                                 )
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(otherUsersCount = 3)
+                                cut.setRoomDisplayName(roomId, roomSummary)
+                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                    otherUsersCount = 3,
+                                    summary = roomSummary
+                                )
                             }
                         }
                         context("|heroes| = 1") {
                             should("set room name to the display name of the hero and a count of the remaining users") {
-                                val heroes = listOf(user1)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 2,
-                                    invitedMemberCountFromSync = 2,
-                                    roomId = roomId
-                                )
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                val roomSummary = RoomSummary(
                                     heroes = listOf(user1),
-                                    otherUsersCount = 2
+                                    joinedMemberCount = 2,
+                                    invitedMemberCount = 2,
+                                )
+                                cut.setRoomDisplayName(roomId, roomSummary)
+                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                    otherUsersCount = 2,
+                                    summary = roomSummary
                                 )
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the display names of the heroes concatenate with an 'und'") {
-                                val heroes = listOf(user1, user2)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 2,
-                                    invitedMemberCountFromSync = 2,
-                                    roomId = roomId
-                                )
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                val roomSummary = RoomSummary(
                                     heroes = listOf(user1, user2),
-                                    otherUsersCount = 1
+                                    joinedMemberCount = 2,
+                                    invitedMemberCount = 2,
+                                )
+                                cut.setRoomDisplayName(roomId, roomSummary)
+                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                    otherUsersCount = 1,
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -227,46 +228,45 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                     }
                     context("|heroes| = 0") {
                         should("set room name to 'Leerer Raum'") {
-                            val heroes = listOf<UserId>()
-                            cut.setRoomDisplayName(
-                                heroes = heroes,
-                                joinedMemberCountFromSync = 1,
-                                invitedMemberCountFromSync = 0,
-                                roomId = roomId
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 0,
                             )
-                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(isEmpty = true)
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                summary = roomSummary
+                            )
                         }
                     }
                     context("|heroes| >= |left member| + |banned member| - 1") {
                         context("|heroes| = 1") {
                             should("set room name to the display name of the hero") {
-                                val heroes = listOf(user2)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user2),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user2),
-                                    otherUsersCount = 1
+                                    otherUsersCount = 1,
+                                    summary = roomSummary
                                 )
-
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the display names of the heroes concatenate with an 'und'") {
-                                val heroes = listOf(user2, user3)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user2, user3),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user2, user3)
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -280,33 +280,31 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         }
                         context("|heroes| = 1") {
                             should("set room name to the concatenation of display names of the heroes and a count of the remaining users, enclosed by an Empty Room String") {
-                                val heroes = listOf(user2)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user2),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user2),
-                                    otherUsersCount = 3
+                                    otherUsersCount = 3,
+                                    summary = roomSummary
                                 )
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the concatenation of display names of the heroes and a count of the remaining users, enclosed by an Empty Room String") {
-                                val heroes = listOf(user2, user3)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 1,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user2, user3),
+                                    joinedMemberCount = 1,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user2, user3),
-                                    otherUsersCount = 2
+                                    otherUsersCount = 2,
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -321,48 +319,47 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                     }
                     context("|heroes| = 0") {
                         should("set room name to 'Leerer Raum'") {
-                            val heroes = listOf<UserId>()
-                            cut.setRoomDisplayName(
-                                heroes = heroes,
-                                joinedMemberCountFromSync = 0,
-                                invitedMemberCountFromSync = 0,
-                                roomId = roomId
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(),
+                                joinedMemberCount = 0,
+                                invitedMemberCount = 0,
                             )
-                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(isEmpty = true)
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                summary = roomSummary
+                            )
                         }
                     }
                     context("|heroes| >= |left member| + |banned member| - 1") {
                         context("|heroes| = 1") {
                             should("set room name to the display name of the hero, enclosed by an Empty Room String") {
-                                val heroes = listOf(user1)
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 0,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1),
+                                    joinedMemberCount = 0,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user1)
+                                    summary = roomSummary
                                 )
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the display names of the heroes concatenate with an 'und', enclosed by an Empty Room String ") {
-                                val heroes = listOf(user1, user2)
                                 store.roomState.update(
                                     memberEvent(5, user3, "User3-Display", LEAVE),
                                 )
-
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 0,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1, user2),
+                                    joinedMemberCount = 0,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user1, user2)
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -377,35 +374,31 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         }
                         context("|heroes| = 1") {
                             should("set room name to the concatenation of display names of the heroes and a count of the remaining users, enclosed by an Empty Room String") {
-                                val heroes = listOf(user1)
-
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 0,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1),
+                                    joinedMemberCount = 0,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user1),
-                                    otherUsersCount = 3
+                                    otherUsersCount = 3,
+                                    summary = roomSummary
                                 )
                             }
                         }
                         context("|heroes| = 2") {
                             should("set room name to the concatenation of display names of the heroes and a count of the remaining users, enclosed by an Empty Room String") {
-                                val heroes = listOf(user1, user2)
-
-                                cut.setRoomDisplayName(
-                                    heroes = heroes,
-                                    joinedMemberCountFromSync = 0,
-                                    invitedMemberCountFromSync = 0,
-                                    roomId = roomId
+                                val roomSummary = RoomSummary(
+                                    heroes = listOf(user1, user2),
+                                    joinedMemberCount = 0,
+                                    invitedMemberCount = 0,
                                 )
+                                cut.setRoomDisplayName(roomId, roomSummary)
                                 store.room.get(roomId).value?.name shouldBe RoomDisplayName(
                                     isEmpty = true,
-                                    heroes = listOf(user1, user2),
-                                    otherUsersCount = 2
+                                    otherUsersCount = 2,
+                                    summary = roomSummary
                                 )
                             }
                         }
@@ -419,7 +412,6 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                     store.roomState.update(nameEvent(1, user1, "The room name"))
                 }
                 should("set room name to the name field value") {
-                    val heroes = listOf(user1, user2)
                     listOf(
                         canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
                         memberEvent(3, user1, "User1-Display", JOIN),
@@ -427,13 +419,16 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                         memberEvent(5, user3, "User3-Display", BAN),
                         memberEvent(6, user4, "User4-Display", LEAVE)
                     ).forEach { store.roomState.update(it) }
-                    cut.setRoomDisplayName(
-                        heroes = heroes,
-                        joinedMemberCountFromSync = 1,
-                        invitedMemberCountFromSync = 1,
-                        roomId = roomId
+                    val roomSummary = RoomSummary(
+                        heroes = listOf(user1, user2),
+                        joinedMemberCount = 1,
+                        invitedMemberCount = 2,
                     )
-                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(explicitName = "The room name")
+                    cut.setRoomDisplayName(roomId, roomSummary)
+                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                        explicitName = "The room name",
+                        summary = roomSummary
+                    )
                 }
             }
             context("with an empty name field") {

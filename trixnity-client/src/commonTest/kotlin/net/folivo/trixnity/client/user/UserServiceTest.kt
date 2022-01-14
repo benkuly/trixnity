@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -93,7 +92,6 @@ class UserServiceTest : ShouldSpec({
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
             job.cancel()
         }
         should("skip members, that are already stored") {
@@ -134,7 +132,6 @@ class UserServiceTest : ShouldSpec({
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
             job.cancel()
         }
     }
