@@ -3,15 +3,12 @@
 # Trixnity - Multiplatform Matrix SDK
 
 Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. You can write clients, bots and appservices with
-it. This SDK supports JVM as targets (native and JS will follow soon). [Ktor](https://github.com/ktorio/ktor) is used
-for the HTTP client/server and
+it. This SDK supports JVM (also Android) as targets (native and JS will follow soon)
+. [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
 
 Trixnity aims to be strongly typed, customizable and easy to use. You can register custom events and Trixnity will take
 care, that you can send and receive that type.
-
-If you want to use Trixnity in combination with Spring Boot, have a look
-at [matrix-spring-boot-sdk](https://gitlab.com/benkuly/matrix-spring-boot-sdk)
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
 
@@ -256,7 +253,7 @@ coroutineScope {
 
 The appservice module of Trixnity contains a webserver, which hosts the Matrix Application-Service API.
 
-You also need to add a server engine to your project, that you can find [here](https://ktor.io/docs/engines.html)
+You also need to add a server engine to your project, that you can find [here](https://ktor.io/docs/engines.html).
 
 ### Usage
 
@@ -288,7 +285,7 @@ It also allows you to retrieve events in the same way as described [here](#use-m
 ## Logging
 
 This project uses [kotlin-logging](https://github.com/MicroUtils/kotlin-logging). On JVM this needs a logging backend.
-You can use for example ` implementation("ch.qos.logback:logback-classic:<version>")`.
+You can use for example `implementation("ch.qos.logback:logback-classic:<version>")`.
 
 ## Build this project
 
@@ -318,4 +315,3 @@ Linux:
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
 . **Important:** Run this command and all gradle tasks within the msys2 **mingw64** shell!
-
