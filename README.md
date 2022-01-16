@@ -68,7 +68,8 @@ find [here](https://ktor.io/docs/http-client-engines.html).
 
 If you are using `trixnity-client` or `trixnity-olm` with JVM, you will need to install olm. You can
 [Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm) and then make it available by your JVM (e.g.
-with `-Djna.library.path="build/olm/3.2.8/build"`)
+with `-Djna.library.path="build/olm/3.2.8/build"`). You can also look into this projects `build.gradle.kts` files for an
+automated way to build olm and e.g. use it for testing.
 
 ## Trixnity-Client
 
@@ -78,7 +79,7 @@ With `MatrixClient` you have access to the whole library. It can be instantiated
 e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database and a `CouroutineScope`, which
 will be used for the lifecycle of the client.
 
-Secrets are stored in the store. Therefore you should encrypt the store!
+Secrets are also stored in the store. Therefore, you should encrypt the store!
 
 ```kotlin
 val storeFactory = createStoreFactory()
@@ -113,9 +114,8 @@ To get the room list, call `matrixClient.room.getAll()`. With `matrixClient.room
 #### Users
 
 To get all members of a room, call `matrixClient.user.getAll(...)`. Because room members are loaded lazily, you should
-also call `matrixClient.user.loadMembers(...)` before. With `matrixClient.user.getById(...)` you can get one user. If
-you do that to e.g. show the sender of a message, you don't need to call `loadMembers(...)`, because this information is
-already delivered by the matrix server.
+also call `matrixClient.user.loadMembers(...)` as soon as you open a room. With `matrixClient.user.getById(...)` you can
+get one user.
 
 #### TimelineEvents
 
@@ -177,7 +177,7 @@ matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { 
 Messages, that were sent with Trixnity can be accessed with `matrixClient.room.getOutbox()` as long as they are not
 received (also called "echo") from the matrix server.
 
-### Send data
+### Other operations
 
 Many operations can be done with [trixnity-client-api](/trixnity-client-api). You have access to it
 via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
@@ -198,6 +198,18 @@ matrixClient.room.sendMessage(roomId) {
     image("dino.png", image, ContentType.Image.PNG)
 }
 ```
+
+#### Media
+
+To upload media there is `MediaService` (can be accessed with `matrixClient.media`).
+
+#### Verification
+
+To verify own and other devices there is `VerificationService` (can be accessed with `matrixClient.verification`).
+
+#### Cross Signing
+
+To bootstrap cross signing there is `KeyService` (can be accessed with `matrixClient.key`).
 
 ## Trixnity-Client-API
 
