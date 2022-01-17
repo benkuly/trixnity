@@ -19,7 +19,7 @@ sealed interface SelfVerificationMethod {
     ) : SelfVerificationMethod {
         suspend fun verify(recoverKey: String): Result<Unit> {
             return decodeRecoveryKey(recoverKey, info).onSuccess {
-                keyService.decryptMissingSecrets(it, keyId, info)
+                keyService.secret.decryptMissingSecrets(it, keyId, info)
             }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
         }
     }
@@ -35,7 +35,7 @@ sealed interface SelfVerificationMethod {
             return recoveryKeyFromPassphrase(passphrase, passphraseInfo)
                 .flatMap { checkRecoveryKey(it, info) }
                 .onSuccess {
-                    keyService.decryptMissingSecrets(it, keyId, info)
+                    keyService.secret.decryptMissingSecrets(it, keyId, info)
                 }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
         }
     }

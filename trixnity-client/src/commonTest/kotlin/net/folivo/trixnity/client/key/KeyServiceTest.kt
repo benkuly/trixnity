@@ -12,6 +12,7 @@ import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.ktor.util.*
 import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class KeyServiceTest : ShouldSpec(body)
 
+@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
@@ -64,12 +66,8 @@ private val body: ShouldSpec.() -> Unit = {
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(scope).apply {
-            init()
-            account.userId.value = alice
-            account.deviceId.value = aliceDevice
-        }
-        cut = KeyService(store, olm, api)
+        store = InMemoryStore(scope).apply { init() }
+        cut = KeyService(alice, aliceDevice, store, olm, api)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
     }
