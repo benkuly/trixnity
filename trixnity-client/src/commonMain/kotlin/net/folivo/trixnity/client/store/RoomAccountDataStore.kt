@@ -35,6 +35,18 @@ class RoomAccountDataStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String = "",
+    ): RoomAccountDataEvent<C>? {
+        val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
+        val firstKey = RoomAccountDataRepositoryKey(roomId, eventType)
+        @Suppress("UNCHECKED_CAST")
+        return roomAccountDataCache.getBySecondKey(firstKey, key) as RoomAccountDataEvent<C>
+    }
+
+    suspend fun <C : RoomAccountDataEventContent> get(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
         scope: CoroutineScope
     ): StateFlow<RoomAccountDataEvent<C>?> {
         val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type

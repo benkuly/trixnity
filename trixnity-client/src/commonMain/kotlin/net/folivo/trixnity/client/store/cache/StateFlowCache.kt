@@ -15,9 +15,11 @@ open class StateFlowCache<K, V>(
     val cacheDuration: Duration = 1.minutes,
 ) {
     private val internalCache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val cache = internalCache
-        .map { value -> value.mapValues { it.value.value.asStateFlow() } }
-        .stateIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0), mapOf())
+        .mapLatest { value -> value.mapValues { it.value.value.asStateFlow() } }
+        .shareIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0))
 
     fun init(initialValues: Map<K, V>) {
         require(infiniteCache) { "Cache cannot be initialized with values, when infiniteCache is disabled." }

@@ -10,3 +10,9 @@ suspend inline fun <reified C : GlobalAccountDataEventContent> UserService.getAc
 ): StateFlow<C?> {
     return getAccountData(C::class, key, scope)
 }
+
+suspend inline fun <reified C : GlobalAccountDataEventContent> UserService.getAccountData(
+    key: String = "",
+): C? {
+    return getAccountData(C::class, key)
+}

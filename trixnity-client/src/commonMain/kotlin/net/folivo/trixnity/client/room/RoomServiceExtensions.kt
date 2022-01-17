@@ -15,10 +15,24 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAcco
     return getAccountData(roomId, C::class, key, scope)
 }
 
+suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
+    roomId: RoomId,
+    key: String = "",
+): C? {
+    return getAccountData(roomId, C::class, key)
+}
+
 suspend inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
 ): StateFlow<Event<C>?> {
     return getState(roomId, stateKey, C::class, scope)
+}
+
+suspend inline fun <reified C : StateEventContent> RoomService.getState(
+    roomId: RoomId,
+    stateKey: String = "",
+): Event<C>? {
+    return getState(roomId, stateKey, C::class)
 }
