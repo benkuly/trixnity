@@ -186,4 +186,11 @@ class UserService(
             .map { it?.content }
             .stateIn(scope)
     }
+
+    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): C? {
+        return store.globalAccountData.get(eventContentClass, key)?.content
+    }
 }

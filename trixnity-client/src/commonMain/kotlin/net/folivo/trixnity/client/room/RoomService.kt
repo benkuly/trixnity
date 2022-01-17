@@ -836,9 +836,7 @@ class RoomService(
         }
     }
 
-    fun getAll(): StateFlow<Set<Room>> {
-        return store.room.getAll()
-    }
+    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = store.room.getAll()
 
     suspend fun getById(roomId: RoomId): StateFlow<Room?> {
         return store.room.get(roomId)
@@ -855,6 +853,14 @@ class RoomService(
             .stateIn(scope)
     }
 
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): C? {
+        return store.roomAccountData.get(roomId, eventContentClass, key)?.content
+    }
+
     fun getOutbox(): StateFlow<List<RoomOutboxMessage>> = store.roomOutboxMessage.getAll()
 
     suspend fun <C : StateEventContent> getState(
@@ -866,13 +872,21 @@ class RoomService(
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+    ): Event<C>? {
+        return store.roomState.getByStateKey(roomId, stateKey, eventContentClass)
+    }
+
     internal suspend fun setRoomIsDirect(directEvent: Event<DirectEventContent>) {
         val allDirectRooms = directEvent.content.mappings.entries.flatMap { (_, rooms) ->
             rooms ?: emptySet()
         }.toSet()
         allDirectRooms.forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
 
-        val allRooms = store.room.getAll().value.map { it.roomId }.toSet()
+        val allRooms = store.room.getAll().value.keys
         allRooms.subtract(allDirectRooms)
             .forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
     }
