@@ -173,8 +173,16 @@ class UserService(
         return store.roomUser.getAll(roomId, scope)
     }
 
+    suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
+        return store.roomUser.getAll(roomId)
+    }
+
     suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
         return store.roomUser.get(userId, roomId, scope)
+    }
+
+    suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
+        return store.roomUser.get(userId, roomId)
     }
 
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(

@@ -18,6 +18,9 @@ class RoomUserStore(
     suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> =
         roomUserCache.get(roomId, scope).map { it?.values?.toSet() }.stateIn(scope)
 
+    suspend fun getAll(roomId: RoomId): Set<RoomUser>? =
+        roomUserCache.get(roomId)?.values?.toSet()
+
     private fun containsInCache(userId: UserId, value: Map<UserId, RoomUser>?): Boolean {
         return value?.containsKey(userId) ?: false
     }
