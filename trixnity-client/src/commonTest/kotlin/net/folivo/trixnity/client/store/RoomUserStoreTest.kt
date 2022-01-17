@@ -32,7 +32,7 @@ class RoomUserStoreTest : ShouldSpec({
     val aliceId = UserId("alice", "server")
     val bobId = UserId("bob", "server")
 
-    context(RoomUserStore::getAll.name) {
+    context("getAll") {
         should("get all users of a room") {
             val scope = CoroutineScope(Dispatchers.Default)
             val aliceUser = mockk<RoomUser>()
