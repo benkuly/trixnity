@@ -2,10 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.ktor.util.*
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.mockk.*
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.encodeRecoveryKey
 import net.folivo.trixnity.client.key.encryptAesHmacSha2
@@ -26,6 +23,9 @@ class SelfVerificationMethodTest : ShouldSpec({
         coEvery {
             keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(any(), any(), any())
         } returns Result.success(Unit)
+        coEvery {
+            keyService.secret.decryptMissingSecrets(any(), any(), any())
+        } just Runs
     }
     afterTest {
         clearAllMocks()
@@ -49,7 +49,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 )
                 val cut = AesHmacSha2RecoveryKey(keyService, "KEY", info)
                 cut.verify(encodeRecoveryKey(key)).getOrThrow()
-                coVerify { keyService.decryptMissingSecrets(key, "KEY", info) }
+                coVerify { keyService.secret.decryptMissingSecrets(key, "KEY", info) }
                 coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
             }
         }
@@ -78,7 +78,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 )
                 val cut = AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", info)
                 cut.verify("password").getOrThrow()
-                coVerify { keyService.decryptMissingSecrets(key, "KEY", info) }
+                coVerify { keyService.secret.decryptMissingSecrets(key, "KEY", info) }
                 coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
             }
         }

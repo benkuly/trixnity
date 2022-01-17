@@ -81,6 +81,8 @@ class MatrixClient private constructor(
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
         )
         key = KeyService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
             store = store,
             api = api,
             olm = olm,
