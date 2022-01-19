@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.serialization.event
+package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
@@ -20,9 +20,6 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.MessageEventSerializer
-import net.folivo.trixnity.core.serialization.events.StateEventSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

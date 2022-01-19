@@ -4,7 +4,7 @@ import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightKeyChainLinkRepository(

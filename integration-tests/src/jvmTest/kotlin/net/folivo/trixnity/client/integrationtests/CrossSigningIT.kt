@@ -8,6 +8,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
@@ -107,6 +108,9 @@ class CrossSigningIT {
         client1.startSync()
         client2.startSync()
         client3.startSync()
+        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client3.syncState.first { it == SyncApiClient.SyncState.RUNNING }
     }
 
     @AfterTest

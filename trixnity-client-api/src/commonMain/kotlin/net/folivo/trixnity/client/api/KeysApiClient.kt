@@ -1,13 +1,16 @@
 package net.folivo.trixnity.client.api
 
 import io.ktor.client.request.*
+import io.ktor.http.HttpMethod.Companion.Delete
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
+import io.ktor.http.HttpMethod.Companion.Put
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.api.model.keys.*
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.keys.*
 
 class KeysApiClient(
     val httpClient: MatrixHttpClient,
@@ -117,4 +120,198 @@ class KeysApiClient(
             }).entries.groupBy { it.key.first }
                 .map { group -> group.key to group.value.associate { it.key.second to it.value } }.toMap()
         }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+        version: String,
+        asUserId: UserId? = null
+    ): Result<RoomsKeyBackup<T>> =
+        httpClient.request {
+            method = Get
+            url("/_matrix/client/v3/room_keys/keys")
+            parameter("version", version)
+            parameter("user_id", asUserId)
+        }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+        version: String,
+        roomId: RoomId,
+        asUserId: UserId? = null
+    ): Result<RoomKeyBackup<T>> = httpClient.request {
+        method = Get
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+        version: String,
+        roomId: RoomId,
+        sessionId: String,
+        asUserId: UserId? = null
+    ): Result<RoomKeyBackupData<T>> = httpClient.request {
+        method = Get
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+        version: String,
+        backup: RoomsKeyBackup<T>,
+        asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = httpClient.request {
+        method = Put
+        url("/_matrix/client/v3/room_keys/keys")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+        body = json.encodeToJsonElement(backup)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+        version: String,
+        roomId: RoomId,
+        backup: RoomKeyBackup<T>,
+        asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = httpClient.request {
+        method = Put
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+        body = json.encodeToJsonElement(backup)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+        version: String,
+        roomId: RoomId,
+        sessionId: String,
+        backup: RoomKeyBackupData<T>,
+        asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = httpClient.request {
+        method = Put
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+        body = json.encodeToJsonElement(backup)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
+     */
+    suspend fun deleteRoomKeys(
+        version: String,
+        asUserId: UserId? = null
+    ): Result<DeleteRoomKeysResponse> = httpClient.request {
+        method = Delete
+        url("/_matrix/client/v3/room_keys/keys")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     */
+    suspend fun deleteRoomKeys(
+        version: String,
+        roomId: RoomId,
+        asUserId: UserId? = null
+    ): Result<DeleteRoomKeysResponse> = httpClient.request {
+        method = Delete
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     */
+    suspend fun deleteRoomKeys(
+        version: String,
+        roomId: RoomId,
+        sessionId: String,
+        asUserId: UserId? = null
+    ): Result<DeleteRoomKeysResponse> = httpClient.request {
+        method = Delete
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keysversion">matrix spec</a>
+     */
+    suspend fun getRoomKeysVersion(
+        asUserId: UserId? = null
+    ): Result<GetRoomKeysVersionResponse> = httpClient.request {
+        method = Get
+        url("/_matrix/client/v3/room_keys/version")
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keysversionversion">matrix spec</a>
+     */
+    suspend fun getRoomKeysVersion(
+        version: String,
+        asUserId: UserId? = null
+    ): Result<GetRoomKeysVersionResponse> = httpClient.request {
+        method = Get
+        url("/_matrix/client/v3/room_keys/version/$version")
+        parameter("user_id", asUserId)
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3room_keysversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keysversionversion">matrix spec</a>
+     */
+    suspend fun setRoomKeysVersion(
+        request: SetRoomKeysVersionRequest,
+        asUserId: UserId? = null
+    ): Result<String> {
+        val version = request.version
+        return if (version == null) {
+            httpClient.request<AddRoomKeysVersionResponse> {
+                method = Post
+                url("/_matrix/client/v3/room_keys/version")
+                parameter("user_id", asUserId)
+                body = request
+            }.map { it.version }
+        } else {
+            httpClient.request<Unit> {
+                method = Put
+                url("/_matrix/client/v3/room_keys/version/$version")
+                parameter("user_id", asUserId)
+                body = request
+            }.map { version }
+        }
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keysversionversion">matrix spec</a>
+     */
+    suspend fun deleteRoomKeysVersion(
+        version: String,
+        asUserId: UserId? = null
+    ): Result<Unit> = httpClient.request {
+        method = Delete
+        url("/_matrix/client/v3/room_keys/version/$version")
+        parameter("user_id", asUserId)
+    }
 }

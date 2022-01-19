@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.exposed
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedKeyChainLink : Table("key_chain_link") {

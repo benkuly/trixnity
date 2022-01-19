@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 class SqlDelightInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightInboundMegolmMessageIndexRepository

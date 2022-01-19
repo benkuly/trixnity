@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Keys
+import net.folivo.trixnity.core.model.keys.Keys
 
 @Serializable
 data class ClaimKeysResponse(

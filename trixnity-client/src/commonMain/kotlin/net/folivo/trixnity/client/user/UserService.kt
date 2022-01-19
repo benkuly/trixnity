@@ -8,10 +8,11 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.retryWhenSyncIsRunning
+import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.originalName
@@ -140,7 +141,8 @@ class UserService(
     fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
 
     internal suspend fun handleLoadMembersQueue() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIsRunning(
+        api.sync.currentSyncState.retryWhenSyncIs(
+            RUNNING,
             onError = { log.warn(it) { "failed loading members" } },
             scope = this
         ) {

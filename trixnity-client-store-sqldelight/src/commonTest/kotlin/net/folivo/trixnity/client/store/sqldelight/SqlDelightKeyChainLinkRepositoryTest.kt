@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 
 class SqlDelightKeyChainLinkRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightKeyChainLinkRepository

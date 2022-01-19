@@ -145,7 +145,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
 
 object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventContentSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomMessageEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): RoomMessageEventContent {
         require(decoder is JsonDecoder)

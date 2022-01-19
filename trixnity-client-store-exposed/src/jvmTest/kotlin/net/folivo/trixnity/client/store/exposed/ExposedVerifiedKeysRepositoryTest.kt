@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction

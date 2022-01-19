@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.model.crypto
+package net.folivo.trixnity.core.model.keys
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -74,5 +74,5 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
         )
     }
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Signatures")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("KeysSerializer")
 }

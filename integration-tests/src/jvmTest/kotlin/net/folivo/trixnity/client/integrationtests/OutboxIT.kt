@@ -5,6 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import org.jetbrains.exposed.sql.Database
@@ -67,6 +68,7 @@ class OutboxIT {
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()
         client.startSync()
+        client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
     }
 
     @AfterTest

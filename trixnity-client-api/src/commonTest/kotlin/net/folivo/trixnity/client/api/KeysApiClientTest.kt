@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.api
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -9,16 +10,17 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.api.model.keys.AddSignaturesResponse
-import net.folivo.trixnity.client.api.model.keys.GetKeyChangesResponse
+import net.folivo.trixnity.client.api.model.keys.*
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.*
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.crypto.Key.*
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm.Curve25519
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm.SignedCurve25519
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Curve25519
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm.SignedCurve25519
+import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -563,5 +565,713 @@ class KeysApiClientTest {
                 )
             ), result
         )
+    }
+
+    @Test
+    fun shouldGetRoomKeys() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "rooms": {
+                                    "!room:example.org": {
+                                      "sessions": {
+                                        "sessionid1": {
+                                          "first_message_index": 1,
+                                          "forwarded_count": 0,
+                                          "is_verified": true,
+                                          "session_data": {
+                                            "ciphertext": "base64+ciphertext+of+JSON+data",
+                                            "ephemeral": "base64+ephemeral+key",
+                                            "mac": "base64+mac+of+ciphertext"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>("1").getOrThrow()
+            .shouldBe(
+                RoomsKeyBackup(
+                    mapOf(
+                        RoomId("!room:example.org") to RoomKeyBackup(
+                            mapOf(
+                                "sessionid1" to RoomKeyBackupData(
+                                    firstMessageIndex = 1,
+                                    forwardedCount = 0,
+                                    isVerified = true,
+                                    sessionData = EncryptedRoomKeyBackupV1SessionData(
+                                        ciphertext = "base64+ciphertext+of+JSON+data",
+                                        ephemeral = "base64+ephemeral+key",
+                                        mac = "base64+mac+of+ciphertext"
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun shouldGetRoomKeysFromRoom() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "sessions": {
+                                    "sessionid1": {
+                                      "first_message_index": 1,
+                                      "forwarded_count": 0,
+                                      "is_verified": true,
+                                      "session_data": {
+                                        "ciphertext": "base64+ciphertext+of+JSON+data",
+                                        "ephemeral": "base64+ephemeral+key",
+                                        "mac": "base64+mac+of+ciphertext"
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>("1", RoomId("!room:example.org"))
+            .getOrThrow()
+            .shouldBe(
+                RoomKeyBackup(
+                    mapOf(
+                        "sessionid1" to RoomKeyBackupData(
+                            firstMessageIndex = 1,
+                            forwardedCount = 0,
+                            isVerified = true,
+                            sessionData = EncryptedRoomKeyBackupV1SessionData(
+                                ciphertext = "base64+ciphertext+of+JSON+data",
+                                ephemeral = "base64+ephemeral+key",
+                                mac = "base64+mac+of+ciphertext"
+                            )
+                        )
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun shouldGetRoomKeysFromRoomAndSession() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "first_message_index": 1,
+                                  "forwarded_count": 0,
+                                  "is_verified": true,
+                                  "session_data": {
+                                    "ciphertext": "base64+ciphertext+of+JSON+data",
+                                    "ephemeral": "base64+ephemeral+key",
+                                    "mac": "base64+mac+of+ciphertext"
+                                  }
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
+            "1", RoomId("!room:example.org"), "sessionid1"
+        ).getOrThrow()
+            .shouldBe(
+                RoomKeyBackupData(
+                    firstMessageIndex = 1,
+                    forwardedCount = 0,
+                    isVerified = true,
+                    sessionData = EncryptedRoomKeyBackupV1SessionData(
+                        ciphertext = "base64+ciphertext+of+JSON+data",
+                        ephemeral = "base64+ephemeral+key",
+                        mac = "base64+mac+of+ciphertext"
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun shouldSetRoomKeys() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        request.body.toByteArray().decodeToString().shouldBe(
+                            """
+                                {
+                                  "rooms":{
+                                    "!room:example.org":{
+                                      "sessions":{
+                                        "sessionid1":{
+                                          "first_message_index":1,
+                                          "forwarded_count":0,
+                                          "is_verified":true,
+                                          "session_data":{
+                                            "ciphertext":"base64+ciphertext+of+JSON+data",
+                                            "ephemeral":"base64+ephemeral+key",
+                                            "mac":"base64+mac+of+ciphertext"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimToFlatJson()
+                        )
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setRoomKeys(
+            "1",
+            RoomsKeyBackup(
+                mapOf(
+                    RoomId("!room:example.org") to RoomKeyBackup(
+                        mapOf(
+                            "sessionid1" to RoomKeyBackupData(
+                                firstMessageIndex = 1,
+                                forwardedCount = 0,
+                                isVerified = true,
+                                sessionData = EncryptedRoomKeyBackupV1SessionData(
+                                    ciphertext = "base64+ciphertext+of+JSON+data",
+                                    ephemeral = "base64+ephemeral+key",
+                                    mac = "base64+mac+of+ciphertext"
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ).getOrThrow()
+            .shouldBe(
+                SetRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldSetRoomKeysWithRoom() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        request.body.toByteArray().decodeToString().shouldBe(
+                            """
+                                {
+                                  "sessions":{
+                                    "sessionid1":{
+                                      "first_message_index":1,
+                                      "forwarded_count":0,
+                                      "is_verified":true,
+                                      "session_data":{
+                                        "ciphertext":"base64+ciphertext+of+JSON+data",
+                                        "ephemeral":"base64+ephemeral+key",
+                                        "mac":"base64+mac+of+ciphertext"
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimToFlatJson()
+                        )
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setRoomKeys(
+            "1",
+            RoomId("!room:example.org"),
+            RoomKeyBackup(
+                mapOf(
+                    "sessionid1" to RoomKeyBackupData(
+                        firstMessageIndex = 1,
+                        forwardedCount = 0,
+                        isVerified = true,
+                        sessionData = EncryptedRoomKeyBackupV1SessionData(
+                            ciphertext = "base64+ciphertext+of+JSON+data",
+                            ephemeral = "base64+ephemeral+key",
+                            mac = "base64+mac+of+ciphertext"
+                        )
+                    )
+                )
+            )
+        ).getOrThrow()
+            .shouldBe(
+                SetRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldSetRoomKeysWithRoomAndSession() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        request.body.toByteArray().decodeToString().shouldBe(
+                            """
+                                {
+                                  "first_message_index":1,
+                                  "forwarded_count":0,
+                                  "is_verified":true,
+                                  "session_data":{
+                                    "ciphertext":"base64+ciphertext+of+JSON+data",
+                                    "ephemeral":"base64+ephemeral+key",
+                                    "mac":"base64+mac+of+ciphertext"
+                                  }
+                                }
+                            """.trimToFlatJson()
+                        )
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setRoomKeys(
+            "1",
+            RoomId("!room:example.org"),
+            "sessionid1",
+            RoomKeyBackupData(
+                firstMessageIndex = 1,
+                forwardedCount = 0,
+                isVerified = true,
+                sessionData = EncryptedRoomKeyBackupV1SessionData(
+                    ciphertext = "base64+ciphertext+of+JSON+data",
+                    ephemeral = "base64+ephemeral+key",
+                    mac = "base64+mac+of+ciphertext"
+                )
+            )
+        ).getOrThrow()
+            .shouldBe(
+                SetRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldDeleteRoomKeys() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Delete, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.deleteRoomKeys("1").getOrThrow()
+            .shouldBe(
+                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldDeleteRoomKeysFromRoom() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Delete, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.deleteRoomKeys("1", RoomId("!room:example.org"))
+            .getOrThrow()
+            .shouldBe(
+                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldDeleteRoomKeysFromRoomAndSession() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Delete, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "count": 10,
+                                  "etag": "abcdefg"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.deleteRoomKeys(
+            "1", RoomId("!room:example.org"), "sessionid1"
+        ).getOrThrow()
+            .shouldBe(
+                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
+            )
+    }
+
+    @Test
+    fun shouldGetRoomKeysVersion() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/version",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "algorithm": "m.megolm_backup.v1.curve25519-aes-sha2",
+                                  "auth_data": {
+                                    "public_key": "abcdefg",
+                                    "signatures": {
+                                      "@alice:example.org": {
+                                        "ed25519:deviceid": "signature"
+                                      }
+                                    }
+                                  },
+                                  "count": 42,
+                                  "etag": "anopaquestring",
+                                  "version": "1"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getRoomKeysVersion().getOrThrow()
+            .shouldBe(
+                GetRoomKeysVersionResponse.V1(
+                    authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                        publicKey = Curve25519Key(value = "abcdefg"),
+                        signatures = mapOf(
+                            UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
+                        )
+                    ),
+                    count = 42,
+                    etag = "anopaquestring",
+                    version = "1"
+                )
+            )
+    }
+
+    @Test
+    fun shouldGetRoomKeysVersionFromVersion() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/version/1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Get, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            """
+                                {
+                                  "algorithm": "m.megolm_backup.v1.curve25519-aes-sha2",
+                                  "auth_data": {
+                                    "public_key": "abcdefg",
+                                    "signatures": {
+                                      "@alice:example.org": {
+                                        "ed25519:deviceid": "signature"
+                                      }
+                                    }
+                                  },
+                                  "count": 42,
+                                  "etag": "anopaquestring",
+                                  "version": "1"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getRoomKeysVersion("1").getOrThrow()
+            .shouldBe(
+                GetRoomKeysVersionResponse.V1(
+                    authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                        publicKey = Curve25519Key(value = "abcdefg"),
+                        signatures = mapOf(
+                            UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
+                        )
+                    ),
+                    count = 42,
+                    etag = "anopaquestring",
+                    version = "1"
+                )
+            )
+    }
+
+    @Test
+    fun shouldSetRoomKeysVersion() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/version",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        request.body.toByteArray().decodeToString().shouldBe(
+                            """
+                                {
+                                  "auth_data":{
+                                    "public_key":"abcdefg",
+                                    "signatures":{
+                                      "@alice:example.org":{
+                                        "ed25519:deviceid":"signature"
+                                      }
+                                    }
+                                  },
+                                  "algorithm":"m.megolm_backup.v1.curve25519-aes-sha2"
+                                }
+                            """.trimToFlatJson()
+                        )
+                        respond(
+                            """
+                                {
+                                  "version": "1"
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setRoomKeysVersion(
+            SetRoomKeysVersionRequest.V1(
+                authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                    publicKey = Curve25519Key(value = "abcdefg"),
+                    signatures = mapOf(
+                        UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
+                    )
+                )
+            )
+        ).getOrThrow().shouldBe("1")
+    }
+
+    @Test
+    fun shouldSetRoomKeysVersionWithVersion() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/version/1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Put, request.method)
+                        request.body.toByteArray().decodeToString().shouldBe(
+                            """
+                                {
+                                  "auth_data":{
+                                    "public_key":"abcdefg",
+                                    "signatures":{
+                                      "@alice:example.org":{
+                                        "ed25519:deviceid":"signature"
+                                      }
+                                    }
+                                  },
+                                  "version":"1",
+                                  "algorithm":"m.megolm_backup.v1.curve25519-aes-sha2"
+                                }
+                            """.trimToFlatJson()
+                        )
+                        respond(
+                            "",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.setRoomKeysVersion(
+            SetRoomKeysVersionRequest.V1(
+                authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                    publicKey = Curve25519Key(value = "abcdefg"),
+                    signatures = mapOf(
+                        UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
+                    )
+                ),
+                version = "1"
+            )
+        ).getOrThrow()
+            .shouldBe("1")
+    }
+
+    @Test
+    fun shouldDeleteRoomKeysVersion() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/room_keys/version/1",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Delete, request.method)
+                        request.body.toByteArray().decodeToString().shouldBeEmpty()
+                        respond(
+                            "",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.deleteRoomKeysVersion("1").getOrThrow()
     }
 }

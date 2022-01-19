@@ -7,6 +7,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
@@ -81,6 +82,8 @@ class SasVerificationIT {
         ).getOrThrow()
         client1.startSync()
         client2.startSync()
+        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
     }
 
     @AfterTest

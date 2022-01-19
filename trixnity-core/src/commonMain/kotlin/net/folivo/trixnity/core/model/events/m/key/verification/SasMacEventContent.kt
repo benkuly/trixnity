@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m.key.verification
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.crypto.Keys
+import net.folivo.trixnity.core.model.keys.Keys
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationmac">matrix spec</a>

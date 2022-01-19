@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
 import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
 
 plugins {
-    kotlin("plugin.serialization")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.squareup.sqldelight")
 }
 

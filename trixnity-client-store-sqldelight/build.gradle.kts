@@ -1,6 +1,6 @@
 plugins {
-    kotlin("plugin.serialization")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.squareup.sqldelight")
 }
 

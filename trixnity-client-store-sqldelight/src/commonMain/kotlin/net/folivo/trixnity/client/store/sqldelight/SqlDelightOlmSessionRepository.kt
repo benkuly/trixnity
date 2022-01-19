@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredOlmSession
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightOlmSessionRepository(
