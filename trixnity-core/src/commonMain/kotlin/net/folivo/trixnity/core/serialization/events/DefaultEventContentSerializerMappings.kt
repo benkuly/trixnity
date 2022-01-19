@@ -67,7 +67,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<MasterKeyEventContent>("m.cross_signing.master"),
         of<SelfSigningKeyEventContent>("m.cross_signing.self_signing"),
         of<UserSigningKeyEventContent>("m.cross_signing.user_signing"),
-        //of<>("m.megolm_backup.v1"), // TODO
+        of<MegolmBackupV1EventContent>("m.megolm_backup.v1"),
     )
     override val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>> = setOf(
         of<FullyReadEventContent>("m.fully_read")

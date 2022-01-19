@@ -18,9 +18,11 @@ sealed interface SelfVerificationMethod {
         private val info: SecretKeyEventContent.AesHmacSha2Key
     ) : SelfVerificationMethod {
         suspend fun verify(recoverKey: String): Result<Unit> {
-            return decodeRecoveryKey(recoverKey, info).onSuccess {
-                keyService.secret.decryptMissingSecrets(it, keyId, info)
-            }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
+            return decodeRecoveryKey(recoverKey)
+                .flatMap { checkRecoveryKey(it, info) }
+                .onSuccess {
+                    keyService.secret.decryptMissingSecrets(it, keyId, info)
+                }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
         }
     }
 
