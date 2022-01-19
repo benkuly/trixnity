@@ -9,13 +9,13 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.crypto.Key
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
-import net.folivo.trixnity.core.model.crypto.Signed
-import net.folivo.trixnity.core.model.crypto.keysOf
+import net.folivo.trixnity.core.model.keys.DeviceKeys
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
 class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({

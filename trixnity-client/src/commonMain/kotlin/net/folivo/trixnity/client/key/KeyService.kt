@@ -6,22 +6,21 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.encodeToJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.INITIAL_SYNC
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.api.injectOnSuccessIntoUIA
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
-import net.folivo.trixnity.client.retryWhenSyncIsRunning
+import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.*
-import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
@@ -32,6 +31,9 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.freeAfter
@@ -79,7 +81,8 @@ class KeyService(
 
     @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIsRunning(
+        api.sync.currentSyncState.retryWhenSyncIs(
+            RUNNING, INITIAL_SYNC,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
             scope = this

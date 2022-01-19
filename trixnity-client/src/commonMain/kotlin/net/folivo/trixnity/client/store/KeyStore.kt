@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 
 class KeyStore(
     private val outdatedKeysRepository: OutdatedKeysRepository,

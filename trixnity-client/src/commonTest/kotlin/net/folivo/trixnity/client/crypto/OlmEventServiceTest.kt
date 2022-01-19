@@ -28,9 +28,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
-import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent

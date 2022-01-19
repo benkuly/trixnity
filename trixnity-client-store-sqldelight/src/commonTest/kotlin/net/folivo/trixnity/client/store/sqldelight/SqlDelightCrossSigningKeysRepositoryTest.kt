@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
 class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({

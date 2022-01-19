@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.model.crypto
+package net.folivo.trixnity.core.model.keys
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

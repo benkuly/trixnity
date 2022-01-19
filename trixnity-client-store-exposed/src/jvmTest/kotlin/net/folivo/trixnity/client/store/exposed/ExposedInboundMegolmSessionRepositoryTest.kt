@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 

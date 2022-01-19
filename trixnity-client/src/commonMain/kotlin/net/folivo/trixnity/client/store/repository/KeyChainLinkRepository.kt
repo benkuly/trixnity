@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store.repository
 
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 
 interface KeyChainLinkRepository {
     suspend fun save(keyChainLink: KeyChainLink)

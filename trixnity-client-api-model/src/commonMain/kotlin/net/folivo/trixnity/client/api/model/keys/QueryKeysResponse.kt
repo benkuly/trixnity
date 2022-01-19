@@ -4,9 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeys
-import net.folivo.trixnity.core.model.crypto.DeviceKeys
-import net.folivo.trixnity.core.model.crypto.Signed
+import net.folivo.trixnity.core.model.keys.CrossSigningKeys
+import net.folivo.trixnity.core.model.keys.DeviceKeys
+import net.folivo.trixnity.core.model.keys.Signed
 
 @Serializable
 data class QueryKeysResponse(

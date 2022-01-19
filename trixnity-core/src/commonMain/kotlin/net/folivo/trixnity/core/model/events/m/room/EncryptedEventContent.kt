@@ -10,9 +10,9 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.*
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
@@ -95,7 +95,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
 
 object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventContentSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EncryptedEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): EncryptedEventContent {
         require(decoder is JsonDecoder)

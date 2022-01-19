@@ -12,10 +12,10 @@ import net.folivo.trixnity.client.crypto.KeyException.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.crypto.Key.*
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm
-import net.folivo.trixnity.core.model.crypto.keysOf
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent

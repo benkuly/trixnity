@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 

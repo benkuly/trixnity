@@ -12,11 +12,6 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.*
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
-import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -24,6 +19,11 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 
@@ -114,8 +114,11 @@ class OlmService(
         if (event is ToDeviceEvent) {
             val decryptedEvent = try {
                 events.decryptOlm(event.content, event.sender)
-            } catch (e: Exception) {
-                log.error(e) { "could not decrypt ${ToDeviceEvent::class.simpleName}" }
+            } catch (e: KeyException) {
+                log.error(e) { "could not decrypt $event" }
+                null
+            } catch (e: SessionException) {
+                log.error(e) { "could not decrypt $event" }
                 null
             }
             if (decryptedEvent != null) {

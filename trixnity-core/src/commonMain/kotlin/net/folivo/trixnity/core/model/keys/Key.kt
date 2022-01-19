@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.model.crypto
+package net.folivo.trixnity.core.model.keys
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -10,7 +10,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.KeyAlgorithm.Unknown
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Unknown
 
 sealed interface Key {
     val algorithm: KeyAlgorithm

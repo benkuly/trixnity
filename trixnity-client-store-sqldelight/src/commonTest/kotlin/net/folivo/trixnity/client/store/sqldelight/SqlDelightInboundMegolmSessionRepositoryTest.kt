@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositor
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 class SqlDelightInboundMegolmSessionRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightInboundMegolmSessionRepository

@@ -19,11 +19,11 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -97,23 +97,26 @@ suspend fun possiblyEncryptEvent(
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIsRunning(
+suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
+    syncState: SyncApiClient.SyncState,
+    vararg moreSyncStates: SyncApiClient.SyncState,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
     scope: CoroutineScope,
     block: suspend () -> Unit
 ) {
-    val isSyncRunning = this.map { it == SyncApiClient.SyncState.RUNNING }.stateIn(scope)
+    val syncStates = listOf(syncState) + moreSyncStates
+    val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
     val schedule = Schedule.exponential<Throwable>(100.milliseconds)
         .or(Schedule.spaced(5.minutes))
-        .and(Schedule.doWhile { isSyncRunning.value }) // just stop, when we are not connected anymore
+        .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
         .logInput {
             if (it is CancellationException) onCancel()
             else onError(it)
         }
 
     while (currentCoroutineContext().isActive) {
-        isSyncRunning.first { it } // just wait, until we are connected again
+        shouldRun.first { it } // just wait, until we are connected again
         try {
             schedule.retry {
                 block()

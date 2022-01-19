@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.crypto.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 

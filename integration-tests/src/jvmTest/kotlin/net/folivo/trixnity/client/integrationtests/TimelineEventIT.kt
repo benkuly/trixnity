@@ -4,14 +4,15 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.crypto.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
@@ -81,6 +82,8 @@ class TimelineEventIT {
         ).getOrThrow()
         client1.startSync()
         client2.startSync()
+        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
     }
 
     @AfterTest

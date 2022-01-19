@@ -9,8 +9,8 @@ import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
 
 plugins {
     id("com.android.library")
-    kotlin("plugin.serialization")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 android {

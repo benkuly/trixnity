@@ -5,9 +5,9 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.crypto.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.MasterKey
-import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
-import net.folivo.trixnity.core.model.crypto.Keys
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent

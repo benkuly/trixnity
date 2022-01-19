@@ -5,7 +5,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.core.model.crypto.SecretStorageAlgorithm
+import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 

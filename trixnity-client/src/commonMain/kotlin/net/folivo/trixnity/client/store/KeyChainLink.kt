@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.Key
+import net.folivo.trixnity.core.model.keys.Key
 
 data class KeyChainLink(
     val signingUserId: UserId,

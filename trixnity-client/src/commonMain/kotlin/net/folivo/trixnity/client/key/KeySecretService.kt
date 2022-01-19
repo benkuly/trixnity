@@ -10,20 +10,18 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.json.decodeFromJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.get
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
-import net.folivo.trixnity.client.retryWhenSyncIsRunning
+import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.SelfSigningKey
-import net.folivo.trixnity.core.model.crypto.CrossSigningKeysUsage.UserSigningKey
-import net.folivo.trixnity.core.model.crypto.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
@@ -34,6 +32,9 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.UserSigningKey
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.days
@@ -230,7 +231,8 @@ class KeySecretService(
     }
 
     internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIsRunning(
+        api.sync.currentSyncState.retryWhenSyncIs(
+            RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
             scope = this
         ) {
