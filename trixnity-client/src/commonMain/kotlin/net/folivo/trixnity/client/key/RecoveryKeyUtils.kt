@@ -12,28 +12,22 @@ internal fun encodeRecoveryKey(recoveryKey: ByteArray): String {
         .toByteArray().encodeBase58().chunked(4).joinToString(" ")
 }
 
-internal suspend fun decodeRecoveryKey(encodedRecoveryKey: String, info: SecretKeyEventContent): Result<ByteArray> {
-    when (info) {
-        is SecretKeyEventContent.AesHmacSha2Key -> {
-            val recoveryKey = try {
-                encodedRecoveryKey.filterNot { it.isWhitespace() }.decodeBase58()
-            } catch (exc: Throwable) {
-                return Result.failure(exc)
-            }
-            recoveryKeyPrefix.forEachIndexed { index, prefix ->
-                if (recoveryKey.getOrNull(index) != prefix)
-                    return Result.failure(RecoveryKeyInvalidException("wrong prefix"))
-            }
-            if (recoveryKey.fold(0x00) { parity, byte -> parity xor byte.toInt() } != 0)
-                return Result.failure(RecoveryKeyInvalidException("wrong parity"))
-            val recoveryKeyLength = 32
-            if (recoveryKey.size != recoveryKeyLength + recoveryKeyPrefix.size + 1)
-                return Result.failure(RecoveryKeyInvalidException("wrong recovery key length"))
-            val result = recoveryKey.copyOfRange(recoveryKeyPrefix.size, recoveryKey.size - 1)
-            return checkRecoveryKey(result, info)
-        }
-        is SecretKeyEventContent.Unknown -> return Result.failure(IllegalArgumentException("unknown algorithm not supported"))
+internal fun decodeRecoveryKey(encodedRecoveryKey: String): Result<ByteArray> {
+    val recoveryKey = try {
+        encodedRecoveryKey.filterNot { it.isWhitespace() }.decodeBase58()
+    } catch (exc: Throwable) {
+        return Result.failure(exc)
     }
+    recoveryKeyPrefix.forEachIndexed { index, prefix ->
+        if (recoveryKey.getOrNull(index) != prefix)
+            return Result.failure(RecoveryKeyInvalidException("wrong prefix"))
+    }
+    if (recoveryKey.fold(0x00) { parity, byte -> parity xor byte.toInt() } != 0)
+        return Result.failure(RecoveryKeyInvalidException("wrong parity"))
+    val recoveryKeyLength = 32
+    if (recoveryKey.size != recoveryKeyLength + recoveryKeyPrefix.size + 1)
+        return Result.failure(RecoveryKeyInvalidException("wrong recovery key length"))
+    return Result.success(recoveryKey.copyOfRange(recoveryKeyPrefix.size, recoveryKey.size - 1))
 }
 
 @OptIn(InternalAPI::class)

@@ -11,6 +11,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
@@ -19,11 +20,11 @@ import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
 import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
+import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
@@ -35,6 +36,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.UserSigningKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.days
@@ -130,28 +132,44 @@ class KeySecretService(
                 log.warn { "received a key from $senderDeviceId, that we did not requested (or request is too old and we already deleted it)" }
                 return
             }
-            val generatedPublicKey = try {
-                freeAfter(OlmPkSigning.create(content.secret)) { it.publicKey }
-            } catch (error: Throwable) {
-                log.warn(error) { "could not generate public key from received secret" }
-                return
-            }
+
             val secretType = request.content.name?.let { AllowedSecretType.ofId(it) }
-            val originalPublicKey = when (secretType) {
-                M_CROSS_SIGNING_USER_SIGNING ->
-                    store.keys.getCrossSigningKey(ownUserId, UserSigningKey)
+            val publicKeyMatches = when (secretType) {
+                M_CROSS_SIGNING_USER_SIGNING, M_CROSS_SIGNING_SELF_SIGNING -> {
+                    val generatedPublicKey = try {
+                        freeAfter(OlmPkSigning.create(content.secret)) { it.publicKey }
+                    } catch (error: Throwable) {
+                        log.warn(error) { "could not generate public key from received secret" }
+                        return
+                    }
+                    val crossSigningKeyType =
+                        if (secretType == M_CROSS_SIGNING_SELF_SIGNING) SelfSigningKey else UserSigningKey
+                    val originalPublicKey = store.keys.getCrossSigningKey(ownUserId, crossSigningKeyType)
                         ?.value?.signed?.get<Ed25519Key>()?.value
-                M_CROSS_SIGNING_SELF_SIGNING ->
-                    store.keys.getCrossSigningKey(ownUserId, SelfSigningKey)
-                        ?.value?.signed?.get<Ed25519Key>()?.value
-                AllowedSecretType.M_MEGOLM_BACKUP_V1 -> null // TODO
-                null -> null
+                    originalPublicKey != null && originalPublicKey == generatedPublicKey
+                }
+                M_MEGOLM_BACKUP_V1 -> {
+                    val generatedPublicKey = try {
+                        freeAfter(OlmPkDecryption.create(content.secret)) { it.publicKey }
+                    } catch (error: Throwable) {
+                        log.warn(error) { "could not generate public key from received secret" }
+                        return
+                    }
+                    val currentRoomKeysVersion = api.keys.getRoomKeysVersion().getOrNull()
+                    if (currentRoomKeysVersion !is GetRoomKeysVersionResponse.V1) {
+                        log.warn { "current room key backup version does not match v1 or there was no backup" }
+                        return
+                    }
+                    val originalPublicKey = currentRoomKeysVersion.authData.publicKey.value
+                    originalPublicKey == generatedPublicKey
+                }
+                null -> false
             }
-            if (secretType == null || originalPublicKey == null || generatedPublicKey != originalPublicKey) {
-                log.warn { "received public key $generatedPublicKey of secret ${request.content.name} did not match the original $originalPublicKey" }
+            if (secretType == null || !publicKeyMatches) {
+                log.warn { "generated public key of secret ${request.content.name} did not match the original" }
                 return
             }
-            val encryptedSecret = secretType.getEncrytedSecret()
+            val encryptedSecret = secretType.getEncryptedSecret()
             if (encryptedSecret == null) {
                 log.warn { "could not find encrypted secret" }
                 return
@@ -189,10 +207,10 @@ class KeySecretService(
             }.getOrThrow()
     }
 
-    private suspend fun AllowedSecretType.getEncrytedSecret() = when (this) {
+    private suspend fun AllowedSecretType.getEncryptedSecret() = when (this) {
         M_CROSS_SIGNING_USER_SIGNING -> store.globalAccountData.get<UserSigningKeyEventContent>()
         M_CROSS_SIGNING_SELF_SIGNING -> store.globalAccountData.get<SelfSigningKeyEventContent>()
-        AllowedSecretType.M_MEGOLM_BACKUP_V1 -> null // TODO
+        M_MEGOLM_BACKUP_V1 -> store.globalAccountData.get<MegolmBackupV1EventContent>()
     }
 
     internal suspend fun requestSecretKeys() {
@@ -294,7 +312,7 @@ class KeySecretService(
         val decryptedSecrets = AllowedSecretType.values()
             .subtract(store.keys.secrets.value.keys)
             .mapNotNull { allowedSecret ->
-                val event = allowedSecret.getEncrytedSecret()
+                val event = allowedSecret.getEncryptedSecret()
                 if (event != null) {
                     decryptSecret(key, keyId, keyInfo, allowedSecret.id, event.content)
                         ?.let { allowedSecret to StoredSecret(event, it) }

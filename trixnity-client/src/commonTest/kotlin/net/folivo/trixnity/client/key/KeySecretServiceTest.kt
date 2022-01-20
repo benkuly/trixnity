@@ -19,6 +19,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient
+import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
@@ -26,19 +27,20 @@ import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
+import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.random.Random
@@ -227,7 +229,8 @@ private val body: ShouldSpec.() -> Unit = {
         notAnswerRequest(Invalid("reason"))
     }
     context(KeySecretService::handleOutgoingKeyRequestAnswer.name) {
-        val (publicKey, privateKey) = freeAfter(OlmPkSigning.create(null)) { it.publicKey to it.privateKey }
+        val (crossSigningPublicKey, crossSigningPrivateKey) = freeAfter(OlmPkSigning.create(null)) { it.publicKey to it.privateKey }
+        val (keyBackupPublicKey, keyBackupPrivateKey) = freeAfter(OlmPkDecryption.create(null)) { it.publicKey to it.privateKey }
         val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
         suspend fun setDeviceKeys(trusted: Boolean) {
             store.keys.updateDeviceKeys(alice) {
@@ -240,11 +243,11 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
 
-        suspend fun setRequest(receiverDeviceIds: Set<String>) {
+        suspend fun setRequest(secretType: AllowedSecretType, receiverDeviceIds: Set<String>) {
             store.keys.addSecretKeyRequest(
                 StoredSecretKeyRequest(
                     SecretKeyRequestEventContent(
-                        M_CROSS_SIGNING_USER_SIGNING.id,
+                        secretType.id,
                         KeyRequestAction.REQUEST,
                         "OWN_ALICE_DEVICE",
                         "requestId"
@@ -269,11 +272,22 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
         }
+
+        suspend fun returnRoomKeysVersion(publicKey: String? = null) {
+            if (publicKey == null) coEvery { api.keys.getRoomKeysVersion() } returns Result.failure(RuntimeException(""))
+            else coEvery { api.keys.getRoomKeysVersion() } returns Result.success(
+                GetRoomKeysVersionResponse.V1(
+                    authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                        publicKey = Key.Curve25519Key(null, publicKey)
+                    ), 1, "etag", "1"
+                )
+            )
+        }
         should("ignore, when sender device id cannot be found") {
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
@@ -284,11 +298,11 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("ignore when sender was not requested") {
             setDeviceKeys(true)
-            setRequest(setOf("OTHER_DEVICE"))
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf("OTHER_DEVICE"))
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
@@ -302,7 +316,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
@@ -311,10 +325,10 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.secrets.value shouldBe mapOf()
             }
         }
-        should("ignore when public key cannot be generated") {
+        should("ignore when public key of cross signing secret cannot be generated") {
             setDeviceKeys(true)
-            setRequest(setOf(aliceDevice))
-            setCrossSigningKeys(publicKey)
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
+            setCrossSigningKeys(crossSigningPublicKey)
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
@@ -327,16 +341,67 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.secrets.value shouldBe mapOf()
             }
         }
-        should("ignore when public key does not match") {
+        should("ignore when public key of key backup secret cannot be generated") {
             setDeviceKeys(true)
-            setRequest(setOf(aliceDevice))
+            setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
+            cut.handleOutgoingKeyRequestAnswer(
+                OlmService.DecryptedOlmEvent(
+                    mockk(), Event.OlmEvent(
+                        SecretKeySendEventContent("requestId", "dino"),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                store.keys.secrets.value shouldBe mapOf()
+            }
+        }
+        should("ignore when public key of key backup secret cannot be retrieved") {
+            setDeviceKeys(true)
+            setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
+            returnRoomKeysVersion(null)
+            val secretEventContent = MegolmBackupV1EventContent(mapOf())
+            store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
+            cut.handleOutgoingKeyRequestAnswer(
+                OlmService.DecryptedOlmEvent(
+                    mockk(), Event.OlmEvent(
+                        SecretKeySendEventContent("requestId", keyBackupPrivateKey),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                store.keys.secrets.value shouldBe mapOf()
+            }
+        }
+        should("ignore when public key of cross signing secret does not match") {
+            setDeviceKeys(true)
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(freeAfter(OlmPkSigning.create(null)) { it.publicKey })
             val secretEventContent = UserSigningKeyEventContent(mapOf())
             store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                store.keys.secrets.value shouldBe mapOf()
+            }
+        }
+        should("ignore when public key of key backup secret does not match") {
+            setDeviceKeys(true)
+            setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
+            returnRoomKeysVersion(freeAfter(OlmPkDecryption.create(null)) { it.publicKey })
+            val secretEventContent = MegolmBackupV1EventContent(mapOf())
+            store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
+            cut.handleOutgoingKeyRequestAnswer(
+                OlmService.DecryptedOlmEvent(
+                    mockk(), Event.OlmEvent(
+                        SecretKeySendEventContent("requestId", keyBackupPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
@@ -347,12 +412,12 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("ignore when encrypted secret could not be found") {
             setDeviceKeys(true)
-            setRequest(setOf(aliceDevice))
-            setCrossSigningKeys(publicKey)
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
+            setCrossSigningKeys(crossSigningPublicKey)
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
@@ -361,43 +426,59 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.secrets.value shouldBe mapOf()
             }
         }
-        should("save secret") {
+        should("save cross signing secret") {
             setDeviceKeys(true)
-            setRequest(setOf(aliceDevice))
-            setCrossSigningKeys(publicKey)
-            val secretEvent: GlobalAccountDataEvent<SecretEventContent> =
-                GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
+            setCrossSigningKeys(crossSigningPublicKey)
+            val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             store.globalAccountData.update(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
             )
             store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
-                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, privateKey)
+                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, crossSigningPrivateKey)
+            )
+        }
+        should("save cross key backup secret") { // FIXME
+            setDeviceKeys(true)
+            setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
+            returnRoomKeysVersion(keyBackupPublicKey)
+            val secretEvent = GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf()))
+            store.globalAccountData.update(secretEvent)
+            cut.handleOutgoingKeyRequestAnswer(
+                OlmService.DecryptedOlmEvent(
+                    mockk(), Event.OlmEvent(
+                        SecretKeySendEventContent("requestId", keyBackupPrivateKey),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
+                M_MEGOLM_BACKUP_V1 to StoredSecret(secretEvent, keyBackupPrivateKey)
             )
         }
         should("cancel other requests") {
             coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
             setDeviceKeys(true)
-            setRequest(setOf(aliceDevice, "OTHER_DEVICE"))
-            setCrossSigningKeys(publicKey)
-            val secretEvent: GlobalAccountDataEvent<SecretEventContent> =
-                GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice, "OTHER_DEVICE"))
+            setCrossSigningKeys(crossSigningPublicKey)
+            val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             store.globalAccountData.update(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 OlmService.DecryptedOlmEvent(
                     mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", privateKey),
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
                     )
                 )
             )
             store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
-                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, privateKey)
+                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, crossSigningPrivateKey)
             )
             coVerify {
                 api.users.sendToDevice(

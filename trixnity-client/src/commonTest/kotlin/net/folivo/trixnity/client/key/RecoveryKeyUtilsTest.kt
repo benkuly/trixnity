@@ -40,43 +40,30 @@ class RecoveryKeyUtilsTest : ShouldSpec({
         should("decode") {
             decodeRecoveryKey(
                 "EsTc LW2K PGiF wKEA 3As5 g5c4 BXwk qeeJ ZJV8 Q9fu gUMN UE4d",
-                info
             ).getOrThrow() shouldBe curve25519Key
             decodeRecoveryKey(
                 "EsTcLW2KPGiFwKEA3As5g5c4BXwkqeeJZJV8Q9fugUMNUE4d",
-                info
             ).getOrThrow() shouldBe curve25519Key
             decodeRecoveryKey(
                 " EsTc LW2K PGiF wKEA 3As5 g5c4       BXwk qeeJ ZJV8 Q9fu gUMN UE4d   ",
-                info
             ).getOrThrow() shouldBe curve25519Key
         }
         should("fail on wrong prefix") {
             decodeRecoveryKey(
                 "FsTc LW2K PGiF wKEA 3As5 g5c4 BXwk qeeJ ZJV8 Q9fu gUMN UE4d",
-                info
             ).isFailure shouldBe true
             decodeRecoveryKey(
                 "EqTc LW2K PGiF wKEA 3As5 g5c4 BXwk qeeJ ZJV8 Q9fu gUMN UE4d",
-                info
             ).isFailure shouldBe true
         }
         should("fail on wrong parity") {
             decodeRecoveryKey(
                 "EsTc LW2K PGiF wKEA 3As5 g5c4 BXwk qeeJ ZJV8 Q9fu gUMN UE4e",
-                info
             ).isFailure shouldBe true
         }
         should("fail on wrong key length") {
             decodeRecoveryKey(
                 "abc",
-                info
-            ).isFailure shouldBe true
-        }
-        should("fail on wrong mac") {
-            decodeRecoveryKey(
-                "EsTc LW2K PGiF wKEA 3As5 g5c4 BXwk qeeJ ZJV8 Q9fu gUMN UE4d",
-                info.copy(mac = Random.nextBytes(16).encodeBase64())
             ).isFailure shouldBe true
         }
     }
