@@ -12,9 +12,7 @@ import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 fun isVerificationRequestActive(timestamp: Long): Boolean {
     val timegap = Clock.System.now() - Instant.fromEpochMilliseconds(timestamp)
     return timegap < 10.minutes && timegap > (-5).minutes

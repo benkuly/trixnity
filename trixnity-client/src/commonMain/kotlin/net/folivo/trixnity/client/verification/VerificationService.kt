@@ -4,6 +4,7 @@ import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -220,9 +221,12 @@ class VerificationService(
         return combine(
             store.keys.getDeviceKeys(ownUserId, scope),
             store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
-                .flatMapLatest { event ->
-                    event?.content?.key?.let { store.globalAccountData.get<SecretKeyEventContent>(it, scope) }
-                        ?: flowOf(null)
+                .transformLatest { event ->
+                    coroutineScope {
+                        event?.content?.key?.let {
+                            emitAll(store.globalAccountData.get<SecretKeyEventContent>(it, this))
+                        } ?: emit(null)
+                    }
                 },
         ) { deviceKeys, defaultKey ->
             if (deviceKeys == null) return@combine null

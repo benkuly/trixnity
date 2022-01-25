@@ -24,15 +24,13 @@ import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -46,13 +44,15 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membershi
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class RoomServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")
@@ -62,6 +62,7 @@ class RoomServiceTest : ShouldSpec({
     val api = mockk<MatrixApiClient>(relaxed = true)
     val users = mockk<UserService>(relaxUnitFun = true)
     val olmService = mockk<OlmService>()
+    val key = mockk<KeyService>()
     val media = mockk<MediaService>()
     lateinit var cut: RoomService
 
@@ -69,7 +70,7 @@ class RoomServiceTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olmService, users, media)
+        cut = RoomService(store, api, olmService, key, users, media)
     }
 
     afterTest {
@@ -389,6 +390,9 @@ class RoomServiceTest : ShouldSpec({
         }
     }
     context(RoomService::getTimelineEvent.name) {
+        beforeTest {
+            coEvery { key.backup.loadMegolmSession(any(), any(), any()) } just Runs
+        }
         val eventId = EventId("\$event1")
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
@@ -409,6 +413,11 @@ class RoomServiceTest : ShouldSpec({
             nextEventId = null,
             gap = null
         )
+        val storedSession = StoredInboundMegolmSession(
+            senderKey, session, room, 1, false, false,
+            Key.Ed25519Key(null, "ed"), listOf(), "pickle"
+        )
+
         context("should just return event") {
             withData(
                 mapOf(
@@ -434,9 +443,7 @@ class RoomServiceTest : ShouldSpec({
                 val result = cut.getTimelineEvent(eventId, room, this)
                 delay(20)
                 store.roomTimeline.addAll(listOf(timelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) {
-                    StoredInboundMegolmSession(senderKey, session, room, "pickle")
-                }
+                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
                 delay(20)
                 result.value shouldBe timelineEvent
             }
@@ -446,19 +453,10 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
-                    mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
-                            Signed(
-                                mockk(),
-                                mapOf()
-                            ), Valid(true)
-                        )
-                    )
+                    mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
                 }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) {
-                    StoredInboundMegolmSession(senderKey, session, room, "pickle")
-                }
+                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
                 val result = cut.getTimelineEvent(eventId, room, this).take(2).toList()
                 result[0] shouldBe encryptedTimelineEvent
                 assertSoftly(result[1]) {
@@ -467,15 +465,10 @@ class RoomServiceTest : ShouldSpec({
                     decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
                 }
             }
-            should("set trust level on device key trust level change") {
-
-            }
             should("handle error") {
                 coEvery { olmService.events.decryptMegolm(any()) } throws DecryptionException.ValidationFailed
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) {
-                    StoredInboundMegolmSession(senderKey, session, room, "pickle")
-                }
+                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
                 val result = cut.getTimelineEvent(eventId, room, this).take(2).toList()
                 result[0] shouldBe encryptedTimelineEvent
                 assertSoftly(result[1]) {
@@ -484,25 +477,42 @@ class RoomServiceTest : ShouldSpec({
                     decryptedEvent?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed
                 }
             }
-            should("wait for olm session") {
+            should("wait for olm session and ask key backup for it") {
                 val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
-                    mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
-                            Signed(
-                                mockk(),
-                                mapOf()
-                            ), Valid(true)
-                        )
-                    )
+                    mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
                 }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
 
                 val result = cut.getTimelineEvent(eventId, room, this)
                 delay(20)
+                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
+                delay(20)
+                assertSoftly(result.value) {
+                    assertNotNull(this)
+                    event shouldBe encryptedTimelineEvent.event
+                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                }
+                coVerify { key.backup.loadMegolmSession(room, session, senderKey) }
+            }
+            should("wait for olm session and ask key backup for it when existing session does not known the index") {
+                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                coEvery { olmService.events.decryptMegolm(any()) }
+                    .throws(OlmLibraryException("OLM_UNKNOWN_MESSAGE_INDEX"))
+                    .andThen(expectedDecryptedEvent)
+                store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
+                    mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
+                }
+                store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
                 store.olm.updateInboundMegolmSession(senderKey, session, room) {
-                    StoredInboundMegolmSession(senderKey, session, room, "pickle")
+                    storedSession.copy(firstKnownIndex = 4)
+                }
+                val result = cut.getTimelineEvent(eventId, room, this)
+
+                delay(20)
+                store.olm.updateInboundMegolmSession(senderKey, session, room) {
+                    storedSession.copy(firstKnownIndex = 3)
                 }
                 delay(20)
                 assertSoftly(result.value) {
@@ -510,41 +520,8 @@ class RoomServiceTest : ShouldSpec({
                     event shouldBe encryptedTimelineEvent.event
                     decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
                 }
-            }
-            should("decrypt timelineEvent only once per scope") {
-                val olmStoreMock: OlmStore = mockk(relaxed = true)
-                store = spyk<Store>(InMemoryStore(storeScope).apply { init() }) {
-                    every { olm } returns olmStoreMock
-                }
-                coEvery { olmStoreMock.getInboundMegolmSession(any(), any(), any(), any()) } returns MutableStateFlow(
-                    StoredInboundMegolmSession(senderKey, session, room, "pickle")
-                )
-                cut = RoomService(store, api, olmService, users, media)
+                coVerify(exactly = 1) { key.backup.loadMegolmSession(room, session, senderKey) }
 
-                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
-                coEvery { olmService.events.decryptMegolm(any()) }.coAnswers {
-                    delay(100)
-                    expectedDecryptedEvent
-                }
-                store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-
-                val scope1 = CoroutineScope(Dispatchers.Default)
-                val scope2 = CoroutineScope(Dispatchers.Default)
-                withTimeout(5_000) {
-                    repeat(100) {
-                        launch {
-                            cut.getTimelineEvent(eventId, room, scope1).take(1).toList()
-                        }
-                        launch {
-                            cut.getTimelineEvent(eventId, room, scope2).take(1).toList()
-                        }
-                    }
-                }
-                coVerify(exactly = 2, timeout = 5_000) {
-                    olmStoreMock.getInboundMegolmSession(any(), any(), any(), any())
-                }
-                scope1.cancel()
-                scope2.cancel()
             }
         }
     }

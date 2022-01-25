@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.crypto
 
-import io.ktor.util.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -41,7 +40,6 @@ class OlmSignService internal constructor(
         data class Custom(val privateKey: String, val publicKey: String) : SignWith
     }
 
-    @OptIn(InternalAPI::class)
     suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = DeviceKey): Signatures<UserId> {
         val stringToSign = canonicalFilteredJson(jsonObject)
         return when (signWith) {
@@ -57,7 +55,7 @@ class OlmSignService internal constructor(
             }
             is SignWith.AllowedSecrets -> {
                 val privateKey = store.keys.secrets.value[signWith.allowedSecretType]?.decryptedPrivateKey
-                requireNotNull(privateKey) { "could not find self signing private key" }
+                requireNotNull(privateKey) { "could not find private key of ${signWith.allowedSecretType}" }
                 val publicKey =
                     store.keys.getCrossSigningKey(
                         ownUserId,
@@ -68,7 +66,7 @@ class OlmSignService internal constructor(
                                 throw IllegalArgumentException("cannot sign with ${signWith.allowedSecretType}")
                         }
                     )?.value?.signed?.get<Ed25519Key>()?.keyId
-                requireNotNull(publicKey) { "could not find self signing public key" }
+                requireNotNull(publicKey) { "could not find public key of ${signWith.allowedSecretType}" }
                 mapOf(
                     ownUserId to keysOf(
                         Ed25519Key(
@@ -95,8 +93,21 @@ class OlmSignService internal constructor(
         }
     }
 
-    suspend inline fun <reified T> sign(unsignedObject: T, signWith: SignWith = DeviceKey): Signed<T, UserId> {
-        return sign(unsignedObject, serializer(), signWith)
+    suspend fun <T> signatures(
+        unsignedObject: T,
+        serializer: KSerializer<T>,
+        signWith: SignWith = DeviceKey
+    ): Signatures<UserId> {
+        val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
+        require(jsonObject is JsonObject)
+        return signatures(jsonObject, signWith)
+    }
+
+    suspend inline fun <reified T> signatures(
+        unsignedObject: T,
+        signWith: SignWith = DeviceKey
+    ): Signatures<UserId> {
+        return signatures(unsignedObject, serializer(), signWith)
     }
 
     suspend fun <T> sign(
@@ -104,16 +115,18 @@ class OlmSignService internal constructor(
         serializer: KSerializer<T>,
         signWith: SignWith = DeviceKey
     ): Signed<T, UserId> {
-        val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
-        require(jsonObject is JsonObject)
-        return Signed(unsignedObject, signatures(jsonObject, signWith))
+        return Signed(unsignedObject, signatures(unsignedObject, serializer, signWith))
     }
 
-    suspend fun signCurve25519Key(key: Curve25519Key): Key.SignedCurve25519Key {
+    suspend inline fun <reified T> sign(unsignedObject: T, signWith: SignWith = DeviceKey): Signed<T, UserId> {
+        return sign(unsignedObject, serializer(), signWith)
+    }
+
+    suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String = "key"): Key.SignedCurve25519Key {
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
-            signatures = signatures(JsonObject(mapOf("key" to JsonPrimitive(key.value))))
+            signatures = signatures(JsonObject(mapOf(jsonKey to JsonPrimitive(key.value))))
         )
     }
 

@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.json.encodeToJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient.SyncState.INITIAL_SYNC
@@ -14,7 +13,7 @@ import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
-import net.folivo.trixnity.client.retryWhenSyncIs
+import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
@@ -47,6 +46,7 @@ import arrow.core.flatMap as flatMapResult
 private val log = KotlinLogging.logger {}
 
 class KeyService(
+    olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
@@ -54,18 +54,18 @@ class KeyService(
     private val api: MatrixApiClient,
 ) {
     internal val secret = KeySecretService(ownUserId, ownDeviceId, store, olm, api)
+    internal val backup = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm)
 
-    @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
-        api.sync.subscribeSyncResponse { syncResponse ->
-            syncResponse.deviceLists?.also { handleDeviceLists(it) }
-        }
+        api.sync.subscribeDeviceLists(::handleDeviceLists)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
         secret.start(scope)
+        backup.start(scope)
     }
 
-    internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists) {
+    internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists?) {
+        if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
             store.keys.outdatedKeys.update { oldUserIds ->
@@ -81,7 +81,7 @@ class KeyService(
 
     @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIs(
+        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING, INITIAL_SYNC,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
@@ -189,7 +189,7 @@ class KeyService(
                 val newMasterKeyTrustLevel = when (oldMasterKeyTrustLevel) {
                     is CrossSigned -> {
                         if (notFullyCrossSigned) {
-                            log.debug { "mark master key of $userId as ${NotAllDeviceKeysCrossSigned::class.simpleName}" }
+                            log.trace { "mark master key of $userId as ${NotAllDeviceKeysCrossSigned::class.simpleName}" }
                             NotAllDeviceKeysCrossSigned(oldMasterKeyTrustLevel.verified)
                         } else oldMasterKeyTrustLevel
                     }
@@ -459,7 +459,7 @@ class KeyService(
         val encryptedMasterKey = store.globalAccountData.get<MasterKeyEventContent>()?.content
             ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
         val decryptedPublicKey =
-            secret.decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey)
+            decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey, api.json)
                 ?.let { privateKey ->
                     freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
                 }
@@ -479,6 +479,10 @@ class KeyService(
         val result: Result<UIA<Unit>>,
     )
 
+    /**
+     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
+     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
+     */
     @OptIn(InternalAPI::class)
     suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray = Random.nextBytes(32),
@@ -501,25 +505,21 @@ class KeyService(
             result = api.users.setAccountData(secretKeyEventContent, ownUserId, keyId)
                 .flatMapResult { api.users.setAccountData(DefaultSecretKeyEventContent(keyId), ownUserId) }
                 .flatMapResult {
-                    val (masterPrivateKey, masterPublicKey) =
+                    val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val masterKey = olm.sign.sign(
+                    val masterSigningKey = olm.sign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(MasterKey),
-                            keys = keysOf(Ed25519Key(masterPublicKey, masterPublicKey))
-                        ), signWith = SignWith.Custom(privateKey = masterPrivateKey, publicKey = masterPublicKey)
-                    )
-                    val encryptedMasterKey = MasterKeyEventContent(
-                        mapOf(
-                            keyId to api.json.encodeToJsonElement(
-                                encryptAesHmacSha2(
-                                    content = masterPrivateKey.encodeToByteArray(),
-                                    key = recoveryKey,
-                                    name = "m.cross_signing.master"
-                                )
-                            )
+                            keys = keysOf(Ed25519Key(masterSigningPublicKey, masterSigningPublicKey))
+                        ),
+                        signWith = SignWith.Custom(
+                            privateKey = masterSigningPrivateKey,
+                            publicKey = masterSigningPublicKey
                         )
+                    )
+                    val encryptedMasterSigningKey = MasterKeyEventContent(
+                        encryptSecret(recoveryKey, keyId, "m.cross_signing.master", masterSigningPrivateKey, api.json)
                     )
                     val (selfSigningPrivateKey, selfSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
@@ -528,17 +528,19 @@ class KeyService(
                             userId = ownUserId,
                             usage = setOf(SelfSigningKey),
                             keys = keysOf(Ed25519Key(selfSigningPublicKey, selfSigningPublicKey))
-                        ), signWith = SignWith.Custom(privateKey = masterPrivateKey, publicKey = masterPublicKey)
+                        ),
+                        signWith = SignWith.Custom(
+                            privateKey = masterSigningPrivateKey,
+                            publicKey = masterSigningPublicKey
+                        )
                     )
                     val encryptedSelfSigningKey = SelfSigningKeyEventContent(
-                        mapOf(
-                            keyId to api.json.encodeToJsonElement(
-                                encryptAesHmacSha2(
-                                    content = selfSigningPrivateKey.encodeToByteArray(),
-                                    key = recoveryKey,
-                                    name = M_CROSS_SIGNING_SELF_SIGNING.id
-                                )
-                            )
+                        encryptSecret(
+                            recoveryKey,
+                            keyId,
+                            M_CROSS_SIGNING_SELF_SIGNING.id,
+                            selfSigningPrivateKey,
+                            api.json
                         )
                     )
                     val (userSigningPrivateKey, userSigningPublicKey) =
@@ -548,17 +550,19 @@ class KeyService(
                             userId = ownUserId,
                             usage = setOf(UserSigningKey),
                             keys = keysOf(Ed25519Key(userSigningPublicKey, userSigningPublicKey))
-                        ), signWith = SignWith.Custom(privateKey = masterPrivateKey, publicKey = masterPublicKey)
+                        ),
+                        signWith = SignWith.Custom(
+                            privateKey = masterSigningPrivateKey,
+                            publicKey = masterSigningPublicKey
+                        )
                     )
                     val encryptedUserSigningKey = UserSigningKeyEventContent(
-                        mapOf(
-                            keyId to api.json.encodeToJsonElement(
-                                encryptAesHmacSha2(
-                                    content = userSigningPrivateKey.encodeToByteArray(),
-                                    key = recoveryKey,
-                                    name = M_CROSS_SIGNING_USER_SIGNING.id
-                                )
-                            )
+                        encryptSecret(
+                            recoveryKey,
+                            keyId,
+                            M_CROSS_SIGNING_USER_SIGNING.id,
+                            userSigningPrivateKey,
+                            api.json
                         )
                     )
                     store.keys.secrets.update {
@@ -573,12 +577,20 @@ class KeyService(
                             ),
                         )
                     }
-                    api.users.setAccountData(encryptedMasterKey, ownUserId)
+                    api.users.setAccountData(encryptedMasterSigningKey, ownUserId)
                         .flatMapResult { api.users.setAccountData(encryptedUserSigningKey, ownUserId) }
                         .flatMapResult { api.users.setAccountData(encryptedSelfSigningKey, ownUserId) }
                         .flatMapResult {
+                            backup.bootstrapRoomKeyBackup(
+                                recoveryKey,
+                                keyId,
+                                masterSigningPrivateKey,
+                                masterSigningPublicKey
+                            )
+                        }
+                        .flatMapResult {
                             api.keys.setCrossSigningKeys(
-                                masterKey = masterKey,
+                                masterKey = masterSigningKey,
                                 selfSigningKey = selfSigningKey,
                                 userSigningKey = userSigningKey
                             )
@@ -598,6 +610,10 @@ class KeyService(
         )
     }
 
+    /**
+     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
+     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
+     */
     @OptIn(InternalAPI::class)
     suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
@@ -651,7 +667,10 @@ class KeyService(
         val event = timelineEvent.event
         val content = event.content
         return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
-            return getTrustLevel(event.sender, content.deviceId, scope)
+            val megolmKeyIsTrusted =
+                store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, event.roomId)?.isTrusted == true
+            return if (megolmKeyIsTrusted) getTrustLevel(event.sender, content.deviceId, scope)
+            else MutableStateFlow(DeviceTrustLevel.NotVerified)
         } else null
     }
 

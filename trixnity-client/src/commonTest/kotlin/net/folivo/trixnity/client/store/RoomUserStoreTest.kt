@@ -157,7 +157,7 @@ class RoomUserStoreTest : ShouldSpec({
                 )
             )
 
-            cut.getByOriginalNameAndMembership("A", setOf(JOIN), roomId) shouldContainExactly listOf(
+            cut.getByOriginalNameAndMembership("A", setOf(JOIN), roomId) shouldBe setOf(
                 UserId("user1", "server"),
                 UserId("user2", "server")
             )

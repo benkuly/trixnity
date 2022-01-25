@@ -25,7 +25,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     secretKeyRequestRepository = InMemorySecretKeyRequestRepository(),
     olmAccountRepository = InMemoryMinimalStoreRepository(),
     olmSessionRepository = InMemoryMinimalStoreRepository(),
-    inboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
+    inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository(),
     inboundMegolmMessageIndexRepository = InMemoryMinimalStoreRepository(),
     outboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
     roomRepository = InMemoryRoomRepository(),
@@ -69,6 +69,12 @@ class InMemoryTwoDimensionsStoreRepository<K, V> : TwoDimensionsStoreRepository<
 class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,
     InMemoryMinimalStoreRepository<String, StoredSecretKeyRequest>() {
     override suspend fun getAll(): List<StoredSecretKeyRequest> = content.value.values.toList()
+}
+
+class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
+    InMemoryMinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
+    override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> =
+        content.value.values.filter { it.hasBeenBackedUp.not() }.toSet()
 }
 
 class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<RoomId, Room>() {

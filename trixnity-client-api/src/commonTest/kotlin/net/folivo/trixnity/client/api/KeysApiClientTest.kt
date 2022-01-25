@@ -586,7 +586,7 @@ class KeysApiClientTest {
                                   "rooms": {
                                     "!room:example.org": {
                                       "sessions": {
-                                        "sessionid1": {
+                                        "+ess/ionId1": {
                                           "first_message_index": 1,
                                           "forwarded_count": 0,
                                           "is_verified": true,
@@ -614,7 +614,7 @@ class KeysApiClientTest {
                     mapOf(
                         RoomId("!room:example.org") to RoomKeyBackup(
                             mapOf(
-                                "sessionid1" to RoomKeyBackupData(
+                                "+ess/ionId1" to RoomKeyBackupData(
                                     firstMessageIndex = 1,
                                     forwardedCount = 0,
                                     isVerified = true,
@@ -648,7 +648,7 @@ class KeysApiClientTest {
                             """
                                 {
                                   "sessions": {
-                                    "sessionid1": {
+                                    "+ess/ionId1": {
                                       "first_message_index": 1,
                                       "forwarded_count": 0,
                                       "is_verified": true,
@@ -673,7 +673,7 @@ class KeysApiClientTest {
             .shouldBe(
                 RoomKeyBackup(
                     mapOf(
-                        "sessionid1" to RoomKeyBackupData(
+                        "+ess/ionId1" to RoomKeyBackupData(
                             firstMessageIndex = 1,
                             forwardedCount = 0,
                             isVerified = true,
@@ -696,7 +696,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Get, request.method)
@@ -722,7 +722,7 @@ class KeysApiClientTest {
             },
         )
         matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
-            "1", RoomId("!room:example.org"), "sessionid1"
+            "1", RoomId("!room:example.org"), "+ess/ionId1"
         ).getOrThrow()
             .shouldBe(
                 RoomKeyBackupData(
@@ -756,7 +756,7 @@ class KeysApiClientTest {
                                   "rooms":{
                                     "!room:example.org":{
                                       "sessions":{
-                                        "sessionid1":{
+                                        "+ess/ionId1":{
                                           "first_message_index":1,
                                           "forwarded_count":0,
                                           "is_verified":true,
@@ -792,7 +792,7 @@ class KeysApiClientTest {
                 mapOf(
                     RoomId("!room:example.org") to RoomKeyBackup(
                         mapOf(
-                            "sessionid1" to RoomKeyBackupData(
+                            "+ess/ionId1" to RoomKeyBackupData(
                                 firstMessageIndex = 1,
                                 forwardedCount = 0,
                                 isVerified = true,
@@ -828,7 +828,7 @@ class KeysApiClientTest {
                             """
                                 {
                                   "sessions":{
-                                    "sessionid1":{
+                                    "+ess/ionId1":{
                                       "first_message_index":1,
                                       "forwarded_count":0,
                                       "is_verified":true,
@@ -861,7 +861,7 @@ class KeysApiClientTest {
             RoomId("!room:example.org"),
             RoomKeyBackup(
                 mapOf(
-                    "sessionid1" to RoomKeyBackupData(
+                    "+ess/ionId1" to RoomKeyBackupData(
                         firstMessageIndex = 1,
                         forwardedCount = 0,
                         isVerified = true,
@@ -887,7 +887,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Put, request.method)
@@ -922,7 +922,7 @@ class KeysApiClientTest {
         matrixRestClient.keys.setRoomKeys(
             "1",
             RoomId("!room:example.org"),
-            "sessionid1",
+            "+ess/ionId1",
             RoomKeyBackupData(
                 firstMessageIndex = 1,
                 forwardedCount = 0,
@@ -1014,7 +1014,7 @@ class KeysApiClientTest {
                 engine {
                     addHandler { request ->
                         assertEquals(
-                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/sessionid1?version=1",
+                            "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
                             request.url.fullPath
                         )
                         assertEquals(HttpMethod.Delete, request.method)
@@ -1034,7 +1034,7 @@ class KeysApiClientTest {
             },
         )
         matrixRestClient.keys.deleteRoomKeys(
-            "1", RoomId("!room:example.org"), "sessionid1"
+            "1", RoomId("!room:example.org"), "+ess/ionId1"
         ).getOrThrow()
             .shouldBe(
                 DeleteRoomKeysResponse(count = 10, etag = "abcdefg")

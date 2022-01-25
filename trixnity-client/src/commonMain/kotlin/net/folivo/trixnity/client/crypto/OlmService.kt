@@ -84,9 +84,7 @@ class OlmService(
     internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
 
     internal suspend fun start(scope: CoroutineScope) {
-        api.sync.subscribeSyncResponse { syncResponse ->
-            syncResponse.deviceOneTimeKeysCount?.also { handleDeviceOneTimeKeysCount(it) }
-        }
+        api.sync.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         api.sync.subscribe(::handleMemberEvents)
         api.sync.subscribe(::handleEncryptionEvents)
         api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
@@ -94,7 +92,8 @@ class OlmService(
         scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
     }
 
-    internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount) {
+    internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
+        if (count == null) return
         val generateOneTimeKeysCount =
             (account.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
                 .coerceAtLeast(0)
@@ -131,9 +130,10 @@ class OlmService(
         val content = event.decrypted.content
         if (content is RoomKeyEventContent) {
             log.debug { "got inbound megolm session for room ${content.roomId}" }
-            store.olm.storeInboundMegolmSession(
+            store.olm.storeTrustedInboundMegolmSession(
                 roomId = content.roomId,
                 senderKey = event.encrypted.content.senderKey,
+                senderSigningKey = requireNotNull(event.decrypted.senderKeys.get()),
                 sessionId = content.sessionId,
                 sessionKey = content.sessionKey,
                 pickleKey = olmPickleKey

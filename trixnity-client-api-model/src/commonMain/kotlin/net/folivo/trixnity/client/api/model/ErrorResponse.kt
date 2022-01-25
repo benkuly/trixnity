@@ -264,6 +264,13 @@ sealed class ErrorResponse {
     @SerialName("M_CANNOT_LEAVE_SERVER_NOTICE_ROOM")
     data class CannotLeaveServerNoticeRoom(override val error: String? = null) : ErrorResponse()
 
+    @Serializable
+    @SerialName("M_WRONG_ROOM_KEYS_VERSION")
+    data class WrongRoomKeysVersion(
+        override val error: String? = null,
+        @SerialName("current_version") val currentVersion: String? = null
+    ) : ErrorResponse()
+
     /**
      * All ErrorResponses, that we cannot map to a subtype of ErrorResponse.
      */

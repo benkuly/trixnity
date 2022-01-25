@@ -23,12 +23,12 @@ import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.keys.Key
 
 class RoomServiceTimelineTest : ShouldSpec({
     val room = RoomId("room", "server")
@@ -41,7 +41,7 @@ class RoomServiceTimelineTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olm, mockk(), mockk())
+        cut = RoomService(store, api, olm, mockk(), mockk(), mockk())
     }
 
     afterTest {
@@ -293,7 +293,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
                 store = spyk(InMemoryStore(storeScope).apply { init() })
-                cut = RoomService(store, api, olm, mockk(), mockk())
+                cut = RoomService(store, api, olm, mockk(), mockk(), mockk())
                 store.room.update(room) {
                     Room(
                         roomId = room,

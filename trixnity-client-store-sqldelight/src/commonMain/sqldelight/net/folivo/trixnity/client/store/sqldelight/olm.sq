@@ -36,17 +36,26 @@ CREATE TABLE sql_inbound_megolm_session(
   sender_key TEXT NOT NULL,
   session_id TEXT NOT NULL,
   room_id TEXT NOT NULL,
+  first_known_index INTEGER NOT NULL,
+  has_been_backed_up INTEGER AS Boolean DEFAULT 0 NOT NULL,
+  is_trusted INTEGER AS Boolean DEFAULT 0 NOT NULL,
+  sender_signing_key TEXT NOT NULL,
+  forwarding_curve25519_key_chain TEXT NOT NULL,
   pickled_session TEXT NOT NULL,
   PRIMARY KEY(sender_key, session_id, room_id)
 );
 
 getInboundMegolmSession:
-SELECT pickled_session FROM sql_inbound_megolm_session
+SELECT * FROM sql_inbound_megolm_session
 WHERE sender_key = ? AND session_id = ? AND room_id = ?;
+
+getNotBackedUpInboundMegolmSessions:
+SELECT * FROM sql_inbound_megolm_session
+WHERE has_been_backed_up = 0;
 
 saveInboundMegolmSession:
 INSERT OR REPLACE INTO sql_inbound_megolm_session
-VALUES (?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteInboundMegolmSession:
 DELETE FROM sql_inbound_megolm_session

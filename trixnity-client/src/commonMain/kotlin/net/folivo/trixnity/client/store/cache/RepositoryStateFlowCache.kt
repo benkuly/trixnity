@@ -57,18 +57,21 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     suspend fun update(
         key: K,
         withTransaction: Boolean = true,
+        onPersist: suspend (newValue: V?) -> Unit = {},
         updater: suspend (oldValue: V?) -> V?
     ) = update(
         key = key,
         persistIntoRepository = true,
         withTransaction = withTransaction,
-        updater = updater
+        updater = updater,
+        onPersist = onPersist
     )
 
     suspend fun update(
         key: K,
         persistIntoRepository: Boolean = true,
         withTransaction: Boolean = true,
+        onPersist: suspend (newValue: V?) -> Unit = {},
         updater: suspend (oldValue: V?) -> V?
     ) {
         writeWithCache(key, updater,
@@ -86,6 +89,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
                         if (newValue == null) repository.delete(key)
                         else repository.save(key, newValue)
                     }
+                    onPersist(newValue)
                 }
             })
     }

@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.retryWhenSyncIs
+import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.originalName
@@ -141,7 +141,7 @@ class UserService(
     fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
 
     internal suspend fun handleLoadMembersQueue() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIs(
+        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed loading members" } },
             scope = this

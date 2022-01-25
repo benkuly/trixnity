@@ -10,25 +10,30 @@ import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
 import io.mockk.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.UIA
-import net.folivo.trixnity.client.crypto.*
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.OlmSignService
+import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
@@ -47,13 +52,17 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val olm = mockk<OlmService>()
     val api = mockk<MatrixApiClient>()
+    val json = createMatrixJson()
+
+    mockkStatic(::decryptSecret)
 
     lateinit var cut: KeyService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeyService(alice, aliceDevice, store, olm, api)
+        coEvery { api.json } returns json
+        cut = KeyService("", alice, aliceDevice, store, olm, api)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
     }
@@ -90,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            coEvery { spyCut.secret.decryptSecret(any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
+            coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
                 .encodeBase64()
 
             spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
@@ -127,7 +136,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            coEvery { spyCut.secret.decryptSecret(any(), any(), any(), any(), any()) } returns privateKey
+            coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns privateKey
 
             spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).getOrThrow()
 
@@ -161,6 +170,9 @@ private val body: ShouldSpec.() -> Unit = {
                 coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
                     Signed(firstArg(), mapOf())
                 }
+                coEvery {
+                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
+                } returns Result.success(Unit)
                 coEvery { api.keys.setCrossSigningKeys(any(), any(), any()) }
                     .returns(Result.success(UIA.UIASuccess(Unit)))
                 coEvery { spyCut.trustAndSignKeys(any(), any()) } just Runs
@@ -249,6 +261,7 @@ private val body: ShouldSpec.() -> Unit = {
                             Ed25519Key(aliceDevice, "dev")
                         ), alice
                     )
+                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 }
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
@@ -318,6 +331,7 @@ private val body: ShouldSpec.() -> Unit = {
                             Ed25519Key(aliceDevice, "dev")
                         ), alice
                     )
+                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 }
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,

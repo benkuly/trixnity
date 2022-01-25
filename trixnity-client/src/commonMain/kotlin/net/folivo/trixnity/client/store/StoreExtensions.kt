@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
@@ -14,6 +13,7 @@ import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
+import net.folivo.trixnity.core.model.keys.Key
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
@@ -101,9 +101,11 @@ suspend inline fun OlmStore.waitForInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,
     senderKey: Key.Curve25519Key,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    firstKnownIndexLessThen: Long? = null
 ) {
-    getInboundMegolmSession(senderKey, sessionId, roomId, scope).first { it != null }
+    getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+        .first { it != null && (firstKnownIndexLessThen == null || it.firstKnownIndex < firstKnownIndexLessThen) }
 }
 
 val RoomUser.originalName
