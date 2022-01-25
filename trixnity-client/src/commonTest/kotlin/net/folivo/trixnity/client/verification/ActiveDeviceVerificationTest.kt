@@ -27,9 +27,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class ActiveDeviceVerificationTest : ShouldSpec({
     timeout = 30_000
 

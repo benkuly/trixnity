@@ -48,11 +48,10 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
 class KeySecretServiceTest : ShouldSpec(body)
 
-@OptIn(ExperimentalTime::class, InternalAPI::class)
+@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
@@ -341,21 +340,6 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.secrets.value shouldBe mapOf()
             }
         }
-        should("ignore when public key of key backup secret cannot be generated") {
-            setDeviceKeys(true)
-            setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
-            cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEvent(
-                    mockk(), Event.OlmEvent(
-                        SecretKeySendEventContent("requestId", "dino"),
-                        alice, keysOf(aliceDevice2Key), alice, keysOf()
-                    )
-                )
-            )
-            continually(500.milliseconds) {
-                store.keys.secrets.value shouldBe mapOf()
-            }
-        }
         should("ignore when public key of key backup secret cannot be retrieved") {
             setDeviceKeys(true)
             setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
@@ -444,7 +428,7 @@ private val body: ShouldSpec.() -> Unit = {
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, crossSigningPrivateKey)
             )
         }
-        should("save cross key backup secret") { // FIXME
+        should("save cross key backup secret") {
             setDeviceKeys(true)
             setRequest(M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
             returnRoomKeysVersion(keyBackupPublicKey)
@@ -680,39 +664,6 @@ private val body: ShouldSpec.() -> Unit = {
                 }, any())
             }
             store.keys.secrets.value shouldBe mapOf()
-        }
-    }
-    context(KeySecretService::decryptSecret.name) {
-        should("decrypt ${SecretKeyEventContent.AesHmacSha2Key::class.simpleName}") {
-            val key = Random.nextBytes(32)
-            val secret = Random.nextBytes(32).encodeBase64()
-            val encryptedData = encryptAesHmacSha2(
-                content = secret.encodeToByteArray(),
-                key = key,
-                name = "m.cross_signing.user_signing"
-            )
-            cut.decryptSecret(
-                key = key,
-                keyId = "KEY",
-                keyInfo = SecretKeyEventContent.AesHmacSha2Key(),
-                secretName = "m.cross_signing.user_signing",
-                secret = UserSigningKeyEventContent(mapOf("KEY" to json.encodeToJsonElement(encryptedData)))
-            ) shouldBe secret
-        }
-        should("return null on error") {
-            val secret = Random.nextBytes(32)
-            val encryptedData = encryptAesHmacSha2(
-                content = secret,
-                key = Random.nextBytes(32),
-                name = "m.cross_signing.user_signing"
-            )
-            cut.decryptSecret(
-                key = Random.nextBytes(32),
-                keyId = "KEY",
-                keyInfo = SecretKeyEventContent.AesHmacSha2Key(),
-                secretName = "m.cross_signing.user_signing",
-                secret = UserSigningKeyEventContent(mapOf("KEY" to json.encodeToJsonElement(encryptedData)))
-            ) shouldBe null
         }
     }
     context(KeySecretService::decryptMissingSecrets.name) {

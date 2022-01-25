@@ -12,10 +12,6 @@ import net.folivo.trixnity.client.crypto.KeyException.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.Key.*
-import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -28,6 +24,10 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
@@ -56,6 +56,8 @@ class OlmEventService internal constructor(
     ): OlmEncryptedEventContent {
         val identityKey = store.keys.getOrFetchKeyFromDevice<Curve25519Key>(receiverId, deviceId)
             ?: throw KeyNotFoundException("could not find curve25519 key for $receiverId ($deviceId)")
+        val signingKey = store.keys.getDeviceKey(receiverId, deviceId)?.value?.get<Ed25519Key>()
+            ?: throw KeyNotFoundException("could not find ed25519 key for $receiverId ($deviceId)")
         val storedSession = store.olm.getOlmSessions(identityKey)?.minByOrNull { it.sessionId }
 
         return if (storedSession == null || forceNewSession) {
@@ -66,10 +68,7 @@ class OlmEventService internal constructor(
             val oneTimeKey = response.oneTimeKeys[receiverId]?.get(deviceId)?.keys?.firstOrNull()
                 ?: throw OneTimeKeyNotFoundException(receiverId, deviceId)
             require(oneTimeKey is SignedCurve25519Key)
-            val keyVerifyState = signService.verify(
-                oneTimeKey,
-                mapOf(receiverId to setOfNotNull(store.keys.getDeviceKey(receiverId, deviceId)?.value?.get()))
-            )
+            val keyVerifyState = signService.verify(oneTimeKey, mapOf(receiverId to setOf(signingKey)))
             if (keyVerifyState is VerifyResult.Invalid)
                 throw KeyVerificationFailedException(keyVerifyState.reason)
             freeAfter(
@@ -234,9 +233,10 @@ class OlmEventService internal constructor(
                     store.keys.getDeviceKeys(userId)?.let { userId to it.keys }
                 }.toMap()
             freeAfter(OlmOutboundGroupSession.create()) { session ->
-                store.olm.storeInboundMegolmSession(
+                store.olm.storeTrustedInboundMegolmSession(
                     roomId = roomId,
                     senderKey = ownCurve25519Key,
+                    senderSigningKey = ownEd25519Key,
                     sessionId = session.sessionId,
                     sessionKey = session.sessionKey,
                     pickleKey = olmPickleKey

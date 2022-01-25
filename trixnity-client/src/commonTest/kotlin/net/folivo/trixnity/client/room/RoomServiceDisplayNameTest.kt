@@ -42,7 +42,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, mockk(), mockk(), mockk())
+        cut = RoomService(store, api, mockk(), mockk(), mockk(), mockk())
     }
 
     afterTest {

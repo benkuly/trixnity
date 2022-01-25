@@ -5,8 +5,10 @@ import io.ktor.http.HttpMethod.Companion.Delete
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpMethod.Companion.Put
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.serializer
 import net.folivo.trixnity.client.api.model.keys.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -124,16 +126,40 @@ class KeysApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+    suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
         version: String,
         asUserId: UserId? = null
     ): Result<RoomsKeyBackup<T>> =
-        httpClient.request {
+        httpClient.request<String> {
             method = Get
             url("/_matrix/client/v3/room_keys/keys")
             parameter("version", version)
             parameter("user_id", asUserId)
-        }
+        }.mapCatching { json.decodeFromString(RoomsKeyBackup.serializer(sessionDataSerializer), it) }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+        version: String,
+        asUserId: UserId? = null
+    ): Result<RoomsKeyBackup<T>> = getRoomKeys(serializer(), version, asUserId)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     */
+    suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
+        version: String,
+        roomId: RoomId,
+        asUserId: UserId? = null
+    ): Result<RoomKeyBackup<T>> = httpClient.request<String> {
+        method = Get
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        parameter("version", version)
+        parameter("user_id", asUserId)
+    }.mapCatching { json.decodeFromString(RoomKeyBackup.serializer(sessionDataSerializer), it) }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
@@ -142,12 +168,23 @@ class KeysApiClient(
         version: String,
         roomId: RoomId,
         asUserId: UserId? = null
-    ): Result<RoomKeyBackup<T>> = httpClient.request {
+    ): Result<RoomKeyBackup<T>> = getRoomKeys(serializer(), version, roomId, asUserId)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     */
+    suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
+        version: String,
+        roomId: RoomId,
+        sessionId: String,
+        asUserId: UserId? = null
+    ): Result<RoomKeyBackupData<T>> = httpClient.request<String> {
         method = Get
-        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/${sessionId.e()}")
         parameter("version", version)
         parameter("user_id", asUserId)
-    }
+    }.mapCatching { json.decodeFromString(RoomKeyBackupData.serializer(sessionDataSerializer), it) }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
@@ -157,11 +194,22 @@ class KeysApiClient(
         roomId: RoomId,
         sessionId: String,
         asUserId: UserId? = null
-    ): Result<RoomKeyBackupData<T>> = httpClient.request {
-        method = Get
-        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
+    ): Result<RoomKeyBackupData<T>> = getRoomKeys(serializer(), version, roomId, sessionId, asUserId)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+     */
+    suspend fun <T : RoomKeyBackupSessionData> setRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
+        version: String,
+        backup: RoomsKeyBackup<T>,
+        asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = httpClient.request {
+        method = Put
+        url("/_matrix/client/v3/room_keys/keys")
         parameter("version", version)
         parameter("user_id", asUserId)
+        body = json.encodeToJsonElement(RoomsKeyBackup.serializer(sessionDataSerializer), backup)
     }
 
     /**
@@ -171,12 +219,23 @@ class KeysApiClient(
         version: String,
         backup: RoomsKeyBackup<T>,
         asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, backup, asUserId)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     */
+    suspend fun <T : RoomKeyBackupSessionData> setRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
+        version: String,
+        roomId: RoomId,
+        backup: RoomKeyBackup<T>,
+        asUserId: UserId? = null
     ): Result<SetRoomKeysResponse> = httpClient.request {
         method = Put
-        url("/_matrix/client/v3/room_keys/keys")
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
         parameter("version", version)
         parameter("user_id", asUserId)
-        body = json.encodeToJsonElement(backup)
+        body = json.encodeToJsonElement(RoomKeyBackup.serializer(sessionDataSerializer), backup)
     }
 
     /**
@@ -187,12 +246,24 @@ class KeysApiClient(
         roomId: RoomId,
         backup: RoomKeyBackup<T>,
         asUserId: UserId? = null
+    ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, roomId, backup, asUserId)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     */
+    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+        sessionDataSerializer: KSerializer<T>,
+        version: String,
+        roomId: RoomId,
+        sessionId: String,
+        backup: RoomKeyBackupData<T>,
+        asUserId: UserId? = null
     ): Result<SetRoomKeysResponse> = httpClient.request {
         method = Put
-        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}")
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/${sessionId.e()}")
         parameter("version", version)
         parameter("user_id", asUserId)
-        body = json.encodeToJsonElement(backup)
+        body = json.encodeToJsonElement(RoomKeyBackupData.serializer(sessionDataSerializer), backup)
     }
 
     /**
@@ -204,13 +275,7 @@ class KeysApiClient(
         sessionId: String,
         backup: RoomKeyBackupData<T>,
         asUserId: UserId? = null
-    ): Result<SetRoomKeysResponse> = httpClient.request {
-        method = Put
-        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
-        parameter("version", version)
-        parameter("user_id", asUserId)
-        body = json.encodeToJsonElement(backup)
-    }
+    ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, roomId, sessionId, backup, asUserId)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
@@ -249,7 +314,7 @@ class KeysApiClient(
         asUserId: UserId? = null
     ): Result<DeleteRoomKeysResponse> = httpClient.request {
         method = Delete
-        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/$sessionId")
+        url("/_matrix/client/v3/room_keys/keys/${roomId.e()}/${sessionId.e()}")
         parameter("version", version)
         parameter("user_id", asUserId)
     }

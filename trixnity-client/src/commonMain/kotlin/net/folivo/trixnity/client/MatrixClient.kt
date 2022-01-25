@@ -71,21 +71,23 @@ class MatrixClient private constructor(
             api = api,
             store = store,
         )
-        room = RoomService(
-            store = store,
-            api = api,
-            olm = olm,
-            user = user,
-            media = media,
-            setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
-            customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
-        )
         key = KeyService(
+            olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
             store = store,
             api = api,
             olm = olm,
+        )
+        room = RoomService(
+            store = store,
+            api = api,
+            olm = olm,
+            key = key,
+            user = user,
+            media = media,
+            setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+            customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
         )
         verification = VerificationService(
             ownUserId = userId,

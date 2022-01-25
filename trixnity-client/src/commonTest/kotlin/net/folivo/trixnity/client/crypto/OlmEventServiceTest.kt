@@ -28,9 +28,6 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -42,6 +39,9 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
@@ -635,9 +635,10 @@ private val body: ShouldSpec.() -> Unit = {
                                 pickled = session.pickle("")
                             )
                         }
-                        store.olm.storeInboundMegolmSession(
+                        store.olm.storeTrustedInboundMegolmSession(
                             roomId = room,
                             senderKey = aliceCurveKey,
+                            senderSigningKey = aliceEdKey,
                             sessionId = session.sessionId,
                             sessionKey = session.sessionKey,
                             pickleKey = ""
@@ -678,9 +679,10 @@ private val body: ShouldSpec.() -> Unit = {
         val megolmEvent = MegolmEvent(eventContent, room)
         should("decrypt megolm event") {
             freeAfter(OlmOutboundGroupSession.create()) { session ->
-                store.olm.storeInboundMegolmSession(
+                store.olm.storeTrustedInboundMegolmSession(
                     roomId = room,
                     senderKey = bobCurveKey,
+                    senderSigningKey = bobEdKey,
                     sessionId = session.sessionId,
                     sessionKey = session.sessionKey,
                     pickleKey = ""
@@ -732,9 +734,10 @@ private val body: ShouldSpec.() -> Unit = {
         context("manipulation") {
             should("handle manipulated roomId in megolmEvent") {
                 freeAfter(OlmOutboundGroupSession.create()) { session ->
-                    store.olm.storeInboundMegolmSession(
+                    store.olm.storeTrustedInboundMegolmSession(
                         roomId = room,
                         senderKey = bobCurveKey,
+                        senderSigningKey = bobEdKey,
                         sessionId = session.sessionId,
                         sessionKey = session.sessionKey,
                         pickleKey = ""
@@ -765,9 +768,10 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("handle manipulated message index") {
                 freeAfter(OlmOutboundGroupSession.create()) { session ->
-                    store.olm.storeInboundMegolmSession(
+                    store.olm.storeTrustedInboundMegolmSession(
                         roomId = room,
                         senderKey = bobCurveKey,
+                        senderSigningKey = bobEdKey,
                         sessionId = session.sessionId,
                         sessionKey = session.sessionKey,
                         pickleKey = ""
@@ -819,9 +823,10 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("handle manipulated senderKey in event content") {
                 freeAfter(OlmOutboundGroupSession.create()) { session ->
-                    store.olm.storeInboundMegolmSession(
+                    store.olm.storeTrustedInboundMegolmSession(
                         roomId = room,
-                        senderKey = Curve25519Key("CEDRICKEY", "cedrics key"),
+                        senderKey = Curve25519Key(null, "cedrics curve key"),
+                        senderSigningKey = Ed25519Key(null, "cedric ed key"),
                         sessionId = session.sessionId,
                         sessionKey = session.sessionKey,
                         pickleKey = ""

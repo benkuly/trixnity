@@ -6,13 +6,9 @@
         </encoder>
     </appender>
 
-    <root level="info">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="net.folivo.trixnity" level="DEBUG"/>
-    <!--    <logger name="net.folivo.trixnity.client.key" level="TRACE"/>-->
-    <!--    <logger name="net.folivo.trixnity.client.room" level="TRACE"/>-->
-    <logger name="org.testcontainers" level="INFO"/>
-    <logger name="com.github.dockerjava" level="WARN"/>
+    <logger name="net.folivo.trixnity" level="TRACE"/>
 </configuration>

@@ -2,7 +2,7 @@ object Versions {
     const val kotlin = "1.6.10" // https://kotlinlang.org/
     const val kotlinxCoroutines = "1.6.0" // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val kotlinxSerialization = "1.3.2" // https://github.com/Kotlin/kotlinx.serialization/releases
-    const val kotlinxDatetime = "0.3.1" // https://github.com/Kotlin/kotlinx-datetime/releases
+    const val kotlinxDatetime = "0.3.2" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val kotlinxAtomicfu = "0.17.0" // https://github.com/Kotlin/kotlinx.atomicfu/releases
     const val kotlinxKover = "0.4.4" // https://github.com/Kotlin/kotlinx-kover/releases
     const val dokka = "1.6.10" // https://github.com/Kotlin/dokka/releases
@@ -10,9 +10,9 @@ object Versions {
     const val jna = "5.10.0" // https://github.com/java-native-access/jna/releases
     const val ktor = "1.6.7" // https://github.com/ktorio/ktor/releases
     const val mockk = "1.12.2" // https://github.com/mockk/mockk/releases
-    const val uuid = "0.3.1" // https://github.com/benasher44/uuid/releases
-    const val kotest = "5.0.3" // https://github.com/kotest/kotest/releases
-    const val testContainers = "1.16.2" // https://github.com/testcontainers/testcontainers-java/releases
+    const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
+    const val kotest = "5.1.0" // https://github.com/kotest/kotest/releases
+    const val testContainers = "1.16.3" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val gradleNexusPublishPlugin = "1.1.0" // https://github.com/gradle-nexus/publish-plugin/releases
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases

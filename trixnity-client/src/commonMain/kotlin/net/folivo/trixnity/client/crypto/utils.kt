@@ -114,17 +114,28 @@ internal fun OlmStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
     account.update { olmAccount.pickle(pickleKey) }
 }
 
-internal suspend fun OlmStore.storeInboundMegolmSession(
+internal suspend fun OlmStore.storeTrustedInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,
     senderKey: Key.Curve25519Key,
+    senderSigningKey: Key.Ed25519Key,
     sessionKey: String,
     pickleKey: String
 ) {
     updateInboundMegolmSession(senderKey, sessionId, roomId) { oldStoredSession ->
         oldStoredSession
             ?: freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
-                StoredInboundMegolmSession(senderKey, sessionId, roomId, session.pickle(pickleKey))
+                StoredInboundMegolmSession(
+                    senderKey = senderKey,
+                    sessionId = sessionId,
+                    roomId = roomId,
+                    firstKnownIndex = session.firstKnownIndex,
+                    hasBeenBackedUp = false,
+                    isTrusted = true,
+                    senderSigningKey = senderSigningKey,
+                    forwardingCurve25519KeyChain = emptyList(),
+                    pickled = session.pickle(pickleKey)
+                )
             }
     }
 }

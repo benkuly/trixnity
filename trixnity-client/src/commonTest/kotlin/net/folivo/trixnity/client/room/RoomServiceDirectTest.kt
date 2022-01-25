@@ -11,6 +11,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
@@ -34,6 +35,7 @@ class RoomServiceDirectTest : ShouldSpec({
     val api = mockk<MatrixApiClient>(relaxed = true)
     val users = mockk<UserService>(relaxUnitFun = true)
     val olm = mockk<OlmService>()
+    val key = mockk<KeyService>()
     val media = mockk<MediaService>()
 
     lateinit var cut: RoomService
@@ -41,7 +43,7 @@ class RoomServiceDirectTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olm, users, media)
+        cut = RoomService(store, api, olm, key, users, media)
     }
 
     afterTest {

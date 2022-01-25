@@ -3,15 +3,10 @@ package net.folivo.trixnity.client
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.api.SyncApiClient
+import net.folivo.trixnity.client.api.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
@@ -25,6 +20,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
@@ -97,18 +93,21 @@ suspend fun possiblyEncryptEvent(
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
+suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
     syncState: SyncApiClient.SyncState,
     vararg moreSyncStates: SyncApiClient.SyncState,
+    scheduleBase: Duration = 100.milliseconds,
+    scheduleFactor: Double = 2.0,
+    scheduleLimit: Duration = 5.minutes,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
     scope: CoroutineScope,
-    block: suspend () -> Unit
+    block: suspend CoroutineScope.() -> Unit
 ) {
     val syncStates = listOf(syncState) + moreSyncStates
     val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
-    val schedule = Schedule.exponential<Throwable>(100.milliseconds)
-        .or(Schedule.spaced(5.minutes))
+    val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
+        .or(Schedule.spaced(scheduleLimit))
         .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
         .logInput {
             if (it is CancellationException) onCancel()
@@ -119,10 +118,56 @@ suspend fun StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
         shouldRun.first { it } // just wait, until we are connected again
         try {
             schedule.retry {
-                block()
+                retryOnRateLimit {
+                    coroutineScope {
+                        block()
+                    }
+                }
             }
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
         }
     }
+}
+
+@OptIn(ExperimentalTime::class)
+suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
+    syncState: SyncApiClient.SyncState,
+    vararg moreSyncStates: SyncApiClient.SyncState,
+    scheduleBase: Duration = 100.milliseconds,
+    scheduleFactor: Double = 2.0,
+    scheduleLimit: Duration = 5.minutes,
+    onError: suspend (error: Throwable) -> Unit = {},
+    onCancel: suspend () -> Unit = {},
+    scope: CoroutineScope,
+    block: suspend CoroutineScope.() -> T
+): T {
+    val syncStates = listOf(syncState) + moreSyncStates
+    val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
+    val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
+        .or(Schedule.spaced(scheduleLimit))
+        .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
+        .logInput {
+            if (it is CancellationException) onCancel()
+            else onError(it)
+        }
+
+    return flow {
+        while (currentCoroutineContext().isActive) {
+            shouldRun.first { it } // just wait, until we are connected again
+            try {
+                emit(
+                    schedule.retry {
+                        retryOnRateLimit {
+                            coroutineScope {
+                                block()
+                            }
+                        }
+                    }
+                )
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+            }
+        }
+    }.first()
 }

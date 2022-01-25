@@ -32,7 +32,7 @@ class ExposedStore(
     secretKeyRequestRepository = ExposedSecretKeyRequestRepository(json),
     olmAccountRepository = ExposedOlmAccountRepository(),
     olmSessionRepository = ExposedOlmSessionRepository(json),
-    inboundMegolmSessionRepository = ExposedInboundMegolmSessionRepository(),
+    inboundMegolmSessionRepository = ExposedInboundMegolmSessionRepository(json),
     inboundMegolmMessageIndexRepository = ExposedInboundMegolmMessageIndexRepository(),
     outboundMegolmSessionRepository = ExposedOutboundMegolmSessionRepository(json),
     roomRepository = ExposedRoomRepository(json),

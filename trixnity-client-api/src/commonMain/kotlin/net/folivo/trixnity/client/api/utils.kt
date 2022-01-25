@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.api
 
 import io.ktor.http.*
+import kotlinx.coroutines.delay
+import net.folivo.trixnity.client.api.model.ErrorResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.MatrixId
 import kotlin.reflect.KClass
@@ -16,4 +18,28 @@ fun MatrixId.e(): String { // TODO remove when https://youtrack.jetbrains.com/is
 
 fun EventId.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
     return full.encodeURLQueryComponent(true)
+}
+
+fun String.e(): String { // TODO remove when https://youtrack.jetbrains.com/issue/KTOR-1658 is fixed
+    return this.encodeURLQueryComponent(true)
+}
+
+suspend fun <T> retryResultOnRateLimit(block: suspend () -> Result<T>): Result<T> {
+    val result = block()
+    val exception = result.exceptionOrNull()
+    return if (exception is MatrixServerException && exception.errorResponse is ErrorResponse.LimitExceeded) {
+        delay(exception.errorResponse.retryAfterMillis)
+        block()
+    } else result
+}
+
+suspend fun <T> retryOnRateLimit(block: suspend () -> T): T {
+    return try {
+        block()
+    } catch (e: MatrixServerException) {
+        if (e.errorResponse is ErrorResponse.LimitExceeded) {
+            delay(e.errorResponse.retryAfterMillis)
+            block()
+        } else throw e
+    }
 }

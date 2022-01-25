@@ -37,7 +37,7 @@ class RoomTimelineStore(
         RoomTimelineKey(eventId, roomId),
         persistIntoRepository,
         withTransaction = withTransaction,
-        updater
+        updater = updater
     )
 
     suspend fun addAll(events: List<TimelineEvent>, withTransaction: Boolean = true) {

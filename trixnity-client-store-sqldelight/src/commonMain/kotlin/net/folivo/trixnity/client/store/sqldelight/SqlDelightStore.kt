@@ -53,7 +53,7 @@ class SqlDelightStore(
     olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
     olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
     inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(
-        database.olmQueries, databaseCoroutineContext
+        database.olmQueries, json, databaseCoroutineContext
     ),
     inboundMegolmMessageIndexRepository = SqlDelightInboundMegolmMessageIndexRepository(
         database.olmQueries, databaseCoroutineContext

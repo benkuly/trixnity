@@ -7,9 +7,7 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class UtilsTest : ShouldSpec({
     timeout = 30_000
 

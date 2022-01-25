@@ -26,7 +26,7 @@ sealed class RoomKeyBackupSessionData {
             @SerialName("session_key")
             val sessionKey: String,
             @SerialName("algorithm")
-            val algorithm: RoomKeyBackupAlgorithm.RoomKeyBackupV1 = RoomKeyBackupAlgorithm.RoomKeyBackupV1
+            val algorithm: EncryptionAlgorithm = EncryptionAlgorithm.Megolm
         )
     }
 

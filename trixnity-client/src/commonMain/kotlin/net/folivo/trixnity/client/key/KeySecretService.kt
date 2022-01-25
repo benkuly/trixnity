@@ -7,18 +7,16 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
-import kotlinx.serialization.json.decodeFromJsonElement
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.get
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
-import net.folivo.trixnity.client.retryWhenSyncIs
+import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.core.model.UserId
@@ -31,16 +29,12 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventConte
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.UserSigningKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.days
-import kotlin.time.ExperimentalTime
 
 private val log = KotlinLogging.logger {}
 
@@ -149,19 +143,10 @@ class KeySecretService(
                     originalPublicKey != null && originalPublicKey == generatedPublicKey
                 }
                 M_MEGOLM_BACKUP_V1 -> {
-                    val generatedPublicKey = try {
-                        freeAfter(OlmPkDecryption.create(content.secret)) { it.publicKey }
-                    } catch (error: Throwable) {
-                        log.warn(error) { "could not generate public key from received secret" }
-                        return
-                    }
-                    val currentRoomKeysVersion = api.keys.getRoomKeysVersion().getOrNull()
-                    if (currentRoomKeysVersion !is GetRoomKeysVersionResponse.V1) {
-                        log.warn { "current room key backup version does not match v1 or there was no backup" }
-                        return
-                    }
-                    val originalPublicKey = currentRoomKeysVersion.authData.publicKey.value
-                    originalPublicKey == generatedPublicKey
+                    api.keys.getRoomKeysVersion().map {
+                        keyBackupCanBeTrusted(it, content.secret, ownUserId, store)
+                    }.onFailure { log.warn { "could not retrieve key backup version" } }
+                        .getOrElse { false }
                 }
                 null -> false
             }
@@ -189,7 +174,6 @@ class KeySecretService(
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     internal suspend fun cancelOldOutgoingKeyRequests() {
         store.keys.allSecretKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
@@ -249,7 +233,7 @@ class KeySecretService(
     }
 
     internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIs(
+        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
             scope = this
@@ -276,33 +260,6 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun decryptSecret(
-        key: ByteArray,
-        keyId: String,
-        keyInfo: SecretKeyEventContent,
-        secretName: String,
-        secret: SecretEventContent
-    ): String? {
-        log.trace { "try decrypt secret $secretName with key $keyId" }
-        val encryptedSecret = secret.encrypted[keyId] ?: return null
-        return when (keyInfo) {
-            is AesHmacSha2Key -> {
-                try {
-                    val encryptedData = api.json.decodeFromJsonElement<AesHmacSha2EncryptedData>(encryptedSecret)
-                    decryptAesHmacSha2(
-                        content = encryptedData,
-                        key = key,
-                        name = secretName
-                    ).decodeToString().also { log.debug { "decrypted secret $secretName" } }
-                } catch (error: Throwable) {
-                    log.warn(error) { "could not decrypt secret $secretName ($secret)" }
-                    null
-                }
-            }
-            is SecretKeyEventContent.Unknown -> null
-        }
-    }
-
     @OptIn(InternalAPI::class)
     internal suspend fun decryptMissingSecrets(
         key: ByteArray,
@@ -314,7 +271,7 @@ class KeySecretService(
             .mapNotNull { allowedSecret ->
                 val event = allowedSecret.getEncryptedSecret()
                 if (event != null) {
-                    decryptSecret(key, keyId, keyInfo, allowedSecret.id, event.content)
+                    decryptSecret(key, keyId, keyInfo, allowedSecret.id, event.content, api.json)
                         ?.let { allowedSecret to StoredSecret(event, it) }
                 } else {
                     log.warn { "could not find secret ${allowedSecret.id} to decrypt and cache" }

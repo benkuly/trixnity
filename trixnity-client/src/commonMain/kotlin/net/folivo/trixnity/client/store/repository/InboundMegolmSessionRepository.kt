@@ -4,8 +4,10 @@ import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 
-typealias InboundMegolmSessionRepository =
-        MinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>
+interface InboundMegolmSessionRepository :
+    MinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession> {
+    suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession>
+}
 
 data class InboundMegolmSessionRepositoryKey(
     val senderKey: Key.Curve25519Key,

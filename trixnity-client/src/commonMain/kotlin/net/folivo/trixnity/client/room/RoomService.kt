@@ -1,9 +1,12 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
@@ -14,6 +17,7 @@ import net.folivo.trixnity.client.api.model.rooms.Direction
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
@@ -33,9 +37,9 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
 private val log = KotlinLogging.logger {}
 
@@ -43,6 +47,7 @@ class RoomService(
     private val store: Store,
     private val api: MatrixApiClient,
     private val olm: OlmService,
+    private val key: KeyService,
     private val user: UserService,
     private val media: MediaService,
     private val setOwnMessagesAsFullyRead: Boolean = false,
@@ -50,8 +55,6 @@ class RoomService(
 ) {
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
-
-    private val eventsInDecryption = MutableStateFlow(setOf<Pair<CoroutineScope, TimelineEvent>>())
 
     suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -77,12 +80,7 @@ class RoomService(
     internal suspend fun handleSyncResponse(syncResponse: SyncResponse) {
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
-            store.room.update(roomId) { oldRoom ->
-                oldRoom ?: Room(
-                    roomId = roomId,
-                    membership = JOIN,
-                )
-            }
+            store.room.update(roomId) { it?.copy(membership = JOIN) ?: Room(roomId = roomId, membership = JOIN) }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
@@ -101,7 +99,7 @@ class RoomService(
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
-            store.room.update(room.key) { oldRoom -> oldRoom ?: Room(room.key, membership = LEAVE) }
+            store.room.update(room.key) { it?.copy(membership = LEAVE) ?: Room(room.key, membership = LEAVE) }
             room.value.timeline?.also {
                 addEventsToTimelineAtEnd(
                     roomId = room.key,
@@ -113,10 +111,10 @@ class RoomService(
             }
         }
         syncResponse.room?.knock?.entries?.forEach { (room, _) ->
-            store.room.update(room) { oldRoom -> oldRoom ?: Room(room, membership = KNOCK) }
+            store.room.update(room) { it?.copy(membership = KNOCK) ?: Room(room, membership = KNOCK) }
         }
         syncResponse.room?.invite?.entries?.forEach { (room, _) ->
-            store.room.update(room) { oldRoom -> oldRoom ?: Room(room, membership = INVITE) }
+            store.room.update(room) { it?.copy(membership = INVITE) ?: Room(room, membership = INVITE) }
         }
     }
 
@@ -683,7 +681,6 @@ class RoomService(
                 && this.event.content is MegolmEncryptedEventContent
                 && this.decryptedEvent == null
 
-    @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
     suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
@@ -693,25 +690,39 @@ class RoomService(
             val timelineEvent = it.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
-                val origEventsInDecryption =
-                    eventsInDecryption.getAndUpdate { events -> events + Pair(coroutineScope, timelineEvent) }
-                if (origEventsInDecryption.contains(Pair(coroutineScope, timelineEvent))) return@also
                 coroutineScope.launch {
-                    log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                    store.olm.waitForInboundMegolmSession(
-                        roomId,
-                        content.sessionId,
-                        content.senderKey,
-                        this
-                    )
+                    val session =
+                        store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
+                    val firstKnownIndex = session.value?.firstKnownIndex
+                    if (session.value == null) {
+                        key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                        log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
+                        store.olm.waitForInboundMegolmSession(
+                            roomId, content.sessionId, content.senderKey, this@launch
+                        )
+                    }
+                    log.trace { "try to decrypt event $eventId in $roomId" }
+                    @Suppress("UNCHECKED_CAST")
+                    val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
+                    val decryptEventAttempt = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
+                    val exception = decryptEventAttempt.exceptionOrNull()
+                    val decryptedEvent =
+                        if (exception is OlmLibraryException && exception.message == "OLM_UNKNOWN_MESSAGE_INDEX") {
+                            key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                            log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                            store.olm.waitForInboundMegolmSession(
+                                roomId,
+                                content.sessionId,
+                                content.senderKey,
+                                this@launch,
+                                firstKnownIndexLessThen = firstKnownIndex
+                            )
+                            kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
+                        } else decryptEventAttempt
                     store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
-                        if (oldEvent?.canBeDecrypted() == true) {
-                            log.debug { "try to decrypt event $eventId in $roomId" }
-                            @Suppress("UNCHECKED_CAST")
-                            val encryptedEvent = oldEvent.event as MessageEvent<MegolmEncryptedEventContent>
-                            val decryptedEvent = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
-                            timelineEvent.copy(decryptedEvent = decryptedEvent)
-                        } else oldEvent
+                        // we check here again, because an event could be redacted at the same time
+                        if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(decryptedEvent = decryptedEvent)
+                        else oldEvent
                     }
                 }
             }
@@ -766,11 +777,11 @@ class RoomService(
         requireNotNull(content)
         store.roomOutboxMessage.add(
             RoomOutboxMessage(
-                uuid4().toString(),
-                roomId,
-                content,
-                null,
-                MutableStateFlow(null)
+                transactionId = uuid4().toString(),
+                roomId = roomId,
+                content = content,
+                sentAt = null,
+                mediaUploadProgress = MutableStateFlow(null)
             )
         )
     }
@@ -785,7 +796,6 @@ class RoomService(
     }
 
     // we do this at the end of the sync, because it may be possible, that we missed events due to a gap
-    @OptIn(ExperimentalTime::class)
     internal suspend fun removeOldOutboxMessages() {
         val outboxMessages = store.roomOutboxMessage.getAll().value
         outboxMessages.forEach {
@@ -798,7 +808,7 @@ class RoomService(
     }
 
     internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
-        api.sync.currentSyncState.retryWhenSyncIs(
+        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
@@ -822,6 +832,7 @@ class RoomService(
                                 }
                                 possiblyEncryptEvent(uploadedContent, roomId, store, olm, user)
                             }
+                        log.trace { "send to $roomId -> $content" }
                         val eventId =
                             api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId).getOrThrow()
                         if (setOwnMessagesAsFullyRead) {

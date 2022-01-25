@@ -9,13 +9,17 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.SyncApiClient.SyncState.*
+import net.folivo.trixnity.client.api.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
+import net.folivo.trixnity.client.api.model.sync.SyncResponse.DeviceLists
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import kotlin.coroutines.cancellation.CancellationException
 
 typealias SyncResponseSubscriber = suspend (SyncResponse) -> Unit
+typealias DeviceListsSubscriber = suspend (DeviceLists?) -> Unit
+typealias DeviceOneTimeKeysCountSubscriber = suspend (DeviceOneTimeKeysCount?) -> Unit
 
 typealias AfterSyncResponseSubscriber = suspend () -> Unit
 
@@ -101,26 +105,31 @@ class SyncApiClient(
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
     val currentSyncState = _currentSyncState.asStateFlow()
 
+    private val deviceListsSubscribers: MutableStateFlow<Set<DeviceListsSubscriber>> = MutableStateFlow(setOf())
+    fun subscribeDeviceLists(subscriber: DeviceListsSubscriber) = deviceListsSubscribers.update { it + subscriber }
+    fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber) = deviceListsSubscribers.update { it - subscriber }
+
+    private val deviceOneTimeKeysCountSubscribers: MutableStateFlow<Set<DeviceOneTimeKeysCountSubscriber>> =
+        MutableStateFlow(setOf())
+
+    fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+        deviceOneTimeKeysCountSubscribers.update { it + subscriber }
+
+    fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+        deviceOneTimeKeysCountSubscribers.update { it - subscriber }
+
     private val syncResponseSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> = MutableStateFlow(setOf())
-
-    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) {
-        syncResponseSubscribers.update { it + subscriber }
-    }
-
-    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) {
-        syncResponseSubscribers.update { it - subscriber }
-    }
+    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) = syncResponseSubscribers.update { it + subscriber }
+    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) = syncResponseSubscribers.update { it - subscriber }
 
     private val afterSyncResponseSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
         MutableStateFlow(setOf())
 
-    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) {
+    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
         afterSyncResponseSubscribers.update { it + subscriber }
-    }
 
-    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) {
+    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
         afterSyncResponseSubscribers.update { it - subscriber }
-    }
 
     enum class SyncState {
         INITIAL_SYNC,
@@ -153,12 +162,23 @@ class SyncApiClient(
                         .collect { response ->
                             // this scope forces, that we wait for processing events of all subscribers
                             coroutineScope {
+
+                                coroutineScope {
+                                    deviceOneTimeKeysCountSubscribers.value.forEach { launch { it.invoke(response.deviceOneTimeKeysCount) } }
+                                }
+                                coroutineScope {
+                                    deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
+                                }
+
+                                // do it at first, to be able to decrypt stuff
+                                response.toDevice?.events?.forEach { emitEvent(it) }
+                                // do it at first, to be able to decrypt stuff
+                                response.accountData?.events?.forEach { emitEvent(it) }
+
                                 coroutineScope {
                                     syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
                                 }
-                                // do it at first, to be able to decrypt stuff
-                                response.toDevice?.events?.forEach { emitEvent(it) }
-                                response.accountData?.events?.forEach { emitEvent(it) }
+
                                 coroutineScope {
                                     launch { response.presence?.events?.forEach { emitEvent(it) } }
                                     launch {
