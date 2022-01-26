@@ -32,7 +32,7 @@ This project contains the following sub-projects, which can be used independentl
     - [x] E2E (olm, megolm)
     - [x] verification
     - [x] cross signing
-    - [ ] room key backup
+    - [x] room key backup
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
