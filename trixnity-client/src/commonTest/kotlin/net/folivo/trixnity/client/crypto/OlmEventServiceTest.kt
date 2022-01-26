@@ -619,9 +619,42 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
         }
-
         context("without stored session") {
             testEncryption(EncryptionEventContent(), 1)
+            should("not send room keys, when not possible to encrypt them due to missing one time keys") {
+                val otherRoom = RoomId("otherRoom", "server")
+                val cedric = UserId("cedric", "server")
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event1"),
+                        alice,
+                        otherRoom,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    StateEvent(
+                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        EventId("\$event2"),
+                        cedric,
+                        otherRoom,
+                        1235,
+                        stateKey = cedric.full
+                    )
+                ).forEach { store.roomState.update(it) }
+
+
+                store.keys.outdatedKeys.value = setOf(cedric)
+                val asyncResult = async { cut.encryptMegolm(eventContent, otherRoom, EncryptionEventContent()) }
+                store.keys.outdatedKeys.subscriptionCount.takeWhile { it == 1 }.take(1).collect()
+                asyncResult.isActive shouldBe true
+                store.keys.outdatedKeys.value = setOf()
+                asyncResult.await()
+
+                coVerify(exactly = 0) {
+                    api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any())
+                }
+            }
         }
         context("with stored session") {
             context("send sessions to new devices and encrypt") {

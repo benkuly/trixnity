@@ -267,20 +267,22 @@ class OlmEventService internal constructor(
                 sessionKey = session.sessionKey,
                 algorithm = Megolm
             )
+            
             log.debug { "send megolm key to devices: $newUserDevicesWithoutUs" }
-            api.users.sendToDevice(
-                newUserDevicesWithoutUs.mapValues { (user, devices) ->
-                    devices.filterNot { user == ownUserId && it == ownDeviceId }
-                        .mapNotNull { deviceName ->
-                            try {
-                                deviceName to encryptOlm(roomKeyEventContent, user, deviceName)
-                            } catch (e: Throwable) {
-                                log.debug { "could not encrypt olm: ${e.stackTraceToString()}" }
-                                null
-                            }
-                        }.toMap()
-                }
-            )
+            val eventsToSend = newUserDevicesWithoutUs.mapNotNull { (user, devices) ->
+                val deviceEvents = devices.filterNot { user == ownUserId && it == ownDeviceId }
+                    .mapNotNull { deviceName ->
+                        try {
+                            deviceName to encryptOlm(roomKeyEventContent, user, deviceName)
+                        } catch (e: Throwable) {
+                            log.debug { "could not encrypt olm: ${e.stackTraceToString()}" }
+                            null
+                        }
+                    }.toMap()
+                if (deviceEvents.isEmpty()) null
+                else user to deviceEvents
+            }.toMap()
+            if (eventsToSend.isNotEmpty()) api.users.sendToDevice(eventsToSend)
         }
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)
