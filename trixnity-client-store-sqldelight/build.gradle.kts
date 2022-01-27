@@ -61,6 +61,7 @@ kotlin {
             dependencies {
                 implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsTest by getting

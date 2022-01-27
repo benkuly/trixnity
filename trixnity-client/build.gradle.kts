@@ -109,12 +109,12 @@ kotlin {
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-datatest:${Versions.kotest}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
 //        val jsTest by getting

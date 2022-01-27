@@ -111,17 +111,11 @@ class OlmService(
 
     internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
         if (event is ToDeviceEvent) {
-            val decryptedEvent = try {
-                events.decryptOlm(event.content, event.sender)
-            } catch (e: KeyException) {
-                log.error(e) { "could not decrypt $event" }
-                null
-            } catch (e: SessionException) {
-                log.error(e) { "could not decrypt $event" }
-                null
-            }
-            if (decryptedEvent != null) {
+            try {
+                val decryptedEvent = events.decryptOlm(event.content, event.sender)
                 _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
+            } catch (e: Exception) {
+                log.error(e) { "could not decrypt $event" }
             }
         }
     }

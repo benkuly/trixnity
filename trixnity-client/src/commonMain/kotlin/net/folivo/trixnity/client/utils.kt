@@ -3,8 +3,11 @@ package net.folivo.trixnity.client
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.OlmService
@@ -102,7 +105,7 @@ suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
     scope: CoroutineScope,
-    block: suspend CoroutineScope.() -> Unit
+    block: suspend () -> Unit
 ) {
     val syncStates = listOf(syncState) + moreSyncStates
     val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
@@ -119,9 +122,7 @@ suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
         try {
             schedule.retry {
                 retryOnRateLimit {
-                    coroutineScope {
-                        block()
-                    }
+                    block()
                 }
             }
         } catch (error: Throwable) {
@@ -140,7 +141,7 @@ suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
     scope: CoroutineScope,
-    block: suspend CoroutineScope.() -> T
+    block: suspend () -> T
 ): T {
     val syncStates = listOf(syncState) + moreSyncStates
     val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
@@ -159,9 +160,7 @@ suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
                 emit(
                     schedule.retry {
                         retryOnRateLimit {
-                            coroutineScope {
-                                block()
-                            }
+                            block()
                         }
                     }
                 )

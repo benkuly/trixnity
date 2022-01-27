@@ -4,7 +4,9 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.http.HttpMethod.Companion.Get
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
@@ -60,44 +62,6 @@ class SyncApiClient(
                 }
             }
         }
-
-    internal fun syncLoop(
-        filter: String? = null,
-        setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
-        asUserId: UserId? = null
-    ): Flow<SyncResponse> {
-        return flow {
-            while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
-                try {
-                    val batchToken = currentBatchToken.value
-                    val response = syncOnce(
-                        filter = filter,
-                        setPresence = setPresence,
-                        fullState = false,
-                        since = batchToken,
-                        timeout = if (currentBatchToken.value == null) 0L else timeout,
-                        asUserId = asUserId
-                    ).getOrThrow()
-                    emit(response)
-                    currentBatchToken.value = response.nextBatch
-                    updateSyncState(RUNNING)
-                } catch (error: Throwable) {
-                    when (error) {
-                        is HttpRequestTimeoutException -> updateSyncState(TIMEOUT)
-                        is CancellationException -> throw error
-                        else -> updateSyncState(ERROR)
-                    }
-                    log.info { "error while sync to server: $error" }
-                    log.debug { error.stackTraceToString() }
-                    delay(5000)// TODO better retry policy!
-                    if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
-                }
-            }
-        }
-    }
-
 
     private var syncJob: Job? = null
     private val startStopMutex = Mutex()
@@ -157,71 +121,93 @@ class SyncApiClient(
                 val isInitialSync = currentBatchToken.value == null
                 if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
 
-                try {
-                    syncLoop(filter, setPresence, currentBatchToken, timeout, asUserId)
-                        .collect { response ->
-                            // this scope forces, that we wait for processing events of all subscribers
-                            coroutineScope {
-
-                                coroutineScope {
-                                    deviceOneTimeKeysCountSubscribers.value.forEach { launch { it.invoke(response.deviceOneTimeKeysCount) } }
-                                }
-                                coroutineScope {
-                                    deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
-                                }
-
-                                // do it at first, to be able to decrypt stuff
-                                response.toDevice?.events?.forEach { emitEvent(it) }
-                                // do it at first, to be able to decrypt stuff
-                                response.accountData?.events?.forEach { emitEvent(it) }
-
-                                coroutineScope {
-                                    syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
-                                }
-
-                                coroutineScope {
-                                    launch { response.presence?.events?.forEach { emitEvent(it) } }
-                                    launch {
-                                        response.room?.join?.forEach { (_, joinedRoom) ->
-                                            joinedRoom.state?.events?.forEach { emitEvent(it) }
-                                            joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                                            joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                                            joinedRoom.accountData?.events?.forEach { emitEvent(it) }
-                                        }
-                                    }
-                                    launch {
-                                        response.room?.invite?.forEach { (_, invitedRoom) ->
-                                            invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                                        }
-                                    }
-                                    launch {
-                                        response.room?.knock?.forEach { (_, invitedRoom) ->
-                                            invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                                        }
-                                    }
-                                    launch {
-                                        response.room?.leave?.forEach { (_, leftRoom) ->
-                                            leftRoom.state?.events?.forEach { emitEvent(it) }
-                                            leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                                            leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                                        }
-                                    }
-                                }
-                                coroutineScope {
-                                    afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
-                                }
-                            }
-                            log.debug { "processed sync response" }
+                while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
+                    try {
+                        val batchToken = currentBatchToken.value
+                        val response = syncOnce(
+                            filter = filter,
+                            setPresence = setPresence,
+                            fullState = false,
+                            since = batchToken,
+                            timeout = if (currentBatchToken.value == null) 0L else timeout,
+                            asUserId = asUserId
+                        ).getOrThrow()
+                        processSyncResponse(response)
+                        log.debug { "processed sync response" }
+                        currentBatchToken.value = response.nextBatch
+                        updateSyncState(RUNNING)
+                    } catch (error: Throwable) {
+                        when (error) {
+                            is HttpRequestTimeoutException -> updateSyncState(TIMEOUT)
+                            is CancellationException -> throw error
+                            else -> updateSyncState(ERROR)
                         }
-                } catch (error: Throwable) {
-                    log.info { "stopped syncLoop: ${error.message}" }
+                        log.info { "error while sync to server: $error" }
+                        log.debug { error.stackTraceToString() }
+                        delay(5000)// TODO better retry policy!
+                        if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
+                    }
                 }
             }
             syncJob?.invokeOnCompletion {
+                log.info { "stopped syncLoop" }
                 _currentSyncState.value = STOPPED
             }
         }
         if (wait) syncJob?.join()
+    }
+
+    private suspend fun processSyncResponse(response: SyncResponse) = coroutineScope {
+        coroutineScope {
+
+            coroutineScope {
+                deviceOneTimeKeysCountSubscribers.value.forEach { launch { it.invoke(response.deviceOneTimeKeysCount) } }
+            }
+            coroutineScope {
+                deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
+            }
+
+            // do it at first, to be able to decrypt stuff
+            response.toDevice?.events?.forEach { emitEvent(it) }
+            // do it at first, to be able to decrypt stuff
+            response.accountData?.events?.forEach { emitEvent(it) }
+
+            coroutineScope {
+                syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
+            }
+
+            coroutineScope {
+                launch { response.presence?.events?.forEach { emitEvent(it) } }
+                launch {
+                    response.room?.join?.forEach { (_, joinedRoom) ->
+                        joinedRoom.state?.events?.forEach { emitEvent(it) }
+                        joinedRoom.timeline?.events?.forEach { emitEvent(it) }
+                        joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                        joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                    }
+                }
+                launch {
+                    response.room?.invite?.forEach { (_, invitedRoom) ->
+                        invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
+                    }
+                }
+                launch {
+                    response.room?.knock?.forEach { (_, invitedRoom) ->
+                        invitedRoom.knockState?.events?.forEach { emitEvent(it) }
+                    }
+                }
+                launch {
+                    response.room?.leave?.forEach { (_, leftRoom) ->
+                        leftRoom.state?.events?.forEach { emitEvent(it) }
+                        leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                        leftRoom.accountData?.events?.forEach { emitEvent(it) }
+                    }
+                }
+            }
+            coroutineScope {
+                afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
+            }
+        }
     }
 
     suspend fun stop(wait: Boolean = false) {
