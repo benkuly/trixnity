@@ -85,13 +85,13 @@ val scope = CoroutineScope(Dispatchers.Default)
 val matrixClient = MatrixClient.fromStore(
     storeFactory = storeFactory,
     scope = scope,
-) ?: MatrixClient.login(
+).getOrThrow() ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
     storeFactory = storeFactory,
     scope = scope,
-)
+).getOrThrow()
 ```
 
 It is important, that you call `matrixClient.startSync()` to fully start the client.

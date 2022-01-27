@@ -350,7 +350,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope,
-            )
+            ).getOrThrow()
             assertNotNull(cut)
 
             cut.displayName.first { it != null } shouldBe "bob"

@@ -216,7 +216,7 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
-        ): MatrixClient? {
+        ): Result<MatrixClient?> = kotlin.runCatching {
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixApiClientJson(eventContentSerializerMappings)
 
@@ -229,7 +229,7 @@ class MatrixClient private constructor(
             val deviceId = store.account.deviceId.value
             val olmPickleKey = store.account.olmPickleKey.value
 
-            return if (olmPickleKey != null && accessToken != null && userId != null && deviceId != null && baseUrl != null) {
+            if (olmPickleKey != null && accessToken != null && userId != null && deviceId != null && baseUrl != null) {
                 val api = MatrixApiClient(
                     baseUrl = baseUrl,
                     baseHttpClient = baseHttpClient,

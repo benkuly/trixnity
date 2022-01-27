@@ -28,7 +28,7 @@ suspend fun timelineExample() = coroutineScope {
     val matrixClient = MatrixClient.fromStore(
         storeFactory = createStoreFactory(),
         scope = scope,
-    ) ?: MatrixClient.login(
+    ).getOrThrow() ?: MatrixClient.login(
         baseUrl = baseUrl,
         User(username),
         password,
