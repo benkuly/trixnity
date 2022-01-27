@@ -69,7 +69,11 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+            }
+        }
         val jsTest by getting
 //        val nativeTest = create("nativeTest") {
 //            dependsOn(commonTest)

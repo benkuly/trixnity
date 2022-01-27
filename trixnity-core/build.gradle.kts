@@ -54,7 +54,11 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+            }
+        }
         val jsTest by getting
         val nativeTest = create("nativeTest") {
             dependsOn(commonTest)

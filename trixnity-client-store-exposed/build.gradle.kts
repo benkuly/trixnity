@@ -48,6 +48,7 @@ kotlin {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("com.h2database:h2:${Versions.h2}")
+                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
     }
