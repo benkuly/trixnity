@@ -133,7 +133,7 @@ class SyncApiClient(
                             asUserId = asUserId
                         ).getOrThrow()
                         processSyncResponse(response)
-                        log.debug { "processed sync response" }
+                        log.debug { "processed sync response with token ${currentBatchToken.value}" }
                         currentBatchToken.value = response.nextBatch
                         updateSyncState(RUNNING)
                     } catch (error: Throwable) {
@@ -142,7 +142,7 @@ class SyncApiClient(
                             is CancellationException -> throw error
                             else -> updateSyncState(ERROR)
                         }
-                        log.info { "error while sync to server: $error" }
+                        log.info { "error while sync with token ${currentBatchToken.value}: $error" }
                         log.debug { error.stackTraceToString() }
                         delay(5000)// TODO better retry policy!
                         if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
