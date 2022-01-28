@@ -701,7 +701,8 @@ class RoomService(
                     log.trace { "try to decrypt event $eventId in $roomId" }
                     @Suppress("UNCHECKED_CAST")
                     val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
-                    val decryptEventAttempt = kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
+
+                    val decryptEventAttempt = encryptedEvent.decryptCatching()
                     val exception = decryptEventAttempt.exceptionOrNull()
                     val decryptedEvent =
                         if (exception is OlmLibraryException && exception.message == "OLM_UNKNOWN_MESSAGE_INDEX") {
@@ -714,12 +715,7 @@ class RoomService(
                                 this@launch,
                                 firstKnownIndexLessThen = firstKnownIndex
                             )
-                            try {
-                                Result.success(olm.events.decryptMegolm(encryptedEvent))
-                            } catch (ex: Exception) {
-                                if (ex is CancellationException) throw ex
-                                else Result.failure(ex)
-                            }
+                            encryptedEvent.decryptCatching()
                         } else decryptEventAttempt
                     store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
                         // we check here again, because an event could be redacted at the same time
@@ -728,6 +724,15 @@ class RoomService(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<MegolmEvent<*>> {
+        return try {
+            Result.success(olm.events.decryptMegolm(this))
+        } catch (ex: Exception) {
+            if (ex is CancellationException) throw ex
+            else Result.failure(ex)
         }
     }
 
