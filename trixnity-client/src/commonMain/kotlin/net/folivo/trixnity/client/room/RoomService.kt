@@ -1,12 +1,9 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
@@ -717,7 +714,12 @@ class RoomService(
                                 this@launch,
                                 firstKnownIndexLessThen = firstKnownIndex
                             )
-                            kotlin.runCatching { olm.events.decryptMegolm(encryptedEvent) }
+                            try {
+                                Result.success(olm.events.decryptMegolm(encryptedEvent))
+                            } catch (ex: Exception) {
+                                if (ex is CancellationException) throw ex
+                                else Result.failure(ex)
+                            }
                         } else decryptEventAttempt
                     store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
                         // we check here again, because an event could be redacted at the same time
