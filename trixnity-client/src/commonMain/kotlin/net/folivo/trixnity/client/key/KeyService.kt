@@ -5,8 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.INITIAL_SYNC
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.client.api.SyncApiClient.SyncState.*
 import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.api.injectOnSuccessIntoUIA
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
@@ -41,6 +40,7 @@ import kotlin.collections.component2
 import kotlin.collections.flatMap
 import kotlin.collections.toSet
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger {}
@@ -82,7 +82,8 @@ class KeyService(
     @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
         api.sync.currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING, INITIAL_SYNC,
+            STARTED, INITIAL_SYNC, RUNNING,
+            scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
             scope = this

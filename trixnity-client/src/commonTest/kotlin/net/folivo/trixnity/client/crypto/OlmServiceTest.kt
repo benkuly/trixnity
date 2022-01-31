@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
@@ -28,19 +29,20 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
@@ -224,6 +226,30 @@ class OlmServiceTest : ShouldSpec({
         }
     }
     context(OlmService::handleOlmEncryptedToDeviceEvents.name) {
+        context("exceptions") {
+            lateinit var spyCut: OlmService
+            beforeTest { spyCut = spyk(cut) }
+            val event = ToDeviceEvent(
+                EncryptedEventContent.OlmEncryptedEventContent(
+                    mapOf(), Curve25519Key(null, "")
+                ),
+                UserId("sender", "server")
+            )
+            should("catch ${KeyException::class.simpleName}") {
+                coEvery { spyCut.events.decryptOlm(any(), any()) } throws KeyException.KeyNotFoundException("")
+                spyCut.handleOlmEncryptedToDeviceEvents(event)
+            }
+            should("catch ${SessionException::class.simpleName}") {
+                coEvery { spyCut.events.decryptOlm(any(), any()) } throws SessionException.CouldNotDecrypt
+                spyCut.handleOlmEncryptedToDeviceEvents(event)
+            }
+            should("not catch other exceptions") {
+                coEvery { spyCut.events.decryptOlm(any(), any()) } throws IllegalArgumentException("")
+                shouldThrow<IllegalArgumentException> {
+                    spyCut.handleOlmEncryptedToDeviceEvents(event)
+                }
+            }
+        }
         should("emit decrypted events") {
             val bobStore = InMemoryStore(storeScope).apply { init() }
             val bobOlmService = OlmService("", bob, bobDevice, bobStore, api, json)

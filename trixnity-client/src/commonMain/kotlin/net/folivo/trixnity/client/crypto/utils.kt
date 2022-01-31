@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
@@ -17,7 +17,7 @@ import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
-    withTimeoutOrNull(30_000) {
+    withTimeout(30_000) {
         outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
     }
 }
