@@ -114,7 +114,9 @@ class OlmService(
             try {
                 val decryptedEvent = events.decryptOlm(event.content, event.sender)
                 _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
-            } catch (e: Exception) {
+            } catch (e: KeyException) {
+                log.error(e) { "could not decrypt $event" }
+            } catch (e: SessionException) {
                 log.error(e) { "could not decrypt $event" }
             }
         }
