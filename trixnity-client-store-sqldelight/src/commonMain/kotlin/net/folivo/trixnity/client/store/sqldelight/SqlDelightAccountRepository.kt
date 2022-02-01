@@ -22,7 +22,7 @@ class SqlDelightAccountRepository(
                 syncBatchToken = it.sync_batch_token,
                 filterId = it.filter_id,
                 displayName = it.display_name,
-                avatarUrl = it.avatar_url?.let { it1 -> Url(it1) },
+                avatarUrl = it.avatar_url,
             )
         }
     }

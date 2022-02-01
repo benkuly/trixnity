@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.user
 
-import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
@@ -132,7 +131,7 @@ class UserService(
                 api.users.getProfile(userId)
                     .onSuccess {
                         store.account.displayName.value = it.displayName
-                        store.account.avatarUrl.value = it.avatarUrl?.let { url -> Url(url) }
+                        store.account.avatarUrl.value = it.avatarUrl
                     }.getOrThrow()
             }
         }

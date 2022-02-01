@@ -31,7 +31,7 @@ class SqlDelightAccountRepositoryTest : ShouldSpec({
             "syncToken",
             "filterId",
             "displayName",
-            Url("mxc://localhost/123456"),
+            "mxc://localhost/123456",
         )
         cut.save(1, account)
         cut.get(1) shouldBe account

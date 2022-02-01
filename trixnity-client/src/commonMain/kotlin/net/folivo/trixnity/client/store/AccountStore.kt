@@ -22,7 +22,7 @@ class AccountStore(
     val syncBatchToken = MutableStateFlow<String?>(null)
     val filterId = MutableStateFlow<String?>(null)
     val displayName = MutableStateFlow<String?>(null)
-    val avatarUrl = MutableStateFlow<Url?>(null)
+    val avatarUrl = MutableStateFlow<String?>(null)
 
     suspend fun init() {
         val account = rtm.transaction { repository.get(1) }
@@ -58,7 +58,7 @@ class AccountStore(
                     syncBatchToken = values[5] as String?,
                     filterId = values[6] as String?,
                     displayName = values[7] as String?,
-                    avatarUrl = values[8] as Url?,
+                    avatarUrl = values[8] as String?,
                 )
             }.collect { rtm.transaction { repository.save(1, it) } }
         }
