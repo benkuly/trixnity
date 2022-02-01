@@ -10,11 +10,12 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
@@ -37,6 +38,8 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         override val deviceId: String,
         @SerialName("session_id")
         override val sessionId: String,
+        @SerialName("m.relates_to")
+        override val relatesTo: RelatesTo? = null,
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
     ) : EncryptedEventContent()
@@ -51,6 +54,8 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         override val deviceId: String? = null,
         @SerialName("session_id")
         override val sessionId: String? = null,
+        @SerialName("m.relates_to")
+        override val relatesTo: RelatesTo? = null,
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
     ) : EncryptedEventContent() {
@@ -88,6 +93,8 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         override val deviceId: String? = null,
         @SerialName("session_id")
         override val sessionId: String? = null,
+        @SerialName("m.relates_to")
+        override val relatesTo: RelatesTo? = null,
         @SerialName("algorithm")
         override val algorithm: Unknown
     ) : EncryptedEventContent()

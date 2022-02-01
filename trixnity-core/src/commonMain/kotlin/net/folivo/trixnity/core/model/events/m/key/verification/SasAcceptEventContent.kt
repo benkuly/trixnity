@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events.m.key.verification
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.DECIMAL
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.EMOJI
 
@@ -21,7 +22,7 @@ data class SasAcceptEventContent(
     @SerialName("short_authentication_string")
     val shortAuthenticationString: Set<SasMethod> = setOf(DECIMAL, EMOJI),
     @SerialName("m.relates_to")
-    override val relatesTo: VerificationStepRelatesTo?,
+    override val relatesTo: RelatesTo.Reference?,
     @SerialName("transaction_id")
     override val transactionId: String?,
 ) : VerificationStep

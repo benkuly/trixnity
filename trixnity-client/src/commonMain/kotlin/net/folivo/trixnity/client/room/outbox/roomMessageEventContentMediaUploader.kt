@@ -95,6 +95,6 @@ suspend fun roomMessageEventContentMediaUploader(
                 content.copy(url = mxcUri)
             } else content
         }
-        is UnknownMessageEventContent -> content
+        is UnknownRoomMessageEventContent -> content
     }
 }

@@ -4,13 +4,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContentSerializer
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.createEncryptedEventContentSerializersModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +33,8 @@ class EncryptedEventContentSerializerTest {
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
-                algorithm = Megolm
+                algorithm = Megolm,
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
             )
         )
         val expectedResult = """
@@ -40,6 +43,10 @@ class EncryptedEventContentSerializerTest {
             "sender_key":"<sender_curve25519_key>",
             "device_id":"<sender_device_id>",
             "session_id":"<outbound_group_session_id>",
+            "m.relates_to":{
+                "event_id":"$1234",
+                "rel_type":"m.reference"
+            },
             "algorithm":"m.megolm.v1.aes-sha2"
           }
         """.trimIndent().lines().joinToString("") { it.trim() }
@@ -54,7 +61,11 @@ class EncryptedEventContentSerializerTest {
             "sender_key": "<sender_curve25519_key>",
             "device_id": "<sender_device_id>",
             "session_id": "<outbound_group_session_id>",
-            "ciphertext": "<encrypted_payload_base_64>"
+            "ciphertext": "<encrypted_payload_base_64>",
+            "m.relates_to":{
+                "event_id":"$1234",
+                "rel_type":"m.reference"
+            }
           }
         """.trimIndent()
         val result = json.decodeFromString<EncryptedEventContent>(input)
@@ -64,7 +75,8 @@ class EncryptedEventContentSerializerTest {
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
-                algorithm = Megolm
+                algorithm = Megolm,
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )
     }
@@ -78,7 +90,8 @@ class EncryptedEventContentSerializerTest {
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
-                algorithm = Olm
+                algorithm = Olm,
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
             )
         )
         val expectedResult = """
@@ -90,6 +103,10 @@ class EncryptedEventContentSerializerTest {
                   }
                 },
                 "sender_key":"<sender_curve25519_key>",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.reference"
+                },
                 "algorithm":"m.olm.v1.curve25519-aes-sha2"
             }
         """.trimIndent().lines().joinToString("") { it.trim() }
@@ -107,6 +124,10 @@ class EncryptedEventContentSerializerTest {
                 "type": 0,
                 "body": "<encrypted_payload_base_64>"
               }
+            },
+            "m.relates_to":{
+                "event_id":"$1234",
+                "rel_type":"m.reference"
             }
           }
         """.trimIndent()
@@ -117,7 +138,8 @@ class EncryptedEventContentSerializerTest {
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
-                algorithm = Olm
+                algorithm = Olm,
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )
     }
@@ -133,6 +155,10 @@ class EncryptedEventContentSerializerTest {
                 "type": 0,
                 "body": "<encrypted_payload_base_64>"
               }
+            },
+            "m.relates_to":{
+                "event_id":"$1234",
+                "rel_type":"m.reference"
             }
           }
         """.trimIndent()
@@ -151,7 +177,8 @@ class EncryptedEventContentSerializerTest {
                             )
                         )
                     )
-                )
+                ),
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )
     }

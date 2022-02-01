@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.serialization.SerializationException
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
@@ -241,6 +242,10 @@ class OlmServiceTest : ShouldSpec({
             }
             should("catch ${SessionException::class.simpleName}") {
                 coEvery { spyCut.events.decryptOlm(any(), any()) } throws SessionException.CouldNotDecrypt
+                spyCut.handleOlmEncryptedToDeviceEvents(event)
+            }
+            should("catch ${SerializationException::class.simpleName}") {
+                coEvery { spyCut.events.decryptOlm(any(), any()) } throws SerializationException("")
                 spyCut.handleOlmEncryptedToDeviceEvents(event)
             }
             should("not catch other exceptions") {

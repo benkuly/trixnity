@@ -8,6 +8,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import net.folivo.trixnity.core.model.events.RelatesTo
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationcancel">matrix spec</a>
@@ -19,7 +20,7 @@ data class VerificationCancelEventContent(
     @SerialName("reason")
     val reason: String,
     @SerialName("m.relates_to")
-    override val relatesTo: VerificationStepRelatesTo?,
+    override val relatesTo: RelatesTo.Reference?,
     @SerialName("transaction_id")
     override val transactionId: String?,
 ) : VerificationStep {

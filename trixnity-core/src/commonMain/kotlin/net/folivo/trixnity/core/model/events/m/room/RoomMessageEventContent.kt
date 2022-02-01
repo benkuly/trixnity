@@ -10,6 +10,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
@@ -29,6 +30,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.notice"
@@ -43,6 +45,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.text"
@@ -57,6 +60,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.emote"
@@ -71,7 +75,8 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("info") val info: ImageInfo? = null,
         @SerialName("url") val url: String? = null,
-        @SerialName("file") val file: EncryptedFile? = null
+        @SerialName("file") val file: EncryptedFile? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.image"
@@ -87,7 +92,8 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("filename") val fileName: String? = null,
         @SerialName("info") val info: FileInfo? = null,
         @SerialName("url") val url: String? = null,
-        @SerialName("file") val file: EncryptedFile? = null
+        @SerialName("file") val file: EncryptedFile? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.file"
@@ -102,7 +108,8 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("info") val info: AudioInfo? = null,
         @SerialName("url") val url: String? = null,
-        @SerialName("file") val file: EncryptedFile? = null
+        @SerialName("file") val file: EncryptedFile? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.audio"
@@ -117,7 +124,8 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String,
         @SerialName("info") val info: VideoInfo? = null,
         @SerialName("url") val url: String? = null,
-        @SerialName("file") val file: EncryptedFile? = null
+        @SerialName("file") val file: EncryptedFile? = null,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
         companion object {
             const val type = "m.video"
@@ -130,16 +138,18 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("to") val to: UserId,
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request. (m.key.verification.request) Apparently your client doesn't support this.",
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent(), VerificationRequest {
         companion object {
             const val type = "m.key.verification.request"
         }
     }
 
-    data class UnknownMessageEventContent(
+    data class UnknownRoomMessageEventContent(
         val type: String,
         override val body: String,
-        val raw: JsonObject
+        val raw: JsonObject,
+        override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent()
 }
 
@@ -169,9 +179,11 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 decoder.json.decodeFromJsonElement(VerificationRequestMessageEventContentSerializer, jsonObj)
             else -> {
                 val body = jsonObj["body"]?.jsonPrimitive?.content
+                val relatesTo: RelatesTo? =
+                    jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
                 requireNotNull(type)
                 requireNotNull(body)
-                RoomMessageEventContent.UnknownMessageEventContent(type, body, jsonObj)
+                RoomMessageEventContent.UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
             }
         }
     }
@@ -195,7 +207,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 encoder.json.encodeToJsonElement(VideoMessageEventContentSerializer, value)
             is RoomMessageEventContent.VerificationRequestMessageEventContent ->
                 encoder.json.encodeToJsonElement(VerificationRequestMessageEventContentSerializer, value)
-            is RoomMessageEventContent.UnknownMessageEventContent -> value.raw
+            is RoomMessageEventContent.UnknownRoomMessageEventContent -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
     }

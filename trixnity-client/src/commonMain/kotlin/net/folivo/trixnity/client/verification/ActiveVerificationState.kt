@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 
 sealed interface ActiveVerificationState {
@@ -13,7 +14,7 @@ sealed interface ActiveVerificationState {
         val content: VerificationRequest,
         private val ownDeviceId: String,
         private val supportedMethods: Set<VerificationMethod>,
-        private val relatesTo: VerificationStepRelatesTo?,
+        private val relatesTo: RelatesTo.Reference?,
         private val transactionId: String?,
         private val send: suspend (VerificationStep) -> Unit
     ) : ActiveVerificationState {
@@ -25,7 +26,7 @@ sealed interface ActiveVerificationState {
     data class Ready(
         private val ownDeviceId: String,
         val methods: Set<VerificationMethod>,
-        private val relatesTo: VerificationStepRelatesTo?,
+        private val relatesTo: RelatesTo.Reference?,
         private val transactionId: String?,
         private val send: suspend (VerificationStep) -> Unit
     ) : ActiveVerificationState {

@@ -9,16 +9,13 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,17 +95,24 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeMessageEvent() {
         val content = MessageEvent(
-            RoomMessageEventContent.TextMessageEventContent("hello"),
+            RoomMessageEventContent.TextMessageEventContent(
+                "hello",
+                relatesTo = RelatesTo.Reference(EventId("$1234"))
+            ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
-            UnsignedMessageEventData(1234)
+            UnsignedMessageEventData(1234),
         )
         val expectedResult = """
         {
             "content":{
                 "body":"hello",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.reference"
+                },
                 "msgtype":"m.text"
             },
             "event_id":"$143273582443PhrSn",
@@ -133,7 +137,11 @@ class EventSerializerTest {
             "content":{
                 "msgtype":"m.dino",
                 "body":"hello",
-                "something":"unicorn"
+                "something":"unicorn",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.reference"
+                }
             },
             "event_id":"$143273582443PhrSn",
             "sender":"@example:example.org",
@@ -150,14 +158,72 @@ class EventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                UnknownMessageEventContent(
+                UnknownRoomMessageEventContent(
                     "m.dino", "hello", JsonObject(
                         mapOf(
                             "msgtype" to JsonPrimitive("m.dino"),
                             "body" to JsonPrimitive("hello"),
-                            "something" to JsonPrimitive("unicorn")
+                            "something" to JsonPrimitive("unicorn"),
+                            "m.relates_to" to JsonObject(
+                                mapOf(
+                                    "event_id" to JsonPrimitive("$1234"),
+                                    "rel_type" to JsonPrimitive("m.reference")
+                                )
+                            )
                         )
-                    )
+                    ), relatesTo = RelatesTo.Reference(EventId("$1234"))
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(1234)
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldDeserializeUnknownMessageEvent() {
+        val input = """
+        {
+            "content":{
+                "msgtype":"m.dino",
+                "body":"hello",
+                "something":"unicorn",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.reference"
+                }
+            },
+            "event_id":"$143273582443PhrSn",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{"age":1234},
+            "type":"m.dino"
+        }
+    """.trimIndent().lines().joinToString("") { it.trim() }
+        val result = json.decodeFromString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+            ), input
+        )
+        assertEquals(
+            MessageEvent(
+                UnknownMessageEventContent(
+                    JsonObject(
+                        mapOf(
+                            "msgtype" to JsonPrimitive("m.dino"),
+                            "body" to JsonPrimitive("hello"),
+                            "something" to JsonPrimitive("unicorn"),
+                            "m.relates_to" to JsonObject(
+                                mapOf(
+                                    "event_id" to JsonPrimitive("$1234"),
+                                    "rel_type" to JsonPrimitive("m.reference")
+                                )
+                            )
+                        )
+                    ), "m.dino", relatesTo = null
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),

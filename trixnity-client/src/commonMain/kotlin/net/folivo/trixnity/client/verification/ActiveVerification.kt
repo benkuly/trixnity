@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
@@ -30,7 +31,7 @@ abstract class ActiveVerification(
     theirInitialDeviceId: String?,
     val timestamp: Long,
     protected val supportedMethods: Set<VerificationMethod>,
-    val relatesTo: VerificationStepRelatesTo?,
+    val relatesTo: RelatesTo.Reference?,
     val transactionId: String?,
     protected val store: Store,
     private val keyService: KeyService,

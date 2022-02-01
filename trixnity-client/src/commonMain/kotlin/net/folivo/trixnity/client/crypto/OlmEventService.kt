@@ -5,7 +5,11 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
 import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.KeyException.*
@@ -15,6 +19,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -120,7 +125,8 @@ class OlmEventService internal constructor(
                     OlmMessageType.of(encryptedContent.type.value)
                 )
             ),
-            senderKey = ownCurve25519Key
+            senderKey = ownCurve25519Key,
+            relatesTo = if (content is MessageEventContent) content.relatesTo else null
         ).also { log.trace { "encrypted event: $it" } }
     }
 
@@ -198,7 +204,8 @@ class OlmEventService internal constructor(
 
         val serializer = json.serializersModule.getContextual(OlmEvent::class)
         requireNotNull(serializer)
-        val decryptedEvent = json.decodeFromString(serializer, decryptedContent)
+        val decryptedEvent =
+            json.decodeFromJsonElement(serializer, addRelatesTo(decryptedContent, encryptedContent.relatesTo))
 
         if (decryptedEvent.sender != senderId
             || decryptedEvent.recipient != ownUserId
@@ -306,6 +313,7 @@ class OlmEventService internal constructor(
             senderKey = ownCurve25519Key,
             deviceId = ownDeviceId,
             sessionId = session.sessionId,
+            relatesTo = content.relatesTo
         ).also { log.trace { "encrypted event: $it" } }
     }
 
@@ -328,8 +336,8 @@ class OlmEventService internal constructor(
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)
         requireNotNull(serializer)
-
-        val decryptedEvent = json.decodeFromString(serializer, decryptionResult.message)
+        val decryptedEvent =
+            json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult.message, encryptedContent.relatesTo))
         val index = decryptionResult.index
         store.olm.updateInboundMegolmMessageIndex(senderKey, sessionId, roomId, index) { storedIndex ->
             if (encryptedEvent.roomId != decryptedEvent.roomId
@@ -343,6 +351,23 @@ class OlmEventService internal constructor(
 
         return decryptedEvent.also { log.trace { "decrypted event: $it" } }
     }
+
+    private fun addRelatesTo(
+        decryptionJson: String,
+        relatesTo: RelatesTo?
+    ) = JsonObject(buildMap {
+        val originalJsonObject = json.decodeFromString<JsonObject>(decryptionJson).jsonObject
+        putAll(originalJsonObject)
+        relatesTo?.let { relatesTo ->
+            originalJsonObject["content"]?.jsonObject?.let { content ->
+                put("content", JsonObject(buildMap {
+                    putAll(content)
+                    put("m.relates_to", json.encodeToJsonElement(relatesTo))
+                }
+                ))
+            }
+        }
+    })
 
     private fun hasCreatedTooManyOlmSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
         val now = Clock.System.now()
