@@ -1,7 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -30,7 +29,7 @@ class RoomEventSerializer(
         val serializer = if (hasStateKey) stateEventSerializer else messageEventSerializer
         return try {
             decoder.json.decodeFromJsonElement(serializer, jsonObj)
-        } catch (error: SerializationException) {
+        } catch (error: Exception) {
             log.warn(error) { "could not deserialize event" }
             val type = jsonObj["type"]?.jsonPrimitive?.content
             requireNotNull(type)

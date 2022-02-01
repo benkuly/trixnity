@@ -7,6 +7,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -267,46 +269,49 @@ class VerificationService(
         }.stateIn(scope)
     }
 
-    fun getActiveUserVerification(
+    private val getActiveUserVerificationMutex = Mutex()
+    suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
     ): ActiveUserVerification? {
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
-            val cache =
-                activeUserVerifications.value.find { it.roomId == timelineEvent.roomId && it.relatesTo?.eventId == timelineEvent.eventId }
-            if (cache != null) cache
-            else {
-                val eventContent = timelineEvent.event.content
-                val request =
-                    if (eventContent is VerificationRequestMessageEventContent) eventContent
-                    else {
-                        val decryptedEventContent = timelineEvent.decryptedEvent?.getOrNull()?.content
-                        if (decryptedEventContent is VerificationRequestMessageEventContent) decryptedEventContent
-                        else null
-                    }
-                val sender = timelineEvent.event.sender
-                if (request != null
-                    && (request.to == ownUserId || sender == ownUserId && request.fromDevice == ownDeviceId)
-                    && request.to != sender
-                ) {
-                    ActiveUserVerification(
-                        request = request,
-                        requestIsFromOurOwn = sender == ownUserId,
-                        requestEventId = timelineEvent.eventId,
-                        requestTimestamp = timelineEvent.event.originTimestamp,
-                        ownUserId = ownUserId,
-                        ownDeviceId = ownDeviceId,
-                        theirUserId = if (sender == ownUserId) request.to else sender,
-                        theirInitialDeviceId = if (sender == ownUserId) null else request.fromDevice,
-                        roomId = timelineEvent.roomId,
-                        supportedMethods = supportedMethods,
-                        api = api,
-                        store = store,
-                        olm = olmService,
-                        user = userService,
-                        room = roomService,
-                        key = keyService,
-                    ).also { auv -> activeUserVerifications.update { it + auv } }
-                } else null
+            getActiveUserVerificationMutex.withLock {
+                val cache =
+                    activeUserVerifications.value.find { it.roomId == timelineEvent.roomId && it.relatesTo?.eventId == timelineEvent.eventId }
+                if (cache != null) cache
+                else {
+                    val eventContent = timelineEvent.event.content
+                    val request =
+                        if (eventContent is VerificationRequestMessageEventContent) eventContent
+                        else {
+                            val decryptedEventContent = timelineEvent.decryptedEvent?.getOrNull()?.content
+                            if (decryptedEventContent is VerificationRequestMessageEventContent) decryptedEventContent
+                            else null
+                        }
+                    val sender = timelineEvent.event.sender
+                    if (request != null
+                        && (request.to == ownUserId || sender == ownUserId && request.fromDevice == ownDeviceId)
+                        && request.to != sender
+                    ) {
+                        ActiveUserVerification(
+                            request = request,
+                            requestIsFromOurOwn = sender == ownUserId,
+                            requestEventId = timelineEvent.eventId,
+                            requestTimestamp = timelineEvent.event.originTimestamp,
+                            ownUserId = ownUserId,
+                            ownDeviceId = ownDeviceId,
+                            theirUserId = if (sender == ownUserId) request.to else sender,
+                            theirInitialDeviceId = if (sender == ownUserId) null else request.fromDevice,
+                            roomId = timelineEvent.roomId,
+                            supportedMethods = supportedMethods,
+                            api = api,
+                            store = store,
+                            olm = olmService,
+                            user = userService,
+                            room = roomService,
+                            key = keyService,
+                        ).also { auv -> activeUserVerifications.update { it + auv } }
+                    } else null
+                }
             }
         } else null
     }

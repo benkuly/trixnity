@@ -12,10 +12,15 @@ import net.folivo.trixnity.core.model.EventId
 
 @Serializable(with = RelatesToSerializer::class)
 sealed class RelatesTo {
+    abstract val eventId: EventId
+    abstract val type: String
+
     @Serializable
     data class Reference(
         @SerialName("event_id")
-        val eventId: EventId,
+        override val eventId: EventId,
+        @SerialName("rel_type")
+        override val type: String = "m.reference"
     ) : RelatesTo() {
         companion object {
             const val type = "m.reference"
@@ -23,8 +28,8 @@ sealed class RelatesTo {
     }
 
     data class Custom(
-        val eventId: EventId,
-        val type: String,
+        override val eventId: EventId,
+        override val type: String,
         val raw: JsonObject
     ) : RelatesTo()
 }
@@ -55,5 +60,4 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             put("rel_type", JsonPrimitive(type))
         }))
     }
-
 }

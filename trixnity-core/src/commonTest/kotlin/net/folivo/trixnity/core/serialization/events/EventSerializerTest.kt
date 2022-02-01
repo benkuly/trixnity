@@ -223,7 +223,7 @@ class EventSerializerTest {
                                 )
                             )
                         )
-                    ), "m.dino", relatesTo = null
+                    ), "m.dino"
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
