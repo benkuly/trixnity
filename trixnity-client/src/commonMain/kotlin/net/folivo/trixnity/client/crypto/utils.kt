@@ -6,14 +6,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeout
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.OlmSession
 import net.folivo.trixnity.olm.freeAfter
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
@@ -137,26 +135,6 @@ internal suspend fun OlmStore.storeTrustedInboundMegolmSession(
                     pickled = session.pickle(pickleKey)
                 )
             }
-    }
-}
-
-internal suspend fun OlmStore.storeOlmSession(
-    session: OlmSession,
-    identityKey: Key.Curve25519Key,
-    pickleKey: String
-) {
-    updateOlmSessions(identityKey) { oldStoredSessions ->
-        val newSessions =
-            (oldStoredSessions?.filterNot { it.sessionId == session.sessionId }?.toSet() ?: setOf()) +
-                    StoredOlmSession(
-                        sessionId = session.sessionId,
-                        senderKey = identityKey,
-                        pickled = session.pickle(pickleKey),
-                        lastUsedAt = Clock.System.now()
-                    )
-        if (newSessions.size > 9) {
-            newSessions.sortedBy { it.lastUsedAt }.drop(1).toSet()
-        } else newSessions
     }
 }
 
