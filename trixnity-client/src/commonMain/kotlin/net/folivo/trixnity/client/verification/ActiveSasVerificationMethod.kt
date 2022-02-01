@@ -9,10 +9,11 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.olm.OlmSAS
 
 private val log = KotlinLogging.logger {}
@@ -24,7 +25,7 @@ class ActiveSasVerificationMethod private constructor(
     private val ownDeviceId: String,
     private val theirUserId: UserId,
     private val theirDeviceId: String,
-    private val relatesTo: VerificationStepRelatesTo?,
+    private val relatesTo: RelatesTo.Reference?,
     private val transactionId: String?,
     private val sendVerificationStep: suspend (step: VerificationStep) -> Unit,
     private val store: Store,
@@ -76,7 +77,7 @@ class ActiveSasVerificationMethod private constructor(
             ownDeviceId: String,
             theirUserId: UserId,
             theirDeviceId: String,
-            relatesTo: VerificationStepRelatesTo?,
+            relatesTo: RelatesTo.Reference?,
             transactionId: String?,
             sendVerificationStep: suspend (step: VerificationStep) -> Unit,
             store: Store,

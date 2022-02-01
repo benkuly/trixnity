@@ -27,10 +27,10 @@ import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
@@ -38,11 +38,11 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStepRelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.test.assertNotNull
@@ -309,7 +309,7 @@ private val body: ShouldSpec.() -> Unit = {
                             VerificationCancelEventContent(
                                 Code.User, "user",
                                 transactionId = null,
-                                relatesTo = VerificationStepRelatesTo(eventId)
+                                relatesTo = RelatesTo.Reference(eventId)
                             ),
                             nextEventId,
                             bobUserId,
@@ -326,7 +326,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val result = cut.getActiveUserVerification(timelineEvent)?.state
                 assertNotNull(result)
                 result.first { it is Cancel } shouldBe Cancel(
-                    VerificationCancelEventContent(Code.User, "user", VerificationStepRelatesTo(eventId), null),
+                    VerificationCancelEventContent(Code.User, "user", RelatesTo.Reference(eventId), null),
                     false
                 )
             }

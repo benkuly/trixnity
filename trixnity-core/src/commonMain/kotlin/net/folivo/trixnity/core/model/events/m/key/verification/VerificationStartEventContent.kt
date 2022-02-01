@@ -4,6 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.DECIMAL
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.EMOJI
 
@@ -34,7 +35,7 @@ sealed class VerificationStartEventContent : VerificationStep {
         @SerialName("short_authentication_string")
         val shortAuthenticationString: Set<SasMethod> = setOf(DECIMAL, EMOJI),
         @SerialName("m.relates_to")
-        override val relatesTo: VerificationStepRelatesTo?,
+        override val relatesTo: RelatesTo.Reference?,
         @SerialName("transaction_id")
         override val transactionId: String?,
     ) : VerificationStartEventContent() {

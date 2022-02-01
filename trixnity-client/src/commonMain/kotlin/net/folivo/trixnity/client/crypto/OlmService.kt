@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -117,6 +118,8 @@ class OlmService(
             } catch (e: KeyException) {
                 log.error(e) { "could not decrypt $event" }
             } catch (e: SessionException) {
+                log.error(e) { "could not decrypt $event" }
+            } catch (e: SerializationException) {
                 log.error(e) { "could not decrypt $event" }
             }
         }

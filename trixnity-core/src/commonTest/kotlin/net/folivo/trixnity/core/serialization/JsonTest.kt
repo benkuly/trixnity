@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -126,9 +126,9 @@ class JsonTest {
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
             val resultContent = result.content
-            if (resultContent is UnknownMessageEventContent)
+            if (resultContent is UnknownRoomMessageEventContent)
                 assertEquals("This is an example text message", resultContent.body)
-            else fail("resultContent should be of type ${UnknownMessageEventContent::class}")
+            else fail("resultContent should be of type ${UnknownRoomMessageEventContent::class}")
         } else {
             fail("result should be of type ${MessageEvent::class}")
         }
@@ -338,11 +338,11 @@ class JsonTest {
     """.trimIndent()
         val result = json.decodeFromString<CustomResponse>(content)
         val resultContent = result.event.content
-        if (resultContent is UnknownMessageEventContent) {
+        if (resultContent is UnknownRoomMessageEventContent) {
             assertEquals("This is an example text message", resultContent.body)
             assertEquals("dino", resultContent.type)
         } else {
-            fail("resultContent should be of type ${UnknownMessageEventContent::class} but was ${resultContent::class}")
+            fail("resultContent should be of type ${UnknownRoomMessageEventContent::class} but was ${resultContent::class}")
         }
     }
 }

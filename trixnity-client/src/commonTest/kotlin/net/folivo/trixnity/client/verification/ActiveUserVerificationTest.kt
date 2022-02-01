@@ -23,12 +23,12 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.MismatchedSas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.User
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStepRelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -46,7 +46,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     val bobDevice = "BBBBBB"
     val event = EventId("$1")
     val roomId = RoomId("room", "server")
-    val relatesTo = VerificationStepRelatesTo(event)
+    val relatesTo = RelatesTo.Reference(event)
 
     val api = mockk<MatrixApiClient>(relaxed = true)
     val olm = mockk<OlmService>(relaxed = true)
@@ -113,7 +113,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                         VerificationCancelEventContent(
                             MismatchedSas,
                             "",
-                            VerificationStepRelatesTo(EventId("$0")),
+                            RelatesTo.Reference(EventId("$0")),
                             null
                         ),
                         EventId("$2"), bob, roomId, 1234
@@ -189,7 +189,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                             VerificationCancelEventContent(
                                 MismatchedSas,
                                 "",
-                                VerificationStepRelatesTo(EventId("$0")),
+                                RelatesTo.Reference(EventId("$0")),
                                 null
                             ),
                             roomId

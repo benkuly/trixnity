@@ -4,4 +4,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class UnknownMessageEventContent(val raw: JsonObject, val eventType: String) : MessageEventContent
+data class UnknownMessageEventContent(
+    val raw: JsonObject,
+    val eventType: String,
+    // is always null, because this class is the last fallback, when nothing can be deserialized
+    override val relatesTo: RelatesTo? = null
+) : MessageEventContent

@@ -29,6 +29,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -59,6 +60,8 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDeviceId = "BOBDEVICE"
     val aliceAccount = OlmAccount.create()
     val bobAccount = OlmAccount.create()
+    val relatesTo = RelatesTo.Reference(EventId("$1fancyEvent"))
+
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
 
@@ -129,7 +132,7 @@ private val body: ShouldSpec.() -> Unit = {
             RoomId("room", "server"),
             "sessionId",
             "sessionKey",
-            EncryptionAlgorithm.Megolm
+            EncryptionAlgorithm.Megolm,
         )
         val olmEvent = OlmEvent(
             content = eventContent,
@@ -527,7 +530,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(OlmEventService::encryptMegolm.name) {
-        val eventContent = TextMessageEventContent("Hi")
+        val eventContent = TextMessageEventContent("Hi", relatesTo = relatesTo)
         val room = RoomId("room", "server")
         val megolmEvent = MegolmEvent(eventContent, room)
         beforeTest {
@@ -574,6 +577,7 @@ private val body: ShouldSpec.() -> Unit = {
                         senderKey shouldBe aliceCurveKey
                         deviceId shouldBe aliceDeviceId
                         sessionId shouldBe outboundSession.sessionId
+                        this.relatesTo shouldBe relatesTo
                     }
 
                     val sendToDeviceEvents = slot<Map<UserId, Map<String, OlmEncryptedEventContent>>>()
@@ -727,14 +731,15 @@ private val body: ShouldSpec.() -> Unit = {
                             ciphertext,
                             bobCurveKey,
                             bobDeviceId,
-                            session.sessionId
+                            session.sessionId,
+                            relatesTo = relatesTo
                         ),
                         EventId("\$event"),
                         bob,
                         room,
                         1234
                     )
-                ) shouldBe megolmEvent
+                ) shouldBe megolmEvent.copy(content = megolmEvent.content.copy(relatesTo = relatesTo))
                 store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
                     it shouldBe StoredInboundMegolmMessageIndex(
                         bobCurveKey, session.sessionId, room, 0, EventId("\$event"), 1234
