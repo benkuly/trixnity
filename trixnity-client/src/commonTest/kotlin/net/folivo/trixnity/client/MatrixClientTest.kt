@@ -129,7 +129,7 @@ class MatrixClientTest : ShouldSpec({
                             "deviceId",
                             "accessToken",
                             "displayName",
-                            Url("mxc://localhost/123456")
+                            "mxc://localhost/123456"
                         )
                     )
                 }
@@ -221,7 +221,7 @@ class MatrixClientTest : ShouldSpec({
             ).fold(
                 onSuccess = { matrixClient ->
                     matrixClient.displayName.value shouldBe "bob"
-                    matrixClient.avatarUrl.value shouldBe Url("mxc://localhost/123456")
+                    matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
                 },
                 onFailure = {
                     fail(it.message)
@@ -238,7 +238,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.baseUrl.value = Url("http://localhost")
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
-            inMemoryStore.account.avatarUrl.value = Url("mxc://localhost/123456")
+            inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
 
             val cut = MatrixClient.fromStore(
                 storeFactory = object : StoreFactory {
@@ -354,12 +354,12 @@ class MatrixClientTest : ShouldSpec({
             assertNotNull(cut)
 
             cut.displayName.first { it != null } shouldBe "bob"
-            cut.avatarUrl.first { it != null } shouldBe Url("mxc://localhost/123456")
+            cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
 
             cut.startSync().getOrThrow()
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
-            cut.avatarUrl.first { it == Url("mxc://localhost/abcdef") } shouldBe Url("mxc://localhost/abcdef")
+            cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
         }
     }
 })

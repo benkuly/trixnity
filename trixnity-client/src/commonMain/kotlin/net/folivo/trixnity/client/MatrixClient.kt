@@ -46,7 +46,7 @@ class MatrixClient private constructor(
     private val scope: CoroutineScope,
 ) {
     val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
-    val avatarUrl: StateFlow<Url?> = store.account.avatarUrl.asStateFlow()
+    val avatarUrl: StateFlow<String?> = store.account.avatarUrl.asStateFlow()
     val olm: OlmService
     val room: RoomService
     val user: UserService
@@ -136,7 +136,7 @@ class MatrixClient private constructor(
                             accessToken = login.accessToken,
                             deviceId = login.deviceId,
                             displayName = profile.displayName,
-                            avatarUrl = profile.avatarUrl?.let { Url(it) }
+                            avatarUrl = profile.avatarUrl
                         )
                     }
                 }
@@ -147,7 +147,7 @@ class MatrixClient private constructor(
             val deviceId: String,
             val accessToken: String,
             val displayName: String?,
-            val avatarUrl: Url?,
+            val avatarUrl: String?,
         )
 
         suspend fun loginWith(
@@ -312,8 +312,8 @@ class MatrixClient private constructor(
         }
     }
 
-    suspend fun setAvatarUrl(avatarUrl: Url?): Result<Unit> {
-        return api.users.setAvatarUrl(userId, avatarUrl?.toString()).map {
+    suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit> {
+        return api.users.setAvatarUrl(userId, avatarUrl).map {
             store.account.avatarUrl.value = avatarUrl
         }
     }

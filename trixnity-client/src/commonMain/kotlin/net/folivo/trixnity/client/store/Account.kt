@@ -12,5 +12,5 @@ data class Account(
     val syncBatchToken: String?,
     val filterId: String?,
     val displayName: String?,
-    val avatarUrl: Url?,
+    val avatarUrl: String?,
 )

@@ -39,7 +39,7 @@ class AccountStoreTest : ShouldSpec({
                 "sync_token",
                 "filter_id",
                 "display_name",
-                Url("mxc://localhost/123456"),
+                "mxc://localhost/123456",
             )
 
             cut.init()
@@ -52,7 +52,7 @@ class AccountStoreTest : ShouldSpec({
             cut.syncBatchToken.value shouldBe "sync_token"
             cut.filterId.value shouldBe "filter_id"
             cut.displayName.value shouldBe "display_name"
-            cut.avatarUrl.value shouldBe Url("mxc://localhost/123456")
+            cut.avatarUrl.value shouldBe "mxc://localhost/123456"
         }
         should("start job, which saves changes to database") {
             coEvery { repository.get(1) } returns null

@@ -33,7 +33,7 @@ internal class ExposedAccountRepository : AccountRepository {
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
                 filterId = it[ExposedAccount.filterId],
                 displayName = it[ExposedAccount.displayName],
-                avatarUrl = it[ExposedAccount.avatarUrl]?.let { it1 -> Url(it1) },
+                avatarUrl = it[ExposedAccount.avatarUrl],
             )
         }
     }

@@ -28,7 +28,7 @@ class ExposedAccountRepositoryTest : ShouldSpec({
             "syncToken",
             "filterId",
             "displayName",
-            Url("mxc://localhost/123456"),
+            "mxc://localhost/123456",
         )
         newSuspendedTransaction {
             cut.save(1, account)
