@@ -2,7 +2,6 @@ package net.folivo.trixnity.core.model
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -17,11 +16,7 @@ class UserId : MatrixId {
 
 object UserIdSerializer : KSerializer<UserId> {
     override fun deserialize(decoder: Decoder): UserId {
-        return try {
-            UserId(decoder.decodeString())
-        } catch (ex: IllegalArgumentException) {
-            throw SerializationException(ex.message)
-        }
+        return UserId(decoder.decodeString())
     }
 
     override fun serialize(encoder: Encoder, value: UserId) {

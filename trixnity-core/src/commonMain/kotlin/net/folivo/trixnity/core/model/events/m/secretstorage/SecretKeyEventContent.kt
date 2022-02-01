@@ -1,12 +1,15 @@
 package net.folivo.trixnity.core.model.events.m.secretstorage
 
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
@@ -101,7 +104,7 @@ object SecretStorageKeyPassphraseSerializer : KSerializer<SecretKeyEventContent.
         require(jsonElement is JsonObject)
         return try {
             decoder.json.decodeFromJsonElement(jsonElement)
-        } catch (error: SerializationException) {
+        } catch (error: Exception) {
             SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown(jsonElement)
         }
     }

@@ -1,7 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -43,7 +42,7 @@ class StrippedStateEventSerializer(
                 StrippedStateEvent.serializer(contentSerializer),
                 jsonObj
             )
-        } catch (error: SerializationException) {
+        } catch (error: Exception) {
             log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
                 StrippedStateEvent.serializer(
