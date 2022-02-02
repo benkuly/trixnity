@@ -200,6 +200,7 @@ abstract class ActiveVerification(
     protected abstract suspend fun sendVerificationStep(step: VerificationStep)
 
     private suspend fun sendVerificationStepAndHandleIt(step: VerificationStep) {
+        log.trace { "send verification step and handle it: $step" }
         when (step) {
             is VerificationCancelEventContent -> {
                 if (state.value !is Cancel)
@@ -207,7 +208,7 @@ abstract class ActiveVerification(
                         sendVerificationStep(step)
                     } catch (error: Throwable) {
                         log.debug { "could not send cancel event: ${error.message}" }
-                        // we just ignore when we could not send it, because it would time out on the other side anyways
+                        // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
                 handleVerificationStep(step, ownUserId, true)
             }
@@ -234,6 +235,7 @@ abstract class ActiveVerification(
     }
 
     suspend fun cancel() {
+        log.debug { "user cancelled verification" }
         cancel(Code.User, "user cancelled verification")
     }
 }
