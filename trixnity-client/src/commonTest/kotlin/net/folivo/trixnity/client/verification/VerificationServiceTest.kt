@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -21,7 +22,8 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.client.verification.ActiveVerificationState.*
+import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
+import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
@@ -51,7 +53,7 @@ class VerificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
 
-    timeout = 30_000
+    timeout = 15_000
     val aliceUserId = UserId("alice", "server")
     val aliceDeviceId = "AAAAAA"
     val bobUserId = UserId("bob", "server")
@@ -255,10 +257,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
                     lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(
-                            request,
-                            bobUserId
-                        )
+                        ToDeviceEvent(request, bobUserId)
                     )
                 }
                 lateinit var verificationStepSubscriber: EventSubscriber<VerificationStep>
@@ -290,9 +289,9 @@ private val body: ShouldSpec.() -> Unit = {
                 } returns Result.success(EventId("$24event"))
                 val timelineEvent = TimelineEvent(
                     event = Event.MessageEvent(
-                        VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                        VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                         eventId,
-                        aliceUserId,
+                        bobUserId,
                         roomId,
                         Clock.System.now().toEpochMilliseconds()
                     ),
@@ -336,9 +335,9 @@ private val body: ShouldSpec.() -> Unit = {
         should("send request to device and save locally") {
             coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } returns Result.success(Unit)
             coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
-            cut.createDeviceVerificationRequest(bobUserId, bobDeviceId)
-            val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
-            require(activeDeviceVerification != null)
+            val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
+            val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
+            createdVerification shouldBe activeDeviceVerification
             coVerify {
                 api.users.sendToDevice<VerificationRequestEventContent>(withArg {
                     it shouldHaveSize 1
@@ -424,7 +423,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             val spyCut = spyk(cut)
-            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
+            val deviceVerification = mockk<ActiveDeviceVerification>()
+            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } returns Result.success(deviceVerification)
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),
@@ -436,12 +436,12 @@ private val body: ShouldSpec.() -> Unit = {
             result?.size shouldBe 1
             val firstResult = result!!.first()
             firstResult.shouldBeInstanceOf<CrossSignedDeviceVerification>()
-            firstResult.createDeviceVerification()
+            firstResult.createDeviceVerification().getOrThrow() shouldBe deviceVerification
             coVerify { spyCut.createDeviceVerificationRequest(aliceUserId, "DEV2") }
         }
         should("don't add ${CrossSignedDeviceVerification::class.simpleName} when there are no cross signed devices") {
             val spyCut = spyk(cut)
-            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } just Runs
+            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } returns Result.success(mockk())
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
             }
@@ -481,7 +481,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("skip timed out verifications") {
             val timelineEvent = TimelineEvent(
                 event = Event.MessageEvent(
-                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
                     roomId,
@@ -499,9 +499,9 @@ private val body: ShouldSpec.() -> Unit = {
         should("return cached verification") {
             val timelineEvent = TimelineEvent(
                 event = Event.MessageEvent(
-                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
-                    aliceUserId,
+                    bobUserId,
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
@@ -519,9 +519,9 @@ private val body: ShouldSpec.() -> Unit = {
         should("create verification from event") {
             val timelineEvent = TimelineEvent(
                 event = Event.MessageEvent(
-                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
-                    aliceUserId,
+                    bobUserId,
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
@@ -534,7 +534,24 @@ private val body: ShouldSpec.() -> Unit = {
             val result = cut.getActiveUserVerification(timelineEvent)
             val state = result?.state
             assertNotNull(state)
-            state.value.shouldBeInstanceOf<OwnRequest>()
+            state.value.shouldBeInstanceOf<TheirRequest>()
+        }
+        should("not create verification from own request event") {
+            val timelineEvent = TimelineEvent(
+                event = Event.MessageEvent(
+                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    eventId,
+                    aliceUserId,
+                    roomId,
+                    Clock.System.now().toEpochMilliseconds()
+                ),
+                eventId = eventId,
+                roomId = roomId,
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
+            )
+            cut.getActiveUserVerification(timelineEvent) shouldBe null
         }
     }
 }

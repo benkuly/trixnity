@@ -18,6 +18,7 @@ import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
+import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -254,7 +255,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     should("stop lifecycle, when cancelled") {
         coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(mockk())
         coEvery { room.getNextTimelineEvent(any(), any()) }.returns(
-            MutableStateFlow( // ignore event, that is no VerificationStep
+            MutableStateFlow(
                 TimelineEvent(
                     event = MessageEvent(
                         VerificationCancelEventContent(User, "r", relatesTo, null),
@@ -312,6 +313,47 @@ class ActiveUserVerificationTest : ShouldSpec({
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
+        cut.cancel()
+    }
+    should("set state to ${Undefined::class.simpleName} when request accepted by own device, but state does not match (e.g. on restart)") {
+        coEvery { room.getTimelineEvent(event, roomId, any()) } returns MutableStateFlow(mockk())
+        coEvery { room.getNextTimelineEvent(any(), any()) }.returnsMany(
+            MutableStateFlow(
+                TimelineEvent(
+                    event = MessageEvent(
+                        VerificationReadyEventContent(
+                            fromDevice = bobDevice,
+                            methods = setOf(),
+                            relatesTo, null
+                        ),
+                        EventId("$2"), bob, roomId, 1234
+                    ),
+                    roomId = roomId, eventId = event,
+                    previousEventId = null, nextEventId = null, gap = null
+                )
+            ),
+            null
+        )
+        cut = ActiveUserVerification(
+            request = RoomMessageEventContent.VerificationRequestMessageEventContent(aliceDevice, bob, setOf(Sas)),
+            requestIsFromOurOwn = false,
+            requestEventId = event,
+            requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+            ownUserId = bob,
+            ownDeviceId = bobDevice,
+            theirUserId = alice,
+            theirInitialDeviceId = null,
+            roomId = roomId,
+            supportedMethods = setOf(Sas),
+            api = api,
+            olm = olm,
+            store = store,
+            user = mockk(relaxUnitFun = true),
+            room = room,
+            key = mockk(),
+        )
+        cut.startLifecycle(this)
+        cut.state.first { it == Undefined } shouldBe Undefined
         cut.cancel()
     }
 })

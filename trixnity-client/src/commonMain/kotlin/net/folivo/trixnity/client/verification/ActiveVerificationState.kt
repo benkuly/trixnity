@@ -6,10 +6,16 @@ import net.folivo.trixnity.core.model.events.m.key.verification.*
 
 sealed interface ActiveVerificationState {
 
+    /**
+     * This state is active when we started the request.
+     */
     data class OwnRequest(
         val content: VerificationRequest,
     ) : ActiveVerificationState
 
+    /**
+     * This state is active when another device or user started the request.
+     */
     data class TheirRequest(
         val content: VerificationRequest,
         private val ownDeviceId: String,
@@ -23,6 +29,9 @@ sealed interface ActiveVerificationState {
         }
     }
 
+    /**
+     * This state is active when the request is accepted.
+     */
     data class Ready(
         private val ownDeviceId: String,
         val methods: Set<VerificationMethod>,
@@ -43,15 +52,37 @@ sealed interface ActiveVerificationState {
         }
     }
 
+    /**
+     * This state is active when the devices agreed on a verification method. It contains a sub-state.
+     */
     data class Start(
         val method: ActiveVerificationMethod,
         val senderUserId: UserId,
         val senderDeviceId: String,
     ) : ActiveVerificationState
 
+    /**
+     * This state is active when one device is done.
+     */
     data class PartlyDone(val isOurOwn: Boolean) : ActiveVerificationState
 
-    object AcceptedByOtherDevice : ActiveVerificationState
+    /**
+     * This state is active when the verification is done.
+     */
     object Done : ActiveVerificationState
+
+    /**
+     * This state is active when the verification is cancelled.
+     */
     data class Cancel(val content: VerificationCancelEventContent, val isOurOwn: Boolean) : ActiveVerificationState
+
+    /**
+     * This state is active when another own device accepted the request.
+     */
+    object AcceptedByOtherDevice : ActiveVerificationState
+
+    /**
+     * This state is active when an incoming request was accepted, but the state got missing (e.g. by restarting the App)
+     */
+    object Undefined : ActiveVerificationState
 }

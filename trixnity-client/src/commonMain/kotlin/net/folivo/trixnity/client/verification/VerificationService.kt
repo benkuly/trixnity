@@ -1,12 +1,9 @@
 package net.folivo.trixnity.client.verification
 
 import com.benasher44.uuid.uuid4
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -32,7 +29,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.olm.OlmLibraryException
+import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
 
@@ -159,7 +156,10 @@ class VerificationService(
                 scope.launch {
                     verification.state.first { verification.state.value is Done || verification.state.value is Cancel }
                     when (verification) {
-                        is ActiveUserVerification -> activeUserVerifications.update { it - verification }
+                        is ActiveUserVerification -> {
+                            delay(20.minutes)
+                            activeUserVerifications.update { it - verification }
+                        }
                         is ActiveDeviceVerification -> {
                             _activeDeviceVerification.update { null }
                         }
@@ -168,7 +168,10 @@ class VerificationService(
         }
     }
 
-    suspend fun createDeviceVerificationRequest(theirUserId: UserId, vararg theirDeviceIds: String) {
+    suspend fun createDeviceVerificationRequest(
+        theirUserId: UserId,
+        vararg theirDeviceIds: String
+    ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
         val request = VerificationRequestEventContent(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
@@ -176,29 +179,30 @@ class VerificationService(
         api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             try {
                 olmService.events.encryptOlm(request, theirUserId, it)
-            } catch (olmError: OlmLibraryException) {
+            } catch (error: Exception) {
                 request
             }
-        }))
-        val existingDeviceVerification = _activeDeviceVerification.getAndUpdate {
-            ActiveDeviceVerification(
-                request = request,
-                requestIsOurs = true,
-                ownUserId = ownUserId,
-                ownDeviceId = ownDeviceId,
-                theirUserId = theirUserId,
-                theirDeviceIds = theirDeviceIds.toSet(),
-                supportedMethods = supportedMethods,
-                api = api,
-                olm = olmService,
-                key = keyService,
-                store = store,
-            )
+        })).getOrThrow()
+        ActiveDeviceVerification(
+            request = request,
+            requestIsOurs = true,
+            ownUserId = ownUserId,
+            ownDeviceId = ownDeviceId,
+            theirUserId = theirUserId,
+            theirDeviceIds = theirDeviceIds.toSet(),
+            supportedMethods = supportedMethods,
+            api = api,
+            olm = olmService,
+            key = keyService,
+            store = store,
+        ).also { newDeviceVerification ->
+            _activeDeviceVerification.getAndUpdate { newDeviceVerification }?.cancel()
         }
-        existingDeviceVerification?.cancel()
     }
 
-    suspend fun createUserVerificationRequest(theirUserId: UserId): Result<Unit> = kotlin.runCatching {
+    suspend fun createUserVerificationRequest(
+        theirUserId: UserId
+    ): Result<ActiveUserVerification> = kotlin.runCatching {
         log.info { "create new user verification request to $theirUserId" }
         val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
         val roomId =
@@ -207,10 +211,28 @@ class VerificationService(
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
             possiblyEncryptEvent(request, roomId, store, olmService, userService)
-        } catch (olmError: OlmLibraryException) {
+        } catch (error: Exception) {
             request
         }
-        api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
+        val eventId = api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
+        ActiveUserVerification(
+            request = request,
+            requestIsFromOurOwn = true,
+            requestEventId = eventId,
+            requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+            ownUserId = ownUserId,
+            ownDeviceId = ownDeviceId,
+            theirUserId = theirUserId,
+            theirInitialDeviceId = null,
+            roomId = roomId,
+            supportedMethods = supportedMethods,
+            api = api,
+            store = store,
+            olm = olmService,
+            user = userService,
+            room = roomService,
+            key = keyService,
+        ).also { auv -> activeUserVerifications.update { it + auv } }
     }
 
     /**
@@ -288,19 +310,16 @@ class VerificationService(
                             else null
                         }
                     val sender = timelineEvent.event.sender
-                    if (request != null
-                        && (request.to == ownUserId || sender == ownUserId && request.fromDevice == ownDeviceId)
-                        && request.to != sender
-                    ) {
+                    if (request != null && sender != ownUserId && request.to == ownUserId) {
                         ActiveUserVerification(
                             request = request,
-                            requestIsFromOurOwn = sender == ownUserId,
+                            requestIsFromOurOwn = false,
                             requestEventId = timelineEvent.eventId,
                             requestTimestamp = timelineEvent.event.originTimestamp,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
-                            theirUserId = if (sender == ownUserId) request.to else sender,
-                            theirInitialDeviceId = if (sender == ownUserId) null else request.fromDevice,
+                            theirUserId = sender,
+                            theirInitialDeviceId = request.fromDevice,
                             roomId = timelineEvent.roomId,
                             supportedMethods = supportedMethods,
                             api = api,

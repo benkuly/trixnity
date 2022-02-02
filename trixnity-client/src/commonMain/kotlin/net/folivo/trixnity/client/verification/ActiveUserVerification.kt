@@ -17,8 +17,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
+import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -29,7 +28,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRead
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
-import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
 
@@ -69,7 +67,7 @@ class ActiveUserVerification(
         log.debug { "send verification step $step" }
         val sendContent = try {
             possiblyEncryptEvent(step, roomId, store, olm, user)
-        } catch (olmError: OlmLibraryException) {
+        } catch (error: Exception) {
             step
         }
         api.rooms.sendMessageEvent(roomId, sendContent)
@@ -99,7 +97,7 @@ class ActiveUserVerification(
                         is VerificationStep -> IsVerificationStep(eventContent, it.event.sender)
                         is EncryptedEventContent -> {
                             when (val decryptedEventContent = it.decryptedEvent?.getOrNull()?.content) {
-                                null -> MaybeVerificationStep
+                                null -> MaybeVerificationStep // this allows us to wait for decryption
                                 is VerificationStep -> IsVerificationStep(decryptedEventContent, it.event.sender)
                                 else -> NoVerificationStep
                             }
@@ -107,23 +105,25 @@ class ActiveUserVerification(
                         else -> NoVerificationStep
                     }
                 }.first { it is IsVerificationStep || it is NoVerificationStep }
-                if (searchResult is IsVerificationStep) {
+                if (searchResult is IsVerificationStep && searchResult.stepContent.relatesTo == relatesTo) {
                     val stepContent = searchResult.stepContent
-                    // mark request as already accepted
-                    if (!requestIsFromOurOwn && searchResult.sender == ownUserId
-                        && stepContent is VerificationReadyEventContent && stepContent.fromDevice != ownDeviceId
-                    ) {
-                        mutableState.value = ActiveVerificationState.AcceptedByOtherDevice
-                    }
-                    // we just ignore our own events (we already processed them)
-                    if ((searchResult.sender != ownUserId || state.value == ActiveVerificationState.AcceptedByOtherDevice)
-                        && searchResult.stepContent.relatesTo == relatesTo
-                    )
-                        handleIncomingVerificationStep(
+                    when {
+                        !requestIsFromOurOwn
+                                && searchResult.sender == ownUserId
+                                && stepContent is VerificationReadyEventContent -> {
+                            if (stepContent.fromDevice != ownDeviceId)
+                                mutableState.value = AcceptedByOtherDevice
+                            else if (state.value !is Ready)
+                                mutableState.value = Undefined
+                        }
+                        state.value == AcceptedByOtherDevice || state.value == Undefined -> {}
+                        // ignore own events (we already processed them)
+                        searchResult.sender != ownUserId -> handleIncomingVerificationStep(
                             searchResult.stepContent,
                             searchResult.sender,
                             searchResult.sender == ownUserId
                         )
+                    }
                 }
             }
         }
@@ -134,7 +134,7 @@ class ActiveUserVerification(
             }
             timelineJob.cancel()
 
-            if (state.value !is Cancel && state.value !is Done && !isVerificationRequestActive(timestamp)) {
+            if (isVerificationTimedOut(timestamp, state.value)) {
                 cancel(Code.Timeout, "verification timed out")
             }
         }

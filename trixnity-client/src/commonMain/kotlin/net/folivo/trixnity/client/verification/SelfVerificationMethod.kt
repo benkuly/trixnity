@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 
 sealed interface SelfVerificationMethod {
     data class CrossSignedDeviceVerification(
-        val createDeviceVerification: suspend () -> Unit
+        val createDeviceVerification: suspend () -> Result<ActiveDeviceVerification>
     ) : SelfVerificationMethod
 
     data class AesHmacSha2RecoveryKey(

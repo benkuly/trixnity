@@ -9,8 +9,6 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -54,7 +52,7 @@ class ActiveDeviceVerification(
         requireNotNull(theirDeviceId) { "their device id should never be null" }
         val sendContent = try {
             olm.events.encryptOlm(step, theirUserId, theirDeviceId)
-        } catch (olmError: OlmLibraryException) {
+        } catch (error: Exception) {
             step
         }
         api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to sendContent)))
@@ -74,7 +72,7 @@ class ActiveDeviceVerification(
             log.debug { "stop verification request lifecycle" }
             job.cancel()
             api.sync.unsubscribe(::handleVerificationStepEvents)
-            if (state.value !is Cancel && state.value !is Done && !isVerificationRequestActive(timestamp)) {
+            if (isVerificationTimedOut(timestamp, state.value)) {
                 cancel(Timeout, "verification timed out")
             }
         }

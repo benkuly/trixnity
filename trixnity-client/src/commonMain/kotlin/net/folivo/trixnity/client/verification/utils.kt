@@ -5,8 +5,7 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
-import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
+import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 import net.folivo.trixnity.olm.OlmUtility
@@ -19,7 +18,15 @@ fun isVerificationRequestActive(timestamp: Long): Boolean {
 }
 
 fun isVerificationRequestActive(timestamp: Long, state: ActiveVerificationState): Boolean {
-    return state !is Done && state !is Cancel && isVerificationRequestActive(timestamp)
+    return state !is Done && state !is Cancel
+            && state !is AcceptedByOtherDevice && state !is Undefined
+            && isVerificationRequestActive(timestamp)
+}
+
+fun isVerificationTimedOut(timestamp: Long, state: ActiveVerificationState): Boolean {
+    return state !is Done && state !is Cancel
+            && state !is AcceptedByOtherDevice && state !is Undefined
+            && !isVerificationRequestActive(timestamp)
 }
 
 internal suspend fun createSasCommitment(
