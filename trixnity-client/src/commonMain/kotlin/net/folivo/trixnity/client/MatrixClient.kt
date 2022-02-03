@@ -80,6 +80,7 @@ class MatrixClient private constructor(
             olm = olm,
         )
         room = RoomService(
+            ownUserId = userId,
             store = store,
             api = api,
             olm = olm,
