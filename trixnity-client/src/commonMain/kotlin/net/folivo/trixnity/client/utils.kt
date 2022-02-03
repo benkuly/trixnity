@@ -132,22 +132,18 @@ suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
-    syncState: SyncApiClient.SyncState,
-    vararg moreSyncStates: SyncApiClient.SyncState,
+suspend fun <T> retryWhen(
+    condition: StateFlow<Boolean>,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
-    scope: CoroutineScope,
     block: suspend () -> T
 ): T {
-    val syncStates = listOf(syncState) + moreSyncStates
-    val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
     val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
         .or(Schedule.spaced(scheduleLimit))
-        .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
+        .and(Schedule.doWhile { condition.value }) // just stop, when it is false
         .logInput {
             if (it is CancellationException) onCancel()
             else onError(it)
@@ -155,7 +151,7 @@ suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
 
     return flow {
         while (currentCoroutineContext().isActive) {
-            shouldRun.first { it } // just wait, until we are connected again
+            condition.first { it } // just wait, until it is true again
             try {
                 emit(
                     schedule.retry {
@@ -169,4 +165,28 @@ suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
             }
         }
     }.first()
+}
+
+suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
+    syncState: SyncApiClient.SyncState,
+    vararg moreSyncStates: SyncApiClient.SyncState,
+    scheduleBase: Duration = 100.milliseconds,
+    scheduleFactor: Double = 2.0,
+    scheduleLimit: Duration = 5.minutes,
+    onError: suspend (error: Throwable) -> Unit = {},
+    onCancel: suspend () -> Unit = {},
+    scope: CoroutineScope,
+    block: suspend () -> T
+): T {
+    val syncStates = listOf(syncState) + moreSyncStates
+    val condition = this.map { syncStates.contains(it) }.stateIn(scope)
+    return retryWhen(
+        condition = condition,
+        scheduleBase = scheduleBase,
+        scheduleFactor = scheduleFactor,
+        scheduleLimit = scheduleLimit,
+        onError = onError,
+        onCancel = onCancel,
+        block = block
+    )
 }
