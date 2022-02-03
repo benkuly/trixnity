@@ -99,6 +99,8 @@ class VerificationService(
                                 store = store,
                             )
                     }
+                } else {
+                    log.warn { "Received device verification request that is not active anymore: $event" }
                 }
             }
             else -> log.warn { "got new device verification request with an event type ${event::class.simpleName}, that we did not expected" }

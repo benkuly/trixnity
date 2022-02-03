@@ -9,13 +9,24 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -574,5 +585,65 @@ class EventSerializerTest {
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
         assertEquals(expectedResult, result)
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Test
+    fun shouldDeserializeEncryptedEventWithRelatesTo() {
+        val input = """
+        {
+           "type": "m.room.encrypted",
+           "sender": "@user:localhost",
+           "content": {
+             "algorithm": "m.megolm.v1.aes-sha2",
+             "sender_key": "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg",
+             "ciphertext": "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+             "session_id": "8798dSJJ878789dfjJKDSF",
+             "device_id": "GNAHNGTKNL",
+             "m.relates_to": {
+               "m.in_reply_to": {
+                 "event_id": "${'$'}7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY"
+               }
+             }
+           },
+           "origin_server_ts": 1643815115835,
+           "unsigned": {
+             "age": 241
+           },
+           "event_id": "${'$'}dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A",
+           "room_id": "!aNgXnqwYApWloKSPKD:imbitbu.de"
+        }
+        """.trimIndent()
+        val serializer = json.serializersModule.getContextual(Event::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, input)
+        assertEquals(
+            MessageEvent(
+                EncryptedEventContent.MegolmEncryptedEventContent(
+                    ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+                    senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
+                    deviceId = "GNAHNGTKNL",
+                    sessionId = "8798dSJJ878789dfjJKDSF",
+                    relatesTo = RelatesTo.Unknown(
+                        raw = JsonObject(
+                            mapOf(
+                                "m.in_reply_to" to JsonObject(
+                                    mapOf(
+                                        "event_id" to JsonPrimitive(
+                                            "$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY"
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),
+                roomId = RoomId("!aNgXnqwYApWloKSPKD:imbitbu.de"),
+                sender = UserId("@user:localhost"),
+                originTimestamp = 1643815115835,
+                unsigned = UnsignedMessageEventData(age = 241)
+            ), result
+        )
     }
 }
