@@ -121,7 +121,7 @@ class KeyBackupService(
 
 
     private val currentlyLoadingMegolmSessions = MutableStateFlow<Set<Pair<RoomId, String>>>(setOf())
-    private val loadMegolmSessionsQueue = MutableSharedFlow<LoadMegolmSession>()
+    private val loadMegolmSessionsQueue = MutableStateFlow<Set<LoadMegolmSession>>(setOf())
 
     data class LoadMegolmSession(
         val roomId: RoomId,
@@ -129,75 +129,83 @@ class KeyBackupService(
         val senderKey: Key.Curve25519Key,
     )
 
-    internal suspend fun loadMegolmSession(
+    internal fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
         senderKey: Key.Curve25519Key,
     ) {
-        loadMegolmSessionsQueue.emit(LoadMegolmSession(roomId, sessionId, senderKey))
+        loadMegolmSessionsQueue.update { it + LoadMegolmSession(roomId, sessionId, senderKey) }
     }
 
     internal suspend fun handleLoadMegolmSessionQueue(): Unit = coroutineScope {
-        loadMegolmSessionsQueue.onEach { (roomId, sessionId, senderKey) ->
-            val runningKey = Pair(roomId, sessionId)
-            if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
-                launch {
-                    api.sync.currentSyncState.retryWhenSyncIs(
-                        RUNNING,
-                        scheduleBase = 500.milliseconds,
-                        scheduleLimit = 6.hours,
-                        onError = { log.warn(it) { "failed load megolm session from key backup" } },
-                        onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
-                        scope = this
-                    ) {
-                        val version = version.value?.version
-                        if (version != null) {
-                            log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
-                            val encryptedData =
-                                api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(version, roomId, sessionId)
-                                    .getOrThrow()
-                            val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
-                            val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
-                                it.decrypt(
-                                    with(encryptedData.sessionData) {
-                                        OlmPkMessage(
-                                            cipherText = ciphertext,
-                                            mac = mac,
-                                            ephemeralKey = ephemeral
-                                        )
-                                    }
-                                )
-                            }
-                            val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
-                            require(data.senderKey.value == senderKey.value) { "sender key did not match" }
-                            val (firstKnownIndex, pickledSession) =
-                                freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                                    it.firstKnownIndex to it.pickle(olmPickleKey)
+        loadMegolmSessionsQueue.onEach { queue ->
+            queue.forEach { loadMegolmSession ->
+                val (roomId, sessionId, senderKey) = loadMegolmSession
+                val runningKey = Pair(roomId, sessionId)
+                if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
+                    launch {
+                        api.sync.currentSyncState.retryWhenSyncIs(
+                            RUNNING,
+                            scheduleBase = 500.milliseconds,
+                            scheduleLimit = 6.hours,
+                            onError = { log.warn(it) { "failed load megolm session from key backup" } },
+                            onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
+                            scope = this
+                        ) {
+                            val version = version.value?.version
+                            if (version != null) {
+                                log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
+                                val encryptedData =
+                                    api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
+                                        version,
+                                        roomId,
+                                        sessionId
+                                    )
+                                        .getOrThrow()
+                                val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
+                                val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
+                                    it.decrypt(
+                                        with(encryptedData.sessionData) {
+                                            OlmPkMessage(
+                                                cipherText = ciphertext,
+                                                mac = mac,
+                                                ephemeralKey = ephemeral
+                                            )
+                                        }
+                                    )
                                 }
-                            val senderSigningKey = Key.Ed25519Key(
-                                null,
-                                data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
-                                    ?: throw IllegalArgumentException("sender claimed key should not be empty")
-                            )
-                            store.olm.updateInboundMegolmSession(data.senderKey, sessionId, roomId) {
-                                if (it != null && it.firstKnownIndex <= firstKnownIndex) it
-                                else StoredInboundMegolmSession(
-                                    senderKey = data.senderKey,
-                                    sessionId = sessionId,
-                                    roomId = roomId,
-                                    firstKnownIndex = firstKnownIndex,
-                                    isTrusted = false, // because it comes from backup
-                                    hasBeenBackedUp = true, // because it comes from backup
-                                    senderSigningKey = senderSigningKey,
-                                    forwardingCurve25519KeyChain = data.forwardingKeyChain,
-                                    pickled = pickledSession
+                                val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
+                                require(data.senderKey.value == senderKey.value) { "sender key did not match" }
+                                val (firstKnownIndex, pickledSession) =
+                                    freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
+                                        it.firstKnownIndex to it.pickle(olmPickleKey)
+                                    }
+                                val senderSigningKey = Key.Ed25519Key(
+                                    null,
+                                    data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
+                                        ?: throw IllegalArgumentException("sender claimed key should not be empty")
                                 )
+                                store.olm.updateInboundMegolmSession(data.senderKey, sessionId, roomId) {
+                                    if (it != null && it.firstKnownIndex <= firstKnownIndex) it
+                                    else StoredInboundMegolmSession(
+                                        senderKey = data.senderKey,
+                                        sessionId = sessionId,
+                                        roomId = roomId,
+                                        firstKnownIndex = firstKnownIndex,
+                                        isTrusted = false, // because it comes from backup
+                                        hasBeenBackedUp = true, // because it comes from backup
+                                        senderSigningKey = senderSigningKey,
+                                        forwardingCurve25519KeyChain = data.forwardingKeyChain,
+                                        pickled = pickledSession
+                                    )
+                                }
                             }
                         }
+                        log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
+                        currentlyLoadingMegolmSessions.update { it - Pair(roomId, sessionId) }
                     }
-                    log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
-                    currentlyLoadingMegolmSessions.update { it - Pair(roomId, sessionId) }
                 }
+                loadMegolmSessionsQueue.update { it - loadMegolmSession }
             }
         }.collect()
     }
