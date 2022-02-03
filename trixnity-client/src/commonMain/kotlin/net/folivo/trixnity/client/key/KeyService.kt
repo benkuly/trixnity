@@ -68,9 +68,7 @@ class KeyService(
         if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
-            store.keys.outdatedKeys.update { oldUserIds ->
-                oldUserIds + userIds.filter { store.keys.isTracked(it) }
-            }
+            store.keys.outdatedKeys.update { it + userIds }
         }
         deviceList.left?.forEach { userId ->
             store.keys.outdatedKeys.update { it - userId }
@@ -90,7 +88,7 @@ class KeyService(
         ) {
             store.keys.outdatedKeys.collect { userIds ->
                 if (userIds.isNotEmpty()) {
-                    log.debug { "try update outdated keys of $userIds" }
+                    log.trace { "try update outdated keys of $userIds" }
                     val keysResponse = api.keys.getKeys(
                         deviceKeys = userIds.associateWith { emptySet() },
                         token = store.account.syncBatchToken.value
@@ -129,7 +127,7 @@ class KeyService(
         signingKeyForVerification: Ed25519Key?,
         signingOptional: Boolean = false
     ) {
-        log.debug { "update outdated master key for user $userId" }
+        log.debug { "update outdated ${usage.name} key of user $userId" }
         val signatureVerification =
             olm.sign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
         if (signatureVerification == VerifyResult.Valid
@@ -190,7 +188,7 @@ class KeyService(
                 val newMasterKeyTrustLevel = when (oldMasterKeyTrustLevel) {
                     is CrossSigned -> {
                         if (notFullyCrossSigned) {
-                            log.trace { "mark master key of $userId as ${NotAllDeviceKeysCrossSigned::class.simpleName}" }
+                            log.debug { "mark master key of $userId as ${NotAllDeviceKeysCrossSigned::class.simpleName}" }
                             NotAllDeviceKeysCrossSigned(oldMasterKeyTrustLevel.verified)
                         } else oldMasterKeyTrustLevel
                     }

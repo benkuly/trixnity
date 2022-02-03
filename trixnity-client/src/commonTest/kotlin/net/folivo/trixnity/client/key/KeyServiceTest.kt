@@ -93,13 +93,6 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.outdatedKeys.value shouldContainExactly setOf(bob)
             }
         }
-        context("device key is not tracked") {
-            should("not add add changed devices to outdated keys") {
-                store.keys.outdatedKeys.value = setOf(alice)
-                cut.handleDeviceLists(SyncResponse.DeviceLists(changed = setOf(bob)))
-                store.keys.outdatedKeys.value shouldContainExactly setOf(alice)
-            }
-        }
     }
 
     context(KeyService::handleOutdatedKeys.name) {
