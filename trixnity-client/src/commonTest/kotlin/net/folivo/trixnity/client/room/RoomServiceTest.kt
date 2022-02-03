@@ -70,7 +70,7 @@ class RoomServiceTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olmService, key, users, media)
+        cut = RoomService(alice, store, api, olmService, key, users, media)
     }
 
     afterTest {
@@ -368,7 +368,6 @@ class RoomServiceTest : ShouldSpec({
 
     context(RoomService::setOwnMembership.name) {
         should("set own membership of a room") {
-            store.account.userId.value = alice
             cut.setOwnMembership(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
@@ -576,14 +575,13 @@ class RoomServiceTest : ShouldSpec({
     }
     context(RoomService::syncOutboxMessage.name) {
         should("ignore messages from foreign users") {
-            store.account.userId.value = UserId("me", "server")
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.add(roomOutboxMessage)
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
-                UserId("sender", "server"),
+                UserId("other", "server"),
                 room,
                 1234,
                 UnsignedMessageEventData(transactionId = "transaction")
@@ -594,14 +592,13 @@ class RoomServiceTest : ShouldSpec({
             }
         }
         should("remove outbox message from us") {
-            store.account.userId.value = UserId("me", "server")
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.add(roomOutboxMessage)
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
-                UserId("me", "server"),
+                alice,
                 room,
                 1234,
                 UnsignedMessageEventData(transactionId = "transaction")

@@ -40,7 +40,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olm, key, users, mockk())
+        cut = RoomService(alice, store, api, olm, key, users, mockk())
     }
 
     afterTest {
@@ -62,18 +62,16 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                     stateKey = alice.full,
                 )
             )
-            val event = Event.GlobalAccountDataEvent(
-                DirectEventContent(
-                    mappings = mapOf(
-                        alice to setOf(
-                            room,
-                            RoomId("room2", "localhost")
-                        )
+            val eventContent = DirectEventContent(
+                mappings = mapOf(
+                    alice to setOf(
+                        room,
+                        RoomId("room2", "localhost")
                     )
                 )
             )
 
-            cut.setAvatarUrlForDirectRooms(event)
+            cut.setAvatarUrlForDirectRooms(eventContent)
 
             store.room.get(room).value?.avatarUrl shouldBe "mxc://localhost/abcdef"
         }
@@ -100,18 +98,16 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                     stateKey = "",
                 )
             )
-            val event = Event.GlobalAccountDataEvent(
-                DirectEventContent(
-                    mappings = mapOf(
-                        alice to setOf(
-                            room,
-                            RoomId("room2", "localhost")
-                        )
+            val eventContent = DirectEventContent(
+                mappings = mapOf(
+                    alice to setOf(
+                        room,
+                        RoomId("room2", "localhost")
                     )
                 )
             )
 
-            cut.setAvatarUrlForDirectRooms(event)
+            cut.setAvatarUrlForDirectRooms(eventContent)
 
             store.room.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
         }
@@ -119,7 +115,6 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
 
     context(RoomService::setAvatarUrlForMemberUpdates.name) {
         should("update the room's avatar URL when the room is a direct room") {
-            store.account.userId.value = alice
             store.room.update(room) { Room(room, isDirect = true) }
             val event = Event.StateEvent(
                 MemberEventContent(
@@ -139,7 +134,6 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         }
 
         should("do nothing when the room is not a direct room") {
-            store.account.userId.value = alice
             store.room.update(room) { Room(room, isDirect = false) }
             val event = Event.StateEvent(
                 MemberEventContent(
@@ -159,7 +153,6 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         }
 
         should("use the membership event of other user and not own (which is the invitation we might have sent)") {
-            store.account.userId.value = alice
             store.room.update(room) { Room(room, isDirect = true) }
             val event = Event.StateEvent(
                 // invitation

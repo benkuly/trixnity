@@ -41,6 +41,7 @@ import kotlin.time.Duration.Companion.seconds
 private val log = KotlinLogging.logger {}
 
 class RoomService(
+    private val ownUserId: UserId,
     private val store: Store,
     private val api: MatrixApiClient,
     private val olm: OlmService,
@@ -63,14 +64,15 @@ class RoomService(
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe<StateEventContent> { store.roomState.update(it) }
-        api.sync.subscribe(::setRoomIsDirect)
-        api.sync.subscribe(::setAvatarUrlForDirectRooms)
+        api.sync.subscribe(::setDirectEventContent)
         api.sync.subscribe(::setAvatarUrlForMemberUpdates)
         api.sync.subscribe(::setAvatarUrlForAvatarEvents)
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
         api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
         api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
+        api.sync.subscribeAfterSyncResponse(::handleDirectEventContent)
+        api.sync.subscribeAfterSyncResponse(::setDirectRoomsAfterSync)
     }
 
     // TODO test
@@ -259,7 +261,7 @@ class RoomService(
     internal suspend fun setOwnMembership(event: Event<MemberEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
-        if (roomId != null && stateKey != null && stateKey == store.account.userId.value?.full) {
+        if (roomId != null && stateKey != null && stateKey == ownUserId.full) {
             store.room.update(roomId) { oldRoom ->
                 oldRoom?.copy(
                     membership = event.content.membership
@@ -271,46 +273,123 @@ class RoomService(
         }
     }
 
+    private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
     internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
-        val ownUserId = store.account.userId.value
         val sender = event.getSender()
-        if (roomId != null && stateKey != null && ownUserId != null && sender != null) {
+        if (roomId != null && stateKey != null && sender != null) {
             val invitee = UserId(stateKey)
-            val directUser = if (sender == ownUserId) {
-                invitee
-            } else if (invitee == ownUserId) {
-                sender
-            } else {
-                return
-            }
-            if (event.content.isDirect == true) {
-                val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
-                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser)
-                val newDirectRooms = when {
-                    existingDirectRoomsWithUser != null -> {
-                        currentDirectRooms.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
-                    }
-                    currentDirectRooms != null -> {
-                        currentDirectRooms.copy(currentDirectRooms.mappings + (directUser to setOf(roomId)))
-                    }
-                    else -> {
-                        DirectEventContent(mapOf(directUser to setOf(roomId)))
-                    }
+            val directUser =
+                when (ownUserId) {
+                    sender -> invitee
+                    invitee -> sender
+                    else -> return
                 }
+
+            if (directUser != ownUserId && event.content.isDirect == true) {
+                log.debug { "mark room $roomId as direct room with $directUser" }
+                val currentDirectRooms = setDirectRoomsEventContent.value
+                    ?: store.globalAccountData.get<DirectEventContent>()?.content
+                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser) ?: setOf()
+                val newDirectRooms =
+                    currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
+                        ?: DirectEventContent(mapOf(directUser to setOf(roomId)))
                 if (newDirectRooms != currentDirectRooms)
-                    api.users.setAccountData(newDirectRooms, ownUserId)
+                    setDirectRoomsEventContent.value = newDirectRooms
             }
             if (directUser == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
-                val currentDirectRooms = store.globalAccountData.get<DirectEventContent>()?.content
+                log.debug { "unmark room $roomId as direct room with $directUser" }
+                val currentDirectRooms = setDirectRoomsEventContent.value
+                    ?: store.globalAccountData.get<DirectEventContent>()?.content
                 if (currentDirectRooms != null) {
                     val newDirectRooms = DirectEventContent(
                         currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
-                            .filterValues { !it.isNullOrEmpty() }
+                            .filterValues { it.isNullOrEmpty().not() }
                     )
                     if (newDirectRooms != currentDirectRooms)
-                        api.users.setAccountData(newDirectRooms, ownUserId)
+                        setDirectRoomsEventContent.value = newDirectRooms
+                }
+            }
+        }
+    }
+
+    internal suspend fun setDirectRoomsAfterSync() {
+        val newDirectRooms = setDirectRoomsEventContent.value
+        if (newDirectRooms != null && newDirectRooms != store.globalAccountData.get<DirectEventContent>()?.content)
+            api.users.setAccountData(newDirectRooms, ownUserId)
+        setDirectRoomsEventContent.value = null
+    }
+
+    // because DirectEventContent could be set before any rooms are in store
+    private val directEventContent = MutableStateFlow<DirectEventContent?>(null)
+    internal fun setDirectEventContent(directEvent: Event<DirectEventContent>) {
+        directEventContent.value = directEvent.content
+    }
+
+    internal suspend fun handleDirectEventContent() {
+        val content = directEventContent.value
+        if (content != null) {
+            setRoomIsDirect(content)
+            setAvatarUrlForDirectRooms(content)
+            directEventContent.value = null
+        }
+    }
+
+    internal suspend fun setRoomIsDirect(directEventContent: DirectEventContent) {
+        val allDirectRooms = directEventContent.mappings.entries.flatMap { (_, rooms) ->
+            rooms ?: emptySet()
+        }.toSet()
+        allDirectRooms.forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
+
+        val allRooms = store.room.getAll().value.keys
+        allRooms.subtract(allDirectRooms)
+            .forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
+    }
+
+    internal suspend fun setAvatarUrlForDirectRooms(directEventContent: DirectEventContent) {
+        directEventContent.mappings.entries.forEach { (userId, rooms) ->
+            rooms?.forEach { room ->
+                if (store.roomState.getByStateKey<AvatarEventContent>(room)?.content?.url.isNullOrEmpty()) {
+                    val avatarUrl = store.roomState.getByStateKey<MemberEventContent>(room, stateKey = userId.full)
+                        ?.content?.avatarUrl
+                    store.room.update(room) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
+                }
+            }
+        }
+    }
+
+    internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
+        memberEvent.getRoomId()?.let { roomId ->
+            val room = store.room.get(roomId).value
+            if (room?.isDirect == true && ownUserId != memberEvent.getSender()) {
+                store.room.update(roomId) { oldRoom ->
+                    oldRoom?.copy(avatarUrl = memberEvent.content.avatarUrl?.ifEmpty { null })
+                }
+            }
+        }
+    }
+
+    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: Event<AvatarEventContent>) {
+        avatarEvent.getRoomId()?.let { roomId ->
+            val avatarUrl = avatarEvent.content.url
+            val room = store.room.get(roomId).value
+            if (room?.isDirect?.not() == true || avatarUrl.isNotEmpty()) {
+                store.room.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl.ifEmpty { null }) }
+            } else if (avatarUrl.isEmpty()) {
+                store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.let { mappings ->
+                    mappings.entries.forEach { (userId, rooms) ->
+                        rooms
+                            ?.filter { room -> room == roomId }
+                            ?.forEach { room ->
+                                val newAvatarUrl =
+                                    store.roomState.getByStateKey<MemberEventContent>(room, stateKey = userId.full)
+                                        ?.content?.avatarUrl
+                                store.room.update(room) { oldRoom ->
+                                    oldRoom?.copy(avatarUrl = newAvatarUrl?.ifEmpty { null })
+                                }
+                            }
+                    }
                 }
             }
         }
@@ -795,7 +874,7 @@ class RoomService(
 
     internal suspend fun syncOutboxMessage(event: Event<*>) {
         if (event is MessageEvent)
-            if (event.sender == store.account.userId.value) {
+            if (event.sender == ownUserId) {
                 event.unsigned?.transactionId?.also {
                     store.roomOutboxMessage.deleteByTransactionId(it)
                 }
@@ -894,70 +973,5 @@ class RoomService(
         eventContentClass: KClass<C>,
     ): Event<C>? {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass)
-    }
-
-    internal suspend fun setRoomIsDirect(directEvent: Event<DirectEventContent>) {
-        val allDirectRooms = directEvent.content.mappings.entries.flatMap { (_, rooms) ->
-            rooms ?: emptySet()
-        }.toSet()
-        allDirectRooms.forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
-
-        val allRooms = store.room.getAll().value.keys
-        allRooms.subtract(allDirectRooms)
-            .forEach { room -> store.room.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
-    }
-
-    internal suspend fun setAvatarUrlForDirectRooms(directEvent: Event<DirectEventContent>) {
-        directEvent.content.mappings.entries.forEach { (userId, rooms) ->
-            rooms?.forEach { room ->
-                if (store.roomState.getByStateKey<AvatarEventContent>(room)?.content?.url.isNullOrEmpty()) {
-                    val avatarUrl =
-                        store.roomState.getByStateKey<MemberEventContent>(
-                            room,
-                            stateKey = userId.full
-                        )?.content?.avatarUrl
-                    store.room.update(room) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
-                }
-            }
-        }
-    }
-
-    internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
-        memberEvent.getRoomId()?.let { roomId ->
-            val room = store.room.get(roomId).value
-            val ownUserId = store.account.userId.value
-            if (room?.isDirect == true && ownUserId != memberEvent.getSender()) {
-                store.room.update(roomId) { oldRoom ->
-                    oldRoom?.copy(avatarUrl = memberEvent.content.avatarUrl?.ifEmpty { null })
-                }
-            }
-        }
-    }
-
-    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: Event<AvatarEventContent>) {
-        avatarEvent.getRoomId()?.let { roomId ->
-            val avatarUrl = avatarEvent.content.url
-            val room = store.room.get(roomId).value
-            if (room?.isDirect?.not() == true || avatarUrl.isNotEmpty()) {
-                store.room.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl.ifEmpty { null }) }
-            } else if (avatarUrl.isEmpty()) {
-                store.globalAccountData.get(DirectEventContent::class)?.content?.mappings?.let { mappings ->
-                    mappings.entries.forEach { (userId, rooms) ->
-                        rooms
-                            ?.filter { room -> room == roomId }
-                            ?.forEach { room ->
-                                val newAvatarUrl =
-                                    store.roomState.getByStateKey<MemberEventContent>(
-                                        room,
-                                        stateKey = userId.full
-                                    )?.content?.avatarUrl
-                                store.room.update(room) { oldRoom ->
-                                    oldRoom?.copy(avatarUrl = newAvatarUrl?.ifEmpty { null })
-                                }
-                            }
-                    }
-                }
-            }
-        }
     }
 }

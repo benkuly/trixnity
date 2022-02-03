@@ -2,9 +2,7 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -28,6 +26,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 class RoomServiceDirectTest : ShouldSpec({
     timeout = 30_000
 
+    val bob = UserId("bob", "server")
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
@@ -43,7 +42,7 @@ class RoomServiceDirectTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(store, api, olm, key, users, media)
+        cut = RoomService(bob, store, api, olm, key, users, media)
     }
 
     afterTest {
@@ -53,10 +52,6 @@ class RoomServiceDirectTest : ShouldSpec({
 
     context(RoomService::setDirectRooms.name) {
         val otherRoom = RoomId("other", "server")
-        val bob = UserId("bob", "server")
-        beforeTest {
-            store.account.userId.value = bob
-        }
         context("membership is direct") {
             val event = Event.StateEvent(
                 MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
@@ -74,6 +69,7 @@ class RoomServiceDirectTest : ShouldSpec({
                 }
                 should("add direct room") {
                     cut.setDirectRooms(event)
+                    cut.setDirectRoomsAfterSync()
                     coVerify {
                         api.users.setAccountData(
                             withArg {
@@ -96,6 +92,7 @@ class RoomServiceDirectTest : ShouldSpec({
                 }
                 should("add direct room") {
                     cut.setDirectRooms(event)
+                    cut.setDirectRoomsAfterSync()
                     coVerify {
                         api.users.setAccountData(
                             withArg {
@@ -110,10 +107,43 @@ class RoomServiceDirectTest : ShouldSpec({
                         )
                     }
                 }
+                should("add multiple direct rooms") {
+                    val yetAnotherRoom = RoomId("yar", "server")
+                    cut.setDirectRooms(event)
+                    cut.setDirectRooms(
+                        Event.StateEvent(
+                            MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                            EventId("$123"),
+                            sender = bob,
+                            yetAnotherRoom,
+                            1234,
+                            stateKey = UserId("other", "server").full
+                        )
+                    )
+                    cut.setDirectRoomsAfterSync()
+                    // ensure, that cache is cleared
+                    cut.setDirectRoomsAfterSync()
+                    coVerify(exactly = 1) {
+                        api.users.setAccountData(
+                            withArg {
+                                println(it)
+                                it shouldBe DirectEventContent(
+                                    mapOf(
+                                        UserId("nobody", "server") to setOf(otherRoom),
+                                        alice to setOf(room),
+                                        UserId("other", "server") to setOf(yetAnotherRoom)
+                                    )
+                                )
+                            },
+                            bob
+                        )
+                    }
+                }
             }
             context("there are no direct rooms at all") {
                 should("add direct room") {
                     cut.setDirectRooms(event)
+                    cut.setDirectRoomsAfterSync()
                     coVerify {
                         api.users.setAccountData(
                             withArg {
@@ -135,6 +165,7 @@ class RoomServiceDirectTest : ShouldSpec({
                 )
                 should("add the room as a direct room") {
                     cut.setDirectRooms(joinEvent)
+                    cut.setDirectRoomsAfterSync()
                     coVerify {
                         api.users.setAccountData(
                             withArg {
@@ -156,12 +187,32 @@ class RoomServiceDirectTest : ShouldSpec({
                 )
                 should("add the room as a direct room") {
                     cut.setDirectRooms(joinEvent)
+                    cut.setDirectRoomsAfterSync()
                     coVerify {
                         api.users.setAccountData(
                             withArg {
                                 it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             },
                             bob
+                        )
+                    }
+                }
+            }
+            context("invitation is from our own to our own") {
+                val joinEvent = Event.StateEvent(
+                    MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                    EventId("$123"),
+                    sender = bob,
+                    room,
+                    1234,
+                    stateKey = bob.full
+                )
+                should("ignore this invitation") {
+                    cut.setDirectRooms(joinEvent)
+                    coVerify(exactly = 0) {
+                        api.users.setAccountData(
+                            any(),
+                            any(),
                         )
                     }
                 }
@@ -209,6 +260,7 @@ class RoomServiceDirectTest : ShouldSpec({
                     stateKey = bob.full
                 )
                 cut.setDirectRooms(event)
+                cut.setDirectRoomsAfterSync()
                 coVerify {
                     api.users.setAccountData(
                         withArg {
@@ -232,6 +284,7 @@ class RoomServiceDirectTest : ShouldSpec({
                     stateKey = bob.full
                 )
                 cut.setDirectRooms(event)
+                cut.setDirectRoomsAfterSync()
                 coVerify {
                     api.users.setAccountData(
                         withArg {
@@ -251,16 +304,14 @@ class RoomServiceDirectTest : ShouldSpec({
     context(RoomService::setRoomIsDirect.name) {
         should("set the room to direct == 'true' when a DirectEventContent is found for the room") {
             store.room.update(room) { Room(room, isDirect = false) }
-            val event = Event.GlobalAccountDataEvent(
-                DirectEventContent(
-                    mappings = mapOf(
-                        UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"), room)
-                    )
+            val eventContent = DirectEventContent(
+                mappings = mapOf(
+                    UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"), room)
                 )
             )
             cut.getAll().first { it.size == 1 }
 
-            cut.setRoomIsDirect(event)
+            cut.setRoomIsDirect(eventContent)
 
             store.room.get(room).value?.isDirect shouldBe true
         }
@@ -269,19 +320,33 @@ class RoomServiceDirectTest : ShouldSpec({
             val room2 = RoomId("room2", "localhost")
             store.room.update(room1) { Room(room1, isDirect = true) }
             store.room.update(room2) { Room(room2, isDirect = true) }
-            val event = Event.GlobalAccountDataEvent(
-                DirectEventContent(
-                    mappings = mapOf(
-                        UserId("user1", "localhost") to setOf(room2)
-                    )
+            val eventContent = DirectEventContent(
+                mappings = mapOf(
+                    UserId("user1", "localhost") to setOf(room2)
                 )
             )
             cut.getAll().first { it.size == 2 }
 
-            cut.setRoomIsDirect(event)
+            cut.setRoomIsDirect(eventContent)
 
             store.room.get(room1).value?.isDirect shouldBe false
             store.room.get(room2).value?.isDirect shouldBe true
+        }
+    }
+
+    context(RoomService::handleDirectEventContent.name) {
+        should("call DirectEventContent handlers") {
+            val spyCut = spyk(cut) {
+                coEvery { setRoomIsDirect(any()) } just Runs
+                coEvery { setAvatarUrlForDirectRooms(any()) } just Runs
+            }
+            val eventContent = mockk<DirectEventContent>()
+            spyCut.setDirectEventContent(Event.GlobalAccountDataEvent(eventContent))
+            spyCut.handleDirectEventContent()
+            coVerify {
+                spyCut.setRoomIsDirect(eventContent)
+                spyCut.setAvatarUrlForDirectRooms(eventContent)
+            }
         }
     }
 
