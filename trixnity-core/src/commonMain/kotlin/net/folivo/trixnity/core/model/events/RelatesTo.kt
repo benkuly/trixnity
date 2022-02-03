@@ -12,24 +12,20 @@ import net.folivo.trixnity.core.model.EventId
 
 @Serializable(with = RelatesToSerializer::class)
 sealed class RelatesTo {
-    abstract val eventId: EventId
-    abstract val type: String
 
     @Serializable
     data class Reference(
         @SerialName("event_id")
-        override val eventId: EventId,
+        val eventId: EventId,
         @SerialName("rel_type")
-        override val type: String = "m.reference"
+        val type: String = "m.reference"
     ) : RelatesTo() {
         companion object {
             const val type = "m.reference"
         }
     }
 
-    data class Custom(
-        override val eventId: EventId,
-        override val type: String,
+    data class Unknown(
         val raw: JsonObject
     ) : RelatesTo()
 }
@@ -40,11 +36,10 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
     override fun deserialize(decoder: Decoder): RelatesTo {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        return when (val type = requireNotNull(jsonObject["rel_type"]?.jsonPrimitive?.content)) {
+        return when (jsonObject["rel_type"]?.jsonPrimitive?.content) {
             RelatesTo.Reference.type -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
             else -> {
-                val eventId = EventId(requireNotNull(jsonObject["event_id"]?.jsonPrimitive?.content))
-                RelatesTo.Custom(eventId, type, jsonObject)
+                RelatesTo.Unknown(jsonObject)
             }
         }
     }
@@ -53,11 +48,11 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         require(encoder is JsonEncoder)
         val (jsonObject, type) = when (value) {
             is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value) to RelatesTo.Reference.type
-            is RelatesTo.Custom -> value.raw to value.type
+            is RelatesTo.Unknown -> value.raw to null
         }
         encoder.encodeJsonElement(JsonObject(buildMap {
             putAll(jsonObject.jsonObject)
-            put("rel_type", JsonPrimitive(type))
+            if (type != null) put("rel_type", JsonPrimitive(type))
         }))
     }
 }
