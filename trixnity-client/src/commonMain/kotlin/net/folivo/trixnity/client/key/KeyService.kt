@@ -88,7 +88,7 @@ class KeyService(
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
             scope = this
         ) {
-            store.keys.outdatedKeys.debounce(100).collectLatest { userIds ->
+            store.keys.outdatedKeys.collect { userIds ->
                 if (userIds.isNotEmpty()) {
                     log.debug { "try update outdated keys of $userIds" }
                     val keysResponse = api.keys.getKeys(
