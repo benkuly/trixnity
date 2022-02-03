@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.api.model.keys.SetRoomKeysVersionRequest
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
-import net.folivo.trixnity.client.retryWhenSyncIs
+import net.folivo.trixnity.client.retryWhen
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
@@ -29,7 +29,6 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoo
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.olm.*
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
@@ -144,13 +143,14 @@ class KeyBackupService(
                 val runningKey = Pair(roomId, sessionId)
                 if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
                     launch {
-                        api.sync.currentSyncState.retryWhenSyncIs(
-                            RUNNING,
-                            scheduleBase = 500.milliseconds,
+                        retryWhen(
+                            combine(version, api.sync.currentSyncState) { currentVersion, currentSyncState ->
+                                currentVersion != null && currentSyncState == RUNNING
+                            }.stateIn(this),
+                            scheduleBase = 1.seconds,
                             scheduleLimit = 6.hours,
                             onError = { log.warn(it) { "failed load megolm session from key backup" } },
                             onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
-                            scope = this
                         ) {
                             val version = version.value?.version
                             if (version != null) {
