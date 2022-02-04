@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
@@ -272,9 +273,10 @@ class OlmEventService internal constructor(
                     .createdAt.plus(rotationPeriodMs, MILLISECOND) <= Clock.System.now())
                 || rotationPeriodMsgs != null && (storedSession.encryptedMessageCount >= rotationPeriodMsgs)
             ) {
-                log.debug { "encrypt megolm event with new session" }
+                store.room.get(roomId).first { it?.membersLoaded == true }
                 val members = store.roomState.members(roomId, JOIN, INVITE)
                 store.keys.waitForUpdateOutdatedKey(*members.toTypedArray())
+                log.debug { "encrypt megolm event with new session" }
                 val newUserDevices =
                     members.mapNotNull { userId ->
                         store.keys.getDeviceKeys(userId)?.let { userId to it.keys }
