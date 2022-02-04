@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -27,6 +28,7 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -90,6 +92,38 @@ class UserServiceTest : ShouldSpec({
             cut.loadMembers(roomId)
             val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            store.keys.outdatedKeys.value.shouldBeEmpty()
+            store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
+            store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
+            job.cancel()
+        }
+        should("add outdated keys when room is encrypted") {
+            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
+                flowOf(
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event1"),
+                        alice,
+                        roomId,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event2"),
+                        bob,
+                        roomId,
+                        1234,
+                        stateKey = bob.full
+                    )
+                )
+            )
+            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
+            store.room.update(roomId) { storedRoom }
+            cut.loadMembers(roomId)
+            val job = launch { cut.handleLoadMembersQueue() }
+            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            store.keys.outdatedKeys.value shouldBe setOf(alice, bob)
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
             job.cancel()
@@ -130,6 +164,7 @@ class UserServiceTest : ShouldSpec({
             cut.loadMembers(roomId)
             val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            store.keys.outdatedKeys.value.shouldBeEmpty()
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
             job.cancel()

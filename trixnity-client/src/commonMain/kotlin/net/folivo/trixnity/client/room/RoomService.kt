@@ -249,7 +249,8 @@ class RoomService(
         if (event is StateEvent) {
             store.room.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
-                    encryptionAlgorithm = event.content.algorithm
+                    encryptionAlgorithm = event.content.algorithm,
+                    membersLoaded = false // enforce all keys are loaded
                 ) ?: Room(
                     roomId = event.roomId,
                     encryptionAlgorithm = event.content.algorithm,

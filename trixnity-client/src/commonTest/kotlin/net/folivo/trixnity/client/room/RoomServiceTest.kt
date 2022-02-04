@@ -352,6 +352,7 @@ class RoomServiceTest : ShouldSpec({
 
     context(RoomService::setEncryptionAlgorithm.name) {
         should("update set encryption algorithm") {
+            store.room.update(room) { simpleRoom.copy(membersLoaded = true) }
             cut.setEncryptionAlgorithm(
                 StateEvent(
                     EncryptionEventContent(algorithm = Megolm),
@@ -363,6 +364,7 @@ class RoomServiceTest : ShouldSpec({
                 )
             )
             store.room.get(room).value?.encryptionAlgorithm shouldBe Megolm
+            store.room.get(room).value?.membersLoaded shouldBe false
         }
     }
 

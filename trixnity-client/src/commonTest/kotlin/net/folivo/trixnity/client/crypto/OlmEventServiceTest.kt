@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.datatest.withData
@@ -39,6 +40,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.ORDINARY
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -47,6 +49,7 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.milliseconds
 
 class OlmEventServiceTest : ShouldSpec(body)
 
@@ -534,9 +537,10 @@ private val body: ShouldSpec.() -> Unit = {
         val room = RoomId("room", "server")
         val megolmEvent = MegolmEvent(eventContent, room)
         beforeTest {
+            store.room.update(room) { Room(room, membership = JOIN, membersLoaded = true) }
             listOf(
                 StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent(membership = JOIN),
                     EventId("\$event1"),
                     alice,
                     room,
@@ -544,7 +548,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full
                 ),
                 StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent(membership = JOIN),
                     EventId("\$event2"),
                     bob,
                     room,
@@ -627,10 +631,11 @@ private val body: ShouldSpec.() -> Unit = {
             testEncryption(EncryptionEventContent(), 1)
             should("not send room keys, when not possible to encrypt them due to missing one time keys") {
                 val otherRoom = RoomId("otherRoom", "server")
+                store.room.update(otherRoom) { Room(otherRoom, membership = JOIN, membersLoaded = true) }
                 val cedric = UserId("cedric", "server")
                 listOf(
                     StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = JOIN),
                         EventId("\$event1"),
                         alice,
                         otherRoom,
@@ -638,7 +643,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = alice.full
                     ),
                     StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = JOIN),
                         EventId("\$event2"),
                         cedric,
                         otherRoom,
@@ -646,7 +651,6 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = cedric.full
                     )
                 ).forEach { store.roomState.update(it) }
-
 
                 store.keys.outdatedKeys.value = setOf(cedric)
                 val asyncResult = async { cut.encryptMegolm(eventContent, otherRoom, EncryptionEventContent()) }
@@ -658,6 +662,36 @@ private val body: ShouldSpec.() -> Unit = {
                 coVerify(exactly = 0) {
                     api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any())
                 }
+            }
+            should("wait that room members are loaded") {
+                store.room.update(room) { Room(room, membership = JOIN, membersLoaded = false) }
+                store.room.get(room).first { it?.membersLoaded == false }
+                val cedric = UserId("cedric", "server")
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event1"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    ),
+                    StateEvent(
+                        MemberEventContent(membership = JOIN),
+                        EventId("\$event2"),
+                        cedric,
+                        room,
+                        1235,
+                        stateKey = cedric.full
+                    )
+                ).forEach { store.roomState.update(it) }
+
+                val asyncResult = async { cut.encryptMegolm(eventContent, room, EncryptionEventContent()) }
+                continually(200.milliseconds) {
+                    asyncResult.isActive shouldBe true
+                }
+                store.room.update(room) { it?.copy(membersLoaded = true) }
+                asyncResult.await()
             }
         }
         context("with stored session") {
