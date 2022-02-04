@@ -21,4 +21,9 @@ sealed interface UserTrustLevel {
      * The trust level could not be calculated.
      */
     data class Invalid(val reason: String) : UserTrustLevel
+
+    /**
+     * There are no stored cross signing keys of this user yet.
+     */
+    object Unknown : UserTrustLevel
 }
