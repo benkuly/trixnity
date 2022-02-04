@@ -1,5 +1,9 @@
 package net.folivo.trixnity.core.model
 
+import mu.KotlinLogging
+
+private val log = KotlinLogging.logger {}
+
 abstract class MatrixId {
 
     val full: String
@@ -14,10 +18,10 @@ abstract class MatrixId {
         localpart = s.substringBefore(':')
         domain = s.substringAfter(':', "")
 
-        if (full.isEmpty()) throw IllegalArgumentException("matrix identifier must not be empty")
-        if (sigilCharacter != full.first()) throw IllegalArgumentException("given sigil character $sigilCharacter does not match with full string $full")
-        if (localpart.isEmpty()) throw IllegalArgumentException("localpart must not be empty")
-        if (domain.isEmpty()) throw IllegalArgumentException("domain must not be empty")
+        if (full.isEmpty()) log.error { "matrix identifier must not be empty" }
+        if (sigilCharacter != full.first()) log.error { "given sigil character $sigilCharacter does not match with full string $full" }
+        if (localpart.isEmpty()) log.error { "localpart must not be empty" }
+        if (domain.isEmpty()) log.error { "domain must not be empty" }
     }
 
     constructor(localpart: String, domain: String, sigilCharacter: Char) {
