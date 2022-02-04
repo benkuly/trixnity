@@ -22,12 +22,12 @@ import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmSAS
 import net.folivo.trixnity.olm.freeAfter
@@ -334,13 +334,13 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasKeyEventContent("key", null, "t"),
             )
             should("send ${VerificationDoneEventContent::class.simpleName}") {
-                coEvery { keyService.trustAndSignKeys(any(), any()) } just Runs
+                coEvery { keyService.trust.trustAndSignKeys(any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
                 sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
                 coVerify {
-                    keyService.trustAndSignKeys(
+                    keyService.trust.trustAndSignKeys(
                         setOf(
                             Ed25519Key(bobDevice, "bobKey"),
                             Ed25519Key("HUHU", "buh"),

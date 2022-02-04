@@ -53,6 +53,8 @@ private val body: ShouldSpec.() -> Unit = {
     val olm = mockk<OlmService>()
     val api = mockk<MatrixApiClient>()
     val json = createMatrixJson()
+    val backup: KeyBackupService = mockk()
+    val trust: KeyTrustService = mockk()
 
     mockkStatic(::decryptSecret)
 
@@ -62,7 +64,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
         coEvery { api.json } returns json
-        cut = KeyService("", alice, aliceDevice, store, olm, api)
+        cut = KeyService("", alice, aliceDevice, store, olm, api, backup = backup, trust = trust)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
     }
@@ -73,13 +75,11 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(KeyService::checkOwnAdvertisedMasterKeyAndVerifySelf.name) {
-        lateinit var spyCut: KeyService
         beforeTest {
-            spyCut = spyk(cut)
-            coEvery { spyCut.trustAndSignKeys(any(), any()) } just Runs
+            coEvery { trust.trustAndSignKeys(any(), any()) } just Runs
         }
         should("fail when master key cannot be found") {
-            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
         }
         should("fail when master key does not match") {
             val encryptedMasterKey = MasterKeyEventContent(mapOf())
@@ -102,7 +102,7 @@ private val body: ShouldSpec.() -> Unit = {
             coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
                 .encodeBase64()
 
-            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
         }
         should("be success, when master key matches") {
             val encryptedMasterKey = MasterKeyEventContent(mapOf())
@@ -138,10 +138,10 @@ private val body: ShouldSpec.() -> Unit = {
 
             coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns privateKey
 
-            spyCut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).getOrThrow()
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).getOrThrow()
 
             coVerify {
-                spyCut.trustAndSignKeys(
+                trust.trustAndSignKeys(
                     setOf(
                         Ed25519Key(publicKey, publicKey),
                         Ed25519Key(aliceDevice, "dev")
@@ -152,10 +152,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeyService::bootstrapCrossSigning.name) {
         context("successfull") {
-            lateinit var spyCut: KeyService
             beforeTest {
-                spyCut = spyk(cut)
-
                 coEvery { api.json } returns createMatrixJson()
                 coEvery { api.users.setAccountData<SecretKeyEventContent>(any(), any(), any()) }
                     .returns(Result.success(Unit))
@@ -171,11 +168,11 @@ private val body: ShouldSpec.() -> Unit = {
                     Signed(firstArg(), mapOf())
                 }
                 coEvery {
-                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
+                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 } returns Result.success(Unit)
                 coEvery { api.keys.setCrossSigningKeys(any(), any(), any()) }
                     .returns(Result.success(UIA.UIASuccess(Unit)))
-                coEvery { spyCut.trustAndSignKeys(any(), any()) } just Runs
+                coEvery { trust.trustAndSignKeys(any(), any()) } just Runs
                 store.keys.updateCrossSigningKeys(alice) {
                     setOf(
                         StoredCrossSigningKeys(
@@ -204,7 +201,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("bootstrap") {
-                val result = async { spyCut.bootstrapCrossSigning() }
+                val result = async { cut.bootstrapCrossSigning() }
                 store.keys.outdatedKeys.first { it.contains(alice) }
                 store.keys.outdatedKeys.value = setOf()
 
@@ -255,13 +252,13 @@ private val body: ShouldSpec.() -> Unit = {
                         userId = alice
                     )
                     api.keys.setCrossSigningKeys(any(), any(), any())
-                    spyCut.trustAndSignKeys(
+                    trust.trustAndSignKeys(
                         setOf(
                             Ed25519Key("A_MSK", "A_MSK"),
                             Ed25519Key(aliceDevice, "dev")
                         ), alice
                     )
-                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
+                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 }
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
@@ -269,7 +266,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             should("bootstrap from passphrase") {
-                val result = async { spyCut.bootstrapCrossSigningFromPassphrase("super secret. not.") }
+                val result = async { cut.bootstrapCrossSigningFromPassphrase("super secret. not.") }
                 store.keys.outdatedKeys.first { it.contains(alice) }
                 store.keys.outdatedKeys.value = setOf()
 
@@ -325,13 +322,13 @@ private val body: ShouldSpec.() -> Unit = {
                         userId = alice
                     )
                     api.keys.setCrossSigningKeys(any(), any(), any())
-                    spyCut.trustAndSignKeys(
+                    trust.trustAndSignKeys(
                         setOf(
                             Ed25519Key("A_MSK", "A_MSK"),
                             Ed25519Key(aliceDevice, "dev")
                         ), alice
                     )
-                    spyCut.backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
+                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 }
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
