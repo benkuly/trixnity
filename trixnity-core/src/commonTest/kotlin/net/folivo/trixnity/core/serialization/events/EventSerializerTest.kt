@@ -9,22 +9,12 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -510,9 +500,9 @@ class EventSerializerTest {
     fun shouldDeserializeMalformedEvent() {
         val input = """
         {
-            "type":"m.room.canonical_alias",
+            "type":"m.room.member",
             "content":{
-                "alias":"dino",
+                "membership":"dino",
                 "unicorns":[]
             },
             "event_id":"$143273582443PhrSn",
@@ -532,10 +522,10 @@ class EventSerializerTest {
                 UnknownStateEventContent(
                     JsonObject(
                         mapOf(
-                            "alias" to JsonPrimitive("dino"),
+                            "membership" to JsonPrimitive("dino"),
                             "unicorns" to JsonArray(listOf())
                         )
-                    ), "m.room.canonical_alias"
+                    ), "m.room.member"
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
