@@ -458,7 +458,8 @@ class KeyService(
                     is NotAllDeviceKeysCrossSigned -> UserTrustLevel.NotAllDevicesCrossSigned(trustLevel.verified)
                     Blocked -> UserTrustLevel.Blocked
                     is Invalid -> UserTrustLevel.Invalid(trustLevel.reason)
-                    NotCrossSigned, null -> UserTrustLevel.Invalid("could not determine trust level of cross signing key: $crossSigningKeys")
+                    NotCrossSigned -> UserTrustLevel.Invalid("could not determine trust level of cross signing key: $crossSigningKeys")
+                    null -> UserTrustLevel.Unknown
                 }
             }.stateIn(scope)
     }
