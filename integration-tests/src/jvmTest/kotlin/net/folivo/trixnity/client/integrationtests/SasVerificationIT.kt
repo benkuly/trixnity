@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel
@@ -129,9 +129,11 @@ class SasVerificationIT {
                 .shouldBeInstanceOf<ActiveVerificationState.Done>()
             client2Verification.state.first { it is ActiveVerificationState.Done }
                 .shouldBeInstanceOf<ActiveVerificationState.Done>()
-        }
 
-        client1.key.getTrustLevel(client2.userId, client2.deviceId, scope1).value shouldBe DeviceTrustLevel.Verified
-        client2.key.getTrustLevel(client1.userId, client1.deviceId, scope2).value shouldBe DeviceTrustLevel.Verified
+            client1.key.getTrustLevel(client2.userId, client2.deviceId, scope1).onEach { println(it) }
+                .first { it == DeviceTrustLevel.Verified }
+            client2.key.getTrustLevel(client1.userId, client1.deviceId, scope2)
+                .first { it == DeviceTrustLevel.Verified }
+        }
     }
 }

@@ -16,7 +16,6 @@ import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
-import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -37,8 +36,6 @@ import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.collections.flatMap
-import kotlin.collections.toSet
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import arrow.core.flatMap as flatMapResult
@@ -52,9 +49,10 @@ class KeyService(
     private val store: Store,
     private val olm: OlmService,
     private val api: MatrixApiClient,
+    internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api),
+    internal val backup: KeyBackupService = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm),
+    internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm, api)
 ) {
-    internal val secret = KeySecretService(ownUserId, ownDeviceId, store, olm, api)
-    internal val backup = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm)
 
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeDeviceLists(::handleDeviceLists)
@@ -127,17 +125,22 @@ class KeyService(
         signingKeyForVerification: Ed25519Key?,
         signingOptional: Boolean = false
     ) {
-        log.debug { "update outdated ${usage.name} key of user $userId" }
         val signatureVerification =
             olm.sign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
         if (signatureVerification == VerifyResult.Valid
             || signingOptional && signatureVerification is VerifyResult.MissingSignature
         ) {
-            val newKey = StoredCrossSigningKeys(crossSigningKey, calculateCrossSigningKeysTrustLevel(crossSigningKey))
+            val oldTrustLevel = store.keys.getCrossSigningKey(userId, usage)?.trustLevel
+            val trustLevel = trust.calculateCrossSigningKeysTrustLevel(crossSigningKey)
+            log.debug { "updated outdated cross signing ${usage.name} key of user $userId with trust level $trustLevel (was $oldTrustLevel)" }
+            val newKey = StoredCrossSigningKeys(crossSigningKey, trustLevel)
             store.keys.updateCrossSigningKeys(userId) { oldKeys ->
                 ((oldKeys?.filterNot { it.value.signed.usage.contains(usage) }
                     ?.toSet() ?: setOf())
                         + newKey)
+            }
+            if (oldTrustLevel != trustLevel) {
+                newKey.value.signed.get<Ed25519Key>()?.let { trust.updateTrustLevelOfKeyChainSignedBy(userId, it) }
             }
         } else {
             log.warn { "Signatures from cross signing key (${usage.name}) of $userId were not valid: $signatureVerification!" }
@@ -149,7 +152,6 @@ class KeyService(
         devices: Map<String, Signed<DeviceKeys, UserId>>,
         joinedEncryptedRooms: Deferred<List<RoomId>>
     ) {
-        log.debug { "update outdated device keys for user $userId" }
         val oldDevices = store.keys.getDeviceKeys(userId)
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
@@ -160,7 +162,9 @@ class KeyService(
                     if (!it) log.warn { "Signatures from device key $deviceId of $userId were not valid: $signatureVerification!" }
                 }
         }.mapValues { (_, deviceKeys) ->
-            StoredDeviceKeys(deviceKeys, calculateDeviceKeysTrustLevel(deviceKeys))
+            val trustLevel = trust.calculateDeviceKeysTrustLevel(deviceKeys)
+            log.debug { "updated outdated device keys ${deviceKeys.signed.deviceId} of user $userId with trust level $trustLevel" }
+            StoredDeviceKeys(deviceKeys, trustLevel)
         }
         val addedDeviceKeys = if (oldDevices != null) newDevices.keys - oldDevices.keys else newDevices.keys
         if (addedDeviceKeys.isNotEmpty()) {
@@ -202,242 +206,6 @@ class KeyService(
         store.keys.updateDeviceKeys(userId) { newDevices }
     }
 
-    internal suspend fun updateTrustLevel(signingUserId: UserId, signingKey: Ed25519Key) {
-        updateTrustLevelOfKey(signingUserId, signingKey)
-        store.keys.getKeyChainLinksBySigningKey(signingUserId, signingKey).forEach { keyChainLink ->
-            updateTrustLevelOfKey(keyChainLink.signedUserId, keyChainLink.signedKey)
-        }
-    }
-
-    private suspend fun updateTrustLevelOfKey(userId: UserId, key: Ed25519Key) {
-        val keyId = key.keyId
-        log.debug { "update trust level for $userId key $key" }
-
-        if (keyId != null) {
-            val foundKey = MutableStateFlow(false)
-
-            store.keys.updateDeviceKeys(userId) { oldDeviceKeys ->
-                val foundDeviceKeys = oldDeviceKeys?.get(keyId)
-                if (foundDeviceKeys != null) {
-                    val newTrustLevel = calculateDeviceKeysTrustLevel(foundDeviceKeys.value)
-                    foundKey.value = true
-                    oldDeviceKeys + (keyId to foundDeviceKeys.copy(trustLevel = newTrustLevel))
-                } else oldDeviceKeys
-            }
-            if (foundKey.value.not()) {
-                store.keys.updateCrossSigningKeys(userId) { oldKeys ->
-                    val foundCrossSigningKeys = oldKeys?.firstOrNull { keys ->
-                        keys.value.signed.keys.keys.filterIsInstance<Ed25519Key>().any { it.keyId == keyId }
-                    }
-                    if (foundCrossSigningKeys != null) {
-                        val newTrustLevel = calculateCrossSigningKeysTrustLevel(foundCrossSigningKeys.value)
-                        foundKey.value = true
-                        (oldKeys - foundCrossSigningKeys) + foundCrossSigningKeys.copy(trustLevel = newTrustLevel)
-
-                    } else oldKeys
-                }
-            }
-            if (foundKey.value.not()) log.warn { "could not find device or cross signing keys of $key" }
-        } else log.warn { "could not update trust level, because key id of $key was null" }
-    }
-
-    internal suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
-        log.trace { "calculate trust level for ${deviceKeys.signed}" }
-        val userId = deviceKeys.signed.userId
-        val deviceId = deviceKeys.signed.deviceId
-        val signedKey = deviceKeys.signed.keys.get<Ed25519Key>()
-            ?: return Invalid("missing ed25519 key")
-        return calculateTrustLevel(
-            userId,
-            { olm.sign.verify(deviceKeys, it) },
-            signedKey,
-            deviceKeys.signatures,
-            deviceKeys.getVerificationState(userId, deviceId),
-            false
-        ).also { log.trace { "calculated trust level of ${deviceKeys.signed} from $userId is $it" } }
-    }
-
-    internal suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
-        log.trace { "calculate trust level for ${crossSigningKeys.signed}" }
-        val userId = crossSigningKeys.signed.userId
-        val signedKey = crossSigningKeys.signed.keys.get<Ed25519Key>()
-            ?: return Invalid("missing ed25519 key")
-        return calculateTrustLevel(
-            userId,
-            { olm.sign.verify(crossSigningKeys, it) },
-            signedKey,
-            crossSigningKeys.signatures,
-            crossSigningKeys.getVerificationState(userId),
-            crossSigningKeys.signed.usage.contains(MasterKey)
-        ).also { log.trace { "calculated trust level of ${crossSigningKeys.signed} from $userId is $it" } }
-    }
-
-    private suspend fun calculateTrustLevel(
-        userId: UserId,
-        verifySignedObject: suspend (signingKeys: Map<UserId, Set<Ed25519Key>>) -> VerifyResult,
-        signedKey: Ed25519Key,
-        signatures: Signatures<UserId>,
-        keyVerificationState: KeyVerificationState?,
-        isMasterKey: Boolean
-    ): KeySignatureTrustLevel {
-        val masterKey = store.keys.getCrossSigningKey(userId, MasterKey)
-        return when {
-            keyVerificationState is KeyVerificationState.Verified && isMasterKey -> CrossSigned(true)
-            keyVerificationState is KeyVerificationState.Verified && (masterKey == null) -> Valid(true)
-            keyVerificationState is KeyVerificationState.Blocked -> Blocked
-            else -> searchSignaturesForTrustLevel(userId, verifySignedObject, signedKey, signatures)
-                ?: when {
-                    isMasterKey -> CrossSigned(false)
-                    else -> if (masterKey == null) Valid(false) else NotCrossSigned
-                }
-        }
-    }
-
-    private suspend fun searchSignaturesForTrustLevel(
-        signedUserId: UserId,
-        verifySignedObject: suspend (signingKeys: Map<UserId, Set<Ed25519Key>>) -> VerifyResult,
-        signedKey: Ed25519Key,
-        signatures: Signatures<UserId>,
-        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
-    ): KeySignatureTrustLevel? {
-        log.trace { "search in signatures of $signedKey for trust level calculation: $signatures" }
-        visitedKeys.add(signedUserId to signedKey.keyId)
-        store.keys.deleteKeyChainLinksBySignedKey(signedUserId, signedKey)
-        val states = signatures.flatMap { (signingUserId, signatureKeys) ->
-            signatureKeys
-                .filterIsInstance<Ed25519Key>()
-                .filterNot { visitedKeys.contains(signingUserId to it.keyId) }
-                .flatMap { signatureKey ->
-                    visitedKeys.add(signingUserId to signatureKey.keyId)
-
-                    val crossSigningKey =
-                        signatureKey.keyId?.let { store.keys.getCrossSigningKey(signingUserId, it) }?.value
-                    val signingCrossSigningKey = crossSigningKey?.signed?.get<Ed25519Key>()
-                    val crossSigningKeyState = if (signingCrossSigningKey != null) {
-                        val isValid = verifySignedObject(mapOf(signingUserId to setOf(signingCrossSigningKey)))
-                            .also { v ->
-                                if (v != VerifyResult.Valid)
-                                    log.warn { "signature was $v for key chain $signingCrossSigningKey ($signingUserId) ---> $signedKey ($signedUserId)" }
-                            } == VerifyResult.Valid
-                        if (isValid) when (crossSigningKey.getVerificationState(signingUserId)) {
-                            is KeyVerificationState.Verified -> CrossSigned(true)
-                            is KeyVerificationState.Blocked -> Blocked
-                            else -> {
-                                searchSignaturesForTrustLevel(
-                                    signingUserId,
-                                    { olm.sign.verify(crossSigningKey, it) },
-                                    signingCrossSigningKey,
-                                    crossSigningKey.signatures,
-                                    visitedKeys
-                                ) ?: if (crossSigningKey.signed.usage.contains(MasterKey)
-                                    && crossSigningKey.signed.userId == signedUserId
-                                    && crossSigningKey.signed.userId == signingUserId
-                                ) CrossSigned(false) else null
-                            }
-                        } else null
-                    } else null
-
-                    val deviceKey = signatureKey.keyId?.let { store.keys.getDeviceKey(signingUserId, it) }?.value
-                    val signingDeviceKey = deviceKey?.get<Ed25519Key>()
-                    val deviceKeyState = if (signingDeviceKey != null) {
-                        val isValid = verifySignedObject(mapOf(signingUserId to setOf(signingDeviceKey)))
-                            .also { v ->
-                                if (v != VerifyResult.Valid)
-                                    log.warn { "signature was $v for key chain $signingCrossSigningKey ($signingUserId) ---> $signedKey ($signedUserId)" }
-                            } == VerifyResult.Valid
-                        if (isValid) when (deviceKey.getVerificationState(signingUserId, deviceKey.signed.deviceId)) {
-                            is KeyVerificationState.Verified -> CrossSigned(true)
-                            is KeyVerificationState.Blocked -> Blocked
-                            else -> searchSignaturesForTrustLevel(
-                                signedUserId,
-                                { olm.sign.verify(deviceKey, it) },
-                                signingDeviceKey,
-                                deviceKey.signatures,
-                                visitedKeys
-                            )
-                        } else null
-                    } else null
-
-                    val signingKey = signingCrossSigningKey ?: signingDeviceKey
-                    if (signingKey != null) {
-                        store.keys.saveKeyChainLink(KeyChainLink(signingUserId, signingKey, signedUserId, signedKey))
-                    }
-
-                    listOf(crossSigningKeyState, deviceKeyState)
-                }.toSet()
-        }.toSet()
-        return when {
-            states.any { it is CrossSigned && it.verified } -> CrossSigned(true)
-            states.any { it is CrossSigned && !it.verified } -> CrossSigned(false)
-            states.contains(Blocked) -> Blocked
-            else -> null
-        }
-    }
-
-    internal suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
-        log.debug { "sign keys (when possible): $keys" }
-        val signedDeviceKeys = keys.mapNotNull { key ->
-            val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed
-            if (deviceKey != null) {
-                store.keys.saveKeyVerificationState(
-                    key, deviceKey.userId, deviceKey.deviceId, KeyVerificationState.Verified(key.value)
-                )
-                updateTrustLevel(userId, key)
-                try {
-                    if (userId == ownUserId && deviceKey.get<Ed25519Key>() == key) {
-                        log.info { "sign own accounts device with own self signing key" }
-                        olm.sign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
-                    } else null
-                } catch (error: Throwable) {
-                    log.warn { "could not sign key $key: ${error.message}" }
-                    null
-                }
-            } else null
-        }
-        val signedCrossSigningKeys = keys.mapNotNull { key ->
-            val crossSigningKey = key.keyId?.let { store.keys.getCrossSigningKey(userId, it) }?.value?.signed
-            if (crossSigningKey != null) {
-                store.keys.saveKeyVerificationState(
-                    key, crossSigningKey.userId, null, KeyVerificationState.Verified(key.value)
-                )
-                updateTrustLevel(userId, key)
-                if (crossSigningKey.usage.contains(MasterKey)) {
-                    try {
-                        if (crossSigningKey.get<Ed25519Key>() == key) {
-                            if (userId == ownUserId) {
-                                log.info { "sign own master key with own device key" }
-                                olm.sign.sign(crossSigningKey, SignWith.DeviceKey)
-                            } else {
-                                log.info { "sign other users master key with own user signing key" }
-                                olm.sign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
-                            }
-                        } else null
-                    } catch (error: Throwable) {
-                        log.warn { "could not sign key $key: ${error.message}" }
-                        null
-                    }
-                } else null
-            } else null
-        }
-        if (signedDeviceKeys.isNotEmpty() || signedCrossSigningKeys.isNotEmpty()) {
-            log.debug { "upload signed keys: ${signedDeviceKeys + signedCrossSigningKeys}" }
-            val response = api.keys.addSignatures(signedDeviceKeys.toSet(), signedCrossSigningKeys.toSet()).getOrThrow()
-            if (response.failures.isNotEmpty()) {
-                log.error { "could not add signatures to server: ${response.failures}" }
-                throw UploadSignaturesException(response.failures.toString())
-            }
-        }
-    }
-
-    private suspend fun Keys.getVerificationState(userId: UserId, deviceId: String? = null) =
-        this.asFlow().mapNotNull { store.keys.getKeyVerificationState(it, userId, deviceId) }.firstOrNull()
-
-    private suspend fun SignedCrossSigningKeys.getVerificationState(userId: UserId) =
-        this.signed.keys.getVerificationState(userId)
-
-    private suspend fun SignedDeviceKeys.getVerificationState(userId: UserId, deviceId: String) =
-        this.signed.keys.getVerificationState(userId, deviceId)
-
     /**
      * Only DeviceKeys and CrossSigningKeys are supported.
      */
@@ -468,7 +236,7 @@ class KeyService(
         ) {
             val ownDeviceKeys = store.keys.getDeviceKey(ownUserId, ownDeviceId)?.value?.get<Ed25519Key>()
             kotlin.runCatching {
-                trustAndSignKeys(setOfNotNull(advertisedPublicKey, ownDeviceKeys), ownUserId)
+                trust.trustAndSignKeys(setOfNotNull(advertisedPublicKey, ownDeviceKeys), ownUserId)
             }
         } else Result.failure(MasterKeyInvalidException("master public key $decryptedPublicKey did not match the advertised ${advertisedPublicKey?.value}"))
     }
@@ -602,7 +370,7 @@ class KeyService(
                             store.keys.getCrossSigningKey(ownUserId, MasterKey)?.value?.signed?.get<Ed25519Key>()
                         val ownDeviceKey = store.keys.getDeviceKey(ownUserId, ownDeviceId)?.value?.get<Ed25519Key>()
 
-                        trustAndSignKeys(setOfNotNull(masterKey, ownDeviceKey), ownUserId)
+                        trust.trustAndSignKeys(setOfNotNull(masterKey, ownDeviceKey), ownUserId)
                         log.debug { "finished bootstrapping" }
                     }
                 }

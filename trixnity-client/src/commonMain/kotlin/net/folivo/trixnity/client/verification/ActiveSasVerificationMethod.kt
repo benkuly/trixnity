@@ -272,7 +272,7 @@ class ActiveSasVerificationMethod private constructor(
                             }
                         }.contains(false)
                     if (!containsMismatchedMac) {
-                        keyService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
+                        keyService.trust.trustAndSignKeys(keysToMac.toSet(), theirUserId)
                         sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
                     } else {
                         sendVerificationStep(
