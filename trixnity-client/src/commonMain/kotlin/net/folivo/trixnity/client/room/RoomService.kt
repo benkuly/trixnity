@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.model.rooms.Direction
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
@@ -785,7 +786,9 @@ class RoomService(
                     val decryptEventAttempt = encryptedEvent.decryptCatching()
                     val exception = decryptEventAttempt.exceptionOrNull()
                     val decryptedEvent =
-                        if (exception is OlmLibraryException && exception.message == "OLM_UNKNOWN_MESSAGE_INDEX") {
+                        if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
+                            || exception is DecryptionException.SessionException && exception.cause.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
+                        ) {
                             key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
                             log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
                             store.olm.waitForInboundMegolmSession(
