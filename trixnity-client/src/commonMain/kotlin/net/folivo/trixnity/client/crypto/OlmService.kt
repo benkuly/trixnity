@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
@@ -113,12 +113,9 @@ class OlmService(
             try {
                 val decryptedEvent = events.decryptOlm(event.content, event.sender)
                 _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
-            } catch (e: KeyException) {
+            } catch (e: Exception) {
                 log.error(e) { "could not decrypt $event" }
-            } catch (e: SessionException) {
-                log.error(e) { "could not decrypt $event" }
-            } catch (e: SerializationException) {
-                log.error(e) { "could not decrypt $event" }
+                if (e is CancellationException) throw e
             }
         }
     }
