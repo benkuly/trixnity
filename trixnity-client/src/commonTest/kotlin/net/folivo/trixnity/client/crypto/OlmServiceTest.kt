@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
@@ -242,12 +241,6 @@ class OlmServiceTest : ShouldSpec({
             should("catch ${SerializationException::class.simpleName}") {
                 coEvery { spyCut.events.decryptOlm(any(), any()) } throws SerializationException("")
                 spyCut.handleOlmEncryptedToDeviceEvents(event)
-            }
-            should("not catch other exceptions") {
-                coEvery { spyCut.events.decryptOlm(any(), any()) } throws IllegalArgumentException("")
-                shouldThrow<IllegalArgumentException> {
-                    spyCut.handleOlmEncryptedToDeviceEvents(event)
-                }
             }
         }
         should("emit decrypted events") {
