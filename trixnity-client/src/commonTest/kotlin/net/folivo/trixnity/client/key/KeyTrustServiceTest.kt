@@ -60,10 +60,18 @@ private val body: ShouldSpec.() -> Unit = {
 
     context(KeyTrustService::updateTrustLevelOfKeyChainSignedBy.name) {
         val aliceSigningKey1 = Ed25519Key(aliceDevice, "signingValue1")
-        val aliceSigningKey2 = Ed25519Key(aliceDevice, "signingValue2")
+        val aliceSigningKey2 = Ed25519Key("OTHER_ALICE", "signingValue2")
         val bobSignedKey = Ed25519Key(bobDevice, "signedValue")
         beforeTest {
-            // this is a key chain
+            // this is a key chain with loop -> it should not loop
+            store.keys.saveKeyChainLink(
+                KeyChainLink(
+                    signingUserId = alice,
+                    signingKey = aliceSigningKey1,
+                    signedUserId = alice,
+                    signedKey = aliceSigningKey2
+                )
+            )
             store.keys.saveKeyChainLink(
                 KeyChainLink(
                     signingUserId = alice,
@@ -74,10 +82,10 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.keys.saveKeyChainLink(
                 KeyChainLink(
-                    signingUserId = alice,
-                    signingKey = aliceSigningKey1,
+                    signingUserId = bob,
+                    signingKey = bobSignedKey,
                     signedUserId = alice,
-                    signedKey = aliceSigningKey2
+                    signedKey = aliceSigningKey1
                 )
             )
         }

@@ -33,12 +33,19 @@ class KeyTrustService(
     private val api: MatrixApiClient,
 ) {
 
-    internal suspend fun updateTrustLevelOfKeyChainSignedBy(signingUserId: UserId, signingKey: Ed25519Key) {
+    internal suspend fun updateTrustLevelOfKeyChainSignedBy(
+        signingUserId: UserId,
+        signingKey: Ed25519Key,
+        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
+    ) {
         log.trace { "update trust level of all keys signed by $signingUserId $signingKey" }
-        store.keys.getKeyChainLinksBySigningKey(signingUserId, signingKey).forEach { keyChainLink ->
-            updateTrustLevelOfKey(keyChainLink.signedUserId, keyChainLink.signedKey)
-            updateTrustLevelOfKeyChainSignedBy(keyChainLink.signedUserId, keyChainLink.signedKey)
-        }
+        visitedKeys.add(signingUserId to signingKey.keyId)
+        store.keys.getKeyChainLinksBySigningKey(signingUserId, signingKey)
+            .filterNot { visitedKeys.contains(it.signedUserId to it.signedKey.keyId) }
+            .forEach { keyChainLink ->
+                updateTrustLevelOfKey(keyChainLink.signedUserId, keyChainLink.signedKey)
+                updateTrustLevelOfKeyChainSignedBy(keyChainLink.signedUserId, keyChainLink.signedKey, visitedKeys)
+            }
     }
 
     private suspend fun updateTrustLevelOfKey(userId: UserId, key: Ed25519Key) {
