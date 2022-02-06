@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
@@ -240,11 +241,12 @@ class VerificationService(
     /**
      * This should be called on login. If it is null, it means, that we don't have enough information yet to calculated available methods.
      * If it is empty, it means that cross signing needs to be bootstrapped.
-     * Bootstrapping can be done with [KeyService][net.folivo.trixnity.client.key.KeyService].
+     * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
         return combine(
+            api.sync.currentSyncState,
             store.keys.getDeviceKeys(ownUserId, scope),
             store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
                 .transformLatest { event ->
@@ -254,11 +256,10 @@ class VerificationService(
                         } ?: emit(null)
                     }
                 },
-        ) { deviceKeys, defaultKey ->
+        ) { currentSyncState, deviceKeys, defaultKey ->
+            if (currentSyncState != SyncApiClient.SyncState.RUNNING) return@combine null
             if (deviceKeys == null) return@combine null
-
-            if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned)
-                return@combine setOf()
+            if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned) return@combine setOf()
 
             val deviceVerificationMethod = deviceKeys.entries
                 .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
@@ -266,9 +267,13 @@ class VerificationService(
                 .let {
                     val sendToDevices = it - ownDeviceId
                     if (sendToDevices.isNotEmpty())
-                        setOf(SelfVerificationMethod.CrossSignedDeviceVerification {
-                            createDeviceVerificationRequest(ownUserId, *sendToDevices.toTypedArray())
-                        })
+                        setOf(
+                            SelfVerificationMethod.CrossSignedDeviceVerification(
+                                ownUserId,
+                                sendToDevices,
+                                ::createDeviceVerificationRequest
+                            )
+                        )
                     else setOf()
                 }
 

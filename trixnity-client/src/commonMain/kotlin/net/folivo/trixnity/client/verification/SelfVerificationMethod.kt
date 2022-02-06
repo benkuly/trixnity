@@ -5,12 +5,22 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.checkRecoveryKey
 import net.folivo.trixnity.client.key.decodeRecoveryKey
 import net.folivo.trixnity.client.key.recoveryKeyFromPassphrase
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 
 sealed interface SelfVerificationMethod {
     data class CrossSignedDeviceVerification(
-        val createDeviceVerification: suspend () -> Result<ActiveDeviceVerification>
-    ) : SelfVerificationMethod
+        private val ownUserId: UserId,
+        private val sendToDevices: List<String>,
+        private val createDeviceVerificationRequest: suspend (
+            theirUserId: UserId,
+            theirDeviceIds: Array<String>
+        ) -> Result<ActiveDeviceVerification>
+    ) : SelfVerificationMethod {
+        suspend fun createDeviceVerification(): Result<ActiveDeviceVerification> {
+            return createDeviceVerificationRequest(ownUserId, sendToDevices.toTypedArray())
+        }
+    }
 
     data class AesHmacSha2RecoveryKey(
         private val keyService: KeyService,

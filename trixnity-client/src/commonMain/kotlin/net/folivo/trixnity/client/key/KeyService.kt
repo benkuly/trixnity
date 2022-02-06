@@ -86,7 +86,7 @@ class KeyService(
         ) {
             store.keys.outdatedKeys.collect { userIds ->
                 if (userIds.isNotEmpty()) {
-                    log.trace { "try update outdated keys of $userIds" }
+                    log.debug { "try update outdated keys of $userIds" }
                     val keysResponse = api.keys.getKeys(
                         deviceKeys = userIds.associateWith { emptySet() },
                         token = store.account.syncBatchToken.value
@@ -168,11 +168,12 @@ class KeyService(
         }
         val addedDeviceKeys = if (oldDevices != null) newDevices.keys - oldDevices.keys else newDevices.keys
         if (addedDeviceKeys.isNotEmpty()) {
-            log.debug { "look for encrypted room, where the user participates and notify megolm sessions about new device keys from $userId: $addedDeviceKeys" }
             joinedEncryptedRooms.await()
                 .filter { roomId ->
                     store.roomState.getByStateKey<MemberEventContent>(roomId, userId.full)
                         ?.content?.membership.let { it == MemberEventContent.Membership.JOIN || it == MemberEventContent.Membership.INVITE }
+                }.also {
+                    if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDeviceKeys" }
                 }.forEach { roomId ->
                     store.olm.updateOutboundMegolmSession(roomId) { oms ->
                         oms?.copy(
