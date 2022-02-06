@@ -34,7 +34,7 @@ class KeyTrustService(
 ) {
 
     internal suspend fun updateTrustLevelOfKeyChainSignedBy(signingUserId: UserId, signingKey: Ed25519Key) {
-        log.debug { "update trust level of all keys signed by $signingUserId $signingKey" }
+        log.trace { "update trust level of all keys signed by $signingUserId $signingKey" }
         store.keys.getKeyChainLinksBySigningKey(signingUserId, signingKey).forEach { keyChainLink ->
             updateTrustLevelOfKey(keyChainLink.signedUserId, keyChainLink.signedKey)
             updateTrustLevelOfKeyChainSignedBy(keyChainLink.signedUserId, keyChainLink.signedKey)

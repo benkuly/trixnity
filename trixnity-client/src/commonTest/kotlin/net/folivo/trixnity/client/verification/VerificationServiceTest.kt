@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.api.MatrixApiClient
+import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
@@ -405,8 +406,25 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(VerificationService::getSelfVerificationMethods.name) {
         lateinit var scope: CoroutineScope
-        beforeTest { scope = CoroutineScope(Dispatchers.Default) }
+        val syncState = MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+        beforeTest {
+            scope = CoroutineScope(Dispatchers.Default)
+            syncState.value = SyncApiClient.SyncState.RUNNING
+            coEvery { api.sync.currentSyncState } returns syncState
+        }
         afterTest { scope.cancel() }
+        should("return null, when sync state is not running") {
+            syncState.value = SyncApiClient.SyncState.INITIAL_SYNC
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),
+                    "DEV2" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
+                    "DEV3" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false))
+                )
+            }
+            val result = cut.getSelfVerificationMethods(scope)
+            result.value shouldBe null
+        }
         should("return null, when device keys not fetched yet") {
             val result = cut.getSelfVerificationMethods(scope)
             result.value shouldBe null
