@@ -31,6 +31,8 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
@@ -70,6 +72,7 @@ class RoomService(
         api.sync.subscribe(::setAvatarUrlForAvatarEvents)
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
+        api.sync.subscribe(::setReadReceipts)
         api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
         api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
         api.sync.subscribeAfterSyncResponse(::handleDirectEventContent)
@@ -276,6 +279,7 @@ class RoomService(
     }
 
     private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
+
     internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
@@ -315,7 +319,6 @@ class RoomService(
             }
         }
     }
-
     internal suspend fun setDirectRoomsAfterSync() {
         val newDirectRooms = setDirectRoomsEventContent.value
         if (newDirectRooms != null && newDirectRooms != store.globalAccountData.get<DirectEventContent>()?.content)
@@ -325,10 +328,10 @@ class RoomService(
 
     // because DirectEventContent could be set before any rooms are in store
     private val directEventContent = MutableStateFlow<DirectEventContent?>(null)
+
     internal fun setDirectEventContent(directEvent: Event<DirectEventContent>) {
         directEventContent.value = directEvent.content
     }
-
     internal suspend fun handleDirectEventContent() {
         val content = directEventContent.value
         if (content != null) {
@@ -407,6 +410,23 @@ class RoomService(
             )
         }
     }
+
+    internal suspend fun setReadReceipts(receiptEvent: Event<ReceiptEventContent>) {
+        receiptEvent.getRoomId()?.let { roomId ->
+            receiptEvent.content.events.forEach { (eventId, receipts) ->
+                receipts
+                    .filterIsInstance<Receipt.ReadReceipt>()
+                    .forEach { receipt ->
+                        receipt.read.keys.forEach { userId ->
+                            store.roomUser.update(userId, roomId) { oldRoomUser ->
+                                oldRoomUser?.copy(lastReadMessage = eventId)
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
 
     internal suspend fun redactTimelineEvent(redactionEvent: Event<RedactionEventContent>) {
         if (redactionEvent is MessageEvent) {
@@ -850,14 +870,17 @@ class RoomService(
         coroutineScope: CoroutineScope,
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
-            if (room?.lastMessageEventId != null) emit(
-                getTimelineEvent(
-                    room.lastMessageEventId,
-                    roomId,
-                    coroutineScope
-                )
-            )
-            else emit(null)
+            coroutineScope {
+                if (room?.lastMessageEventId != null)
+                    emit(
+                        getTimelineEvent(
+                            room.lastMessageEventId,
+                            roomId,
+                            this,
+                        )
+                    )
+                else emit(null)
+            }
         }.stateIn(coroutineScope)
     }
 
