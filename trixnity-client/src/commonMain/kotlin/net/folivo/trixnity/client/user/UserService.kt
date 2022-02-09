@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.originalName
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -156,8 +157,12 @@ class UserService(
                             store.roomState.update(event = it, skipWhenAlreadyPresent = true)
                             setRoomUser(event = it, skipWhenAlreadyPresent = true)
                         }
-                        if (store.room.get(roomId).value?.encryptionAlgorithm != null)
-                            store.keys.outdatedKeys.update { it + memberEvents.map { event -> UserId(event.stateKey) } }
+                        if (store.room.get(roomId).value?.encryptionAlgorithm != null) {
+                            store.keys.outdatedKeys.update {
+                                it + memberEvents.map { event -> UserId(event.stateKey) }
+                                    .filterNot { userId -> store.keys.isTracked(userId) }
+                            }
+                        }
                         store.room.update(roomId) { it?.copy(membersLoaded = true) }
                     }
                     loadMembersQueue.update { it - roomId }

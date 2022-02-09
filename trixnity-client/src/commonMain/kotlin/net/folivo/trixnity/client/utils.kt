@@ -7,7 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.OlmService
@@ -85,9 +84,7 @@ suspend fun possiblyEncryptEvent(
 ): MessageEventContent {
     return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
         user.loadMembers(roomId)
-        withTimeout(30_000) {
-            store.room.get(roomId).first { it?.membersLoaded == true }
-        }
+        store.room.get(roomId).first { it?.membersLoaded == true }
 
         val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
         requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }

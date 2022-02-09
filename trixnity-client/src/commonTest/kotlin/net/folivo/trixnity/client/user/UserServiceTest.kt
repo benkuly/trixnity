@@ -118,12 +118,13 @@ class UserServiceTest : ShouldSpec({
                     )
                 )
             )
+            store.keys.updateDeviceKeys(alice) { mapOf("alice" to mockk()) } // we know alice keys, so only update bob keys
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
             val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
-            store.keys.outdatedKeys.value shouldBe setOf(alice, bob)
+            store.keys.outdatedKeys.value shouldBe setOf(bob)
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
             job.cancel()

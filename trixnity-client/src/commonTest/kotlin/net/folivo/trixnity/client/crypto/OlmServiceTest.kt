@@ -2,15 +2,19 @@ package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
 import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
@@ -31,6 +35,7 @@ import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.keys.*
@@ -398,6 +403,73 @@ class OlmServiceTest : ShouldSpec({
             )
             store.olm.getOutboundMegolmSession(room) should beNull()
         }
+        should("remove device keys on leave or ban of the last encrypted room") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = LEAVE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) should beNull()
+
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = MemberEventContent.Membership.BAN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) should beNull()
+        }
+        should("not remove device keys on leave or ban when there are more rooms") {
+            val otherRoom = RoomId("otherRoom", "server")
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.room.update(otherRoom) { simpleRoom.copy(roomId = otherRoom, encryptionAlgorithm = Megolm) }
+            delay(500)
+            store.roomState.update(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event"),
+                    alice,
+                    otherRoom,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = LEAVE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) shouldNot beNull()
+
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = BAN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) shouldNot beNull()
+        }
         should("ignore join without real change (already join)") {
             cut.handleMemberEvents(
                 StateEvent(
@@ -411,6 +483,113 @@ class OlmServiceTest : ShouldSpec({
                         previousContent = MemberEventContent(membership = JOIN)
                     )
                 )
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+        should("mark keys as outdated when join or invite") {
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldContain alice
+
+            store.keys.outdatedKeys.value = setOf()
+
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = INVITE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldContain alice
+        }
+        should("not mark keys as outdated when join, but devices are already tracked") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            cut.handleMemberEvents(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+    }
+    context(OlmService::handleEncryptionEvents.name) {
+        should("mark all joined and invited users as outdated") {
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
+            cut.handleEncryptionEvents(
+                StateEvent(
+                    EncryptionEventContent(),
+                    EventId("\$event3"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = ""
+                ),
+            )
+            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+        }
+        should("not mark joined or invited users as outdated, when keys already tracked") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to mockk()) }
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
+            cut.handleEncryptionEvents(
+                StateEvent(
+                    EncryptionEventContent(),
+                    EventId("\$event3"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = ""
+                ),
             )
             store.keys.outdatedKeys.value shouldHaveSize 0
         }
