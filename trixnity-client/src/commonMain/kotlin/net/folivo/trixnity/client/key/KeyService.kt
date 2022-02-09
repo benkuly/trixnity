@@ -66,7 +66,9 @@ class KeyService(
         if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
-            store.keys.outdatedKeys.update { it + userIds }
+            store.keys.outdatedKeys.update { oldUserIds ->
+                oldUserIds + userIds.filter { store.keys.isTracked(it) }
+            }
         }
         deviceList.left?.forEach { userId ->
             store.keys.outdatedKeys.update { it - userId }

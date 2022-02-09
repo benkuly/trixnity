@@ -5,20 +5,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.model.sync.DeviceOneTimeKeysCount
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.BAN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
@@ -87,6 +88,7 @@ class OlmService(
         api.sync.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         api.sync.subscribe(::handleMemberEvents)
         api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
+        api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
     }
@@ -141,10 +143,28 @@ class OlmService(
             when (event.content.membership) {
                 LEAVE, BAN -> {
                     store.olm.updateOutboundMegolmSession(event.roomId) { null }
+                    if (store.room.encryptedJoinedRooms().find { roomId ->
+                            store.roomState.getByStateKey<MemberEventContent>(roomId, event.stateKey)
+                                ?.content?.membership.let { it == JOIN || it == INVITE }
+                        } == null) store.keys.updateDeviceKeys(UserId(event.stateKey)) { null }
+                }
+                JOIN, INVITE -> {
+                    if (event.unsigned?.previousContent?.membership != event.content.membership
+                        && !store.keys.isTracked(UserId(event.stateKey))
+                    ) store.keys.outdatedKeys.update { it + UserId(event.stateKey) }
                 }
                 else -> {
                 }
             }
+        }
+    }
+
+    internal suspend fun handleEncryptionEvents(event: Event<EncryptionEventContent>) {
+        if (event is StateEvent) {
+            val outdatedKeys = store.roomState.members(event.roomId, JOIN, INVITE).filterNot {
+                store.keys.isTracked(it)
+            }
+            store.keys.outdatedKeys.update { it + outdatedKeys }
         }
     }
 }

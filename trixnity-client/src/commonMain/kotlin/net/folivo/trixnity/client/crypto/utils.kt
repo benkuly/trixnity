@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -15,9 +14,7 @@ import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
-    withTimeout(30_000) {
-        outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
-    }
+    outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
 }
 
 internal suspend inline fun <reified T : Key> KeyStore.getFromDevice(
