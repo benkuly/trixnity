@@ -13,6 +13,8 @@ import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
@@ -635,5 +637,114 @@ class EventSerializerTest {
                 unsigned = UnsignedMessageEventData(age = 241)
             ), result
         )
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Test
+    fun shouldDeserializeReceipt() {
+        val input = """
+        {
+            "type": "m.receipt",
+            "content": {
+                "${'$'}wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s": {
+                    "m.read": {
+                        "@user1:localhost": {
+                            "ts":1644259179796,"hidden":false
+                        },
+                        "@user2:localhost": {
+                            "ts":1644258600722,"hidden":false
+                        }
+                   }
+                },
+                "${'$'}zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE": {
+                    "m.read": {
+                        "@user3:localhost": {
+                            "ts":1644267366690,"hidden":false
+                        }
+                    }
+                }
+            }
+        }
+        """.trimIndent()
+        val serializer = json.serializersModule.getContextual(EphemeralEvent::class)
+        requireNotNull(serializer)
+        val result = json.decodeFromString(serializer, input)
+        assertEquals(
+            EphemeralEvent(
+                ReceiptEventContent(
+                    events = mapOf(
+                        EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to setOf(
+                            ReadReceipt(
+                                read = mapOf(
+                                    UserId("user1", "localhost") to ReadReceipt.ReadEvent(1644259179796L),
+                                    UserId("user2", "localhost") to ReadReceipt.ReadEvent(1644258600722L),
+                                )
+                            )
+                        ),
+                        EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to setOf(
+                            ReadReceipt(
+                                read = mapOf(
+                                    UserId("user3", "localhost") to ReadReceipt.ReadEvent(1644267366690L)
+                                )
+                            )
+                        )
+                    ),
+                ),
+            ), result
+        )
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Test
+    fun shouldSerializeReceipt() {
+        val receipt = EphemeralEvent(
+            ReceiptEventContent(
+                events = mapOf(
+                    EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to setOf(
+                        ReadReceipt(
+                            read = mapOf(
+                                UserId("user1", "localhost") to ReadReceipt.ReadEvent(1644259179796L),
+                                UserId("user2", "localhost") to ReadReceipt.ReadEvent(1644258600722L),
+                            )
+                        )
+                    ),
+                    EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to setOf(
+                        ReadReceipt(
+                            read = mapOf(
+                                UserId("user3", "localhost") to ReadReceipt.ReadEvent(1644267366690L)
+                            )
+                        )
+                    )
+                ),
+            ),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "${'$'}wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s":{
+                    "m.read":{
+                        "@user1:localhost":{
+                            "ts":1644259179796
+                        },
+                        "@user2:localhost":{
+                            "ts":1644258600722
+                        }
+                   }
+                },
+                "${'$'}zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE":{
+                    "m.read":{
+                        "@user3:localhost":{
+                            "ts":1644267366690
+                        }
+                    }
+                }
+            },
+            "type":"m.receipt"
+        }
+        """.trimIndent().lines().joinToString("") { it.trim() }
+        val serializer = json.serializersModule.getContextual(EphemeralEvent::class)
+        requireNotNull(serializer)
+        val result = json.encodeToString(serializer, receipt)
+        assertEquals(expectedResult, result)
     }
 }
