@@ -24,7 +24,10 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
@@ -460,6 +463,21 @@ class UserServiceTest : ShouldSpec({
                     )
                 }
             }
+        }
+    }
+
+    context(UserService::setPresence.name) {
+        should("set the presence for a user whose presence is not known") {
+            cut.userPresence.value[alice] shouldBe null
+            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.ONLINE), sender = alice))
+            cut.userPresence.value[alice] shouldBe PresenceEventContent(Presence.ONLINE)
+        }
+
+        should("overwrite the presence of a user when a new status is known") {
+            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.ONLINE), sender = bob))
+            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.UNAVAILABLE), sender = bob))
+
+            cut.userPresence.value[bob] shouldBe PresenceEventContent(Presence.UNAVAILABLE)
         }
     }
 })
