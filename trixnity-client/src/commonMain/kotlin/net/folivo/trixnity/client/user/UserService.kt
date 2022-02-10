@@ -10,6 +10,7 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.RoomUser
@@ -20,6 +21,8 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import kotlin.reflect.KClass
 
@@ -31,13 +34,22 @@ class UserService(
 ) {
     private val reloadOwnProfile = MutableStateFlow(false)
     private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
+    private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())
+    val userPresence = _userPresence.asStateFlow()
 
     suspend fun start(scope: CoroutineScope) {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
+        api.sync.subscribe(::setPresence)
         api.sync.subscribeAfterSyncResponse(::reloadProfile)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleLoadMembersQueue() }
+    }
+
+    internal fun setPresence(presenceEvent: Event<PresenceEventContent>) {
+        presenceEvent.getSender()?.let { sender ->
+            _userPresence.update { oldValue -> oldValue + (sender to presenceEvent.content) }
+        }
     }
 
     private fun calculateUserDisplayName(
