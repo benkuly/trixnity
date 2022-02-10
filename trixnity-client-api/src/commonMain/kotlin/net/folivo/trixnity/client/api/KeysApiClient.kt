@@ -22,7 +22,7 @@ class KeysApiClient(
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
      */
     suspend fun setDeviceKeys(
-        deviceKeys: Signed<DeviceKeys, UserId>? = null,
+        deviceKeys: SignedDeviceKeys? = null,
         oneTimeKeys: Keys? = null,
         asUserId: UserId? = null
     ): Result<Map<KeyAlgorithm, Int>> =
@@ -42,12 +42,12 @@ class KeysApiClient(
         timeout: Int? = 10000,
         asUserId: UserId? = null
     ): Result<QueryKeysResponse> =
-        httpClient.request {
+        httpClient.request<String> {
             method = Post
             url("/_matrix/client/v3/keys/query")
             parameter("user_id", asUserId)
             body = QueryKeysRequest(deviceKeys, token, timeout)
-        }
+        }.mapCatching { json.decodeFromString(CatchingQueryKeysResponseSerializer, it) }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
@@ -84,9 +84,9 @@ class KeysApiClient(
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
      */
     suspend fun setCrossSigningKeys(
-        masterKey: Signed<CrossSigningKeys, UserId>?,
-        selfSigningKey: Signed<CrossSigningKeys, UserId>?,
-        userSigningKey: Signed<CrossSigningKeys, UserId>?,
+        masterKey: SignedCrossSigningKeys?,
+        selfSigningKey: SignedCrossSigningKeys?,
+        userSigningKey: SignedCrossSigningKeys?,
         asUserId: UserId? = null
     ): Result<UIA<Unit>> =
         httpClient.uiaRequest(

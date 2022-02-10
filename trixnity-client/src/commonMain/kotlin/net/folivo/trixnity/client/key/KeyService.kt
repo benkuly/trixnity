@@ -151,7 +151,7 @@ class KeyService(
 
     private suspend fun handleOutdatedDeviceKeys(
         userId: UserId,
-        devices: Map<String, Signed<DeviceKeys, UserId>>,
+        devices: Map<String, SignedDeviceKeys>,
         joinedEncryptedRooms: Deferred<List<RoomId>>
     ) {
         val oldDevices = store.keys.getDeviceKeys(userId)

@@ -147,6 +147,6 @@ internal inline fun <reified T : Key> Keys.get(): T? {
     return keys.filterIsInstance<T>().firstOrNull()
 }
 
-internal inline fun <reified T : Key> Signed<DeviceKeys, UserId>.get(): T? {
+internal inline fun <reified T : Key> SignedDeviceKeys.get(): T? {
     return signed.keys.keys.filterIsInstance<T>().firstOrNull()
 }

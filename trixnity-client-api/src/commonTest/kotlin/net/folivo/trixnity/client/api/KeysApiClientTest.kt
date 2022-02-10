@@ -23,10 +23,11 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm.SignedCurve25519
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class KeysApiClientTest {
+
+    val alice = UserId("@alice:example.com")
 
     @Test
     fun shouldSetDeviceKeys() = runTest {
@@ -167,12 +168,175 @@ class KeysApiClientTest {
                         respond(
                             """
                                 {
-                                  "failures": {},
                                   "device_keys": {
                                     "@alice:example.com": {
                                       "JLAFKJWSCS": {
-                                        "user_id": "@alice:example.com",
+                                        "algorithms": [
+                                          "m.olm.v1.curve25519-aes-sha2",
+                                          "m.megolm.v1.aes-sha2"
+                                        ],
                                         "device_id": "JLAFKJWSCS",
+                                        "keys": {
+                                          "curve25519:JLAFKJWSCS": "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI",
+                                          "ed25519:JLAFKJWSCS": "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI"
+                                        },
+                                        "signatures": {
+                                          "@alice:example.com": {
+                                            "ed25519:JLAFKJWSCS": "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                                          }
+                                        },
+                                        "unsigned": {
+                                          "device_display_name": "Alice's mobile phone"
+                                        },
+                                        "user_id": "@alice:example.com"
+                                      }
+                                    }
+                                  },
+                                  "master_keys": {
+                                    "@alice:example.com": {
+                                      "keys": {
+                                        "ed25519:base64+master+public+key": "base64+master+public+key"
+                                      },
+                                      "usage": [
+                                        "master"
+                                      ],
+                                      "user_id": "@alice:example.com"
+                                    }
+                                  },
+                                  "self_signing_keys": {
+                                    "@alice:example.com": {
+                                      "keys": {
+                                        "ed25519:base64+self+signing+public+key": "base64+self+signing+public+key"
+                                      },
+                                      "signatures": {
+                                        "@alice:example.com": {
+                                          "ed25519:base64+master+public+key": "signature+of+self+signing+key"
+                                        }
+                                      },
+                                      "usage": [
+                                        "self_signing"
+                                      ],
+                                      "user_id": "@alice:example.com"
+                                    }
+                                  },
+                                  "user_signing_keys": {
+                                    "@alice:example.com": {
+                                      "keys": {
+                                        "ed25519:base64+user+signing+public+key": "base64+user+signing+public+key"
+                                      },
+                                      "signatures": {
+                                        "@alice:example.com": {
+                                          "ed25519:base64+master+public+key": "signature+of+user+signing+key"
+                                        }
+                                      },
+                                      "usage": [
+                                        "user_signing"
+                                      ],
+                                      "user_id": "@alice:example.com"
+                                    }
+                                  }
+                                }
+                            """.trimIndent(),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+        )
+        matrixRestClient.keys.getKeys(
+            timeout = 10_000,
+            deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
+            token = "string"
+        ).getOrThrow() shouldBe QueryKeysResponse(
+            failures = null,
+            deviceKeys = mapOf(
+                alice to mapOf(
+                    "JLAFKJWSCS" to Signed(
+                        signed = DeviceKeys(
+                            userId = alice,
+                            deviceId = "JLAFKJWSCS",
+                            algorithms = setOf(Olm, Megolm),
+                            keys = keysOf(
+                                Curve25519Key("JLAFKJWSCS", "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI"),
+                                Ed25519Key("JLAFKJWSCS", "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI")
+                            )
+                        ),
+                        signatures = mapOf(
+                            alice to keysOf(
+                                Ed25519Key(
+                                    "JLAFKJWSCS",
+                                    "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                                )
+                            )
+                        ),
+                    )
+                )
+            ),
+            masterKeys = mapOf(
+                alice to Signed(
+                    signed = CrossSigningKeys(
+                        userId = alice,
+                        usage = setOf(MasterKey),
+                        keys = keysOf(Ed25519Key("base64+master+public+key", "base64+master+public+key"))
+                    ),
+                    signatures = mapOf()
+                )
+            ),
+            selfSigningKeys = mapOf(
+                alice to Signed(
+                    signed = CrossSigningKeys(
+                        userId = alice,
+                        usage = setOf(SelfSigningKey),
+                        keys = keysOf(Ed25519Key("base64+self+signing+public+key", "base64+self+signing+public+key"))
+                    ),
+                    signatures = mapOf(
+                        alice to keysOf(Ed25519Key("base64+master+public+key", "signature+of+self+signing+key"))
+                    )
+                )
+            ),
+            userSigningKeys = mapOf(
+                alice to Signed(
+                    signed = CrossSigningKeys(
+                        userId = alice,
+                        usage = setOf(UserSigningKey),
+                        keys = keysOf(Ed25519Key("base64+user+signing+public+key", "base64+user+signing+public+key"))
+                    ),
+                    signatures = mapOf(
+                        alice to keysOf(Ed25519Key("base64+master+public+key", "signature+of+user+signing+key"))
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun shouldQueryKeysAndSkipMalformedKeys() = runTest {
+        val matrixRestClient = MatrixApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler { request ->
+                        assertEquals(
+                            "/_matrix/client/v3/keys/query",
+                            request.url.fullPath
+                        )
+                        assertEquals(HttpMethod.Post, request.method)
+                        request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "device_keys":{
+                                    "@alice:example.com":[]
+                                  },
+                                  "token":"string",
+                                  "timeout":10000
+                                }
+                    """.trimToFlatJson()
+                        respond(
+                            """
+                                {
+                                  "device_keys": {
+                                    "@alice:example.com": {
+                                      "JLAFKJWSCS": {
                                         "algorithms": [
                                           "m.olm.v1.curve25519-aes-sha2",
                                           "m.megolm.v1.aes-sha2"
@@ -188,8 +352,45 @@ class KeysApiClientTest {
                                         },
                                         "unsigned": {
                                           "device_display_name": "Alice's mobile phone"
-                                        }
+                                        },
+                                        "user_id": "@alice:example.com"
                                       }
+                                    }
+                                  },
+                                  "master_keys": {
+                                    "@alice:example.com": {
+                                      "usage": [
+                                        "master"
+                                      ],
+                                      "user_id": "@alice:example.com"
+                                    }
+                                  },
+                                  "self_signing_keys": {
+                                    "@alice:example.com": {
+                                      "keys": {
+                                        "ed25519:base64+self+signing+public+key": "base64+self+signing+public+key"
+                                      },
+                                      "signatures": {
+                                        "@alice:example.com": {
+                                          "ed25519:base64+master+public+key": "signature+of+self+signing+key"
+                                        }
+                                      },
+                                      "usage": [
+                                        "self_signing"
+                                      ]
+                                    }
+                                  },
+                                  "user_signing_keys": {
+                                    "@alice:example.com": {
+                                      "keys": {
+                                        "ed25519:base64+user+signing+public+key": "base64+user+signing+public+key"
+                                      },
+                                      "signatures": {
+                                        "@alice:example.com": {
+                                          "ed25519:base64+master+public+key": "signature+of+user+signing+key"
+                                        }
+                                      },
+                                      "user_id": "@alice:example.com"
                                     }
                                   }
                                 }
@@ -201,17 +402,19 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.getKeys(
+        matrixRestClient.keys.getKeys(
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
             token = "string"
-        ).getOrThrow()
-        assertEquals(mapOf(), result.failures)
-        val oneTimeKeyMap = result.deviceKeys?.entries?.firstOrNull()
-        assertEquals(UserId("alice", "example.com"), oneTimeKeyMap?.key)
-        val oneTimeKey = oneTimeKeyMap?.value?.entries?.firstOrNull()
-        assertEquals("JLAFKJWSCS", oneTimeKey?.key)
-        assertNotNull(oneTimeKey?.value)
+        ).getOrThrow() shouldBe QueryKeysResponse(
+            failures = null,
+            deviceKeys = mapOf(
+                alice to mapOf()
+            ),
+            masterKeys = mapOf(),
+            selfSigningKeys = mapOf(),
+            userSigningKeys = mapOf()
+        )
     }
 
     @Test

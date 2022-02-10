@@ -24,11 +24,11 @@ internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepos
             }
     }
 
-    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, roomUser: RoomUser) {
+    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser) {
         ExposedRoomUser.replace {
             it[this.roomId] = firstKey.full
             it[this.userId] = secondKey.full
-            it[this.value] = json.encodeToString(roomUser)
+            it[this.value] = json.encodeToString(value)
         }
     }
 
