@@ -51,7 +51,10 @@ class RoomStateStore(
     ): StateFlow<Map<String, Event<C>>?> {
         val eventType = findType(eventContentClass)
         @Suppress("UNCHECKED_CAST")
-        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType), scope) as StateFlow<Map<String, Event<C>>?>
+        return roomStateCache.get(
+            RoomStateRepositoryKey(roomId, eventType),
+            scope = scope
+        ) as StateFlow<Map<String, Event<C>>?>
     }
 
     suspend fun <C : StateEventContent> get(

@@ -19,7 +19,7 @@ class RoomTimelineStore(
     }
 
     suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
-        roomTimelineCache.get(RoomTimelineKey(eventId, roomId), scope)
+        roomTimelineCache.get(RoomTimelineKey(eventId, roomId), scope = scope)
 
     suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
         roomTimelineCache.get(

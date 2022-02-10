@@ -55,7 +55,7 @@ class ExposedStoreFactoryTest : ShouldSpec({
         )
         newSuspendedTransaction(Dispatchers.IO, database) {
             with(TransactionManager.current()) {
-                exec("ALTER TABLE ROOM DROP COLUMN VALUE;")
+                exec("""ALTER TABLE ROOM DROP COLUMN "VALUE";""")
             }
         }
         val store = cut.createStore(

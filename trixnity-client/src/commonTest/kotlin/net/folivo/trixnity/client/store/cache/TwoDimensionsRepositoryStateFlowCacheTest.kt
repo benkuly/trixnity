@@ -14,9 +14,9 @@ import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 
 class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
-    val repository = mockk<TwoDimensionsStoreRepository<String, String>>(relaxUnitFun = true)
+    val repository = mockk<TwoDimensionsStoreRepository<String, String, String>>(relaxUnitFun = true)
     lateinit var cacheScope: CoroutineScope
-    lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, TwoDimensionsStoreRepository<String, String>>
+    lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsStoreRepository<String, String, String>>
     val transactionWasCalled = MutableStateFlow(false)
     val rtm = object : RepositoryTransactionManager {
         override suspend fun <T> transaction(block: suspend () -> T): T {
@@ -36,8 +36,17 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
         cut = mockk() // just in case we forgot to init a new cut for a test
     }
 
+    should("handle get after getBySecondKey") {
+        coEvery { repository.get("firstKey") } returns mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        coEvery { repository.getBySecondKey("firstKey", "secondKey1") } returns "value1"
+        cut.getBySecondKey("firstKey", "secondKey1") shouldBe "value1"
+        cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        coVerify(exactly = 1) { repository.get("firstKey") }
+    }
     context("updateBySecondKey") {
         should("always save") {
+            coEvery { repository.get("firstKey") } returns mapOf("secondKey" to "value")
             cut.updateBySecondKey("firstKey", "secondKey") { "value" }
             coVerify { repository.saveBySecondKey("firstKey", "secondKey", "value") }
             cut.get("firstKey") shouldBe mapOf("secondKey" to "value")
@@ -49,6 +58,7 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
             cut.get("firstKey") shouldBe null
         }
         should("update existing cache value") {
+            coEvery { repository.get("firstKey") } returns mapOf("secondKey1" to "value1")
             cut.updateBySecondKey("firstKey", "secondKey1") { "value1" }
             cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
             cut.updateBySecondKey("firstKey", "secondKey2") { "value2" }

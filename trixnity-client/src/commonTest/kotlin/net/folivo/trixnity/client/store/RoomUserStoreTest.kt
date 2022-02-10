@@ -3,7 +3,10 @@ package net.folivo.trixnity.client.store
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -47,71 +50,6 @@ class RoomUserStoreTest : ShouldSpec({
             cut.getAll(roomId, scope).value shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
-        }
-    }
-    context("get") {
-        should("return user from repository") {
-            val user = mockk<RoomUser>()
-            coEvery { roomUserRepository.getByUserId(aliceId, roomId) } returns user
-
-            cut.get(aliceId, roomId) shouldBe user
-        }
-        should("prefer cache") {
-            val user = mockk<RoomUser>()
-            coEvery { roomUserRepository.getByUserId(aliceId, roomId) } returns user
-
-            cut.get(aliceId, roomId) shouldBe user
-            cut.get(aliceId, roomId) shouldBe user
-
-            coVerify(exactly = 1) { roomUserRepository.getByUserId(aliceId, roomId) }
-        }
-    }
-    context(RoomUserStore::update.name) {
-        should("save to database") {
-            val aliceUser = RoomUser(roomId, aliceId, "ALICE", mockk())
-            coEvery { roomUserRepository.getByUserId(aliceId, roomId) } returns aliceUser
-            coEvery { roomUserRepository.getByUserId(bobId, roomId) } returns null
-            cut.update(aliceId, roomId) {
-                it shouldBe aliceUser
-                it?.copy(name = "ALICE-ALICE")
-            }
-            cut.update(bobId, roomId) {
-                it shouldBe null
-                null
-            }
-            coVerifyAll {
-                roomUserRepository.getByUserId(aliceId, roomId)
-                roomUserRepository.getByUserId(bobId, roomId)
-                roomUserRepository.saveByUserId(aliceId, roomId, aliceUser.copy(name = "ALICE-ALICE"))
-                roomUserRepository.deleteByUserId(bobId, roomId)
-            }
-        }
-        should("delete in database") {
-            val aliceUser = RoomUser(roomId, aliceId, "ALICE", mockk())
-            coEvery { roomUserRepository.getByUserId(aliceId, roomId) } returns aliceUser
-            cut.update(aliceId, roomId) {
-                null
-            }
-            coVerifyAll {
-                roomUserRepository.getByUserId(aliceId, roomId)
-                roomUserRepository.deleteByUserId(aliceId, roomId)
-            }
-        }
-        should("prefer cache") {
-            val aliceUser = RoomUser(roomId, aliceId, "ALICE", mockk())
-            coEvery { roomUserRepository.getByUserId(aliceId, roomId) } returns aliceUser
-            cut.update(aliceId, roomId) {
-                it shouldBe aliceUser.copy(name = "ALICE")
-                it?.copy(name = "ALICE-ALICE")
-            }
-            cut.update(aliceId, roomId) {
-                it shouldBe aliceUser.copy(name = "ALICE-ALICE")
-                it?.copy(name = "ALICE-ALICE")
-            }
-            coVerifyAll {
-                roomUserRepository.getByUserId(aliceId, roomId)
-                roomUserRepository.saveByUserId(aliceId, roomId, aliceUser.copy(name = "ALICE-ALICE"))
-            }
         }
     }
     context(RoomUserStore::getByOriginalNameAndMembership.name) {

@@ -83,8 +83,8 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         )
 
         newSuspendedTransaction {
-            cut.saveByUserId(user.userId, key, user)
-            cut.getByUserId(user.userId, key) shouldBe user
+            cut.saveBySecondKey(key, user.userId, user)
+            cut.getBySecondKey(key, user.userId) shouldBe user
         }
     }
 })

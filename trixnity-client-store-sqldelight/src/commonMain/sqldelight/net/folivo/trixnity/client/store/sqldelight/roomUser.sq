@@ -1,13 +1,13 @@
 CREATE TABLE sql_room_user (
-  user_id TEXT NOT NULL,
   room_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   room_user TEXT NOT NULL,
   PRIMARY KEY(user_id,room_id)
 );
 
 getRoomUser:
 SELECT room_user FROM sql_room_user
-WHERE user_id = ? AND room_id = ?;
+WHERE room_id = ? AND user_id = ?;
 
 saveRoomUser:
 INSERT OR REPLACE INTO sql_room_user
@@ -15,7 +15,7 @@ VALUES (?, ?, ?);
 
 deleteRoomUser:
 DELETE FROM sql_room_user
-WHERE user_id = ? AND room_id = ?;
+WHERE room_id = ? AND user_id = ?;
 
 getRoomUsers:
 SELECT * FROM sql_room_user

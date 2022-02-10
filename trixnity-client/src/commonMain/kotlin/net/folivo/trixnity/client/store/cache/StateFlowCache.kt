@@ -41,7 +41,7 @@ open class StateFlowCache<K, V>(
 
     suspend fun readWithCache(
         key: K,
-        containsInCache: suspend (cacheValue: V?) -> Boolean,
+        isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         scope: CoroutineScope? = null
     ): StateFlow<V?> {
@@ -79,7 +79,7 @@ open class StateFlowCache<K, V>(
             } else {
                 cacheValue.removeTimer.emit(cacheDuration)
                 cacheValue.value.update {
-                    if (containsInCache(it).not()) retrieveAndUpdateCache(it)
+                    if (isContainedInCache(it).not()) retrieveAndUpdateCache(it)
                     else it
                 }
                 oldCache + (key to cacheValue.copy(
@@ -95,7 +95,7 @@ open class StateFlowCache<K, V>(
     suspend fun writeWithCache(
         key: K,
         updater: suspend (oldValue: V?) -> V?,
-        containsInCache: suspend (cacheValue: V?) -> Boolean,
+        isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         persist: suspend (newValue: V?) -> Unit
     ) {
@@ -118,7 +118,7 @@ open class StateFlowCache<K, V>(
                 } else {
                     val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
                         val oldValue =
-                            if (containsInCache(oldCacheValue).not())
+                            if (isContainedInCache(oldCacheValue).not())
                                 retrieveAndUpdateCache(oldCacheValue)
                             else oldCacheValue
                         updater(oldValue)

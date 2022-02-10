@@ -65,7 +65,7 @@ class OlmStore(
         roomId: RoomId,
         scope: CoroutineScope
     ): StateFlow<StoredInboundMegolmSession?> =
-        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId), scope)
+        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId), scope = scope)
 
     suspend fun getInboundMegolmSession(
         senderKey: Curve25519Key,

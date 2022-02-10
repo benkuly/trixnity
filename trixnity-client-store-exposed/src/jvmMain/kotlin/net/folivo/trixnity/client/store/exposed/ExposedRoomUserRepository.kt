@@ -17,23 +17,23 @@ internal object ExposedRoomUser : Table("room_user") {
 }
 
 internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepository {
-    override suspend fun getByUserId(userId: UserId, roomId: RoomId): RoomUser? {
-        return ExposedRoomUser.select { ExposedRoomUser.userId.eq(userId.full) and ExposedRoomUser.roomId.eq(roomId.full) }
+    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? {
+        return ExposedRoomUser.select { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
             .firstOrNull()?.let {
                 json.decodeFromString(it[ExposedRoomUser.value])
             }
     }
 
-    override suspend fun saveByUserId(userId: UserId, roomId: RoomId, roomUser: RoomUser) {
+    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, roomUser: RoomUser) {
         ExposedRoomUser.replace {
-            it[this.userId] = userId.full
-            it[this.roomId] = roomId.full
+            it[this.roomId] = firstKey.full
+            it[this.userId] = secondKey.full
             it[this.value] = json.encodeToString(roomUser)
         }
     }
 
-    override suspend fun deleteByUserId(userId: UserId, roomId: RoomId) {
-        ExposedRoomUser.deleteWhere { ExposedRoomUser.userId.eq(userId.full) and ExposedRoomUser.roomId.eq(roomId.full) }
+    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId) {
+        ExposedRoomUser.deleteWhere { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
     }
 
     override suspend fun get(key: RoomId): Map<UserId, RoomUser> {

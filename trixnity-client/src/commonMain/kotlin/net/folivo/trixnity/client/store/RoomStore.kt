@@ -23,7 +23,12 @@ class RoomStore(
 
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = allRooms
 
-    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.getWithInfiniteMode(roomId)
+    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.readWithCache(
+        roomId,
+        isContainedInCache = { true },
+        retrieveAndUpdateCache = { it },
+        null
+    )
 
     suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?) =
         roomCache.update(roomId, updater = updater)
