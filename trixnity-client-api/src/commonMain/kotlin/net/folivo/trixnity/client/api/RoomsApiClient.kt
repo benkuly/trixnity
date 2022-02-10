@@ -38,7 +38,7 @@ class RoomsApiClient(
 ) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
      */
     @ExperimentalSerializationApi
     suspend fun getEvent(
@@ -53,7 +53,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : StateEventContent> getStateEvent(
@@ -76,7 +76,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
     suspend inline fun <reified C : StateEventContent> getStateEvent(
         roomId: RoomId,
@@ -85,7 +85,7 @@ class RoomsApiClient(
     ): Result<C> = getStateEvent(C::class, roomId, stateKey, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidstate">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstate">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Result<Flow<StateEvent<*>>> =
@@ -100,7 +100,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
      */
     suspend fun getMembers(
         roomId: RoomId,
@@ -126,7 +126,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidjoined_members">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidjoined_members">matrix spec</a>
      */
     suspend fun getJoinedMembers(
         roomId: RoomId,
@@ -139,7 +139,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
      */
     suspend fun getEvents(
         roomId: RoomId,
@@ -162,7 +162,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
     suspend fun sendStateEvent(
         roomId: RoomId,
@@ -181,7 +181,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
      */
     suspend fun sendMessageEvent(
         roomId: RoomId,
@@ -200,7 +200,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidredacteventidtxnid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidredacteventidtxnid">matrix spec</a>
      */
     suspend fun redactEvent(
         roomId: RoomId,
@@ -217,7 +217,7 @@ class RoomsApiClient(
         }.mapCatching { it.eventId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
      */
     suspend fun createRoom(
         visibility: Visibility = Visibility.PRIVATE,
@@ -255,7 +255,7 @@ class RoomsApiClient(
         }.mapCatching { it.roomId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun setRoomAlias(
         roomId: RoomId,
@@ -270,7 +270,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
@@ -283,7 +283,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3directoryroomroomalias">matrix spec</a>
      */
     suspend fun deleteRoomAlias(
         roomAliasId: RoomAliasId,
@@ -296,7 +296,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3joined_rooms">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3joined_rooms">matrix spec</a>
      */
     suspend fun getJoinedRooms(asUserId: UserId? = null): Result<Flow<RoomId>> =
         httpClient.request<GetJoinedRoomsResponse> {
@@ -306,7 +306,7 @@ class RoomsApiClient(
         }.mapCatching { it.joinedRooms.asFlow() }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidinvite">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidinvite">matrix spec</a>
      */
     suspend fun inviteUser(
         roomId: RoomId,
@@ -322,7 +322,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidkick">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidkick">matrix spec</a>
      */
     suspend fun kickUser(
         roomId: RoomId,
@@ -338,7 +338,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidban">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidban">matrix spec</a>
      */
     suspend fun banUser(
         roomId: RoomId,
@@ -354,7 +354,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidunban">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidunban">matrix spec</a>
      */
     suspend fun unbanUser(
         roomId: RoomId,
@@ -370,7 +370,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
      */
     suspend fun joinRoom(
         roomId: RoomId,
@@ -388,7 +388,7 @@ class RoomsApiClient(
         }.mapCatching { it.roomId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
      */
     suspend fun joinRoom(
         roomAliasId: RoomAliasId,
@@ -406,7 +406,7 @@ class RoomsApiClient(
         }.mapCatching { it.roomId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
      */
     suspend fun knockRoom(
         roomId: RoomId,
@@ -423,7 +423,7 @@ class RoomsApiClient(
         }.mapCatching { it.roomId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
      */
     suspend fun knockRoom(
         roomAliasId: RoomAliasId,
@@ -440,7 +440,7 @@ class RoomsApiClient(
         }.mapCatching { it.roomId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidforget">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidforget">matrix spec</a>
      */
     suspend fun forgetRoom(
         roomId: RoomId,
@@ -453,7 +453,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidleave">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidleave">matrix spec</a>
      */
     suspend fun leaveRoom(
         roomId: RoomId,
@@ -469,7 +469,7 @@ class RoomsApiClient(
 
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidreceiptreceipttypeeventid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidreceiptreceipttypeeventid">matrix spec</a>
      */
     suspend fun setReceipt(
         roomId: RoomId,
@@ -484,7 +484,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3roomsroomidread_markers">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidread_markers">matrix spec</a>
      */
     suspend fun setReadMarkers(
         roomId: RoomId,
@@ -499,7 +499,7 @@ class RoomsApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
@@ -524,7 +524,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
      */
     suspend inline fun <reified C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
@@ -534,7 +534,7 @@ class RoomsApiClient(
     ): Result<C> = getAccountData(C::class, roomId, userId, key, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
      */
     suspend fun <C : RoomAccountDataEventContent> setAccountData(
         content: C,
@@ -556,7 +556,7 @@ class RoomsApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3roomsroomidtypinguserid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidtypinguserid">matrix spec</a>
      */
     suspend fun setUserIsTyping(
         roomId: RoomId,

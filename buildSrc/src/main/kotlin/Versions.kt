@@ -4,7 +4,7 @@ object Versions {
     const val kotlinxSerialization = "1.3.2" // https://github.com/Kotlin/kotlinx.serialization/releases
     const val kotlinxDatetime = "0.3.2" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val kotlinxAtomicfu = "0.17.0" // https://github.com/Kotlin/kotlinx.atomicfu/releases
-    const val kotlinxKover = "0.4.4" // https://github.com/Kotlin/kotlinx-kover/releases
+    const val kotlinxKover = "0.5.0" // https://github.com/Kotlin/kotlinx-kover/releases
     const val dokka = "1.6.10" // https://github.com/Kotlin/dokka/releases
     const val olm = "3.2.8" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.10.0" // https://github.com/java-native-access/jna/releases

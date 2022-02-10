@@ -23,7 +23,7 @@ class UsersApiClient(
 ) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3profileuseriddisplayname">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseriddisplayname">matrix spec</a>
      */
     suspend fun getDisplayName(
         userId: UserId,
@@ -36,7 +36,7 @@ class UsersApiClient(
         }.mapCatching { it.displayName }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3profileuseriddisplayname">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseriddisplayname">matrix spec</a>
      */
     suspend fun setDisplayName(
         userId: UserId,
@@ -51,7 +51,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3profileuseridavatar_url">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseridavatar_url">matrix spec</a>
      */
     suspend fun getAvatarUrl(
         userId: UserId,
@@ -64,7 +64,7 @@ class UsersApiClient(
         }.mapCatching { it.avatarUrl }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
      */
     suspend fun setAvatarUrl(
         userId: UserId,
@@ -79,7 +79,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3profileuserid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuserid">matrix spec</a>
      */
     suspend fun getProfile(
         userId: UserId,
@@ -92,7 +92,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3accountwhoami">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3accountwhoami">matrix spec</a>
      */
     suspend fun whoAmI(asUserId: UserId? = null): Result<WhoAmIResponse> =
         httpClient.request {
@@ -102,7 +102,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3presenceuseridstatus">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3presenceuseridstatus">matrix spec</a>
      */
     suspend fun setPresence(
         userId: UserId,
@@ -118,7 +118,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3presenceuseridstatus">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3presenceuseridstatus">matrix spec</a>
      */
     suspend fun getPresence(
         userId: UserId,
@@ -137,7 +137,7 @@ class UsersApiClient(
 
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
      */
     suspend fun <C : ToDeviceEventContent> sendToDevice(
         events: Map<UserId, Map<String, C>>,
@@ -160,7 +160,7 @@ class UsersApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3useruseridfilter">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3useruseridfilter">matrix spec</a>
      */
     suspend fun setFilter(
         userId: UserId,
@@ -175,7 +175,7 @@ class UsersApiClient(
         }.mapCatching { it.filterId }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridfilterfilterid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridfilterfilterid">matrix spec</a>
      */
     suspend fun getFilter(
         userId: UserId,
@@ -189,7 +189,7 @@ class UsersApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridaccount_datatype">matrix spec</a>
      */
     suspend fun <C : GlobalAccountDataEventContent> setAccountData(
         content: C,
@@ -210,7 +210,7 @@ class UsersApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
      */
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(
@@ -234,7 +234,7 @@ class UsersApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
      */
     suspend inline fun <reified C : GlobalAccountDataEventContent> getAccountData(
         userId: UserId,
@@ -243,7 +243,7 @@ class UsersApiClient(
     ): Result<C> = getAccountData(C::class, userId, key, asUserId)
 
     /**
-     *  @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3user_directorysearch">matrix spec</a>
+     *  @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3user_directorysearch">matrix spec</a>
      */
     suspend fun searchUsers(
         searchTerm: String,

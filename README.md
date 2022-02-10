@@ -236,17 +236,15 @@ matrixRestClient.room.sendRoomEvent(
 Example 2: You can receive different type of events from sync.
 
 ```kotlin
-coroutineScope {
-    matrixRestClient.sync.subscribe<TextMessageEventContent> { println(it.content.body) }
-    matrixRestClient.sync.subscribe<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
-    matrixRestClient.sync.subscribeAllEvents { // this is a shortcut for .subscribe<EventContent> { }
-        println(it)
-    }
-
-    matrixRestClient.sync.start() // you need to start the sync to receive messages
-    delay(30000) // wait some time
-    matrixRestClient.sync.stop() // stop the client
+matrixRestClient.sync.subscribe<TextMessageEventContent> { println(it.content.body) }
+matrixRestClient.sync.subscribe<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
+matrixRestClient.sync.subscribeAllEvents { // this is a shortcut for .subscribe<EventContent> { }
+    println(it)
 }
+
+matrixRestClient.sync.start() // you need to start the sync to receive messages
+delay(30000) // wait some time
+matrixRestClient.sync.stop() // stop the client
 ```
 
 ## Trixnity-Appservice

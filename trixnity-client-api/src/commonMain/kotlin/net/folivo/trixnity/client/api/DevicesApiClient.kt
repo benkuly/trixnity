@@ -15,7 +15,7 @@ class DevicesApiClient(
 ) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3devicesdeviceid">matrix spec</a>
      */
     suspend fun getDevices(): Result<GetDevicesResponse> =
         httpClient.request {
@@ -24,7 +24,7 @@ class DevicesApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3devices">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3devices">matrix spec</a>
      */
     suspend fun getDevice(deviceId: String): Result<Device> =
         httpClient.request {
@@ -33,7 +33,7 @@ class DevicesApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
      */
     suspend fun updateDevice(
         deviceId: String,
@@ -46,7 +46,7 @@ class DevicesApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
      */
     suspend fun deleteDevices(devices: List<String>): Result<UIA<Unit>> =
         httpClient.uiaRequest(
@@ -57,7 +57,7 @@ class DevicesApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3devicesdeviceid">matrix spec</a>
      */
     suspend fun deleteDevice(
         deviceId: String,

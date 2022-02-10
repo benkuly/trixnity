@@ -27,7 +27,7 @@ class DevicesApiClientTest {
                 }
               ]
             }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimIndent()
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -68,7 +68,7 @@ class DevicesApiClientTest {
               "last_seen_ip":"1.2.3.4",
               "last_seen_ts":1474491775024
             }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimIndent()
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -125,7 +125,7 @@ class DevicesApiClientTest {
                 "ABCDEFG"
               ]
             }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimToFlatJson()
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {

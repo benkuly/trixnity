@@ -32,7 +32,7 @@ class SyncApiClient(
 ) : EventEmitter() {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
      */
     suspend fun syncOnce(
         filter: String? = null,

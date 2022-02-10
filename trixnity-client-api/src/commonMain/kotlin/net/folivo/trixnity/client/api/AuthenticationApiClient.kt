@@ -10,7 +10,7 @@ class AuthenticationApiClient(
 ) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3registeravailable">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3registeravailable">matrix spec</a>
      */
     suspend fun isUsernameAvailable(
         username: String
@@ -22,7 +22,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3register">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3register">matrix spec</a>
      */
     suspend fun register(
         username: String? = null,
@@ -49,7 +49,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3login">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3login">matrix spec</a>
      */
     suspend fun getLoginTypes(): Result<Set<LoginType>> =
         httpClient.request<GetLoginTypesResponse> {
@@ -58,7 +58,7 @@ class AuthenticationApiClient(
         }.mapCatching { it.flows }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3login">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3login">matrix spec</a>
      */
     suspend fun login(
         identifier: IdentifierType,
@@ -81,7 +81,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logout">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3logout">matrix spec</a>
      */
     suspend fun logout(): Result<Unit> =
         httpClient.request {
@@ -90,7 +90,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3logoutall">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3logoutall">matrix spec</a>
      */
     suspend fun logoutAll(): Result<Unit> =
         httpClient.request {
@@ -99,7 +99,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
      */
     suspend fun deactivateAccount(
         identityServer: String? = null
@@ -112,7 +112,7 @@ class AuthenticationApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
      */
     suspend fun changePassword(
         newPassword: String,

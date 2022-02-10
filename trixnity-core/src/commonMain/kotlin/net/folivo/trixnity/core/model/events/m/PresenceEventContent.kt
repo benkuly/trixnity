@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mpresence">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mpresence">matrix spec</a>
  */
 @Serializable
 data class PresenceEventContent(
