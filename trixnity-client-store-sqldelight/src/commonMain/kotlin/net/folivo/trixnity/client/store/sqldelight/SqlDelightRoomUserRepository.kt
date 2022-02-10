@@ -21,9 +21,9 @@ class SqlDelightRoomUserRepository(
         }
     }
 
-    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, roomUser: RoomUser) =
+    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser) =
         withContext(context) {
-            db.saveRoomUser(firstKey.full, secondKey.full, json.encodeToString(roomUser))
+            db.saveRoomUser(firstKey.full, secondKey.full, json.encodeToString(value))
         }
 
     override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId) = withContext(context) {
