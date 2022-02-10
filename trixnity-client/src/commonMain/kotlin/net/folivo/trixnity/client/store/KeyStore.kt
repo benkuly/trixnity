@@ -46,7 +46,7 @@ class KeyStore(
     suspend fun getDeviceKeys(
         userId: UserId,
         scope: CoroutineScope
-    ): StateFlow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.get(userId, scope)
+    ): StateFlow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.get(userId, scope = scope)
 
     suspend fun getDeviceKeys(
         userId: UserId,
@@ -60,7 +60,7 @@ class KeyStore(
     suspend fun getCrossSigningKeys(
         userId: UserId,
         scope: CoroutineScope
-    ): StateFlow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId, scope)
+    ): StateFlow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId, scope = scope)
 
     suspend fun getCrossSigningKeys(
         userId: UserId,

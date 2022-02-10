@@ -15,18 +15,19 @@ class SqlDelightRoomUserRepository(
     private val json: Json,
     private val context: CoroutineContext
 ) : RoomUserRepository {
-    override suspend fun getByUserId(userId: UserId, roomId: RoomId): RoomUser? = withContext(context) {
-        db.getRoomUser(userId.full, roomId.full).executeAsOneOrNull()?.let {
+    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? = withContext(context) {
+        db.getRoomUser(firstKey.full, secondKey.full).executeAsOneOrNull()?.let {
             json.decodeFromString(it)
         }
     }
 
-    override suspend fun saveByUserId(userId: UserId, roomId: RoomId, roomUser: RoomUser) = withContext(context) {
-        db.saveRoomUser(userId.full, roomId.full, json.encodeToString(roomUser))
-    }
+    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, roomUser: RoomUser) =
+        withContext(context) {
+            db.saveRoomUser(firstKey.full, secondKey.full, json.encodeToString(roomUser))
+        }
 
-    override suspend fun deleteByUserId(userId: UserId, roomId: RoomId) = withContext(context) {
-        db.deleteRoomUser(userId.full, roomId.full)
+    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId) = withContext(context) {
+        db.deleteRoomUser(firstKey.full, secondKey.full)
     }
 
     override suspend fun get(key: RoomId): Map<UserId, RoomUser> = withContext(context) {
@@ -36,7 +37,7 @@ class SqlDelightRoomUserRepository(
     }
 
     override suspend fun save(key: RoomId, value: Map<UserId, RoomUser>) = withContext(context) {
-        value.values.forEach { saveByUserId(it.userId, key, it) }
+        value.values.forEach { saveBySecondKey(key, it.userId, it) }
     }
 
     override suspend fun delete(key: RoomId) = withContext(context) {

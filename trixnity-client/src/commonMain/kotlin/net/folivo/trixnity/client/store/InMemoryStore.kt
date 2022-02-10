@@ -29,7 +29,7 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     inboundMegolmMessageIndexRepository = InMemoryMinimalStoreRepository(),
     outboundMegolmSessionRepository = InMemoryMinimalStoreRepository(),
     roomRepository = InMemoryRoomRepository(),
-    roomUserRepository = InMemoryRoomUserRepository(),
+    roomUserRepository = InMemoryTwoDimensionsStoreRepository(),
     roomStateRepository = InMemoryTwoDimensionsStoreRepository(),
     roomTimelineEventRepository = InMemoryMinimalStoreRepository(),
     roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository(),
@@ -52,16 +52,16 @@ open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
     }
 }
 
-class InMemoryTwoDimensionsStoreRepository<K, V> : TwoDimensionsStoreRepository<K, V>,
-    InMemoryMinimalStoreRepository<K, Map<String, V>>() {
-    override suspend fun getBySecondKey(firstKey: K, secondKey: String): V? =
+class InMemoryTwoDimensionsStoreRepository<K1, K2, V> : TwoDimensionsStoreRepository<K1, K2, V>,
+    InMemoryMinimalStoreRepository<K1, Map<K2, V>>() {
+    override suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V? =
         get(firstKey)?.get(secondKey)
 
-    override suspend fun saveBySecondKey(firstKey: K, secondKey: String, value: V) {
+    override suspend fun saveBySecondKey(firstKey: K1, secondKey: K2, value: V) {
         content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) + (secondKey to value))) }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: K, secondKey: String) {
+    override suspend fun deleteBySecondKey(firstKey: K1, secondKey: K2) {
         content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) - secondKey)) }
     }
 }
@@ -79,20 +79,6 @@ class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
 
 class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<RoomId, Room>() {
     override suspend fun getAll(): List<Room> = content.value.values.toList()
-}
-
-class InMemoryRoomUserRepository : RoomUserRepository,
-    InMemoryMinimalStoreRepository<RoomId, Map<UserId, RoomUser>>() {
-    override suspend fun getByUserId(userId: UserId, roomId: RoomId): RoomUser? =
-        get(roomId)?.get(userId)
-
-    override suspend fun saveByUserId(userId: UserId, roomId: RoomId, roomUser: RoomUser) {
-        content.update { it + (roomId to ((it[roomId] ?: mapOf()) + (userId to roomUser))) }
-    }
-
-    override suspend fun deleteByUserId(userId: UserId, roomId: RoomId) {
-        content.update { it + (roomId to ((it[roomId] ?: mapOf()) - userId)) }
-    }
 }
 
 class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,

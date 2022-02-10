@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository
 
-interface TwoDimensionsStoreRepository<K, V> : MinimalStoreRepository<K, Map<String, V>> {
-    suspend fun getBySecondKey(firstKey: K, secondKey: String): V?
-    suspend fun saveBySecondKey(firstKey: K, secondKey: String, value: V)
-    suspend fun deleteBySecondKey(firstKey: K, secondKey: String)
+interface TwoDimensionsStoreRepository<K1, K2, V> : MinimalStoreRepository<K1, Map<K2, V>> {
+    suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V?
+    suspend fun saveBySecondKey(firstKey: K1, secondKey: K2, value: V)
+    suspend fun deleteBySecondKey(firstKey: K1, secondKey: K2)
 }

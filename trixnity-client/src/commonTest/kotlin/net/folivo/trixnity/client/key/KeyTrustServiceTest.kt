@@ -416,7 +416,6 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeyTrustService::trustAndSignKeys.name) {
-        lateinit var spyCut: KeyService
         beforeTest {
             coEvery { olm.sign.sign<DeviceKeys>(any(), any<SignWith>()) }.coAnswers {
                 Signed(firstArg(), mapOf())

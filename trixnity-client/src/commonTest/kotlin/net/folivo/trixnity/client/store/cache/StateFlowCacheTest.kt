@@ -29,7 +29,7 @@ class StateFlowCacheTest : ShouldSpec({
             cut = StateFlowCache(cacheScope)
             cut.readWithCache(
                 key = "key",
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { cacheValue ->
                     cacheValue shouldBe null
                     "a new value"
@@ -38,7 +38,7 @@ class StateFlowCacheTest : ShouldSpec({
             // value is now in cache, but we say it isn't
             cut.readWithCache(
                 key = "key",
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { cacheValue ->
                     cacheValue shouldBe "a new value"
                     "another value"
@@ -50,7 +50,7 @@ class StateFlowCacheTest : ShouldSpec({
             // we say, the value is in cache, but actually it is not, so the cache asks for it
             cut.readWithCache(
                 key = "key",
-                containsInCache = { true },
+                isContainedInCache = { true },
                 retrieveAndUpdateCache = {
                     "a new value"
                 }
@@ -59,7 +59,7 @@ class StateFlowCacheTest : ShouldSpec({
             var wasCalled = false
             cut.readWithCache(
                 key = "key",
-                containsInCache = { true },
+                isContainedInCache = { true },
                 retrieveAndUpdateCache = {
                     wasCalled = true
                     "another value"
@@ -71,7 +71,7 @@ class StateFlowCacheTest : ShouldSpec({
             cut = StateFlowCache(cacheScope)
             cut.readWithCache(
                 key = "key",
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { cacheValue ->
                     cacheValue shouldBe null
                     "a new value"
@@ -79,7 +79,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).value shouldBe "a new value"
             cut.readWithCache(
                 key = "key",
-                containsInCache = { true },
+                isContainedInCache = { true },
                 retrieveAndUpdateCache = {
                     "another value"
                 }
@@ -93,7 +93,7 @@ class StateFlowCacheTest : ShouldSpec({
                 val readScope2 = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "a new value"
                     },
@@ -103,7 +103,7 @@ class StateFlowCacheTest : ShouldSpec({
                 cache.first { it.isEmpty() }
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         // if the key would be in cache, this would never be called
                         "another value"
@@ -113,7 +113,7 @@ class StateFlowCacheTest : ShouldSpec({
                 // calling it without scope should run a remover job and therefore cancelling a scope should not remove value from cache
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         // if the key is in cache, this will never be called
                         "yet another value"
@@ -122,7 +122,7 @@ class StateFlowCacheTest : ShouldSpec({
                 readScope2.cancel()
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         // if the key is in cache, this will never be called
                         "yet another value"
@@ -135,7 +135,7 @@ class StateFlowCacheTest : ShouldSpec({
                 cut = StateFlowCache(cacheScope, cacheDuration = 30.milliseconds)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "a new value"
                     }
@@ -143,7 +143,7 @@ class StateFlowCacheTest : ShouldSpec({
                 delay(40)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "another value"
                     }
@@ -152,7 +152,7 @@ class StateFlowCacheTest : ShouldSpec({
                 val readScope = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "yet another value"
                     },
@@ -162,7 +162,7 @@ class StateFlowCacheTest : ShouldSpec({
                 delay(40)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "yet another value"
                     },
@@ -177,7 +177,7 @@ class StateFlowCacheTest : ShouldSpec({
                 val readScope = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "a new value"
                     },
@@ -186,7 +186,7 @@ class StateFlowCacheTest : ShouldSpec({
                 readScope.cancel()
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "another value"
                     }
@@ -194,7 +194,7 @@ class StateFlowCacheTest : ShouldSpec({
                 delay(50)
                 cut.readWithCache(
                     key = "key",
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         "another value"
                     }
@@ -211,7 +211,7 @@ class StateFlowCacheTest : ShouldSpec({
                     oldValue shouldBe "from db"
                     "updated value"
                 },
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { cacheValue ->
                     cacheValue shouldBe null
                     "from db"
@@ -226,7 +226,7 @@ class StateFlowCacheTest : ShouldSpec({
                     oldValue shouldBe "from db 2"
                     "updated value 2"
                 },
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { cacheValue ->
                     cacheValue shouldBe "updated value"
                     "from db 2"
@@ -241,7 +241,7 @@ class StateFlowCacheTest : ShouldSpec({
             cut.writeWithCache(
                 key = "key",
                 updater = { "updated value" },
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { null },
                 persist = { }
             )
@@ -252,7 +252,7 @@ class StateFlowCacheTest : ShouldSpec({
                     oldValue shouldBe "updated value"
                     "updated value 2"
                 },
-                containsInCache = { true },
+                isContainedInCache = { true },
                 retrieveAndUpdateCache = {
                     wasCalled = true
                     "from db 2"
@@ -266,7 +266,7 @@ class StateFlowCacheTest : ShouldSpec({
             cut.writeWithCache(
                 key = "key",
                 updater = { "updated value" },
-                containsInCache = { false },
+                isContainedInCache = { false },
                 retrieveAndUpdateCache = { null },
                 persist = {}
             )
@@ -274,7 +274,7 @@ class StateFlowCacheTest : ShouldSpec({
             cut.writeWithCache(
                 key = "key",
                 updater = { "updated value" },
-                containsInCache = { true },
+                isContainedInCache = { true },
                 retrieveAndUpdateCache = { null },
                 persist = { wasCalled = true }
             )
@@ -289,7 +289,7 @@ class StateFlowCacheTest : ShouldSpec({
                         cut.writeWithCache(
                             key = "key",
                             updater = { "$i" },
-                            containsInCache = { false },
+                            isContainedInCache = { false },
                             retrieveAndUpdateCache = { database.replayCache.lastOrNull() },
                             persist = { newValue -> database.emit(newValue) }
                         )
@@ -304,7 +304,7 @@ class StateFlowCacheTest : ShouldSpec({
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
-                    containsInCache = { false },
+                    isContainedInCache = { false },
                     retrieveAndUpdateCache = { null },
                     persist = { }
                 )
@@ -313,7 +313,7 @@ class StateFlowCacheTest : ShouldSpec({
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         wasCalled = true
                         null
@@ -329,7 +329,7 @@ class StateFlowCacheTest : ShouldSpec({
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
-                    containsInCache = { false },
+                    isContainedInCache = { false },
                     retrieveAndUpdateCache = { null },
                     persist = { }
                 )
@@ -341,7 +341,7 @@ class StateFlowCacheTest : ShouldSpec({
                         oldValue shouldBe "updated value"
                         "updated value"
                     },
-                    containsInCache = { true },
+                    isContainedInCache = { true },
                     retrieveAndUpdateCache = {
                         wasCalled = true
                         null
