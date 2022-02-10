@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroommember">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroommember">matrix spec</a>
  */
 @Serializable
 data class MemberEventContent(

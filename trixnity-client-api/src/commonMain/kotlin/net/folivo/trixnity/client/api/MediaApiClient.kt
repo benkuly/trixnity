@@ -16,7 +16,7 @@ import net.folivo.trixnity.client.api.model.media.UploadResponse
 class MediaApiClient(private val httpClient: MatrixHttpClient) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3config">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3config">matrix spec</a>
      */
     suspend fun getConfig(): Result<GetConfigResponse> =
         httpClient.request {
@@ -27,7 +27,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixmediav3upload">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixmediav3upload">matrix spec</a>
      */
     suspend fun upload(
         content: ByteReadChannel,
@@ -62,7 +62,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
      */
     suspend fun download(
         mxcUri: String,
@@ -96,7 +96,7 @@ class MediaApiClient(private val httpClient: MatrixHttpClient) {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
      */
     suspend fun downloadThumbnail(
         mxcUri: String,

@@ -29,6 +29,7 @@ class MatrixApiClient(
     val keys = KeysApiClient(httpClient, json)
     val media = MediaApiClient(httpClient)
     val devices = DevicesApiClient(httpClient)
+    val push = PushApiClient(httpClient)
 }
 
 fun createMatrixApiClientEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =

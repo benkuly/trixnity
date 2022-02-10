@@ -19,7 +19,7 @@ class KeysApiClient(
     val json: Json
 ) {
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
      */
     suspend fun setDeviceKeys(
         deviceKeys: Signed<DeviceKeys, UserId>? = null,
@@ -34,7 +34,7 @@ class KeysApiClient(
         }.mapCatching { it.oneTimeKeyCounts }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>
      */
     suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
@@ -50,7 +50,7 @@ class KeysApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
      */
     suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
@@ -65,7 +65,7 @@ class KeysApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3keyschanges">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3keyschanges">matrix spec</a>
      */
     suspend fun getKeyChanges(
         from: String,
@@ -81,7 +81,7 @@ class KeysApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
      */
     suspend fun setCrossSigningKeys(
         masterKey: Signed<CrossSigningKeys, UserId>?,
@@ -102,7 +102,7 @@ class KeysApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3keyssignaturesupload">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keyssignaturesupload">matrix spec</a>
      */
     suspend fun addSignatures(
         signedDeviceKeys: Set<SignedDeviceKeys>,
@@ -124,7 +124,7 @@ class KeysApiClient(
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
      */
     suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -139,7 +139,7 @@ class KeysApiClient(
         }.mapCatching { json.decodeFromString(RoomsKeyBackup.serializer(sessionDataSerializer), it) }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
         version: String,
@@ -147,7 +147,7 @@ class KeysApiClient(
     ): Result<RoomsKeyBackup<T>> = getRoomKeys(serializer(), version, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
     suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -162,7 +162,7 @@ class KeysApiClient(
     }.mapCatching { json.decodeFromString(RoomKeyBackup.serializer(sessionDataSerializer), it) }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
         version: String,
@@ -171,7 +171,7 @@ class KeysApiClient(
     ): Result<RoomKeyBackup<T>> = getRoomKeys(serializer(), version, roomId, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
     suspend fun <T : RoomKeyBackupSessionData> getRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -187,7 +187,7 @@ class KeysApiClient(
     }.mapCatching { json.decodeFromString(RoomKeyBackupData.serializer(sessionDataSerializer), it) }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
         version: String,
@@ -197,7 +197,7 @@ class KeysApiClient(
     ): Result<RoomKeyBackupData<T>> = getRoomKeys(serializer(), version, roomId, sessionId, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
      */
     suspend fun <T : RoomKeyBackupSessionData> setRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -213,7 +213,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
         version: String,
@@ -222,7 +222,7 @@ class KeysApiClient(
     ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, backup, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
     suspend fun <T : RoomKeyBackupSessionData> setRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -239,7 +239,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
         version: String,
@@ -249,7 +249,7 @@ class KeysApiClient(
     ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, roomId, backup, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
         sessionDataSerializer: KSerializer<T>,
@@ -267,7 +267,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
     suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
         version: String,
@@ -278,7 +278,7 @@ class KeysApiClient(
     ): Result<SetRoomKeysResponse> = setRoomKeys(serializer(), version, roomId, sessionId, backup, asUserId)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -291,7 +291,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -305,7 +305,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -320,7 +320,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keysversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keysversion">matrix spec</a>
      */
     suspend fun getRoomKeysVersion(
         asUserId: UserId? = null
@@ -331,7 +331,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keysversionversion">matrix spec</a>
      */
     suspend fun getRoomKeysVersion(
         version: String,
@@ -343,8 +343,8 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#post_matrixclientv3room_keysversion">matrix spec</a>
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#put_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3room_keysversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keysversionversion">matrix spec</a>
      */
     suspend fun setRoomKeysVersion(
         request: SetRoomKeysVersionRequest,
@@ -369,7 +369,7 @@ class KeysApiClient(
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#delete_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keysversionversion">matrix spec</a>
      */
     suspend fun deleteRoomKeysVersion(
         version: String,

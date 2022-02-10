@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.api.model.server.VersionsResponse
 class ServerApiClient(private val httpClient: MatrixHttpClient) {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientversions">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientversions">matrix spec</a>
      */
     suspend fun getVersions(): Result<VersionsResponse> =
         httpClient.request {
@@ -18,7 +18,7 @@ class ServerApiClient(private val httpClient: MatrixHttpClient) {
         }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#get_matrixclientv3capabilities">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3capabilities">matrix spec</a>
      */
     suspend fun getCapabilities(): Result<CapabilitiesResponse> =
         httpClient.request {

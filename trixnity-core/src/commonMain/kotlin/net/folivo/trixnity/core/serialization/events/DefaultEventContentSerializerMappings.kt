@@ -63,12 +63,13 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
     )
     override val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>> = setOf(
         of<DirectEventContent>("m.direct"),
+        of<PushRulesEventContent>("m.push_rules"),
         of<DefaultSecretKeyEventContent>("m.secret_storage.default_key"),
         of<SecretKeyEventContent>("m.secret_storage.key."),
         of<MasterKeyEventContent>("m.cross_signing.master"),
         of<SelfSigningKeyEventContent>("m.cross_signing.self_signing"),
         of<UserSigningKeyEventContent>("m.cross_signing.user_signing"),
-        of<MegolmBackupV1EventContent>("m.megolm_backup.v1"),
+        of<MegolmBackupV1EventContent>("m.megolm_backup.v1")
     )
     override val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>> = setOf(
         of<FullyReadEventContent>("m.fully_read")

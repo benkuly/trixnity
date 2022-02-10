@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#mroomencrypted">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
 sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {

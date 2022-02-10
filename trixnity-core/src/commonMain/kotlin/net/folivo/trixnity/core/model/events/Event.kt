@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessa
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 
 /**
- * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#types-of-room-events">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#types-of-room-events">matrix spec</a>
  */
 sealed interface Event<C : EventContent> {
     val content: C
@@ -24,7 +24,7 @@ sealed interface Event<C : EventContent> {
     ) : Event<EmptyEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#room-event-fields">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#room-event-fields">matrix spec</a>
      */
     sealed interface RoomEvent<C : RoomEventContent> : Event<C> {
         override val content: C
@@ -46,7 +46,7 @@ sealed interface Event<C : EventContent> {
     ) : RoomEvent<C>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#types-of-room-events">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#types-of-room-events">matrix spec</a>
      */
     @Serializable
     data class StateEvent<C : StateEventContent>(
