@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.api.model.authentication
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -28,6 +27,12 @@ sealed class LoginType {
             get() = "m.login.token"
     }
 
+    object AppService : LoginType() {
+        @SerialName("type")
+        override val name: String
+            get() = "m.login.appservice"
+    }
+
     data class Unknown(
         @SerialName("type")
         override val name: String
@@ -43,12 +48,13 @@ object LoginTypeSerializer : KSerializer<LoginType> {
         return when (type) {
             LoginType.Password.name -> LoginType.Password
             LoginType.Token.name -> LoginType.Token
+            LoginType.AppService.name -> LoginType.AppService
             else -> LoginType.Unknown(type)
         }
     }
 
     override fun serialize(encoder: Encoder, value: LoginType) {
-        throw SerializationException("should never be serialized")
+        encoder.encodeString(value.name)
     }
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("LoginType")

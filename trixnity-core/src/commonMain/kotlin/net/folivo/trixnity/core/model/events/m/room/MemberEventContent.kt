@@ -3,8 +3,8 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.keys.Signed
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroommember">matrix spec</a>
@@ -19,6 +19,8 @@ data class MemberEventContent(
     val membership: Membership,
     @SerialName("is_direct")
     val isDirect: Boolean? = null,
+    @SerialName("join_authorised_via_users_server")
+    val joinAuthorisedViaUsersServer: String? = null,
     @SerialName("third_party_invite")
     val thirdPartyInvite: Invite? = null
 ) : StateEventContent {

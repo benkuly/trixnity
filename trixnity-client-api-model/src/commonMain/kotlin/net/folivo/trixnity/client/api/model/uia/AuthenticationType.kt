@@ -8,6 +8,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#authentication-types">matrix spec</a>
+ */
 @Serializable(with = AuthenticationTypeSerializer::class)
 sealed class AuthenticationType {
     abstract val name: String
@@ -40,6 +43,11 @@ sealed class AuthenticationType {
     @Serializable(with = DummyAuthenticationSerializer::class)
     object Dummy : AuthenticationType() {
         override val name = "m.login.dummy"
+    }
+
+    @Serializable(with = RegistrationTokenAuthenticationSerializer::class)
+    object RegistrationToken : AuthenticationType() {
+        override val name = "m.login.registration_token"
     }
 
     @Serializable(with = UnknownAuthenticationSerializer::class)
@@ -121,6 +129,19 @@ sealed class AuthenticationType {
         }
 
         override fun serialize(encoder: Encoder, value: Dummy) {
+            encoder.encodeString(value.name)
+        }
+    }
+
+    object RegistrationTokenAuthenticationSerializer : KSerializer<RegistrationToken> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("RegistrationTokenAuthenticationSerializer", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): RegistrationToken {
+            return RegistrationToken
+        }
+
+        override fun serialize(encoder: Encoder, value: RegistrationToken) {
             encoder.encodeString(value.name)
         }
     }

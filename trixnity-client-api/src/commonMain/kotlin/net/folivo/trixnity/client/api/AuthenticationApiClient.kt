@@ -71,7 +71,7 @@ class AuthenticationApiClient(
             method = Post
             url("/_matrix/client/v3/login")
             body = LoginRequest(
-                type.name,
+                type,
                 identifier,
                 if (type == LoginType.Password) passwordOrToken else null,
                 if (type == LoginType.Token) passwordOrToken else null,

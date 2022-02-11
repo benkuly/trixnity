@@ -7,5 +7,6 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 data class WhoAmIResponse(
     @SerialName("user_id") val userId: UserId,
-    @SerialName("device_id") val deviceId: String?
+    @SerialName("device_id") val deviceId: String?,
+    @SerialName("is_guest") val isGuest: Boolean?
 )

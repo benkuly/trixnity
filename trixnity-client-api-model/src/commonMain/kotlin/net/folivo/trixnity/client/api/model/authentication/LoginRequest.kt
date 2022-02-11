@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LoginRequest(
     @SerialName("type")
-    val type: String,
+    val type: LoginType,
     @SerialName("identifier")
     val identifier: IdentifierType,
     @SerialName("password")
