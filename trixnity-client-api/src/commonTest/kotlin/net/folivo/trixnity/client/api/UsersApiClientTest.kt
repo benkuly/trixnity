@@ -12,11 +12,11 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.api.model.users.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -162,7 +162,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetWhoami() = runTest {
-        val response = WhoAmIResponse(UserId("user", "server"), "ABCDEF")
+        val response = WhoAmIResponse(UserId("user", "server"), "ABCDEF", false)
         val matrixRestClient = MatrixApiClient(
             baseUrl = Url("https://matrix.host"),
             baseHttpClient = HttpClient(MockEngine) {
@@ -179,7 +179,7 @@ class UsersApiClientTest {
                 }
             })
         val result = matrixRestClient.users.whoAmI().getOrThrow()
-        assertEquals(WhoAmIResponse(UserId("user", "server"), "ABCDEF"), result)
+        assertEquals(WhoAmIResponse(UserId("user", "server"), "ABCDEF", false), result)
     }
 
     @Test

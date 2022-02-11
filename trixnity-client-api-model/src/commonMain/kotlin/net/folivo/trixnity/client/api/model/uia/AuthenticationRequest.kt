@@ -40,6 +40,11 @@ sealed interface AuthenticationRequest {
     object Dummy : AuthenticationRequest
 
     @Serializable
+    data class RegistrationToken(
+        @SerialName("token") val token: String,
+    ) : AuthenticationRequest
+
+    @Serializable
     object Fallback : AuthenticationRequest
 }
 
@@ -86,6 +91,13 @@ class AuthenticationRequestSerializer(val session: String?) : KSerializer<Authen
                     AuthenticationRequest.Dummy.serializer(),
                     "session" to session,
                     "type" to AuthenticationType.Dummy.name
+                ), value
+            )
+            is AuthenticationRequest.RegistrationToken -> encoder.json.encodeToJsonElement(
+                AddFieldsSerializer(
+                    AuthenticationRequest.RegistrationToken.serializer(),
+                    "session" to session,
+                    "type" to AuthenticationType.RegistrationToken.name
                 ), value
             )
             is AuthenticationRequest.Fallback -> encoder.json.encodeToJsonElement(
