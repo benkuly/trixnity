@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.ktor.http.*
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.core.model.UserId
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -21,7 +20,7 @@ class ExposedAccountRepositoryTest : ShouldSpec({
     should("save, get and delete") {
         val account = Account(
             "",
-            Url("http://host"),
+            "http://host",
             UserId("alice", "server"),
             "aliceDevice",
             "accessToken",

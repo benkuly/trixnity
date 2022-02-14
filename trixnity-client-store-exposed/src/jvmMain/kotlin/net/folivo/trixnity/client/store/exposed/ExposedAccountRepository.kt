@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.exposed
 
-import io.ktor.http.*
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.core.model.UserId
@@ -27,7 +26,7 @@ internal class ExposedAccountRepository : AccountRepository {
         return ExposedAccount.select { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
                 olmPickleKey = it[ExposedAccount.olmPickleKey],
-                baseUrl = it[ExposedAccount.baseUrl]?.let { it1 -> Url(it1) },
+                baseUrl = it[ExposedAccount.baseUrl],
                 userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) },
                 deviceId = it[ExposedAccount.deviceId],
                 accessToken = it[ExposedAccount.accessToken],

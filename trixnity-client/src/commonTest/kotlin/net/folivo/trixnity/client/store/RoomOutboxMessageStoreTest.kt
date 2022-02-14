@@ -8,6 +8,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -31,10 +32,10 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
 
     context(RoomOutboxMessageStore::init.name) {
         should("fill cache with values from repository") {
-            val message1 = mockk<RoomOutboxMessage> {
+            val message1 = mockk<RoomOutboxMessage<*>> {
                 coEvery { transactionId } returns "t1"
             }
-            val message2 = mockk<RoomOutboxMessage> {
+            val message2 = mockk<RoomOutboxMessage<*>> {
                 coEvery { transactionId } returns "t2"
             }
             coEvery { roomOutboxMessageRepository.getAll() }.returns(listOf(message1, message2))
@@ -49,18 +50,18 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
     should("handle massive save and delete") {
         val job1 = launch {
             cut.getAll().collect { outbox ->
-                outbox.forEach { cut.markAsSent(it.transactionId) }
+                outbox.forEach { cut.update(it.transactionId) { it?.copy(sentAt = Clock.System.now()) } }
                 delay(10)
             }
         }
         val job2 = launch {
             cut.getAll().collect { outbox ->
-                outbox.forEach { cut.deleteByTransactionId(it.transactionId) }
+                outbox.forEach { cut.update(it.transactionId) { null } }
                 delay(10)
             }
         }
         repeat(50) { i ->
-            cut.add(RoomOutboxMessage(i.toString(), RoomId("room", "server"), mockk()))
+            cut.update(i.toString()) { RoomOutboxMessage(i.toString(), RoomId("room", "server"), mockk()) }
         }
         cut.getAll().first { it.isEmpty() } // we get a timeout if this never succeeds
         job1.cancel()

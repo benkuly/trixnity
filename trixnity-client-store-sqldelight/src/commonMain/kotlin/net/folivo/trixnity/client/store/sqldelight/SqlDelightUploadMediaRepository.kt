@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.sqldelight
 
-import io.ktor.http.*
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
@@ -12,12 +11,12 @@ class SqlDelightUploadMediaRepository(
 ) : UploadMediaRepository {
     override suspend fun get(key: String): UploadMedia? = withContext(context) {
         db.getUploadMedia(key).executeAsOneOrNull()?.let { result ->
-            UploadMedia(result.cache_uri, result.mxc_uri, result.content_type?.let { ContentType.parse(it) })
+            UploadMedia(result.cache_uri, result.mxc_uri, result.content_type)
         }
     }
 
     override suspend fun save(key: String, value: UploadMedia) = withContext(context) {
-        db.saveUploadMedia(key, value.mxcUri, value.contentTyp.toString())
+        db.saveUploadMedia(key, value.mxcUri, value.contentType.toString())
     }
 
     override suspend fun delete(key: String) = withContext(context) {

@@ -32,7 +32,7 @@ class AccountStoreTest : ShouldSpec({
         should("load values from database") {
             coEvery { repository.get(1) } returns Account(
                 "",
-                Url("http://localhost"),
+                "http://localhost",
                 UserId("user", "server"),
                 "device",
                 "access_token",

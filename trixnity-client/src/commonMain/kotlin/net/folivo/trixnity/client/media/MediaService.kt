@@ -93,7 +93,7 @@ class MediaService(
     suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             store.media.addContent(cacheUri, content)
-            store.media.updateUploadMedia(cacheUri) { UploadMedia(cacheUri, contentTyp = contentType) }
+            store.media.updateUploadMedia(cacheUri) { UploadMedia(cacheUri, contentType = contentType.toString()) }
         }
     }
 
@@ -168,7 +168,8 @@ class MediaService(
             api.media.upload(
                 content = ByteReadChannel(content),
                 contentLength = content.size.toLong(),
-                contentType = uploadMediaCache?.contentTyp ?: ContentType.Application.OctetStream,
+                contentType = uploadMediaCache?.contentType?.let { ContentType.parse(it) }
+                    ?: ContentType.Application.OctetStream,
                 progress = progress
             ).map {
                 it.contentUri.also { mxcUri ->

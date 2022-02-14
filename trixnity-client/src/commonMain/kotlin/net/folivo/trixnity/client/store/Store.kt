@@ -71,11 +71,10 @@ abstract class Store(
         roomOutboxMessage.init()
     }
 
-    private val deleteAllAndKeepAccountMutex = Mutex()
-    suspend fun deleteAllButKeepAccount() {
-        deleteAllAndKeepAccountMutex.withLock {
-            keys.deleteAll()
-            olm.deleteAll()
+    private val deleteNonLocalMutex = Mutex()
+    suspend fun deleteNonLocal() {
+        deleteNonLocalMutex.withLock {
+            keys.deleteNonLocal()
             room.deleteAll()
             roomUser.deleteAll()
             roomState.deleteAll()
@@ -91,7 +90,16 @@ abstract class Store(
     suspend fun deleteAll() {
         deleteAllMutex.withLock {
             account.deleteAll()
-            deleteAllButKeepAccount()
+            keys.deleteAll()
+            olm.deleteAll()
+            room.deleteAll()
+            roomUser.deleteAll()
+            roomState.deleteAll()
+            roomTimeline.deleteAll()
+            roomOutboxMessage.deleteAll()
+            media.deleteAll()
+            globalAccountData.deleteAll()
+            roomAccountData.deleteAll()
         }
     }
 

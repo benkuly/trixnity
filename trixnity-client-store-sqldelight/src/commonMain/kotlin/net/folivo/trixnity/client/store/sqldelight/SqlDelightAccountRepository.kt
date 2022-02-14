@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.sqldelight
 
-import io.ktor.http.*
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
@@ -15,7 +14,7 @@ class SqlDelightAccountRepository(
         db.getAccount(key).executeAsOneOrNull()?.let {
             Account(
                 olmPickleKey = it.olm_pickle_key,
-                baseUrl = it.base_url?.let { it1 -> Url(it1) },
+                baseUrl = it.base_url,
                 userId = it.user_id?.let { it1 -> UserId(it1) },
                 deviceId = it.device_id,
                 accessToken = it.access_token,

@@ -62,7 +62,6 @@ kotlin {
 //            configurations.named("jvmRuntimeClasspath")
 //        )
 //        mainClass.set("net.folivo.trixnity.examples.multiplatform.JvmAppKt")
-//        systemProperty("java.library.path", olm.build.canonicalPath)
 //        systemProperty("jna.library.path", olm.build.canonicalPath)
 //        dependsOn("build")
 //        dependsOn(":buildOlm")

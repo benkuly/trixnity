@@ -133,7 +133,7 @@ class MediaServiceTest : ShouldSpec({
             coVerify {
                 store.media.addContent(result, "test".encodeToByteArray())
                 store.media.updateUploadMedia(result, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result, null, Plain)
+                    it.invoke(null) shouldBe UploadMedia(result, null, Plain.toString())
                 })
             }
         }
@@ -156,7 +156,7 @@ class MediaServiceTest : ShouldSpec({
             coVerify {
                 store.media.addContent(result.first, thumbnail)
                 store.media.updateUploadMedia(result.first, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.first, null, JPEG)
+                    it.invoke(null) shouldBe UploadMedia(result.first, null, JPEG.toString())
                 })
             }
         }
@@ -182,7 +182,7 @@ class MediaServiceTest : ShouldSpec({
                     it shouldNotBe "test".encodeToByteArray()
                 })
                 store.media.updateUploadMedia(result.url, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.url, null, OctetStream)
+                    it.invoke(null) shouldBe UploadMedia(result.url, null, OctetStream.toString())
                 })
             }
         }
@@ -213,7 +213,7 @@ class MediaServiceTest : ShouldSpec({
                     it shouldNotBe "test".encodeToByteArray()
                 })
                 store.media.updateUploadMedia(result.first.url, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.first.url, null, OctetStream)
+                    it.invoke(null) shouldBe UploadMedia(result.first.url, null, OctetStream.toString())
                 })
             }
         }
@@ -234,7 +234,7 @@ class MediaServiceTest : ShouldSpec({
                 )
             } returns Result.success(UploadResponse(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
-            coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain)
+            coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain.toString())
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
@@ -242,7 +242,11 @@ class MediaServiceTest : ShouldSpec({
                 api.media.upload(any(), any(), any())
                 store.media.changeUri(cacheUri, mxcUri)
                 store.media.updateUploadMedia(cacheUri, coWithArg {
-                    it.invoke(UploadMedia(cacheUri, null, Plain)) shouldBe UploadMedia(cacheUri, mxcUri, Plain)
+                    it.invoke(UploadMedia(cacheUri, null, Plain.toString())) shouldBe UploadMedia(
+                        cacheUri,
+                        mxcUri,
+                        Plain.toString()
+                    )
                 })
             }
         }
@@ -259,8 +263,8 @@ class MediaServiceTest : ShouldSpec({
             } returns Result.success(UploadResponse(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
             coEvery { store.media.getUploadMedia(cacheUri) }
-                .returns(UploadMedia(cacheUri, null, Plain))
-                .andThen(UploadMedia(cacheUri, mxcUri, Plain))
+                .returns(UploadMedia(cacheUri, null, Plain.toString()))
+                .andThen(UploadMedia(cacheUri, mxcUri, Plain.toString()))
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri

@@ -42,11 +42,9 @@ kotlin {
             useJUnitPlatform()
             when (HostManager.host) {
                 is LINUX_X64 -> {
-                    systemProperty("java.library.path", olm.build.canonicalPath)
                     systemProperty("jna.library.path", olm.build.canonicalPath)
                 }
                 is MINGW_X64 -> {
-                    systemProperty("java.library.path", olm.buildWin.canonicalPath)
                     systemProperty("jna.library.path", olm.buildWin.canonicalPath)
                 }
                 else -> {}

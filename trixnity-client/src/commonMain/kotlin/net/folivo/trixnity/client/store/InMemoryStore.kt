@@ -94,8 +94,8 @@ class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<Ro
 }
 
 class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,
-    InMemoryMinimalStoreRepository<String, RoomOutboxMessage>() {
-    override suspend fun getAll(): List<RoomOutboxMessage> = content.value.values.toList()
+    InMemoryMinimalStoreRepository<String, RoomOutboxMessage<*>>() {
+    override suspend fun getAll(): List<RoomOutboxMessage<*>> = content.value.values.toList()
 }
 
 class InMemoryMediaRepository : MediaRepository, InMemoryMinimalStoreRepository<String, ByteArray>() {

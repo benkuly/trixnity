@@ -319,6 +319,7 @@ class RoomService(
             }
         }
     }
+
     internal suspend fun setDirectRoomsAfterSync() {
         val newDirectRooms = setDirectRoomsEventContent.value
         if (newDirectRooms != null && newDirectRooms != store.globalAccountData.get<DirectEventContent>()?.content)
@@ -332,6 +333,7 @@ class RoomService(
     internal fun setDirectEventContent(directEvent: Event<DirectEventContent>) {
         directEventContent.value = directEvent.content
     }
+
     internal suspend fun handleDirectEventContent() {
         val content = directEventContent.value
         if (content != null) {
@@ -554,7 +556,7 @@ class RoomService(
             val replaceOwnMessagesWithOutboxContent = timelineEvents.map {
                 if (it.event.content is MegolmEncryptedEventContent) {
                     it.event.unsigned?.transactionId?.let { transactionId ->
-                        store.roomOutboxMessage.getByTransactionId(transactionId)?.let { roomOutboxMessage ->
+                        store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
                             it.copy(decryptedEvent = Result.success(MegolmEvent(roomOutboxMessage.content, roomId)))
                         }
                     } ?: it
@@ -888,22 +890,31 @@ class RoomService(
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, media).build(builder)
         requireNotNull(content)
-        store.roomOutboxMessage.add(
+        val transactionId = uuid4().toString()
+        store.roomOutboxMessage.update(transactionId) {
             RoomOutboxMessage(
-                transactionId = uuid4().toString(),
+                transactionId = transactionId,
                 roomId = roomId,
                 content = content,
                 sentAt = null,
                 mediaUploadProgress = MutableStateFlow(null)
             )
-        )
+        }
+    }
+
+    suspend fun abortSendMessage(transactionId: String) {
+        store.roomOutboxMessage.update(transactionId) { null }
+    }
+
+    suspend fun retrySendMessage(transactionId: String) {
+        store.roomOutboxMessage.update(transactionId) { it?.copy(retryCount = 0) }
     }
 
     internal suspend fun syncOutboxMessage(event: Event<*>) {
         if (event is MessageEvent)
             if (event.sender == ownUserId) {
                 event.unsigned?.transactionId?.also {
-                    store.roomOutboxMessage.deleteByTransactionId(it)
+                    store.roomOutboxMessage.update(it) { null }
                 }
             }
     }
@@ -915,12 +926,12 @@ class RoomService(
             val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.warn { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
-                store.roomOutboxMessage.deleteByTransactionId(it.transactionId)
+                store.roomOutboxMessage.update(it.transactionId) { null }
             }
         }
     }
 
-    internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage>>) = coroutineScope {
+    internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage<*>>>) = coroutineScope {
         api.sync.currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
@@ -930,8 +941,9 @@ class RoomService(
             log.info { "start sending outbox messages" }
             outboxMessages.collect { outboxMessagesList ->
                 outboxMessagesList
-                    .filter { it.sentAt == null }
+                    .filter { it.sentAt == null && !it.reachedMaxRetryCount }
                     .forEach { outboxMessage ->
+                        store.roomOutboxMessage.update(outboxMessage.transactionId) { it?.copy(retryCount = it.retryCount + 1) }
                         val roomId = outboxMessage.roomId
                         val content = outboxMessage.content
                             .let { content ->
@@ -951,7 +963,7 @@ class RoomService(
                         if (setOwnMessagesAsFullyRead) {
                             api.rooms.setReadMarkers(roomId, eventId).getOrThrow()
                         }
-                        store.roomOutboxMessage.markAsSent(outboxMessage.transactionId)
+                        store.roomOutboxMessage.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }
                         log.debug { "sent message: $content" }
                     }
             }
@@ -983,7 +995,7 @@ class RoomService(
         return store.roomAccountData.get(roomId, eventContentClass, key)?.content
     }
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage>> = store.roomOutboxMessage.getAll()
+    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = store.roomOutboxMessage.getAll()
 
     suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
