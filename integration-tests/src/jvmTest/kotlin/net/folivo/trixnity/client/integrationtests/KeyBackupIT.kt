@@ -118,7 +118,7 @@ class KeyBackupIT {
                         port = synapseDocker.firstMappedPort
                     ).build(),
                     identifier = IdentifierType.User("user1"),
-                    password = "user$1passw0rd",
+                    passwordOrToken = "user$1passw0rd",
                     storeFactory = storeFactory,
                     scope = scope,
                 ).getOrThrow()

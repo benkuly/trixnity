@@ -54,4 +54,8 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
                     ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedInboundMegolmMessageIndex.deleteAll()
+    }
 }

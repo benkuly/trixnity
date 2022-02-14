@@ -15,14 +15,17 @@ deleteMedia:
 DELETE FROM sql_media
 WHERE url = ?;
 
-changeUri {
-INSERT OR REPLACE INTO sql_media (url,media)
-SELECT ?, media
-FROM sql_media
-WHERE url = ?;
+deleteAllMedia:
+DELETE FROM sql_media;
 
-DELETE FROM sql_media
-WHERE url = ?;
+changeUri {
+    INSERT OR REPLACE INTO sql_media (url,media)
+    SELECT ?, media
+    FROM sql_media
+    WHERE url = ?;
+
+    DELETE FROM sql_media
+    WHERE url = ?;
 }
 
 CREATE TABLE sql_upload_media (
@@ -42,3 +45,6 @@ VALUES (?, ?, ?);
 deleteUploadMedia:
 DELETE FROM sql_upload_media
 WHERE cache_uri = ?;
+
+deleteAllUploadMedia:
+DELETE FROM sql_upload_media;

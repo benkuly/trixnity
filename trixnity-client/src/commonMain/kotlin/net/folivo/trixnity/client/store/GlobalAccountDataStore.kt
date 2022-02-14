@@ -11,13 +11,20 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.reflect.KClass
 
 class GlobalAccountDataStore(
-    globalAccountDataRepository: GlobalAccountDataRepository,
-    rtm: RepositoryTransactionManager,
+    private val globalAccountDataRepository: GlobalAccountDataRepository,
+    private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
     private val globalAccountDataCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, globalAccountDataRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            globalAccountDataRepository.deleteAll()
+        }
+        globalAccountDataCache.reset()
+    }
 
     suspend fun update(event: GlobalAccountDataEvent<out GlobalAccountDataEventContent>) {
         val eventType = when (val content = event.content) {

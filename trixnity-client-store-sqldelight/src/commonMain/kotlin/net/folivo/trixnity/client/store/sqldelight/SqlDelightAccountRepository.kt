@@ -48,4 +48,7 @@ class SqlDelightAccountRepository(
         db.deleteAccount(key)
     }
 
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllAccounts()
+    }
 }

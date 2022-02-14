@@ -48,4 +48,8 @@ class SqlDelightRoomStateRepository(
     override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String) = withContext(context) {
         db.deleteRoomStateByStateKey(firstKey.roomId.full, firstKey.type, secondKey)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllRoomStates()
+    }
 }

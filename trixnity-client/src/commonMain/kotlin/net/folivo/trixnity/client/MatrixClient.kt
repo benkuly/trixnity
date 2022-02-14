@@ -5,11 +5,13 @@ import io.ktor.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerializerMappings
 import net.folivo.trixnity.client.api.createMatrixApiClientJson
@@ -30,10 +32,10 @@ import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import kotlin.time.Duration.Companion.milliseconds
 
 private val log = KotlinLogging.logger {}
 
-// TODO test
 class MatrixClient private constructor(
     olmPickleKey: String,
     val userId: UserId,
@@ -107,7 +109,9 @@ class MatrixClient private constructor(
         suspend fun login(
             baseUrl: Url,
             identifier: IdentifierType,
-            password: String,
+            passwordOrToken: String,
+            loginType: LoginType = LoginType.Password,
+            deviceId: String? = null,
             initialDeviceDisplayName: String? = null,
             storeFactory: StoreFactory,
             baseHttpClient: HttpClient = HttpClient(),
@@ -127,8 +131,9 @@ class MatrixClient private constructor(
             ) { api ->
                 api.authentication.login(
                     identifier = identifier,
-                    passwordOrToken = password,
-                    type = LoginType.Password,
+                    passwordOrToken = passwordOrToken,
+                    type = loginType,
+                    deviceId = deviceId,
                     initialDeviceDisplayName = initialDeviceDisplayName
                 ).flatMap { login ->
                     api.users.getProfile(login.userId).map { profile ->
@@ -171,6 +176,7 @@ class MatrixClient private constructor(
             val api = MatrixApiClient(
                 baseUrl = baseUrl,
                 baseHttpClient = baseHttpClient,
+                onLogout = { onLogout(it, store) },
                 json = json,
                 eventContentSerializerMappings = eventContentSerializerMappings,
             )
@@ -204,11 +210,17 @@ class MatrixClient private constructor(
                     it, userId, deviceId, KeyVerificationState.Verified(it.value)
                 )
             }
-            api.keys.setDeviceKeys(deviceKeys = selfSignedDeviceKeys)
+            api.keys.setDeviceKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
             store.keys.outdatedKeys.update { it + userId }
 
             matrixClient
         }
+
+        data class SoftLoginInfo(
+            val identifier: IdentifierType,
+            val passwordOrToken: String,
+            val loginType: LoginType = LoginType.Password,
+        )
 
         suspend fun fromStore(
             storeFactory: StoreFactory,
@@ -216,7 +228,8 @@ class MatrixClient private constructor(
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
-            scope: CoroutineScope,
+            onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
+            scope: CoroutineScope
         ): Result<MatrixClient?> = kotlin.runCatching {
             val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixApiClientJson(eventContentSerializerMappings)
@@ -225,54 +238,105 @@ class MatrixClient private constructor(
             store.init()
 
             val baseUrl = store.account.baseUrl.value
-            val accessToken = store.account.accessToken.value
             val userId = store.account.userId.value
             val deviceId = store.account.deviceId.value
             val olmPickleKey = store.account.olmPickleKey.value
 
-            if (olmPickleKey != null && accessToken != null && userId != null && deviceId != null && baseUrl != null) {
+            if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
                 val api = MatrixApiClient(
                     baseUrl = baseUrl,
                     baseHttpClient = baseHttpClient,
+                    onLogout = { onLogout(it, store) },
                     json = json,
                     eventContentSerializerMappings = eventContentSerializerMappings,
                 )
-                api.accessToken.value = accessToken
-                MatrixClient(
-                    olmPickleKey = olmPickleKey,
-                    userId = userId,
-                    deviceId = deviceId,
-                    api = api,
-                    store = store,
-                    json = json,
-                    setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
-                    customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
-                    scope = scope,
-                )
+                val accessToken = store.account.accessToken.value ?: onSoftLogin?.let {
+                    val (identifier, passwordOrToken, loginType) = onSoftLogin()
+                    api.authentication.login(identifier, passwordOrToken, loginType, deviceId).getOrThrow().accessToken
+                        .also { store.account.accessToken.value = it }
+                }
+                if (accessToken != null) {
+                    api.accessToken.value = accessToken
+                    MatrixClient(
+                        olmPickleKey = olmPickleKey,
+                        userId = userId,
+                        deviceId = deviceId,
+                        api = api,
+                        store = store,
+                        json = json,
+                        setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+                        customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                        scope = scope,
+                    )
+                } else null
             } else null
+        }
+
+        private fun onLogout(
+            soft: Boolean,
+            store: Store
+        ) {
+            log.debug { "This device has been logged out (soft=$soft)." }
+            store.account.accessToken.value = null
+            if (!soft) {
+                store.account.syncBatchToken.value = null
+            }
         }
     }
 
-    fun isLoggedIn(scope: CoroutineScope): StateFlow<Boolean> {
-        return store.account.accessToken.map { it != null }.stateIn(scope, Eagerly, false)
+    enum class LoginState {
+        LOGGED_IN,
+        LOGGED_OUT_SOFT,
+        LOGGED_OUT,
+    }
+
+    val loginState: StateFlow<LoginState?> =
+        combine(store.account.accessToken, store.account.syncBatchToken) { accessToken, syncBatchToken ->
+            when {
+                accessToken != null -> LOGGED_IN
+                syncBatchToken != null -> LOGGED_OUT_SOFT
+                else -> LOGGED_OUT
+            }
+        }.stateIn(scope, Eagerly, null)
+
+    suspend fun logout(): Result<Unit> {
+        stopSync(true)
+        return if (loginState.value == LOGGED_OUT_SOFT) {
+            deleteAll()
+            Result.success(Unit)
+        } else api.authentication.logout()
+            .mapCatching {
+                deleteAll()
+            }
+    }
+
+    private suspend fun deleteAll() {
+        stopSync(true)
+        store.deleteAll()
+        olm.free()
+    }
+
+    /**
+     * Be aware, that most StateFlows you got before will not be updated after calling this method.
+     */
+    suspend fun clearCache(): Result<Unit> = kotlin.runCatching {
+        stopSync(true)
+        store.account.syncBatchToken.value = null
+        store.deleteAllButKeepAccount()
+        startSync()
     }
 
     val syncState = api.sync.currentSyncState
 
-    suspend fun logout() {
-        api.sync.stop()
-        api.authentication.logout()
-        olm.free()
-    }
-
     private val isInitialized = MutableStateFlow(false)
 
+    @OptIn(FlowPreview::class)
     suspend fun startSync(): Result<Unit> = kotlin.runCatching {
         if (isInitialized.getAndUpdate { true }.not()) {
             val handler = CoroutineExceptionHandler { _, exception ->
                 log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
                 scope.launch {
-                    api.sync.stop(wait = true)
+                    stopSync(true)
                 }
             }
             val everythingStarted = MutableStateFlow(false)
@@ -282,6 +346,24 @@ class MatrixClient private constructor(
                 room.start(this)
                 user.start(this)
                 verification.start(this)
+                launch {
+                    loginState.debounce(100.milliseconds).collect {
+                        log.info { "login state: $it" }
+                        when (it) {
+                            LOGGED_OUT_SOFT -> {
+                                log.info { "stop sync and delete all but account" }
+                                stopSync(true)
+                                store.deleteAllButKeepAccount()
+                            }
+                            LOGGED_OUT -> {
+                                log.info { "stop sync and delete all" }
+                                stopSync(true)
+                                store.deleteAll()
+                            }
+                            else -> {}
+                        }
+                    }
+                }
                 everythingStarted.value = true
             }
             everythingStarted.first { it } // we wait until everything has started
@@ -303,8 +385,8 @@ class MatrixClient private constructor(
         )
     }
 
-    suspend fun stopSync() {
-        api.sync.stop()
+    suspend fun stopSync(wait: Boolean = false) {
+        api.sync.stop(wait)
     }
 
     suspend fun setDisplayName(displayName: String?): Result<Unit> {

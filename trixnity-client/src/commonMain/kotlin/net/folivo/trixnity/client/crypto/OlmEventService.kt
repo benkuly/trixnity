@@ -45,15 +45,14 @@ class OlmEventService internal constructor(
     private val olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
+    private val ownEd25519Key: Ed25519Key,
+    private val ownCurve25519Key: Curve25519Key,
     private val json: Json,
     private val account: OlmAccount,
     private val store: Store,
     private val api: MatrixApiClient,
     private val signService: OlmSignService,
 ) {
-    private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
-    private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
-
     suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,

@@ -68,4 +68,8 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
                     ExposedRoomState.stateKey.eq(secondKey)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedRoomState.deleteAll()
+    }
 }

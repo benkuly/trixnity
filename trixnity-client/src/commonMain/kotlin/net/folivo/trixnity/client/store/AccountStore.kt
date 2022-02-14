@@ -30,8 +30,8 @@ class AccountStore(
         baseUrl.value = account?.baseUrl
         userId.value = account?.userId
         deviceId.value = account?.deviceId
-        accessToken.value = account?.accessToken
         syncBatchToken.value = account?.syncBatchToken
+        accessToken.value = account?.accessToken
         filterId.value = account?.filterId
         displayName.value = account?.displayName
         avatarUrl.value = account?.avatarUrl
@@ -62,5 +62,18 @@ class AccountStore(
                 )
             }.collect { rtm.transaction { repository.save(1, it) } }
         }
+    }
+
+    suspend fun deleteAll() {
+        rtm.transaction { repository.deleteAll() }
+        olmPickleKey.value = null
+        baseUrl.value = null
+        userId.value = null
+        deviceId.value = null
+        syncBatchToken.value = null
+        accessToken.value = null
+        filterId.value = null
+        displayName.value = null
+        avatarUrl.value = null
     }
 }

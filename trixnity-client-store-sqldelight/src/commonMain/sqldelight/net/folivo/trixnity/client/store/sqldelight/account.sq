@@ -22,3 +22,6 @@ WHERE id = ?;
 deleteAccount:
 DELETE FROM sql_account
 WHERE id = ?;
+
+deleteAllAccounts:
+DELETE FROM sql_account;

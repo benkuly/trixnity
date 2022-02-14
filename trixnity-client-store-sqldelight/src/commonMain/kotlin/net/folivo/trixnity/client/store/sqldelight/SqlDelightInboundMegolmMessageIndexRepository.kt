@@ -41,4 +41,8 @@ class SqlDelightInboundMegolmMessageIndexRepository(
             key.senderKey.value, key.sessionId, key.roomId.full, key.messageIndex
         )
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllInboundMegolmSessionIndex()
+    }
 }

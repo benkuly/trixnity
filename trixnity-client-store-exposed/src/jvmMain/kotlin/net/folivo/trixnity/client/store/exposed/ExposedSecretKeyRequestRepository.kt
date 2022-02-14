@@ -35,4 +35,8 @@ class ExposedSecretKeyRequestRepository(private val json: Json) : SecretKeyReque
     override suspend fun delete(key: String) {
         ExposedSecretKeyRequest.deleteWhere { ExposedSecretKeyRequest.id eq key }
     }
+
+    override suspend fun deleteAll() {
+        ExposedSecretKeyRequest.deleteAll()
+    }
 }

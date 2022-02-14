@@ -7,11 +7,20 @@ import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 
 class MediaStore(
     private val mediaRepository: MediaRepository,
-    uploadMediaRepository: UploadMediaRepository,
+    private val uploadMediaRepository: UploadMediaRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
     private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            mediaRepository.deleteAll()
+            uploadMediaRepository.deleteAll()
+        }
+        mediaCache.reset()
+        uploadMediaCache.reset()
+    }
 
     suspend fun addContent(uri: String, content: ByteArray) = mediaCache.update(uri) { content }
 

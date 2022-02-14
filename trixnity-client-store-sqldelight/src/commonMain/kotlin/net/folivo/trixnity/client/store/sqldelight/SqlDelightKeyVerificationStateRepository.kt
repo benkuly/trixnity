@@ -43,4 +43,8 @@ class SqlDelightKeyVerificationStateRepository(
             key_algorithm = key.keyAlgorithm.name
         )
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllKeyVerificationStates()
+    }
 }

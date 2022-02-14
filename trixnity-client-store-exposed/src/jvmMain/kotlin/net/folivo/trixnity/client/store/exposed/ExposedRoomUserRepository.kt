@@ -53,4 +53,8 @@ internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepos
     override suspend fun delete(key: RoomId) {
         ExposedRoomUser.deleteWhere { ExposedRoomUser.roomId eq key.full }
     }
+
+    override suspend fun deleteAll() {
+        ExposedRoomUser.deleteAll()
+    }
 }

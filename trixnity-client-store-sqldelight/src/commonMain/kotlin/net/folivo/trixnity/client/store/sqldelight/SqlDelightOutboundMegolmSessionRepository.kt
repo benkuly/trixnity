@@ -29,4 +29,8 @@ class SqlDelightOutboundMegolmSessionRepository(
     override suspend fun delete(key: RoomId) = withContext(context) {
         db.deleteOutboundMegolmSession(key.full)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllOutboundMegolmSessions()
+    }
 }

@@ -60,4 +60,7 @@ internal class ExposedRoomOutboxMessageRepository(
         ExposedRoomOutboxMessage.deleteWhere { ExposedRoomOutboxMessage.transactionId eq key }
     }
 
+    override suspend fun deleteAll() {
+        ExposedRoomOutboxMessage.deleteAll()
+    }
 }

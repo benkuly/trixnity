@@ -72,6 +72,8 @@ class OlmService(
         olmPickleKey = olmPickleKey,
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
+        ownEd25519Key = ownEd25519Key,
+        ownCurve25519Key = ownCurve25519Key,
         json = json,
         account = account,
         store = store,

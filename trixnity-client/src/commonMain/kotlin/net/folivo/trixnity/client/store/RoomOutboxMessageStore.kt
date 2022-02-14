@@ -18,6 +18,13 @@ class RoomOutboxMessageStore(
         rtm = rtm
     )
 
+    suspend fun deleteAll() {
+        rtm.transaction {
+            roomOutboxMessageRepository.deleteAll()
+        }
+        roomOutboxMessageCache.reset()
+    }
+
     @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val allRoomOutboxMessages =
         roomOutboxMessageCache.cache

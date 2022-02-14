@@ -13,9 +13,9 @@ import net.folivo.trixnity.core.model.keys.Key
 
 class KeyStore(
     private val outdatedKeysRepository: OutdatedKeysRepository,
-    deviceKeysRepository: DeviceKeysRepository,
-    crossSigningKeysRepository: CrossSigningKeysRepository,
-    keyVerificationStateRepository: KeyVerificationStateRepository,
+    private val deviceKeysRepository: DeviceKeysRepository,
+    private val crossSigningKeysRepository: CrossSigningKeysRepository,
+    private val keyVerificationStateRepository: KeyVerificationStateRepository,
     private val keyChainLinkRepository: KeyChainLinkRepository,
     private val secretsRepository: SecretsRepository,
     private val secretKeyRequestRepository: SecretKeyRequestRepository,
@@ -41,6 +41,24 @@ class KeyStore(
         }
         secretKeyRequestCache.init(rtm.transaction { secretKeyRequestRepository.getAll() }
             .associateBy { it.content.requestId })
+    }
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            outdatedKeysRepository.deleteAll()
+            deviceKeysRepository.deleteAll()
+            crossSigningKeysRepository.deleteAll()
+            keyVerificationStateRepository.deleteAll()
+            keyChainLinkRepository.deleteAll()
+            secretsRepository.deleteAll()
+            secretKeyRequestRepository.deleteAll()
+        }
+        outdatedKeys.value = setOf()
+        secrets.value = mapOf()
+        deviceKeysCache.reset()
+        crossSigningKeysCache.reset()
+        keyVerificationStateCache.reset()
+        secretKeyRequestCache.reset()
     }
 
     suspend fun getDeviceKeys(

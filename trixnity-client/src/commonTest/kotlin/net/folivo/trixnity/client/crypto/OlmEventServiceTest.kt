@@ -117,7 +117,18 @@ private val body: ShouldSpec.() -> Unit = {
         coEvery { signService.verify(any<Key.SignedCurve25519Key>(), any()) } returns VerifyResult.Valid
         coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
 
-        cut = OlmEventService("", alice, aliceDeviceId, json, aliceAccount, store, api, signService)
+        cut = OlmEventService(
+            "",
+            alice,
+            aliceDeviceId,
+            aliceEdKey,
+            aliceCurveKey,
+            json,
+            aliceAccount,
+            store,
+            api,
+            signService
+        )
     }
 
     afterTest {

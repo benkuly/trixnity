@@ -37,4 +37,8 @@ internal class ExposedRoomTimelineEventRepository(private val json: Json) : Room
             ExposedRoomTimeline.eventId.eq(key.eventId.full) and ExposedRoomTimeline.roomId.eq(key.roomId.full)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedRoomTimeline.deleteAll()
+    }
 }

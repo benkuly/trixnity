@@ -15,6 +15,9 @@ deleteOlmAccount:
 DELETE FROM sql_olm_account
 WHERE id = ?;
 
+deleteAllOlmAccounts:
+DELETE FROM sql_olm_account;
+
 CREATE TABLE sql_olm_sessions(
   sender_key TEXT PRIMARY KEY NOT NULL,
   olm_sessions TEXT NOT NULL
@@ -31,6 +34,9 @@ VALUES (?, ?);
 deleteOlmSessions:
 DELETE FROM sql_olm_sessions
 WHERE sender_key = ?;
+
+deleteAllOlmSessions:
+DELETE FROM sql_olm_sessions;
 
 CREATE TABLE sql_inbound_megolm_session(
   sender_key TEXT NOT NULL,
@@ -61,6 +67,9 @@ deleteInboundMegolmSession:
 DELETE FROM sql_inbound_megolm_session
 WHERE sender_key = ? AND session_id = ? AND room_id = ?;
 
+deleteAllInboundMegolmSessions:
+DELETE FROM sql_inbound_megolm_session;
+
 CREATE TABLE sql_inbound_megolm_session_index(
   sender_key TEXT NOT NULL,
   session_id TEXT NOT NULL,
@@ -83,6 +92,9 @@ deleteInboundMegolmSessionIndex:
 DELETE FROM sql_inbound_megolm_session_index
 WHERE sender_key = ? AND session_id = ? AND room_id = ? AND message_index = ?;
 
+deleteAllInboundMegolmSessionIndex:
+DELETE FROM sql_inbound_megolm_session_index;
+
 CREATE TABLE sql_outbound_megolm_session(
   room_id TEXT PRIMARY KEY NOT NULL,
   outbound_megolm_session TEXT NOT NULL
@@ -99,3 +111,6 @@ VALUES (?, ?);
 deleteOutboundMegolmSession:
 DELETE FROM sql_outbound_megolm_session
 WHERE room_id = ?;
+
+deleteAllOutboundMegolmSessions:
+DELETE FROM sql_outbound_megolm_session;

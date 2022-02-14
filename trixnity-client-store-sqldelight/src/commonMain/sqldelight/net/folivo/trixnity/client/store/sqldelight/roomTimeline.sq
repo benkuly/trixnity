@@ -16,3 +16,6 @@ VALUES (?, ?, ?);
 deleteTimelineEvent:
 DELETE FROM sql_room_timeline_event
 WHERE event_id = ? AND room_id = ?;
+
+deleteAllTimelineEvents:
+DELETE FROM sql_room_timeline_event;

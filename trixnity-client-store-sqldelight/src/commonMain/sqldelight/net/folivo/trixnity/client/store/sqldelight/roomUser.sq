@@ -24,3 +24,6 @@ WHERE room_id = ?;
 deleteRoomUsers:
 DELETE FROM sql_room_user
 WHERE room_id = ?;
+
+deleteAllRoomUsers:
+DELETE FROM sql_room_user;

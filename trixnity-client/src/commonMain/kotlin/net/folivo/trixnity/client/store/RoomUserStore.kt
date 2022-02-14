@@ -11,11 +11,16 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
 
 class RoomUserStore(
-    roomUserRepository: RoomUserRepository,
-    rtm: RepositoryTransactionManager,
+    private val roomUserRepository: RoomUserRepository,
+    private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) {
     private val roomUserCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomUserRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction { roomUserRepository.deleteAll() }
+        roomUserCache.reset()
+    }
 
     suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> =
         roomUserCache.get(roomId, scope = scope).map { it?.values?.toSet() }.stateIn(scope)

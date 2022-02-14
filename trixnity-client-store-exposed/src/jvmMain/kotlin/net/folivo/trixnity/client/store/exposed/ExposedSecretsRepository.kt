@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.AllowedSecretType
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.client.store.repository.SecretsRepository
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
@@ -31,5 +32,9 @@ internal class ExposedSecretsRepository(private val json: Json) : SecretsReposit
 
     override suspend fun delete(key: Long) {
         ExposedSecrets.deleteWhere { ExposedSecrets.id eq key }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedSecrets.deleteAll()
     }
 }

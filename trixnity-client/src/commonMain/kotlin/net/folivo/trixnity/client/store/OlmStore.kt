@@ -14,10 +14,10 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 class OlmStore(
     private val olmAccountRepository: OlmAccountRepository,
-    olmSessionRepository: OlmSessionRepository,
+    private val olmSessionRepository: OlmSessionRepository,
     private val inboundMegolmSessionRepository: InboundMegolmSessionRepository,
-    inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
-    outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
+    private val inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
+    private val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) {
@@ -44,6 +44,22 @@ class OlmStore(
                 rtm.transaction { inboundMegolmSessionRepository.getByNotBackedUp() }
                     .associateBy { InboundMegolmSessionRepositoryKey(it.senderKey, it.sessionId, it.roomId) }
         }
+    }
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            olmAccountRepository.deleteAll()
+            olmSessionRepository.deleteAll()
+            inboundMegolmSessionRepository.deleteAll()
+            inboundMegolmMessageIndexRepository.deleteAll()
+            outboundMegolmSessionRepository.deleteAll()
+        }
+        account.value = null
+        _notBackedUpInboundMegolmSessions.value = mapOf()
+        olmSessionsCache.reset()
+        inboundMegolmSessionCache.reset()
+        inboundMegolmSessionIndexCache.reset()
+        outboundMegolmSessionCache.reset()
     }
 
     private val olmSessionsCache = RepositoryStateFlowCache(storeScope, olmSessionRepository, rtm)

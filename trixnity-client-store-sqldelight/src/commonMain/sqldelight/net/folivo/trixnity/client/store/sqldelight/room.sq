@@ -17,3 +17,6 @@ VALUES (?, ?);
 deleteRoom:
 DELETE FROM sql_room
 WHERE room_id = ?;
+
+deleteAllRooms:
+DELETE FROM sql_room;

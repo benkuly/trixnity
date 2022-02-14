@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
@@ -67,6 +69,30 @@ abstract class Store(
         olm.init()
         room.init()
         roomOutboxMessage.init()
+    }
+
+    private val deleteAllAndKeepAccountMutex = Mutex()
+    suspend fun deleteAllButKeepAccount() {
+        deleteAllAndKeepAccountMutex.withLock {
+            keys.deleteAll()
+            olm.deleteAll()
+            room.deleteAll()
+            roomUser.deleteAll()
+            roomState.deleteAll()
+            roomTimeline.deleteAll()
+            roomOutboxMessage.deleteAll()
+            media.deleteAll()
+            globalAccountData.deleteAll()
+            roomAccountData.deleteAll()
+        }
+    }
+
+    private val deleteAllMutex = Mutex()
+    suspend fun deleteAll() {
+        deleteAllMutex.withLock {
+            account.deleteAll()
+            deleteAllButKeepAccount()
+        }
     }
 
     private fun resetCache() {

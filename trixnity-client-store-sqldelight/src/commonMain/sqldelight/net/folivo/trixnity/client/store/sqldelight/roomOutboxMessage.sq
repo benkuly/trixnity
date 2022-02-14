@@ -20,3 +20,6 @@ VALUES ?;
 deleteRoomOutboxMessage:
 DELETE FROM sql_room_outbox_message
 WHERE transaction_id = ?;
+
+deleteAllRoomOutboxMessages:
+DELETE FROM sql_room_outbox_message;

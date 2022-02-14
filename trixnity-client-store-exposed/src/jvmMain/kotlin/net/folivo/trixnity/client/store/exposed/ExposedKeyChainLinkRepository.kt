@@ -58,4 +58,8 @@ internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
                     ExposedKeyChainLink.signedKeyValue.eq(signedKey.value)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedKeyChainLink.deleteAll()
+    }
 }

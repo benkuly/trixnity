@@ -33,4 +33,8 @@ internal class ExposedMediaRepository : MediaRepository {
     override suspend fun delete(key: String) {
         ExposedMedia.deleteWhere { ExposedMedia.url eq key }
     }
+
+    override suspend fun deleteAll() {
+        ExposedMedia.deleteAll()
+    }
 }

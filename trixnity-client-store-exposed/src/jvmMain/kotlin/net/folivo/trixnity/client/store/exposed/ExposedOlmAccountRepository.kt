@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.exposed
 
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
@@ -25,5 +26,9 @@ internal class ExposedOlmAccountRepository : OlmAccountRepository {
 
     override suspend fun delete(key: Long) {
         ExposedOlmAccount.deleteWhere { ExposedOlmAccount.id eq key }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedOlmAccount.deleteAll()
     }
 }
