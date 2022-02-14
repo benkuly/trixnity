@@ -13,20 +13,24 @@ import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.api.model.authentication.AccountType
+import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.api.model.authentication.RegisterResponse
 import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import org.jetbrains.exposed.sql.Database
 
-const val synapseVersion = "v1.51.0" // TODO you should update this from time to time.
+const val synapseVersion = "v1.52.0" // TODO you should update this from time to time.
+private const val password = "user$1passw0rd"
 
 suspend fun MatrixApiClient.register(
     username: String? = null,
-    password: String
+    password: String,
+    deviceId: String? = null
 ): Result<MatrixClient.Companion.LoginInfo> {
     val registerStep = authentication.register(
         password = password,
         username = username,
+        deviceId = deviceId,
         accountType = AccountType.USER,
     ).getOrThrow()
     registerStep.shouldBeInstanceOf<UIA.UIAStep<RegisterResponse>>()
@@ -56,9 +60,27 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
         baseUrl = baseUrl,
         storeFactory = storeFactory,
         scope = scope,
-        getLoginInfo = { it.register(username, "user$1passw0rd") }
+        getLoginInfo = { it.register(username, password, name) }
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
-    return StartedClient(scope, database, client, "user$1passw0rd")
+    return StartedClient(scope, database, client, password)
+}
+
+suspend fun startClient(name: String, username: String = name, baseUrl: Url): StartedClient {
+    val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
+    val database = newDatabase()
+    val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+
+    val client = MatrixClient.login(
+        baseUrl = baseUrl,
+        identifier = IdentifierType.User(username),
+        passwordOrToken = password,
+        deviceId = name,
+        storeFactory = storeFactory,
+        scope = scope,
+    ).getOrThrow()
+    client.startSync()
+    client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+    return StartedClient(scope, database, client, password)
 }

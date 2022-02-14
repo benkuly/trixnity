@@ -6,10 +6,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
 import net.folivo.trixnity.core.model.UserId
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 
 internal object ExposedCrossSigningKeys : Table("cross_signing_keys") {
     val userId = varchar("user_id", length = 65535)
@@ -35,5 +32,9 @@ internal class ExposedCrossSigningKeysRepository(private val json: Json) : Cross
 
     override suspend fun delete(key: UserId) {
         ExposedCrossSigningKeys.deleteWhere { ExposedCrossSigningKeys.userId eq key.full }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedCrossSigningKeys.deleteAll()
     }
 }

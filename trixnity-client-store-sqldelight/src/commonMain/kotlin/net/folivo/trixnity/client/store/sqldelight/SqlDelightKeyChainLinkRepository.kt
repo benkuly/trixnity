@@ -47,4 +47,8 @@ class SqlDelightKeyChainLinkRepository(
             signed_key_value = signedKey.value
         )
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllKeyChainLinks()
+    }
 }

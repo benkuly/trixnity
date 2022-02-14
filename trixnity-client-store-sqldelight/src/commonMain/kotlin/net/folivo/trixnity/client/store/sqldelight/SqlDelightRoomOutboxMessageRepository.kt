@@ -56,4 +56,7 @@ class SqlDelightRoomOutboxMessageRepository(
         db.deleteRoomOutboxMessage(key)
     }
 
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllRoomOutboxMessages()
+    }
 }

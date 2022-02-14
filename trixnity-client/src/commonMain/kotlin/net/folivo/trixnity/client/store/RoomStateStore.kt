@@ -16,12 +16,19 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.reflect.KClass
 
 class RoomStateStore(
-    roomStateRepository: RoomStateRepository,
-    rtm: RepositoryTransactionManager,
+    private val roomStateRepository: RoomStateRepository,
+    private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
     private val roomStateCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            roomStateRepository.deleteAll()
+        }
+        roomStateCache.reset()
+    }
 
     private fun <C : StateEventContent> findType(eventContentClass: KClass<C>): String {
         return contentMappings.state.find { it.kClass == eventContentClass }?.type

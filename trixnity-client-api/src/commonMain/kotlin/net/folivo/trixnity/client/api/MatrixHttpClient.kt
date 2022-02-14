@@ -26,7 +26,8 @@ class MatrixHttpClient(
     initialHttpClient: HttpClient,
     val json: Json,
     private val baseUrl: Url,
-    private val accessToken: MutableStateFlow<String?>
+    private val accessToken: MutableStateFlow<String?>,
+    val onLogout: suspend (isSoft: Boolean) -> Unit = {}
 ) {
     val baseClient: HttpClient = initialHttpClient.config {
         install(JsonFeature) {
@@ -62,6 +63,9 @@ class MatrixHttpClient(
                 } catch (error: Throwable) {
                     ErrorResponse.CustomErrorResponse("UNKNOWN", responseText)
                 }
+            if (response.status == HttpStatusCode.Unauthorized && errorResponse is ErrorResponse.UnknownToken) {
+                onLogout(errorResponse.softLogout)
+            }
             throw MatrixServerException(response.status, errorResponse)
         }
     }
@@ -89,6 +93,12 @@ class MatrixHttpClient(
                 val responseObject = json.decodeFromString<JsonObject>(responseText)
                 val state = json.decodeFromJsonElement<UIAState>(responseObject)
                 val errorCode = responseObject["errcode"]
+                val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
+                    URLBuilder().takeFrom(baseUrl).apply {
+                        encodedPath += "/_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
+                        state.session?.let { parameters.append("session", it) }
+                    }.build()
+                }
                 val authenticate: suspend (AuthenticationRequest) -> Result<UIA<R>> = { authenticationRequest ->
                     val authBody = JsonObject(
                         buildMap {
@@ -104,14 +114,11 @@ class MatrixHttpClient(
                     )
                     uiaRequest(authBody, serializer(), responseSerializer, requestBuilder)
                 }
-                val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
-                    URLBuilder().takeFrom(baseUrl).apply {
-                        encodedPath += "/_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
-                        state.session?.let { parameters.append("session", it) }
-                    }.build()
-                }
                 if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
+                    if (error is ErrorResponse.UnknownToken) {
+                        onLogout(error.softLogout)
+                    }
                     UIA.UIAError(state, error, getFallbackUrl, authenticate)
                 } else {
                     UIA.UIAStep(state, getFallbackUrl, authenticate)

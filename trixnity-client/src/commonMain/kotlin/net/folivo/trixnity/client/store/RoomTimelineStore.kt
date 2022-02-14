@@ -8,11 +8,18 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
 class RoomTimelineStore(
-    roomTimelineRepository: MinimalStoreRepository<RoomTimelineKey, TimelineEvent>,
-    rtm: RepositoryTransactionManager,
+    private val roomTimelineRepository: MinimalStoreRepository<RoomTimelineKey, TimelineEvent>,
+    private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope,
 ) {
     private val roomTimelineCache = RepositoryStateFlowCache(storeScope, roomTimelineRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            roomTimelineRepository.deleteAll()
+        }
+        roomTimelineCache.reset()
+    }
 
     fun resetCache() {
         roomTimelineCache.reset()

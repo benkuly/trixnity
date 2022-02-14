@@ -13,12 +13,19 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.reflect.KClass
 
 class RoomAccountDataStore(
-    roomAccountDataRepository: RoomAccountDataRepository,
-    rtm: RepositoryTransactionManager,
+    private val roomAccountDataRepository: RoomAccountDataRepository,
+    private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
 ) {
     private val roomAccountDataCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomAccountDataRepository, rtm)
+
+    suspend fun deleteAll() {
+        rtm.transaction {
+            roomAccountDataRepository.deleteAll()
+        }
+        roomAccountDataCache.reset()
+    }
 
     suspend fun update(event: RoomAccountDataEvent<RoomAccountDataEventContent>) {
         val eventType = when (val content = event.content) {

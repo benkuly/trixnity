@@ -26,6 +26,7 @@ private class LoadingRepository<K1, K2, V>(
         baseRepository.save(key, value.value)
 
     override suspend fun delete(key: K1) = baseRepository.delete(key)
+    override suspend fun deleteAll() = baseRepository.deleteAll()
 }
 
 class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRepository<K1, K2, V>>(
@@ -42,6 +43,10 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         infiniteCache = false,
         cacheDuration = cacheDuration
     )
+
+    fun reset() {
+        cache.reset()
+    }
 
     suspend fun get(
         key: K1,

@@ -27,4 +27,8 @@ class SqlDelightDeviceKeysRepository(
     override suspend fun delete(key: UserId) = withContext(context) {
         db.deleteDeviceKeys(key.full)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllDeviceKeys()
+    }
 }

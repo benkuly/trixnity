@@ -29,4 +29,8 @@ class SqlDelightSecretsRepository(
     override suspend fun delete(key: Long) = withContext(context) {
         db.deleteSecrets(key)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllSecrets()
+    }
 }

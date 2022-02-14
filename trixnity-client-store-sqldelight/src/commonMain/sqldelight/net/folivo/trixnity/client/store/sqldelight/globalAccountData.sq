@@ -21,6 +21,9 @@ deleteGlobalAccountData:
 DELETE FROM sql_global_account_data
 WHERE  type = ?;
 
+deleteAllGlobalAccountData:
+DELETE FROM sql_global_account_data;
+
 deleteGlobalAccountDataByKey:
 DELETE FROM sql_global_account_data
 WHERE type = ? AND key = ?;

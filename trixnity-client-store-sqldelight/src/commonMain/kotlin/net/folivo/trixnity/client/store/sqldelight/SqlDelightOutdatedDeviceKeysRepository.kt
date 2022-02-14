@@ -28,4 +28,8 @@ class SqlDelightOutdatedDeviceKeysRepository(
     override suspend fun delete(key: Long) = withContext(context) {
         db.deleteOutdatedDeviceKeys(key)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllOutdatedDeviceKeys()
+    }
 }

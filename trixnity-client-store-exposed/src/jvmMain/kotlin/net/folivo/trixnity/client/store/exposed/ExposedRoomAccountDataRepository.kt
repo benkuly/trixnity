@@ -79,4 +79,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         }
     }
 
+    override suspend fun deleteAll() {
+        ExposedRoomAccountData.deleteAll()
+    }
 }

@@ -33,4 +33,8 @@ class SqlDelightRoomRepository(
     override suspend fun delete(key: RoomId) = withContext(context) {
         db.deleteRoom(key.full)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllRooms()
+    }
 }

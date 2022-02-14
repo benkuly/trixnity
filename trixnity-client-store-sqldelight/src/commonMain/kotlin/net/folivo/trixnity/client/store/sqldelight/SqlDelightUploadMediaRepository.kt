@@ -23,4 +23,8 @@ class SqlDelightUploadMediaRepository(
     override suspend fun delete(key: String) = withContext(context) {
         db.deleteUploadMedia(key)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllUploadMedia()
+    }
 }

@@ -6,10 +6,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.repository.DeviceKeysRepository
 import net.folivo.trixnity.core.model.UserId
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 
 internal object ExposedDeviceKeys : Table("device_keys") {
     val userId = varchar("user_id", length = 65535)
@@ -35,5 +32,9 @@ internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysR
 
     override suspend fun delete(key: UserId) {
         ExposedDeviceKeys.deleteWhere { ExposedDeviceKeys.userId eq key.full }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedDeviceKeys.deleteAll()
     }
 }

@@ -22,6 +22,9 @@ deleteRoomAccountData:
 DELETE FROM sql_room_account_data
 WHERE room_id = ? AND type = ?;
 
+deleteAllRoomAccountData:
+DELETE FROM sql_room_account_data;
+
 deleteRoomAccountDataByKey:
 DELETE FROM sql_room_account_data
 WHERE room_id = ? AND type = ? AND key = ?;

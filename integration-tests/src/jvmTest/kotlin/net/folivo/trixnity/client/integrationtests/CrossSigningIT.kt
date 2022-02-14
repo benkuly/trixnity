@@ -95,7 +95,7 @@ class CrossSigningIT {
         client2 = MatrixClient.login(
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
-            password = password,
+            passwordOrToken = password,
             storeFactory = storeFactory2,
             scope = scope2,
         ).getOrThrow()

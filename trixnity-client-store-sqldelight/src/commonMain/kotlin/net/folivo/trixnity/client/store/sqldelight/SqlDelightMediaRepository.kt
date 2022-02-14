@@ -23,4 +23,8 @@ class SqlDelightMediaRepository(
     override suspend fun delete(key: String) = withContext(context) {
         db.deleteMedia(key)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllMedia()
+    }
 }

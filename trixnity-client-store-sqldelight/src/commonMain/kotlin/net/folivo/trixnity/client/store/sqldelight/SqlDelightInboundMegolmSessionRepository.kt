@@ -59,4 +59,8 @@ class SqlDelightInboundMegolmSessionRepository(
     override suspend fun delete(key: InboundMegolmSessionRepositoryKey) = withContext(context) {
         db.deleteInboundMegolmSession(key.senderKey.value, key.sessionId, key.roomId.full)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllInboundMegolmSessions()
+    }
 }

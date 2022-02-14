@@ -19,6 +19,13 @@ class RoomStore(
         roomCache.init(rtm.transaction { roomRepository.getAll() }.associateBy { it.roomId })
     }
 
+    suspend fun deleteAll() {
+        rtm.transaction {
+            roomRepository.deleteAll()
+        }
+        roomCache.reset()
+    }
+
     private val allRooms = roomCache.cache.stateIn(storeScope, SharingStarted.Eagerly, mapOf())
 
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = allRooms

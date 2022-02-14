@@ -45,4 +45,8 @@ class SqlDelightGlobalAccountDataRepository(
     override suspend fun deleteBySecondKey(firstKey: String, secondKey: String) = withContext(context) {
         db.deleteGlobalAccountDataByKey(firstKey, secondKey)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllGlobalAccountData()
+    }
 }

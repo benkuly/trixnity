@@ -3,10 +3,7 @@ package net.folivo.trixnity.client.store.exposed
 import io.ktor.http.*
 import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 
 internal object ExposedUploadMedia : Table("upload_media") {
     val cacheUri = varchar("cache_uri", length = 65535)
@@ -35,5 +32,9 @@ internal class ExposedUploadMediaRepository : UploadMediaRepository {
 
     override suspend fun delete(key: String) {
         ExposedUploadMedia.deleteWhere { ExposedUploadMedia.cacheUri eq key }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedUploadMedia.deleteAll()
     }
 }

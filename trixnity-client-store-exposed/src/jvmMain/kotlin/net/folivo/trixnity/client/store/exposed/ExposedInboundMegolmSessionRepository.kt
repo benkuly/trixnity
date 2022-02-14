@@ -71,4 +71,8 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
                     ExposedInboundMegolmSession.roomId.eq(key.roomId.full)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedInboundMegolmSession.deleteAll()
+    }
 }

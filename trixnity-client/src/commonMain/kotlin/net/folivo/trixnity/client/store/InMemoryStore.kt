@@ -3,11 +3,13 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     scope = storeCoroutineScope,
@@ -39,6 +41,12 @@ class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     roomAccountDataRepository = InMemoryTwoDimensionsStoreRepository()
 )
 
+class InMemoryStoreFactory(private val store: InMemoryStore) : StoreFactory {
+    override suspend fun createStore(contentMappings: EventContentSerializerMappings, json: Json): Store {
+        return store
+    }
+}
+
 open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
     val content = MutableStateFlow<Map<K, V>>(mapOf())
     override suspend fun get(key: K): V? = content.value[key]
@@ -49,6 +57,10 @@ open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
 
     override suspend fun delete(key: K) {
         content.update { it - key }
+    }
+
+    override suspend fun deleteAll() {
+        content.value = mapOf()
     }
 }
 
@@ -112,4 +124,7 @@ class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
         }
     }
 
+    override suspend fun deleteAll() {
+        values.value = setOf()
+    }
 }

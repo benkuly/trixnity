@@ -27,4 +27,8 @@ class SqlDelightCrossSigningKeysRepository(
     override suspend fun delete(key: UserId) = withContext(context) {
         db.deleteCrossSigningKeys(key.full)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllCrossSigningKeys()
+    }
 }

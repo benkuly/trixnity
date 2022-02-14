@@ -103,6 +103,44 @@ class MatrixHttpClientTest {
     }
 
     @Test
+    fun itShouldCallOnLogout() = runTest {
+        var onLogout: Boolean? = null
+        try {
+            val cut = MatrixHttpClient(
+                baseUrl = Url("https://matrix.host"),
+                initialHttpClient = HttpClient(MockEngine) {
+                    engine {
+                        addHandler {
+                            respond(
+                                """{
+                            "errcode": "M_UNKNOWN_TOKEN",
+                            "error": "Only unicorns accepted",
+                            "soft_logout": true
+                       }""".trimIndent(),
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                },
+                onLogout = { onLogout = it },
+                json = json,
+                accessToken = MutableStateFlow("token")
+            )
+            cut.request<OkResponse> {
+                method = Post
+                url("/path")
+            }.getOrThrow()
+            fail("should throw ${MatrixServerException::class.simpleName}")
+        } catch (error: MatrixServerException) {
+            assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+            assertEquals(ErrorResponse.UnknownToken::class, error.errorResponse::class)
+            assertEquals("Only unicorns accepted", error.errorResponse.error)
+        }
+        onLogout shouldBe true
+    }
+
+    @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         try {
             val cut = MatrixHttpClient(
@@ -233,6 +271,46 @@ class MatrixHttpClientTest {
             assertEquals(HttpStatusCode.NotFound, error.statusCode)
             assertEquals(ErrorResponse.NotFound::class, error.errorResponse::class)
         }
+    }
+
+    @Test
+    fun uiaRequestShouldCallOnLogout() = runTest {
+        var onLogout: Boolean? = null
+        val cut = MatrixHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            initialHttpClient = HttpClient(MockEngine) {
+                engine {
+                    addHandler {
+                        respond(
+                            """{ 
+                                "errcode": "M_UNKNOWN_TOKEN",
+                                "error": "Only unicorns accepted",
+                                "soft_logout": true
+                            }""".trimIndent(),
+                            HttpStatusCode.Unauthorized,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    }
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            accessToken = MutableStateFlow("token")
+        )
+
+        try {
+            cut.uiaRequest<Map<String, String>, OkResponse>(
+                body = mapOf("help" to "me")
+            ) {
+                method = Post
+                url("/path")
+                parameter("param", "dino")
+            }.getOrThrow()
+        } catch (error: MatrixServerException) {
+            assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+            assertEquals(ErrorResponse.UnknownToken::class, error.errorResponse::class)
+        }
+        onLogout shouldBe true
     }
 
     @Test

@@ -25,4 +25,8 @@ class SqlDelightOlmSessionRepository(
     override suspend fun delete(key: Key.Curve25519Key) = withContext(context) {
         db.deleteOlmSessions(key.value)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllOlmSessions()
+    }
 }

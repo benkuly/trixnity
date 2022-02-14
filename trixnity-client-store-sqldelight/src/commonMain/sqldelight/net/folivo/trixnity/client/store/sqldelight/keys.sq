@@ -15,6 +15,9 @@ deleteDeviceKeys:
 DELETE FROM sql_device_keys
 WHERE user_id = ?;
 
+deleteAllDeviceKeys:
+DELETE FROM sql_device_keys;
+
 CREATE TABLE sql_cross_signing_keys(
   user_id TEXT PRIMARY KEY NOT NULL,
   cross_signing_keys TEXT NOT NULL
@@ -32,6 +35,9 @@ deleteCrossSigningKeys:
 DELETE FROM sql_cross_signing_keys
 WHERE user_id = ?;
 
+deleteAllCrossSigningKeys:
+DELETE FROM sql_cross_signing_keys;
+
 CREATE TABLE sql_outdated_device_keys (
   id INTEGER NOT NULL PRIMARY KEY,
   outdated_device_keys TEXT
@@ -48,6 +54,9 @@ WHERE id = ?;
 deleteOutdatedDeviceKeys:
 DELETE FROM sql_outdated_device_keys
 WHERE id = ?;
+
+deleteAllOutdatedDeviceKeys:
+DELETE FROM sql_outdated_device_keys;
 
 CREATE TABLE sql_key_verification_state (
     user_id TEXT NOT NULL,
@@ -69,6 +78,9 @@ WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
 deleteKeyVerificationState:
 DELETE FROM sql_key_verification_state
 WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
+
+deleteAllKeyVerificationStates:
+DELETE FROM sql_key_verification_state;
 
 CREATE TABLE sql_key_chain_link (
     signing_user_id TEXT NOT NULL,
@@ -92,6 +104,9 @@ deleteKeyChainLinkBySignedgKey:
 DELETE FROM sql_key_chain_link
 WHERE signed_user_id = ? AND signed_key_id = ? AND signed_key_value = ?;
 
+deleteAllKeyChainLinks:
+DELETE FROM sql_key_chain_link;
+
 CREATE TABLE sql_secrets (
   id INTEGER NOT NULL PRIMARY KEY,
   secrets TEXT
@@ -108,6 +123,9 @@ WHERE id = ?;
 deleteSecrets:
 DELETE FROM sql_secrets
 WHERE id = ?;
+
+deleteAllSecrets:
+DELETE FROM sql_secrets;
 
 CREATE TABLE sql_secret_key_request (
   id TEXT PRIMARY KEY NOT NULL,
@@ -128,3 +146,6 @@ VALUES (?, ?);
 deleteSecretKeyRequest:
 DELETE FROM sql_secret_key_request
 WHERE id = ?;
+
+deleteAllSecretKeyRequests:
+DELETE FROM sql_secret_key_request;

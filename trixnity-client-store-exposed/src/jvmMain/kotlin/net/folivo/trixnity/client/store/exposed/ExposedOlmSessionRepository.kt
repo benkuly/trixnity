@@ -6,10 +6,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredOlmSession
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
 import net.folivo.trixnity.core.model.keys.Key
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 
 internal object ExposedOlmSession : Table("olm_session") {
     val senderKey = varchar("sender_key", length = 65535)
@@ -32,5 +29,9 @@ internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionR
 
     override suspend fun delete(key: Key.Curve25519Key) {
         ExposedOlmSession.deleteWhere { ExposedOlmSession.senderKey eq key.value }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedOlmSession.deleteAll()
     }
 }

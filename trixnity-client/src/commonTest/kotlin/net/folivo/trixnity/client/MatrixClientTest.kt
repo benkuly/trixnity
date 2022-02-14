@@ -7,22 +7,20 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.spyk
+import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.api.e
 import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoreFactory
+import net.folivo.trixnity.client.store.InMemoryStoreFactory
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -31,7 +29,6 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
@@ -59,6 +56,7 @@ class MatrixClientTest : ShouldSpec({
     }
     afterTest {
         scope.cancel()
+        clearAllMocks()
     }
 
     context(MatrixClient::startSync.name) {
@@ -66,14 +64,7 @@ class MatrixClientTest : ShouldSpec({
             val inMemoryStore = InMemoryStore(scope)
             val cut = spyk(MatrixClient.loginWith(
                 baseUrl = Url("http://matrix.home"),
-                storeFactory = object : StoreFactory {
-                    override suspend fun createStore(
-                        contentMappings: EventContentSerializerMappings,
-                        json: Json,
-                    ): Store {
-                        return inMemoryStore
-                    }
-                },
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -152,15 +143,8 @@ class MatrixClientTest : ShouldSpec({
             MatrixClient.login(
                 baseUrl = Url("http://matrix.home"),
                 identifier = IdentifierType.User(userId.full),
-                password = "p4ssw0rd!",
-                storeFactory = object : StoreFactory {
-                    override suspend fun createStore(
-                        contentMappings: EventContentSerializerMappings,
-                        json: Json,
-                    ): Store {
-                        return inMemoryStore
-                    }
-                },
+                passwordOrToken = "p4ssw0rd!",
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -241,14 +225,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
 
             val cut = MatrixClient.fromStore(
-                storeFactory = object : StoreFactory {
-                    override suspend fun createStore(
-                        contentMappings: EventContentSerializerMappings,
-                        json: Json,
-                    ): Store {
-                        return inMemoryStore
-                    }
-                },
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
                 baseHttpClient = HttpClient(MockEngine) {
                     engine {
                         addHandler { request ->
@@ -360,6 +337,90 @@ class MatrixClientTest : ShouldSpec({
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
+        }
+    }
+    context(MatrixClient::loginState.name) {
+        val inMemoryStore = InMemoryStore(scope).apply { init() }
+        delay(50) // wait for init
+        inMemoryStore.account.olmPickleKey.value = ""
+        inMemoryStore.account.accessToken.value = "abcdef"
+        inMemoryStore.account.userId.value = userId
+        inMemoryStore.account.deviceId.value = "deviceId"
+        inMemoryStore.account.baseUrl.value = Url("http://localhost")
+        inMemoryStore.account.filterId.value = "someFilter"
+        inMemoryStore.account.displayName.value = "bob"
+        inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+        val cut = MatrixClient.fromStore(
+            storeFactory = InMemoryStoreFactory(inMemoryStore),
+            baseHttpClient = HttpClient(MockEngine) {
+                engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
+            },
+            scope = scope
+        ).getOrThrow()!!
+        should("$LOGGED_IN when access token is not null") {
+            inMemoryStore.account.accessToken.value = "access"
+            inMemoryStore.account.syncBatchToken.value = "sync"
+            cut.loginState.first { it == LOGGED_IN }
+        }
+        should("$LOGGED_OUT_SOFT when access token is null, but sync batch token not") {
+            inMemoryStore.account.accessToken.value = null
+            inMemoryStore.account.syncBatchToken.value = "sync"
+            cut.loginState.first { it == LOGGED_OUT_SOFT }
+        }
+        should("$LOGGED_OUT when access token and sync batch token are null") {
+            inMemoryStore.account.accessToken.value = null
+            inMemoryStore.account.syncBatchToken.value = null
+            cut.loginState.first { it == LOGGED_OUT }
+        }
+    }
+    context(MatrixClient::logout.name) {
+        lateinit var apiMock: MatrixApiClient
+        lateinit var inMemoryStore: InMemoryStore
+        lateinit var cut: MatrixClient
+        beforeTest {
+            inMemoryStore = InMemoryStore(scope).apply { init() }
+            delay(50) // wait for init
+            inMemoryStore.account.olmPickleKey.value = ""
+            inMemoryStore.account.accessToken.value = "abcdef"
+            inMemoryStore.account.userId.value = userId
+            inMemoryStore.account.deviceId.value = "deviceId"
+            inMemoryStore.account.baseUrl.value = Url("http://localhost")
+            inMemoryStore.account.filterId.value = "someFilter"
+            inMemoryStore.account.displayName.value = "bob"
+            inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            apiMock = mockk<MatrixApiClient> {
+                coEvery { authentication.logout() } returns Result.success(Unit)
+                coEvery { sync.stop(any()) } just Runs
+            }
+            cut = spyk(
+                MatrixClient.fromStore(
+                    storeFactory = InMemoryStoreFactory(inMemoryStore),
+                    baseHttpClient = HttpClient(MockEngine) {
+                        engine { addHandler { respond("{}", HttpStatusCode.OK) } }
+                    },
+                    scope = scope
+                ).getOrThrow()!!
+            ) {
+                coEvery { api } returns apiMock
+            }
+        }
+        should("delete All when $LOGGED_OUT_SOFT") {
+            inMemoryStore.account.accessToken.value = null
+            inMemoryStore.account.syncBatchToken.value = "sync"
+            cut.loginState.first { it == LOGGED_OUT_SOFT }
+            cut.logout().getOrThrow()
+            coVerify {
+                apiMock.sync.stop(true)
+            }
+            inMemoryStore.account.userId.value shouldBe null
+        }
+        should("call api and delete all") {
+            cut.logout().getOrThrow()
+            coVerify {
+                apiMock.authentication.logout()
+                apiMock.sync.stop(true)
+            }
+            inMemoryStore.account.userId.value shouldBe null
         }
     }
 })

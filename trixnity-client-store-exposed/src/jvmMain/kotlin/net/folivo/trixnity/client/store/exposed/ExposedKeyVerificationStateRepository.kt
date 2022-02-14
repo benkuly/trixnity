@@ -47,4 +47,8 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedKeyVerificationState.deleteAll()
+    }
 }

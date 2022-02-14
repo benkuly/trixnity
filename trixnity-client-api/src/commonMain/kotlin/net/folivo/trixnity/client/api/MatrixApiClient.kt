@@ -14,12 +14,13 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 class MatrixApiClient(
     baseUrl: Url,
     baseHttpClient: HttpClient = HttpClient(),
+    onLogout: suspend (isSoft: Boolean) -> Unit = {},
     val eventContentSerializerMappings: EventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(),
     val json: Json = createMatrixApiClientJson(eventContentSerializerMappings),
 ) {
     val accessToken = MutableStateFlow<String?>(null)
 
-    val httpClient = MatrixHttpClient(baseHttpClient, json, baseUrl, accessToken)
+    val httpClient = MatrixHttpClient(baseHttpClient, json, baseUrl, accessToken, onLogout)
 
     val authentication = AuthenticationApiClient(httpClient)
     val server = ServerApiClient(httpClient)

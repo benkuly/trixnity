@@ -6,10 +6,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
 import net.folivo.trixnity.core.model.RoomId
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 
 internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") {
     val roomId = varchar("room_id", length = 65535)
@@ -34,5 +31,9 @@ internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : 
 
     override suspend fun delete(key: RoomId) {
         ExposedOutboundMegolmSession.deleteWhere { ExposedOutboundMegolmSession.roomId eq key.full }
+    }
+
+    override suspend fun deleteAll() {
+        ExposedOutboundMegolmSession.deleteAll()
     }
 }

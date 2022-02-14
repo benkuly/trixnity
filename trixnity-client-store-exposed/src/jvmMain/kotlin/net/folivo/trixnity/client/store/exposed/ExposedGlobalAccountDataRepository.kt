@@ -59,4 +59,8 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
                     ExposedGlobalAccountData.key.eq(secondKey)
         }
     }
+
+    override suspend fun deleteAll() {
+        ExposedGlobalAccountData.deleteAll()
+    }
 }

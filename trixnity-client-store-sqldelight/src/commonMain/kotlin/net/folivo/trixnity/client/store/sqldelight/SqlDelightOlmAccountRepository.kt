@@ -19,4 +19,8 @@ class SqlDelightOlmAccountRepository(
     override suspend fun delete(key: Long) = withContext(context) {
         db.deleteOlmAccount(key)
     }
+
+    override suspend fun deleteAll() = withContext(context) {
+        db.deleteAllOlmAccounts()
+    }
 }
