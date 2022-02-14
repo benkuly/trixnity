@@ -22,8 +22,8 @@ class SqlDelightUploadMediaRepositoryTest : ShouldSpec({
     should("save, get and delete") {
         val key1 = "uri1"
         val key2 = "uri2"
-        val uploadMedia1 = UploadMedia(key1, "mxcUri1", ContentType.Text.Plain)
-        val uploadMedia2 = UploadMedia(key2, null, ContentType.Image.PNG)
+        val uploadMedia1 = UploadMedia(key1, "mxcUri1", ContentType.Text.Plain.toString())
+        val uploadMedia2 = UploadMedia(key2, null, ContentType.Image.PNG.toString())
         val uploadMedia2Copy = uploadMedia2.copy(mxcUri = "mxcUri2")
 
         cut.save(key1, uploadMedia1)

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.exposed
 
-import io.ktor.http.*
 import net.folivo.trixnity.client.store.UploadMedia
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 import org.jetbrains.exposed.sql.*
@@ -18,7 +17,8 @@ internal class ExposedUploadMediaRepository : UploadMediaRepository {
             UploadMedia(
                 key,
                 it[ExposedUploadMedia.mxcUri],
-                it[ExposedUploadMedia.contentType]?.let { it2 -> ContentType.parse(it2) })
+                it[ExposedUploadMedia.contentType]
+            )
         }
     }
 
@@ -26,7 +26,7 @@ internal class ExposedUploadMediaRepository : UploadMediaRepository {
         ExposedUploadMedia.replace {
             it[cacheUri] = key
             it[mxcUri] = value.mxcUri
-            it[contentType] = value.contentTyp.toString()
+            it[contentType] = value.contentType.toString()
         }
     }
 

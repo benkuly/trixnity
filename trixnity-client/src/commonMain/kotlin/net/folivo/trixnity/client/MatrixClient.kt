@@ -322,7 +322,13 @@ class MatrixClient private constructor(
     suspend fun clearCache(): Result<Unit> = kotlin.runCatching {
         stopSync(true)
         store.account.syncBatchToken.value = null
-        store.deleteAllButKeepAccount()
+        store.deleteNonLocal()
+        startSync()
+    }
+
+    suspend fun clearMediaCache(): Result<Unit> = kotlin.runCatching {
+        stopSync(true)
+        store.media.deleteAll()
         startSync()
     }
 
@@ -351,9 +357,8 @@ class MatrixClient private constructor(
                         log.info { "login state: $it" }
                         when (it) {
                             LOGGED_OUT_SOFT -> {
-                                log.info { "stop sync and delete all but account" }
+                                log.info { "stop sync" }
                                 stopSync(true)
-                                store.deleteAllButKeepAccount()
                             }
                             LOGGED_OUT -> {
                                 log.info { "stop sync and delete all" }

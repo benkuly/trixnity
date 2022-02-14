@@ -169,9 +169,9 @@ class RoomServiceTest : ShouldSpec({
             val outbox2 = RoomOutboxMessage("transaction2", room, mockk(), Clock.System.now() - 10.seconds)
             val outbox3 = RoomOutboxMessage("transaction3", room, mockk(), Clock.System.now())
 
-            store.roomOutboxMessage.add(outbox1)
-            store.roomOutboxMessage.add(outbox2)
-            store.roomOutboxMessage.add(outbox3)
+            store.roomOutboxMessage.update(outbox1.transactionId) { outbox1 }
+            store.roomOutboxMessage.update(outbox2.transactionId) { outbox2 }
+            store.roomOutboxMessage.update(outbox3.transactionId) { outbox3 }
 
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
@@ -579,7 +579,7 @@ class RoomServiceTest : ShouldSpec({
         should("ignore messages from foreign users") {
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
-            store.roomOutboxMessage.add(roomOutboxMessage)
+            store.roomOutboxMessage.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
@@ -596,7 +596,7 @@ class RoomServiceTest : ShouldSpec({
         should("remove outbox message from us") {
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
-            store.roomOutboxMessage.add(roomOutboxMessage)
+            store.roomOutboxMessage.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
             val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
@@ -620,11 +620,11 @@ class RoomServiceTest : ShouldSpec({
             val message1 =
                 RoomOutboxMessage(
                     "transaction1", room, ImageMessageEventContent("hi.png", url = cacheUrl),
-                    null, mediaUploadProgress
+                    null, mediaUploadProgress = mediaUploadProgress
                 )
             val message2 = RoomOutboxMessage("transaction2", room, TextMessageEventContent("hi"), null)
-            store.roomOutboxMessage.add(message1)
-            store.roomOutboxMessage.add(message2)
+            store.roomOutboxMessage.update(message1.transactionId) { message1 }
+            store.roomOutboxMessage.update(message2.transactionId) { message2 }
             coEvery { media.uploadMedia(any(), any()) } returns Result.success(mxcUrl)
             coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns Result.success(EventId("event"))
             val syncState = MutableStateFlow(STARTED)
@@ -655,7 +655,7 @@ class RoomServiceTest : ShouldSpec({
             coEvery { api.sync.currentSyncState } returns syncState
             store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm, membersLoaded = true) }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
-            store.roomOutboxMessage.add(message)
+            store.roomOutboxMessage.update(message.transactionId) { message }
             val encryptionState =
                 StateEvent(
                     EncryptionEventContent(),
@@ -689,7 +689,7 @@ class RoomServiceTest : ShouldSpec({
         should("retry on sending error") {
             store.room.update(room) { simpleRoom }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
-            store.roomOutboxMessage.add(message)
+            store.roomOutboxMessage.update(message.transactionId) { message }
             coEvery {
                 api.rooms.sendMessageEvent(any(), any(), any(), any())
             } returns Result.failure(IllegalArgumentException("wtf")) andThen Result.success(EventId("event"))
@@ -697,13 +697,37 @@ class RoomServiceTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
+            val roomsApi = api.rooms
             coVerify(exactly = 2, timeout = 5_000) {
-                api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
+                roomsApi.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
+            }
+            job.cancel()
+        }
+
+        should("not retry infinite on sending error") {
+            store.room.update(room) { simpleRoom }
+            val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
+            store.roomOutboxMessage.update(message.transactionId) { message }
+            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns
+                    Result.failure(IllegalArgumentException("wtf"))
+            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
+
+            val roomsApi = api.rooms
+            coVerify(exactly = 3, timeout = 5_000) {
+                roomsApi.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
+            }
+            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
+                val outboxMessages = store.roomOutboxMessage.getAll().value
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].sentAt shouldBe null
+                outboxMessages[0].reachedMaxRetryCount shouldBe true
             }
             job.cancel()
         }

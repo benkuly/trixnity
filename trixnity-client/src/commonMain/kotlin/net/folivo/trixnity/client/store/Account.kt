@@ -1,11 +1,12 @@
 package net.folivo.trixnity.client.store
 
-import io.ktor.http.*
+import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.UserId
 
+@Serializable
 data class Account(
     val olmPickleKey: String?,
-    val baseUrl: Url?,
+    val baseUrl: String?,
     val userId: UserId?,
     val deviceId: String?,
     val accessToken: String?,

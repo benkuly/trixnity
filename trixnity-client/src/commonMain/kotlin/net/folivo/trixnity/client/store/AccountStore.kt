@@ -27,7 +27,7 @@ class AccountStore(
     suspend fun init() {
         val account = rtm.transaction { repository.get(1) }
         olmPickleKey.value = account?.olmPickleKey
-        baseUrl.value = account?.baseUrl
+        baseUrl.value = account?.baseUrl?.let { Url(it) }
         userId.value = account?.userId
         deviceId.value = account?.deviceId
         syncBatchToken.value = account?.syncBatchToken
@@ -51,7 +51,7 @@ class AccountStore(
             ) { values ->
                 Account(
                     olmPickleKey = values[0] as String?,
-                    baseUrl = values[1] as Url?,
+                    baseUrl = values[1]?.toString(),
                     userId = values[2] as UserId?,
                     deviceId = values[3] as String?,
                     accessToken = values[4] as String?,

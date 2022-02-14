@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 
@@ -40,16 +39,11 @@ class RoomOutboxMessageStore(
             .associateBy { it.transactionId })
     }
 
-    fun getAll(): StateFlow<List<RoomOutboxMessage>> = allRoomOutboxMessages
+    fun getAll(): StateFlow<List<RoomOutboxMessage<*>>> = allRoomOutboxMessages
 
-    suspend fun add(message: RoomOutboxMessage) = roomOutboxMessageCache.update(message.transactionId) { message }
+    suspend fun update(transactionId: String, updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?) =
+        roomOutboxMessageCache.update(transactionId, updater = updater)
 
-    suspend fun deleteByTransactionId(transactionId: String) =
-        roomOutboxMessageCache.update(transactionId) { null }
-
-    suspend fun getByTransactionId(transactionId: String): RoomOutboxMessage? =
+    suspend fun get(transactionId: String): RoomOutboxMessage<*>? =
         roomOutboxMessageCache.get(transactionId)
-
-    suspend fun markAsSent(transactionId: String) =
-        roomOutboxMessageCache.update(transactionId) { it?.copy(sentAt = Clock.System.now()) }
 }

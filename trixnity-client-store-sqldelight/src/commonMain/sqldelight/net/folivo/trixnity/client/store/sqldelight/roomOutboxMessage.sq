@@ -1,9 +1,7 @@
 CREATE TABLE sql_room_outbox_message (
   transaction_id TEXT PRIMARY KEY NOT NULL,
-  room_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  content TEXT NOT NULL,
-  sent_at INTEGER
+  value TEXT NOT NULL,
+  content_type TEXT NOT NULL
 );
 
 getRoomOutboxMessage:

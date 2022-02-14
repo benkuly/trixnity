@@ -61,6 +61,20 @@ class KeyStore(
         secretKeyRequestCache.reset()
     }
 
+    suspend fun deleteNonLocal() {
+        rtm.transaction {
+            outdatedKeysRepository.deleteAll()
+            deviceKeysRepository.deleteAll()
+            crossSigningKeysRepository.deleteAll()
+            keyChainLinkRepository.deleteAll()
+            secretKeyRequestRepository.deleteAll()
+        }
+        outdatedKeys.value = setOf()
+        deviceKeysCache.reset()
+        crossSigningKeysCache.reset()
+        secretKeyRequestCache.reset()
+    }
+
     suspend fun getDeviceKeys(
         userId: UserId,
         scope: CoroutineScope

@@ -301,13 +301,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                         lastEventId = event1.id
                     )
                 }
-                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId1") } returns RoomOutboxMessage(
+                coEvery { store.roomOutboxMessage.get("transactionId1") } returns RoomOutboxMessage(
                     "transactionId1",
                     room,
                     TextMessageEventContent("Hello!")
                 )
-                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId2") } returns null
-                coEvery { store.roomOutboxMessage.getByTransactionId("transactionId-unknown") } returns null
+                coEvery { store.roomOutboxMessage.get("transactionId2") } returns null
+                coEvery { store.roomOutboxMessage.get("transactionId-unknown") } returns null
                 val eventId1 = EventId("\$event1")
                 val eventId2 = EventId("\$event2")
                 val eventId3 = EventId("\$event3")
