@@ -8,6 +8,8 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.decodeFromJsonElement
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -58,8 +60,9 @@ object RoomTypeSerializer : KSerializer<RoomType> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomTypeSerializer")
 
     override fun deserialize(decoder: Decoder): RoomType {
-        return when (val name = decoder.decodeString()) {
-            RoomType.Room.name -> RoomType.Room
+        require(decoder is JsonDecoder)
+        return when (val name = decoder.json.decodeFromJsonElement<String?>(decoder.decodeJsonElement())) {
+            null -> RoomType.Room
             RoomType.Space.name -> RoomType.Space
             else -> RoomType.Unknown(name)
         }
