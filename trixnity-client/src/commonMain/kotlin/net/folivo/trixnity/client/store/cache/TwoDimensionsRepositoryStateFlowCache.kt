@@ -91,9 +91,8 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             else oldValue?.value?.plus(secondKey to value) ?: mapOf(secondKey to value)
             newValue?.let { LoadingCacheValue(it, oldValue?.fullyLoadedFromRepository == true) }
         },
-        // We don't mind, what is stored in database, because we always override it.
-        isContainedInCache = { true },
-        retrieveAndUpdateCache = { null },
+        isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
+        retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
         persist = {
             val value = it?.value?.get(secondKey)
             rtm.transaction {
@@ -108,20 +107,31 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         scope: CoroutineScope? = null
     ) = cache.readWithCache(
         key = firstKey,
-        isContainedInCache = { it?.value?.containsKey(secondKey) ?: false },
-        retrieveAndUpdateCache = { cacheValue ->
-            val newValue = rtm.transaction {
-                repository.getBySecondKey(firstKey, secondKey)
-            }
-            if (newValue != null) LoadingCacheValue(
-                cacheValue?.value?.plus(secondKey to newValue) ?: mapOf(
-                    secondKey to newValue
-                ), cacheValue?.fullyLoadedFromRepository == true
-            )
-            else cacheValue
-        },
+        isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
+        retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
         scope
     ).map { it?.value?.get(secondKey) }
+
+    private fun isContainedInCacheBySecondKey(
+        it: LoadingCacheValue<Map<K2, V>>?,
+        secondKey: K2
+    ) = it?.fullyLoadedFromRepository == true || it?.value?.containsKey(secondKey) == true
+
+    private suspend fun retrieveAndUpdateCacheBySecondKey(
+        firstKey: K1,
+        secondKey: K2,
+        cacheValue: LoadingCacheValue<Map<K2, V>>?
+    ): LoadingCacheValue<Map<K2, V>>? {
+        val newValue = rtm.transaction {
+            repository.getBySecondKey(firstKey, secondKey)
+        }
+        return if (newValue != null) LoadingCacheValue(
+            cacheValue?.value?.plus(secondKey to newValue) ?: mapOf(
+                secondKey to newValue
+            ), cacheValue?.fullyLoadedFromRepository == true
+        )
+        else cacheValue
+    }
 
     suspend fun getBySecondKey(
         firstKey: K1,

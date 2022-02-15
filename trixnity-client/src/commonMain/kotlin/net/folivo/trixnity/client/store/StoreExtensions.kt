@@ -18,11 +18,11 @@ import net.folivo.trixnity.core.model.keys.Key
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
     scope: CoroutineScope
-): StateFlow<Map<String, Event<C>>?> = get(roomId, C::class, scope)
+): StateFlow<Map<String, Event<C>?>?> = get(roomId, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Map<String, Event<C>>? = get(roomId, C::class)
+): Map<String, Event<C>?>? = get(roomId, C::class)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
@@ -57,7 +57,7 @@ suspend inline fun RoomStateStore.members(
 ): Set<UserId> {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId)
-        ?.filter { allMemberships.contains(it.value.content.membership) }
+        ?.filter { allMemberships.contains(it.value?.content?.membership) }
         ?.map { UserId(it.key) }?.toSet() ?: setOf()
 }
 
@@ -68,7 +68,7 @@ suspend inline fun RoomStateStore.membersCount(
 ): Int {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId)
-        ?.count { allMemberships.contains(it.value.content.membership) } ?: 0
+        ?.count { allMemberships.contains(it.value?.content?.membership) } ?: 0
 }
 
 fun RoomStore.encryptedJoinedRooms(): List<RoomId> =

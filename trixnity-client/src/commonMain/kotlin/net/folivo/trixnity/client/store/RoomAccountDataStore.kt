@@ -1,7 +1,12 @@
 package net.folivo.trixnity.client.store
 
+import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
@@ -38,18 +43,7 @@ class RoomAccountDataStore(
         ) { event }
     }
 
-    suspend fun <C : RoomAccountDataEventContent> get(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String = "",
-    ): RoomAccountDataEvent<C>? {
-        val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
-            ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        val firstKey = RoomAccountDataRepositoryKey(roomId, eventType)
-        @Suppress("UNCHECKED_CAST")
-        return roomAccountDataCache.getBySecondKey(firstKey, key) as RoomAccountDataEvent<C>
-    }
-
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun <C : RoomAccountDataEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
@@ -58,8 +52,23 @@ class RoomAccountDataStore(
     ): StateFlow<RoomAccountDataEvent<C>?> {
         val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        val firstKey = RoomAccountDataRepositoryKey(roomId, eventType)
-        @Suppress("UNCHECKED_CAST")
-        return roomAccountDataCache.getBySecondKey(firstKey, key, scope) as StateFlow<RoomAccountDataEvent<C>>
+        return roomAccountDataCache.getBySecondKey(RoomAccountDataRepositoryKey(roomId, eventType), key, scope)
+            .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
+            .filterIsInstance<RoomAccountDataEvent<C>?>()
+            .stateIn(scope)
+    }
+
+    suspend fun <C : RoomAccountDataEventContent> get(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): RoomAccountDataEvent<C>? {
+        val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
+            ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
+        val value = roomAccountDataCache.getBySecondKey(RoomAccountDataRepositoryKey(roomId, eventType), key)
+        return if (value?.content?.instanceOf(eventContentClass) == true) {
+            @Suppress("UNCHECKED_CAST")
+            value as RoomAccountDataEvent<C>?
+        } else null
     }
 }
