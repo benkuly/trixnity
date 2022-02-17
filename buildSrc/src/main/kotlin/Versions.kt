@@ -8,7 +8,8 @@ object Versions {
     const val dokka = "1.6.10" // https://github.com/Kotlin/dokka/releases
     const val olm = "3.2.8" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.10.0" // https://github.com/java-native-access/jna/releases
-    const val ktor = "1.6.7" // https://github.com/ktorio/ktor/releases
+    const val ktor = "2.0.0-beta-1" // https://github.com/ktorio/ktor/releases
+    const val korlibs = "2.4.12" // https://github.com/korlibs/korge-next/releases
     const val mockk = "1.12.2" // https://github.com/mockk/mockk/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.1.0" // https://github.com/kotest/kotest/releases

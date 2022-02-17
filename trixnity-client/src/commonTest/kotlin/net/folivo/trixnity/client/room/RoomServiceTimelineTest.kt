@@ -13,13 +13,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.rooms.Direction.BACKWARDS
-import net.folivo.trixnity.client.api.model.rooms.Direction.FORWARD
-import net.folivo.trixnity.client.api.model.rooms.GetEventsResponse
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.rooms.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.rooms.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEventsResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -34,7 +34,7 @@ class RoomServiceTimelineTest : ShouldSpec({
     val room = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
     lateinit var cut: RoomService
 

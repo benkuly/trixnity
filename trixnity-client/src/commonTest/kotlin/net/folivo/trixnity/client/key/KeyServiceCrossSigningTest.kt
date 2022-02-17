@@ -17,14 +17,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.UIA
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -51,7 +51,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val json = createMatrixJson()
     val backup: KeyBackupService = mockk()
     val trust: KeyTrustService = mockk()

@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.simpleRoom
@@ -19,6 +18,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -49,7 +49,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     val relatesTo = RelatesTo.Reference(event)
 
-    val api = mockk<MatrixApiClient>(relaxed = true)
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val olm = mockk<OlmService>(relaxed = true)
     val room = mockk<RoomService>(relaxed = true)
     val store = mockk<Store>(relaxed = true)

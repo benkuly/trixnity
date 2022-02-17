@@ -10,13 +10,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -25,6 +25,7 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomServiceReadReceiptsTest : ShouldSpec({
     timeout = 5_000
@@ -33,7 +34,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
     val key = mockk<KeyService>()
     val users = mockk<UserService>(relaxUnitFun = true)
@@ -182,7 +183,7 @@ fun roomUser(roomId: RoomId, userId: UserId, lastReadMessage: EventId? = null): 
         userId,
         userId.full,
         event = Event.StateEvent(
-            MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+            MemberEventContent(membership = Membership.JOIN),
             mockk(),
             mockk(),
             roomId,

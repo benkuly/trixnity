@@ -7,13 +7,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
-import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_OUT
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.STOPPED
-import net.folivo.trixnity.client.api.UIA
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
-import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.STOPPED
+import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
+import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -63,13 +63,13 @@ class LogoutIT {
 
         val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
         deleteStep.shouldBeInstanceOf<UIA.UIAStep<Unit>>()
-            .authenticate(AuthenticationRequest.Password(User("user1"), startedClient1.password)).getOrThrow()
+            .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
             .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
 
         withClue("check client2 is logged out and sync is stopped") {
             withTimeout(30_000) {
                 startedClient2.client.syncState.first { it == STOPPED }
-                startedClient2.client.loginState.first { it == LOGGED_OUT }
+                startedClient2.client.loginState.first { it == MatrixClient.LoginState.LOGGED_OUT }
             }
         }
 

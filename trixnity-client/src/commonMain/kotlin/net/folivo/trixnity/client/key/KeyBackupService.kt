@@ -6,12 +6,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.ErrorResponse
-import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
-import net.folivo.trixnity.client.api.model.keys.SetRoomKeysVersionRequest
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
@@ -20,6 +14,12 @@ import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixServerException
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.ErrorResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysVersionRequest
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -38,7 +38,7 @@ class KeyBackupService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     private val olm: OlmService,
 ) {
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysVersionResponse.V1?>(null)

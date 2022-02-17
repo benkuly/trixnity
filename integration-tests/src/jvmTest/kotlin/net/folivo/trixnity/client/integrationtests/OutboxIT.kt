@@ -5,9 +5,9 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll

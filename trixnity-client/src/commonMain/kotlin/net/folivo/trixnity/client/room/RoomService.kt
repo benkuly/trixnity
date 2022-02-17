@@ -8,11 +8,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.rooms.Direction
-import net.folivo.trixnity.client.api.model.sync.SyncResponse
-import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
@@ -23,6 +18,11 @@ import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.rooms.Direction
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -35,7 +35,7 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
@@ -46,7 +46,7 @@ private val log = KotlinLogging.logger {}
 class RoomService(
     private val ownUserId: UserId,
     private val store: Store,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     private val olm: OlmService,
     private val key: KeyService,
     private val user: UserService,

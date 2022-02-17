@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.key
 
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.freeAfter

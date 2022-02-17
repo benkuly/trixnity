@@ -12,7 +12,8 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.keys.Key
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
@@ -73,7 +74,7 @@ suspend inline fun RoomStateStore.membersCount(
 
 fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
     getAll().value.values
-        .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == Membership.JOIN }
+        .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == JOIN }
         .mapNotNull { it.value?.roomId }
 
 suspend inline fun RoomTimelineStore.getNext(

@@ -64,7 +64,7 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                api(project(":trixnity-client-api"))
+                api(project(":trixnity-clientserverapi-client"))
                 implementation(project(":trixnity-olm"))
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
@@ -74,6 +74,7 @@ kotlin {
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
         val androidAndJvmMain by creating {

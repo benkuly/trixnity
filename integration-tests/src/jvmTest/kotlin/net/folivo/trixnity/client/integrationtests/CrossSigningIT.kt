@@ -8,10 +8,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.SyncApiClient
-import net.folivo.trixnity.client.api.UIA
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
@@ -22,10 +18,14 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer

@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.key
 
+import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import kotlin.experimental.and
-import kotlin.random.Random
 
 expect fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
 
@@ -24,7 +24,7 @@ internal suspend fun encryptAesHmacSha2(
     content: ByteArray,
     key: ByteArray,
     name: String,
-    initialisationVector: ByteArray = Random.nextBytes(16)
+    initialisationVector: ByteArray = SecureRandom.nextBytes(16)
 ): AesHmacSha2EncryptedData {
     val iv = initialisationVector.copyOf()
     iv[8] = iv[8] and 0x7f

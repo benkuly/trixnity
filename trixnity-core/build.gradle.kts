@@ -39,7 +39,7 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        val nativeMain = create("nativeMain") {
+        val nativeMain by creating {
             dependsOn(commonMain)
         }
         val linuxX64Main by getting {
@@ -60,7 +60,7 @@ kotlin {
             }
         }
         val jsTest by getting
-        val nativeTest = create("nativeTest") {
+        val nativeTest by creating {
             dependsOn(commonTest)
         }
         val linuxX64Test by getting {

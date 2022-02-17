@@ -16,11 +16,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.STARTED
-import net.folivo.trixnity.client.api.model.media.FileTransferProgress
-import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
@@ -29,6 +24,11 @@ import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.STARTED
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -40,8 +40,8 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessa
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
@@ -59,7 +59,7 @@ class RoomServiceTest : ShouldSpec({
     val room = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>(relaxed = true)
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val users = mockk<UserService>(relaxUnitFun = true)
     val olmService = mockk<OlmService>()
     val key = mockk<KeyService>()

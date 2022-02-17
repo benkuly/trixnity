@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmService.DecryptedOlmEvent
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
@@ -36,7 +36,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     val bob = UserId("bob", "server")
     val bobDevice = "BBBBBB"
 
-    val api = mockk<MatrixApiClient>(relaxed = true)
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val olm = mockk<OlmService>(relaxed = true)
 
     lateinit var cut: ActiveDeviceVerification

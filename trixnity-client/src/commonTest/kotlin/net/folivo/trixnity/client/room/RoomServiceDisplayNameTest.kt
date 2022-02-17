@@ -9,12 +9,12 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -22,7 +22,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
@@ -30,7 +31,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     lateinit var cut: RoomService
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
@@ -54,7 +55,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         i: Long,
         userId: UserId,
         displayName: String,
-        membership: MemberEventContent.Membership
+        membership: Membership
     ): Event.StateEvent<MemberEventContent> {
         return Event.StateEvent(
             MemberEventContent(

@@ -25,24 +25,6 @@ data class MemberEventContent(
     val thirdPartyInvite: Invite? = null
 ) : StateEventContent {
     @Serializable
-    enum class Membership {
-        @SerialName("invite")
-        INVITE,
-
-        @SerialName("join")
-        JOIN,
-
-        @SerialName("knock")
-        KNOCK,
-
-        @SerialName("leave")
-        LEAVE,
-
-        @SerialName("ban")
-        BAN
-    }
-
-    @Serializable
     data class Invite(
         @SerialName("display_name")
         val displayName: String,

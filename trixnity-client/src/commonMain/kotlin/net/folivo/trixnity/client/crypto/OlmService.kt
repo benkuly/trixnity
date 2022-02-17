@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
@@ -19,7 +19,9 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
@@ -35,7 +37,7 @@ class OlmService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     val json: Json,
 ) {
     private val account: OlmAccount =
@@ -143,7 +145,7 @@ class OlmService(
         if (event is StateEvent && store.room.get(event.roomId).value?.encryptionAlgorithm == Megolm) {
             log.debug { "handle membership change in an encrypted room" }
             when (event.content.membership) {
-                LEAVE, BAN -> {
+                Membership.LEAVE, Membership.BAN -> {
                     store.olm.updateOutboundMegolmSession(event.roomId) { null }
                     if (store.room.encryptedJoinedRooms().find { roomId ->
                             store.roomState.getByStateKey<MemberEventContent>(roomId, event.stateKey)

@@ -17,13 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.ErrorResponse
-import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
-import net.folivo.trixnity.client.api.model.keys.SetRoomKeysResponse
-import net.folivo.trixnity.client.api.model.keys.SetRoomKeysVersionRequest
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.DeviceKey
@@ -32,6 +25,13 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixServerException
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.ErrorResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysResponse
+import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysVersionRequest
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
@@ -61,7 +61,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
     val json = createMatrixJson()
     lateinit var cut: KeyBackupService

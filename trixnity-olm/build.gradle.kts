@@ -78,9 +78,10 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("io.ktor:ktor-utils:${Versions.ktor}")
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
-        val olmLibraryMain = create("olmLibraryMain") {
+        val olmLibraryMain by creating {
             dependsOn(commonMain)
         }
         val jvmMain by getting {
@@ -96,7 +97,7 @@ kotlin {
                 api("net.java.dev.jna:jna:${Versions.jna}@aar")
             }
         }
-        val nativeMain = create("nativeMain") {
+        val nativeMain by creating {
             dependsOn(olmLibraryMain)
         }
         val linuxX64Main by getting {
@@ -125,7 +126,7 @@ kotlin {
             }
         }
         val jsTest by getting
-        val nativeTest = create("nativeTest") {
+        val nativeTest by creating {
             dependsOn(commonTest)
         }
         val linuxX64Test by getting {

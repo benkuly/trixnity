@@ -7,13 +7,13 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -21,6 +21,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomServiceAvatarUrlTest : ShouldSpec({
     timeout = 5_000
@@ -30,7 +31,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
     val key = mockk<KeyService>()
     val users = mockk<UserService>(relaxUnitFun = true)
@@ -54,7 +55,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
             store.room.update(room) { Room(room, avatarUrl = null) }
             store.roomState.update(
                 Event.StateEvent(
-                    MemberEventContent("mxc://localhost/abcdef", membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
                     room,
@@ -80,7 +81,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
             store.room.update(room) { Room(room, avatarUrl = "mxc://localhost/123456") }
             store.roomState.update(
                 Event.StateEvent(
-                    MemberEventContent("mxc://localhost/abcdef", membership = MemberEventContent.Membership.JOIN),
+                    MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
                     room,
@@ -119,7 +120,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
             val event = Event.StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
-                    membership = MemberEventContent.Membership.JOIN,
+                    membership = Membership.JOIN,
                 ),
                 EventId("1"),
                 bob,
@@ -138,7 +139,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
             val event = Event.StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
-                    membership = MemberEventContent.Membership.JOIN,
+                    membership = Membership.JOIN,
                 ),
                 EventId("1"),
                 bob,
@@ -158,7 +159,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                 // invitation
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/abcdef",
-                    membership = MemberEventContent.Membership.JOIN,
+                    membership = Membership.JOIN,
                 ),
                 EventId("1"),
                 alice,
@@ -233,7 +234,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                 Event.StateEvent(
                     MemberEventContent(
                         avatarUrl = "mxc://localhost/123456",
-                        membership = MemberEventContent.Membership.JOIN
+                        membership = Membership.JOIN
                     ),
                     EventId("1"),
                     bob,

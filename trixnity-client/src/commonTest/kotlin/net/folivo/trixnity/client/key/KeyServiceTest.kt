@@ -19,21 +19,22 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient
-import net.folivo.trixnity.client.api.model.keys.QueryKeysResponse
-import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.model.keys.QueryKeysResponse
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -53,7 +54,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val trust = mockk<KeyTrustService>(relaxUnitFun = true)
 
     lateinit var cut: KeyService
@@ -381,7 +382,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 listOf(
                     Event.StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event1"),
                         alice,
                         room1,
@@ -389,7 +390,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = alice.full
                     ),
                     Event.StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event2"),
                         alice,
                         room2,
@@ -397,7 +398,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = alice.full
                     ),
                     Event.StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event3"),
                         alice,
                         room3,
@@ -405,7 +406,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = alice.full
                     ),
                     Event.StateEvent(
-                        MemberEventContent(membership = MemberEventContent.Membership.JOIN),
+                        MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event4"),
                         cedric,
                         room1,
