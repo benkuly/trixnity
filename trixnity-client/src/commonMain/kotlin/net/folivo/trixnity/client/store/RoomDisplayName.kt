@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.client.api.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable

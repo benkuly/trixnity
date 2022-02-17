@@ -7,7 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
@@ -16,12 +15,14 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomServiceDirectTest : ShouldSpec({
     timeout = 30_000
@@ -31,7 +32,7 @@ class RoomServiceDirectTest : ShouldSpec({
     val room = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>(relaxed = true)
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val users = mockk<UserService>(relaxUnitFun = true)
     val olm = mockk<OlmService>()
     val key = mockk<KeyService>()
@@ -54,7 +55,7 @@ class RoomServiceDirectTest : ShouldSpec({
         val otherRoom = RoomId("other", "server")
         context("membership is direct") {
             val event = Event.StateEvent(
-                MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                MemberEventContent(membership = Membership.JOIN, isDirect = true),
                 EventId("$123"),
                 sender = bob,
                 room,
@@ -112,7 +113,7 @@ class RoomServiceDirectTest : ShouldSpec({
                     cut.setDirectRooms(event)
                     cut.setDirectRooms(
                         Event.StateEvent(
-                            MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                            MemberEventContent(membership = Membership.JOIN, isDirect = true),
                             EventId("$123"),
                             sender = bob,
                             yetAnotherRoom,
@@ -126,7 +127,6 @@ class RoomServiceDirectTest : ShouldSpec({
                     coVerify(exactly = 1) {
                         api.users.setAccountData(
                             withArg {
-                                println(it)
                                 it shouldBe DirectEventContent(
                                     mapOf(
                                         UserId("nobody", "server") to setOf(otherRoom),
@@ -156,7 +156,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             context("we are the invitee of a direct room") {
                 val joinEvent = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                    MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = alice,
                     room,
@@ -178,7 +178,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             context("we invite to a direct room") {
                 val joinEvent = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                    MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = bob,
                     room,
@@ -200,7 +200,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             context("invitation is from our own to our own") {
                 val joinEvent = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                    MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = bob,
                     room,
@@ -219,7 +219,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             context("invitation does not affect us") {
                 val joinEvent = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.JOIN, isDirect = true),
+                    MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = alice,
                     room,
@@ -252,7 +252,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             should("remove direct room on leave") {
                 val event = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.LEAVE),
+                    MemberEventContent(membership = Membership.LEAVE),
                     EventId("$123"),
                     bob,
                     room,
@@ -276,7 +276,7 @@ class RoomServiceDirectTest : ShouldSpec({
             }
             should("remove direct room on ban") {
                 val event = Event.StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.BAN),
+                    MemberEventContent(membership = Membership.BAN),
                     EventId("$123"),
                     bob,
                     room,

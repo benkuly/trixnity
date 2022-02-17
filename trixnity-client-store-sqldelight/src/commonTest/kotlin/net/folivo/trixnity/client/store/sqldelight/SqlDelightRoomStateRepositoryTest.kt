@@ -13,8 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
@@ -33,7 +32,7 @@ class SqlDelightRoomStateRepositoryTest : ShouldSpec({
         val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
         val state1 = mapOf(
             "@alice:server" to StateEvent(
-                MemberEventContent(membership = JOIN),
+                MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 RoomId("room1", "server"),
@@ -43,7 +42,7 @@ class SqlDelightRoomStateRepositoryTest : ShouldSpec({
         )
         val state1Copy = state1 + mapOf(
             "@bob:server" to StateEvent(
-                MemberEventContent(membership = LEAVE),
+                MemberEventContent(membership = Membership.LEAVE),
                 EventId("\$event"),
                 UserId("alice", "server"),
                 RoomId("room1", "server"),
@@ -74,7 +73,7 @@ class SqlDelightRoomStateRepositoryTest : ShouldSpec({
     should("save and get by state key") {
         val key = RoomStateRepositoryKey(RoomId("room3", "server"), "m.room.member")
         val event = StateEvent(
-            MemberEventContent(membership = JOIN),
+            MemberEventContent(membership = Membership.JOIN),
             EventId("\$event"),
             UserId("alice", "server"),
             RoomId("room1", "server"),

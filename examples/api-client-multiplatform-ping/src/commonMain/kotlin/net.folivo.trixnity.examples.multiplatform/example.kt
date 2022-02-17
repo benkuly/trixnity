@@ -4,8 +4,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 
 suspend fun example() = coroutineScope {
     val matrixRestClient =
-        MatrixApiClient(
+        MatrixClientServerApiClient(
             baseUrl = Url("http://host"),
         ).apply { accessToken.value = "token" }
     val roomId = RoomId("!room:server")

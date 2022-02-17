@@ -1,14 +1,10 @@
 package net.folivo.trixnity.client.key
 
+import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.*
-import net.folivo.trixnity.client.api.UIA
-import net.folivo.trixnity.client.api.injectOnSuccessIntoUIA
-import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
@@ -16,6 +12,11 @@ import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
+import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -24,6 +25,8 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventC
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
@@ -48,7 +51,7 @@ class KeyService(
     private val ownDeviceId: String,
     private val store: Store,
     private val olm: OlmService,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api),
     internal val backup: KeyBackupService = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm),
     internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm, api)
@@ -173,7 +176,7 @@ class KeyService(
             joinedEncryptedRooms.await()
                 .filter { roomId ->
                     store.roomState.getByStateKey<MemberEventContent>(roomId, userId.full)
-                        ?.content?.membership.let { it == MemberEventContent.Membership.JOIN || it == MemberEventContent.Membership.INVITE }
+                        ?.content?.membership.let { it == JOIN || it == INVITE }
                 }.also {
                     if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDeviceKeys" }
                 }.forEach { roomId ->
@@ -255,9 +258,9 @@ class KeyService(
      */
     @OptIn(InternalAPI::class)
     suspend fun bootstrapCrossSigning(
-        recoveryKey: ByteArray = Random.nextBytes(32),
+        recoveryKey: ByteArray = SecureRandom.nextBytes(32),
         secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent = {
-            val iv = Random.nextBytes(16)
+            val iv = SecureRandom.nextBytes(16)
             AesHmacSha2Key(
                 iv = iv.encodeBase64(),
                 mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
@@ -265,6 +268,7 @@ class KeyService(
         }
     ): BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
+        Random.Default
         val keyId = generateSequence {
             val alphabet = 'a'..'z'
             generateSequence { alphabet.random() }.take(24).joinToString("")
@@ -389,11 +393,11 @@ class KeyService(
         passphrase: String,
         secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
             val passphraseInfo = Pbkdf2(
-                salt = Random.nextBytes(32).encodeBase64(),
+                salt = SecureRandom.nextBytes(32).encodeBase64(),
                 iterations = 500_000,
                 bits = 32 * 8
             )
-            val iv = Random.nextBytes(16)
+            val iv = SecureRandom.nextBytes(16)
             val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo).getOrThrow()
             key to AesHmacSha2Key(
                 passphrase = passphraseInfo,

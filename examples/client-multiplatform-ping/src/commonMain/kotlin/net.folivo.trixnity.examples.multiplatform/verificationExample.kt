@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 
 suspend fun verificationExample() = coroutineScope {

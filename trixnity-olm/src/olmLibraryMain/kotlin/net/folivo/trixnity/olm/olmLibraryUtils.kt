@@ -1,5 +1,6 @@
 package net.folivo.trixnity.olm
 
+import com.soywiz.krypto.SecureRandom
 import kotlin.random.Random
 
 internal inline fun <T : Any> checkError(
@@ -15,7 +16,7 @@ internal inline fun <T : Any> checkError(
 
 internal inline fun <T : Any> withRandom(
     size: ULong,
-    random: Random = Random.Default,
+    random: Random = SecureRandom,
     block: (randomBytes: ByteArray?) -> T
 ): T {
     val randomBytes = if (size > 0u) random.nextBytes(size.toInt()) else null

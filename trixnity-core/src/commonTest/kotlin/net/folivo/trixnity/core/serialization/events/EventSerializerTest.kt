@@ -16,7 +16,6 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -256,7 +255,7 @@ class EventSerializerTest {
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
                 stateKey = UserId("user", "server").full,
-                content = MemberEventContent(membership = INVITE)
+                content = MemberEventContent(membership = Membership.INVITE)
             )
         )
         val expectedResult = """

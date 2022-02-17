@@ -20,13 +20,15 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                api(project(":trixnity-client-api"))
+                api(project(":trixnity-clientserverapi-client"))
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
 
-                implementation("io.ktor:ktor-auth:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-status-pages:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
 
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("com.benasher44:uuid:${Versions.uuid}")
@@ -37,6 +39,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.mockk:mockk:${Versions.mockk}")
             }

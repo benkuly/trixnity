@@ -9,8 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -29,7 +28,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         val key2 = RoomId("room2", "server")
         val user1 = RoomUser(
             key1, UserId("alice", "server"), "ALIC", Event.StateEvent(
-                MemberEventContent(membership = JOIN),
+                MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event1"),
                 UserId("alice", "server"),
                 key1,
@@ -39,7 +38,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         )
         val user2 = RoomUser(
             key1, UserId("bob", "server"), "BO", Event.StateEvent(
-                MemberEventContent(membership = LEAVE),
+                MemberEventContent(membership = Membership.LEAVE),
                 EventId("\$event2"),
                 UserId("alice", "server"),
                 key2,
@@ -49,7 +48,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         )
         val user3 = RoomUser(
             key1, UserId("cedric", "server"), "CEDRIC", Event.StateEvent(
-                MemberEventContent(membership = JOIN),
+                MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event3"),
                 UserId("cedric", "server"),
                 key2,
@@ -73,7 +72,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         val key = RoomId("room3", "server")
         val user = RoomUser(
             key, UserId("alice2", "server"), "ALIC", Event.StateEvent(
-                MemberEventContent(membership = JOIN),
+                MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event5"),
                 UserId("alice2", "server"),
                 key,

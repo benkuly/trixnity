@@ -6,10 +6,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
@@ -30,7 +29,7 @@ suspend fun timelineExample() = coroutineScope {
         scope = scope,
     ).getOrThrow() ?: MatrixClient.login(
         baseUrl = baseUrl,
-        User(username),
+        IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
         storeFactory = createStoreFactory(),
@@ -68,7 +67,7 @@ suspend fun timelineExample() = coroutineScope {
                 emit(lastEvent)
                 while (currentTimelineEvent?.value != null) {
                     val currentTimelineEventValue = currentTimelineEvent.value
-                    if (currentTimelineEventValue?.gap is GapBefore) {
+                    if (currentTimelineEventValue?.gap is TimelineEvent.Gap.GapBefore) {
                         matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
                     }
                     currentTimelineEvent =

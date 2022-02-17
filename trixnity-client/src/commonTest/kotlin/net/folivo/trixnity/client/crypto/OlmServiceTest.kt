@@ -19,13 +19,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.SerializationException
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.keys.ClaimKeysResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeysResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -37,7 +37,8 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.*
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
@@ -57,7 +58,7 @@ class OlmServiceTest : ShouldSpec({
     val bobDevice = "BOBDEVICE"
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     val json = createMatrixJson()
     lateinit var cut: OlmService
 
@@ -420,7 +421,7 @@ class OlmServiceTest : ShouldSpec({
             store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
             cut.handleMemberEvents(
                 StateEvent(
-                    MemberEventContent(membership = MemberEventContent.Membership.BAN),
+                    MemberEventContent(membership = Membership.BAN),
                     EventId("\$event"),
                     alice,
                     room,

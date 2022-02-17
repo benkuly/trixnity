@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#key-storage">matrix spec</a>
  */
-@Serializable(with = SecretStorageKeyEventContentSerializer::class)
+@Serializable(with = SecretKeyEventContentSerializer::class)
 sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
     @Serializable
     data class AesHmacSha2Key(
@@ -57,8 +57,8 @@ sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
     }
 }
 
-object SecretStorageKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
-    override val descriptor = buildClassSerialDescriptor("SecretStorageKeyEventContentSerializer")
+object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
+    override val descriptor = buildClassSerialDescriptor("SecretKeyEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): SecretKeyEventContent {
         require(decoder is JsonDecoder)

@@ -14,8 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
@@ -26,6 +24,8 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -61,7 +61,7 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDeviceId = "BBBBBB"
     val eventId = EventId("$1event")
     val roomId = RoomId("room", "server")
-    val api = mockk<MatrixApiClient>(relaxed = true)
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()

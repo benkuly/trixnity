@@ -6,9 +6,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.rooms.Membership
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
@@ -17,20 +14,22 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.originalName
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
 
 class UserService(
     private val store: Store,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
 ) {
     private val reloadOwnProfile = MutableStateFlow(false)
     private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
@@ -71,12 +70,7 @@ class UserService(
         roomId: RoomId
     ): Boolean {
         val usersWithSameDisplayName =
-            store.roomUser.getByOriginalNameAndMembership(
-                displayName, setOf(
-                    MemberEventContent.Membership.JOIN,
-                    MemberEventContent.Membership.INVITE
-                ), roomId
-            ) - sourceUserId
+            store.roomUser.getByOriginalNameAndMembership(displayName, setOf(JOIN, INVITE), roomId) - sourceUserId
         if (usersWithSameDisplayName.size == 1) {
             val userId = usersWithSameDisplayName.first()
             val calculatedName = calculateUserDisplayName(displayName, isOld, userId)
@@ -99,7 +93,7 @@ class UserService(
             val newDisplayName = event.content.displayName
 
             val hasLeftRoom =
-                membership == MemberEventContent.Membership.LEAVE || membership == MemberEventContent.Membership.BAN
+                membership == LEAVE || membership == BAN
 
             val oldDisplayName = store.roomUser.get(userId, roomId)?.originalName
             val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
@@ -163,7 +157,7 @@ class UserService(
                     if (store.room.get(roomId).value?.membersLoaded != true) {
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
-                            notMembership = Membership.LEAVE
+                            notMembership = LEAVE
                         ).getOrThrow().toList()
                         memberEvents.forEach {
                             store.roomState.update(event = it, skipWhenAlreadyPresent = true)

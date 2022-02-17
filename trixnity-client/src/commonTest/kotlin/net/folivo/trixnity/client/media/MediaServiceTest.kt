@@ -15,18 +15,18 @@ import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
 import io.mockk.*
-import net.folivo.trixnity.client.api.DownloadResponse
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.client.api.model.media.UploadResponse
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadMedia
+import net.folivo.trixnity.clientserverapi.client.DownloadResponse
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
+import net.folivo.trixnity.clientserverapi.model.media.UploadResponse
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 
 class MediaServiceTest : ShouldSpec({
-    val api: MatrixApiClient = mockk()
+    val api: MatrixClientServerApiClient = mockk()
     val store = mockk<Store>(relaxUnitFun = true)
     val cut = MediaService(api, store)
 

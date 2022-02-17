@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -29,8 +29,7 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import kotlin.time.Duration.Companion.milliseconds
@@ -42,7 +41,7 @@ class UserServiceTest : ShouldSpec({
     val roomId = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixApiClient>()
+    val api = mockk<MatrixClientServerApiClient>()
     lateinit var cut: UserService
 
     beforeTest {
@@ -211,7 +210,7 @@ class UserServiceTest : ShouldSpec({
                     user4,
                     "U1 (@user4:server)",
                     StateEvent(
-                        MemberEventContent(displayName = "U1", membership = MemberEventContent.Membership.BAN),
+                        MemberEventContent(displayName = "U1", membership = BAN),
                         EventId("\$event4"),
                         UserId("sender", "server"),
                         roomId,
@@ -422,7 +421,7 @@ class UserServiceTest : ShouldSpec({
                         user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
                     store.roomUser.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
                     val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = MemberEventContent.Membership.BAN)
+                        content = MemberEventContent(displayName = "U1", membership = BAN)
                     )
                     cut.setRoomUser(event)
                     store.roomUser.get(user1, roomId) shouldBe RoomUser(

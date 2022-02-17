@@ -1,32 +1,32 @@
 package net.folivo.trixnity.client.media
 
 import com.benasher44.uuid.uuid4
+import com.soywiz.krypto.SecureRandom
 import io.ktor.http.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.model.media.FileTransferProgress
-import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod
-import net.folivo.trixnity.client.api.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadMedia
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
+import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
+import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
-import kotlin.random.Random
 
 private val log = KotlinLogging.logger {}
 
 class MediaService(
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     private val store: Store,
 ) {
     companion object {
@@ -114,8 +114,8 @@ class MediaService(
     }
 
     suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
-        val key = Random.nextBytes(32)
-        val nonce = Random.nextBytes(8)
+        val key = SecureRandom.nextBytes(32)
+        val nonce = SecureRandom.nextBytes(8)
         val initialisationVector = nonce + ByteArray(8)
         val encrypted = encryptAes256Ctr(content = content, key = key, initialisationVector = initialisationVector)
         val cacheUri = prepareUploadMedia(encrypted, ContentType.Application.OctetStream)

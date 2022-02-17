@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
@@ -18,6 +17,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -42,7 +42,7 @@ class ActiveUserVerification(
     theirInitialDeviceId: String?,
     val roomId: RoomId,
     supportedMethods: Set<VerificationMethod>,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
     store: Store,
     private val olm: OlmService,
     private val user: UserService,

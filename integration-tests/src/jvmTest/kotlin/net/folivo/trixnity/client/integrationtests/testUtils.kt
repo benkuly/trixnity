@@ -9,20 +9,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient
-import net.folivo.trixnity.client.api.UIA
-import net.folivo.trixnity.client.api.model.authentication.AccountType
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.api.model.authentication.RegisterResponse
-import net.folivo.trixnity.client.api.model.uia.AuthenticationRequest
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.authentication.RegisterResponse
+import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
 
 const val synapseVersion = "v1.52.0" // TODO you should update this from time to time.
 private const val password = "user$1passw0rd"
 
-suspend fun MatrixApiClient.register(
+suspend fun MatrixClientServerApiClient.register(
     username: String? = null,
     password: String,
     deviceId: String? = null
@@ -36,10 +36,10 @@ suspend fun MatrixApiClient.register(
     registerStep.shouldBeInstanceOf<UIA.UIAStep<RegisterResponse>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
     registerResult.shouldBeInstanceOf<UIA.UIASuccess<RegisterResponse>>()
-    val (userId, deviceId, accessToken) = registerResult.value
-    requireNotNull(deviceId)
+    val (userId, createdDeviceId, accessToken) = registerResult.value
+    requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.Companion.LoginInfo(userId, deviceId, accessToken, "displayName", null))
+    return Result.success(MatrixClient.Companion.LoginInfo(userId, createdDeviceId, accessToken, "displayName", null))
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")

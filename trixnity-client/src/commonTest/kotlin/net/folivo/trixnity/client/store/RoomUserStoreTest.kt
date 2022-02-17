@@ -14,8 +14,8 @@ import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 
 class RoomUserStoreTest : ShouldSpec({
     val roomUserRepository = mockk<RoomUserRepository>(relaxUnitFun = true)

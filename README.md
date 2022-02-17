@@ -3,8 +3,8 @@
 # Trixnity - Multiplatform Matrix SDK
 
 Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. You can write clients, bots and appservices with
-it. This SDK supports JVM (also Android) as targets (native and JS will follow soon)
-. [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
+it. This SDK supports JVM (also Android), JS and Native as targets for most modules.
+[Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
 
 Trixnity aims to be strongly typed, customizable and easy to use. You can register custom events and Trixnity will take
@@ -14,15 +14,15 @@ care, that you can send and receive that type.
 
 ## Overview
 
-This project contains the following sub-projects, which can be used independently:
+This project contains the following modules, which can be used independently:
 
 - [trixnity-core](/trixnity-core) contains the model and serialization stuff for Matrix.
 - [trixnity-olm](/trixnity-olm) implements the wrappers of the
-  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/JS/Native.
-- [trixnity-client-api](/trixnity-client-api) implements
-  the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
-- [trixnity-client-api-model](/trixnity-client-api-model) provides
+  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native.
+- [trixnity-clientserverapi-model](/trixnity-clientserverapi-model) provides
   [Client-Server API](https://spec.matrix.org/latest/client-server-api/) model classes.
+- [trixnity-clientserverapi-client](/trixnity-clientserverapi-client) implements
+  the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
 - [trixnity-appservice](/trixnity-appservice) implements
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
@@ -34,14 +34,17 @@ This project contains the following sub-projects, which can be used independentl
     - [x] cross signing
     - [x] room key backup
     - [x] room list
+    - [ ] spaces
     - [x] timelines
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
     - [ ] push notifications
+        - [x] API
+        - [ ] high level abstraction
 - [trixnity-client-store-exposed](/trixnity-client-store-exposed) implements a database for trixnity-client
-  with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM as platform.
+  with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM based platforms.
 - [trixnity-client-store-sqldelight](/trixnity-client-store-sqldelight) implements a database for trixnity-client
   with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained at the moment.
 
@@ -51,22 +54,24 @@ We plan to add something like `trixnity-client-store-indexeddb` as a database ba
 
 ### Add Trixnity to you project
 
-Just add the following to your dependencies and fill `<sub-project>` (with e.g. `client`) and `<version>` (
-with the current version):
+Just add the following to your dependencies and fill `<module>` (with e.g. `client`) and `<version>` (with the current
+version):
 
 ```yml
-implementation("net.folivo:trixnity-<sub-project>:<version>")
+implementation("net.folivo:trixnity-<module>:<version>")
 ```
 
-For Trixnity-Client and Trixnity-Client-API you also need to add a client engine to your project, that you can
-find [here](https://ktor.io/docs/http-client-engines.html).
+For Trixnity-Client and Trixnity-ClientServerAPI-Client you also need to add a client engine to your project, that you
+can find [here](https://ktor.io/docs/http-client-engines.html).
 
 #### Olm-Library
 
-If you are using `trixnity-client` or `trixnity-olm` with JVM, you will need to install olm. You can
-[Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm) and then make it available by your JVM (e.g.
-with `-Djna.library.path="build/olm/3.2.8/build"`). You can also look into this projects `build.gradle.kts` files for an
-automated way to build olm and e.g. use it for testing.
+If you are using `trixnity-client` or `trixnity-olm` with JVM (except Android) or native, you will need to install olm.
+You can
+[Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm).
+
+Make it available by your JVM (e.g. with `-Djna.library.path="build/olm/3.2.8/build"`). You can also look into this
+projects `build.gradle.kts` files for an automated way to build olm and e.g. use it for testing.
 
 ## Trixnity-Client
 
@@ -92,15 +97,15 @@ val matrixClient = MatrixClient.fromStore(
     storeFactory = storeFactory,
     scope = scope,
 ).getOrThrow()
-```
 
-It is important, that you call `matrixClient.startSync()` to fully start the client.
+matrixClient.startSync() // important to fully start the client!
+```
 
 ### Read data
 
 Most data in Trixnity is wrapped into Kotlins `StateFlow`. This means, that you get the current value, but also every
 future values. This is useful when e.g. the display name or the avatar of a user changes, because you only need to
-render that change and not your complete application.
+rerender that change and not your complete application.
 
 There are some important data, which are described below:
 
@@ -122,7 +127,7 @@ You can use this to navigate threw the graph and e.g. form a list out of it.
 
 A `TimelineEvent` also contains a `Gap` which can be used to determine, if there are missing events, which can be loaded
 from the server: `GabBefore <-> TimelineEvent <-> TimelineEvent <-> GapAfter`. If a `TimelineEvent` has a `Gap`, you can
-fetch is neighbours by calling `matrixClient.room.fetchMissingEvents(...)`.
+fetch its neighbours by calling `matrixClient.room.fetchMissingEvents(...)`.
 
 You can always get the last known `TimelineEvent` of a room with `matrixClient.room.getLastTimelineEvent(...)`.
 
@@ -148,8 +153,7 @@ matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { 
         val content = event?.content
         val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
         when {
-            content is RoomMessageEventContent ->
-                println("${sender}: ${content.body}")
+            content is RoomMessageEventContent -> println("${sender}: ${content.body}")
             content is MegolmEncryptedEventContent -> {
                 val decryptedEvent = timelineEvent.value?.decryptedEvent
                 val decryptedEventContent = decryptedEvent?.getOrNull()?.content
@@ -176,8 +180,8 @@ received (also called "echo") from the matrix server.
 
 ### Other operations
 
-Many operations can be done with [trixnity-client-api](/trixnity-client-api). You have access to it
-via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
+Many operations can be done with [trixnity-clientserverapi-client](/trixnity-clientserverapi-client). You have access to
+it via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
 described below.
 
 #### Send messages
@@ -208,16 +212,16 @@ To verify own and other devices there is `VerificationService` (can be accessed 
 
 To bootstrap cross signing there is `KeyService` (can be accessed with `matrixClient.key`).
 
-## Trixnity-Client-API
+## Trixnity-ClientServerAPI-Client
 
 ### Usage
 
-#### Create MatrixApiClient
+#### Create MatrixClientServerApiClient
 
-Here is a typical example, how to create a `MatrixApiClient`:
+Here is a typical example, how to create a `MatrixClientServerApiClient`:
 
 ```kotlin
-val matrixRestClient = MatrixApiClient(
+val matrixRestClient = MatrixClientServerApiClient(
     baseUrl = Url("http://host"),
 ).apply { accessToken.value = "token" }
 ```
@@ -238,12 +242,10 @@ Example 2: You can receive different type of events from sync.
 ```kotlin
 matrixRestClient.sync.subscribe<TextMessageEventContent> { println(it.content.body) }
 matrixRestClient.sync.subscribe<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
-matrixRestClient.sync.subscribeAllEvents { // this is a shortcut for .subscribe<EventContent> { }
-    println(it)
-}
+matrixRestClient.sync.subscribeAllEvents { println(it) }
 
 matrixRestClient.sync.start() // you need to start the sync to receive messages
-delay(30000) // wait some time
+delay(30.seconds) // wait some time
 matrixRestClient.sync.stop() // stop the client
 ```
 

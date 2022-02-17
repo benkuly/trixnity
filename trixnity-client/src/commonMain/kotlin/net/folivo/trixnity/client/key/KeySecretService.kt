@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
@@ -19,6 +17,8 @@ import net.folivo.trixnity.client.crypto.getDeviceKey
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
@@ -43,7 +43,7 @@ class KeySecretService(
     private val ownDeviceId: String,
     private val store: Store,
     private val olm: OlmService,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
 ) {
     @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
@@ -234,7 +234,7 @@ class KeySecretService(
 
     internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
         api.sync.currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+            SyncApiClient.SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
             scope = this
         ) {

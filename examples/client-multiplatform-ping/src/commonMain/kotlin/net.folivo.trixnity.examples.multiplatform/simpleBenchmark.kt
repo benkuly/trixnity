@@ -6,11 +6,10 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.api.SyncApiClient
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType.User
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.TimelineEvent.Gap.GapBefore
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -68,7 +67,7 @@ suspend fun simpleBenchmark() = coroutineScope {
                 emit(lastEvent)
                 while (currentTimelineEvent?.value != null) {
                     val currentTimelineEventValue = currentTimelineEvent.value
-                    if (currentTimelineEventValue?.gap is GapBefore) {
+                    if (currentTimelineEventValue?.gap is TimelineEvent.Gap.GapBefore) {
                         matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
                     }
                     currentTimelineEvent =

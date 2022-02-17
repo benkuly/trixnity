@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
 import mu.KotlinLogging
-import net.folivo.trixnity.client.api.MatrixApiClient
 import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
@@ -14,6 +13,7 @@ import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_S
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.KeyVerificationState
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -30,7 +30,7 @@ class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
     private val olm: OlmService,
-    private val api: MatrixApiClient,
+    private val api: MatrixClientServerApiClient,
 ) {
 
     internal suspend fun updateTrustLevelOfKeyChainSignedBy(

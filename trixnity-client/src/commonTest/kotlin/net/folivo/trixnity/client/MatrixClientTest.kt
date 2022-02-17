@@ -15,19 +15,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.e
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.api.model.sync.SyncResponse
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.InMemoryStoreFactory
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.e
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -242,9 +243,7 @@ class MatrixClientTest : ShouldSpec({
                                                             timeline = SyncResponse.Rooms.Timeline(
                                                                 events = listOf(
                                                                     Event.StateEvent(
-                                                                        MemberEventContent(
-                                                                            membership = MemberEventContent.Membership.JOIN
-                                                                        ),
+                                                                        MemberEventContent(membership = JOIN),
                                                                         sender = userId,
                                                                         id = EventId("event1"),
                                                                         roomId = roomId,
@@ -279,7 +278,7 @@ class MatrixClientTest : ShouldSpec({
                                                                 events = listOf(
                                                                     Event.StateEvent(
                                                                         MemberEventContent(
-                                                                            membership = MemberEventContent.Membership.JOIN,
+                                                                            membership = JOIN,
                                                                             displayName = "bob", // display name in the room != global display name
                                                                             avatarUrl = "mxc://localhost/123456"
                                                                         ),
@@ -374,7 +373,7 @@ class MatrixClientTest : ShouldSpec({
         }
     }
     context(MatrixClient::logout.name) {
-        lateinit var apiMock: MatrixApiClient
+        lateinit var apiMock: MatrixClientServerApiClient
         lateinit var inMemoryStore: InMemoryStore
         lateinit var cut: MatrixClient
         beforeTest {
@@ -388,7 +387,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
-            apiMock = mockk<MatrixApiClient> {
+            apiMock = mockk<MatrixClientServerApiClient> {
                 coEvery { authentication.logout() } returns Result.success(Unit)
                 coEvery { sync.stop(any()) } just Runs
             }

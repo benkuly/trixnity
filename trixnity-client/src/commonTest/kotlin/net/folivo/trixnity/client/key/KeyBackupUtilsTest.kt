@@ -8,7 +8,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.client.api.model.keys.GetRoomKeysVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys

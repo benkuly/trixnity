@@ -12,13 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
-import net.folivo.trixnity.client.api.MatrixApiClient
-import net.folivo.trixnity.client.api.createMatrixApiClientEventContentSerializerMappings
-import net.folivo.trixnity.client.api.createMatrixApiClientJson
-import net.folivo.trixnity.client.api.model.authentication.IdentifierType
-import net.folivo.trixnity.client.api.model.authentication.LoginType
-import net.folivo.trixnity.client.api.model.users.Filters
-import net.folivo.trixnity.client.api.model.users.RoomFilter
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
@@ -29,6 +22,13 @@ import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientEventContentSerializerMappings
+import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientJson
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.clientserverapi.model.users.RoomFilter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -40,7 +40,7 @@ class MatrixClient private constructor(
     olmPickleKey: String,
     val userId: UserId,
     val deviceId: String,
-    val api: MatrixApiClient,
+    val api: MatrixClientServerApiClient,
     private val store: Store,
     json: Json,
     setOwnMessagesAsFullyRead: Boolean = false,
@@ -164,16 +164,17 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
             scope: CoroutineScope,
-            getLoginInfo: suspend (MatrixApiClient) -> Result<LoginInfo>
+            getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>
         ): Result<MatrixClient> = kotlin.runCatching {
-            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixApiClientJson(eventContentSerializerMappings)
+            val eventContentSerializerMappings =
+                createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
+            val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
 
             val store =
                 storeFactory.createStore(eventContentSerializerMappings, json)
             store.init()
 
-            val api = MatrixApiClient(
+            val api = MatrixClientServerApiClient(
                 baseUrl = baseUrl,
                 baseHttpClient = baseHttpClient,
                 onLogout = { onLogout(it, store) },
@@ -231,8 +232,9 @@ class MatrixClient private constructor(
             onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
             scope: CoroutineScope
         ): Result<MatrixClient?> = kotlin.runCatching {
-            val eventContentSerializerMappings = createMatrixApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixApiClientJson(eventContentSerializerMappings)
+            val eventContentSerializerMappings =
+                createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
+            val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
 
             val store = storeFactory.createStore(eventContentSerializerMappings, json)
             store.init()
@@ -243,7 +245,7 @@ class MatrixClient private constructor(
             val olmPickleKey = store.account.olmPickleKey.value
 
             if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
-                val api = MatrixApiClient(
+                val api = MatrixClientServerApiClient(
                     baseUrl = baseUrl,
                     baseHttpClient = baseHttpClient,
                     onLogout = { onLogout(it, store) },

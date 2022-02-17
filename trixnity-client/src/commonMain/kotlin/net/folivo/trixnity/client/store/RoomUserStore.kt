@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCa
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomUserStore(
     private val roomUserRepository: RoomUserRepository,

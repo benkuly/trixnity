@@ -10,11 +10,10 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.api.MatrixServerException
-import net.folivo.trixnity.client.api.SyncApiClient
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.INITIAL_SYNC
-import net.folivo.trixnity.client.api.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.client.api.model.ErrorResponse
+import net.folivo.trixnity.clientserverapi.client.MatrixServerException
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.ErrorResponse
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -35,7 +34,7 @@ class UtilsTest : ShouldSpec({
             val job = launch {
                 syncState.retryInfiniteWhenSyncIs(
                     RUNNING,
-                    INITIAL_SYNC,
+                    SyncApiClient.SyncState.INITIAL_SYNC,
                     onError = { onErrorCalled.update { it + 1 } },
                     onCancel = { onCancelCalled.update { it + 1 } },
                     scope = this,
@@ -54,7 +53,7 @@ class UtilsTest : ShouldSpec({
             blockCalled.value shouldBe 0
             syncState.value = RUNNING
             blockCalled.first { it == 2 } shouldBe 2
-            syncState.value = INITIAL_SYNC
+            syncState.value = SyncApiClient.SyncState.INITIAL_SYNC
             blockCalled.first { it == 4 } shouldBe 4
             job.cancelAndJoin()
             onErrorCalled.value shouldBe 1

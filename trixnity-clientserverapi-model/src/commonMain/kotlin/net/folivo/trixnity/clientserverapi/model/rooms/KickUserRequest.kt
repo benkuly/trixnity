@@ -1,0 +1,11 @@
+package net.folivo.trixnity.clientserverapi.model.rooms
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.model.UserId
+
+@Serializable
+data class KickUserRequest(
+    @SerialName("user_id") val userId: UserId,
+    @SerialName("reason") val reason: String?
+)
