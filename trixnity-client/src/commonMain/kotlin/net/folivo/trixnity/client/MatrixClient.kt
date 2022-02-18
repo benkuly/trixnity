@@ -170,8 +170,11 @@ class MatrixClient private constructor(
                 createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
 
-            val store =
+            val store = try {
                 storeFactory.createStore(eventContentSerializerMappings, json)
+            } catch (exc: Exception) {
+                throw MatrixClientStoreException(exc)
+            }
             store.init()
 
             val api = MatrixClientServerApiClient(
@@ -236,7 +239,11 @@ class MatrixClient private constructor(
                 createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
             val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
 
-            val store = storeFactory.createStore(eventContentSerializerMappings, json)
+            val store = try {
+                storeFactory.createStore(eventContentSerializerMappings, json)
+            } catch (exc: Exception) {
+                throw MatrixClientStoreException(exc)
+            }
             store.init()
 
             val baseUrl = store.account.baseUrl.value
@@ -408,3 +415,5 @@ class MatrixClient private constructor(
         }
     }
 }
+
+class MatrixClientStoreException(cause: Throwable?) : RuntimeException(cause)
