@@ -38,6 +38,7 @@ class AccountStoreTest : ShouldSpec({
                 "access_token",
                 "sync_token",
                 "filter_id",
+                "background_filter_id",
                 "display_name",
                 "mxc://localhost/123456",
             )
@@ -66,6 +67,7 @@ class AccountStoreTest : ShouldSpec({
                         null,
                         null,
                         UserId("user", "server"),
+                        null,
                         null,
                         null,
                         null,

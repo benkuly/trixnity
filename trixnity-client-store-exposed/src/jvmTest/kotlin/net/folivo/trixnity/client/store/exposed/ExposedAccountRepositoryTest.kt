@@ -26,6 +26,7 @@ class ExposedAccountRepositoryTest : ShouldSpec({
             "accessToken",
             "syncToken",
             "filterId",
+            "backgroundFilterId",
             "displayName",
             "mxc://localhost/123456",
         )

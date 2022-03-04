@@ -20,6 +20,7 @@ class SqlDelightAccountRepository(
                 accessToken = it.access_token,
                 syncBatchToken = it.sync_batch_token,
                 filterId = it.filter_id,
+                backgroundFilterId = it.background_filter_id,
                 displayName = it.display_name,
                 avatarUrl = it.avatar_url,
             )
@@ -31,14 +32,15 @@ class SqlDelightAccountRepository(
             Sql_account(
                 id = key,
                 olm_pickle_key = value.olmPickleKey,
-                base_url = value.baseUrl?.toString(),
+                base_url = value.baseUrl,
                 user_id = value.userId?.full,
                 device_id = value.deviceId,
                 access_token = value.accessToken,
                 sync_batch_token = value.syncBatchToken,
                 filter_id = value.filterId,
+                background_filter_id = value.backgroundFilterId,
                 display_name = value.displayName,
-                avatar_url = value.avatarUrl?.toString(),
+                avatar_url = value.avatarUrl,
             )
         )
     }

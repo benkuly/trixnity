@@ -15,8 +15,11 @@ data class SetPushersRequest(
     val data: PusherData,
     @SerialName("device_display_name")
     val deviceDisplayName: String,
+    /**
+     * Setting kind to *null* deletes the pusher.
+     */
     @SerialName("kind")
-    val kind: String,
+    val kind: String? = null,
     @SerialName("lang")
     val lang: String,
     @SerialName("profile_tag")

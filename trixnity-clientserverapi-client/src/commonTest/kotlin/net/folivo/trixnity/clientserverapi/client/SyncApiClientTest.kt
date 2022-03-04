@@ -39,6 +39,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest {
@@ -943,5 +944,68 @@ class SyncApiClientTest {
 
         matrixRestClient.sync.stop()
         matrixRestClient.sync.stop()
+    }
+
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun shouldAllowOnlyOneSyncAtATime() = runTest(dispatchTimeoutMs = 4_000) {
+        val response = SyncResponse(
+            nextBatch = "nextBatch1",
+            accountData = SyncResponse.GlobalAccountData(emptyList()),
+            deviceLists = SyncResponse.DeviceLists(emptySet(), emptySet()),
+            deviceOneTimeKeysCount = emptyMap(),
+            presence = SyncResponse.Presence(emptyList()),
+            room = SyncResponse.Rooms(
+                join = mapOf(
+                    RoomId("room", "Server") to SyncResponse.Rooms.JoinedRoom(
+                        timeline = SyncResponse.Rooms.Timeline(
+                            listOf(
+                                Event.MessageEvent(
+                                    RoomMessageEventContent.TextMessageEventContent("hi"),
+                                    EventId("event"),
+                                    UserId("user", "server"),
+                                    RoomId("room", "server"),
+                                    1234L
+                                )
+                            )
+                        )
+                    )
+                ), knock = null, invite = null, leave = null
+            ),
+            toDevice = SyncResponse.ToDevice(emptyList())
+        )
+        val matrixClientServerApiClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            baseHttpClient = HttpClient(MockEngine {
+                respond(
+                    json.encodeToString(response),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                )
+            })
+        )
+
+        val allEventsCount = MutableStateFlow(0)
+        launch(Dispatchers.Default) {
+            matrixClientServerApiClient.sync.startOnce(timeout = 0L) {
+                delay(500)
+                allEventsCount.update { it + 1 }
+            }
+        }
+        launch(Dispatchers.Default) {
+            matrixClientServerApiClient.sync.startOnce(timeout = 0L) {
+                delay(500)
+                allEventsCount.update { it + 1 }
+            }
+        }
+
+        launch(Dispatchers.Default) {
+            delay(200)
+            allEventsCount.value shouldBe 0
+            delay(500)
+            allEventsCount.value shouldBe 1
+            delay(500)
+            allEventsCount.value shouldBe 2
+        }.join()
     }
 }
