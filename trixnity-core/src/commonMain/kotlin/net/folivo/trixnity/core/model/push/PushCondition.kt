@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.model.push
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -48,13 +49,17 @@ object PushConditionSerializer : KSerializer<PushCondition> {
     override fun deserialize(decoder: Decoder): PushCondition {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        return when (jsonObject["kind"]?.jsonPrimitive?.content) {
-            "event_match" -> decoder.json.decodeFromJsonElement<PushCondition.EventMatch>(jsonObject)
-            "room_member_count" -> decoder.json.decodeFromJsonElement<PushCondition.RoomMemberCount>(jsonObject)
-            "sender_notification_permission" ->
-                decoder.json.decodeFromJsonElement<PushCondition.SenderNotificationPermission>(jsonObject)
-            "contains_display_name" -> PushCondition.ContainsDisplayName
-            else -> PushCondition.Unknown(jsonObject)
+        return try {
+            when (jsonObject["kind"]?.jsonPrimitive?.content) {
+                "event_match" -> decoder.json.decodeFromJsonElement<PushCondition.EventMatch>(jsonObject)
+                "room_member_count" -> decoder.json.decodeFromJsonElement<PushCondition.RoomMemberCount>(jsonObject)
+                "sender_notification_permission" ->
+                    decoder.json.decodeFromJsonElement<PushCondition.SenderNotificationPermission>(jsonObject)
+                "contains_display_name" -> PushCondition.ContainsDisplayName
+                else -> PushCondition.Unknown(jsonObject)
+            }
+        } catch (exc: SerializationException) {
+            PushCondition.Unknown(jsonObject)
         }
     }
 

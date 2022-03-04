@@ -222,6 +222,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.deviceId.value = "deviceId"
             inMemoryStore.account.baseUrl.value = Url("http://localhost")
             inMemoryStore.account.filterId.value = "someFilter"
+            inMemoryStore.account.backgroundFilterId.value = "backgroundFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
 

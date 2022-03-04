@@ -12,6 +12,7 @@ data class Account(
     val accessToken: String?,
     val syncBatchToken: String?,
     val filterId: String?,
+    val backgroundFilterId: String?,
     val displayName: String?,
     val avatarUrl: String?,
 )

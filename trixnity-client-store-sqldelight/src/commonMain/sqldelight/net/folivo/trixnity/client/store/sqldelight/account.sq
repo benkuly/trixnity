@@ -7,6 +7,7 @@ CREATE TABLE sql_account (
   access_token TEXT,
   sync_batch_token TEXT,
   filter_id TEXT,
+  background_filter_id TEXT,
   display_name TEXT,
   avatar_url TEXT
 );

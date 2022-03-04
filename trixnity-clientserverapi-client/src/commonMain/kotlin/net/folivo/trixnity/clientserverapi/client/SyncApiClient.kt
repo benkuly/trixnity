@@ -66,8 +66,9 @@ class SyncApiClient(
 
     private var syncJob: Job? = null
     private val startStopMutex = Mutex()
+    private val syncMutex = Mutex()
 
-    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
+    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     val currentSyncState = _currentSyncState.asStateFlow()
 
     private val deviceListsSubscribers: MutableStateFlow<Set<DeviceListsSubscriber>> = MutableStateFlow(setOf())
@@ -113,53 +114,95 @@ class SyncApiClient(
         timeout: Long = 30000,
         asUserId: UserId? = null,
         wait: Boolean = false,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ) {
         stop(wait = true)
         startStopMutex.withLock {
-            syncJob = scope.launch {
-                log.info { "started syncLoop" }
-                val isInitialSync = currentBatchToken.value == null
-                if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
+            if (syncJob == null) {
+                syncJob = scope.launch {
+                    syncMutex.withLock {
+                        log.info { "started syncLoop" }
+                        val isInitialSync = currentBatchToken.value == null
+                        if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
 
-                while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
-                    try {
-                        val batchToken = currentBatchToken.value
-                        val response = syncOnce(
-                            filter = filter,
-                            setPresence = setPresence,
-                            fullState = false,
-                            since = batchToken,
-                            timeout = if (currentBatchToken.value == null) 0L else timeout,
-                            asUserId = asUserId
-                        ).getOrThrow()
-                        processSyncResponse(response)
-                        log.debug { "processed sync response with token ${currentBatchToken.value}" }
-                        currentBatchToken.value = response.nextBatch
-                        updateSyncState(RUNNING)
-                    } catch (error: Throwable) {
-                        when (error) {
-                            is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
-                                log.info { "timeout while sync with token ${currentBatchToken.value}" }
-                                updateSyncState(TIMEOUT)
-                            }
-                            is CancellationException -> throw error
-                            else -> {
-                                log.error(error) { "error while sync with token ${currentBatchToken.value}" }
-                                updateSyncState(ERROR)
+                        while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
+                            try {
+                                syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+                            } catch (error: Throwable) {
+                                when (error) {
+                                    is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
+                                        log.info { "timeout while sync with token ${currentBatchToken.value}" }
+                                        updateSyncState(TIMEOUT)
+                                    }
+                                    is CancellationException -> throw error
+                                    else -> {
+                                        log.error(error) { "error while sync with token ${currentBatchToken.value}" }
+                                        updateSyncState(ERROR)
+                                    }
+                                }
+                                delay(5000)// TODO better retry policy!
+                                if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(
+                                    STARTED
+                                )
                             }
                         }
-                        delay(5000)// TODO better retry policy!
-                        if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
                     }
                 }
-            }
-            syncJob?.invokeOnCompletion {
-                log.info { "stopped syncLoop" }
-                _currentSyncState.value = STOPPED
+                syncJob?.invokeOnCompletion {
+                    log.info { "stopped syncLoop" }
+                    _currentSyncState.value = STOPPED
+                    syncJob = null
+                }
             }
         }
         if (wait) syncJob?.join()
+    }
+
+    suspend fun <T> startOnce(
+        filter: String? = null,
+        setPresence: Presence? = null,
+        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
+        asUserId: UserId? = null,
+        runOnce: suspend () -> T,
+    ): Result<T> = kotlin.runCatching {
+        stop(wait = true)
+        syncMutex.withLock {
+            log.info { "started single sync" }
+            val isInitialSync = currentBatchToken.value == null
+            if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
+            syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+            runOnce()
+        }
+    }.onSuccess {
+        log.info { "stopped single sync" }
+        _currentSyncState.value = STOPPED
+    }.onFailure {
+        log.info { "stopped single sync" }
+        _currentSyncState.value = STOPPED
+    }
+
+    private suspend fun syncAndResponse(
+        currentBatchToken: MutableStateFlow<String?>,
+        filter: String?,
+        setPresence: Presence?,
+        timeout: Long,
+        asUserId: UserId?
+    ) {
+        val batchToken = currentBatchToken.value
+        val response = syncOnce(
+            filter = filter,
+            setPresence = setPresence,
+            fullState = false,
+            since = batchToken,
+            timeout = if (currentBatchToken.value == null) 0L else timeout,
+            asUserId = asUserId
+        ).getOrThrow()
+        log.debug { "received sync response with token ${currentBatchToken.value}" }
+        processSyncResponse(response)
+        log.debug { "processed sync response with token ${currentBatchToken.value}" }
+        currentBatchToken.value = response.nextBatch
+        updateSyncState(RUNNING)
     }
 
     private suspend fun processSyncResponse(response: SyncResponse) = coroutineScope {

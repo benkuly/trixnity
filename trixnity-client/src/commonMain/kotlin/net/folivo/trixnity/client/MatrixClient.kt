@@ -5,7 +5,6 @@ import io.ktor.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.launch
@@ -27,12 +26,16 @@ import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiCli
 import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientJson
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.users.EventFilter
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.RoomFilter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 private val log = KotlinLogging.logger {}
 
@@ -226,6 +229,7 @@ class MatrixClient private constructor(
             val loginType: LoginType = LoginType.Password,
         )
 
+        @OptIn(ExperimentalTime::class)
         suspend fun fromStore(
             storeFactory: StoreFactory,
             baseHttpClient: HttpClient = HttpClient(),
@@ -235,50 +239,69 @@ class MatrixClient private constructor(
             onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
             scope: CoroutineScope
         ): Result<MatrixClient?> = kotlin.runCatching {
-            val eventContentSerializerMappings =
-                createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
+            measureTimedValue {
+                val eventContentSerializerMappings = measureTimedValue {
+                    createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
+                }.apply {
+                    log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
+                }.value
+                val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
 
-            val store = try {
-                storeFactory.createStore(eventContentSerializerMappings, json)
-            } catch (exc: Exception) {
-                throw MatrixClientStoreException(exc)
-            }
-            store.init()
-
-            val baseUrl = store.account.baseUrl.value
-            val userId = store.account.userId.value
-            val deviceId = store.account.deviceId.value
-            val olmPickleKey = store.account.olmPickleKey.value
-
-            if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
-                val api = MatrixClientServerApiClient(
-                    baseUrl = baseUrl,
-                    baseHttpClient = baseHttpClient,
-                    onLogout = { onLogout(it, store) },
-                    json = json,
-                    eventContentSerializerMappings = eventContentSerializerMappings,
-                )
-                val accessToken = store.account.accessToken.value ?: onSoftLogin?.let {
-                    val (identifier, passwordOrToken, loginType) = onSoftLogin()
-                    api.authentication.login(identifier, passwordOrToken, loginType, deviceId).getOrThrow().accessToken
-                        .also { store.account.accessToken.value = it }
+                val store = try {
+                    measureTimedValue {
+                        storeFactory.createStore(
+                            eventContentSerializerMappings,
+                            json
+                        )
+                    }.apply {
+                        log.debug { "createStore() took ${duration.inWholeMilliseconds}ms" }
+                    }.value
+                } catch (exc: Exception) {
+                    throw MatrixClientStoreException(exc)
                 }
-                if (accessToken != null) {
-                    api.accessToken.value = accessToken
-                    MatrixClient(
-                        olmPickleKey = olmPickleKey,
-                        userId = userId,
-                        deviceId = deviceId,
-                        api = api,
-                        store = store,
+                measureTime { store.init() }.apply { log.debug { "store.init() took ${inWholeMilliseconds}ms" } }
+
+                val baseUrl = store.account.baseUrl.value
+                val userId = store.account.userId.value
+                val deviceId = store.account.deviceId.value
+                val olmPickleKey = store.account.olmPickleKey.value
+
+                if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
+                    val api = MatrixClientServerApiClient(
+                        baseUrl = baseUrl,
+                        baseHttpClient = baseHttpClient,
+                        onLogout = { onLogout(it, store) },
                         json = json,
-                        setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
-                        customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
-                        scope = scope,
+                        eventContentSerializerMappings = eventContentSerializerMappings,
                     )
+                    val accessToken = store.account.accessToken.value ?: onSoftLogin?.let {
+                        val (identifier, passwordOrToken, loginType) = onSoftLogin()
+                        api.authentication.login(identifier, passwordOrToken, loginType, deviceId)
+                            .getOrThrow().accessToken
+                            .also { store.account.accessToken.value = it }
+                    }
+                    if (accessToken != null) {
+                        api.accessToken.value = accessToken
+                        measureTimedValue {
+                            MatrixClient(
+                                olmPickleKey = olmPickleKey,
+                                userId = userId,
+                                deviceId = deviceId,
+                                api = api,
+                                store = store,
+                                json = json,
+                                setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
+                                customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                                scope = scope,
+                            )
+                        }.apply {
+                            log.debug { "init MatrixClient took ${duration.inWholeMilliseconds}ms" }
+                        }.value
+                    } else null
                 } else null
-            } else null
+            }.apply {
+                log.debug { "fromStore() took ${duration.inWholeMilliseconds}ms" }
+            }.value
         }
 
         private fun onLogout(
@@ -345,8 +368,28 @@ class MatrixClient private constructor(
 
     private val isInitialized = MutableStateFlow(false)
 
-    @OptIn(FlowPreview::class)
     suspend fun startSync(): Result<Unit> = kotlin.runCatching {
+        startMatrixClient()
+        api.sync.start(
+            filter = store.account.filterId.value,
+            setPresence = PresenceEventContent.Presence.ONLINE,
+            currentBatchToken = store.account.syncBatchToken,
+            scope = scope,
+        )
+    }
+
+    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend () -> T): Result<T> {
+        startMatrixClient()
+        return api.sync.startOnce(
+            filter = store.account.backgroundFilterId.value,
+            setPresence = PresenceEventContent.Presence.OFFLINE,
+            currentBatchToken = store.account.syncBatchToken,
+            timeout = timeout,
+            runOnce = runOnce
+        )
+    }
+
+    private suspend fun startMatrixClient() {
         if (isInitialized.getAndUpdate { true }.not()) {
             val handler = CoroutineExceptionHandler { _, exception ->
                 log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
@@ -390,13 +433,21 @@ class MatrixClient private constructor(
                     Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
                 ).getOrThrow()
             }
+            val backgroundFilterId = store.account.backgroundFilterId.value
+            if (backgroundFilterId == null) {
+                log.debug { "set new background filter for sync" }
+                store.account.backgroundFilterId.value = api.users.setFilter(
+                    userId,
+                    Filters(
+                        room = RoomFilter(
+                            state = RoomFilter.StateFilter(lazyLoadMembers = true),
+                            ephemeral = RoomFilter.RoomEventFilter(limit = 0)
+                        ),
+                        presence = EventFilter(limit = 0)
+                    )
+                ).getOrThrow()
+            }
         }
-        api.sync.start(
-            filter = store.account.filterId.value,
-            setPresence = PresenceEventContent.Presence.ONLINE,
-            currentBatchToken = store.account.syncBatchToken,
-            scope = scope,
-        )
     }
 
     suspend fun stopSync(wait: Boolean = false) {

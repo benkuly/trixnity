@@ -21,6 +21,7 @@ class AccountStore(
     val accessToken = MutableStateFlow<String?>(null)
     val syncBatchToken = MutableStateFlow<String?>(null)
     val filterId = MutableStateFlow<String?>(null)
+    val backgroundFilterId = MutableStateFlow<String?>(null)
     val displayName = MutableStateFlow<String?>(null)
     val avatarUrl = MutableStateFlow<String?>(null)
 
@@ -33,6 +34,7 @@ class AccountStore(
         syncBatchToken.value = account?.syncBatchToken
         accessToken.value = account?.accessToken
         filterId.value = account?.filterId
+        backgroundFilterId.value = account?.backgroundFilterId
         displayName.value = account?.displayName
         avatarUrl.value = account?.avatarUrl
 
@@ -46,6 +48,7 @@ class AccountStore(
                 accessToken,
                 syncBatchToken,
                 filterId,
+                backgroundFilterId,
                 displayName,
                 avatarUrl
             ) { values ->
@@ -57,8 +60,9 @@ class AccountStore(
                     accessToken = values[4] as String?,
                     syncBatchToken = values[5] as String?,
                     filterId = values[6] as String?,
-                    displayName = values[7] as String?,
-                    avatarUrl = values[8] as String?,
+                    backgroundFilterId = values[7] as String?,
+                    displayName = values[8] as String?,
+                    avatarUrl = values[9] as String?,
                 )
             }.collect { rtm.transaction { repository.save(1, it) } }
         }
@@ -73,6 +77,7 @@ class AccountStore(
         syncBatchToken.value = null
         accessToken.value = null
         filterId.value = null
+        backgroundFilterId.value = null
         displayName.value = null
         avatarUrl.value = null
     }
