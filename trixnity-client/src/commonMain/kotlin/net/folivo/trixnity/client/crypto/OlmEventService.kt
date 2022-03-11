@@ -228,7 +228,7 @@ class OlmEventService internal constructor(
                                     )
                                 )
                             )
-                        )
+                        ).getOrThrow()
                     } catch (sendError: Throwable) {
                         log.warn(sendError) { "could not send m.dummy to $senderId ($senderDeviceId)" }
                     }
@@ -343,7 +343,7 @@ class OlmEventService internal constructor(
                 if (deviceEvents.isEmpty()) null
                 else user to deviceEvents
             }.toMap()
-            if (eventsToSend.isNotEmpty()) api.users.sendToDevice(eventsToSend)
+            if (eventsToSend.isNotEmpty()) api.users.sendToDevice(eventsToSend).getOrThrow()
         }
 
         val serializer = json.serializersModule.getContextual(MegolmEvent::class)

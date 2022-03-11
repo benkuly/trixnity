@@ -2,21 +2,17 @@ package net.folivo.trixnity.core.serialization.m.room.message
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
-import net.folivo.trixnity.core.serialization.events.createMessageEventContentSerializersModule
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MessageEventContentSerializerTest {
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        serializersModule = createMessageEventContentSerializersModule()
-    }
+    private val json = createMatrixJson()
 
     @Test
     fun shouldSerialize() {

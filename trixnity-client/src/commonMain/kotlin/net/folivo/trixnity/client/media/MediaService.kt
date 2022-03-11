@@ -6,12 +6,14 @@ import io.ktor.http.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.UploadMedia
+import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
@@ -45,7 +47,7 @@ class MediaService(
                         store.media.addContent(uri, mediaDownload)
                     }
             uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> store.media.getContent(uri)
-                ?: store.media.getUploadMedia(uri)?.mxcUri
+                ?: store.media.getUploadCache(uri)?.mxcUri
                     ?.let { store.media.getContent(it) }
                 ?: throw IllegalArgumentException("cache uri $uri does not exists")
             else -> throw IllegalArgumentException("uri $uri is no valid cache or mxc uri")
@@ -81,7 +83,7 @@ class MediaService(
         method: ThumbnailResizingMethod = CROP,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): Result<ByteArray> = kotlin.runCatching {
-        val thumbnailUrl = "$mxcUri/${width}x$height/${method.value}"
+        val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         store.media.getContent(thumbnailUrl)
             ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress)
                 .getOrThrow().content.toByteArray()
@@ -93,7 +95,7 @@ class MediaService(
     suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             store.media.addContent(cacheUri, content)
-            store.media.updateUploadMedia(cacheUri) { UploadMedia(cacheUri, contentType = contentType.toString()) }
+            store.media.updateUploadCache(cacheUri) { UploadCache(cacheUri, contentType = contentType.toString()) }
         }
     }
 
@@ -158,7 +160,7 @@ class MediaService(
     ): Result<String> {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 
-        val uploadMediaCache = store.media.getUploadMedia(cacheUri)
+        val uploadMediaCache = store.media.getUploadCache(cacheUri)
         val cachedMxcUri = uploadMediaCache?.mxcUri
 
         return if (cachedMxcUri == null) {
@@ -174,7 +176,7 @@ class MediaService(
             ).map {
                 it.contentUri.also { mxcUri ->
                     store.media.changeUri(cacheUri, mxcUri)
-                    store.media.updateUploadMedia(cacheUri) { it?.copy(mxcUri = mxcUri) }
+                    store.media.updateUploadCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
                 }
             }
         } else Result.success(cachedMxcUri)

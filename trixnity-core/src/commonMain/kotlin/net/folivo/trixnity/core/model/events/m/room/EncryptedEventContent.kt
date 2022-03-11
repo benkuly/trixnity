@@ -13,10 +13,10 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroomencrypted">matrix spec</a>
@@ -40,9 +40,10 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         override val sessionId: String,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null,
+    ) : EncryptedEventContent() {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
-    ) : EncryptedEventContent()
+    }
 
     @Serializable
     data class OlmEncryptedEventContent(
@@ -55,10 +56,11 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         @SerialName("session_id")
         override val sessionId: String? = null,
         @SerialName("m.relates_to")
-        override val relatesTo: RelatesTo? = null,
+        override val relatesTo: RelatesTo? = null
+    ) : EncryptedEventContent() {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
-    ) : EncryptedEventContent() {
+
         @Serializable
         data class CiphertextInfo(
             @SerialName("body")
@@ -86,7 +88,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
     @Serializable
     data class UnknownEncryptedEventContent(
         @SerialName("ciphertext")
-        val ciphertext: JsonElement,
+        val ciphertext: JsonElement? = null,
         @SerialName("sender_key")
         override val senderKey: Curve25519Key,
         @SerialName("device_id")
@@ -96,7 +98,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null,
         @SerialName("algorithm")
-        override val algorithm: Unknown
+        override val algorithm: Unknown,
     ) : EncryptedEventContent()
 }
 
@@ -110,55 +112,34 @@ object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
         return when (decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
             jsonObj["algorithm"] ?: JsonPrimitive("unknown")
         )) {
-            Olm ->
-                decoder.json.decodeFromJsonElement<EncryptedEventContent.OlmEncryptedEventContent>(jsonObj)
-            Megolm ->
-                decoder.json.decodeFromJsonElement<EncryptedEventContent.MegolmEncryptedEventContent>(jsonObj)
-            else ->
-                decoder.json.decodeFromJsonElement<EncryptedEventContent.UnknownEncryptedEventContent>(jsonObj)
+            Olm -> decoder.json.decodeFromJsonElement<OlmEncryptedEventContent>(jsonObj)
+            Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedEventContent>(jsonObj)
+            else -> decoder.json.decodeFromJsonElement<UnknownEncryptedEventContent>(jsonObj)
         }
     }
 
     override fun serialize(encoder: Encoder, value: EncryptedEventContent) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
-            is EncryptedEventContent.OlmEncryptedEventContent ->
-                encoder.json.encodeToJsonElement(
-                    AddFieldsSerializer(OlmEncryptedEventContentSerializer, "algorithm" to Olm.name), value
-                )
-            is EncryptedEventContent.MegolmEncryptedEventContent ->
-                encoder.json.encodeToJsonElement(
-                    AddFieldsSerializer(MegolmEncryptedEventContentSerializer, "algorithm" to Megolm.name), value
-                )
-            is EncryptedEventContent.UnknownEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
+            is OlmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
+            is MegolmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
+            is UnknownEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
         }
         encoder.encodeJsonElement(jsonElement)
     }
 }
 
-object MegolmEncryptedEventContentSerializer :
-    AddFieldsSerializer<EncryptedEventContent.MegolmEncryptedEventContent>(
-        EncryptedEventContent.MegolmEncryptedEventContent.serializer(),
-        "algorithm" to Megolm.name
-    )
-
-object OlmEncryptedEventContentSerializer :
-    AddFieldsSerializer<EncryptedEventContent.OlmEncryptedEventContent>(
-        EncryptedEventContent.OlmEncryptedEventContent.serializer(),
-        "algorithm" to Olm.name
-    )
-
 object OlmMessageTypeSerializer :
-    KSerializer<EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType> {
+    KSerializer<OlmEncryptedEventContent.CiphertextInfo.OlmMessageType> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("OlmMessageTypeSerializer", PrimitiveKind.INT)
 
-    override fun deserialize(decoder: Decoder): EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType {
-        return EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.of(decoder.decodeInt())
+    override fun deserialize(decoder: Decoder): OlmEncryptedEventContent.CiphertextInfo.OlmMessageType {
+        return OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.of(decoder.decodeInt())
     }
 
     override fun serialize(
         encoder: Encoder,
-        value: EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType
+        value: OlmEncryptedEventContent.CiphertextInfo.OlmMessageType
     ) {
         encoder.encodeInt(value.value)
     }

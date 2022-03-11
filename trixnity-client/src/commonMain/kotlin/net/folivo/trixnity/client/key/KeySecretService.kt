@@ -5,6 +5,7 @@ import io.ktor.util.*
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
@@ -44,6 +45,7 @@ class KeySecretService(
     private val store: Store,
     private val olm: OlmService,
     private val api: MatrixClientServerApiClient,
+    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
 ) {
     @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
@@ -81,23 +83,26 @@ class KeySecretService(
 
     internal suspend fun processIncomingKeyRequests() {
         incomingSecretKeyRequests.value.forEach { request ->
-            val senderTrustLevel = store.keys.getDeviceKey(ownUserId, request.requestingDeviceId)?.trustLevel
+            val requestingDeviceId = request.requestingDeviceId
+            val senderTrustLevel = store.keys.getDeviceKey(ownUserId, requestingDeviceId)?.trustLevel
             if (senderTrustLevel is CrossSigned && senderTrustLevel.verified || senderTrustLevel is Valid && senderTrustLevel.verified) {
                 val requestedSecret = request.name
                     ?.let { AllowedSecretType.ofId(it) }
                     ?.let { store.keys.secrets.value[it] }
                 if (requestedSecret != null) {
-                    log.info { "send incoming key request answer (${request.name}) to device ${request.requestingDeviceId}" }
+                    log.info { "send incoming key request answer (${request.name}) to device $requestingDeviceId" }
                     api.users.sendToDevice(
                         mapOf(
                             ownUserId to mapOf(
-                                request.requestingDeviceId to SecretKeySendEventContent(
-                                    request.requestId, requestedSecret.decryptedPrivateKey
+                                requestingDeviceId to olm.events.encryptOlm(
+                                    SecretKeySendEventContent(
+                                        request.requestId, requestedSecret.decryptedPrivateKey
+                                    ), ownUserId, requestingDeviceId
                                 )
                             )
                         )
                     ).getOrThrow()
-                } else log.info { "got a key request (${request.name}) from ${request.requestingDeviceId}, but we do not have that secret cached" }
+                } else log.info { "got a key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }
             }
             incomingSecretKeyRequests.update { it - request }
         }
@@ -233,7 +238,7 @@ class KeySecretService(
     }
 
     internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryInfiniteWhenSyncIs(
             SyncApiClient.SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
             scope = this

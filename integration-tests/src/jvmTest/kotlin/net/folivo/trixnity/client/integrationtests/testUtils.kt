@@ -15,7 +15,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.authentication.RegisterResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
 
@@ -33,9 +33,9 @@ suspend fun MatrixClientServerApiClient.register(
         deviceId = deviceId,
         accountType = AccountType.USER,
     ).getOrThrow()
-    registerStep.shouldBeInstanceOf<UIA.UIAStep<RegisterResponse>>()
+    registerStep.shouldBeInstanceOf<UIA.UIAStep<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
-    registerResult.shouldBeInstanceOf<UIA.UIASuccess<RegisterResponse>>()
+    registerResult.shouldBeInstanceOf<UIA.UIASuccess<Register.Response>>()
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)

@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
-import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroommessage">matrix spec</a>
@@ -32,6 +32,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.notice"
+
         companion object {
             const val type = "m.notice"
         }
@@ -47,6 +50,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.text"
+
         companion object {
             const val type = "m.text"
         }
@@ -62,6 +68,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.emote"
+
         companion object {
             const val type = "m.emote"
         }
@@ -78,6 +87,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.image"
+
         companion object {
             const val type = "m.image"
         }
@@ -95,6 +107,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.file"
+
         companion object {
             const val type = "m.file"
         }
@@ -111,6 +126,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.audio"
+
         companion object {
             const val type = "m.audio"
         }
@@ -127,6 +145,9 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent() {
+        @SerialName("msgtype")
+        val type = "m.video"
+
         companion object {
             const val type = "m.video"
         }
@@ -137,9 +158,12 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("from_device") override val fromDevice: String,
         @SerialName("to") val to: UserId,
         @SerialName("methods") override val methods: Set<VerificationMethod>,
-        @SerialName("body") override val body: String = "Attempting verification request. (m.key.verification.request) Apparently your client doesn't support this.",
+        @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
     ) : RoomMessageEventContent(), VerificationRequest {
+        @SerialName("msgtype")
+        val type = "m.key.verification.request"
+
         companion object {
             const val type = "m.key.verification.request"
         }
@@ -161,29 +185,22 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return when (val type = jsonObj["msgtype"]?.jsonPrimitive?.content) {
-            RoomMessageEventContent.NoticeMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(NoticeMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.TextMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(TextMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.EmoteMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(EmoteMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.ImageMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(ImageMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.FileMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(FileMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.AudioMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(AudioMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.VideoMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(VideoMessageEventContentSerializer, jsonObj)
-            RoomMessageEventContent.VerificationRequestMessageEventContent.type ->
-                decoder.json.decodeFromJsonElement(VerificationRequestMessageEventContentSerializer, jsonObj)
+            NoticeMessageEventContent.type -> decoder.json.decodeFromJsonElement<NoticeMessageEventContent>(jsonObj)
+            TextMessageEventContent.type -> decoder.json.decodeFromJsonElement<TextMessageEventContent>(jsonObj)
+            EmoteMessageEventContent.type -> decoder.json.decodeFromJsonElement<EmoteMessageEventContent>(jsonObj)
+            ImageMessageEventContent.type -> decoder.json.decodeFromJsonElement<ImageMessageEventContent>(jsonObj)
+            FileMessageEventContent.type -> decoder.json.decodeFromJsonElement<FileMessageEventContent>(jsonObj)
+            AudioMessageEventContent.type -> decoder.json.decodeFromJsonElement<AudioMessageEventContent>(jsonObj)
+            VideoMessageEventContent.type -> decoder.json.decodeFromJsonElement<VideoMessageEventContent>(jsonObj)
+            VerificationRequestMessageEventContent.type ->
+                decoder.json.decodeFromJsonElement<VerificationRequestMessageEventContent>(jsonObj)
             else -> {
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 val relatesTo: RelatesTo? =
                     jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
                 requireNotNull(type)
                 requireNotNull(body)
-                RoomMessageEventContent.UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
+                UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
             }
         }
     }
@@ -191,72 +208,16 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     override fun serialize(encoder: Encoder, value: RoomMessageEventContent) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
-            is RoomMessageEventContent.NoticeMessageEventContent ->
-                encoder.json.encodeToJsonElement(NoticeMessageEventContentSerializer, value)
-            is RoomMessageEventContent.TextMessageEventContent ->
-                encoder.json.encodeToJsonElement(TextMessageEventContentSerializer, value)
-            is RoomMessageEventContent.EmoteMessageEventContent ->
-                encoder.json.encodeToJsonElement(EmoteMessageEventContentSerializer, value)
-            is RoomMessageEventContent.ImageMessageEventContent ->
-                encoder.json.encodeToJsonElement(ImageMessageEventContentSerializer, value)
-            is RoomMessageEventContent.FileMessageEventContent ->
-                encoder.json.encodeToJsonElement(FileMessageEventContentSerializer, value)
-            is RoomMessageEventContent.AudioMessageEventContent ->
-                encoder.json.encodeToJsonElement(AudioMessageEventContentSerializer, value)
-            is RoomMessageEventContent.VideoMessageEventContent ->
-                encoder.json.encodeToJsonElement(VideoMessageEventContentSerializer, value)
-            is RoomMessageEventContent.VerificationRequestMessageEventContent ->
-                encoder.json.encodeToJsonElement(VerificationRequestMessageEventContentSerializer, value)
-            is RoomMessageEventContent.UnknownRoomMessageEventContent -> value.raw
+            is NoticeMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is TextMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is EmoteMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is ImageMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is FileMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is AudioMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is VideoMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is VerificationRequestMessageEventContent -> encoder.json.encodeToJsonElement(value)
+            is UnknownRoomMessageEventContent -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
     }
 }
-
-object NoticeMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.NoticeMessageEventContent>(
-        RoomMessageEventContent.NoticeMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.NoticeMessageEventContent.type
-    )
-
-object TextMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.TextMessageEventContent>(
-        RoomMessageEventContent.TextMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.TextMessageEventContent.type
-    )
-
-object EmoteMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.EmoteMessageEventContent>(
-        RoomMessageEventContent.EmoteMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.EmoteMessageEventContent.type
-    )
-
-object ImageMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.ImageMessageEventContent>(
-        RoomMessageEventContent.ImageMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.ImageMessageEventContent.type
-    )
-
-object FileMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.FileMessageEventContent>(
-        RoomMessageEventContent.FileMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.FileMessageEventContent.type
-    )
-
-object AudioMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.AudioMessageEventContent>(
-        RoomMessageEventContent.AudioMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.AudioMessageEventContent.type
-    )
-
-object VideoMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.VideoMessageEventContent>(
-        RoomMessageEventContent.VideoMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.VideoMessageEventContent.type
-    )
-
-object VerificationRequestMessageEventContentSerializer :
-    AddFieldsSerializer<RoomMessageEventContent.VerificationRequestMessageEventContent>(
-        RoomMessageEventContent.VerificationRequestMessageEventContent.serializer(),
-        "msgtype" to RoomMessageEventContent.VerificationRequestMessageEventContent.type
-    )

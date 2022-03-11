@@ -12,8 +12,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmService.DecryptedOlmEvent
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.EventSubscriber
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
@@ -23,9 +25,12 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.minutes
 
 class ActiveDeviceVerificationTest : ShouldSpec({
@@ -36,7 +41,9 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     val bob = UserId("bob", "server")
     val bobDevice = "BBBBBB"
 
-    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
+    lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var api: MatrixClientServerApiClient
+    val json = createMatrixJson()
     val olm = mockk<OlmService>(relaxed = true)
 
     lateinit var cut: ActiveDeviceVerification
@@ -44,8 +51,10 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     lateinit var encryptedStepFlow: MutableSharedFlow<DecryptedOlmEvent>
 
     beforeTest {
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        api = newApi
         encryptedStepFlow = MutableSharedFlow()
-        coEvery { api.json } returns mockk()
         coEvery { olm.decryptedOlmEvents } returns encryptedStepFlow
     }
     afterTest {
@@ -70,10 +79,17 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     should("handle verification step") {
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
-        coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }
-            .coAnswers { lambda<EventSubscriber<VerificationStep>>().captured.invoke(ToDeviceEvent(cancelEvent, bob)) }
+        apiConfig.endpoints {
+            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                Sync.Response(
+                    nextBatch = "nextBatch",
+                    toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(cancelEvent, bob)))
+                )
+            }
+        }
         createCut()
         cut.startLifecycle(this)
+        api.sync.startOnce().getOrThrow()
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
@@ -86,42 +102,118 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
     should("send verification step and encrypt it") {
-        val encrypted = mockk<EncryptedEventContent.OlmEncryptedEventContent>()
-        coEvery { api.users.sendToDevice<VerificationCancelEventContent>(any()) } returns Result.success(Unit)
+        val encrypted = EncryptedEventContent.OlmEncryptedEventContent(
+            ciphertext = mapOf(),
+            senderKey = Key.Curve25519Key(null, "key")
+        )
         coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
+
+        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                json,
+                SendToDevice("m.room.encrypted", "txn"),
+                requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                skipUrlCheck = true
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+        }
+
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
         coVerify {
             olm.events.encryptOlm(any(), bob, bobDevice)
-            api.users.sendToDevice(mapOf(bob to mapOf(bobDevice to encrypted)), any(), any())
         }
+        cut.state.first { it is ActiveVerificationState.Cancel }
+        sendToDeviceEvents shouldBe mapOf(bob to mapOf(bobDevice to encrypted))
     }
     should("send verification step and use unencrypted when encrypt failed") {
-        coEvery { api.users.sendToDevice<VerificationCancelEventContent>(any()) } returns Result.success(Unit)
+        var sendToDeviceEvents: Map<UserId, Map<String, VerificationCancelEventContent>>? = null
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                json,
+                SendToDevice("m.key.verification.cancel", "txn"),
+                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
+                skipUrlCheck = true
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+        }
         coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
-        coVerify {
-            api.users.sendToDevice<VerificationCancelEventContent>(any(), any(), any())
-        }
+        sendToDeviceEvents shouldBe mapOf(
+            bob to mapOf(
+                bobDevice to VerificationCancelEventContent(User, "user cancelled verification", null, "t")
+            )
+        )
     }
     should("stop lifecycle, when cancelled") {
-        coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }.coAnswers {
-            lambda<EventSubscriber<VerificationStep>>().captured.invoke(
-                ToDeviceEvent(VerificationCancelEventContent(User, "u", null, "t"), bob)
-            )
+        apiConfig.endpoints {
+            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                Sync.Response(
+                    nextBatch = "nextBatch",
+                    toDevice = Sync.Response.ToDevice(
+                        listOf(
+                            ToDeviceEvent(
+                                VerificationCancelEventContent(User, "u", null, "t"), bob
+                            )
+                        )
+                    )
+                )
+            }
         }
         createCut()
         cut.startLifecycle(this)
+        api.sync.startOnce().getOrThrow()
     }
     should("stop lifecycle, when timed out") {
+        val encrypted = EncryptedEventContent.OlmEncryptedEventContent(
+            ciphertext = mapOf(),
+            senderKey = Key.Curve25519Key(null, "key")
+        )
+        coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                json,
+                SendToDevice("m.room.encrypted", "txn"),
+                requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                skipUrlCheck = true
+            ) { }
+        }
         createCut(Clock.System.now() - 9.9.minutes)
         cut.startLifecycle(this)
     }
     should("cancel request from other devices") {
-        coEvery { api.users.sendToDevice<VerificationCancelEventContent>(any()) } returns Result.success(Unit)
+        var sendToDeviceEvents: Map<UserId, Map<String, VerificationCancelEventContent>>? = null
+        val readyEvent = VerificationReadyEventContent("ALICE_1", setOf(Sas), null, "t")
+        apiConfig.endpoints {
+            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                Sync.Response(
+                    nextBatch = "nextBatch",
+                    toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(readyEvent, alice)))
+                )
+            }
+            matrixJsonEndpoint(
+                json,
+                SendToDevice("m.key.verification.cancel", "txn"),
+                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
+                skipUrlCheck = true
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+            matrixJsonEndpoint(
+                json,
+                SendToDevice("m.key.verification.cancel", "txn"),
+                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
+                skipUrlCheck = true
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+        }
         coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         cut = ActiveDeviceVerification(
             request = VerificationRequestEventContent(
@@ -142,24 +234,25 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             store = mockk(),
             key = mockk(),
         )
-        val readyEvent = VerificationReadyEventContent("ALICE_1", setOf(Sas), null, "t")
-        coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }
-            .coAnswers { lambda<EventSubscriber<VerificationStep>>().captured.invoke(ToDeviceEvent(readyEvent, alice)) }
         cut.startLifecycle(this)
+        api.sync.startOnce().getOrThrow()
         cut.state.first { it is ActiveVerificationState.Ready }
 
         cut.theirDeviceId shouldBe "ALICE_1"
-        coVerify {
-            api.users.sendToDevice(
-                mapOf(
-                    alice to mapOf(
-                        "ALICE_2" to VerificationCancelEventContent(
-                            Accepted, "accepted by other device", null, "t"
-                        )
-                    )
-                ), any()
+        sendToDeviceEvents shouldBe mapOf(
+            alice to mapOf(
+                "ALICE_2" to VerificationCancelEventContent(
+                    Accepted, "accepted by other device", null, "t"
+                )
             )
-        }
+        )
         cut.cancel()
+        sendToDeviceEvents shouldBe mapOf(
+            alice to mapOf(
+                "ALICE_1" to VerificationCancelEventContent(
+                    User, "user cancelled verification", null, "t"
+                )
+            )
+        )
     }
 })

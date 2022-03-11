@@ -68,9 +68,10 @@ class ActiveUserVerification(
         val sendContent = try {
             possiblyEncryptEvent(step, roomId, store, olm, user)
         } catch (error: Exception) {
+            log.debug { "could not encrypt verification step. will be send unencrypted." }
             step
         }
-        api.rooms.sendMessageEvent(roomId, sendContent)
+        api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
     }
 
     private sealed interface VerificationStepSearchResult {

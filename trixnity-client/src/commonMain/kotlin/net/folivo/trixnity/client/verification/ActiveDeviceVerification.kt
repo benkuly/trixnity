@@ -50,12 +50,14 @@ class ActiveDeviceVerification(
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
         requireNotNull(theirDeviceId) { "their device id should never be null" }
-        val sendContent = try {
-            olm.events.encryptOlm(step, theirUserId, theirDeviceId)
+        try {
+            api.users.sendToDevice(
+                mapOf(theirUserId to mapOf(theirDeviceId to olm.events.encryptOlm(step, theirUserId, theirDeviceId)))
+            )
         } catch (error: Exception) {
-            step
-        }
-        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to sendContent)))
+            log.debug { "could not encrypt verification step. will be send unencrypted." }
+            api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to step)))
+        }.getOrThrow()
     }
 
     override suspend fun lifecycle(scope: CoroutineScope) {
@@ -106,7 +108,7 @@ class ActiveDeviceVerification(
                             } catch (olmError: OlmLibraryException) {
                                 cancelEvent
                             }
-                        }))
+                        })).getOrThrow()
                     } catch (error: Throwable) {
                         log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }
                     }

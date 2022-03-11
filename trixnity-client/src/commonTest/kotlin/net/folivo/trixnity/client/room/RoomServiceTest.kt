@@ -11,24 +11,34 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
+import kotlinx.serialization.KSerializer
+import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.STARTED
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
+import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -47,8 +57,10 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -59,18 +71,22 @@ class RoomServiceTest : ShouldSpec({
     val room = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
+    lateinit var apiConfig: PortableMockEngineConfig
     val users = mockk<UserService>(relaxUnitFun = true)
     val olmService = mockk<OlmService>()
     val key = mockk<KeyService>()
+    val json = createMatrixJson()
     val media = mockk<MediaService>()
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
     lateinit var cut: RoomService
 
     beforeTest {
-        every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(alice, store, api, olmService, key, users, media)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = RoomService(alice, store, api, olmService, key, users, media, currentSyncState)
     }
 
     afterTest {
@@ -122,11 +138,11 @@ class RoomServiceTest : ShouldSpec({
     context(RoomService::setLastMessageEvent.name) {
         should("set last message event") {
             cut.handleSyncResponse(
-                SyncResponse(
-                    room = SyncResponse.Rooms(
+                Sync.Response(
+                    room = Sync.Response.Rooms(
                         join = mapOf(
-                            room to SyncResponse.Rooms.JoinedRoom(
-                                timeline = SyncResponse.Rooms.Timeline(
+                            room to Sync.Response.Rooms.JoinedRoom(
+                                timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(
                                         StateEvent(
                                             CreateEventContent(UserId("user1", "localhost")),
@@ -612,6 +628,11 @@ class RoomServiceTest : ShouldSpec({
         }
     }
     context(RoomService::processOutboxMessages.name) {
+        @Suppress("UNCHECKED_CAST")
+        val roomMessageSerializer = RoomMessageEventContentSerializer as KSerializer<MessageEventContent>
+
+        @Suppress("UNCHECKED_CAST")
+        val encryptedMessageSerializer = EncryptedEventContentSerializer as KSerializer<MessageEventContent>
         should("wait until connected, upload media, send message and mark outbox message as sent") {
             store.room.update(room) { simpleRoom }
             val mxcUrl = "mxc://dino"
@@ -626,21 +647,37 @@ class RoomServiceTest : ShouldSpec({
             store.roomOutboxMessage.update(message1.transactionId) { message1 }
             store.roomOutboxMessage.update(message2.transactionId) { message2 }
             coEvery { media.uploadMedia(any(), any()) } returns Result.success(mxcUrl)
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns Result.success(EventId("event"))
-            val syncState = MutableStateFlow(STARTED)
-            coEvery { api.sync.currentSyncState } returns syncState
+            var sendMessageEventCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendMessageEvent(room.e(), "m.room.message", "transaction1"),
+                    requestSerializer = roomMessageSerializer
+                ) {
+                    it shouldBe ImageMessageEventContent("hi.png", url = mxcUrl)
+                    SendEventResponse(EventId("event"))
+                }
+                matrixJsonEndpoint(
+                    json,
+                    SendMessageEvent(room.e(), "m.room.message", "transaction2"),
+                    requestSerializer = roomMessageSerializer
+                ) {
+                    it shouldBe TextMessageEventContent("hi")
+                    sendMessageEventCalled = true
+                    SendEventResponse(EventId("event"))
+                }
+            }
+            currentSyncState.value = STARTED
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
             until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
-            syncState.value = RUNNING
+            currentSyncState.value = RUNNING
 
             coVerify(timeout = 5_000) {
                 media.uploadMedia(cacheUrl, mediaUploadProgress)
-                api.rooms.sendMessageEvent(room, ImageMessageEventContent("hi.png", url = mxcUrl), "transaction1")
-                api.rooms.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction2")
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
@@ -648,11 +685,11 @@ class RoomServiceTest : ShouldSpec({
                 outboxMessages[0].sentAt shouldNotBe null
                 outboxMessages[1].sentAt shouldNotBe null
             }
+            sendMessageEventCalled shouldBe true
             job.cancel()
         }
         should("encrypt events in encrypted rooms") {
-            val syncState = MutableStateFlow(RUNNING)
-            coEvery { api.sync.currentSyncState } returns syncState
+            currentSyncState.value = RUNNING
             store.room.update(room) { simpleRoom.copy(encryptionAlgorithm = Megolm, membersLoaded = true) }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.update(message.transactionId) { message }
@@ -666,16 +703,25 @@ class RoomServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             store.roomState.update(encryptionState)
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns Result.success(EventId("event"))
-            val megolmEventContent = mockk<MegolmEncryptedEventContent>()
+            val megolmEventContent =
+                MegolmEncryptedEventContent("cipher", Key.Curve25519Key(null, "key"), "device", "session")
+            var sendMessageEventCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendMessageEvent(room.e(), "m.room.encrypted", "transaction"),
+                    requestSerializer = encryptedMessageSerializer
+                ) {
+                    it shouldBe megolmEventContent
+                    sendMessageEventCalled = true
+                    SendEventResponse(EventId("event"))
+                }
+            }
             coEvery { olmService.events.encryptMegolm(any(), any(), any()) } returns megolmEventContent
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(flowOf())
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
             coVerify(timeout = 5_000) {
-                api.rooms.sendMessageEvent(room, megolmEventContent, "transaction")
                 olmService.events.encryptMegolm(TextMessageEventContent("hi"), room, EncryptionEventContent())
                 users.loadMembers(room)
             }
@@ -684,23 +730,33 @@ class RoomServiceTest : ShouldSpec({
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
             }
+            sendMessageEventCalled shouldBe true
             job.cancel()
         }
         should("retry on sending error") {
             store.room.update(room) { simpleRoom }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.update(message.transactionId) { message }
-            coEvery {
-                api.rooms.sendMessageEvent(any(), any(), any(), any())
-            } returns Result.failure(IllegalArgumentException("wtf")) andThen Result.success(EventId("event"))
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                    requestSerializer = roomMessageSerializer
+                ) {
+                    throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                }
+                matrixJsonEndpoint(
+                    json,
+                    SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                    requestSerializer = roomMessageSerializer
+                ) {
+                    SendEventResponse(EventId("event"))
+                }
+            }
+            currentSyncState.value = RUNNING
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            val roomsApi = api.rooms
-            coVerify(exactly = 2, timeout = 5_000) {
-                roomsApi.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
-            }
             retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1
@@ -713,16 +769,21 @@ class RoomServiceTest : ShouldSpec({
             store.room.update(room) { simpleRoom }
             val message = RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), null)
             store.roomOutboxMessage.update(message.transactionId) { message }
-            coEvery { api.rooms.sendMessageEvent(any(), any(), any(), any()) } returns
-                    Result.failure(IllegalArgumentException("wtf"))
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING).asStateFlow()
+            apiConfig.endpoints {
+                repeat(3) {
+                    matrixJsonEndpoint(
+                        json,
+                        SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                        requestSerializer = roomMessageSerializer
+                    ) {
+                        throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                    }
+                }
+            }
+            currentSyncState.value = RUNNING
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
-            val roomsApi = api.rooms
-            coVerify(exactly = 3, timeout = 5_000) {
-                roomsApi.sendMessageEvent(room, TextMessageEventContent("hi"), "transaction")
-            }
             retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
                 val outboxMessages = store.roomOutboxMessage.getAll().value
                 outboxMessages shouldHaveSize 1

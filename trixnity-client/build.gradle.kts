@@ -64,16 +64,22 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                api(project(":trixnity-clientserverapi-client"))
+                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 implementation(project(":trixnity-olm"))
+
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
+
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
+
                 implementation("com.benasher44:uuid:${Versions.uuid}")
+
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
@@ -102,8 +108,11 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(project(":test-utils"))
+
                 implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")

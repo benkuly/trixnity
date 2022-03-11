@@ -9,12 +9,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -32,6 +34,8 @@ class RoomServiceDisplayNameTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>()
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
     lateinit var cut: RoomService
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
@@ -43,7 +47,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(UserId("alice", "server"), store, api, mockk(), mockk(), mockk(), mockk())
+        cut = RoomService(UserId("alice", "server"), store, api, mockk(), mockk(), mockk(), mockk(), currentSyncState)
     }
 
     afterTest {

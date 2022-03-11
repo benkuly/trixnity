@@ -12,7 +12,11 @@ import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.*
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.engine.mock.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
@@ -23,9 +27,10 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import kotlinx.datetime.minus
 import kotlinx.serialization.ExperimentalSerializationApi
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeysResponse
+import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
+import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -33,6 +38,7 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
@@ -48,6 +54,8 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -68,8 +76,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
 
-    val api = mockk<MatrixClientServerApiClient>()
     val signService = mockk<OlmSignService>()
+    lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: OlmEventService
 
@@ -84,6 +92,20 @@ private val body: ShouldSpec.() -> Unit = {
         json.serializersModule.getContextual(MegolmEvent::class)
     requireNotNull(olmEventSerializer)
     requireNotNull(megolmEventSerializer)
+
+    fun MockEngineConfig.claimKeysEndpoint() {
+        bobAccount.generateOneTimeKeys(1)
+        val bobsFakeSignedCurveKey =
+            Key.SignedCurve25519Key(bobDeviceId, bobAccount.oneTimeKeys.curve25519.values.first(), mapOf())
+        matrixJsonEndpoint(json, ClaimKeys()) {
+            it.oneTimeKeys shouldBe (mapOf(bob to mapOf(bobDeviceId to KeyAlgorithm.SignedCurve25519)))
+            ClaimKeys.Response(
+                emptyMap(),
+                mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
+            )
+        }
+        bobAccount.markKeysAsPublished()
+    }
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
@@ -102,20 +124,10 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
         }
-        bobAccount.generateOneTimeKeys(1)
-        val bobsFakeSignedCurveKey =
-            Key.SignedCurve25519Key(bobDeviceId, bobAccount.oneTimeKeys.curve25519.values.first(), mapOf())
-        coEvery {
-            api.keys.claimKeys(mapOf(bob to mapOf(bobDeviceId to KeyAlgorithm.SignedCurve25519)))
-        } returns Result.success(
-            ClaimKeysResponse(
-                emptyMap(),
-                mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
-            )
-        )
-        bobAccount.markKeysAsPublished()
         coEvery { signService.verify(any<Key.SignedCurve25519Key>(), any()) } returns VerifyResult.Valid
-        coEvery { api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any()) } returns Result.success(Unit)
+
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
 
         cut = OlmEventService(
             "",
@@ -156,6 +168,11 @@ private val body: ShouldSpec.() -> Unit = {
             recipientKeys = keysOf(bobEdKey.copy(keyId = null))
         )
         context("without stored session") {
+            beforeTest {
+                apiConfig.endpoints {
+                    claimKeysEndpoint()
+                }
+            }
             should("encrypt") {
                 val encryptedMessage = cut.encryptOlm(eventContent, bob, bobDeviceId)
                 val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value]
@@ -327,6 +344,17 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("throw on ordinary message") {
+                var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SendToDevice("m.room.encrypted", "txn"),
+                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                        skipUrlCheck = true
+                    ) {
+                        sendToDeviceEvents = it.messages
+                    }
+                }
                 val encryptedMessage = freeAfter(
                     OlmSession.createOutbound(
                         bobAccount,
@@ -346,13 +374,10 @@ private val body: ShouldSpec.() -> Unit = {
                         ), bob
                     )
                 }
-                val sendToDeviceEvents = slot<Map<UserId, Map<String, OlmEncryptedEventContent>>>()
-                coVerify {
-                    api.users.sendToDevice(capture(sendToDeviceEvents), any(), any())
-                }
 
-                val ciphertext =
-                    sendToDeviceEvents.captured[bob]?.get(bobDeviceId)?.ciphertext?.get(bobCurveKey.value)?.body
+                val encryptedEventContent =
+                    sendToDeviceEvents?.get(bob)?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedEventContent>()
+                val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value)?.body
                 assertNotNull(ciphertext)
                 freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
                     json.decodeFromString(
@@ -573,6 +598,17 @@ private val body: ShouldSpec.() -> Unit = {
             expectedMessageCount: Int
         ) {
             should("encrypt message") {
+                var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SendToDevice("m.room.encrypted", "txn"),
+                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                        skipUrlCheck = true
+                    ) {
+                        sendToDeviceEvents = it.messages
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(bob)
                 val asyncResult = async { cut.encryptMegolm(eventContent, room, settings) }
                 store.keys.outdatedKeys.subscriptionCount.takeWhile { it == 1 }.take(1).collect()
@@ -595,13 +631,9 @@ private val body: ShouldSpec.() -> Unit = {
                         this.relatesTo shouldBe relatesTo
                     }
 
-                    val sendToDeviceEvents = slot<Map<UserId, Map<String, OlmEncryptedEventContent>>>()
-                    coVerify {
-                        api.users.sendToDevice(capture(sendToDeviceEvents), any(), any())
-                    }
-
                     val ciphertext =
-                        sendToDeviceEvents.captured[bob]?.get(bobDeviceId)?.ciphertext?.get(bobCurveKey.value)?.body
+                        sendToDeviceEvents?.get(bob)?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedEventContent>()
+                            ?.ciphertext?.get(bobCurveKey.value)?.body
                     assertNotNull(ciphertext)
                     freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
                         assertSoftly(
@@ -669,12 +701,17 @@ private val body: ShouldSpec.() -> Unit = {
                 asyncResult.isActive shouldBe true
                 store.keys.outdatedKeys.value = setOf()
                 asyncResult.await()
-
-                coVerify(exactly = 0) {
-                    api.users.sendToDevice<OlmEncryptedEventContent>(any(), any(), any())
-                }
             }
             should("wait that room members are loaded") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SendToDevice("m.room.encrypted", "txn"),
+                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                        skipUrlCheck = true
+                    ) {
+                    }
+                }
                 store.room.update(room) { Room(room, membership = JOIN, membersLoaded = false) }
                 store.room.get(room).first { it?.membersLoaded == false }
                 val cedric = UserId("cedric", "server")
@@ -706,6 +743,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         context("with stored session") {
+            beforeTest { apiConfig.endpoints { claimKeysEndpoint() } }
             context("send sessions to new devices and encrypt") {
                 beforeTest {
                     freeAfter(OlmOutboundGroupSession.create()) { session ->

@@ -35,7 +35,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
+                api("io.ktor:ktor-http:${Versions.ktor}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
@@ -48,7 +49,6 @@ kotlin {
         val mingwX64Main by getting {
             dependsOn(nativeMain)
         }
-        val jsMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

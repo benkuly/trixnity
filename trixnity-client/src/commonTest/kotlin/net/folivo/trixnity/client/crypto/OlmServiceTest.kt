@@ -25,7 +25,7 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeysResponse
+import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -81,7 +81,7 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
         beforeTest {
             coEvery {
-                api.keys.setDeviceKeys(
+                api.keys.setKeys(
                     any(),
                     any(),
                     any()
@@ -95,7 +95,7 @@ class OlmServiceTest : ShouldSpec({
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
 
-                coVerify { api.keys.setDeviceKeys(oneTimeKeys = capture(uploadedKeys)) }
+                coVerify { api.keys.setKeys(oneTimeKeys = capture(uploadedKeys)) }
                 uploadedKeys[0] shouldHaveSize 26
                 uploadedKeys[1] shouldHaveSize 26
 
@@ -163,7 +163,7 @@ class OlmServiceTest : ShouldSpec({
                     coEvery {
                         api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
                     } returns Result.success(
-                        ClaimKeysResponse(
+                        ClaimKeys.Response(
                             emptyMap(),
                             mapOf(
                                 alice to mapOf(
@@ -300,7 +300,7 @@ class OlmServiceTest : ShouldSpec({
                 coEvery {
                     api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
                 } returns Result.success(
-                    ClaimKeysResponse(
+                    ClaimKeys.Response(
                         emptyMap(),
                         mapOf(
                             alice to mapOf(

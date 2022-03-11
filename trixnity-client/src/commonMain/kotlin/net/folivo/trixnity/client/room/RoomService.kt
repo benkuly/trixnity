@@ -19,10 +19,10 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.rooms.Direction
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -51,6 +51,7 @@ class RoomService(
     private val key: KeyService,
     private val user: UserService,
     private val media: MediaService,
+    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
 ) {
@@ -80,7 +81,7 @@ class RoomService(
     }
 
     // TODO test
-    internal suspend fun handleSyncResponse(syncResponse: SyncResponse) {
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             store.room.update(roomId) { it?.copy(membership = JOIN) ?: Room(roomId = roomId, membership = JOIN) }
@@ -141,7 +142,8 @@ class RoomService(
         }
     }
 
-    private val setRoomDisplayNamesQueue = MutableStateFlow(mapOf<RoomId, RoomSummary?>())
+    private val setRoomDisplayNamesQueue =
+        MutableStateFlow(mapOf<RoomId, Sync.Response.Rooms.JoinedRoom.RoomSummary?>())
 
     internal suspend fun handleSetRoomDisplayNamesQueue() {
         setRoomDisplayNamesQueue.value.forEach { (roomId, roomSummary) ->
@@ -152,11 +154,11 @@ class RoomService(
 
     internal suspend fun setRoomDisplayName(
         roomId: RoomId,
-        roomSummary: RoomSummary?,
+        roomSummary: Sync.Response.Rooms.JoinedRoom.RoomSummary?,
     ) {
         val oldRoomSummary = store.room.get(roomId).value?.name?.summary
 
-        val mergedRoomSummary = RoomSummary(
+        val mergedRoomSummary = Sync.Response.Rooms.JoinedRoom.RoomSummary(
             heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
             joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
             invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
@@ -931,15 +933,21 @@ class RoomService(
         }
     }
 
-    internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage<*>>>) = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+    @OptIn(FlowPreview::class)
+    internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
+        currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this
         ) {
             log.info { "start sending outbox messages" }
-            outboxMessages.collect { outboxMessagesList ->
+            outboxMessages.scan(listOf<RoomOutboxMessage<*>>()) { old, new ->
+                // the flow from store.roomOutboxMessage.getAll() needs some time to get updated, when one entry is updated
+                // therefore we compare the lists and if they did not change, we do nothing (distinctUntilChanged)
+                if (old.map { it.transactionId }.toSet() != new.map { it.transactionId }.toSet()) new
+                else old
+            }.distinctUntilChanged().collect { outboxMessagesList ->
                 outboxMessagesList
                     .filter { it.sentAt == null && !it.reachedMaxRetryCount }
                     .forEach { outboxMessage ->
@@ -957,14 +965,14 @@ class RoomService(
                                 }
                                 possiblyEncryptEvent(uploadedContent, roomId, store, olm, user)
                             }
-                        log.trace { "send to $roomId -> $content" }
+                        log.trace { "send to $roomId : $content" }
                         val eventId =
                             api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId).getOrThrow()
                         if (setOwnMessagesAsFullyRead) {
                             api.rooms.setReadMarkers(roomId, eventId).getOrThrow()
                         }
                         store.roomOutboxMessage.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }
-                        log.debug { "sent message: $content" }
+                        log.debug { "sent message with transactionId '${outboxMessage.transactionId}' and content $content" }
                     }
             }
         }

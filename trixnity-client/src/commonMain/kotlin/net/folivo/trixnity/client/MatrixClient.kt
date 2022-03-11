@@ -5,6 +5,7 @@ import io.ktor.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.coroutines.launch
@@ -23,14 +24,12 @@ import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientEventContentSerializerMappings
-import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientJson
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
-import net.folivo.trixnity.clientserverapi.model.users.EventFilter
 import net.folivo.trixnity.clientserverapi.model.users.Filters
-import net.folivo.trixnity.clientserverapi.model.users.RoomFilter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -58,6 +57,7 @@ class MatrixClient private constructor(
     val media: MediaService
     val verification: VerificationService
     val key: KeyService
+    val syncState = api.sync.currentSyncState
 
     init {
         olm = OlmService(
@@ -75,6 +75,7 @@ class MatrixClient private constructor(
         user = UserService(
             api = api,
             store = store,
+            currentSyncState = syncState,
         )
         key = KeyService(
             olmPickleKey = olmPickleKey,
@@ -83,6 +84,7 @@ class MatrixClient private constructor(
             store = store,
             api = api,
             olm = olm,
+            currentSyncState = syncState,
         )
         room = RoomService(
             ownUserId = userId,
@@ -92,6 +94,7 @@ class MatrixClient private constructor(
             key = key,
             user = user,
             media = media,
+            currentSyncState = syncState,
             setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
         )
@@ -104,6 +107,7 @@ class MatrixClient private constructor(
             roomService = room,
             userService = user,
             keyService = key,
+            currentSyncState = syncState,
         )
 
     }
@@ -117,7 +121,7 @@ class MatrixClient private constructor(
             deviceId: String? = null,
             initialDeviceDisplayName: String? = null,
             storeFactory: StoreFactory,
-            baseHttpClient: HttpClient = HttpClient(),
+            httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
@@ -126,7 +130,7 @@ class MatrixClient private constructor(
             loginWith(
                 baseUrl = baseUrl,
                 storeFactory = storeFactory,
-                baseHttpClient = baseHttpClient,
+                httpClientFactory = httpClientFactory,
                 customMappings = customMappings,
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
@@ -162,7 +166,7 @@ class MatrixClient private constructor(
         suspend fun loginWith(
             baseUrl: Url,
             storeFactory: StoreFactory,
-            baseHttpClient: HttpClient = HttpClient(),
+            httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
@@ -171,7 +175,7 @@ class MatrixClient private constructor(
         ): Result<MatrixClient> = kotlin.runCatching {
             val eventContentSerializerMappings =
                 createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
-            val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
+            val json = createMatrixJson(eventContentSerializerMappings)
 
             val store = try {
                 storeFactory.createStore(eventContentSerializerMappings, json)
@@ -182,7 +186,7 @@ class MatrixClient private constructor(
 
             val api = MatrixClientServerApiClient(
                 baseUrl = baseUrl,
-                baseHttpClient = baseHttpClient,
+                httpClientFactory = httpClientFactory,
                 onLogout = { onLogout(it, store) },
                 json = json,
                 eventContentSerializerMappings = eventContentSerializerMappings,
@@ -217,7 +221,7 @@ class MatrixClient private constructor(
                     it, userId, deviceId, KeyVerificationState.Verified(it.value)
                 )
             }
-            api.keys.setDeviceKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
+            api.keys.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
             store.keys.outdatedKeys.update { it + userId }
 
             matrixClient
@@ -232,7 +236,7 @@ class MatrixClient private constructor(
         @OptIn(ExperimentalTime::class)
         suspend fun fromStore(
             storeFactory: StoreFactory,
-            baseHttpClient: HttpClient = HttpClient(),
+            httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
             customMappings: EventContentSerializerMappings? = null,
             setOwnMessagesAsFullyRead: Boolean = false,
             customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
@@ -245,7 +249,7 @@ class MatrixClient private constructor(
                 }.apply {
                     log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
                 }.value
-                val json = createMatrixClientServerApiClientJson(eventContentSerializerMappings)
+                val json = createMatrixJson(eventContentSerializerMappings)
 
                 val store = try {
                     measureTimedValue {
@@ -269,7 +273,7 @@ class MatrixClient private constructor(
                 if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
                     val api = MatrixClientServerApiClient(
                         baseUrl = baseUrl,
-                        baseHttpClient = baseHttpClient,
+                        httpClientFactory = httpClientFactory,
                         onLogout = { onLogout(it, store) },
                         json = json,
                         eventContentSerializerMappings = eventContentSerializerMappings,
@@ -364,8 +368,6 @@ class MatrixClient private constructor(
         startSync()
     }
 
-    val syncState = api.sync.currentSyncState
-
     private val isInitialized = MutableStateFlow(false)
 
     suspend fun startSync(): Result<Unit> = kotlin.runCatching {
@@ -389,6 +391,7 @@ class MatrixClient private constructor(
         )
     }
 
+    @OptIn(FlowPreview::class)
     private suspend fun startMatrixClient() {
         if (isInitialized.getAndUpdate { true }.not()) {
             val handler = CoroutineExceptionHandler { _, exception ->
@@ -430,7 +433,7 @@ class MatrixClient private constructor(
                 log.debug { "set new filter for sync" }
                 store.account.filterId.value = api.users.setFilter(
                     userId,
-                    Filters(room = RoomFilter(state = RoomFilter.StateFilter(lazyLoadMembers = true)))
+                    Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
                 ).getOrThrow()
             }
             val backgroundFilterId = store.account.backgroundFilterId.value
@@ -439,11 +442,11 @@ class MatrixClient private constructor(
                 store.account.backgroundFilterId.value = api.users.setFilter(
                     userId,
                     Filters(
-                        room = RoomFilter(
-                            state = RoomFilter.StateFilter(lazyLoadMembers = true),
-                            ephemeral = RoomFilter.RoomEventFilter(limit = 0)
+                        room = Filters.RoomFilter(
+                            state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                            ephemeral = Filters.RoomFilter.RoomEventFilter(limit = 0)
                         ),
-                        presence = EventFilter(limit = 0)
+                        presence = Filters.EventFilter(limit = 0)
                     )
                 ).getOrThrow()
             }

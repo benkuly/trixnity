@@ -27,7 +27,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-clientserverapi-client"))
+                implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
