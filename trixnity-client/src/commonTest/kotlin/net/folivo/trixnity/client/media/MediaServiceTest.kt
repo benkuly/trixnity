@@ -17,17 +17,19 @@ import io.ktor.utils.io.*
 import io.mockk.*
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.UploadMedia
+import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.clientserverapi.client.DownloadResponse
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.clientserverapi.model.media.UploadResponse
+import net.folivo.trixnity.clientserverapi.model.media.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 
 class MediaServiceTest : ShouldSpec({
     val api: MatrixClientServerApiClient = mockk()
     val store = mockk<Store>(relaxUnitFun = true)
+    val json = createMatrixJson()
     val cut = MediaService(api, store)
 
     val mxcUri = "mxc://example.com/abc"
@@ -37,7 +39,10 @@ class MediaServiceTest : ShouldSpec({
 
     beforeTest {
         clearAllMocks()
-        coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns Result.success(UploadResponse(mxcUri))
+        coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns Result.success(
+            UploadMedia.Response(mxcUri)
+        )
+        coEvery { api.json } returns json
         coEvery { store.media.getContent(any()) } returns null
     }
     context(MediaService::getMedia.name) {
@@ -45,7 +50,8 @@ class MediaServiceTest : ShouldSpec({
             should("prefer cache") {
                 coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
                 cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
-                coVerify { api wasNot Called }
+                val mediaMock = api.media
+                coVerify { mediaMock wasNot Called }
             }
             should("download and cache") {
                 coEvery { api.media.download(any(), any()) } returns Result.success(
@@ -65,13 +71,15 @@ class MediaServiceTest : ShouldSpec({
             should("prefer cache") {
                 coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
                 cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
-                coVerify { api wasNot Called }
+                val mediaMock = api.media
+                coVerify { mediaMock wasNot Called }
             }
             should("prefer cache, but use mxcUri, when already uploaded") {
-                coEvery { store.media.getUploadMedia(cacheUri)?.mxcUri } returns mxcUri
+                coEvery { store.media.getUploadCache(cacheUri)?.mxcUri } returns mxcUri
                 coEvery { store.media.getContent(mxcUri) } returns "test".encodeToByteArray()
                 cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
-                coVerify { api wasNot Called }
+                val mediaMock = api.media
+                coVerify { mediaMock wasNot Called }
             }
         }
     }
@@ -110,7 +118,8 @@ class MediaServiceTest : ShouldSpec({
         should("prefer cache") {
             coEvery { store.media.getContent("$mxcUri/32x32/crop") } returns "test".encodeToByteArray()
             cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
-            coVerify { api wasNot Called }
+            val mediaMock = api.media
+            coVerify { mediaMock wasNot Called }
         }
         should("download and cache") {
             coEvery { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) } returns Result.success(
@@ -132,8 +141,8 @@ class MediaServiceTest : ShouldSpec({
             result.length shouldBeGreaterThan 12
             coVerify {
                 store.media.addContent(result, "test".encodeToByteArray())
-                store.media.updateUploadMedia(result, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result, null, Plain.toString())
+                store.media.updateUploadCache(result, coWithArg {
+                    it.invoke(null) shouldBe UploadCache(result, null, Plain.toString())
                 })
             }
         }
@@ -155,8 +164,8 @@ class MediaServiceTest : ShouldSpec({
             }
             coVerify {
                 store.media.addContent(result.first, thumbnail)
-                store.media.updateUploadMedia(result.first, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.first, null, JPEG.toString())
+                store.media.updateUploadCache(result.first, coWithArg {
+                    it.invoke(null) shouldBe UploadCache(result.first, null, JPEG.toString())
                 })
             }
         }
@@ -181,8 +190,8 @@ class MediaServiceTest : ShouldSpec({
                 store.media.addContent(result.url, withArg {
                     it shouldNotBe "test".encodeToByteArray()
                 })
-                store.media.updateUploadMedia(result.url, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.url, null, OctetStream.toString())
+                store.media.updateUploadCache(result.url, coWithArg {
+                    it.invoke(null) shouldBe UploadCache(result.url, null, OctetStream.toString())
                 })
             }
         }
@@ -212,8 +221,8 @@ class MediaServiceTest : ShouldSpec({
                 store.media.addContent(result.first.url, withArg {
                     it shouldNotBe "test".encodeToByteArray()
                 })
-                store.media.updateUploadMedia(result.first.url, coWithArg {
-                    it.invoke(null) shouldBe UploadMedia(result.first.url, null, OctetStream.toString())
+                store.media.updateUploadCache(result.first.url, coWithArg {
+                    it.invoke(null) shouldBe UploadCache(result.first.url, null, OctetStream.toString())
                 })
             }
         }
@@ -232,17 +241,17 @@ class MediaServiceTest : ShouldSpec({
                     any(),
                     contentType = Plain
                 )
-            } returns Result.success(UploadResponse(mxcUri))
+            } returns Result.success(UploadMedia.Response(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
-            coEvery { store.media.getUploadMedia(cacheUri) } returns UploadMedia(cacheUri, null, Plain.toString())
+            coEvery { store.media.getUploadCache(cacheUri) } returns UploadCache(cacheUri, null, Plain.toString())
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
             coVerify {
                 api.media.upload(any(), any(), any())
                 store.media.changeUri(cacheUri, mxcUri)
-                store.media.updateUploadMedia(cacheUri, coWithArg {
-                    it.invoke(UploadMedia(cacheUri, null, Plain.toString())) shouldBe UploadMedia(
+                store.media.updateUploadCache(cacheUri, coWithArg {
+                    it.invoke(UploadCache(cacheUri, null, Plain.toString())) shouldBe UploadCache(
                         cacheUri,
                         mxcUri,
                         Plain.toString()
@@ -260,11 +269,11 @@ class MediaServiceTest : ShouldSpec({
                     any(),
                     contentType = Plain
                 )
-            } returns Result.success(UploadResponse(mxcUri))
+            } returns Result.success(UploadMedia.Response(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
-            coEvery { store.media.getUploadMedia(cacheUri) }
-                .returns(UploadMedia(cacheUri, null, Plain.toString()))
-                .andThen(UploadMedia(cacheUri, mxcUri, Plain.toString()))
+            coEvery { store.media.getUploadCache(cacheUri) }
+                .returns(UploadCache(cacheUri, null, Plain.toString()))
+                .andThen(UploadCache(cacheUri, mxcUri, Plain.toString()))
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri

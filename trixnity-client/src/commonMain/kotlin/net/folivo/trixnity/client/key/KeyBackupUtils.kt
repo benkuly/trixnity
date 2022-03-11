@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.key
 
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.freeAfter
@@ -10,7 +10,7 @@ import net.folivo.trixnity.olm.freeAfter
 private val log = KotlinLogging.logger {}
 
 internal suspend fun keyBackupCanBeTrusted(
-    keyBackupVersion: GetRoomKeysVersionResponse,
+    keyBackupVersion: GetRoomKeysBackupVersionResponse,
     privateKey: String,
     ownUserId: UserId,
     store: Store
@@ -21,7 +21,7 @@ internal suspend fun keyBackupCanBeTrusted(
         log.warn(error) { "could not generate public key from private backup key" }
         return false
     }
-    if (keyBackupVersion !is GetRoomKeysVersionResponse.V1) {
+    if (keyBackupVersion !is GetRoomKeysBackupVersionResponse.V1) {
         log.warn { "current room key backup version does not match v1 or there was no backup" }
         return false
     }

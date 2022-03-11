@@ -8,6 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.crypto.OlmService
@@ -17,6 +18,7 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -38,13 +40,15 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
     val olm = mockk<OlmService>()
     val key = mockk<KeyService>()
     val users = mockk<UserService>(relaxUnitFun = true)
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
     lateinit var cut: RoomService
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(alice, store, api, olm, key, users, mockk())
+        cut = RoomService(alice, store, api, olm, key, users, mockk(), currentSyncState)
     }
 
     afterTest {

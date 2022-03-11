@@ -12,14 +12,16 @@ import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.rooms.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.Direction.FORWARD
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEventsResponse
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -36,12 +38,14 @@ class RoomServiceTimelineTest : ShouldSpec({
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
     lateinit var cut: RoomService
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk())
+        cut = RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
     }
 
     afterTest {
@@ -293,7 +297,8 @@ class RoomServiceTimelineTest : ShouldSpec({
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
                 store = spyk(InMemoryStore(storeScope).apply { init() })
-                cut = RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk())
+                cut =
+                    RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
                 store.room.update(room) {
                     Room(
                         roomId = room,
@@ -385,7 +390,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event2, event1),
@@ -438,7 +443,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event2),
@@ -483,7 +488,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "start",
                             chunk = listOf(),
@@ -522,7 +527,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event2),
@@ -583,7 +588,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event2, event1.copy(originTimestamp = 24)),
@@ -646,7 +651,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event2),
@@ -725,7 +730,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event3, event4),
@@ -794,7 +799,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event4, event5.copy(originTimestamp = 24)),
@@ -857,7 +862,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             filter = """{"lazy_load_members":true}"""
                         )
                     } returns Result.success(
-                        GetEventsResponse(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
                             chunk = listOf(event4),

@@ -6,10 +6,11 @@ import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
+import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.util.*
 import io.mockk.*
 import kotlinx.coroutines.*
@@ -21,11 +22,15 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
@@ -34,15 +39,17 @@ import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
@@ -63,16 +70,19 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
-    val api = mockk<MatrixClientServerApiClient>()
+    lateinit var apiConfig: PortableMockEngineConfig
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
 
     lateinit var cut: KeySecretService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeySecretService(alice, aliceDevice, store, olm, api)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = KeySecretService(alice, aliceDevice, store, olm, api, currentSyncState)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { api.json } returns json
     }
 
     afterTest {
@@ -81,14 +91,35 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(KeySecretService::handleEncryptedIncomingKeyRequests.name) {
+        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
         beforeTest {
+            sendToDeviceEvents = null
             store.account.userId.value = alice
             store.keys.updateDeviceKeys(alice) {
                 mapOf(aliceDevice to mockk { every { trustLevel } returns Valid(true) })
             }
-            coEvery { api.users.sendToDevice<SecretKeySendEventContent>(any(), any()) } returns Result.success(Unit)
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice<EncryptedEventContent>("m.room.encrypted", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             store.keys.secrets.value =
                 mapOf(M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "secretUserSigningKey"))
+            coEvery {
+                olm.events.encryptOlm(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns EncryptedEventContent.OlmEncryptedEventContent(
+                ciphertext = mapOf(),
+                senderKey = Key.Curve25519Key("", "")
+            )
         }
         should("ignore request from other user") {
             cut.handleEncryptedIncomingKeyRequests(
@@ -105,7 +136,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.processIncomingKeyRequests()
-            coVerify { api wasNot Called }
+            sendToDeviceEvents shouldBe null
         }
         should("add request on request") {
             cut.handleEncryptedIncomingKeyRequests(
@@ -122,7 +153,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.processIncomingKeyRequests()
-            coVerify { api.users.sendToDevice<SecretKeySendEventContent>(any(), any(), any()) }
+            sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
         }
         should("remove request on request cancellation") {
             cut.handleEncryptedIncomingKeyRequests(
@@ -152,15 +183,36 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.processIncomingKeyRequests()
-            coVerify { api wasNot Called }
+            sendToDeviceEvents shouldBe null
         }
     }
     context(KeySecretService::processIncomingKeyRequests.name) {
+        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
         beforeTest {
+            sendToDeviceEvents = null
             store.account.userId.value = alice
-            coEvery { api.users.sendToDevice<SecretKeySendEventContent>(any(), any()) } returns Result.success(Unit)
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice<EncryptedEventContent>("m.room.encrypted", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             store.keys.secrets.value =
                 mapOf(M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "secretUserSigningKey"))
+            coEvery {
+                olm.events.encryptOlm(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns EncryptedEventContent.OlmEncryptedEventContent(
+                ciphertext = mapOf(),
+                senderKey = Key.Curve25519Key("", "")
+            )
         }
         suspend fun ShouldSpecContainerScope.answerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
             should("answer request with trust level $returnedTrustLevel") {
@@ -182,18 +234,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.processIncomingKeyRequests()
                 cut.processIncomingKeyRequests()
-                coVerify(exactly = 1) {
-                    api.users.sendToDevice(
-                        mapOf(
-                            alice to mapOf(
-                                aliceDevice to SecretKeySendEventContent(
-                                    "requestId",
-                                    "secretUserSigningKey"
-                                )
-                            )
-                        ), any(), any()
-                    )
-                }
+                sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
             }
         }
         answerRequest(Valid(true))
@@ -218,7 +259,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.processIncomingKeyRequests()
                 cut.processIncomingKeyRequests()
-                coVerify { api wasNot Called }
+                sendToDeviceEvents shouldBe null
             }
         }
         notAnswerRequest(Valid(false))
@@ -272,15 +313,17 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
 
-        suspend fun returnRoomKeysVersion(publicKey: String? = null) {
-            if (publicKey == null) coEvery { api.keys.getRoomKeysVersion() } returns Result.failure(RuntimeException(""))
-            else coEvery { api.keys.getRoomKeysVersion() } returns Result.success(
-                GetRoomKeysVersionResponse.V1(
-                    authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Key.Curve25519Key(null, publicKey)
-                    ), 1, "etag", "1"
-                )
-            )
+        fun returnRoomKeysVersion(publicKey: String? = null) {
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                    if (publicKey == null) throw MatrixServerException(InternalServerError, ErrorResponse.Unknown(""))
+                    else GetRoomKeysBackupVersionResponse.V1(
+                        authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
+                            publicKey = Key.Curve25519Key(null, publicKey)
+                        ), 1, "etag", "1"
+                    )
+                }
+            }
         }
         should("ignore, when sender device id cannot be found") {
             cut.handleOutgoingKeyRequestAnswer(
@@ -447,7 +490,17 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
         should("cancel other requests") {
-            coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
+            var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice("m.secret.request", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             setDeviceKeys(true)
             setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice, "OTHER_DEVICE"))
             setCrossSigningKeys(crossSigningPublicKey)
@@ -464,25 +517,27 @@ private val body: ShouldSpec.() -> Unit = {
             store.keys.secrets.first { it.size == 1 } shouldBe mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(secretEvent, crossSigningPrivateKey)
             )
-            coVerify {
-                api.users.sendToDevice(
-                    mapOf(
-                        alice to mapOf(
-                            "OTHER_DEVICE" to SecretKeyRequestEventContent(
-                                M_CROSS_SIGNING_USER_SIGNING.id,
-                                KeyRequestAction.REQUEST_CANCELLATION,
-                                "OWN_ALICE_DEVICE",
-                                "requestId"
-                            )
-                        )
-                    ), any()
-                )
-            }
+            sendToDeviceEvents?.get(alice)?.get("OTHER_DEVICE") shouldBe SecretKeyRequestEventContent(
+                M_CROSS_SIGNING_USER_SIGNING.id,
+                KeyRequestAction.REQUEST_CANCELLATION,
+                "OWN_ALICE_DEVICE",
+                "requestId"
+            )
         }
     }
     context(KeySecretService::cancelOldOutgoingKeyRequests.name) {
         should("only remove old requests and send cancel") {
-            coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
+            var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice("m.secret.request", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             val request1 = StoredSecretKeyRequest(
                 SecretKeyRequestEventContent(
                     M_CROSS_SIGNING_USER_SIGNING.id,
@@ -506,23 +561,29 @@ private val body: ShouldSpec.() -> Unit = {
             cut.cancelOldOutgoingKeyRequests()
 
             store.keys.allSecretKeyRequests.first { it.size == 1 } shouldBe setOf(request1)
-            coVerify {
-                api.users.sendToDevice(
-                    mapOf(
-                        alice to mapOf(
-                            aliceDevice to SecretKeyRequestEventContent(
-                                M_CROSS_SIGNING_USER_SIGNING.id,
-                                KeyRequestAction.REQUEST_CANCELLATION,
-                                "OWN_ALICE_DEVICE",
-                                "requestId2"
-                            )
-                        )
-                    ), any()
-                )
-            }
+            sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe SecretKeyRequestEventContent(
+                M_CROSS_SIGNING_USER_SIGNING.id,
+                KeyRequestAction.REQUEST_CANCELLATION,
+                "OWN_ALICE_DEVICE",
+                "requestId2"
+            )
         }
     }
     context(KeySecretService::requestSecretKeys.name) {
+        var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+        beforeTest {
+            sendToDeviceEvents = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice("m.secret.request", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
+        }
         should("ignore when there are no missing secrets") {
             store.keys.secrets.value = mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "key1"),
@@ -530,10 +591,9 @@ private val body: ShouldSpec.() -> Unit = {
                 M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "key3")
             )
             cut.requestSecretKeys()
-            coVerify { api wasNot Called }
+            sendToDeviceEvents shouldBe null
         }
         should("send requests to verified cross signed devices") {
-            coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
             store.keys.secrets.value = mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "key3")
             )
@@ -561,27 +621,20 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             cut.requestSecretKeys()
-            coVerify {
-                api.users.sendToDevice<SecretKeyRequestEventContent>(coWithArg { content ->
-                    content shouldHaveSize 1
-                    content[alice]?.size shouldBe 1
-                    assertSoftly(content[alice]?.get("DEVICE_2")) {
-                        assertNotNull(this)
-                        this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
-                        this.action shouldBe KeyRequestAction.REQUEST
-                        this.requestingDeviceId shouldBe aliceDevice
-                        this.requestId shouldNot beEmpty()
-                    }
-                }, any())
+
+            assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
+                assertNotNull(this)
+                this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
+                this.action shouldBe KeyRequestAction.REQUEST
+                this.requestingDeviceId shouldBe aliceDevice
+                this.requestId shouldNot beEmpty()
             }
             store.keys.allSecretKeyRequests.first { it.size == 2 } shouldHaveSize 2
         }
     }
     context(KeySecretService::requestSecretKeysWhenCrossSigned.name) {
         should("request secret keys, when cross signed and verified") {
-            coEvery {
-                api.sync.currentSyncState
-            } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+            currentSyncState.value = SyncApiClient.SyncState.RUNNING
 
             val spyCut = spyk(cut)
             coEvery { spyCut.requestSecretKeys() } just Runs
@@ -611,9 +664,19 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeySecretService::handleChangedSecrets.name) {
+        var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
         beforeTest {
-            coEvery { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any()) } returns Result.success(Unit)
-            coEvery { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
+            sendToDeviceEvents = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice("m.secret.request", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             store.keys.addSecretKeyRequest(
                 StoredSecretKeyRequest(
                     SecretKeyRequestEventContent(
@@ -630,7 +693,7 @@ private val body: ShouldSpec.() -> Unit = {
             val crossSigningPrivateKeys = mapOf(M_CROSS_SIGNING_USER_SIGNING to mockk<StoredSecret>())
             store.keys.secrets.value = crossSigningPrivateKeys
             cut.handleChangedSecrets(GlobalAccountDataEvent(MasterKeyEventContent(mapOf())))
-            coVerify(exactly = 0) { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any(), any()) }
+            sendToDeviceEvents shouldBe null
             store.keys.secrets.value shouldBe crossSigningPrivateKeys
         }
         should("do nothing when event did not change") {
@@ -642,7 +705,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.keys.secrets.value = crossSigningPrivateKeys
             cut.handleChangedSecrets(event)
-            coVerify(exactly = 0) { api.users.sendToDevice<SecretKeyRequestEventContent>(any(), any(), any()) }
+            sendToDeviceEvents shouldBe null
             store.keys.secrets.value shouldBe crossSigningPrivateKeys
         }
         should("remove cached secret and cancel ongoing requests when event did change") {
@@ -650,18 +713,13 @@ private val body: ShouldSpec.() -> Unit = {
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), "bla")
             )
             cut.handleChangedSecrets(GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())))
-            coVerify {
-                api.users.sendToDevice<SecretKeyRequestEventContent>(coWithArg { content ->
-                    content shouldHaveSize 1
-                    content[alice]?.size shouldBe 1
-                    assertSoftly(content[alice]?.get("DEVICE_2")) {
-                        assertNotNull(this)
-                        this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
-                        this.action shouldBe KeyRequestAction.REQUEST_CANCELLATION
-                        this.requestingDeviceId shouldBe aliceDevice
-                        this.requestId shouldBe "requestId1"
-                    }
-                }, any())
+
+            assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
+                assertNotNull(this)
+                this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
+                this.action shouldBe KeyRequestAction.REQUEST_CANCELLATION
+                this.requestingDeviceId shouldBe aliceDevice
+                this.requestId shouldBe "requestId1"
             }
             store.keys.secrets.value shouldBe mapOf()
         }

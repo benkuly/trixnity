@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.verification
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldHaveSize
@@ -14,10 +15,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
+import kotlinx.serialization.KSerializer
+import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
@@ -26,28 +30,34 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequ
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.core.EventSubscriber
+import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
+import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
+import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 
 class VerificationServiceTest : ShouldSpec(body)
@@ -61,7 +71,8 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDeviceId = "BBBBBB"
     val eventId = EventId("$1event")
     val roomId = RoomId("room", "server")
-    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
+    lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var api: MatrixClientServerApiClient
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
@@ -69,7 +80,12 @@ private val body: ShouldSpec.() -> Unit = {
     val user = mockk<UserService>(relaxUnitFun = true)
     val keyService = mockk<KeyService>()
     val json = createMatrixJson()
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
     lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEvent>
+
+    @Suppress("UNCHECKED_CAST")
+    val roomMessageSerializer = RoomMessageEventContentSerializer as KSerializer<MessageEventContent>
+
     lateinit var cut: VerificationService
 
     beforeTest {
@@ -77,7 +93,9 @@ private val body: ShouldSpec.() -> Unit = {
         store = InMemoryStore(storeScope)
         decryptedOlmEventFlow = MutableSharedFlow()
         coEvery { olm.decryptedOlmEvents } returns decryptedOlmEventFlow
-        coEvery { api.json } returns json
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        api = newApi
         cut = VerificationService(
             ownUserId = aliceUserId,
             ownDeviceId = aliceDeviceId,
@@ -87,6 +105,7 @@ private val body: ShouldSpec.() -> Unit = {
             roomService = room,
             userService = user,
             keyService = keyService,
+            currentSyncState = currentSyncState
         )
     }
     afterTest {
@@ -104,15 +123,17 @@ private val body: ShouldSpec.() -> Unit = {
         context("handleVerificationRequestEvents") {
             should("ignore request, that is timed out") {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
-                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(
-                            request,
-                            bobUserId
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                        Sync.Response(
+                            nextBatch = "nextBatch",
+                            toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
                         )
-                    )
+                    }
                 }
                 cut.start(eventHandlingCoroutineScope)
+                api.sync.startOnce().getOrThrow()
+
                 val activeDeviceVerifications = cut.activeDeviceVerification.value
                 activeDeviceVerifications shouldBe null
             }
@@ -123,15 +144,16 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(
-                            request,
-                            bobUserId
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                        Sync.Response(
+                            nextBatch = "nextBatch",
+                            toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
                         )
-                    )
+                    }
                 }
                 cut.start(eventHandlingCoroutineScope)
+                api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
@@ -149,24 +171,25 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction2"
                 )
-                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(
-                            request1,
-                            bobUserId
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                        Sync.Response(
+                            nextBatch = "nextBatch",
+                            toDevice = Sync.Response.ToDevice(
+                                listOf(
+                                    ToDeviceEvent(request1, bobUserId),
+                                    ToDeviceEvent(request2, aliceUserId)
+                                )
+                            )
                         )
-                    )
-                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(
-                            request2,
-                            aliceUserId
-                        )
-                    )
+                    }
                 }
                 val olmEvents: OlmEventService = mockk(relaxed = true)
                 every { olm.events } returns olmEvents
 
                 cut.start(eventHandlingCoroutineScope)
+
+                api.sync.startOnce().getOrThrow()
 
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
@@ -256,21 +279,32 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction"
                 )
-                coEvery { api.sync.subscribe<VerificationRequestEventContent>(captureLambda()) }.coAnswers {
-                    lambda<EventSubscriber<VerificationRequestEventContent>>().captured.invoke(
-                        ToDeviceEvent(request, bobUserId)
-                    )
-                }
-                lateinit var verificationStepSubscriber: EventSubscriber<VerificationStep>
-                coEvery { api.sync.subscribe<VerificationStep>(captureLambda()) }.coAnswers {
-                    verificationStepSubscriber = lambda<EventSubscriber<VerificationStep>>().captured
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                        Sync.Response(
+                            nextBatch = "nextBatch",
+                            toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
+                        )
+                    }
+                    matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+                        Sync.Response(
+                            nextBatch = "nextBatch",
+                            toDevice = Sync.Response.ToDevice(
+                                listOf(
+                                    ToDeviceEvent(
+                                        VerificationCancelEventContent(Code.User, "user", null, "transaction"),
+                                        bobUserId
+                                    )
+                                )
+                            )
+                        )
+                    }
                 }
                 cut.start(eventHandlingCoroutineScope)
+                api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
-                verificationStepSubscriber.invoke(
-                    ToDeviceEvent(VerificationCancelEventContent(Code.User, "user", null, "transaction"), bobUserId)
-                )
+                api.sync.startOnce().getOrThrow()
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", null, "transaction"),
                     false
@@ -280,14 +314,15 @@ private val body: ShouldSpec.() -> Unit = {
             should("start all lifecycles of user verifications") {
                 cut.start(eventHandlingCoroutineScope)
                 val nextEventId = EventId("$1nextEventId")
-                coEvery {
-                    api.rooms.sendMessageEvent(
-                        any(),
-                        any(),
-                        any(),
-                        any()
-                    )
-                } returns Result.success(EventId("$24event"))
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        requestSerializer = roomMessageSerializer
+                    ) {
+                        SendEventResponse(EventId("$24event"))
+                    }
+                }
                 val timelineEvent = TimelineEvent(
                     event = Event.MessageEvent(
                         VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
@@ -334,29 +369,29 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(VerificationService::createDeviceVerificationRequest.name) {
         should("send request to device and save locally") {
-            coEvery { api.users.sendToDevice<ToDeviceEventContent>(any(), any(), any()) } returns Result.success(Unit)
+            var sendToDeviceEvents: Map<UserId, Map<String, VerificationRequestEventContent>>? = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json,
+                    SendToDevice("m.key.verification.request", "txn"),
+                    requestSerializer = SendToDevice.Request.serializer(VerificationRequestEventContent.serializer()),
+                    skipUrlCheck = true
+                ) {
+                    sendToDeviceEvents = it.messages
+                }
+            }
             coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
             val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
-            coVerify {
-                api.users.sendToDevice<VerificationRequestEventContent>(withArg {
-                    it shouldHaveSize 1
-                    it[bobUserId]?.get(bobDeviceId)?.fromDevice shouldBe aliceDeviceId
-                }, any(), any())
+            assertSoftly(sendToDeviceEvents) {
+                this?.shouldHaveSize(1)
+                this?.get(bobUserId)?.get(bobDeviceId)?.fromDevice shouldBe aliceDeviceId
             }
         }
     }
     context(VerificationService::createUserVerificationRequest.name) {
         beforeTest {
-            coEvery {
-                api.rooms.sendMessageEvent(
-                    any(),
-                    any(),
-                    any(),
-                    any()
-                )
-            } returns Result.success(EventId("$1event"))
             store.room.update(roomId) {
                 Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm, membersLoaded = true)
             }
@@ -373,48 +408,62 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("no direct room with user exists") {
             should("create room and send request into it") {
-                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
-                coEvery { api.rooms.createRoom(invite = setOf(bobUserId), isDirect = true) } returns Result.success(
-                    roomId
-                )
-                cut.createUserVerificationRequest(bobUserId).getOrThrow()
-                coVerify {
-                    api.rooms.sendMessageEvent(
-                        roomId,
-                        VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
-                        any()
-                    )
+                var sendMessageEventCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, CreateRoom()) {
+                        it.invite shouldBe setOf(bobUserId)
+                        it.isDirect shouldBe true
+                        CreateRoom.Response(roomId)
+                    }
+                    matrixJsonEndpoint(
+                        json,
+                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        requestSerializer = roomMessageSerializer,
+                        skipUrlCheck = true
+                    ) {
+                        it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
+                        sendMessageEventCalled = true
+                        SendEventResponse(EventId("$1event"))
+                    }
                 }
+                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
+                cut.createUserVerificationRequest(bobUserId).getOrThrow()
+                sendMessageEventCalled shouldBe true
             }
         }
         context("direct room with user exists") {
             should("send request to existing room") {
+                var sendMessageEventCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        requestSerializer = roomMessageSerializer,
+                        skipUrlCheck = true
+                    ) {
+                        it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
+                        sendMessageEventCalled = true
+                        SendEventResponse(EventId("$1event"))
+                    }
+                }
                 coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
                 store.globalAccountData.update(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
-                coVerify {
-                    api.rooms.sendMessageEvent(
-                        roomId,
-                        VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
-                        any()
-                    )
-                }
+                sendMessageEventCalled shouldBe true
             }
         }
     }
     context(VerificationService::getSelfVerificationMethods.name) {
         lateinit var scope: CoroutineScope
-        val syncState = MutableStateFlow(SyncApiClient.SyncState.RUNNING)
         beforeTest {
             scope = CoroutineScope(Dispatchers.Default)
-            syncState.value = SyncApiClient.SyncState.RUNNING
-            coEvery { api.sync.currentSyncState } returns syncState
+            currentSyncState.value = SyncApiClient.SyncState.RUNNING
         }
         afterTest { scope.cancel() }
         should("return null, when sync state is not running") {
-            syncState.value = SyncApiClient.SyncState.INITIAL_SYNC
+            currentSyncState.value = SyncApiClient.SyncState.INITIAL_SYNC
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),

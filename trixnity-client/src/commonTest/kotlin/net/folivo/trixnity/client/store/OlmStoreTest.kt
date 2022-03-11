@@ -25,6 +25,7 @@ class OlmStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
+        coEvery { inboundMegolmSessionRepository.getByNotBackedUp() } returns setOf()
         cut = OlmStore(
             olmAccountRepository,
             mockk(),

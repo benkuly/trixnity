@@ -15,11 +15,12 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixServerException
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.ErrorResponse
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
-import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysVersionRequest
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -40,8 +41,9 @@ class KeyBackupService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val olm: OlmService,
+    private val currentSyncState: StateFlow<SyncApiClient.SyncState>
 ) {
-    private val currentBackupVersion = MutableStateFlow<GetRoomKeysVersionResponse.V1?>(null)
+    private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
     /**
      * This is the active key backup version.
@@ -57,7 +59,7 @@ class KeyBackupService(
     }
 
     internal suspend fun setAndSignNewKeyBackupVersion() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
@@ -73,7 +75,7 @@ class KeyBackupService(
     private suspend fun updateKeyBackupVersion(privateKey: String?) {
         log.debug { "check key backup version" }
         val currentVersion = api.keys.getRoomKeysVersion().getOrThrow().let { currentVersion ->
-            if (currentVersion is GetRoomKeysVersionResponse.V1) {
+            if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
                     olm.sign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
                 if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey, ownUserId, store)) {
@@ -82,7 +84,7 @@ class KeyBackupService(
                     ) {
                         log.info { "sign key backup" }
                         api.keys.setRoomKeysVersion(
-                            SetRoomKeysVersionRequest.V1(
+                            SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures = signatures[ownUserId].orEmpty()
                                         .filterNot { it.keyId == ownDeviceId } + deviceSignature
@@ -99,7 +101,7 @@ class KeyBackupService(
                     // when the private key does not match it's likely, that the key backup has been changed
                     if (currentVersion.authData.signatures[ownUserId]?.any { it.keyId == ownDeviceId } == true)
                         api.keys.setRoomKeysVersion(
-                            SetRoomKeysVersionRequest.V1(
+                            SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures =
                                         signatures[ownUserId].orEmpty()
@@ -144,7 +146,7 @@ class KeyBackupService(
                 if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
                     launch {
                         retryWhen(
-                            combine(version, api.sync.currentSyncState) { currentVersion, currentSyncState ->
+                            combine(version, currentSyncState) { currentVersion, currentSyncState ->
                                 currentVersion != null && currentSyncState == RUNNING
                             }.stateIn(this),
                             scheduleBase = 1.seconds,
@@ -160,8 +162,7 @@ class KeyBackupService(
                                         version,
                                         roomId,
                                         sessionId
-                                    )
-                                        .getOrThrow()
+                                    ).getOrThrow()
                                 val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                                 val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                                     it.decrypt(
@@ -212,7 +213,7 @@ class KeyBackupService(
 
     @OptIn(FlowPreview::class)
     internal suspend fun uploadRoomKeyBackup() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
@@ -283,7 +284,7 @@ class KeyBackupService(
     ): Result<Unit> {
         val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
         return api.keys.setRoomKeysVersion(
-            SetRoomKeysVersionRequest.V1(
+            SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
                     RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
                 ) {

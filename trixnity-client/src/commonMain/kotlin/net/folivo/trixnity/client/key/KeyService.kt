@@ -13,10 +13,11 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -52,8 +53,17 @@ class KeyService(
     private val store: Store,
     private val olm: OlmService,
     private val api: MatrixClientServerApiClient,
-    internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api),
-    internal val backup: KeyBackupService = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm),
+    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api, currentSyncState),
+    internal val backup: KeyBackupService = KeyBackupService(
+        olmPickleKey,
+        ownUserId,
+        ownDeviceId,
+        store,
+        api,
+        olm,
+        currentSyncState
+    ),
     internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm, api)
 ) {
 
@@ -65,7 +75,7 @@ class KeyService(
         backup.start(scope)
     }
 
-    internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists?) {
+    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?) {
         if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
@@ -82,7 +92,7 @@ class KeyService(
 
     @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryInfiniteWhenSyncIs(
             STARTED, INITIAL_SYNC, RUNNING,
             scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },

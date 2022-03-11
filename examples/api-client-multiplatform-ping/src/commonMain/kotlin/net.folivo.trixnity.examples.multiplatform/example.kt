@@ -31,7 +31,7 @@ suspend fun example() = coroutineScope {
                     body.startsWith("ping") -> {
                         matrixRestClient.rooms.sendMessageEvent(
                             roomId, TextMessageEventContent(body = "pong")
-                        )
+                        ).getOrThrow()
                     }
                     body.startsWith("me") -> {
                         val senderAvatar =
@@ -59,7 +59,7 @@ suspend fun example() = coroutineScope {
                                     info = ImageInfo(),
                                     url = uploadedUrl
                                 )
-                            )
+                            ).getOrThrow()
                         }
 
                     }

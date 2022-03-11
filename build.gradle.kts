@@ -28,9 +28,13 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "1.2.0-RC1"
+    version = "1.2.0-RC2"
 
     repositories {
+        // TODO remove when ktor 2.0.0 or another beta is released
+        maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
+        // TODO remove when ktor 2.0.0 uses stable or RC kotlin version (see https://github.com/ktorio/ktor/blob/main/gradle.properties#L23)
+        maven { url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/") }
         mavenCentral()
         google()
     }

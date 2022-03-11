@@ -207,7 +207,7 @@ abstract class ActiveVerification(
                     try {
                         sendVerificationStep(step)
                     } catch (error: Throwable) {
-                        log.debug { "could not send cancel event: ${error.message}" }
+                        log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
                 handleVerificationStep(step, ownUserId, true)

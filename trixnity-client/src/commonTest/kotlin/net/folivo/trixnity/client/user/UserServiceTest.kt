@@ -5,23 +5,22 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -31,7 +30,9 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
 
 class UserServiceTest : ShouldSpec({
@@ -41,15 +42,19 @@ class UserServiceTest : ShouldSpec({
     val roomId = simpleRoom.roomId
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>()
+    lateinit var apiConfig: PortableMockEngineConfig
+    val json = createMatrixJson()
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
     lateinit var cut: UserService
 
     beforeTest {
-        every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
-        coEvery { api.sync.currentSyncState } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        currentSyncState.value = SyncApiClient.SyncState.RUNNING
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = UserService(store, api)
+        cut = UserService(store, api, currentSyncState)
     }
 
     afterTest {
@@ -69,26 +74,30 @@ class UserServiceTest : ShouldSpec({
             job.cancel()
         }
         should("load members") {
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
-                flowOf(
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event1"),
-                        alice,
-                        roomId,
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event2"),
-                        bob,
-                        roomId,
-                        1234,
-                        stateKey = bob.full
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                    GetMembers.Response(
+                        setOf(
+                            StateEvent(
+                                MemberEventContent(membership = JOIN),
+                                EventId("\$event1"),
+                                alice,
+                                roomId,
+                                1234,
+                                stateKey = alice.full
+                            ),
+                            StateEvent(
+                                MemberEventContent(membership = JOIN),
+                                EventId("\$event2"),
+                                bob,
+                                roomId,
+                                1234,
+                                stateKey = bob.full
+                            )
+                        )
                     )
-                )
-            )
+                }
+            }
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
@@ -100,26 +109,30 @@ class UserServiceTest : ShouldSpec({
             job.cancel()
         }
         should("add outdated keys when room is encrypted") {
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
-                flowOf(
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event1"),
-                        alice,
-                        roomId,
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event2"),
-                        bob,
-                        roomId,
-                        1234,
-                        stateKey = bob.full
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                    GetMembers.Response(
+                        setOf(
+                            StateEvent(
+                                MemberEventContent(membership = JOIN),
+                                EventId("\$event1"),
+                                alice,
+                                roomId,
+                                1234,
+                                stateKey = alice.full
+                            ),
+                            StateEvent(
+                                MemberEventContent(membership = JOIN),
+                                EventId("\$event2"),
+                                bob,
+                                roomId,
+                                1234,
+                                stateKey = bob.full
+                            )
+                        )
                     )
-                )
-            )
+                }
+            }
             store.keys.updateDeviceKeys(alice) { mapOf("alice" to mockk()) } // we know alice keys, so only update bob keys
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
             store.room.update(roomId) { storedRoom }
@@ -142,26 +155,30 @@ class UserServiceTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            coEvery { api.rooms.getMembers(any(), any(), any(), any(), any()) } returns Result.success(
-                flowOf(
-                    StateEvent(
-                        MemberEventContent(membership = LEAVE),
-                        EventId("\$event1"),
-                        alice,
-                        roomId,
-                        1234,
-                        stateKey = alice.full
-                    ),
-                    StateEvent(
-                        MemberEventContent(membership = JOIN),
-                        EventId("\$event2"),
-                        bob,
-                        roomId,
-                        1234,
-                        stateKey = bob.full
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                    GetMembers.Response(
+                        setOf(
+                            StateEvent(
+                                MemberEventContent(membership = LEAVE),
+                                EventId("\$event1"),
+                                alice,
+                                roomId,
+                                1234,
+                                stateKey = alice.full
+                            ),
+                            StateEvent(
+                                MemberEventContent(membership = JOIN),
+                                EventId("\$event2"),
+                                bob,
+                                roomId,
+                                1234,
+                                stateKey = bob.full
+                            )
+                        )
                     )
-                )
-            )
+                }
+            }
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)

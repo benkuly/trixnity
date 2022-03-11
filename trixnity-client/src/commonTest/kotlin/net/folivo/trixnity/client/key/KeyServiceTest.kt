@@ -12,7 +12,10 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -23,12 +26,12 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.QueryKeysResponse
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -38,6 +41,9 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -54,15 +60,20 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
-    val api = mockk<MatrixClientServerApiClient>()
+    val json = createMatrixJson()
+    lateinit var apiConfig: PortableMockEngineConfig
     val trust = mockk<KeyTrustService>(relaxUnitFun = true)
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+
 
     lateinit var cut: KeyService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeyService("", alice, aliceDevice, store, olm, api, trust = trust)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = KeyService("", alice, aliceDevice, store, olm, api, trust = trust, currentSyncState = currentSyncState)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
         coEvery { trust.calculateCrossSigningKeysTrustLevel(any()) } returns CrossSigned(false)
@@ -79,13 +90,13 @@ private val body: ShouldSpec.() -> Unit = {
             should("add changed devices to outdated keys") {
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to mockk()) }
-                cut.handleDeviceLists(SyncResponse.DeviceLists(changed = setOf(bob)))
+                cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)))
                 store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
             }
             should("remove key when user left") {
                 store.keys.outdatedKeys.value = setOf(alice, bob)
                 store.keys.updateDeviceKeys(alice) { mockk() }
-                cut.handleDeviceLists(SyncResponse.DeviceLists(left = setOf(alice)))
+                cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)))
                 store.keys.getDeviceKeys(alice) should beNull()
                 store.keys.outdatedKeys.value shouldContainExactly setOf(bob)
             }
@@ -93,7 +104,7 @@ private val body: ShouldSpec.() -> Unit = {
         context("device key is not tracked") {
             should("not add changed devices to outdated keys") {
                 store.keys.outdatedKeys.value = setOf(alice)
-                cut.handleDeviceLists(SyncResponse.DeviceLists(changed = setOf(bob)))
+                cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)))
                 store.keys.outdatedKeys.value shouldContainExactly setOf(alice)
             }
         }
@@ -110,15 +121,26 @@ private val body: ShouldSpec.() -> Unit = {
             DeviceKeys(alice, aliceDevice2, setOf(), keysOf(Ed25519Key("id", "value"))), mapOf()
         )
         beforeTest {
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+            currentSyncState.value = SyncApiClient.SyncState.RUNNING
             scope.launch {
                 cut.handleOutdatedKeys()
             }
         }
         should("do nothing when no keys outdated") {
+            var getKeysCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, GetKeys()) {
+                    getKeysCalled = true
+                    GetKeys.Response(
+                        mapOf(), mapOf(),
+                        mapOf(),
+                        mapOf(), mapOf()
+                    )
+                }
+            }
             store.keys.outdatedKeys.value = setOf()
             continually(500.milliseconds, 50.milliseconds.fixed()) {
-                verify { api.keys wasNot Called }
+                getKeysCalled shouldBe false
             }
         }
         context("master keys") {
@@ -127,13 +149,15 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
                 coEvery { olm.sign.verify(key, any()) } returns VerifyResult.MissingSignature("")
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf(), mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(),
+                            mapOf(alice to key),
+                            mapOf(), mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -147,13 +171,15 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(),
-                        mapOf(alice to invalidKey),
-                        mapOf(), mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(),
+                            mapOf(alice to invalidKey),
+                            mapOf(), mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
@@ -163,13 +189,15 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf(), mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(),
+                            mapOf(alice to key),
+                            mapOf(), mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -185,13 +213,15 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to invalidKey),
-                        mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to invalidKey),
+                            mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
@@ -201,13 +231,15 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to key),
+                            mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -227,13 +259,15 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to key),
-                        mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to key),
+                            mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -249,12 +283,14 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to invalidKey)
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to invalidKey)
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 continually(500.milliseconds, 50.milliseconds.fixed()) {
                     store.keys.getCrossSigningKeys(alice).shouldBeNull()
@@ -265,12 +301,14 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to key),
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to key)
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -290,12 +328,14 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(), mapOf(), mapOf(), mapOf(),
-                        mapOf(alice to key),
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(), mapOf(), mapOf(), mapOf(),
+                            mapOf(alice to key)
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
@@ -306,22 +346,25 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("device keys") {
             should("update outdated device keys") {
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(),
-                        mapOf(
-                            cedric to mapOf(cedricDevice to cedricKey1),
-                            alice to mapOf(aliceDevice2 to aliceKey2)
-                        ),
-                        mapOf(), mapOf(), mapOf()
-                    )
-                ) andThen Result.success(
-                    QueryKeysResponse(
-                        mapOf(),
-                        mapOf(alice to mapOf()),
-                        mapOf(), mapOf(), mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(),
+                            mapOf(
+                                cedric to mapOf(cedricDevice to cedricKey1),
+                                alice to mapOf(aliceDevice2 to aliceKey2)
+                            ),
+                            mapOf(), mapOf(), mapOf()
+                        )
+                    }
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(),
+                            mapOf(alice to mapOf()),
+                            mapOf(), mapOf(), mapOf()
+                        )
+                    }
+                }
                 store.keys.outdatedKeys.value = setOf(cedric, alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 val storedCedricKeys = store.keys.getDeviceKeys(cedric)
@@ -349,16 +392,18 @@ private val body: ShouldSpec.() -> Unit = {
                 storedAliceKeysAfterDelete shouldContainExactly mapOf()
             }
             should("look for encrypted room, where the user participates and notify megolm sessions about new device keys") {
-                coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                    QueryKeysResponse(
-                        mapOf(),
-                        mapOf(
-                            cedric to mapOf(cedricDevice to cedricKey1),
-                            alice to mapOf(aliceDevice2 to aliceKey2)
-                        ),
-                        mapOf(), mapOf(), mapOf()
-                    )
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(),
+                            mapOf(
+                                cedric to mapOf(cedricDevice to cedricKey1),
+                                alice to mapOf(aliceDevice2 to aliceKey2)
+                            ),
+                            mapOf(), mapOf(), mapOf()
+                        )
+                    }
+                }
                 val room1 = RoomId("room1", "server")
                 val room2 = RoomId("room2", "server")
                 val room3 = RoomId("room3", "server")
@@ -444,13 +489,15 @@ private val body: ShouldSpec.() -> Unit = {
                             CrossSigned(false) to false,
                         ) { (levelBefore, expectedVerified) ->
                             coEvery { trust.calculateDeviceKeysTrustLevel(aliceKey2) } returns NotCrossSigned
-                            coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                                QueryKeysResponse(
-                                    mapOf(),
-                                    mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
-                                    mapOf(), mapOf(), mapOf()
-                                )
-                            )
+                            apiConfig.endpoints {
+                                matrixJsonEndpoint(json, GetKeys()) {
+                                    GetKeys.Response(
+                                        mapOf(),
+                                        mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
+                                        mapOf(), mapOf(), mapOf()
+                                    )
+                                }
+                            }
                             store.keys.updateCrossSigningKeys(alice) {
                                 setOf(
                                     StoredCrossSigningKeys(
@@ -481,13 +528,15 @@ private val body: ShouldSpec.() -> Unit = {
                             Invalid(""),
                             Blocked
                         ) { levelBefore ->
-                            coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                                QueryKeysResponse(
-                                    mapOf(),
-                                    mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
-                                    mapOf(), mapOf(), mapOf()
-                                )
-                            )
+                            apiConfig.endpoints {
+                                matrixJsonEndpoint(json, GetKeys()) {
+                                    GetKeys.Response(
+                                        mapOf(),
+                                        mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
+                                        mapOf(), mapOf(), mapOf()
+                                    )
+                                }
+                            }
                             store.keys.updateCrossSigningKeys(alice) {
                                 setOf(
                                     StoredCrossSigningKeys(
@@ -517,20 +566,22 @@ private val body: ShouldSpec.() -> Unit = {
                         mapOf()
                     )
                     beforeTest {
-                        coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                            QueryKeysResponse(
-                                mapOf(),
-                                mapOf(
-                                    alice to mapOf(
-                                        aliceDevice2 to Signed(
-                                            aliceKey2.signed,
-                                            mapOf(alice to keysOf(Ed25519Key("ALICE_MSK", "...")))
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(json, GetKeys()) {
+                                GetKeys.Response(
+                                    mapOf(),
+                                    mapOf(
+                                        alice to mapOf(
+                                            aliceDevice2 to Signed(
+                                                aliceKey2.signed,
+                                                mapOf(alice to keysOf(Ed25519Key("ALICE_MSK", "...")))
+                                            )
                                         )
-                                    )
-                                ),
-                                mapOf(), mapOf(), mapOf()
-                            )
-                        )
+                                    ),
+                                    mapOf(), mapOf(), mapOf()
+                                )
+                            }
+                        }
                     }
                     should("do nothing when his trust level is ${CrossSigned::class.simpleName}") {
                         store.keys.updateCrossSigningKeys(alice) {
@@ -546,11 +597,13 @@ private val body: ShouldSpec.() -> Unit = {
             context("manipulation of ") {
                 should("signature") {
                     coEvery { olm.sign.verify(cedricKey1, any()) } returns VerifyResult.Invalid("")
-                    coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                        QueryKeysResponse(
-                            mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(json, GetKeys()) {
+                            GetKeys.Response(
+                                mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
+                            )
+                        }
+                    }
                     store.keys.outdatedKeys.value = setOf(cedric)
                     store.keys.outdatedKeys.first { it.isEmpty() }
                     val storedKeys = store.keys.getDeviceKeys(cedric)
@@ -563,11 +616,13 @@ private val body: ShouldSpec.() -> Unit = {
                         "deviceId" to mapOf(alice to mapOf(cedricDevice to aliceKey2)),
                     )
                 ) { deviceKeys ->
-                    coEvery { api.keys.getKeys(any(), any(), any(), any()) } returns Result.success(
-                        QueryKeysResponse(
-                            mapOf(), deviceKeys, mapOf(), mapOf(), mapOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(json, GetKeys()) {
+                            GetKeys.Response(
+                                mapOf(), deviceKeys, mapOf(), mapOf(), mapOf()
+                            )
+                        }
+                    }
                     store.keys.outdatedKeys.value = setOf(alice, cedric)
                     store.keys.outdatedKeys.first { it.isEmpty() }
                     val storedKeys = store.keys.getDeviceKeys(alice)

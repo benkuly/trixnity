@@ -1,5 +1,5 @@
 package net.folivo.trixnity.client.store.repository
 
-import net.folivo.trixnity.client.store.UploadMedia
+import net.folivo.trixnity.client.store.UploadCache
 
-typealias UploadMediaRepository = MinimalStoreRepository<String, UploadMedia>
+typealias UploadMediaRepository = MinimalStoreRepository<String, UploadCache>

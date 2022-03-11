@@ -21,7 +21,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.keys.AddSignaturesResponse
+import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
@@ -427,7 +427,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("handle own account keys") {
             coEvery {
                 api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignaturesResponse(mapOf()))
+            } returns Result.success(AddSignatures.Response(mapOf()))
 
             val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
             val ownMasterEdKey = Ed25519Key("A-MASTER", "valueMasterA")
@@ -480,7 +480,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("handle others account keys") {
             coEvery {
                 api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignaturesResponse(mapOf()))
+            } returns Result.success(AddSignatures.Response(mapOf()))
 
             val othersDeviceEdKey = Ed25519Key("BBBBBB", "valueB") // should be ignored
             val othersMasterEdKey = Ed25519Key("B-MASTER", "valueMasterB")
@@ -523,7 +523,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("throw exception, when signature upload fails") {
             coEvery {
                 api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignaturesResponse(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh")))))
+            } returns Result.success(AddSignatures.Response(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh")))))
 
             val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
 

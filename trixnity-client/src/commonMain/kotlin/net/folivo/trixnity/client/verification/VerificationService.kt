@@ -44,6 +44,7 @@ class VerificationService(
     private val userService: UserService,
     private val keyService: KeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
+    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
 ) {
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
     val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
@@ -246,7 +247,7 @@ class VerificationService(
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
         return combine(
-            api.sync.currentSyncState,
+            currentSyncState,
             store.keys.getDeviceKeys(ownUserId, scope),
             store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
                 .transformLatest { event ->

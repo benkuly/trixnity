@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.key
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
@@ -14,17 +14,22 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
+import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -38,6 +43,8 @@ import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
 
 class KeyServiceCrossSigningTest : ShouldSpec(body)
@@ -51,10 +58,11 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
     val olm = mockk<OlmService>()
-    val api = mockk<MatrixClientServerApiClient>()
     val json = createMatrixJson()
     val backup: KeyBackupService = mockk()
     val trust: KeyTrustService = mockk()
+    lateinit var apiConfig: PortableMockEngineConfig
+    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
 
     mockkStatic(::decryptSecret)
 
@@ -63,8 +71,19 @@ private val body: ShouldSpec.() -> Unit = {
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        coEvery { api.json } returns json
-        cut = KeyService("", alice, aliceDevice, store, olm, api, backup = backup, trust = trust)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = KeyService(
+            "",
+            alice,
+            aliceDevice,
+            store,
+            olm,
+            api,
+            backup = backup,
+            trust = trust,
+            currentSyncState = currentSyncState
+        )
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
     }
@@ -152,26 +171,84 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeyService::bootstrapCrossSigning.name) {
         context("successfull") {
+            var secretKeyEventContentCalled = false
+            var capturedPassphrase: SecretKeyEventContent.SecretStorageKeyPassphrase? = null
+            var defaultSecretKeyEventContentCalled = false
+            var masterKeyEventContentCalled = false
+            var userSigningKeyEventContentCalled = false
+            var selfSigningKeyEventContentCalled = false
+            var setCrossSigningKeysCalled = false
             beforeTest {
-                coEvery { api.json } returns createMatrixJson()
-                coEvery { api.users.setAccountData<SecretKeyEventContent>(any(), any(), any()) }
-                    .returns(Result.success(Unit))
-                coEvery { api.users.setAccountData<DefaultSecretKeyEventContent>(any(), any()) }
-                    .returns(Result.success(Unit))
-                coEvery { api.users.setAccountData<MasterKeyEventContent>(any(), any()) }
-                    .returns(Result.success(Unit))
-                coEvery { api.users.setAccountData<SelfSigningKeyEventContent>(any(), any()) }
-                    .returns(Result.success(Unit))
-                coEvery { api.users.setAccountData<UserSigningKeyEventContent>(any(), any()) }
-                    .returns(Result.success(Unit))
+                secretKeyEventContentCalled = false
+                capturedPassphrase = null
+                defaultSecretKeyEventContentCalled = false
+                masterKeyEventContentCalled = false
+                userSigningKeyEventContentCalled = false
+                selfSigningKeyEventContentCalled = false
+                setCrossSigningKeysCalled = false
+
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json,
+                        SetGlobalAccountData<SecretKeyEventContent>(alice.e(), "m.secret_storage.key."),
+                        skipUrlCheck = true
+                    ) {
+                        it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
+                        it.iv shouldNot beEmpty()
+                        it.mac shouldNot beEmpty()
+                        capturedPassphrase = it.passphrase
+                        secretKeyEventContentCalled = true
+                    }
+                    matrixJsonEndpoint(
+                        json,
+                        SetGlobalAccountData<DefaultSecretKeyEventContent>(alice.e(), "m.secret_storage.default_key")
+                    ) {
+                        it.key.length shouldBeGreaterThan 10
+                        defaultSecretKeyEventContentCalled = true
+                    }
+                    matrixJsonEndpoint(
+                        json,
+                        SetGlobalAccountData<MasterKeyEventContent>(alice.e(), "m.cross_signing.master")
+                    ) {
+                        val encrypted = it.encrypted.values.first()
+                        encrypted.shouldBeInstanceOf<JsonObject>()
+                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        masterKeyEventContentCalled = true
+                    }
+                    matrixJsonEndpoint(
+                        json,
+                        SetGlobalAccountData<UserSigningKeyEventContent>(alice.e(), "m.cross_signing.user_signing")
+                    ) {
+                        val encrypted = it.encrypted.values.first()
+                        encrypted.shouldBeInstanceOf<JsonObject>()
+                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        userSigningKeyEventContentCalled = true
+                    }
+                    matrixJsonEndpoint(
+                        json,
+                        SetGlobalAccountData<SelfSigningKeyEventContent>(alice.e(), "m.cross_signing.self_signing")
+                    ) {
+                        val encrypted = it.encrypted.values.first()
+                        encrypted.shouldBeInstanceOf<JsonObject>()
+                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                        selfSigningKeyEventContentCalled = true
+                    }
+                    matrixJsonEndpoint(json, SetCrossSigningKeys()) {
+                        it.masterKey shouldNotBe null
+                        it.selfSigningKey shouldNotBe null
+                        it.userSigningKey shouldNotBe null
+                        setCrossSigningKeysCalled = true
+                    }
+                }
                 coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
                     Signed(firstArg(), mapOf())
                 }
                 coEvery {
                     backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
                 } returns Result.success(Unit)
-                coEvery { api.keys.setCrossSigningKeys(any(), any(), any()) }
-                    .returns(Result.success(UIA.UIASuccess(Unit)))
                 coEvery { trust.trustAndSignKeys(any(), any()) } just Runs
                 store.keys.updateCrossSigningKeys(alice) {
                     setOf(
@@ -210,48 +287,6 @@ private val body: ShouldSpec.() -> Unit = {
                     this.result shouldBe Result.success(UIA.UIASuccess(Unit))
                 }
                 coVerify {
-                    api.users.setAccountData<SecretKeyEventContent>(
-                        content = coWithArg {
-                            it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
-                            it.iv shouldNot beEmpty()
-                            it.mac shouldNot beEmpty()
-                            it.passphrase shouldBe null
-                        },
-                        userId = alice,
-                        key = coWithArg { it.length shouldBeGreaterThan 10 }
-                    )
-                    api.users.setAccountData<DefaultSecretKeyEventContent>(
-                        content = coWithArg { it.key.length shouldBeGreaterThan 10 },
-                        userId = alice
-                    )
-                    api.users.setAccountData<MasterKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.users.setAccountData<SelfSigningKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.users.setAccountData<UserSigningKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.keys.setCrossSigningKeys(any(), any(), any())
                     trust.trustAndSignKeys(
                         setOf(
                             Ed25519Key("A_MSK", "A_MSK"),
@@ -264,6 +299,13 @@ private val body: ShouldSpec.() -> Unit = {
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
                 )
+                secretKeyEventContentCalled shouldBe true
+                capturedPassphrase shouldBe null
+                defaultSecretKeyEventContentCalled shouldBe true
+                masterKeyEventContentCalled shouldBe true
+                userSigningKeyEventContentCalled shouldBe true
+                selfSigningKeyEventContentCalled shouldBe true
+                setCrossSigningKeysCalled shouldBe true
             }
             should("bootstrap from passphrase") {
                 val result = async { cut.bootstrapCrossSigningFromPassphrase("super secret. not.") }
@@ -275,53 +317,6 @@ private val body: ShouldSpec.() -> Unit = {
                     this.result shouldBe Result.success(UIA.UIASuccess(Unit))
                 }
                 coVerify {
-                    api.users.setAccountData<SecretKeyEventContent>(
-                        content = coWithArg {
-                            it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
-                            it.iv shouldNot beEmpty()
-                            it.mac shouldNot beEmpty()
-                            assertSoftly(it.passphrase) {
-                                this.shouldBeInstanceOf<SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2>()
-                                this.bits shouldBe 32 * 8
-                                this.iterations shouldBeGreaterThanOrEqual 500_000
-                                this.salt shouldNot beEmpty()
-                            }
-                        },
-                        userId = alice,
-                        key = coWithArg { it.length shouldBeGreaterThan 10 }
-                    )
-                    api.users.setAccountData<DefaultSecretKeyEventContent>(
-                        content = coWithArg { it.key.length shouldBeGreaterThan 10 },
-                        userId = alice
-                    )
-                    api.users.setAccountData<MasterKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.users.setAccountData<SelfSigningKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.users.setAccountData<UserSigningKeyEventContent>(
-                        content = coWithArg {
-                            val encrypted = it.encrypted.values.first()
-                            encrypted.shouldBeInstanceOf<JsonObject>()
-                            encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                            encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        },
-                        userId = alice
-                    )
-                    api.keys.setCrossSigningKeys(any(), any(), any())
                     trust.trustAndSignKeys(
                         setOf(
                             Ed25519Key("A_MSK", "A_MSK"),
@@ -334,6 +329,13 @@ private val body: ShouldSpec.() -> Unit = {
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
                 )
+                secretKeyEventContentCalled shouldBe true
+                capturedPassphrase.shouldBeInstanceOf<SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2>()
+                defaultSecretKeyEventContentCalled shouldBe true
+                masterKeyEventContentCalled shouldBe true
+                userSigningKeyEventContentCalled shouldBe true
+                selfSigningKeyEventContentCalled shouldBe true
+                setCrossSigningKeysCalled shouldBe true
             }
         }
     }

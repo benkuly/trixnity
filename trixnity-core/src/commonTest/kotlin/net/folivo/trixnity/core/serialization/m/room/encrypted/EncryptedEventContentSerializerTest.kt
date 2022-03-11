@@ -1,7 +1,6 @@
 package net.folivo.trixnity.core.serialization.m.room.encrypted
 
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.EventId
@@ -11,18 +10,15 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContentSerializer
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.events.createEncryptedEventContentSerializersModule
+import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EncryptedEventContentSerializerTest {
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        serializersModule = createEncryptedEventContentSerializersModule()
-    }
+    private val json = createMatrixJson()
 
     @Test
     fun shouldSerializeMegolm() {
@@ -33,7 +29,6 @@ class EncryptedEventContentSerializerTest {
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
-                algorithm = Megolm,
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             )
         )
@@ -75,7 +70,6 @@ class EncryptedEventContentSerializerTest {
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
-                algorithm = Megolm,
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )
@@ -90,7 +84,6 @@ class EncryptedEventContentSerializerTest {
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
-                algorithm = Olm,
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             )
         )
@@ -138,7 +131,6 @@ class EncryptedEventContentSerializerTest {
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
-                algorithm = Olm,
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )

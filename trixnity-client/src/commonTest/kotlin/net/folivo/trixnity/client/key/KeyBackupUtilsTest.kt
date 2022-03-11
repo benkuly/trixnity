@@ -8,10 +8,10 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.olm.OlmPkDecryption
@@ -33,7 +33,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     context(::keyBackupCanBeTrusted.name) {
         val (privateKey, publicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-        val roomKeyVersion = GetRoomKeysVersionResponse.V1(
+        val roomKeyVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                 publicKey = Key.Curve25519Key(null, publicKey),
                 signatures = mapOf(ownUserId to keysOf(Key.Ed25519Key("DEVICE", "s1"), Key.Ed25519Key("MSK", "s2")))
@@ -71,7 +71,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("return false, when key backup version not supported") {
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
             keyBackupCanBeTrusted(
-                GetRoomKeysVersionResponse.Unknown(
+                GetRoomKeysBackupVersionResponse.Unknown(
                     JsonObject(mapOf()),
                     RoomKeyBackupAlgorithm.Unknown("")
                 ), "dino", ownUserId, store
