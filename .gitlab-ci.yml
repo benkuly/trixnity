@@ -24,7 +24,7 @@ variables:
 .artifact-reports: &artifact-reports
   name: reports
   when: always
-  paths: [ "*/build/reports" ]
+  paths: [ "**/build/reports" ]
 
 
 build-trixnity-build-linux-image:

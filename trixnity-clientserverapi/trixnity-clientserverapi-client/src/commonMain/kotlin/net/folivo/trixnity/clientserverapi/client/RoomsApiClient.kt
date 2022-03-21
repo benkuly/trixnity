@@ -1,9 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import com.benasher44.uuid.uuid4
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.rooms.*
@@ -22,56 +19,57 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.contentSerializer
+import net.folivo.trixnity.core.serialization.events.fromClass
 
 class RoomsApiClient(
-    val httpClient: MatrixClientServerApiHttpClient,
-    val json: Json,
-    val contentMappings: EventContentSerializerMappings
+    @PublishedApi
+    internal val httpClient: MatrixClientServerApiHttpClient,
+    @PublishedApi
+    internal val json: Json,
+    @PublishedApi
+    internal val contentMappings: EventContentSerializerMappings
 ) {
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
      */
-    @ExperimentalSerializationApi
     suspend fun getEvent(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
     ): Result<Event<*>> =
-        httpClient.request(
-            GetEvent(roomId.e(), eventId.e(), asUserId),
-            requireNotNull(json.serializersModule.getContextual(Event::class))
-        )
+        httpClient.request(GetEvent(roomId.e(), eventId.e(), asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
      */
-    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified C : StateEventContent> getStateEvent(
         roomId: RoomId,
         stateKey: String = "",
         asUserId: UserId? = null
     ): Result<C> {
-        val mapping = contentMappings.state.find { it.kClass == C::class }
-            ?: throw IllegalArgumentException(unsupportedEventType(C::class))
-
+        val type = contentMappings.state.fromClass(C::class).type
         @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            GetStateEvent(roomId.e(), mapping.type, stateKey.e(), asUserId),
-            serializer
-        )
+        return getStateEvent(type, roomId, stateKey, asUserId) as Result<C>
     }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     */
+    suspend fun getStateEvent(
+        type: String,
+        roomId: RoomId,
+        stateKey: String = "",
+        asUserId: UserId? = null
+    ): Result<StateEventContent> =
+        httpClient.request(GetStateEvent(roomId.e(), type, stateKey.e(), asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstate">matrix spec</a>
      */
-    @OptIn(ExperimentalSerializationApi::class)
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Result<List<StateEvent<*>>> =
-        httpClient.request(
-            GetState(roomId.e(), asUserId),
-            ListSerializer(requireNotNull(json.serializersModule.getContextual(StateEvent::class)))
-        )
+        httpClient.request(GetState(roomId.e(), asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
@@ -126,8 +124,7 @@ class RoomsApiClient(
         stateKey: String = "",
         asUserId: UserId? = null
     ): Result<EventId> {
-        val eventType = contentMappings.state.find { it.kClass.isInstance(eventContent) }?.type
-            ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
+        val eventType = contentMappings.state.contentSerializer(eventContent).first
         return httpClient.request(SendStateEvent(roomId.e(), eventType, stateKey.e(), asUserId), eventContent)
             .mapCatching { it.eventId }
     }
@@ -141,8 +138,7 @@ class RoomsApiClient(
         txnId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): Result<EventId> {
-        val eventType = contentMappings.message.find { it.kClass.isInstance(eventContent) }?.type
-            ?: throw IllegalArgumentException(unsupportedEventType(eventContent::class))
+        val eventType = contentMappings.message.contentSerializer(eventContent).first
         return httpClient.request(SendMessageEvent(roomId.e(), eventType, txnId.e(), asUserId), eventContent)
             .mapCatching { it.eventId }
     }
@@ -372,7 +368,7 @@ class RoomsApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidtypinguserid">matrix spec</a>
      */
-    suspend fun setUserIsTyping(
+    suspend fun setTyping(
         roomId: RoomId,
         userId: UserId,
         typing: Boolean,
@@ -384,46 +380,44 @@ class RoomsApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
      */
-    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         userId: UserId,
         key: String = "",
         asUserId: UserId? = null
     ): Result<C> {
-        val mapping = contentMappings.roomAccountData.find { it.kClass == C::class }
-            ?: throw IllegalArgumentException(unsupportedEventType(C::class))
-        val eventType = if (key.isEmpty()) mapping.type else mapping.type + key
-
+        val type = contentMappings.roomAccountData.fromClass(C::class).type
         @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            GetRoomAccountData(userId.e(), roomId.e(), eventType, asUserId),
-            serializer
-        )
+        return getAccountData(type, roomId, userId, key, asUserId) as Result<C>
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     */
+    suspend fun getAccountData(
+        type: String,
+        roomId: RoomId,
+        userId: UserId,
+        key: String = "",
+        asUserId: UserId? = null
+    ): Result<RoomAccountDataEventContent> {
+        val actualType = if (key.isEmpty()) type else type + key
+        return httpClient.request(GetRoomAccountData(userId.e(), roomId.e(), actualType, asUserId))
     }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
      */
-    suspend inline fun <reified C : RoomAccountDataEventContent> setAccountData(
-        content: C,
+    suspend fun setAccountData(
+        content: RoomAccountDataEventContent,
         roomId: RoomId,
         userId: UserId,
         key: String = "",
         asUserId: UserId? = null
     ): Result<Unit> {
-        val mapping = contentMappings.roomAccountData.find { it.kClass.isInstance(content) }
-        val eventType = mapping?.type
-            ?.let { type -> if (key.isEmpty()) type else type + key }
-            ?: throw IllegalArgumentException(unsupportedEventType(content::class))
+        val mapping = contentMappings.roomAccountData.contentSerializer(content)
+        val eventType = mapping.first.let { type -> if (key.isEmpty()) type else type + key }
 
-        @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            SetRoomAccountData(userId.e(), roomId.e(), eventType, asUserId),
-            content,
-            serializer,
-        )
+        return httpClient.request(SetRoomAccountData(userId.e(), roomId.e(), eventType, asUserId), content)
     }
 }

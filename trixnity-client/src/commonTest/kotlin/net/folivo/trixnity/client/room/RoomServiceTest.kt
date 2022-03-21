@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
-import kotlinx.serialization.KSerializer
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
@@ -57,6 +56,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -76,6 +76,7 @@ class RoomServiceTest : ShouldSpec({
     val olmService = mockk<OlmService>()
     val key = mockk<KeyService>()
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val media = mockk<MediaService>()
     val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
 
@@ -431,8 +432,8 @@ class RoomServiceTest : ShouldSpec({
             gap = null
         )
         val storedSession = StoredInboundMegolmSession(
-            senderKey, session, room, 1, false, false,
-            Key.Ed25519Key(null, "ed"), listOf(), "pickle"
+            senderKey, session, room, 1, hasBeenBackedUp = false, isTrusted = false,
+            senderSigningKey = Key.Ed25519Key(null, "ed"), forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
         )
 
         context("should just return event") {
@@ -628,11 +629,6 @@ class RoomServiceTest : ShouldSpec({
         }
     }
     context(RoomService::processOutboxMessages.name) {
-        @Suppress("UNCHECKED_CAST")
-        val roomMessageSerializer = RoomMessageEventContentSerializer as KSerializer<MessageEventContent>
-
-        @Suppress("UNCHECKED_CAST")
-        val encryptedMessageSerializer = EncryptedEventContentSerializer as KSerializer<MessageEventContent>
         should("wait until connected, upload media, send message and mark outbox message as sent") {
             store.room.update(room) { simpleRoom }
             val mxcUrl = "mxc://dino"
@@ -650,17 +646,15 @@ class RoomServiceTest : ShouldSpec({
             var sendMessageEventCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendMessageEvent(room.e(), "m.room.message", "transaction1"),
-                    requestSerializer = roomMessageSerializer
                 ) {
                     it shouldBe ImageMessageEventContent("hi.png", url = mxcUrl)
                     SendEventResponse(EventId("event"))
                 }
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendMessageEvent(room.e(), "m.room.message", "transaction2"),
-                    requestSerializer = roomMessageSerializer
                 ) {
                     it shouldBe TextMessageEventContent("hi")
                     sendMessageEventCalled = true
@@ -708,9 +702,8 @@ class RoomServiceTest : ShouldSpec({
             var sendMessageEventCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendMessageEvent(room.e(), "m.room.encrypted", "transaction"),
-                    requestSerializer = encryptedMessageSerializer
                 ) {
                     it shouldBe megolmEventContent
                     sendMessageEventCalled = true
@@ -739,16 +732,14 @@ class RoomServiceTest : ShouldSpec({
             store.roomOutboxMessage.update(message.transactionId) { message }
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendMessageEvent(room.e(), "m.room.message", "transaction"),
-                    requestSerializer = roomMessageSerializer
                 ) {
                     throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                 }
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendMessageEvent(room.e(), "m.room.message", "transaction"),
-                    requestSerializer = roomMessageSerializer
                 ) {
                     SendEventResponse(EventId("event"))
                 }
@@ -772,9 +763,8 @@ class RoomServiceTest : ShouldSpec({
             apiConfig.endpoints {
                 repeat(3) {
                     matrixJsonEndpoint(
-                        json,
+                        json, mappings,
                         SendMessageEvent(room.e(), "m.room.message", "transaction"),
-                        requestSerializer = roomMessageSerializer
                     ) {
                         throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                     }

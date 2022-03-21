@@ -1,20 +1,24 @@
 package net.folivo.trixnity.clientserverapi.model.sync
 
-import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.resources.*
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import kotlinx.serialization.json.Json
+import net.folivo.trixnity.core.HttpMethodType.GET
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 @Serializable
 @Resource("/_matrix/client/v3/sync")
+@HttpMethod(GET)
 data class Sync(
     @SerialName("filter") val filter: String? = null,
     @SerialName("full_state") val fullState: Boolean? = null,
@@ -22,9 +26,11 @@ data class Sync(
     @SerialName("since") val since: String? = null,
     @SerialName("timeout") val timeout: Long? = null,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<Unit, Sync.Response>() {
-    @Transient
-    override val method = Get
+) : MatrixEndpoint<Unit, Sync.Response> {
+    override fun responseSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json
+    ): KSerializer<Response> = SyncResponseSerializer
 
     @Serializable
     data class Response(

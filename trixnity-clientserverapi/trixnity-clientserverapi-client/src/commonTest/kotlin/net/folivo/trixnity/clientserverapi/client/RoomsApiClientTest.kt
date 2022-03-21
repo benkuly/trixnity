@@ -792,7 +792,7 @@ class RoomsApiClientTest {
 
     @Test
     fun shouldKnockRoomByRoomId() = runTest {
-        val response = JoinRoom.Response(RoomId("room", "server"))
+        val response = KnockRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClient(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
@@ -826,7 +826,7 @@ class RoomsApiClientTest {
 
     @Test
     fun shouldKnockRoomByRoomAlias() = runTest {
-        val response = JoinRoom.Response(RoomId("room", "server"))
+        val response = KnockRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClient(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
@@ -1085,7 +1085,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setUserIsTyping(
+        matrixRestClient.rooms.setTyping(
             RoomId("room", "server"),
             UserId("alice", "example.com"),
             typing = true,

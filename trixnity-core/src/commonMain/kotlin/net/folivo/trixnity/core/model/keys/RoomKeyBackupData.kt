@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RoomKeyBackupData<T : RoomKeyBackupSessionData>(
+data class RoomKeyBackupData(
     @SerialName("first_message_index")
     val firstMessageIndex: Long,
     @SerialName("forwarded_count")
@@ -12,5 +12,5 @@ data class RoomKeyBackupData<T : RoomKeyBackupSessionData>(
     @SerialName("is_verified")
     val isVerified: Boolean,
     @SerialName("session_data")
-    val sessionData: T,
+    val sessionData: RoomKeyBackupSessionData,
 )

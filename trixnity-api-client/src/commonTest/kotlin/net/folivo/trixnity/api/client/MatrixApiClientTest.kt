@@ -14,10 +14,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -30,13 +31,11 @@ class MatrixApiClientTest {
 
     @Serializable
     @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
     data class PostPath(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixJsonEndpoint<PostPath.Request, PostPath.Response>() {
-        @Transient
-        override val method = Post
-
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
         @Serializable
         data class Request(
             val includeDino: Boolean
@@ -47,7 +46,6 @@ class MatrixApiClientTest {
             val status: String
         )
     }
-
 
     @Test
     fun itShouldDoNormalRequest() = runTest {

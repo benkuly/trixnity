@@ -308,9 +308,7 @@ object ErrorResponseSerializer : KSerializer<ErrorResponse> {
         return try {
             decoder.json.decodeFromJsonElement(jsonElement)
         } catch (error: SerializationException) {
-            decoder.json.decodeFromJsonElement<ErrorResponse.CustomErrorResponse>(
-                jsonElement
-            )
+            decoder.json.decodeFromJsonElement<ErrorResponse.CustomErrorResponse>(jsonElement)
         }
     }
 

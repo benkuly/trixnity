@@ -14,35 +14,33 @@ class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceRoomService: ApplicationServiceRoomService,
 ) : ApplicationServiceApiServerHandler, EventEmitter() {
 
-    override suspend fun addTransaction(tnxId: String, events: List<Event<*>>) {
-        when (applicationServiceEventTxnService.eventTnxProcessingState(tnxId)) {
+    override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
+        when (applicationServiceEventTxnService.eventTnxProcessingState(txnId)) {
             ApplicationServiceEventTxnService.EventTnxProcessingState.NOT_PROCESSED -> {
                 events.forEach { emitEvent(it) }
-                applicationServiceEventTxnService.onEventTnxProcessed(tnxId)
+                applicationServiceEventTxnService.onEventTnxProcessed(txnId)
             }
             ApplicationServiceEventTxnService.EventTnxProcessingState.PROCESSED -> {
             }
         }
     }
 
-    override suspend fun hasUser(userId: UserId): Boolean {
-        return when (applicationServiceUserService.userExistingState(userId)) {
-            UserExistingState.EXISTS -> true
-            UserExistingState.DOES_NOT_EXISTS -> false
+    override suspend fun hasUser(userId: UserId) {
+        when (applicationServiceUserService.userExistingState(userId)) {
+            UserExistingState.EXISTS -> {}
+            UserExistingState.DOES_NOT_EXISTS -> throw MatrixNotFoundException("user $userId not found")
             UserExistingState.CAN_BE_CREATED -> {
                 applicationServiceUserService.registerManagedUser(userId)
-                true
             }
         }
     }
 
-    override suspend fun hasRoomAlias(roomAlias: RoomAliasId): Boolean {
-        return when (applicationServiceRoomService.roomExistingState(roomAlias)) {
-            RoomExistingState.EXISTS -> true
-            RoomExistingState.DOES_NOT_EXISTS -> false
+    override suspend fun hasRoomAlias(roomAlias: RoomAliasId) {
+        when (applicationServiceRoomService.roomExistingState(roomAlias)) {
+            RoomExistingState.EXISTS -> {}
+            RoomExistingState.DOES_NOT_EXISTS -> throw MatrixNotFoundException("room $roomAlias not found")
             RoomExistingState.CAN_BE_CREATED -> {
                 applicationServiceRoomService.createManagedRoom(roomAlias)
-                true
             }
         }
     }

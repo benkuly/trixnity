@@ -1,21 +1,19 @@
 package net.folivo.trixnity.clientserverapi.model.users
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 @Resource("/_matrix/client/v3/user_directory/search")
+@HttpMethod(POST)
 data class SearchUsers(
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<SearchUsers.Request, SearchUsers.Response>() {
-    @Transient
-    override val method = Post
-
+) : MatrixEndpoint<SearchUsers.Request, SearchUsers.Response> {
     @Serializable
     data class Request(
         @SerialName("search_term") val searchTerm: String,

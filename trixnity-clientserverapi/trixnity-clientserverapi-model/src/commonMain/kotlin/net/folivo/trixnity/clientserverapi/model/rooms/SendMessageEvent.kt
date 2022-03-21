@@ -1,23 +1,32 @@
 package net.folivo.trixnity.clientserverapi.model.rooms
 
-import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.resources.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import kotlinx.serialization.json.Json
+import net.folivo.trixnity.core.HttpMethodType.PUT
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.MessageEventContentSerializer
 
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/send/{type}/{txnId}")
+@HttpMethod(PUT)
 data class SendMessageEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("type") val type: String,
-    @SerialName("txnId") val tnxId: String,
+    @SerialName("txnId") val txnId: String,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<MessageEventContent, SendEventResponse>() {
-    @Transient
-    override val method = Put
+) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
+    override fun requestSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json
+    ): KSerializer<MessageEventContent> {
+        return MessageEventContentSerializer(type, false, mappings.message)
+    }
 }

@@ -10,7 +10,7 @@ class MatrixQueryParameterAuthenticationProvider internal constructor(
     private val field: String,
     private val token: String
 ) : AuthenticationProvider(configuration) {
-    class Configuration internal constructor(name: String) : Config(name)
+    class Configuration internal constructor(name: String? = null) : Config(name)
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
         // TODO simplify
@@ -37,7 +37,7 @@ class MatrixQueryParameterAuthenticationProvider internal constructor(
 }
 
 fun AuthenticationConfig.matrixQueryParameter(
-    name: String,
+    name: String? = null,
     field: String,
     token: String,
 ) {

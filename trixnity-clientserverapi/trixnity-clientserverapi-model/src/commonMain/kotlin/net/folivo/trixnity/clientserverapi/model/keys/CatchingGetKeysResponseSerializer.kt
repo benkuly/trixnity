@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.client
+package net.folivo.trixnity.clientserverapi.model.keys
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -11,14 +11,13 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import mu.KotlinLogging
-import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
 private val log = KotlinLogging.logger {}
 
-object CatchingQueryKeysResponseSerializer : KSerializer<GetKeys.Response> {
+object CatchingGetKeysResponseSerializer : KSerializer<GetKeys.Response> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("QueryKeysResponseSerializer")
 
     override fun deserialize(decoder: Decoder): GetKeys.Response {
@@ -63,6 +62,6 @@ object CatchingQueryKeysResponseSerializer : KSerializer<GetKeys.Response> {
     }
 
     override fun serialize(encoder: Encoder, value: GetKeys.Response) {
-        throw RuntimeException("this should never be called")
+        encoder.encodeSerializableValue(GetKeys.Response.serializer(), value)
     }
 }

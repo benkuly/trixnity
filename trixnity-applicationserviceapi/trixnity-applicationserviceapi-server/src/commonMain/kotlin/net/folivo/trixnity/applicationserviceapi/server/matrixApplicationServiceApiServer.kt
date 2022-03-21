@@ -15,38 +15,32 @@ fun Application.matrixApplicationServiceApiServer(
     applicationServiceApiServerHandler: ApplicationServiceApiServerHandler,
     customMappings: EventContentSerializerMappings? = null
 ) {
-    val json = createMatrixJson(DefaultEventContentSerializerMappings + customMappings)
+    val contentMappings = DefaultEventContentSerializerMappings + customMappings
+    val json = createMatrixJson(contentMappings)
     matrixApiServer(json) {
         install(Authentication) {
-            matrixQueryParameter("default", "access_token", hsToken)
+            matrixQueryParameter(null, "access_token", hsToken)
         }
         routing {
-            authenticate("default") {
-                matrixEndpoint<AddTransaction, AddTransaction.Request, Unit>(json) {
+            authenticate {
+                matrixEndpoint<AddTransaction, AddTransaction.Request, Unit>(json, contentMappings) {
                     applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
                 }
-                matrixEndpoint<AddTransactionLegacy, AddTransactionLegacy.Request, Unit>(json) {
+                matrixEndpoint<AddTransactionLegacy, AddTransactionLegacy.Request, Unit>(json, contentMappings) {
                     applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
                 }
-                matrixEndpoint<HasUser, Unit, Unit>(json) {
-                    val userId = endpoint.userId
-                    val hasUser = applicationServiceApiServerHandler.hasUser(userId)
-                    if (!hasUser) throw MatrixNotFoundException("user $userId not found")
+                matrixEndpoint<HasUser, Unit, Unit>(json, contentMappings) {
+                    applicationServiceApiServerHandler.hasUser(endpoint.userId)
                 }
-                matrixEndpoint<HasUserLegacy, Unit, Unit>(json) {
-                    val userId = endpoint.userId
-                    val hasUser = applicationServiceApiServerHandler.hasUser(userId)
-                    if (!hasUser) throw MatrixNotFoundException("user $userId not found")
+                matrixEndpoint<HasUserLegacy, Unit, Unit>(json, contentMappings) {
+                    applicationServiceApiServerHandler.hasUser(endpoint.userId)
                 }
-                matrixEndpoint<HasRoom, Unit, Unit>(json) {
-                    val roomAlias = endpoint.roomAlias
-                    val hasRoom = applicationServiceApiServerHandler.hasRoomAlias(roomAlias)
-                    if (!hasRoom) throw MatrixNotFoundException("room $roomAlias not found")
+                matrixEndpoint<HasRoom, Unit, Unit>(json, contentMappings) {
+                    applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
                 }
-                matrixEndpoint<HasRoomLegacy, Unit, Unit>(json) {
-                    val roomAlias = endpoint.roomAlias
-                    val hasRoom = applicationServiceApiServerHandler.hasRoomAlias(roomAlias)
-                    if (!hasRoom) throw MatrixNotFoundException("room $roomAlias not found")
+                matrixEndpoint<HasRoomLegacy, Unit, Unit>(json, contentMappings) {
+                    applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
+
                 }
             }
         }

@@ -1,23 +1,29 @@
 package net.folivo.trixnity.clientserverapi.model.keys
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 @Serializable
 @Resource("/_matrix/client/v3/keys/query")
+@HttpMethod(POST)
 data class GetKeys(
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<GetKeys.Request, GetKeys.Response>() {
-    @Transient
-    override val method = Post
+) : MatrixEndpoint<GetKeys.Request, GetKeys.Response> {
+    override fun responseSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json
+    ): KSerializer<Response> = CatchingGetKeysResponseSerializer
 
     @Serializable
     data class Request(
@@ -43,3 +49,4 @@ data class GetKeys(
         val userSigningKeys: Map<UserId, SignedCrossSigningKeys>?,
     )
 }
+

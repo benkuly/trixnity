@@ -91,7 +91,7 @@ class KeyTrustService(
             userId,
             { olm.sign.verify(deviceKeys, it) },
             signedKey,
-            deviceKeys.signatures,
+            deviceKeys.signatures ?: mapOf(),
             deviceKeys.getVerificationState(userId, deviceId),
             false
         ).also { log.trace { "calculated trust level of ${deviceKeys.signed} from $userId is $it" } }
@@ -106,7 +106,7 @@ class KeyTrustService(
             userId,
             { olm.sign.verify(crossSigningKeys, it) },
             signedKey,
-            crossSigningKeys.signatures,
+            crossSigningKeys.signatures ?: mapOf(),
             crossSigningKeys.getVerificationState(userId),
             crossSigningKeys.signed.usage.contains(MasterKey)
         ).also { log.trace { "calculated trust level of ${crossSigningKeys.signed} from $userId is $it" } }
@@ -167,7 +167,7 @@ class KeyTrustService(
                                     signingUserId,
                                     { olm.sign.verify(crossSigningKey, it) },
                                     signingCrossSigningKey,
-                                    crossSigningKey.signatures,
+                                    crossSigningKey.signatures ?: mapOf(),
                                     visitedKeys
                                 ) ?: if (crossSigningKey.signed.usage.contains(MasterKey)
                                     && crossSigningKey.signed.userId == signedUserId
@@ -192,7 +192,7 @@ class KeyTrustService(
                                 signedUserId,
                                 { olm.sign.verify(deviceKey, it) },
                                 signingDeviceKey,
-                                deviceKey.signatures,
+                                deviceKey.signatures ?: mapOf(),
                                 visitedKeys
                             )
                         } else null

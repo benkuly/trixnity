@@ -1,6 +1,7 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
@@ -8,6 +9,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.testutils.mockEngineFactory
@@ -70,7 +74,7 @@ class AuthenticationApiClientTest {
             initialDeviceDisplayName = "someInitialDeviceDisplayName",
             inhibitLogin = true
         ).getOrThrow()
-        require(result is UIA.UIASuccess)
+        require(result is UIA.Success)
         assertEquals(response, result.value)
     }
 
@@ -112,7 +116,23 @@ class AuthenticationApiClientTest {
         val result = matrixRestClient.authentication.getLoginTypes().getOrThrow()
         assertEquals(
             setOf(
-                LoginType.Unknown("m.login.sso"),
+                LoginType.Unknown(
+                    "m.login.sso", JsonObject(
+                        mapOf(
+                            "type" to JsonPrimitive("m.login.sso"),
+                            "identity_providers" to JsonArray(
+                                listOf(
+                                    JsonObject(
+                                        mapOf(
+                                            "id" to JsonPrimitive("oidc-keycloak"),
+                                            "name" to JsonPrimitive("FridaysForFuture")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
                 LoginType.Token,
                 LoginType.Password,
             ), result
@@ -227,14 +247,15 @@ class AuthenticationApiClientTest {
                         request.body.toByteArray().decodeToString()
                     )
                     respond(
-                        "{}",
+                        """{"id_server_unbind_result": "success"}""",
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
             })
         val result = matrixRestClient.authentication.deactivateAccount("id.host").getOrThrow()
-        assertTrue { result is UIA.UIASuccess }
+            .shouldBeInstanceOf<UIA.Success<DeactivateAccount.Response>>()
+        result.value shouldBe DeactivateAccount.Response(DeactivateAccount.Response.IdServerUnbindResult.SUCCESS)
     }
 
     @Test
@@ -257,6 +278,6 @@ class AuthenticationApiClientTest {
                 }
             })
         val result = matrixRestClient.authentication.changePassword("newPassword").getOrThrow()
-        assertTrue { result is UIA.UIASuccess }
+        assertTrue { result is UIA.Success }
     }
 }

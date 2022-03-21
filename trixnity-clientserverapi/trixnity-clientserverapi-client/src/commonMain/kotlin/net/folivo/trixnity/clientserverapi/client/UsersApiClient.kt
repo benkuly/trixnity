@@ -3,8 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import com.benasher44.uuid.uuid4
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.users.*
@@ -14,11 +12,16 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.contentSerializer
+import net.folivo.trixnity.core.serialization.events.fromClass
 
 class UsersApiClient(
-    val httpClient: MatrixClientServerApiHttpClient,
-    val json: Json,
-    val contentMappings: EventContentSerializerMappings
+    @PublishedApi
+    internal val httpClient: MatrixClientServerApiHttpClient,
+    @PublishedApi
+    internal val json: Json,
+    @PublishedApi
+    internal val contentMappings: EventContentSerializerMappings
 ) {
 
     /**
@@ -92,30 +95,33 @@ class UsersApiClient(
         statusMessage: String? = null,
         asUserId: UserId? = null
     ): Result<Unit> =
-        httpClient.request(SetPresence(userId.e(), asUserId), SetPresence.Request(presence.value, statusMessage))
+        httpClient.request(SetPresence(userId.e(), asUserId), SetPresence.Request(presence, statusMessage))
 
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
      */
-    suspend inline fun <reified C : ToDeviceEventContent> sendToDevice(
+    suspend fun <C : ToDeviceEventContent> sendToDevice(
         events: Map<UserId, Map<String, C>>,
         transactionId: String = uuid4().toString(),
         asUserId: UserId? = null
     ): Result<Unit> {
         val firstEventForType = events.entries.firstOrNull()?.value?.entries?.firstOrNull()?.value
             ?: throw IllegalArgumentException("you need to send at least on event")
-        val mapping = contentMappings.toDevice.find { it.kClass.isInstance(firstEventForType) }
-            ?: throw IllegalArgumentException(unsupportedEventType(firstEventForType::class))
-
-        @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            SendToDevice(mapping.type, transactionId.e(), asUserId),
-            SendToDevice.Request(events),
-            SendToDevice.Request.serializer(serializer),
-        )
+        val type = contentMappings.toDevice.contentSerializer(firstEventForType).first
+        return sendToDevice(type, events, transactionId, asUserId)
     }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
+     */
+    suspend fun sendToDevice(
+        type: String,
+        events: Map<UserId, Map<String, ToDeviceEventContent>>,
+        transactionId: String = uuid4().toString(),
+        asUserId: UserId? = null
+    ): Result<Unit> =
+        httpClient.request(SendToDevice(type, transactionId.e(), asUserId), SendToDevice.Request(events))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridfilterfilterid">matrix spec</a>
@@ -140,45 +146,42 @@ class UsersApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
      */
-    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified C : GlobalAccountDataEventContent> getAccountData(
         userId: UserId,
         key: String = "",
         asUserId: UserId? = null
     ): Result<C> {
-        val mapping = contentMappings.globalAccountData.find { it.kClass == C::class }
-            ?: throw IllegalArgumentException(unsupportedEventType(C::class))
-        val eventType = if (key.isEmpty()) mapping.type else mapping.type + key
-
+        val type = contentMappings.globalAccountData.fromClass(C::class).type
         @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            GetGlobalAccountData(userId.e(), eventType, asUserId),
-            serializer
-        )
+        return getAccountData(type, userId, key, asUserId) as Result<C>
+    }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     */
+    suspend fun getAccountData(
+        type: String,
+        userId: UserId,
+        key: String = "",
+        asUserId: UserId? = null
+    ): Result<GlobalAccountDataEventContent> {
+        val actualType = if (key.isEmpty()) type else type + key
+        return httpClient.request(GetGlobalAccountData(userId.e(), actualType, asUserId))
     }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridaccount_datatype">matrix spec</a>
      */
-    suspend inline fun <reified C : GlobalAccountDataEventContent> setAccountData(
-        content: C,
+    suspend fun setAccountData(
+        content: GlobalAccountDataEventContent,
         userId: UserId,
         key: String = "",
         asUserId: UserId? = null
     ): Result<Unit> {
-        val mapping = contentMappings.globalAccountData.find { it.kClass.isInstance(content) }
-        val eventType = mapping?.type
-            ?.let { type -> if (key.isEmpty()) type else type + key }
-            ?: throw IllegalArgumentException(unsupportedEventType(content::class))
+        val mapping = contentMappings.globalAccountData.contentSerializer(content)
+        val eventType = mapping.first.let { type -> if (key.isEmpty()) type else type + key }
 
-        @Suppress("UNCHECKED_CAST")
-        val serializer = mapping.serializer as KSerializer<C>
-        return httpClient.request(
-            SetGlobalAccountData(userId.e(), eventType, asUserId),
-            content,
-            serializer,
-        )
+        return httpClient.request(SetGlobalAccountData(userId.e(), eventType, asUserId), content)
     }
 
     /**

@@ -19,7 +19,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
 
-const val synapseVersion = "v1.52.0" // TODO you should update this from time to time.
+const val synapseVersion = "v1.54.0" // TODO you should update this from time to time.
 private const val password = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(
@@ -33,9 +33,9 @@ suspend fun MatrixClientServerApiClient.register(
         deviceId = deviceId,
         accountType = AccountType.USER,
     ).getOrThrow()
-    registerStep.shouldBeInstanceOf<UIA.UIAStep<Register.Response>>()
+    registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
-    registerResult.shouldBeInstanceOf<UIA.UIASuccess<Register.Response>>()
+    registerResult.shouldBeInstanceOf<UIA.Success<Register.Response>>()
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)

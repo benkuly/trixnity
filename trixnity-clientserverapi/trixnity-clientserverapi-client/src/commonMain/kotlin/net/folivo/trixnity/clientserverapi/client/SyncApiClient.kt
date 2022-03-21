@@ -12,7 +12,6 @@ import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
@@ -43,7 +42,6 @@ class SyncApiClient(
     ): Result<Sync.Response> =
         httpClient.request(
             Sync(filter, if (fullState) fullState else null, setPresence, since, timeout, asUserId),
-            SyncResponseSerializer
         ) {
             timeout {
                 requestTimeoutMillis = if (timeout == 0L) 300_000 else timeout + 5000

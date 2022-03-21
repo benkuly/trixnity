@@ -9,16 +9,19 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
-import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.MatrixServerException
+import kotlinx.serialization.serializer
+import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 open class MatrixApiClient(
     val baseUrl: Url? = null,
-    val json: Json,
+    val json: Json = createMatrixJson(),
+    val contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) {
     val baseClient: HttpClient = httpClientFactory {
@@ -41,20 +44,16 @@ open class MatrixApiClient(
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> request(
         endpoint: ENDPOINT,
-        responseSerializer: KSerializer<RESPONSE>? = null,
         requestBuilder: HttpRequestBuilder.() -> Unit = {}
-    ): Result<RESPONSE> =
-        request(endpoint, Unit, responseSerializer = responseSerializer, requestBuilder = requestBuilder)
+    ): Result<RESPONSE> = request(endpoint, Unit, requestBuilder)
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> request(
         endpoint: ENDPOINT,
         body: REQUEST,
-        requestSerializer: KSerializer<REQUEST>? = null,
-        responseSerializer: KSerializer<RESPONSE>? = null,
         requestBuilder: HttpRequestBuilder.() -> Unit = {}
-    ): Result<RESPONSE> = kotlin.runCatching {
+    ): Result<RESPONSE> = runCatching<RESPONSE> {
         try {
-            unsafeRequest(endpoint, body, requestSerializer, responseSerializer, requestBuilder)
+            unsafeRequest(endpoint, body, requestBuilder)
         } catch (responseException: ResponseException) {
             val response = responseException.response
             val responseText = response.bodyAsText()
@@ -69,15 +68,19 @@ open class MatrixApiClient(
         }
     }
 
-    suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> unsafeRequest(
+    @PublishedApi
+    @OptIn(ExperimentalSerializationApi::class)
+    internal suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> unsafeRequest(
         endpoint: ENDPOINT,
         requestBody: REQUEST,
-        requestSerializer: KSerializer<REQUEST>? = null,
-        responseSerializer: KSerializer<RESPONSE>? = null,
         requestBuilder: HttpRequestBuilder.() -> Unit = {}
     ): RESPONSE {
+        val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json)
         val response = baseClient.request(endpoint) {
-            method = endpoint.method
+            val endpointHttpMethod =
+                serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
+                    ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+            method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
             contentType(endpoint.requestContentType)
             accept(endpoint.responseContentType)
             if (requestBody != Unit) {
@@ -86,6 +89,7 @@ open class MatrixApiClient(
             }
             requestBuilder()
         }
+        val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json)
         return if (responseSerializer != null) json.decodeFromJsonElement(responseSerializer, response.body())
         else response.body()
     }

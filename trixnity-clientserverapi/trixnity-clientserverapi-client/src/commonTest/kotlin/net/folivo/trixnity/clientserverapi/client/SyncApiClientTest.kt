@@ -195,16 +195,6 @@ class SyncApiClientTest {
                                 "account_data": {
                                   "events": [
                                     {
-                                      "content": {
-                                        "tags": {
-                                          "u.work": {
-                                            "order": 0.9
-                                          }
-                                        }
-                                      },
-                                      "type": "m.tag"
-                                    },
-                                    {
                                       "type": "org.example.custom.room.config",
                                       "content": {
                                         "custom_config_key": "custom_config_value"

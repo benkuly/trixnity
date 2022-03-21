@@ -1,18 +1,16 @@
 package net.folivo.trixnity.clientserverapi.model.server
 
-import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.GET
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 
 @Serializable
 @Resource("/_matrix/client/v3/capabilities")
-object GetCapabilities : MatrixJsonEndpoint<Unit, GetCapabilities.Response>() {
-    @Transient
-    override val method = Get
-
+@HttpMethod(GET)
+object GetCapabilities : MatrixEndpoint<Unit, GetCapabilities.Response> {
     @Serializable
     data class Response(
         @SerialName("capabilities") val capabilities: Capabilities

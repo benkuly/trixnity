@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
@@ -49,9 +50,12 @@ suspend fun example() = coroutineScope {
                             val contentLength = senderAvatarDownload.contentLength
                             requireNotNull(contentLength)
                             val uploadedUrl = matrixRestClient.media.upload(
-                                senderAvatarDownload.content,
-                                contentLength,
-                                senderAvatarDownload.contentType ?: ContentType.Application.OctetStream
+                                Media(
+                                    senderAvatarDownload.content,
+                                    contentLength,
+                                    senderAvatarDownload.contentType ?: ContentType.Application.OctetStream,
+                                    null
+                                )
                             ).getOrThrow().contentUri
                             matrixRestClient.rooms.sendMessageEvent(
                                 roomId, ImageMessageEventContent(

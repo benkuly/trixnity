@@ -67,7 +67,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":test-utils"))
-                
+
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")

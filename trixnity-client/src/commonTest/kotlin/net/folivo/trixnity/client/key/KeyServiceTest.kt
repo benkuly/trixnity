@@ -41,6 +41,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -61,6 +62,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val olm = mockk<OlmService>()
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
     val trust = mockk<KeyTrustService>(relaxUnitFun = true)
     val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
@@ -129,7 +131,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("do nothing when no keys outdated") {
             var getKeysCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetKeys()) {
+                matrixJsonEndpoint(json, mappings, GetKeys()) {
                     getKeysCalled = true
                     GetKeys.Response(
                         mapOf(), mapOf(),
@@ -150,7 +152,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 coEvery { olm.sign.verify(key, any()) } returns VerifyResult.MissingSignature("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -172,7 +174,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to invalidKey),
@@ -190,7 +192,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -214,7 +216,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to invalidKey),
@@ -232,7 +234,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -260,7 +262,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -284,7 +286,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to invalidKey)
@@ -302,7 +304,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key)
@@ -329,7 +331,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key)
@@ -347,7 +349,7 @@ private val body: ShouldSpec.() -> Unit = {
         context("device keys") {
             should("update outdated device keys") {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(),
                             mapOf(
@@ -357,7 +359,7 @@ private val body: ShouldSpec.() -> Unit = {
                             mapOf(), mapOf(), mapOf()
                         )
                     }
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(),
                             mapOf(alice to mapOf()),
@@ -393,7 +395,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("look for encrypted room, where the user participates and notify megolm sessions about new device keys") {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetKeys()) {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
                             mapOf(),
                             mapOf(
@@ -490,7 +492,7 @@ private val body: ShouldSpec.() -> Unit = {
                         ) { (levelBefore, expectedVerified) ->
                             coEvery { trust.calculateDeviceKeysTrustLevel(aliceKey2) } returns NotCrossSigned
                             apiConfig.endpoints {
-                                matrixJsonEndpoint(json, GetKeys()) {
+                                matrixJsonEndpoint(json, mappings, GetKeys()) {
                                     GetKeys.Response(
                                         mapOf(),
                                         mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -529,7 +531,7 @@ private val body: ShouldSpec.() -> Unit = {
                             Blocked
                         ) { levelBefore ->
                             apiConfig.endpoints {
-                                matrixJsonEndpoint(json, GetKeys()) {
+                                matrixJsonEndpoint(json, mappings, GetKeys()) {
                                     GetKeys.Response(
                                         mapOf(),
                                         mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -567,7 +569,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                     beforeTest {
                         apiConfig.endpoints {
-                            matrixJsonEndpoint(json, GetKeys()) {
+                            matrixJsonEndpoint(json, mappings, GetKeys()) {
                                 GetKeys.Response(
                                     mapOf(),
                                     mapOf(
@@ -598,7 +600,7 @@ private val body: ShouldSpec.() -> Unit = {
                 should("signature") {
                     coEvery { olm.sign.verify(cedricKey1, any()) } returns VerifyResult.Invalid("")
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, GetKeys()) {
+                        matrixJsonEndpoint(json, mappings, GetKeys()) {
                             GetKeys.Response(
                                 mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
                             )
@@ -617,7 +619,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 ) { deviceKeys ->
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, GetKeys()) {
+                        matrixJsonEndpoint(json, mappings, GetKeys()) {
                             GetKeys.Response(
                                 mapOf(), deviceKeys, mapOf(), mapOf(), mapOf()
                             )

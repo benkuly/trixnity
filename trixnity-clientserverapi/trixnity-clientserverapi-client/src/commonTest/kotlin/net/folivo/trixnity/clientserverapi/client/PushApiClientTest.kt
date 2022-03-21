@@ -431,6 +431,7 @@ class PushApiClientTest {
                     override = listOf(
                         PushRule(
                             actions = setOf(DontNotify),
+                            conditions = setOf(),
                             default = true,
                             enabled = false,
                             ruleId = ".m.rule.master"

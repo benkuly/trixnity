@@ -13,16 +13,15 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.serialization.createMatrixJson
 
-fun Application.matrixApiServer(json: Json = createMatrixJson(), block: Application.() -> Unit) {
+fun Application.matrixApiServer(json: Json, block: Application.() -> Unit) {
     install(Resources)
     install(ContentNegotiation) {
         json(json)
     }
     install(StatusPages) {
         exception { call: ApplicationCall, cause: Throwable ->
-            log.error(cause)
+            call.application.log.error(cause)
             when (cause) {
                 is MatrixServerException ->
                     call.respond(
@@ -41,6 +40,30 @@ fun Application.matrixApiServer(json: Json = createMatrixJson(), block: Applicat
                     )
                 }
             }
+        }
+        status(HttpStatusCode.NotFound) { call, _ ->
+            call.respond(
+                HttpStatusCode.NotFound,
+                json.encodeToJsonElement(ErrorResponseSerializer, ErrorResponse.NotFound())
+            )
+        }
+        status(HttpStatusCode.MethodNotAllowed) { call, _ ->
+            call.respond(
+                HttpStatusCode.MethodNotAllowed,
+                json.encodeToJsonElement(
+                    ErrorResponseSerializer,
+                    ErrorResponse.Unrecognized("http request method not allowed")
+                )
+            )
+        }
+        status(HttpStatusCode.UnsupportedMediaType) { call, _ ->
+            call.respond(
+                HttpStatusCode.UnsupportedMediaType,
+                json.encodeToJsonElement(
+                    ErrorResponseSerializer,
+                    ErrorResponse.Unrecognized("media type of request is not supported")
+                )
+            )
         }
     }
     block()

@@ -163,7 +163,7 @@ class OlmSignService internal constructor(
                 val signedJson = canonicalFilteredJson(jsonObject)
                 val verifyResults = checkSignaturesOf.flatMap { (userId, signingKeys) ->
                     signingKeys.map { signingKey ->
-                        val signatureKey = signedObject.signatures[userId]?.find { it.keyId == signingKey.keyId }
+                        val signatureKey = signedObject.signatures?.get(userId)?.find { it.keyId == signingKey.keyId }
                             ?: return VerifyResult.MissingSignature("no signature found for signing key $signingKey")
                         try {
                             utility.verifyEd25519(

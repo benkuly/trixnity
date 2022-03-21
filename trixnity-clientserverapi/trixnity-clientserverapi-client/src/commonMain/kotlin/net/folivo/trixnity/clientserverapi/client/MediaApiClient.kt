@@ -1,11 +1,7 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import io.ktor.client.call.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.resources.*
 import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.clientserverapi.model.media.*
 
@@ -21,18 +17,11 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixmediav3upload">matrix spec</a>
      */
     suspend fun upload(
-        content: ByteReadChannel,
-        contentLength: Long,
-        contentType: ContentType,
-        filename: String? = null,
+        media: Media,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Long = 600_000
     ): Result<UploadMedia.Response> =
-        httpClient.request(UploadMedia(filename, contentType), object : OutgoingContent.ReadChannelContent() {
-            override val contentType = contentType
-            override val contentLength = contentLength
-            override fun readFrom() = content
-        }) {
+        httpClient.request(UploadMedia(media.filename), media) {
             timeout {
                 requestTimeoutMillis = timeout
             }
@@ -50,29 +39,20 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Long = 600_000
-    ): Result<DownloadResponse> {
+    ): Result<Media> {
         val uri = Url(mxcUri)
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
-        val downloadUri = mxcUri.removePrefix("mxc://")
-        val response = kotlin.runCatching {
-            httpClient.baseClient.request(DownloadMedia(downloadUri, allowRemote)) {
-                method = HttpMethod.Get
-                timeout {
-                    requestTimeoutMillis = timeout
-                }
-                if (progress != null)
-                    onDownload { transferred, total ->
-                        progress.value = FileTransferProgress(transferred, total)
-                    }
+        val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
+            .let { it.substringBefore("/") to it.substringAfter("/") }
+        return httpClient.request(DownloadMedia(serverName, mediaId, allowRemote)) {
+            method = HttpMethod.Get
+            timeout {
+                requestTimeoutMillis = timeout
             }
-        }
-        return response.mapCatching {
-            DownloadResponse(
-                content = it.body(),
-                contentLength = it.contentLength(),
-                contentType = it.contentType(),
-                filename = it.headers[HttpHeaders.ContentDisposition]
-            )
+            if (progress != null)
+                onDownload { transferred, total ->
+                    progress.value = FileTransferProgress(transferred, total)
+                }
         }
     }
 
@@ -86,37 +66,29 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
         method: ThumbnailResizingMethod,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-    ): Result<DownloadResponse> {
+    ): Result<Media> {
         val uri = Url(mxcUri)
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
-        val downloadUri = mxcUri.removePrefix("mxc://")
-        val response = kotlin.runCatching {
-            httpClient.baseClient.request(
-                DownloadThumbnail(
-                    downloadUri = downloadUri,
-                    width = width,
-                    height = height,
-                    method = method,
-                    allowRemote = allowRemote,
-                )
-            ) {
-                this.method = HttpMethod.Get
-                timeout {
-                    requestTimeoutMillis = 300000
-                }
-                if (progress != null)
-                    onDownload { transferred, total ->
-                        progress.value = FileTransferProgress(transferred, total)
-                    }
-            }
-        }
-        return response.mapCatching {
-            DownloadResponse(
-                content = it.body(),
-                contentLength = it.contentLength(),
-                contentType = it.contentType(),
-                filename = it.headers[HttpHeaders.ContentDisposition]
+        val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
+            .let { it.substringBefore("/") to it.substringAfter("/") }
+        return httpClient.request(
+            DownloadThumbnail(
+                serverName = serverName,
+                mediaId = mediaId,
+                width = width.toInt(),
+                height = height.toInt(),
+                method = method,
+                allowRemote = allowRemote,
             )
+        ) {
+            this.method = HttpMethod.Get
+            timeout {
+                requestTimeoutMillis = 300000
+            }
+            if (progress != null)
+                onDownload { transferred, total ->
+                    progress.value = FileTransferProgress(transferred, total)
+                }
         }
     }
 }

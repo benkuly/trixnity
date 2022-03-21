@@ -1,9 +1,9 @@
-package net.folivo.trixnity.clientserverapi.client
+package net.folivo.trixnity.clientserverapi.model.media
 
 import io.ktor.http.*
 import io.ktor.utils.io.*
 
-data class DownloadResponse(
+data class Media(
     val content: ByteReadChannel,
     val contentLength: Long?,
     val contentType: ContentType?,

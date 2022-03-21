@@ -36,9 +36,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
@@ -51,6 +51,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
@@ -65,6 +66,7 @@ private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDeviceId = "ALICEDEVICE"
@@ -97,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
         bobAccount.generateOneTimeKeys(1)
         val bobsFakeSignedCurveKey =
             Key.SignedCurve25519Key(bobDeviceId, bobAccount.oneTimeKeys.curve25519.values.first(), mapOf())
-        matrixJsonEndpoint(json, ClaimKeys()) {
+        matrixJsonEndpoint(json, mappings, ClaimKeys()) {
             it.oneTimeKeys shouldBe (mapOf(bob to mapOf(bobDeviceId to KeyAlgorithm.SignedCurve25519)))
             ClaimKeys.Response(
                 emptyMap(),
@@ -344,12 +346,11 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("throw on ordinary message") {
-                var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+                var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json,
+                        json, mappings,
                         SendToDevice("m.room.encrypted", "txn"),
-                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
                         skipUrlCheck = true
                     ) {
                         sendToDeviceEvents = it.messages
@@ -598,12 +599,11 @@ private val body: ShouldSpec.() -> Unit = {
             expectedMessageCount: Int
         ) {
             should("encrypt message") {
-                var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+                var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json,
+                        json, mappings,
                         SendToDevice("m.room.encrypted", "txn"),
-                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
                         skipUrlCheck = true
                     ) {
                         sendToDeviceEvents = it.messages
@@ -705,9 +705,8 @@ private val body: ShouldSpec.() -> Unit = {
             should("wait that room members are loaded") {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json,
+                        json, mappings,
                         SendToDevice("m.room.encrypted", "txn"),
-                        requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
                         skipUrlCheck = true
                     ) {
                     }

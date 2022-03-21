@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonObject
 @Serializable(with = SignedSerializer::class)
 open class Signed<T, U>(
     val signed: T,
-    val signatures: Signatures<U>
+    val signatures: Signatures<U>? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -48,26 +48,26 @@ class SignedSerializer<T, U>(
     override fun deserialize(decoder: Decoder): Signed<T, U> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val signatures = jsonObj["signatures"] ?: JsonObject(mapOf())
-        require(signatures is JsonObject)
         val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
+        val signatures = jsonObj["signatures"]?.let {
+            if (it is JsonObject) decoder.json.decodeFromJsonElement(signaturesSerializer, it)
+            else null
+        }
         return Signed(
             signed = decoder.json.decodeFromJsonElement(valueSerializer, jsonObj),
-            signatures = decoder.json.decodeFromJsonElement(signaturesSerializer, signatures)
+            signatures = signatures
         )
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     override fun serialize(encoder: Encoder, value: Signed<T, U>) {
         require(encoder is JsonEncoder)
         val signedValue = encoder.json.encodeToJsonElement(valueSerializer, value.signed)
         val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
-        val signatures = encoder.json.encodeToJsonElement(signaturesSerializer, value.signatures)
         require(signedValue is JsonObject)
         encoder.encodeJsonElement(
             JsonObject(buildMap {
                 putAll(signedValue)
-                put("signatures", signatures)
+                value.signatures?.let { put("signatures", encoder.json.encodeToJsonElement(signaturesSerializer, it)) }
             })
         )
     }

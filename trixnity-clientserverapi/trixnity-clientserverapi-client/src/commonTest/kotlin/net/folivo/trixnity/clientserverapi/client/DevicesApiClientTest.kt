@@ -132,7 +132,7 @@ class DevicesApiClientTest {
                 }
             })
         val result = matrixRestClient.devices.deleteDevices(devices = listOf("ABCDEFG")).getOrThrow()
-        assertTrue { result is UIA.UIASuccess }
+        assertTrue { result is UIA.Success }
     }
 
     @Test
@@ -143,6 +143,7 @@ class DevicesApiClientTest {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/devices/ABCDEFG", request.url.fullPath)
                     assertEquals(HttpMethod.Delete, request.method)
+                    assertEquals("{}", request.body.toByteArray().decodeToString())
                     respond(
                         "{}",
                         HttpStatusCode.OK,
@@ -151,6 +152,6 @@ class DevicesApiClientTest {
                 }
             })
         val result = matrixRestClient.devices.deleteDevice(deviceId = "ABCDEFG").getOrThrow()
-        assertTrue { result is UIA.UIASuccess }
+        assertTrue { result is UIA.Success }
     }
 }

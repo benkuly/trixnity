@@ -23,12 +23,12 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientEventContentSerializerMappings
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration.Companion.milliseconds
@@ -173,8 +173,7 @@ class MatrixClient private constructor(
             scope: CoroutineScope,
             getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>
         ): Result<MatrixClient> = kotlin.runCatching {
-            val eventContentSerializerMappings =
-                createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
+            val eventContentSerializerMappings = createEventContentSerializerMappings(customMappings)
             val json = createMatrixJson(eventContentSerializerMappings)
 
             val store = try {
@@ -245,7 +244,7 @@ class MatrixClient private constructor(
         ): Result<MatrixClient?> = kotlin.runCatching {
             measureTimedValue {
                 val eventContentSerializerMappings = measureTimedValue {
-                    createMatrixClientServerApiClientEventContentSerializerMappings(customMappings)
+                    createEventContentSerializerMappings(customMappings)
                 }.apply {
                     log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
                 }.value

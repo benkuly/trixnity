@@ -3,26 +3,24 @@ package net.folivo.trixnity.clientserverapi.model.authentication
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.*
-import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 @Serializable(with = IdentifierTypeSerializer::class)
 sealed class IdentifierType {
+    abstract val name: String
 
     @Serializable
     data class User(
         @SerialName("user")
         val user: String
     ) : IdentifierType() {
-        companion object {
-            const val name: String = "m.id.user"
-        }
+        @SerialName("type")
+        override val name = "m.id.user"
     }
 
     @Serializable
@@ -32,9 +30,8 @@ sealed class IdentifierType {
         @SerialName("address")
         val address: String
     ) : IdentifierType() {
-        companion object {
-            const val name: String = "m.id.thirdparty"
-        }
+        @SerialName("type")
+        override val name = "m.id.thirdparty"
     }
 
     @Serializable
@@ -44,37 +41,40 @@ sealed class IdentifierType {
         @SerialName("phone")
         val number: String
     ) : IdentifierType() {
-        companion object {
-            const val name: String = "m.id.phone"
-        }
+        @SerialName("type")
+        override val name = "m.id.phone"
     }
 
-    @Serializable
     data class Unknown(
-        @SerialName("type")
-        val name: String
+        override val name: String,
+        val raw: JsonElement
     ) : IdentifierType()
 }
 
 object IdentifierTypeSerializer : KSerializer<IdentifierType> {
     override fun deserialize(decoder: Decoder): IdentifierType {
-        throw SerializationException("should never be serialized")
+        require(decoder is JsonDecoder)
+        return try {
+            val jsonObject = decoder.decodeJsonElement().jsonObject
+            when (val name = jsonObject["type"]?.jsonPrimitive?.content) {
+                "m.id.user" -> decoder.json.decodeFromJsonElement<User>(jsonObject)
+                "m.id.thirdparty" -> decoder.json.decodeFromJsonElement<Thirdparty>(jsonObject)
+                "m.id.phone" -> decoder.json.decodeFromJsonElement<Phone>(jsonObject)
+                else -> Unknown(name ?: "", jsonObject)
+            }
+        } catch (exception: Exception) {
+            Unknown("", decoder.decodeJsonElement())
+        }
     }
 
     override fun serialize(encoder: Encoder, value: IdentifierType) {
         require(encoder is JsonEncoder)
         encoder.encodeJsonElement(
             when (value) {
-                is User -> encoder.json.encodeToJsonElement(
-                    AddFieldsSerializer(User.serializer(), "type" to User.name), value
-                )
-                is Thirdparty -> encoder.json.encodeToJsonElement(
-                    AddFieldsSerializer(Thirdparty.serializer(), "type" to Thirdparty.name), value
-                )
-                is Phone -> encoder.json.encodeToJsonElement(
-                    AddFieldsSerializer(Phone.serializer(), "type" to Phone.name), value
-                )
-                is Unknown -> throw SerializationException("unknown identifier type should never be serialized")
+                is User -> encoder.json.encodeToJsonElement(value)
+                is Thirdparty -> encoder.json.encodeToJsonElement(value)
+                is Phone -> encoder.json.encodeToJsonElement(value)
+                is Unknown -> value.raw
             }
         )
     }

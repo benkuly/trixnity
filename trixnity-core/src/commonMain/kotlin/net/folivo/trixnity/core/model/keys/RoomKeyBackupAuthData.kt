@@ -13,11 +13,5 @@ sealed class RoomKeyBackupAuthData {
         val publicKey: Key.Curve25519Key,
         @SerialName("signatures")
         val signatures: Signatures<UserId> = mapOf()
-    ) : RoomKeyBackupAuthData() {
-        companion object {
-            fun fromSigned(signed: Key.SignedCurve25519Key) = RoomKeyBackupV1AuthData(signed.signed, signed.signatures)
-        }
-
-        fun toSigned() = Key.SignedCurve25519Key(publicKey.keyId, publicKey.value, signatures)
-    }
+    ) : RoomKeyBackupAuthData()
 }

@@ -45,7 +45,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
                 implementation("com.squareup.sqldelight:coroutines-extensions:${Versions.sqlDelight}")
-                
+
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }

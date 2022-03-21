@@ -19,6 +19,7 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.OlmEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.User
@@ -27,6 +28,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRead
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -44,6 +46,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var api: MatrixClientServerApiClient
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val olm = mockk<OlmService>(relaxed = true)
 
     lateinit var cut: ActiveDeviceVerification
@@ -80,7 +83,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     should("handle verification step") {
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
         apiConfig.endpoints {
-            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+            matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
                 Sync.Response(
                     nextBatch = "nextBatch",
                     toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(cancelEvent, bob)))
@@ -108,12 +111,11 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         )
         coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
 
-        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         apiConfig.endpoints {
             matrixJsonEndpoint(
-                json,
+                json, mappings,
                 SendToDevice("m.room.encrypted", "txn"),
-                requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
                 skipUrlCheck = true
             ) {
                 sendToDeviceEvents = it.messages
@@ -130,12 +132,11 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         sendToDeviceEvents shouldBe mapOf(bob to mapOf(bobDevice to encrypted))
     }
     should("send verification step and use unencrypted when encrypt failed") {
-        var sendToDeviceEvents: Map<UserId, Map<String, VerificationCancelEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         apiConfig.endpoints {
             matrixJsonEndpoint(
-                json,
+                json, mappings,
                 SendToDevice("m.key.verification.cancel", "txn"),
-                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
                 skipUrlCheck = true
             ) {
                 sendToDeviceEvents = it.messages
@@ -153,7 +154,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     }
     should("stop lifecycle, when cancelled") {
         apiConfig.endpoints {
-            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+            matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
                 Sync.Response(
                     nextBatch = "nextBatch",
                     toDevice = Sync.Response.ToDevice(
@@ -178,9 +179,8 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
         apiConfig.endpoints {
             matrixJsonEndpoint(
-                json,
+                json, mappings,
                 SendToDevice("m.room.encrypted", "txn"),
-                requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
                 skipUrlCheck = true
             ) { }
         }
@@ -188,27 +188,25 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
     }
     should("cancel request from other devices") {
-        var sendToDeviceEvents: Map<UserId, Map<String, VerificationCancelEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         val readyEvent = VerificationReadyEventContent("ALICE_1", setOf(Sas), null, "t")
         apiConfig.endpoints {
-            matrixJsonEndpoint(json, Sync(), skipUrlCheck = true) {
+            matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
                 Sync.Response(
                     nextBatch = "nextBatch",
                     toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(readyEvent, alice)))
                 )
             }
             matrixJsonEndpoint(
-                json,
+                json, mappings,
                 SendToDevice("m.key.verification.cancel", "txn"),
-                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
                 skipUrlCheck = true
             ) {
                 sendToDeviceEvents = it.messages
             }
             matrixJsonEndpoint(
-                json,
+                json, mappings,
                 SendToDevice("m.key.verification.cancel", "txn"),
-                requestSerializer = SendToDevice.Request.serializer(VerificationCancelEventContent.serializer()),
                 skipUrlCheck = true
             ) {
                 sendToDeviceEvents = it.messages

@@ -12,6 +12,7 @@ import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -35,18 +36,18 @@ class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandle
     var hasRoom: Boolean = false
     var requestedRoom: RoomAliasId? = null
 
-    override suspend fun addTransaction(tnxId: String, events: List<Event<*>>) {
-        addTransaction = tnxId to events
+    override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
+        addTransaction = txnId to events
     }
 
-    override suspend fun hasUser(userId: UserId): Boolean {
+    override suspend fun hasUser(userId: UserId) {
         requestedUser = userId
-        return hasUser
+        if (!hasUser) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound())
     }
 
-    override suspend fun hasRoomAlias(roomAlias: RoomAliasId): Boolean {
+    override suspend fun hasRoomAlias(roomAlias: RoomAliasId) {
         requestedRoom = roomAlias
-        return hasRoom
+        if (!hasRoom) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound())
     }
 
 }

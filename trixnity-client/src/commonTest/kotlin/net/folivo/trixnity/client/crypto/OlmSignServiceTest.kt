@@ -205,7 +205,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             val result = cut.sign(event)
             result.signed shouldBe event
-            assertSoftly(result.signatures.entries.first()) {
+            assertSoftly(result.signatures!!.entries.first()) {
                 key shouldBe ownUserId
                 value.keys shouldHaveSize 1
                 assertSoftly(value.keys.first()) {
@@ -246,7 +246,7 @@ class OlmSignServiceTest : ShouldSpec({
                     "AAAAAQ",
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
                 )
-            ).signatures shouldHaveSize 1
+            ).signatures?.size shouldBe 1
         }
     }
     context("verify") {

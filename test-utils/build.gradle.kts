@@ -35,7 +35,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-core"))
-                
+                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
+
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
                 api("io.ktor:ktor-client-mock:${Versions.ktor}")

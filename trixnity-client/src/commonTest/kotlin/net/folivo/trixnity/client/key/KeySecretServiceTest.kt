@@ -10,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.util.*
 import io.mockk.*
@@ -34,6 +35,7 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -44,6 +46,7 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventConte
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -63,6 +66,7 @@ private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -91,7 +95,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(KeySecretService::handleEncryptedIncomingKeyRequests.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
             store.account.userId.value = alice
@@ -100,9 +104,8 @@ private val body: ShouldSpec.() -> Unit = {
             }
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
-                    SendToDevice<EncryptedEventContent>("m.room.encrypted", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                    json, mappings,
+                    SendToDevice("m.room.encrypted", "txn"),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -187,15 +190,14 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeySecretService::processIncomingKeyRequests.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, EncryptedEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
             store.account.userId.value = alice
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
-                    SendToDevice<EncryptedEventContent>("m.room.encrypted", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(EncryptedEventContent.serializer()),
+                    json, mappings,
+                    SendToDevice("m.room.encrypted", "txn"),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -315,7 +317,7 @@ private val body: ShouldSpec.() -> Unit = {
 
         fun returnRoomKeysVersion(publicKey: String? = null) {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                     if (publicKey == null) throw MatrixServerException(InternalServerError, ErrorResponse.Unknown(""))
                     else GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -490,12 +492,11 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
         should("cancel other requests") {
-            var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+            var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendToDevice("m.secret.request", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -527,12 +528,11 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeySecretService::cancelOldOutgoingKeyRequests.name) {
         should("only remove old requests and send cancel") {
-            var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+            var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendToDevice("m.secret.request", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -570,14 +570,13 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeySecretService::requestSecretKeys.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendToDevice("m.secret.request", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -624,6 +623,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
                 assertNotNull(this)
+                this.shouldBeInstanceOf<SecretKeyRequestEventContent>()
                 this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
                 this.action shouldBe KeyRequestAction.REQUEST
                 this.requestingDeviceId shouldBe aliceDevice
@@ -664,14 +664,13 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeySecretService::handleChangedSecrets.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, SecretKeyRequestEventContent>>? = null
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json,
+                    json, mappings,
                     SendToDevice("m.secret.request", "txn"),
-                    requestSerializer = SendToDevice.Request.serializer(SecretKeyRequestEventContent.serializer()),
                     skipUrlCheck = true
                 ) {
                     sendToDeviceEvents = it.messages
@@ -716,6 +715,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
                 assertNotNull(this)
+                this.shouldBeInstanceOf<SecretKeyRequestEventContent>()
                 this.name shouldBe M_CROSS_SIGNING_USER_SIGNING.id
                 this.action shouldBe KeyRequestAction.REQUEST_CANCELLATION
                 this.requestingDeviceId shouldBe aliceDevice

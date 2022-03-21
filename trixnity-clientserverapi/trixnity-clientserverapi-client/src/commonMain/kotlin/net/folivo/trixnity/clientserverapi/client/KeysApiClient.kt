@@ -2,7 +2,6 @@ package net.folivo.trixnity.clientserverapi.client
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.keys.*
 import net.folivo.trixnity.core.model.RoomId
@@ -10,8 +9,10 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 
 class KeysApiClient(
-    val httpClient: MatrixClientServerApiHttpClient,
-    val json: Json
+    @PublishedApi
+    internal val httpClient: MatrixClientServerApiHttpClient,
+    @PublishedApi
+    internal val json: Json
 ) {
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
@@ -33,11 +34,7 @@ class KeysApiClient(
         timeout: Int? = 10000,
         asUserId: UserId? = null
     ): Result<GetKeys.Response> =
-        httpClient.request(
-            GetKeys(asUserId),
-            GetKeys.Request(deviceKeys, token, timeout),
-            responseSerializer = CatchingQueryKeysResponseSerializer
-        )
+        httpClient.request(GetKeys(asUserId), GetKeys.Request(deviceKeys, token, timeout))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
@@ -100,86 +97,65 @@ class KeysApiClient(
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+    suspend inline fun getRoomKeys(
         version: String,
         asUserId: UserId? = null
-    ): Result<RoomsKeyBackup<T>> =
-        httpClient.request(
-            GetRoomsKeyBackup(version, asUserId),
-            RoomsKeyBackup.serializer(serializer())
-        )
+    ): Result<RoomsKeyBackup> =
+        httpClient.request(GetRoomsKeyBackup(version, asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+    suspend inline fun getRoomKeys(
         version: String,
         roomId: RoomId,
         asUserId: UserId? = null
-    ): Result<RoomKeyBackup<T>> =
-        httpClient.request(
-            GetRoomKeyBackup(roomId.e(), version, asUserId),
-            RoomKeyBackup.serializer(serializer())
-        )
+    ): Result<RoomKeyBackup> =
+        httpClient.request(GetRoomKeyBackup(roomId.e(), version, asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> getRoomKeys(
+    suspend inline fun getRoomKeys(
         version: String,
         roomId: RoomId,
         sessionId: String,
         asUserId: UserId? = null
-    ): Result<RoomKeyBackupData<T>> =
-        httpClient.request(
-            GetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId),
-            RoomKeyBackupData.serializer(serializer())
-        )
+    ): Result<RoomKeyBackupData> =
+        httpClient.request(GetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+    suspend inline fun setRoomKeys(
         version: String,
-        backup: RoomsKeyBackup<T>,
+        backup: RoomsKeyBackup,
         asUserId: UserId? = null
     ): Result<SetRoomKeysResponse> =
-        httpClient.request(
-            SetRoomsKeyBackup(version, asUserId),
-            backup,
-            RoomsKeyBackup.serializer(serializer()),
-        )
+        httpClient.request(SetRoomsKeyBackup(version, asUserId), backup)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+    suspend inline fun setRoomKeys(
         version: String,
         roomId: RoomId,
-        backup: RoomKeyBackup<T>,
+        backup: RoomKeyBackup,
         asUserId: UserId? = null
     ): Result<SetRoomKeysResponse> =
-        httpClient.request(
-            SetRoomKeyBackup(roomId.e(), version, asUserId),
-            backup,
-            RoomKeyBackup.serializer(serializer()),
-        )
+        httpClient.request(SetRoomKeyBackup(roomId.e(), version, asUserId), backup)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
      */
-    suspend inline fun <reified T : RoomKeyBackupSessionData> setRoomKeys(
+    suspend inline fun setRoomKeys(
         version: String,
         roomId: RoomId,
         sessionId: String,
-        backup: RoomKeyBackupData<T>,
+        backup: RoomKeyBackupData,
         asUserId: UserId? = null
     ): Result<SetRoomKeysResponse> =
-        httpClient.request(
-            SetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId),
-            backup,
-            RoomKeyBackupData.serializer(serializer()),
-        )
+        httpClient.request(SetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId), backup)
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
