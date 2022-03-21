@@ -80,9 +80,9 @@ class KeyBackupIT {
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
                 bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(Password(IdentifierType.User("user1"), startedClient1.password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
                 startedClient1.client.api.rooms.createRoom(

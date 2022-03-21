@@ -57,10 +57,10 @@ class AuthenticationApiClient(
     ): Result<Login.Response> =
         httpClient.request(
             Login, Login.Request(
-                type = type,
+                type = type.name,
                 identifier = identifier,
-                password = if (type == LoginType.Password) passwordOrToken else null,
-                token = if (type == LoginType.Token) passwordOrToken else null,
+                password = if (type is LoginType.Password) passwordOrToken else null,
+                token = if (type is LoginType.Token) passwordOrToken else null,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName
             )
@@ -84,7 +84,7 @@ class AuthenticationApiClient(
     suspend fun deactivateAccount(
         identityServer: String? = null,
         asUserId: UserId? = null
-    ): Result<UIA<Unit>> =
+    ): Result<UIA<DeactivateAccount.Response>> =
         httpClient.uiaRequest(DeactivateAccount(asUserId), DeactivateAccount.Request(identityServer))
 
     /**

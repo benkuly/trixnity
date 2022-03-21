@@ -227,7 +227,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/tnxId", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/txnId", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
                     request.body.toByteArray().decodeToString() shouldBe """
                                 {
@@ -261,7 +261,7 @@ class UsersApiClientTest {
                     )
                 )
             ),
-            transactionId = "tnxId"
+            transactionId = "txnId"
         ).getOrThrow()
     }
 

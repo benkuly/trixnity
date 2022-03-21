@@ -23,6 +23,7 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("js") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
+    id("com.google.devtools.ksp") version Versions.ksp apply false
     id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
@@ -110,6 +111,7 @@ val buildOlmLinux by tasks.registering(Exec::class) {
 
 val buildOlm by tasks.registering {
     dependsOn(buildOlmLinux, buildOlmWindows)
+    group = "olm"
 }
 
 subprojects {

@@ -6,9 +6,9 @@ import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.keys.Keys
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#types-of-room-events">matrix spec</a>
@@ -79,6 +79,7 @@ sealed interface Event<C : EventContent> {
         @SerialName("sender") val sender: UserId
     ) : Event<C>
 
+    // TODO could be split into GlobalEphemeralEvent and RoomEphemeralEvent
     @Serializable
     data class EphemeralEvent<C : EphemeralEventContent>(
         @SerialName("content") override val content: C,

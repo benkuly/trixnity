@@ -12,6 +12,7 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
@@ -21,13 +22,14 @@ import kotlin.test.Test
 class ApplicationServiceRoomServiceTest {
 
     private val json = createMatrixJson()
+    private val mappings = createEventContentSerializerMappings()
     private val roomAlias = RoomAliasId("alias", "server")
     private val roomId = RoomId("room", "server")
 
     @Test
     fun `should create and save room`() = runTest {
         val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, CreateRoom()) { requestBody ->
+            matrixJsonEndpoint(json, mappings, CreateRoom()) { requestBody ->
                 assertSoftly(requestBody) {
                     it.roomAliasLocalPart shouldBe roomAlias.localpart
                     it.name shouldBe "someName"
@@ -48,7 +50,7 @@ class ApplicationServiceRoomServiceTest {
     @Test
     fun `should have error when creation fails`() = runTest {
         val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, CreateRoom()) {
+            matrixJsonEndpoint(json, mappings, CreateRoom()) {
                 throw MatrixServerException(
                     HttpStatusCode.InternalServerError,
                     ErrorResponse.Unknown("internal server error")
@@ -68,9 +70,8 @@ class ApplicationServiceRoomServiceTest {
     @Test
     fun `should have error when saving by room service fails`() = runTest {
         val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, CreateRoom()) {
+            matrixJsonEndpoint(json, mappings, CreateRoom()) {
                 CreateRoom.Response(roomId)
-
             }
         })
         val cut = TestApplicationServiceRoomService(api)

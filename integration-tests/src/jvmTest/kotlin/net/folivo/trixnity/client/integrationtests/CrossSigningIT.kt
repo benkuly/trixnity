@@ -128,9 +128,9 @@ class CrossSigningIT {
             val bootstrap = client1.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
                 bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             withClue("user1 invites user3, so user3 gets user1s keys") {
                 val roomId = client1.api.rooms.createRoom(
@@ -146,9 +146,9 @@ class CrossSigningIT {
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(AuthenticationRequest.Password(IdentifierType.User("user3"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
 
             withClue("observe trust level with client1 before self verification") {

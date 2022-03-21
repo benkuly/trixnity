@@ -38,7 +38,6 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -48,6 +47,7 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -71,6 +71,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     val olm = mockk<OlmService>()
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     lateinit var cut: KeyBackupService
 
     mockkStatic(::keyBackupCanBeTrusted)
@@ -108,7 +109,7 @@ private val body: ShouldSpec.() -> Unit = {
             ownUserId to keysOf(Ed25519Key("DEV", "s1"))
         )
         apiConfig.endpoints {
-            matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+            matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                 keyVersion
             }
         }
@@ -135,10 +136,10 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("set version to null when algorithm not supported") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                     keyVersion
                 }
-                matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                     GetRoomKeysBackupVersionResponse.Unknown(
                         JsonObject(mapOf()),
                         RoomKeyBackupAlgorithm.Unknown("")
@@ -165,7 +166,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("just set version when already signed") {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                         keyVersion
                     }
                 }
@@ -182,10 +183,10 @@ private val body: ShouldSpec.() -> Unit = {
             should("set version and sign when not signed by own device") {
                 var setRoomKeyBackupVersionCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                         keyVersion
                     }
-                    matrixJsonEndpoint(json, SetRoomKeyBackupVersionByVersion("1")) {
+                    matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersionByVersion("1")) {
                         setRoomKeyBackupVersionCalled = true
                         it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
@@ -218,13 +219,13 @@ private val body: ShouldSpec.() -> Unit = {
             should("set version to null, remove secret and remove signatures when signed by own device") {
                 var setRoomKeyBackupVersionCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                         keyVersion
                     }
-                    matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                         keyVersion
                     }
-                    matrixJsonEndpoint(json, SetRoomKeyBackupVersionByVersion("1")) {
+                    matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersionByVersion("1")) {
                         setRoomKeyBackupVersionCalled = true
                         it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
@@ -295,7 +296,7 @@ private val body: ShouldSpec.() -> Unit = {
             context("without error") {
                 beforeTest {
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
                             RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
                     }
@@ -355,7 +356,7 @@ private val body: ShouldSpec.() -> Unit = {
                 beforeTest {
                     allLoadMegolmSessionsCalled.value = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
                             allLoadMegolmSessionsCalled.first { it }
                             getRoomKeyBackupDataCalled = true
                             RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
@@ -376,12 +377,12 @@ private val body: ShouldSpec.() -> Unit = {
                 beforeTest {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json,
-                            GetRoomKeyBackupData<EncryptedRoomKeyBackupV1SessionData>(roomId.e(), sessionId, version)
+                            json, mappings,
+                            GetRoomKeyBackupData(roomId.e(), sessionId, version)
                         ) {
                             throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                         }
-                        matrixJsonEndpoint(json, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
                             getRoomKeyBackupDataCalled = true
                             RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
@@ -411,7 +412,7 @@ private val body: ShouldSpec.() -> Unit = {
             var setRoomKeyBackupVersionCalled = false
             var setGlobalAccountDataCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, SetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
                     setRoomKeyBackupVersionCalled = true
                     it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                     it.authData.publicKey.value shouldNot beEmpty()
@@ -423,8 +424,8 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("1")
                 }
                 matrixJsonEndpoint(
-                    json,
-                    SetGlobalAccountData<MegolmBackupV1EventContent>(ownUserId.e(), "m.megolm_backup.v1")
+                    json, mappings,
+                    SetGlobalAccountData(ownUserId.e(), "m.megolm_backup.v1")
                 ) {
                     setGlobalAccountDataCalled = true
                 }
@@ -496,7 +497,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("do nothing when version is null") {
             var setRoomKeyBackupVersionCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, SetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
                     setRoomKeyBackupVersionCalled = true
                     SetRoomKeyBackupVersion.Response("1")
                 }
@@ -524,7 +525,7 @@ private val body: ShouldSpec.() -> Unit = {
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
             var setRoomKeyBackupVersionCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, SetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
                     setRoomKeyBackupVersionCalled = true
                     SetRoomKeyBackupVersion.Response("2")
                 }
@@ -539,7 +540,7 @@ private val body: ShouldSpec.() -> Unit = {
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
             var setRoomKeyBackupDataCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, SetRoomsKeyBackup<EncryptedRoomKeyBackupV1SessionData>("1")) {
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("1")) {
                     it.rooms.keys shouldBe setOf(RoomId("room1", "server"), RoomId("room2", "server"))
                     assertSoftly(it.rooms[room1]?.sessions?.get(sessionId1)) {
                         assertNotNull(this)
@@ -577,10 +578,10 @@ private val body: ShouldSpec.() -> Unit = {
 
             var setRoomKeyBackupDataCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, SetRoomsKeyBackup<EncryptedRoomKeyBackupV1SessionData>("1")) {
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("1")) {
                     throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
                 }
-                matrixJsonEndpoint(json, GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
                     GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupV1AuthData(
                             publicKey = Curve25519Key(null, keyBackupPublicKey),
@@ -591,7 +592,7 @@ private val body: ShouldSpec.() -> Unit = {
                         version = "2"
                     )
                 }
-                matrixJsonEndpoint(json, SetRoomsKeyBackup<EncryptedRoomKeyBackupV1SessionData>("2")) {
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("2")) {
                     setRoomKeyBackupDataCalled = true
                     SetRoomKeysResponse(2, "etag")
                 }

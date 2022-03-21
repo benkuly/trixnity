@@ -1,21 +1,19 @@
 package net.folivo.trixnity.clientserverapi.model.push
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 @Resource("/_matrix/client/v3/pushers/set")
+@HttpMethod(POST)
 data class SetPushers(
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<SetPushers.Request, Unit>() {
-    @Transient
-    override val method = Post
-
+) : MatrixEndpoint<SetPushers.Request, Unit> {
     @Serializable
     data class Request(
         @SerialName("app_display_name")

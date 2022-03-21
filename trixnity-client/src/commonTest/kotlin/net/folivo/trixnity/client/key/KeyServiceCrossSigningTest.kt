@@ -29,6 +29,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
+import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -39,6 +40,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
@@ -59,6 +61,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val olm = mockk<OlmService>()
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val backup: KeyBackupService = mockk()
     val trust: KeyTrustService = mockk()
     lateinit var apiConfig: PortableMockEngineConfig
@@ -189,8 +192,8 @@ private val body: ShouldSpec.() -> Unit = {
 
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json,
-                        SetGlobalAccountData<SecretKeyEventContent>(alice.e(), "m.secret_storage.key."),
+                        json, mappings,
+                        SetGlobalAccountData(alice.e(), "m.secret_storage.key."),
                         skipUrlCheck = true
                     ) {
                         it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
@@ -200,16 +203,18 @@ private val body: ShouldSpec.() -> Unit = {
                         secretKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json,
-                        SetGlobalAccountData<DefaultSecretKeyEventContent>(alice.e(), "m.secret_storage.default_key")
+                        json, mappings,
+                        SetGlobalAccountData(alice.e(), "m.secret_storage.default_key")
                     ) {
+                        it.shouldBeInstanceOf<DefaultSecretKeyEventContent>()
                         it.key.length shouldBeGreaterThan 10
                         defaultSecretKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json,
-                        SetGlobalAccountData<MasterKeyEventContent>(alice.e(), "m.cross_signing.master")
+                        json, mappings,
+                        SetGlobalAccountData(alice.e(), "m.cross_signing.master")
                     ) {
+                        it.shouldBeInstanceOf<MasterKeyEventContent>()
                         val encrypted = it.encrypted.values.first()
                         encrypted.shouldBeInstanceOf<JsonObject>()
                         encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
@@ -217,9 +222,10 @@ private val body: ShouldSpec.() -> Unit = {
                         masterKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json,
-                        SetGlobalAccountData<UserSigningKeyEventContent>(alice.e(), "m.cross_signing.user_signing")
+                        json, mappings,
+                        SetGlobalAccountData(alice.e(), "m.cross_signing.user_signing")
                     ) {
+                        it.shouldBeInstanceOf<UserSigningKeyEventContent>()
                         val encrypted = it.encrypted.values.first()
                         encrypted.shouldBeInstanceOf<JsonObject>()
                         encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
@@ -227,20 +233,22 @@ private val body: ShouldSpec.() -> Unit = {
                         userSigningKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json,
-                        SetGlobalAccountData<SelfSigningKeyEventContent>(alice.e(), "m.cross_signing.self_signing")
+                        json, mappings,
+                        SetGlobalAccountData(alice.e(), "m.cross_signing.self_signing")
                     ) {
+                        it.shouldBeInstanceOf<SelfSigningKeyEventContent>()
                         val encrypted = it.encrypted.values.first()
                         encrypted.shouldBeInstanceOf<JsonObject>()
                         encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                         encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                         selfSigningKeyEventContentCalled = true
                     }
-                    matrixJsonEndpoint(json, SetCrossSigningKeys()) {
-                        it.masterKey shouldNotBe null
-                        it.selfSigningKey shouldNotBe null
-                        it.userSigningKey shouldNotBe null
+                    matrixJsonEndpoint(json, mappings, SetCrossSigningKeys()) {
+                        it.request.masterKey shouldNotBe null
+                        it.request.selfSigningKey shouldNotBe null
+                        it.request.userSigningKey shouldNotBe null
                         setCrossSigningKeysCalled = true
+                        ResponseWithUIA.Success(Unit)
                     }
                 }
                 coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
@@ -284,7 +292,7 @@ private val body: ShouldSpec.() -> Unit = {
 
                 assertSoftly(result.await()) {
                     this.recoveryKey shouldNot beEmpty()
-                    this.result shouldBe Result.success(UIA.UIASuccess(Unit))
+                    this.result shouldBe Result.success(UIA.Success(Unit))
                 }
                 coVerify {
                     trust.trustAndSignKeys(
@@ -314,7 +322,7 @@ private val body: ShouldSpec.() -> Unit = {
 
                 assertSoftly(result.await()) {
                     this.recoveryKey shouldNot beEmpty()
-                    this.result shouldBe Result.success(UIA.UIASuccess(Unit))
+                    this.result shouldBe Result.success(UIA.Success(Unit))
                 }
                 coVerify {
                     trust.trustAndSignKeys(

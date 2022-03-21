@@ -1,12 +1,12 @@
 package net.folivo.trixnity.clientserverapi.model.rooms
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -15,12 +15,10 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
 @Serializable
 @Resource("/_matrix/client/v3/createRoom")
+@HttpMethod(POST)
 data class CreateRoom(
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<CreateRoom.Request, CreateRoom.Response>() {
-    @Transient
-    override val method = Post
-
+) : MatrixEndpoint<CreateRoom.Request, CreateRoom.Response> {
     @Serializable
     data class Request(
         @SerialName("visibility") val visibility: Visibility,

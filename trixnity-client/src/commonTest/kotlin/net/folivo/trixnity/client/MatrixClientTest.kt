@@ -32,6 +32,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
@@ -44,6 +45,7 @@ class MatrixClientTest : ShouldSpec({
     timeout = 30_000
 
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
 
     val serverResponse = Sync.Response(
         nextBatch = "nextBatch",
@@ -404,7 +406,7 @@ class MatrixClientTest : ShouldSpec({
             val cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
                 httpClientFactory = mockEngineFactory {
-                    matrixJsonEndpoint(json, Logout()) {
+                    matrixJsonEndpoint(json, mappings, Logout()) {
                         logoutCalled = true
                     }
                 },
@@ -424,7 +426,7 @@ class MatrixClientTest : ShouldSpec({
             val cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
                 httpClientFactory = mockEngineFactory {
-                    matrixJsonEndpoint(json, Logout()) {
+                    matrixJsonEndpoint(json, mappings, Logout()) {
                         logoutCalled = true
                     }
                 },

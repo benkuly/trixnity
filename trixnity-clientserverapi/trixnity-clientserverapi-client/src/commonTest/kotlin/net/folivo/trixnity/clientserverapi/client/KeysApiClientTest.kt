@@ -27,7 +27,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class KeysApiClientTest {
 
-    val alice = UserId("@alice:example.com")
+    private val alice = UserId("@alice:example.com")
 
     @Test
     fun shouldSetDeviceKeys() = runTest {
@@ -276,7 +276,6 @@ class KeysApiClientTest {
                         usage = setOf(MasterKey),
                         keys = keysOf(Ed25519Key("base64+master+public+key", "base64+master+public+key"))
                     ),
-                    signatures = mapOf()
                 )
             ),
             selfSigningKeys = mapOf(
@@ -795,7 +794,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>("1").getOrThrow()
+        matrixRestClient.keys.getRoomKeys("1").getOrThrow()
             .shouldBe(
                 RoomsKeyBackup(
                     mapOf(
@@ -853,7 +852,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>("1", RoomId("!room:example.org"))
+        matrixRestClient.keys.getRoomKeys("1", RoomId("!room:example.org"))
             .getOrThrow()
             .shouldBe(
                 RoomKeyBackup(
@@ -904,7 +903,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
+        matrixRestClient.keys.getRoomKeys(
             "1", RoomId("!room:example.org"), "+ess/ionId1"
         ).getOrThrow()
             .shouldBe(

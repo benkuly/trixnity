@@ -30,6 +30,7 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -44,6 +45,7 @@ class UserServiceTest : ShouldSpec({
     lateinit var storeScope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
 
     lateinit var cut: UserService
@@ -75,7 +77,7 @@ class UserServiceTest : ShouldSpec({
         }
         should("load members") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
                     GetMembers.Response(
                         setOf(
                             StateEvent(
@@ -110,7 +112,7 @@ class UserServiceTest : ShouldSpec({
         }
         should("add outdated keys when room is encrypted") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
                     GetMembers.Response(
                         setOf(
                             StateEvent(
@@ -156,7 +158,7 @@ class UserServiceTest : ShouldSpec({
                 )
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
                     GetMembers.Response(
                         setOf(
                             StateEvent(

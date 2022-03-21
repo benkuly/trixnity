@@ -62,9 +62,9 @@ class LogoutIT {
         }
 
         val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
-        deleteStep.shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+        deleteStep.shouldBeInstanceOf<UIA.Step<Unit>>()
             .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
-            .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+            .shouldBeInstanceOf<UIA.Success<Unit>>()
 
         withClue("check client2 is logged out and sync is stopped") {
             withTimeout(30_000) {

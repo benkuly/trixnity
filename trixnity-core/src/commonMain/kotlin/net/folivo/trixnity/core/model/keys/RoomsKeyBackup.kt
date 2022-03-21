@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.RoomId
 
 @Serializable
-data class RoomsKeyBackup<T : RoomKeyBackupSessionData>(
+data class RoomsKeyBackup(
     @SerialName("rooms")
-    val rooms: Map<RoomId, RoomKeyBackup<T>>,
+    val rooms: Map<RoomId, RoomKeyBackup>,
 )

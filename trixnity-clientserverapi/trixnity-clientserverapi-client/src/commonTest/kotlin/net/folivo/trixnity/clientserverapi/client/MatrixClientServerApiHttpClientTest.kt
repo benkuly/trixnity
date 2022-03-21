@@ -14,16 +14,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
+import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -33,16 +36,33 @@ import kotlin.test.assertEquals
 class MatrixClientServerApiHttpClientTest {
 
     private val json = createMatrixJson()
+    private val mappings = createEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
     data class PostPath(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixJsonEndpoint<PostPath.Request, PostPath.Response>() {
-        @Transient
-        override val method = Post
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
+        @Serializable
+        data class Request(
+            val includeDino: Boolean
+        )
 
+        @Serializable
+        data class Response(
+            val status: String
+        )
+    }
+
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    data class PostPathWithUIA(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixUIAEndpoint<PostPathWithUIA.Request, PostPathWithUIA.Response> {
         @Serializable
         data class Request(
             val includeDino: Boolean
@@ -75,6 +95,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -101,6 +122,7 @@ class MatrixClientServerApiHttpClientTest {
             },
             onLogout = { onLogout = it },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
         val error = shouldThrow<MatrixServerException> {
@@ -135,11 +157,12 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
-        cut.uiaRequest(PostPath("1", "2"), PostPath.Request(true))
-            .getOrThrow() shouldBe UIA.UIASuccess(PostPath.Response("ok"))
+        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true))
+            .getOrThrow() shouldBe UIA.Success(PostPathWithUIA.Response("ok"))
     }
 
     @Test
@@ -156,11 +179,12 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
         val error = shouldThrow<MatrixServerException> {
-            cut.uiaRequest(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
         }
         assertEquals(HttpStatusCode.NotFound, error.statusCode)
         assertEquals(
@@ -189,11 +213,12 @@ class MatrixClientServerApiHttpClientTest {
             },
             onLogout = { onLogout = it },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
-        val error = cut.uiaRequest(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
-            .shouldBeInstanceOf<UIA.UIAError<*>>()
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+            .shouldBeInstanceOf<UIA.Error<*>>()
         assertEquals(
             ErrorResponse.UnknownToken::class,
             error.errorResponse::class
@@ -260,11 +285,12 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
-        val result = cut.uiaRequest(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
-        result.shouldBeInstanceOf<UIA.UIAStep<*>>()
+        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        result.shouldBeInstanceOf<UIA.Step<*>>()
         result.state shouldBe UIAState(
             completed = listOf(),
             flows = setOf(
@@ -300,26 +326,71 @@ class MatrixClientServerApiHttpClientTest {
                             when (requestCount) {
                                 0 -> {
                                     requestCount++
+                                    request.body.toByteArray().decodeToString() shouldBe """
+                                        {
+                                          "includeDino":true
+                                        }
+                                        """.trimToFlatJson()
                                     respond(
                                         """
-                                {
-                                  "errcode": "M_NOT_FOUND",
-                                  "flows":[
-                                    {
-                                      "stages":["m.login.password"]
-                                    },
-                                    {
-                                      "stages":["m.login.sso","m.login.recaptcha"]
-                                    }
-                                  ],
-                                  "params":{
-                                      "example.type.baz":{
-                                          "example_key":"foobar"
-                                      }
-                                  },
-                                  "session":"session1"
+                                            {
+                                              "errcode": "M_NOT_FOUND",
+                                              "flows":[
+                                                {
+                                                  "stages":["m.login.password"]
+                                                },
+                                                {
+                                                  "stages":["m.login.sso","m.login.recaptcha"]
+                                                }
+                                              ],
+                                              "params":{
+                                                  "example.type.baz":{
+                                                      "example_key":"foobar"
+                                                  }
+                                              },
+                                              "session":"session1"
+                                            }
+                                            """.trimIndent(),
+                                        HttpStatusCode.Unauthorized,
+                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                    )
                                 }
-                            """.trimIndent(),
+                                1 -> {
+                                    requestCount++
+                                    request.body.toByteArray().decodeToString() shouldBe """
+                                        {
+                                          "includeDino":true,
+                                          "auth":{
+                                            "type":"m.login.password",
+                                            "identifier":{
+                                              "user":"username",
+                                              "type":"m.id.user"                                     
+                                            },
+                                            "password":"password",
+                                            "session":"session1"
+                                          }
+                                        }
+                                        """.trimToFlatJson()
+                                    respond(
+                                        """
+                                            {
+                                              "errcode": "M_NOT_FOUND",
+                                              "flows":[
+                                                {
+                                                  "stages":["m.login.password"]
+                                                },
+                                                {
+                                                  "stages":["m.login.sso","m.login.recaptcha"]
+                                                }
+                                              ],
+                                              "params":{
+                                                  "example.type.baz":{
+                                                      "example_key":"foobar"
+                                                  }
+                                              },
+                                              "session":"session1"
+                                            }
+                                            """.trimIndent(),
                                         HttpStatusCode.Unauthorized,
                                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                     )
@@ -327,19 +398,19 @@ class MatrixClientServerApiHttpClientTest {
                                 else -> {
                                     requestCount++
                                     request.body.toByteArray().decodeToString() shouldBe """
-                                {
-                                  "help":"me",
-                                  "auth":{
-                                    "identifier":{
-                                      "user":"username",
-                                      "type":"m.id.user"                                     
-                                    },
-                                    "password":"password",
-                                    "session":"session1",
-                                    "type":"m.login.password"
-                                  }
-                                }
-                                """.trimToFlatJson()
+                                        {
+                                          "includeDino":true,
+                                          "auth":{
+                                            "type":"m.login.password",
+                                            "identifier":{
+                                              "user":"username",
+                                              "type":"m.id.user"                                     
+                                            },
+                                            "password":"password",
+                                            "session":"session1"
+                                          }
+                                        }
+                                        """.trimToFlatJson()
                                     respond(
                                         """{"status":"ok"}""",
                                         HttpStatusCode.OK,
@@ -352,15 +423,11 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
+            contentMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
-        val result = cut.uiaRequest(
-            PostPath("1", "2"),
-            PostPath.Request(true)
-        ).getOrThrow()
-        result.shouldBeInstanceOf<UIA.UIAError<*>>()
-        result.state shouldBe UIAState(
+        val expectedUIAState = UIAState(
             completed = listOf(),
             flows = setOf(
                 UIAState.FlowInformation(listOf(AuthenticationType.Password)),
@@ -377,10 +444,24 @@ class MatrixClientServerApiHttpClientTest {
             ),
             session = "session1"
         )
-        result.errorResponse shouldBe ErrorResponse.NotFound()
-        result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
-        result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
+        val result1 = cut.uiaRequest(
+            PostPathWithUIA("1", "2"),
+            PostPathWithUIA.Request(true)
+        ).getOrThrow()
+        result1.shouldBeInstanceOf<UIA.Error<*>>()
+        result1.state shouldBe expectedUIAState
+        result1.errorResponse shouldBe ErrorResponse.NotFound()
+        result1.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
                 "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
-        requestCount shouldBe 2
+        val result2 = result1.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
+            .getOrThrow()
+        result2.shouldBeInstanceOf<UIA.Error<*>>()
+        result2.state shouldBe expectedUIAState
+        result2.errorResponse shouldBe ErrorResponse.NotFound()
+        result2.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+        result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
+            .getOrThrow()
+        requestCount shouldBe 3
     }
 }

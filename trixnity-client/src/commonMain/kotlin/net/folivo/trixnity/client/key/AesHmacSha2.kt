@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import kotlin.experimental.and
 
+// TODO can be implemented multiplatform with okio or krypto
 expect fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
 
 internal class DerivedKeys(val aesKey: ByteArray, val hmacKey: ByteArray)

@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.serialization.events.createEventSerializersModul
 
 @OptIn(ExperimentalSerializationApi::class)
 fun createMatrixJson(
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
     val modules = (createEventSerializersModule(eventContentSerializerMappings))
@@ -24,3 +24,6 @@ fun createMatrixJson(
             if (customModule != null) modules + customModule else modules
     }
 }
+
+fun createEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+    DefaultEventContentSerializerMappings + customMappings

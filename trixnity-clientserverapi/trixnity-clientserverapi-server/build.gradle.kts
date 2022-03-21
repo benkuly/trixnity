@@ -1,6 +1,11 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("com.google.devtools.ksp")
+}
+
+dependencies {
+    ksp("io.mockative:mockative-processor:${Versions.mockative}")
 }
 
 kotlin {
@@ -32,6 +37,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
@@ -39,9 +45,14 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
+
+                implementation("io.mockative:mockative:${Versions.mockative}")
+
+                implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
+
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
         val jvmTest by getting {

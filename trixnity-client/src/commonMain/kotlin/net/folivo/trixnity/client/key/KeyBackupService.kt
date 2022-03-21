@@ -157,16 +157,13 @@ class KeyBackupService(
                             val version = version.value?.version
                             if (version != null) {
                                 log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
-                                val encryptedData =
-                                    api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
-                                        version,
-                                        roomId,
-                                        sessionId
-                                    ).getOrThrow()
+                                val encryptedSessionData =
+                                    api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
+                                require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
                                 val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                                 val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                                     it.decrypt(
-                                        with(encryptedData.sessionData) {
+                                        with(encryptedSessionData) {
                                             OlmPkMessage(
                                                 cipherText = ciphertext,
                                                 mac = mac,

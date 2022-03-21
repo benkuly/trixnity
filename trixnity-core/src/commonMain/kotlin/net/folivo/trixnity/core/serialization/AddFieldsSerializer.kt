@@ -18,7 +18,6 @@ open class AddFieldsSerializer<T : Any>(
         return addField(element)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun addField(element: JsonElement): JsonElement {
         require(element is JsonObject)
         return JsonObject(buildMap {

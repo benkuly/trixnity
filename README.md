@@ -304,6 +304,10 @@ You can use for example `implementation("ch.qos.logback:logback-classic:<version
 
 ## Build this project
 
+### Build Olm
+
+Build olm with the `buildOlm` gradle tasks.
+
 ### Android SDK
 
 Install the Android SDK with the following packages:

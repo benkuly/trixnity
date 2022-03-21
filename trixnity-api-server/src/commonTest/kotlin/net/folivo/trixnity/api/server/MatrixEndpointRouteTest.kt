@@ -11,30 +11,28 @@ import io.ktor.utils.io.charsets.Charsets.UTF_8
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.Test
 
 class MatrixEndpointRouteTest {
     private val json = createMatrixJson()
+    private val contentMappings = createEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")
+    @HttpMethod(net.folivo.trixnity.core.HttpMethodType.POST)
     data class PostPath(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixJsonEndpoint<PostPath.Request, PostPath.Response>() {
-        @Transient
-        override val method = HttpMethod.Post
-
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
         @Serializable
         data class Request(
             val includeDino: Boolean
@@ -46,12 +44,25 @@ class MatrixEndpointRouteTest {
         )
     }
 
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(net.folivo.trixnity.core.HttpMethodType.GET)
+    data class GetPath(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<Unit, GetPath.Response> {
+        @Serializable
+        data class Response(
+            val status: String
+        )
+    }
+
     @Test
     fun shouldHandleRequest() = testApplication {
         application {
             matrixApiServer(json) {
                 routing {
-                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json) {
+                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
                         endpoint.pathParam shouldBe "unicorn"
                         endpoint.requestParam shouldBe "2"
                         requestBody.includeDino shouldBe true
@@ -70,40 +81,112 @@ class MatrixEndpointRouteTest {
     }
 
     @Test
+    fun shouldIgnoreWrongHttpMethod() = testApplication {
+        var getHasBeenCalled = false
+        var postHasBeenCalled = false
+        application {
+            matrixApiServer(json) {
+                routing {
+                    matrixEndpoint<GetPath, GetPath.Response>(json, contentMappings) {
+                        getHasBeenCalled = true
+                        GetPath.Response("anti-dino")
+                    }
+                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
+                        postHasBeenCalled = true
+                        PostPath.Response("dino")
+                    }
+                }
+            }
+        }
+        val response1 = client.post("/path/unicorn?requestParam=2") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"includeDino":true}""")
+        }
+        getHasBeenCalled shouldBe false
+        postHasBeenCalled shouldBe true
+        response1.body<String>() shouldBe """{"status":"dino"}"""
+        response1.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response1.status shouldBe HttpStatusCode.OK
+
+        getHasBeenCalled = false
+        postHasBeenCalled = false
+
+        val response2 = client.get("/path/unicorn?requestParam=2")
+        getHasBeenCalled shouldBe true
+        postHasBeenCalled shouldBe false
+        response2.body<String>() shouldBe """{"status":"anti-dino"}"""
+        response2.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response2.status shouldBe HttpStatusCode.OK
+    }
+
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(net.folivo.trixnity.core.HttpMethodType.POST)
+    data class PostPathWithCustomSerializer(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<PostPathWithCustomSerializer.Request, PostPathWithCustomSerializer.Response> {
+        @Serializable
+        data class Request(
+            val includeDino: Boolean
+        )
+
+        @Serializable
+        data class Response(
+            val status: String
+        )
+
+        override fun requestSerializerBuilder(
+            mappings: EventContentSerializerMappings,
+            json: Json
+        ): KSerializer<Request> {
+            return object : KSerializer<Request> {
+                override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
+
+                override fun deserialize(decoder: Decoder): Request {
+                    require(decoder is JsonDecoder)
+                    decoder.decodeJsonElement()
+                    return Request(false)
+                }
+
+                override fun serialize(encoder: Encoder, value: Request) {
+                    throw NotImplementedError()
+                }
+
+            }
+        }
+
+        override fun responseSerializerBuilder(
+            mappings: EventContentSerializerMappings,
+            json: Json
+        ): KSerializer<Response> {
+            return object : KSerializer<Response> {
+                override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
+
+                override fun deserialize(decoder: Decoder): Response {
+                    throw NotImplementedError()
+                }
+
+                override fun serialize(encoder: Encoder, value: Response) {
+                    require(encoder is JsonEncoder)
+                    encoder.encodeJsonElement(JsonObject(mapOf("custom" to JsonPrimitive(true))))
+                }
+
+            }
+        }
+    }
+
+    @Test
     fun shouldHandleRequestWithCustomSerializers() = testApplication {
         application {
             matrixApiServer(json) {
                 routing {
-                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json,
-                        requestSerializer = object : KSerializer<PostPath.Request> {
-                            override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
-
-                            override fun deserialize(decoder: Decoder): PostPath.Request {
-                                require(decoder is JsonDecoder)
-                                decoder.decodeJsonElement()
-                                return PostPath.Request(false)
-                            }
-
-                            override fun serialize(encoder: Encoder, value: PostPath.Request) {
-                                throw NotImplementedError()
-                            }
-
-                        },
-                        responseSerializer = object : KSerializer<PostPath.Response> {
-                            override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
-
-                            override fun deserialize(decoder: Decoder): PostPath.Response {
-                                throw NotImplementedError()
-                            }
-
-                            override fun serialize(encoder: Encoder, value: PostPath.Response) {
-                                require(encoder is JsonEncoder)
-                                encoder.encodeJsonElement(JsonObject(mapOf("custom" to JsonPrimitive(true))))
-                            }
-
-                        }) {
+                    matrixEndpoint<PostPathWithCustomSerializer, PostPathWithCustomSerializer.Request, PostPathWithCustomSerializer.Response>(
+                        json,
+                        contentMappings
+                    ) {
                         requestBody.includeDino shouldBe false
-                        PostPath.Response("dino")
+                        PostPathWithCustomSerializer.Response("dino")
                     }
                 }
             }
@@ -119,17 +202,15 @@ class MatrixEndpointRouteTest {
 
     @Serializable
     @Resource("/unit")
-    object UnitPath : MatrixJsonEndpoint<Unit, Unit>() {
-        @Transient
-        override val method = HttpMethod.Get
-    }
+    @HttpMethod(net.folivo.trixnity.core.HttpMethodType.GET)
+    object UnitPath : MatrixEndpoint<Unit, Unit>
 
     @Test
     fun shouldHandleUnitRequestAndResponse() = testApplication {
         application {
             matrixApiServer(json) {
                 routing {
-                    matrixEndpoint<UnitPath, Unit, Unit>(json) {
+                    matrixEndpoint<UnitPath, Unit, Unit>(json, contentMappings) {
                         requestBody shouldBe Unit
                     }
                 }

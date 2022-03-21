@@ -1,18 +1,19 @@
 package net.folivo.trixnity.clientserverapi.model.rooms
 
-import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.GET
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/messages")
+@HttpMethod(GET)
 data class GetEvents(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("from") val from: String,
@@ -21,10 +22,7 @@ data class GetEvents(
     @SerialName("limit") val limit: Long,
     @SerialName("filter") val filter: String? = null,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<Unit, GetEvents.Response>() {
-    @Transient
-    override val method = Get
-
+) : MatrixEndpoint<Unit, GetEvents.Response> {
     @Serializable
     enum class Direction {
         @SerialName("f")

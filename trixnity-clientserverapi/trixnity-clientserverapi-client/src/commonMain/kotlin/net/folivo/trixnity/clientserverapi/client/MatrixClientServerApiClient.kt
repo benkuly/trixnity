@@ -4,20 +4,27 @@ import io.ktor.client.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class MatrixClientServerApiClient(
     baseUrl: Url? = null,
     val json: Json = createMatrixJson(),
     onLogout: suspend (isSoft: Boolean) -> Unit = {},
-    val eventContentSerializerMappings: EventContentSerializerMappings = createMatrixClientServerApiClientEventContentSerializerMappings(),
+    val eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) {
     val accessToken = MutableStateFlow<String?>(null)
 
-    val httpClient = MatrixClientServerApiHttpClient(baseUrl, json, accessToken, onLogout, httpClientFactory)
+    val httpClient = MatrixClientServerApiHttpClient(
+        baseUrl,
+        json,
+        eventContentSerializerMappings,
+        accessToken,
+        onLogout,
+        httpClientFactory
+    )
 
     val authentication = AuthenticationApiClient(httpClient)
     val server = ServerApiClient(httpClient)
@@ -29,6 +36,3 @@ class MatrixClientServerApiClient(
     val devices = DevicesApiClient(httpClient)
     val push = PushApiClient(httpClient)
 }
-
-fun createMatrixClientServerApiClientEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
-    DefaultEventContentSerializerMappings + customMappings

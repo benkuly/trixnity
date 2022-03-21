@@ -1,21 +1,21 @@
 package net.folivo.trixnity.clientserverapi.model.authentication
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 @Resource("/_matrix/client/v3/register")
+@HttpMethod(POST)
+@WithoutAuth
 data class Register(
-    @SerialName("kind") val kind: AccountType? = null
-) : MatrixJsonEndpoint<Register.Request, Register.Response>() {
-    @Transient
-    override val method = Post
-
+    @SerialName("kind") val kind: AccountType? = null,
+) : MatrixUIAEndpoint<Register.Request, Register.Response> {
     @Serializable
     data class Request(
         @SerialName("username") val username: String?,

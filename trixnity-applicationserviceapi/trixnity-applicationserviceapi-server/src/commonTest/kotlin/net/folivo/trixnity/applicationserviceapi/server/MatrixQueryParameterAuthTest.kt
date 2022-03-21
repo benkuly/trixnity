@@ -23,10 +23,10 @@ private fun Application.testAppMatrixQueryParameterAuth() {
         json()
     }
     install(Authentication) {
-        matrixQueryParameter("default", "access_token", "validToken")
+        matrixQueryParameter(null, "access_token", "validToken")
     }
     routing {
-        authenticate("default") {
+        authenticate {
             get("/_matrix/something") {
                 call.respond(HttpStatusCode.OK)
             }

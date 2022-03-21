@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -64,10 +65,12 @@ class MediaApiClientTest {
             })
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         val result = matrixRestClient.media.upload(
-            content = ByteReadChannel("test"),
-            contentLength = 4,
-            contentType = ContentType.Text.Plain,
-            filename = "testFile.txt",
+            Media(
+                content = ByteReadChannel("test"),
+                contentLength = 4,
+                contentType = ContentType.Text.Plain,
+                filename = "testFile.txt"
+            ),
             progress = progress
         ).getOrThrow()
         result.contentUri shouldBe "mxc://example.com/AQwafuaFswefuhsfAFAgsw"

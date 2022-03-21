@@ -11,7 +11,7 @@ data class PushRule(
     @SerialName("actions")
     val actions: Set<PushAction>,
     @SerialName("conditions")
-    val conditions: Set<PushCondition> = setOf(),
+    val conditions: Set<PushCondition>? = null,
     @SerialName("default")
     val default: Boolean,
     @SerialName("enabled")

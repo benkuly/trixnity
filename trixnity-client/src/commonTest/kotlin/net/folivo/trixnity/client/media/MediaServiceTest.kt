@@ -18,8 +18,8 @@ import io.mockk.*
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
-import net.folivo.trixnity.clientserverapi.client.DownloadResponse
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.clientserverapi.model.media.UploadMedia
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
@@ -39,7 +39,7 @@ class MediaServiceTest : ShouldSpec({
 
     beforeTest {
         clearAllMocks()
-        coEvery { api.media.upload(any(), any(), any(), any(), any()) } returns Result.success(
+        coEvery { api.media.upload(any(), any(), any()) } returns Result.success(
             UploadMedia.Response(mxcUri)
         )
         coEvery { api.json } returns json
@@ -55,9 +55,7 @@ class MediaServiceTest : ShouldSpec({
             }
             should("download and cache") {
                 coEvery { api.media.download(any(), any()) } returns Result.success(
-                    DownloadResponse(
-                        ByteReadChannel("test"), null, null, null
-                    )
+                    Media(ByteReadChannel("test"), null, null, null)
                 )
                 cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
 
@@ -99,9 +97,7 @@ class MediaServiceTest : ShouldSpec({
         }
         should("download, cache and decrypt") {
             coEvery { api.media.download(any(), any()) } returns Result.success(
-                DownloadResponse(
-                    ByteReadChannel(rawFile), null, null, null
-                )
+                Media(ByteReadChannel(rawFile), null, null, null)
             )
             cut.getEncryptedMedia(encryptedFile).getOrThrow().decodeToString() shouldBe "test"
             coVerify { store.media.addContent(mxcUri, rawFile) }
@@ -123,9 +119,7 @@ class MediaServiceTest : ShouldSpec({
         }
         should("download and cache") {
             coEvery { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) } returns Result.success(
-                DownloadResponse(
-                    ByteReadChannel("test"), null, null, null
-                )
+                Media(ByteReadChannel("test"), null, null, null)
             )
             cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
             coVerify {
@@ -239,7 +233,7 @@ class MediaServiceTest : ShouldSpec({
                 api.media.upload(
                     any(),
                     any(),
-                    contentType = Plain
+                    any()
                 )
             } returns Result.success(UploadMedia.Response(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()
@@ -267,7 +261,7 @@ class MediaServiceTest : ShouldSpec({
                 api.media.upload(
                     any(),
                     any(),
-                    contentType = Plain
+                    any()
                 )
             } returns Result.success(UploadMedia.Response(mxcUri))
             coEvery { store.media.getContent(cacheUri) } returns "test".encodeToByteArray()

@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
@@ -168,10 +169,13 @@ class MediaService(
                 store.media.getContent(cacheUri)
                     ?: throw IllegalArgumentException("content for cacheUri $cacheUri not found")
             api.media.upload(
-                content = ByteReadChannel(content),
-                contentLength = content.size.toLong(),
-                contentType = uploadMediaCache?.contentType?.let { ContentType.parse(it) }
-                    ?: ContentType.Application.OctetStream,
+                Media(
+                    content = ByteReadChannel(content),
+                    contentLength = content.size.toLong(),
+                    contentType = uploadMediaCache?.contentType?.let { ContentType.parse(it) }
+                        ?: ContentType.Application.OctetStream,
+                    null
+                ),
                 progress = progress
             ).map {
                 it.contentUri.also { mxcUri ->

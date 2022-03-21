@@ -18,7 +18,6 @@ open class HideFieldsSerializer<T : Any>(
         return hideField(element)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private fun hideField(element: JsonElement): JsonElement {
         require(element is JsonObject)
         return JsonObject(buildMap {

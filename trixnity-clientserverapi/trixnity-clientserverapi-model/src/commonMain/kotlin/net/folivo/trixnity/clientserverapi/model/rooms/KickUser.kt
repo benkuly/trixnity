@@ -1,23 +1,21 @@
 package net.folivo.trixnity.clientserverapi.model.rooms
 
-import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.MatrixJsonEndpoint
+import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/kick")
+@HttpMethod(POST)
 data class KickUser(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixJsonEndpoint<KickUser.Request, Unit>() {
-    @Transient
-    override val method = Post
-
+) : MatrixEndpoint<KickUser.Request, Unit> {
     @Serializable
     data class Request(
         @SerialName("user_id") val userId: UserId,
