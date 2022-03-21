@@ -1,7 +1,3 @@
-import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
-import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
-
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
@@ -29,15 +25,6 @@ kotlin {
     jvm {
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            when (HostManager.host) {
-                is LINUX_X64 -> {
-                    systemProperty("jna.library.path", olm.build.canonicalPath)
-                }
-                is MINGW_X64 -> {
-                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
-                }
-                else -> {}
-            }
         }
     }
     android {
@@ -112,7 +99,7 @@ kotlin {
 
                 implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
-                
+
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
