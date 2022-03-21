@@ -18,7 +18,8 @@ This project contains the following modules, which can be used independently:
 
 - [trixnity-core](/trixnity-core) contains the model and serialization stuff for Matrix.
 - [trixnity-olm](/trixnity-olm) implements the wrappers of the
-  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native.
+  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native. It also ships the
+  olm binaries for Android packages and Windows/Linux binaries on JVM and Native packages.
 - [trixnity-api-client](/trixnity-api-client) provides tools for api client modules.
 - [trixnity-api-server](/trixnity-api-server) provides tools for api server modules.
 - [trixnity-clientserverapi-*](/trixnity-clientserverapi) provides modules to use
@@ -84,12 +85,15 @@ can find [here](https://ktor.io/docs/http-client-engines.html).
 
 #### Olm-Library
 
-If you are using `trixnity-client` or `trixnity-olm` with JVM (except Android) or native, you will need to install olm.
-You can
-[Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm).
+If you are using a module, which depends on `trixnity-olm` you may need to install olm.
 
-Make it available by your JVM (e.g. with `-Djna.library.path="build/olm/3.2.8/build"`). You can also look into this
-projects `build.gradle.kts` files for an automated way to build olm and e.g. use it for testing.
+- Android: Everything is packaged. There is nothing to do for you.
+- JS: You need to provide the url path `/olm.wasm`. The file can be found in the official olm js package.
+- JVM: If your platform is not build by Trixnity's CI, you
+  can [download or build it yourself](https://gitlab.matrix.org/matrix-org/olm). Make it available to your JVM (e.g.
+  with `-Djna.library.path="build/olm"`). You can also look into the `build.gradle.kts` file of `trixnity-olm`
+  for an automated way to build olm and e.g. use it for testing.
+- Native: If your platform is not supported, feel free to open a merge request for our CI.
 
 ## Trixnity-Client
 

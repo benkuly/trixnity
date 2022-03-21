@@ -1,7 +1,3 @@
-import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
-import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -18,15 +14,6 @@ kotlin {
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            when (HostManager.host) {
-                is LINUX_X64 -> {
-                    systemProperty("jna.library.path", olm.build.canonicalPath)
-                }
-                is MINGW_X64 -> {
-                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
-                }
-                else -> {}
-            }
         }
     }
 
