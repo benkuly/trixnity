@@ -11,8 +11,11 @@ import net.folivo.trixnity.core.model.events.RoomEventContent
 data class TimelineEvent(
     val event: @Contextual RoomEvent<*>,
     /**
-     * If the event is encrypted, this will be the decrypted event content. If the event is not encrypted, this will immediately
-     * contain the event content from the event. Therefore, if this is null, the event content is not yet decrypted.
+     * - event is not encrypted -> original content
+     * - event is encrypted
+     *     - not yet decrypted -> null
+     *     - successfully decrypted -> Result.Success
+     *     - failure in decryption -> Result.Failure
      */
     @Transient
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),

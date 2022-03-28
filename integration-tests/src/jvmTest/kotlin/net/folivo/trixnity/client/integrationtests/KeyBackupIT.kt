@@ -137,10 +137,10 @@ class KeyBackupIT {
 
                 val lastEvent = client3.room.getLastMessageEvent(roomId, scope).first { it?.value != null }
                 assertNotNull(lastEvent)
-                lastEvent.first { it?.content != null }?.content?.getOrThrow()?.content
+                lastEvent.first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
                 lastEvent.value?.previousEventId?.let { client3.room.getTimelineEvent(it, roomId, scope) }
-                    ?.first { it?.content != null }?.content?.getOrThrow()?.content
+                    ?.first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()
             }
