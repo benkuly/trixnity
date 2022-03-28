@@ -164,15 +164,15 @@ class SyncApiClient(
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
         asUserId: UserId? = null,
-        runOnce: suspend () -> T,
+        runOnce: suspend (SyncResponse) -> T,
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
             log.info { "started single sync" }
             val isInitialSync = currentBatchToken.value == null
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
-            syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
-            runOnce()
+            val syncResponse = syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+            runOnce(syncResponse)
         }
     }.onSuccess {
         log.info { "stopped single sync" }
@@ -188,7 +188,7 @@ class SyncApiClient(
         setPresence: Presence?,
         timeout: Long,
         asUserId: UserId?
-    ) {
+    ): SyncResponse {
         val batchToken = currentBatchToken.value
         val response = syncOnce(
             filter = filter,
@@ -203,6 +203,7 @@ class SyncApiClient(
         log.debug { "processed sync response with token ${currentBatchToken.value}" }
         currentBatchToken.value = response.nextBatch
         updateSyncState(RUNNING)
+        return response
     }
 
     private suspend fun processSyncResponse(response: SyncResponse) = coroutineScope {

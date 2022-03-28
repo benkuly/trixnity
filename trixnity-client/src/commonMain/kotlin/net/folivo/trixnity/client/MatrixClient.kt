@@ -26,6 +26,7 @@ import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiCli
 import net.folivo.trixnity.clientserverapi.client.createMatrixClientServerApiClientJson
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.clientserverapi.model.users.EventFilter
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.RoomFilter
@@ -378,7 +379,7 @@ class MatrixClient private constructor(
         )
     }
 
-    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend () -> T): Result<T> {
+    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend (SyncResponse) -> T): Result<T> {
         startMatrixClient()
         return api.sync.startOnce(
             filter = store.account.backgroundFilterId.value,

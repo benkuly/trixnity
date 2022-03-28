@@ -12,7 +12,7 @@ object Versions {
     const val korlibs = "2.4.12" // https://github.com/korlibs/korge-next/releases
     const val mockk = "1.12.2" // https://github.com/mockk/mockk/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
-    const val kotest = "5.1.0" // https://github.com/kotest/kotest/releases
+    const val kotest = "5.2.1" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.16.3" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val gradleNexusPublishPlugin = "1.1.0" // https://github.com/gradle-nexus/publish-plugin/releases
