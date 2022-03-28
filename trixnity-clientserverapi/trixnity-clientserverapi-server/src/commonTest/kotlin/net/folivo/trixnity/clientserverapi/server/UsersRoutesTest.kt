@@ -171,25 +171,6 @@ class UsersRoutesTest {
     }
 
     @Test
-    fun shouldGetWhoami() = testApplication {
-        initCut()
-        given(handlerMock).suspendFunction(handlerMock::whoAmI)
-            .whenInvokedWith(any())
-            .then {
-                WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
-            }
-        val response = client.get("/_matrix/client/v3/account/whoami") { bearerAuth("token") }
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe """{"user_id":"@user:server","device_id":"ABCDEF","is_guest":false}"""
-        }
-        verify(handlerMock).suspendFunction(handlerMock::whoAmI)
-            .with(any())
-            .wasInvoked()
-    }
-
-    @Test
     fun shouldSetPresence() = testApplication {
         initCut()
         val response =

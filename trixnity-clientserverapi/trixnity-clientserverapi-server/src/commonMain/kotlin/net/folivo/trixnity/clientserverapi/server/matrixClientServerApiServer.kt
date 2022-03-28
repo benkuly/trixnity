@@ -1,7 +1,14 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import io.ktor.http.*
+import io.ktor.http.HttpMethod.Companion.Delete
+import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Options
+import io.ktor.http.HttpMethod.Companion.Post
+import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.cors.*
 import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -30,6 +37,18 @@ fun Application.matrixClientServerApiServer(
             matrixAccessTokenAuth {
                 this.authenticationFunction = accessTokenAuthenticationFunction
             }
+        }
+        // see also https://spec.matrix.org/v1.2/client-server-api/#web-browser-clients
+        install(CORS) {
+            anyHost()
+            allowMethod(Get)
+            allowMethod(Post)
+            allowMethod(Delete)
+            allowMethod(Options)
+            allowMethod(Put)
+            allowHeader(HttpHeaders.Authorization)
+            allowHeader(HttpHeaders.ContentType)
+            allowHeader("X-Requested-With")
         }
         routing {
             authenticationApiRoutes(authenticationApiHandler, json, contentMappings)

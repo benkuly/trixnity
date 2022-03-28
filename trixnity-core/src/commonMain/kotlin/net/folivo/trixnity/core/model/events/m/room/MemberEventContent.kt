@@ -22,7 +22,9 @@ data class MemberEventContent(
     @SerialName("join_authorised_via_users_server")
     val joinAuthorisedViaUsersServer: String? = null,
     @SerialName("third_party_invite")
-    val thirdPartyInvite: Invite? = null
+    val thirdPartyInvite: Invite? = null,
+    @SerialName("reason")
+    val reason: String? = null
 ) : StateEventContent {
     @Serializable
     data class Invite(

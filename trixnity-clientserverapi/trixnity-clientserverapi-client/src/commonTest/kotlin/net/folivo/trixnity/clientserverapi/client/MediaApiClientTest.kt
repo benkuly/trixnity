@@ -8,10 +8,7 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
-import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
-import net.folivo.trixnity.clientserverapi.model.media.Media
-import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
+import net.folivo.trixnity.clientserverapi.model.media.*
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -134,8 +131,8 @@ class MediaApiClientTest {
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         val result = matrixRestClient.media.downloadThumbnail(
             mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
-            width = 64u,
-            height = 64u,
+            width = 64,
+            height = 64,
             method = ThumbnailResizingMethod.SCALE,
             allowRemote = false,
             progress = progress
@@ -144,5 +141,36 @@ class MediaApiClientTest {
         result.contentLength shouldBe 4
         result.contentType shouldBe ContentType.Text.Plain
         progress.value shouldBe FileTransferProgress(4, 4)
+    }
+
+    @Test
+    fun shouldGetUrlPreview() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/media/v3/preview_url?url=someUrl", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                                {
+                                  "matrix:image:size": 102400,
+                                  "og:description": "This is a really cool blog post from matrix.org",
+                                  "og:image": "mxc://example.com/ascERGshawAWawugaAcauga",
+                                  "og:image:height": 48,
+                                  "og:image:type": "image/png",
+                                  "og:image:width": 48,
+                                  "og:title": "Matrix Blog Post"
+                                }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.media.getUrlPreview("someUrl").getOrThrow() shouldBe GetUrlPreview.Response(
+            size = 102400,
+            imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga"
+        )
     }
 }

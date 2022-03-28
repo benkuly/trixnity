@@ -804,6 +804,7 @@ class SyncApiClientTest {
                             listOf(
                                 Event.StrippedStateEvent(
                                     MemberEventContent(membership = Membership.INVITE),
+                                    null,
                                     UserId("user", "server"),
                                     RoomId("room3", "server"),
                                     stateKey = UserId("joinedUser", "server").toString()

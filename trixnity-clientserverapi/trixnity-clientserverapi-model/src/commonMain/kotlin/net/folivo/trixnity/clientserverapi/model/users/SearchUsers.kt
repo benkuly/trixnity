@@ -3,8 +3,8 @@ package net.folivo.trixnity.clientserverapi.model.users
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
@@ -17,7 +17,7 @@ data class SearchUsers(
     @Serializable
     data class Request(
         @SerialName("search_term") val searchTerm: String,
-        @SerialName("limit") val limit: Int?,
+        @SerialName("limit") val limit: Long?,
     )
 
     @Serializable

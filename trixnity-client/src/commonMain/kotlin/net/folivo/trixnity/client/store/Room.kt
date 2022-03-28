@@ -16,7 +16,7 @@ data class Room(
     val lastMessageEventAt: Instant? = null,
     val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventId !!!
     val lastMessageEventId: EventId? = null,
-    val unreadMessageCount: Int = 0,
+    val unreadMessageCount: Long = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,

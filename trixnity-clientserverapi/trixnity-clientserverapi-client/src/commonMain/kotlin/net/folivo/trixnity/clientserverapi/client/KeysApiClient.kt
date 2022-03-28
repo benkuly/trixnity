@@ -31,7 +31,7 @@ class KeysApiClient(
     suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
         token: String? = null,
-        timeout: Int? = 10000,
+        timeout: Long? = 10000,
         asUserId: UserId? = null
     ): Result<GetKeys.Response> =
         httpClient.request(GetKeys(asUserId), GetKeys.Request(deviceKeys, token, timeout))
@@ -41,7 +41,7 @@ class KeysApiClient(
      */
     suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
-        timeout: Int? = 10000,
+        timeout: Long? = 10000,
         asUserId: UserId? = null
     ): Result<ClaimKeys.Response> =
         httpClient.request(ClaimKeys(asUserId), ClaimKeys.Request(oneTimeKeys, timeout))

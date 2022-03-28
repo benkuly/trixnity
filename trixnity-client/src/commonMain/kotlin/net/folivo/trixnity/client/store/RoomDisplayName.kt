@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.UserId
 data class RoomDisplayName(
     val explicitName: String? = null,
     val isEmpty: Boolean = false,
-    val otherUsersCount: Int = 0,
+    val otherUsersCount: Long = 0,
     internal val summary: RoomSummary?
 ) {
     val heroes: List<UserId>

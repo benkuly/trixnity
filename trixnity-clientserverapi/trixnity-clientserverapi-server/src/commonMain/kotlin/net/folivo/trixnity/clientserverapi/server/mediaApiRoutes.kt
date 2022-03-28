@@ -25,5 +25,8 @@ internal fun Route.mediaApiRoutes(
         matrixEndpoint<DownloadThumbnail, Media>(json, contentMappings) {
             handler.downloadThumbnail(this)
         }
+        matrixEndpoint<GetUrlPreview, Unit, GetUrlPreview.Response>(json, contentMappings) {
+            handler.getUrlPreview(this)
+        }
     }
 }

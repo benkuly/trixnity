@@ -29,9 +29,8 @@ class UsersApiClient(
      */
     suspend fun getDisplayName(
         userId: UserId,
-        asUserId: UserId? = null
     ): Result<String?> =
-        httpClient.request(GetDisplayName(userId.e(), asUserId)).mapCatching { it.displayName }
+        httpClient.request(GetDisplayName(userId.e())).mapCatching { it.displayName }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseriddisplayname">matrix spec</a>
@@ -48,9 +47,8 @@ class UsersApiClient(
      */
     suspend fun getAvatarUrl(
         userId: UserId,
-        asUserId: UserId? = null,
     ): Result<String?> =
-        httpClient.request(GetAvatarUrl(userId.e(), asUserId)).mapCatching { it.avatarUrl }
+        httpClient.request(GetAvatarUrl(userId.e())).mapCatching { it.avatarUrl }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
@@ -67,15 +65,8 @@ class UsersApiClient(
      */
     suspend fun getProfile(
         userId: UserId,
-        asUserId: UserId? = null,
     ): Result<GetProfile.Response> =
-        httpClient.request(GetProfile(userId.e(), asUserId))
-
-    /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3accountwhoami">matrix spec</a>
-     */
-    suspend fun whoAmI(asUserId: UserId? = null): Result<WhoAmI.Response> =
-        httpClient.request(WhoAmI(asUserId))
+        httpClient.request(GetProfile(userId.e()))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3presenceuseridstatus">matrix spec</a>
@@ -190,7 +181,7 @@ class UsersApiClient(
     suspend fun searchUsers(
         searchTerm: String,
         acceptLanguage: String,
-        limit: Int? = 10,
+        limit: Long? = 10,
         asUserId: UserId? = null,
     ): Result<SearchUsers.Response> =
         httpClient.request(SearchUsers(asUserId), SearchUsers.Request(searchTerm, limit)) {

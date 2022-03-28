@@ -1,3 +1,3 @@
 package net.folivo.trixnity.clientserverapi.client
 
-fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.trim() }
+fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }

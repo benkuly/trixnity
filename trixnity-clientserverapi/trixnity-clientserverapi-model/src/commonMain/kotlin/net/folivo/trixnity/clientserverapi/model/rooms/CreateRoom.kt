@@ -4,8 +4,8 @@ import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -21,7 +21,7 @@ data class CreateRoom(
 ) : MatrixEndpoint<CreateRoom.Request, CreateRoom.Response> {
     @Serializable
     data class Request(
-        @SerialName("visibility") val visibility: Visibility,
+        @SerialName("visibility") val visibility: DirectoryVisibility,
         @SerialName("room_alias_name") val roomAliasLocalPart: String?,
         @SerialName("name") val name: String?,
         @SerialName("topic") val topic: String?,
@@ -34,15 +34,6 @@ data class CreateRoom(
         @SerialName("is_direct") val isDirect: Boolean?,
         @SerialName("power_level_content_override") val powerLevelContentOverride: PowerLevelsEventContent?,
     ) {
-        @Serializable
-        enum class Visibility {
-            @SerialName("public")
-            PUBLIC,
-
-            @SerialName("private")
-            PRIVATE
-        }
-
         @Serializable
         data class Invite3Pid(
             @SerialName("id_server") val identityServer: String,

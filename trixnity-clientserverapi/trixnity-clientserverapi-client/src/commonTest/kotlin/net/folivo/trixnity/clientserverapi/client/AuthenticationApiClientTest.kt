@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -21,6 +22,85 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationApiClientTest {
+
+    @Test
+    fun shouldGetWhoami() = runTest {
+        val response = WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/whoami", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        Json.encodeToString(response),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.authentication.whoAmI().getOrThrow()
+        assertEquals(WhoAmI.Response(UserId("user", "server"), "ABCDEF", false), result)
+    }
+
+    @Test
+    fun shouldGetWellKnown() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/.well-known/matrix/client", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "m.homeserver": {
+                                "base_url": "https://matrix.example.com"
+                              },
+                              "m.identity_server": {
+                                "base_url": "https://identity.example.com"
+                              },
+                              "org.example.custom.property": {
+                                "app_url": "https://custom.app.example.org"
+                              }
+                            }
+
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getWellKnown().getOrThrow() shouldBe DiscoveryInformation(
+            homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
+            identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
+        )
+    }
+
+    @Test
+    fun shouldIsRegistrationTokenValid() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/register/m.login.registration_token/validity?token=token",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "valid": true
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.isRegistrationTokenValid("token").getOrThrow() shouldBe true
+    }
 
     @Test
     fun shouldIsUsernameAvailable() = runTest {
@@ -38,6 +118,190 @@ class AuthenticationApiClientTest {
                 }
             })
         matrixRestClient.authentication.isUsernameAvailable("user").getOrThrow()
+    }
+
+    @Test
+    fun shouldGetEmailRequestTokenForPassword() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/password/email/requestToken", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """
+                        {
+                          "client_secret": "monkeys_are_GREAT",
+                          "email": "foo@example.com",
+                          "id_server": "id.example.com",
+                          "next_link": "https://example.org/congratulations.html",
+                          "send_attempt": 1
+                        }
+                    """.trimToFlatJson(), request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        """
+                            {
+                              "sid": "123abc",
+                              "submit_url": "https://example.org/path/to/submitToken"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getEmailRequestTokenForPassword(
+            GetEmailRequestTokenForPassword.Request(
+                clientSecret = "monkeys_are_GREAT",
+                email = "foo@example.com",
+                idServer = "id.example.com",
+                nextLink = "https://example.org/congratulations.html",
+                sendAttempt = 1
+            )
+        ).getOrThrow() shouldBe GetEmailRequestTokenForPassword.Response(
+            sessionId = "123abc",
+            submitUrl = "https://example.org/path/to/submitToken"
+        )
+    }
+
+    @Test
+    fun shouldGetEmailRequestTokenForRegistration() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/register/email/requestToken", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """
+                        {
+                          "client_secret": "monkeys_are_GREAT",
+                          "email": "foo@example.com",
+                          "id_server": "id.example.com",
+                          "next_link": "https://example.org/congratulations.html",
+                          "send_attempt": 1
+                        }
+                    """.trimToFlatJson(), request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        """
+                            {
+                              "sid": "123abc",
+                              "submit_url": "https://example.org/path/to/submitToken"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getEmailRequestTokenForRegistration(
+            GetEmailRequestTokenForRegistration.Request(
+                clientSecret = "monkeys_are_GREAT",
+                email = "foo@example.com",
+                idServer = "id.example.com",
+                nextLink = "https://example.org/congratulations.html",
+                sendAttempt = 1
+            )
+        ).getOrThrow() shouldBe GetEmailRequestTokenForRegistration.Response(
+            sessionId = "123abc",
+            submitUrl = "https://example.org/path/to/submitToken"
+        )
+    }
+
+    @Test
+    fun shouldGetMsisdnRequestTokenForPassword() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/password/msisdn/requestToken", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """
+                        {
+                          "client_secret": "monkeys_are_GREAT",
+                          "country": "GB",
+                          "id_server": "id.example.com",
+                          "next_link": "https://example.org/congratulations.html",
+                          "phone_number": "07700900001",
+                          "send_attempt": 1
+                        }
+                    """.trimToFlatJson(), request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        """
+                            {
+                              "sid": "123abc",
+                              "submit_url": "https://example.org/path/to/submitToken"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getMsisdnRequestTokenForPassword(
+            GetMsisdnRequestTokenForPassword.Request(
+                clientSecret = "monkeys_are_GREAT",
+                country = "GB",
+                idServer = "id.example.com",
+                nextLink = "https://example.org/congratulations.html",
+                phoneNumber = "07700900001",
+                sendAttempt = 1
+            )
+        ).getOrThrow() shouldBe GetMsisdnRequestTokenForPassword.Response(
+            sessionId = "123abc",
+            submitUrl = "https://example.org/path/to/submitToken"
+        )
+    }
+
+    @Test
+    fun shouldGetMsisdnRequestTokenForRegistration() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/register/msisdn/requestToken", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """
+                        {
+                          "client_secret": "monkeys_are_GREAT",
+                          "country": "GB",
+                          "id_server": "id.example.com",
+                          "next_link": "https://example.org/congratulations.html",
+                          "phone_number": "07700900001",
+                          "send_attempt": 1
+                        }
+                    """.trimToFlatJson(), request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        """
+                            {
+                              "sid": "123abc",
+                              "submit_url": "https://example.org/path/to/submitToken"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getMsisdnRequestTokenForRegistration(
+            GetMsisdnRequestTokenForRegistration.Request(
+                clientSecret = "monkeys_are_GREAT",
+                country = "GB",
+                idServer = "id.example.com",
+                nextLink = "https://example.org/congratulations.html",
+                phoneNumber = "07700900001",
+                sendAttempt = 1
+            )
+        ).getOrThrow() shouldBe GetMsisdnRequestTokenForRegistration.Response(
+            sessionId = "123abc",
+            submitUrl = "https://example.org/path/to/submitToken"
+        )
     }
 
     @Test
@@ -190,9 +454,9 @@ class AuthenticationApiClientTest {
                 userId = UserId("@cheeky_monkey:matrix.org"),
                 accessToken = "abc123",
                 deviceId = "GHTYAJCE",
-                discoveryInformation = Login.Response.DiscoveryInformation(
-                    Login.Response.DiscoveryInformation.HomeserverInformation("https://example.org"),
-                    Login.Response.DiscoveryInformation.IdentityServerInformation("https://id.example.org")
+                discoveryInformation = DiscoveryInformation(
+                    DiscoveryInformation.HomeserverInformation("https://example.org"),
+                    DiscoveryInformation.IdentityServerInformation("https://id.example.org")
                 )
             ), result
         )
@@ -255,7 +519,7 @@ class AuthenticationApiClientTest {
             })
         val result = matrixRestClient.authentication.deactivateAccount("id.host").getOrThrow()
             .shouldBeInstanceOf<UIA.Success<DeactivateAccount.Response>>()
-        result.value shouldBe DeactivateAccount.Response(DeactivateAccount.Response.IdServerUnbindResult.SUCCESS)
+        result.value shouldBe DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)
     }
 
     @Test
@@ -279,5 +543,179 @@ class AuthenticationApiClientTest {
             })
         val result = matrixRestClient.authentication.changePassword("newPassword").getOrThrow()
         assertTrue { result is UIA.Success }
+    }
+
+    @Test
+    fun shouldGetThirdPartyIdentifiers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/3pid", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "threepids": [
+                                {
+                                  "added_at": 1535336848756,
+                                  "address": "monkey@banana.island",
+                                  "medium": "email",
+                                  "validated_at": 1535176800000
+                                }
+                              ]
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getThirdPartyIdentifiers().getOrThrow() shouldBe setOf(
+            ThirdPartyIdentifier(
+                addedAt = 1535336848756,
+                address = "monkey@banana.island",
+                medium = Medium.EMAIL,
+                validatedAt = 1535176800000
+            )
+        )
+    }
+
+    @Test
+    fun shouldAddThirdPartyIdentifiers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/3pid/add", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "client_secret": "d0nt-T3ll",
+                              "sid": "abc123987"
+                            }
+                    """.trimToFlatJson()
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.addThirdPartyIdentifiers("d0nt-T3ll", "abc123987")
+            .getOrThrow() shouldBe UIA.Success(Unit)
+    }
+
+    @Test
+    fun shouldBindThirdPartyIdentifiers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/3pid/bind", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "client_secret": "d0nt-T3ll",
+                              "sid": "abc123987",
+                              "id_access_token": "abc123_OpaqueString",
+                              "id_server": "example.org"
+                            }
+                    """.trimToFlatJson()
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.bindThirdPartyIdentifiers(
+            "d0nt-T3ll",
+            "abc123987",
+            "abc123_OpaqueString",
+            "example.org"
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldDeleteThirdPartyIdentifiers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/3pid/delete", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "address": "example@example.org",
+                              "id_server": "example.org",
+                              "medium": "email"
+                            }
+                    """.trimToFlatJson()
+                    respond(
+                        """{"id_server_unbind_result":"success"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.deleteThirdPartyIdentifiers("example@example.org", "example.org", Medium.EMAIL)
+            .getOrThrow() shouldBe DeleteThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS)
+    }
+
+    @Test
+    fun shouldUnbindThirdPartyIdentifiers() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/account/3pid/unbind", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "address": "example@example.org",
+                              "id_server": "example.org",
+                              "medium": "email"
+                            }
+                    """.trimToFlatJson()
+                    respond(
+                        """{"id_server_unbind_result":"success"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.unbindThirdPartyIdentifiers("example@example.org", "example.org", Medium.EMAIL)
+            .getOrThrow() shouldBe UnbindThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS)
+    }
+
+    @Test
+    fun shouldGetOIDCRequestToken() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/user/%40user%3Aserver/openid/request_token", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                             "access_token": "SomeT0kenHere",
+                             "expires_in": 3600,
+                             "matrix_server_name": "example.com",
+                             "token_type": "Bearer"
+                           }
+                       """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.authentication.getOIDCRequestToken(UserId("user", "server"))
+            .getOrThrow() shouldBe GetOIDCRequestToken.Response(
+            accessToken = "SomeT0kenHere",
+            expiresIn = 3600,
+            matrixServerName = "example.com",
+        )
     }
 }

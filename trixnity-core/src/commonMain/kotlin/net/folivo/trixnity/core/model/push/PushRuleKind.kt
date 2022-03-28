@@ -4,15 +4,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PushRuleSet(
+enum class PushRuleKind {
     @SerialName("content")
-    val content: List<PushRule>? = listOf(),
+    CONTENT,
+
     @SerialName("override")
-    val override: List<PushRule>? = listOf(),
+    OVERRIDE,
+
     @SerialName("room")
-    val room: List<PushRule>? = listOf(),
+    ROOM,
+
     @SerialName("sender")
-    val sender: List<PushRule>? = listOf(),
+    SENDER,
+
     @SerialName("underride")
-    val underride: List<PushRule>? = listOf(),
-)
+    UNDERRIDE,
+}

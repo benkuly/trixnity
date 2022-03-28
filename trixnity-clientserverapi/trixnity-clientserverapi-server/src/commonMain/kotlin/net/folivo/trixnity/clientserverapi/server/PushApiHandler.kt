@@ -39,4 +39,24 @@ interface PushApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
      */
     suspend fun deletePushRule(context: MatrixEndpointContext<DeletePushRule, Unit, Unit>)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     */
+    suspend fun getPushRuleActions(context: MatrixEndpointContext<GetPushRuleActions, Unit, GetPushRuleActions.Response>): GetPushRuleActions.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     */
+    suspend fun setPushRuleActions(context: MatrixEndpointContext<SetPushRuleActions, SetPushRuleActions.Request, Unit>)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     */
+    suspend fun getPushRuleEnabled(context: MatrixEndpointContext<GetPushRuleEnabled, Unit, GetPushRuleEnabled.Response>): GetPushRuleEnabled.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     */
+    suspend fun setPushRuleEnabled(context: MatrixEndpointContext<SetPushRuleEnabled, SetPushRuleEnabled.Request, Unit>)
 }

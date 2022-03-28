@@ -3,6 +3,7 @@ package net.folivo.trixnity.clientserverapi.client
 import io.ktor.client.plugins.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.media.*
 
 class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
@@ -61,8 +62,8 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
      */
     suspend fun downloadThumbnail(
         mxcUri: String,
-        width: UInt,
-        height: UInt,
+        width: Long,
+        height: Long,
         method: ThumbnailResizingMethod,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
@@ -75,8 +76,8 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
             DownloadThumbnail(
                 serverName = serverName,
                 mediaId = mediaId,
-                width = width.toInt(),
-                height = height.toInt(),
+                width = width,
+                height = height,
                 method = method,
                 allowRemote = allowRemote,
             )
@@ -91,4 +92,13 @@ class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) {
                 }
         }
     }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3preview_url">matrix spec</a>
+     */
+    suspend fun getUrlPreview(
+        url: String,
+        timestamp: Long? = null
+    ): Result<GetUrlPreview.Response> =
+        httpClient.request(GetUrlPreview(url.e(), timestamp))
 }

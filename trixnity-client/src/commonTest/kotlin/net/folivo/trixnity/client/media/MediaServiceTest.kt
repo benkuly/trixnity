@@ -113,17 +113,17 @@ class MediaServiceTest : ShouldSpec({
     context(MediaService::getThumbnail.name) {
         should("prefer cache") {
             coEvery { store.media.getContent("$mxcUri/32x32/crop") } returns "test".encodeToByteArray()
-            cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
+            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().decodeToString() shouldBe "test"
             val mediaMock = api.media
             coVerify { mediaMock wasNot Called }
         }
         should("download and cache") {
-            coEvery { api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP) } returns Result.success(
+            coEvery { api.media.downloadThumbnail(mxcUri, 32, 32, CROP) } returns Result.success(
                 Media(ByteReadChannel("test"), null, null, null)
             )
-            cut.getThumbnail(mxcUri, 32u, 32u).getOrThrow().decodeToString() shouldBe "test"
+            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().decodeToString() shouldBe "test"
             coVerify {
-                api.media.downloadThumbnail(mxcUri, 32u, 32u, CROP)
+                api.media.downloadThumbnail(mxcUri, 32, 32, CROP)
                 store.media.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
             }
         }

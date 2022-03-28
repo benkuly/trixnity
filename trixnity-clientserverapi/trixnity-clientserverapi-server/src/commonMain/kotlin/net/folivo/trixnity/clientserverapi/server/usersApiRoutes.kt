@@ -30,9 +30,6 @@ internal fun Route.usersApiRoutes(
         matrixEndpoint<GetProfile, Unit, GetProfile.Response>(json, contentMappings) {
             handler.getProfile(this)
         }
-        matrixEndpoint<WhoAmI, Unit, WhoAmI.Response>(json, contentMappings) {
-            handler.whoAmI(this)
-        }
         matrixEndpoint<GetPresence, Unit, PresenceEventContent>(json, contentMappings) {
             handler.getPresence(this)
         }

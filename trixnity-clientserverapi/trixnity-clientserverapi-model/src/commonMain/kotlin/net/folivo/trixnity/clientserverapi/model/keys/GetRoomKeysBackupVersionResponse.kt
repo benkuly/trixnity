@@ -20,7 +20,7 @@ sealed class GetRoomKeysBackupVersionResponse {
         @SerialName("auth_data")
         val authData: RoomKeyBackupAuthData.RoomKeyBackupV1AuthData,
         @SerialName("count")
-        val count: Int,
+        val count: Long,
         @SerialName("etag")
         val etag: String,
         @SerialName("version")

@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SetRoomKeysResponse(
     @SerialName("count")
-    val count: Int,
+    val count: Long,
     @SerialName("etag")
     val etag: String
 )

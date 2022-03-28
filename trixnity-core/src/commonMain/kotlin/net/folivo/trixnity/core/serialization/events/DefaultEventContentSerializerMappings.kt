@@ -6,11 +6,16 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventConten
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.*
+import net.folivo.trixnity.core.model.events.m.policy.RoomRuleEventContent
+import net.folivo.trixnity.core.model.events.m.policy.ServerRuleEventContent
+import net.folivo.trixnity.core.model.events.m.policy.UserRuleEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
+import net.folivo.trixnity.core.model.events.m.space.ParentEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMapping.Companion.of
 
 object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
@@ -24,7 +29,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<VerificationCancelEventContent>("m.key.verification.cancel"),
         of<SasAcceptEventContent>("m.key.verification.accept"),
         of<SasKeyEventContent>("m.key.verification.key"),
-        of<SasMacEventContent>("m.key.verification.mac")
+        of<SasMacEventContent>("m.key.verification.mac"),
     )
     override val state: Set<EventContentSerializerMapping<out StateEventContent>> = setOf(
         of<AvatarEventContent>("m.room.avatar"),
@@ -37,6 +42,16 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<PowerLevelsEventContent>("m.room.power_levels"),
         of<TopicEventContent>("m.room.topic"),
         of<EncryptionEventContent>("m.room.encryption"),
+        of<HistoryVisibilityEventContent>("m.room.history_visibility"),
+        of<ThirdPartyInviteEventContent>("m.room.third_party_invite"),
+        of<GuestAccessEventContent>("m.room.guest_access"),
+        of<ServerACLEventContent>("m.room.server_acl"),
+        of<TombstoneEventContent>("m.room.tombstone"),
+        of<UserRuleEventContent>("m.policy.rule.user"),
+        of<RoomRuleEventContent>("m.policy.rule.room"),
+        of<ServerRuleEventContent>("m.policy.rule.server"),
+        of<ParentEventContent>("m.space.parent"),
+        of<ChildEventContent>("m.space.child"),
     )
     override val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>> = setOf(
         of<PresenceEventContent>("m.presence"),
@@ -59,9 +74,10 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<SasKeyEventContent>("m.key.verification.key"),
         of<SasMacEventContent>("m.key.verification.mac"),
         of<SecretKeyRequestEventContent>("m.secret.request"),
-        of<SecretKeySendEventContent>("m.secret.send")
+        of<SecretKeySendEventContent>("m.secret.send"),
     )
     override val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>> = setOf(
+        of<IdentityServerEventContent>("m.identity_server"),
         of<DirectEventContent>("m.direct"),
         of<PushRulesEventContent>("m.push_rules"),
         of<DefaultSecretKeyEventContent>("m.secret_storage.default_key"),
@@ -69,9 +85,11 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<MasterKeyEventContent>("m.cross_signing.master"),
         of<SelfSigningKeyEventContent>("m.cross_signing.self_signing"),
         of<UserSigningKeyEventContent>("m.cross_signing.user_signing"),
-        of<MegolmBackupV1EventContent>("m.megolm_backup.v1")
+        of<MegolmBackupV1EventContent>("m.megolm_backup.v1"),
+        of<IgnoredUserListEventContent>("m.ignored_user_list"),
     )
     override val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>> = setOf(
-        of<FullyReadEventContent>("m.fully_read")
+        of<FullyReadEventContent>("m.fully_read"),
+        of<TagEventContent>("m.tag"),
     )
 }

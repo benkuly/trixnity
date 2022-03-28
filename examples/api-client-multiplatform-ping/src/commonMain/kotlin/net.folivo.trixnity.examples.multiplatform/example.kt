@@ -43,8 +43,8 @@ suspend fun example() = coroutineScope {
                         if (senderAvatar != null) {
                             val senderAvatarDownload = matrixRestClient.media.downloadThumbnail(
                                 senderAvatar,
-                                64u,
-                                64u,
+                                64,
+                                64,
                                 ThumbnailResizingMethod.CROP
                             ).getOrThrow()
                             val contentLength = senderAvatarDownload.contentLength

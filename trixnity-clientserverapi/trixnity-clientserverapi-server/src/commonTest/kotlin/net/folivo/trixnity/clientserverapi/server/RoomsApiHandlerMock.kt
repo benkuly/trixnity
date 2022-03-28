@@ -6,6 +6,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.*
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.TagEventContent
 
 class RoomsApiHandlerMock : io.mockative.Mockable(stubsUnitByDefault = false), RoomsApiHandler {
     override suspend fun banUser(context: MatrixEndpointContext<BanUser, BanUser.Request, Unit>): Unit = suspend(
@@ -57,6 +58,11 @@ class RoomsApiHandlerMock : io.mockative.Mockable(stubsUnitByDefault = false), R
     override suspend fun getRoomAlias(context: MatrixEndpointContext<GetRoomAlias, Unit, GetRoomAlias.Response>): GetRoomAlias.Response =
         suspend(
             this, Invocation.Function("getRoomAlias", listOf<Any?>(context)), false
+        )
+
+    override suspend fun getRoomAliases(context: MatrixEndpointContext<GetRoomAliases, Unit, GetRoomAliases.Response>): GetRoomAliases.Response =
+        suspend(
+            this, Invocation.Function("getRoomAliases", listOf<Any?>(context)), false
         )
 
     override suspend fun getState(context: MatrixEndpointContext<GetState, Unit, List<Event.StateEvent<*>>>): List<Event.StateEvent<*>> =
@@ -133,4 +139,37 @@ class RoomsApiHandlerMock : io.mockative.Mockable(stubsUnitByDefault = false), R
     override suspend fun unbanUser(context: MatrixEndpointContext<UnbanUser, UnbanUser.Request, Unit>): Unit = suspend(
         this, Invocation.Function("unbanUser", listOf<Any?>(context)), true
     )
+
+    override suspend fun getDirectoryVisibility(context: MatrixEndpointContext<GetDirectoryVisibility, Unit, GetDirectoryVisibility.Response>): GetDirectoryVisibility.Response =
+        Companion.suspend(this, Invocation.Function("getDirectoryVisibility", listOf<Any?>(context)), false)
+
+    override suspend fun setDirectoryVisibility(context: MatrixEndpointContext<SetDirectoryVisibility, SetDirectoryVisibility.Request, Unit>): Unit =
+        Companion.suspend(this, Invocation.Function("setDirectoryVisibility", listOf<Any?>(context)), true)
+
+    override suspend fun getPublicRooms(context: MatrixEndpointContext<GetPublicRooms, Unit, GetPublicRoomsResponse>): GetPublicRoomsResponse =
+        Companion.suspend(this, Invocation.Function("getPublicRooms", listOf<Any?>(context)), false)
+
+    override suspend fun getPublicRoomsWithFilter(context: MatrixEndpointContext<GetPublicRoomsWithFilter, GetPublicRoomsWithFilter.Request, GetPublicRoomsResponse>): GetPublicRoomsResponse =
+        Companion.suspend(this, Invocation.Function("getPublicRoomsWithFilter", listOf<Any?>(context)), false)
+
+    override suspend fun getTags(context: MatrixEndpointContext<GetRoomTags, Unit, TagEventContent>): TagEventContent =
+        Companion.suspend(this, Invocation.Function("getTags", listOf<Any?>(context)), false)
+
+    override suspend fun setTag(context: MatrixEndpointContext<SetRoomTag, TagEventContent.Tag, Unit>): Unit =
+        Companion.suspend(this, Invocation.Function("setTag", listOf<Any?>(context)), true)
+
+    override suspend fun deleteTag(context: MatrixEndpointContext<DeleteRoomTag, Unit, Unit>): Unit =
+        Companion.suspend(this, Invocation.Function("deleteTag", listOf<Any?>(context)), true)
+
+    override suspend fun getEventContext(context: MatrixEndpointContext<GetEventContext, Unit, GetEventContext.Response>): GetEventContext.Response =
+        Companion.suspend(this, Invocation.Function("getEventContext", listOf<Any?>(context)), false)
+
+    override suspend fun reportEvent(context: MatrixEndpointContext<ReportEvent, ReportEvent.Request, Unit>): Unit =
+        Companion.suspend(this, Invocation.Function("reportEvent", listOf<Any?>(context)), true)
+
+    override suspend fun upgradeRoom(context: MatrixEndpointContext<UpgradeRoom, UpgradeRoom.Request, UpgradeRoom.Response>): UpgradeRoom.Response =
+        Companion.suspend(this, Invocation.Function("upgradeRoom", listOf<Any?>(context)), false)
+
+    override suspend fun getHierarchy(context: MatrixEndpointContext<GetHierarchy, Unit, GetHierarchy.Response>): GetHierarchy.Response =
+        Companion.suspend(this, Invocation.Function("getHierarchy", listOf<Any?>(context)), false)
 }
