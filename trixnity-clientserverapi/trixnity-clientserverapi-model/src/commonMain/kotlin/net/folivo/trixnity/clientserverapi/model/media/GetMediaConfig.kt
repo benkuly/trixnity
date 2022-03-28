@@ -3,8 +3,8 @@ package net.folivo.trixnity.clientserverapi.model.media
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
 @Serializable
@@ -13,6 +13,6 @@ import net.folivo.trixnity.core.MatrixEndpoint
 object GetMediaConfig : MatrixEndpoint<Unit, GetMediaConfig.Response> {
     @Serializable
     data class Response(
-        @SerialName("m.upload.size") val maxUploadSize: Int
+        @SerialName("m.upload.size") val maxUploadSize: Long
     )
 }

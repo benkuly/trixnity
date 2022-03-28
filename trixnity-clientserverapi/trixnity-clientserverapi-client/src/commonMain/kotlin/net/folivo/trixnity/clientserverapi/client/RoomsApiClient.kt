@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -109,11 +110,11 @@ class RoomsApiClient(
         from: String,
         dir: GetEvents.Direction = GetEvents.Direction.FORWARD,
         to: String? = null,
-        limit: Long = 10,
+        limit: Long? = null,
         filter: String? = null,
         asUserId: UserId? = null
     ): Result<GetEvents.Response> =
-        httpClient.request(GetEvents(roomId.e(), from, to, dir, limit, filter, asUserId))
+        httpClient.request(GetEvents(roomId.e(), from, to, dir, limit, filter?.e(), asUserId))
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
@@ -160,7 +161,7 @@ class RoomsApiClient(
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
      */
     suspend fun createRoom(
-        visibility: CreateRoom.Request.Visibility = CreateRoom.Request.Visibility.PRIVATE,
+        visibility: DirectoryVisibility = DirectoryVisibility.PRIVATE,
         roomAliasId: RoomAliasId? = null,
         name: String? = null,
         topic: String? = null,
@@ -207,9 +208,16 @@ class RoomsApiClient(
      */
     suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
-        asUserId: UserId? = null
     ): Result<GetRoomAlias.Response> =
-        httpClient.request(GetRoomAlias(roomAliasId.e(), asUserId))
+        httpClient.request(GetRoomAlias(roomAliasId.e()))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidaliases">matrix spec</a>
+     */
+    suspend fun getRoomAliases(
+        roomId: RoomId,
+    ): Result<Set<RoomAliasId>> =
+        httpClient.request(GetRoomAliases(roomId.e())).map { it.aliases }
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3directoryroomroomalias">matrix spec</a>
@@ -372,7 +380,7 @@ class RoomsApiClient(
         roomId: RoomId,
         userId: UserId,
         typing: Boolean,
-        timeout: Int? = null,
+        timeout: Long? = null,
         asUserId: UserId? = null,
     ): Result<Unit> =
         httpClient.request(SetTyping(roomId.e(), userId.e(), asUserId), SetTyping.Request(typing, timeout))
@@ -420,4 +428,134 @@ class RoomsApiClient(
 
         return httpClient.request(SetRoomAccountData(userId.e(), roomId.e(), eventType, asUserId), content)
     }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3directorylistroomroomid">matrix spec</a>
+     */
+    suspend fun getDirectoryVisibility(
+        roomId: RoomId,
+    ): Result<DirectoryVisibility> =
+        httpClient.request(GetDirectoryVisibility(roomId.e())).map { it.visibility }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3directorylistroomroomid">matrix spec</a>
+     */
+    suspend fun setDirectoryVisibility(
+        roomId: RoomId,
+        visibility: DirectoryVisibility,
+        asUserId: UserId? = null
+    ): Result<Unit> =
+        httpClient.request(SetDirectoryVisibility(roomId.e(), asUserId), SetDirectoryVisibility.Request(visibility))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3publicrooms">matrix spec</a>
+     */
+    suspend fun getPublicRooms(
+        limit: Long? = null,
+        server: String? = null,
+        since: String? = null
+    ): Result<GetPublicRoomsResponse> =
+        httpClient.request(GetPublicRooms(limit = limit, server = server?.e(), since = since))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3publicrooms">matrix spec</a>
+     */
+    suspend fun getPublicRooms(
+        limit: Long? = null,
+        server: String? = null,
+        since: String? = null,
+        filter: GetPublicRoomsWithFilter.Request.Filter? = null,
+        includeAllNetworks: Boolean? = null,
+        thirdPartyInstanceId: String? = null,
+        asUserId: UserId? = null
+    ): Result<GetPublicRoomsResponse> =
+        httpClient.request(
+            GetPublicRoomsWithFilter(server?.e(), asUserId), GetPublicRoomsWithFilter.Request(
+                limit = limit,
+                since = since,
+                filter = filter,
+                includeAllNetworks = includeAllNetworks,
+                thirdPartyInstanceId = thirdPartyInstanceId
+            )
+        )
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidtags">matrix spec</a>
+     */
+    suspend fun getTags(
+        userId: UserId,
+        roomId: RoomId,
+        asUserId: UserId? = null
+    ): Result<TagEventContent> =
+        httpClient.request(GetRoomTags(userId.e(), roomId.e(), asUserId))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidtagstag">matrix spec</a>
+     */
+    suspend fun setTag(
+        userId: UserId,
+        roomId: RoomId,
+        tag: String,
+        tagValue: TagEventContent.Tag,
+        asUserId: UserId? = null
+    ): Result<Unit> =
+        httpClient.request(SetRoomTag(userId.e(), roomId.e(), tag.e(), asUserId), tagValue)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3useruseridroomsroomidtagstag">matrix spec</a>
+     */
+    suspend fun deleteTag(
+        userId: UserId,
+        roomId: RoomId,
+        tag: String,
+        asUserId: UserId? = null
+    ): Result<Unit> =
+        httpClient.request(DeleteRoomTag(userId.e(), roomId.e(), tag.e(), asUserId))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidcontexteventid">matrix spec</a>
+     */
+    suspend fun getEventContext(
+        roomId: RoomId,
+        eventId: EventId,
+        filter: String? = null,
+        limit: Long? = null,
+        asUserId: UserId? = null
+    ): Result<GetEventContext.Response> =
+        httpClient.request(GetEventContext(roomId.e(), eventId.e(), filter?.e(), limit, asUserId))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidreporteventid">matrix spec</a>
+     */
+    suspend fun reportEvent(
+        roomId: RoomId,
+        eventId: EventId,
+        reason: String? = null,
+        score: Long? = null,
+        asUserId: UserId? = null
+    ): Result<Unit> =
+        httpClient.request(ReportEvent(roomId.e(), eventId.e(), asUserId), ReportEvent.Request(reason, score))
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidupgrade">matrix spec</a>
+     */
+    suspend fun upgradeRoom(
+        roomId: RoomId,
+        version: String,
+        asUserId: UserId? = null
+    ): Result<RoomId> =
+        httpClient.request(UpgradeRoom(roomId.e(), asUserId), UpgradeRoom.Request(version)).map { it.replacementRoom }
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv1roomsroomidhierarchy">matrix spec</a>
+     */
+    suspend fun getHierarchy(
+        roomId: RoomId,
+        from: String,
+        limit: Long? = null,
+        maxDepth: Long? = null,
+        suggestedOnly: Boolean = false,
+        asUserId: UserId? = null
+    ): Result<GetHierarchy.Response> =
+        httpClient.request(GetHierarchy(roomId.e(), from, limit, maxDepth, suggestedOnly, asUserId))
 }

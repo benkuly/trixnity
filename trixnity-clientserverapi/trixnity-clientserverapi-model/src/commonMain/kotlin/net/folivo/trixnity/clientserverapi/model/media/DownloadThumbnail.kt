@@ -5,9 +5,9 @@ import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.HttpMethod
 
 @Serializable
 @Resource("/_matrix/media/v3/thumbnail/{serverName}/{mediaId}")
@@ -15,8 +15,8 @@ import net.folivo.trixnity.core.HttpMethod
 data class DownloadThumbnail(
     @SerialName("serverName") val serverName: String,
     @SerialName("mediaId") val mediaId: String,
-    @SerialName("width") val width: Int,
-    @SerialName("height") val height: Int,
+    @SerialName("width") val width: Long,
+    @SerialName("height") val height: Long,
     @SerialName("method") val method: ThumbnailResizingMethod,
     @SerialName("allow_remote") val allowRemote: Boolean? = null,
 ) : MatrixEndpoint<Unit, Media> {

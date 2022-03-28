@@ -4,9 +4,9 @@ import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -19,7 +19,7 @@ data class GetEvents(
     @SerialName("from") val from: String,
     @SerialName("to") val to: String? = null,
     @SerialName("dir") val dir: Direction,
-    @SerialName("limit") val limit: Long,
+    @SerialName("limit") val limit: Long? = null,
     @SerialName("filter") val filter: String? = null,
     @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<Unit, GetEvents.Response> {

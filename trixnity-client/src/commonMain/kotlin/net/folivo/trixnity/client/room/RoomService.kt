@@ -404,7 +404,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
+    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Long) {
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(
                 unreadMessageCount = count

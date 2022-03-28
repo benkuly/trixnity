@@ -32,11 +32,6 @@ interface UsersApiHandler {
     suspend fun getProfile(context: MatrixEndpointContext<GetProfile, Unit, GetProfile.Response>): GetProfile.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3accountwhoami">matrix spec</a>
-     */
-    suspend fun whoAmI(context: MatrixEndpointContext<WhoAmI, Unit, WhoAmI.Response>): WhoAmI.Response
-
-    /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3presenceuseridstatus">matrix spec</a>
      */
     suspend fun getPresence(context: MatrixEndpointContext<GetPresence, Unit, PresenceEventContent>): PresenceEventContent

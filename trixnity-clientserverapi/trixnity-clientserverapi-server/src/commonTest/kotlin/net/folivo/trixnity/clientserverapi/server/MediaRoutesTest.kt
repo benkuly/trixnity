@@ -16,10 +16,7 @@ import io.mockative.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
-import net.folivo.trixnity.clientserverapi.model.media.Media
-import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
-import net.folivo.trixnity.clientserverapi.model.media.UploadMedia
+import net.folivo.trixnity.clientserverapi.model.media.*
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.AfterTest
@@ -182,6 +179,36 @@ class MediaRoutesTest {
                 it.endpoint.height shouldBe 64
                 it.endpoint.method shouldBe ThumbnailResizingMethod.SCALE
                 it.endpoint.allowRemote shouldBe false
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetUrlPreview() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getUrlPreview)
+            .whenInvokedWith(any())
+            .then {
+                GetUrlPreview.Response(
+                    size = 102400,
+                    imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga"
+                )
+            }
+        val response = client.get("/_matrix/media/v3/preview_url?url=someUrl") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "matrix:image:size": 102400,
+                  "og:image": "mxc://example.com/ascERGshawAWawugaAcauga"
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getUrlPreview)
+            .with(matching {
+                it.endpoint.url shouldBe "someUrl"
                 true
             })
             .wasInvoked()

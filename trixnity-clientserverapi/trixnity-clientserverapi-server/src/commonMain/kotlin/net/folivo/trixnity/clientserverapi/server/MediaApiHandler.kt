@@ -23,4 +23,9 @@ interface MediaApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
      */
     suspend fun downloadThumbnail(context: MatrixEndpointContext<DownloadThumbnail, Unit, Media>): Media
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3preview_url">matrix spec</a>
+     */
+    suspend fun getUrlPreview(context: MatrixEndpointContext<GetUrlPreview, Unit, GetUrlPreview.Response>): GetUrlPreview.Response
 }

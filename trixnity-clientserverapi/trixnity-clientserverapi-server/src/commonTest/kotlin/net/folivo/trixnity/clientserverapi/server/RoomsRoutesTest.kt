@@ -25,10 +25,9 @@ import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.TagEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
@@ -625,7 +624,7 @@ class RoomsRoutesTest {
         verify(handlerMock).suspendFunction(handlerMock::createRoom)
             .with(matching {
                 it.requestBody shouldBe CreateRoom.Request(
-                    visibility = CreateRoom.Request.Visibility.PRIVATE,
+                    visibility = DirectoryVisibility.PRIVATE,
                     roomAliasLocalPart = null,
                     name = "someRoomName",
                     topic = null,
@@ -699,6 +698,43 @@ class RoomsRoutesTest {
         verify(handlerMock).suspendFunction(handlerMock::getRoomAlias)
             .with(matching {
                 it.endpoint.roomAliasId shouldBe RoomAliasId("unicorns", "server")
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetRoomAliases() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getRoomAliases)
+            .whenInvokedWith(any())
+            .then {
+                GetRoomAliases.Response(
+                    setOf(
+                        RoomAliasId("#somewhere:example.com"),
+                        RoomAliasId("#another:example.com"),
+                        RoomAliasId("#hat_trick:example.com")
+                    )
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/aliases") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "aliases": [
+                    "#somewhere:example.com",
+                    "#another:example.com",
+                    "#hat_trick:example.com"
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getRoomAliases)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
                 true
             })
             .wasInvoked()
@@ -1147,6 +1183,669 @@ class RoomsRoutesTest {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
                 it.requestBody shouldBe SetTyping.Request(true, 10000)
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetDirectoryVisibility() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getDirectoryVisibility)
+            .whenInvokedWith(any())
+            .then {
+                GetDirectoryVisibility.Response(DirectoryVisibility.PUBLIC)
+            }
+        val response =
+            client.get("/_matrix/client/v3/directory/list/room/%21room%3Aserver")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "visibility": "public"
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getDirectoryVisibility)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldSetDirectoryVisibility() = testApplication {
+        initCut()
+        val response =
+            client.put("/_matrix/client/v3/directory/list/room/%21room%3Aserver") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"visibility":"public"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::setDirectoryVisibility)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.requestBody shouldBe SetDirectoryVisibility.Request(DirectoryVisibility.PUBLIC)
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetPublicRooms() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getPublicRooms)
+            .whenInvokedWith(any())
+            .then {
+                GetPublicRoomsResponse(
+                    chunk = listOf(
+                        GetPublicRoomsResponse.PublicRoomsChunk(
+                            avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Public,
+                            name = "CHEESE",
+                            joinedMembersCount = 37,
+                            roomId = RoomId("!ol19s:bleecker.street"),
+                            topic = "Tasty tasty cheese",
+                            worldReadable = true
+                        )
+                    ),
+                    nextBatch = "p190q",
+                    prevBatch = "p1902",
+                    totalRoomCountEstimate = 115
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/publicRooms?limit=5&server=example&since=since")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "chunk": [
+                    {
+                      "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                      "guest_can_join": false,
+                      "join_rule": "public",
+                      "name": "CHEESE",
+                      "num_joined_members": 37,
+                      "room_id": "!ol19s:bleecker.street",
+                      "topic": "Tasty tasty cheese",
+                      "world_readable": true
+                    }
+                  ],
+                  "next_batch": "p190q",
+                  "prev_batch": "p1902",
+                  "total_room_count_estimate": 115
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getPublicRooms)
+            .with(matching {
+                it.endpoint.limit shouldBe 5
+                it.endpoint.server shouldBe "example"
+                it.endpoint.since shouldBe "since"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetPublicRoomsWithFilter() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getPublicRoomsWithFilter)
+            .whenInvokedWith(any())
+            .then {
+                GetPublicRoomsResponse(
+                    chunk = listOf(
+                        GetPublicRoomsResponse.PublicRoomsChunk(
+                            avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Public,
+                            name = "CHEESE",
+                            joinedMembersCount = 37,
+                            roomId = RoomId("!ol19s:bleecker.street"),
+                            topic = "Tasty tasty cheese",
+                            worldReadable = true
+                        )
+                    ),
+                    nextBatch = "p190q",
+                    prevBatch = "p1902",
+                    totalRoomCountEstimate = 115
+                )
+            }
+        val response =
+            client.post("/_matrix/client/v3/publicRooms?server=example") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                      "filter": {
+                        "generic_search_term": "foo"
+                      },
+                      "include_all_networks": false,
+                      "limit": 10,
+                      "third_party_instance_id": "irc"
+                    }
+                """.trimIndent()
+                )
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "chunk": [
+                    {
+                      "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                      "guest_can_join": false,
+                      "join_rule": "public",
+                      "name": "CHEESE",
+                      "num_joined_members": 37,
+                      "room_id": "!ol19s:bleecker.street",
+                      "topic": "Tasty tasty cheese",
+                      "world_readable": true
+                    }
+                  ],
+                  "next_batch": "p190q",
+                  "prev_batch": "p1902",
+                  "total_room_count_estimate": 115
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getPublicRoomsWithFilter)
+            .with(matching {
+                it.endpoint.server shouldBe "example"
+                it.requestBody shouldBe GetPublicRoomsWithFilter.Request(
+                    filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
+                    includeAllNetworks = false,
+                    limit = 10,
+                    thirdPartyInstanceId = "irc"
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetTags() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getTags)
+            .whenInvokedWith(any())
+            .then {
+                TagEventContent(
+                    mapOf(
+                        "m.favourite" to TagEventContent.Tag(0.1),
+                        "u.Customers" to TagEventContent.Tag(),
+                        "u.Work" to TagEventContent.Tag(0.7)
+                    )
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "tags": {
+                    "m.favourite": {
+                      "order": 0.1
+                    },
+                    "u.Customers": {},
+                    "u.Work": {
+                      "order": 0.7
+                    }
+                  }
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getTags)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.userId shouldBe UserId("user", "server")
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldSetTag() = testApplication {
+        initCut()
+        val response =
+            client.put("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"order":0.25}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::setTag)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.userId shouldBe UserId("user", "server")
+                it.endpoint.tag shouldBe "m.dino"
+                it.requestBody shouldBe TagEventContent.Tag(0.25)
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldDeleteTag() = testApplication {
+        initCut()
+        val response =
+            client.delete("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::deleteTag)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.userId shouldBe UserId("user", "server")
+                it.endpoint.tag shouldBe "m.dino"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetEventContext() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getEventContext)
+            .whenInvokedWith(any())
+            .then {
+                GetEventContext.Response(
+                    start = "t27-54_2_0_2",
+                    end = "t29-57_2_0_2",
+                    event = Event.MessageEvent(
+                        content = RoomMessageEventContent.ImageMessageEventContent(
+                            body = "filename.jpg",
+                            info = ImageInfo(
+                                height = 398,
+                                width = 394,
+                                mimeType = "image/jpeg",
+                                size = 31037,
+                                thumbnailUrl = null,
+                                thumbnailFile = null,
+                                thumbnailInfo = null
+                            ),
+                            url = "mxc://example.org/JWEIFJgwEIhweiWJE", file = null, relatesTo = null
+                        ),
+                        id = EventId("\$f3h4d129462ha:example.com"),
+                        sender = UserId("@example:example.org"),
+                        roomId = RoomId("!636q39766251:example.com"),
+                        originTimestamp = 1432735824653,
+                        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                            age = 1234,
+                            redactedBecause = null,
+                            transactionId = null
+                        )
+                    ),
+                    eventsBefore = listOf(
+                        Event.MessageEvent(
+                            content = RoomMessageEventContent.FileMessageEventContent(
+                                body = "something-important.doc",
+                                fileName = "something-important.doc",
+                                info = FileInfo(
+                                    mimeType = "application/msword",
+                                    size = 46144,
+                                    thumbnailUrl = null,
+                                    thumbnailFile = null,
+                                    thumbnailInfo = null
+                                ),
+                                url = "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe", file = null, relatesTo = null
+                            ),
+                            id = EventId("$143273582443PhrSn:example.org"),
+                            sender = UserId("@example:example.org"),
+                            roomId = RoomId("!636q39766251:example.com"),
+                            originTimestamp = 1432735824653,
+                            unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                                age = 1234,
+                                redactedBecause = null,
+                                transactionId = null
+                            )
+                        )
+                    ),
+                    eventsAfter = listOf(
+                        Event.MessageEvent(
+                            content = RoomMessageEventContent.TextMessageEventContent(
+                                body = "This is an example text message",
+                                format = "org.matrix.custom.html",
+                                formattedBody = "<b>This is an example text message</b>",
+                                relatesTo = null
+                            ),
+                            id = EventId("$143273582443PhrSn:example.org"),
+                            sender = UserId("@example:example.org"),
+                            roomId = RoomId("!636q39766251:example.com"),
+                            originTimestamp = 1432735824653,
+                            unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                                age = 1234,
+                                redactedBecause = null,
+                                transactionId = null
+                            )
+                        )
+                    ),
+                    state = listOf(
+                        Event.StateEvent(
+                            content = CreateEventContent(
+                                creator = UserId("@example:example.org"), federate = true, roomVersion = "1",
+                                predecessor = CreateEventContent.PreviousRoom(
+                                    roomId = RoomId("!oldroom:example.org"),
+                                    eventId = EventId("\$something:example.org")
+                                ),
+                                type = CreateEventContent.RoomType.Room
+                            ),
+                            id = EventId("$143273582443PhrSn:example.org"),
+                            sender = UserId("@example:example.org"),
+                            roomId = RoomId("!636q39766251:example.com"),
+                            originTimestamp = 1432735824653,
+                            unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                                age = 1234,
+                                redactedBecause = null,
+                                transactionId = null,
+                                previousContent = null
+                            ),
+                            stateKey = ""
+                        ),
+                        Event.StateEvent(
+                            content = MemberEventContent(
+                                avatarUrl = "mxc://example.org/SEsfnsuifSDFSSEF",
+                                displayName = "Alice Margatroid",
+                                membership = Membership.JOIN,
+                                isDirect = null,
+                                joinAuthorisedViaUsersServer = null,
+                                thirdPartyInvite = null,
+                                reason = "Looking for support"
+                            ),
+                            id = EventId("$143273582443PhrSn:example.org"),
+                            sender = UserId("@example:example.org"),
+                            roomId = RoomId("!636q39766251:example.com"),
+                            originTimestamp = 1432735824653,
+                            unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                                age = 1234,
+                                redactedBecause = null,
+                                transactionId = null,
+                                previousContent = null
+                            ),
+                            stateKey = "@alice:example.org"
+                        )
+                    )
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/context/event?filter=filter&limit=10") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "start": "t27-54_2_0_2",
+                  "end": "t29-57_2_0_2",
+                  "event": {
+                    "content": {
+                      "body": "filename.jpg",
+                      "info": {
+                        "h": 398,
+                        "w": 394,
+                        "mimetype": "image/jpeg",
+                        "size": 31037
+                      },
+                      "url": "mxc://example.org/JWEIFJgwEIhweiWJE",
+                      "msgtype": "m.image"
+                    },
+                    "event_id": "${'$'}f3h4d129462ha:example.com",
+                    "sender": "@example:example.org",
+                    "room_id": "!636q39766251:example.com",
+                    "origin_server_ts": 1432735824653,
+                    "unsigned": {
+                      "age": 1234
+                    },
+                    "type": "m.room.message"
+                  },
+                  "events_before": [
+                    {
+                      "content": {
+                        "body": "something-important.doc",
+                        "filename": "something-important.doc",
+                        "info": {
+                          "mimetype": "application/msword",
+                          "size": 46144
+                        },
+                        "url": "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe",
+                        "msgtype": "m.file"
+                      },
+                      "event_id": "${'$'}143273582443PhrSn:example.org",
+                      "sender": "@example:example.org",
+                      "room_id": "!636q39766251:example.com",
+                      "origin_server_ts": 1432735824653,
+                      "unsigned": {
+                        "age": 1234
+                      },
+                      "type": "m.room.message"
+                    }
+                  ],
+                  "events_after": [
+                    {
+                      "content": {
+                        "body": "This is an example text message",
+                        "format": "org.matrix.custom.html",
+                        "formatted_body": "<b>This is an example text message</b>",
+                        "msgtype": "m.text"
+                      },
+                      "event_id": "${'$'}143273582443PhrSn:example.org",
+                      "sender": "@example:example.org",
+                      "room_id": "!636q39766251:example.com",
+                      "origin_server_ts": 1432735824653,
+                      "unsigned": {
+                        "age": 1234
+                      },
+                      "type": "m.room.message"
+                    }
+                  ],
+                  "state": [
+                    {
+                      "content": {
+                        "creator": "@example:example.org",
+                        "m.federate": true,
+                        "room_version": "1",
+                        "predecessor": {
+                          "room_id": "!oldroom:example.org",
+                          "event_id": "${'$'}something:example.org"
+                        },
+                        "type": null
+                      },
+                      "event_id": "${'$'}143273582443PhrSn:example.org",
+                      "sender": "@example:example.org",
+                      "room_id": "!636q39766251:example.com",
+                      "origin_server_ts": 1432735824653,
+                      "unsigned": {
+                        "age": 1234
+                      },
+                      "state_key": "",
+                      "type": "m.room.create"
+                    },
+                    {
+                      "content": {
+                        "avatar_url": "mxc://example.org/SEsfnsuifSDFSSEF",
+                        "displayname": "Alice Margatroid",
+                        "membership": "join",
+                        "reason": "Looking for support"
+                      },
+                      "event_id": "${'$'}143273582443PhrSn:example.org",
+                      "sender": "@example:example.org",
+                      "room_id": "!636q39766251:example.com",
+                      "origin_server_ts": 1432735824653,
+                      "unsigned": {
+                        "age": 1234
+                      },
+                      "state_key": "@alice:example.org",
+                      "type": "m.room.member"
+                    }
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getEventContext)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.eventId shouldBe EventId("event")
+                it.endpoint.filter shouldBe "filter"
+                it.endpoint.limit shouldBe 10
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldReportEvent() = testApplication {
+        initCut()
+        val response =
+            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/report/%24eventToRedact") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"reason":"someReason","score":-100}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::reportEvent)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.eventId shouldBe EventId("\$eventToRedact")
+                it.requestBody shouldBe ReportEvent.Request("someReason", -100)
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldUpgradeRoom() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::upgradeRoom)
+            .whenInvokedWith(any())
+            .then {
+                UpgradeRoom.Response(RoomId("nextRoom", "server"))
+            }
+        val response =
+            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/upgrade") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"new_version":"2"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"replacement_room":"!nextRoom:server"}"""
+        }
+        verify(handlerMock).suspendFunction(handlerMock::upgradeRoom)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.requestBody shouldBe UpgradeRoom.Request("2")
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetHierarchy() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getHierarchy)
+            .whenInvokedWith(any())
+            .then {
+                GetHierarchy.Response(
+                    nextBatch = "next_batch_token",
+                    rooms = listOf(
+                        GetHierarchy.Response.PublicRoomsChunk(
+                            avatarUrl = "mxc://example.org/abcdef",
+                            canonicalAlias = RoomAliasId("#general:example.org"),
+                            childrenState = setOf(
+                                Event.StrippedStateEvent(
+                                    ChildEventContent(via = setOf("example.org")),
+                                    originTimestamp = 1629413349153,
+                                    sender = UserId("@alice:example.org"),
+                                    stateKey = "!a:example.org",
+                                )
+                            ),
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Public,
+                            name = "The First Space",
+                            joinedMembersCount = 42,
+                            roomId = RoomId("!space:example.org"),
+                            roomType = CreateEventContent.RoomType.Space,
+                            topic = "No other spaces were created first, ever",
+                            worldReadable = true
+                        )
+                    )
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
+                bearerAuth(
+                    "token"
+                )
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                 "next_batch": "next_batch_token",
+                 "rooms": [
+                   {
+                     "avatar_url": "mxc://example.org/abcdef",
+                     "canonical_alias": "#general:example.org",
+                     "children_state": [
+                       {
+                         "content": {
+                           "suggested":false,
+                           "via": [
+                             "example.org"
+                           ]
+                         },
+                         "sender": "@alice:example.org",
+                         "origin_server_ts": 1629413349153,
+                         "state_key": "!a:example.org",
+                         "type": "m.space.child"
+                       }
+                     ],
+                     "guest_can_join": false,
+                     "join_rule": "public",
+                     "name": "The First Space",
+                     "num_joined_members": 42,
+                     "room_id": "!space:example.org",
+                     "room_type": "m.space",
+                     "topic": "No other spaces were created first, ever",
+                     "world_readable": true
+                   }
+                 ]
+               }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getHierarchy)
+            .with(matching {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.from shouldBe "from"
+                it.endpoint.limit shouldBe 10
+                it.endpoint.maxDepth shouldBe 4
+                it.endpoint.suggestedOnly shouldBe true
                 true
             })
             .wasInvoked()

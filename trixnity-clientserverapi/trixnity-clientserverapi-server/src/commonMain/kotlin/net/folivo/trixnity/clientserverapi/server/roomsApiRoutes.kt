@@ -9,6 +9,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 internal fun Route.roomsApiRoutes(
@@ -52,6 +53,9 @@ internal fun Route.roomsApiRoutes(
         }
         matrixEndpoint<GetRoomAlias, GetRoomAlias.Response>(json, contentMappings) {
             handler.getRoomAlias(this)
+        }
+        matrixEndpoint<GetRoomAliases, GetRoomAliases.Response>(json, contentMappings) {
+            handler.getRoomAliases(this)
         }
         matrixEndpoint<DeleteRoomAlias>(json, contentMappings) {
             handler.deleteRoomAlias(this)
@@ -97,6 +101,42 @@ internal fun Route.roomsApiRoutes(
         }
         matrixEndpoint<SetRoomAccountData, RoomAccountDataEventContent>(json, contentMappings) {
             handler.setAccountData(this)
+        }
+        matrixEndpoint<GetDirectoryVisibility, Unit, GetDirectoryVisibility.Response>(json, contentMappings) {
+            handler.getDirectoryVisibility(this)
+        }
+        matrixEndpoint<SetDirectoryVisibility, SetDirectoryVisibility.Request, Unit>(json, contentMappings) {
+            handler.setDirectoryVisibility(this)
+        }
+        matrixEndpoint<GetPublicRooms, Unit, GetPublicRoomsResponse>(json, contentMappings) {
+            handler.getPublicRooms(this)
+        }
+        matrixEndpoint<GetPublicRoomsWithFilter, GetPublicRoomsWithFilter.Request, GetPublicRoomsResponse>(
+            json,
+            contentMappings
+        ) {
+            handler.getPublicRoomsWithFilter(this)
+        }
+        matrixEndpoint<GetRoomTags, TagEventContent>(json, contentMappings) {
+            handler.getTags(this)
+        }
+        matrixEndpoint<SetRoomTag, TagEventContent.Tag>(json, contentMappings) {
+            handler.setTag(this)
+        }
+        matrixEndpoint<DeleteRoomTag>(json, contentMappings) {
+            handler.deleteTag(this)
+        }
+        matrixEndpoint<GetEventContext, GetEventContext.Response>(json, contentMappings) {
+            handler.getEventContext(this)
+        }
+        matrixEndpoint<ReportEvent, ReportEvent.Request>(json, contentMappings) {
+            handler.reportEvent(this)
+        }
+        matrixEndpoint<UpgradeRoom, UpgradeRoom.Request, UpgradeRoom.Response>(json, contentMappings) {
+            handler.upgradeRoom(this)
+        }
+        matrixEndpoint<GetHierarchy, GetHierarchy.Response>(json, contentMappings) {
+            handler.getHierarchy(this)
         }
     }
 }

@@ -1,10 +1,10 @@
-package net.folivo.trixnity.clientserverapi.model.users
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 

@@ -6,12 +6,9 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.GetProfile
 import net.folivo.trixnity.clientserverapi.model.users.SearchUsers
-import net.folivo.trixnity.clientserverapi.model.users.WhoAmI
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -149,26 +146,6 @@ class UsersApiClientTest {
             GetProfile.Response(null, null),
             matrixRestClient.users.getProfile(UserId("user", "server")).getOrThrow()
         )
-    }
-
-    @Test
-    fun shouldGetWhoami() = runTest {
-        val response = WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
-        val matrixRestClient = MatrixClientServerApiClient(
-            baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
-                addHandler { request ->
-                    assertEquals("/_matrix/client/v3/account/whoami", request.url.fullPath)
-                    assertEquals(HttpMethod.Get, request.method)
-                    respond(
-                        Json.encodeToString(response),
-                        HttpStatusCode.OK,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                    )
-                }
-            })
-        val result = matrixRestClient.users.whoAmI().getOrThrow()
-        assertEquals(WhoAmI.Response(UserId("user", "server"), "ABCDEF", false), result)
     }
 
     @Test

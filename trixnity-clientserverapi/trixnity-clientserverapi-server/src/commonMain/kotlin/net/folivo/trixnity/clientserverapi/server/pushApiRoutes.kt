@@ -35,5 +35,17 @@ internal fun Route.pushApiRoutes(
         matrixEndpoint<DeletePushRule>(json, contentMappings) {
             handler.deletePushRule(this)
         }
+        matrixEndpoint<GetPushRuleActions, Unit, GetPushRuleActions.Response>(json, contentMappings) {
+            handler.getPushRuleActions(this)
+        }
+        matrixEndpoint<SetPushRuleActions, SetPushRuleActions.Request, Unit>(json, contentMappings) {
+            handler.setPushRuleActions(this)
+        }
+        matrixEndpoint<GetPushRuleEnabled, Unit, GetPushRuleEnabled.Response>(json, contentMappings) {
+            handler.getPushRuleEnabled(this)
+        }
+        matrixEndpoint<SetPushRuleEnabled, SetPushRuleEnabled.Request, Unit>(json, contentMappings) {
+            handler.setPushRuleEnabled(this)
+        }
     }
 }

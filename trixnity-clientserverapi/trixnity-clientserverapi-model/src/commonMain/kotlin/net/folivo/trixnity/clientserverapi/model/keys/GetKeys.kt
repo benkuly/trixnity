@@ -6,9 +6,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
@@ -32,7 +32,7 @@ data class GetKeys(
         @SerialName("token")
         val token: String?,
         @SerialName("timeout")
-        val timeout: Int?,
+        val timeout: Long?,
     )
 
     @Serializable

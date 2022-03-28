@@ -22,7 +22,7 @@ data class Filters(
 
     @Serializable
     data class EventFilter(
-        @SerialName("limit") val limit: Int? = null,
+        @SerialName("limit") val limit: Long? = null,
         @SerialName("not_senders") val notSenders: Set<String>? = null,
         @SerialName("not_types") val notTypes: Set<String>? = null,
         @SerialName("senders") val senders: Set<String>? = null,
@@ -40,7 +40,7 @@ data class Filters(
     ) {
         @Serializable
         data class RoomEventFilter(
-            @SerialName("limit") val limit: Int? = null,
+            @SerialName("limit") val limit: Long? = null,
             @SerialName("not_senders") val notSenders: Set<String>? = null,
             @SerialName("not_types") val notTypes: Set<String>? = null,
             @SerialName("senders") val senders: Set<String>? = null,
@@ -54,7 +54,7 @@ data class Filters(
 
         @Serializable
         data class StateFilter(
-            @SerialName("limit") val limit: Int? = null,
+            @SerialName("limit") val limit: Long? = null,
             @SerialName("not_senders") val notSenders: Set<String>? = null,
             @SerialName("not_types") val notTypes: Set<String>? = null,
             @SerialName("senders") val senders: Set<String>? = null,

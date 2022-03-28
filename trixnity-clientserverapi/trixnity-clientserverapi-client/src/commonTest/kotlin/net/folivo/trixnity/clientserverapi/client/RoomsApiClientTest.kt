@@ -14,18 +14,15 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.TagEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
@@ -315,7 +312,8 @@ class RoomsApiClientTest {
         val result = matrixRestClient.rooms.getEvents(
             roomId = RoomId("room", "server"),
             from = "from",
-            dir = GetEvents.Direction.FORWARD
+            dir = GetEvents.Direction.FORWARD,
+            limit = 10
         ).getOrThrow()
         assertEquals(response, result)
     }
@@ -488,7 +486,7 @@ class RoomsApiClientTest {
                 }
             })
         val result = matrixRestClient.rooms.createRoom(
-            visibility = CreateRoom.Request.Visibility.PRIVATE,
+            visibility = DirectoryVisibility.PRIVATE,
             invite = setOf(UserId("user1", "server")),
             isDirect = true,
             name = "someRoomName",
@@ -546,6 +544,39 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.rooms.getRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
         assertEquals(response, result)
+    }
+
+    @Test
+    fun shouldGetRoomAliases() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/%21room%3Aserver/aliases",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "aliases": [
+                                "#somewhere:example.com",
+                                "#another:example.com",
+                                "#hat_trick:example.com"
+                              ]
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getRoomAliases(RoomId("room", "server")).getOrThrow() shouldBe setOf(
+            RoomAliasId("#somewhere:example.com"),
+            RoomAliasId("#another:example.com"),
+            RoomAliasId("#hat_trick:example.com")
+        )
     }
 
     @Test
@@ -1091,5 +1122,652 @@ class RoomsApiClientTest {
             typing = true,
             timeout = 10_000,
         ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetDirectoryVisibility() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/directory/list/room/%21room%3Aserver",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "visibility": "public"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getDirectoryVisibility(RoomId("room", "server"))
+            .getOrThrow() shouldBe DirectoryVisibility.PUBLIC
+    }
+
+    @Test
+    fun shouldSetDirectoryVisibility() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/directory/list/room/%21room%3Aserver",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals("""{"visibility":"public"}""", request.body.toByteArray().decodeToString())
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.setDirectoryVisibility(
+            roomId = RoomId("room", "server"),
+            visibility = DirectoryVisibility.PUBLIC
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetPublicRooms() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/publicRooms?limit=5&server=example&since=since",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                                  "guest_can_join": false,
+                                  "join_rule": "public",
+                                  "name": "CHEESE",
+                                  "num_joined_members": 37,
+                                  "room_id": "!ol19s:bleecker.street",
+                                  "topic": "Tasty tasty cheese",
+                                  "world_readable": true
+                                }
+                              ],
+                              "next_batch": "p190q",
+                              "prev_batch": "p1902",
+                              "total_room_count_estimate": 115
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getPublicRooms(limit = 5, server = "example", since = "since")
+            .getOrThrow() shouldBe GetPublicRoomsResponse(
+            chunk = listOf(
+                GetPublicRoomsResponse.PublicRoomsChunk(
+                    avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                    guestCanJoin = false,
+                    joinRule = JoinRulesEventContent.JoinRule.Public,
+                    name = "CHEESE",
+                    joinedMembersCount = 37,
+                    roomId = RoomId("!ol19s:bleecker.street"),
+                    topic = "Tasty tasty cheese",
+                    worldReadable = true
+                )
+            ),
+            nextBatch = "p190q",
+            prevBatch = "p1902",
+            totalRoomCountEstimate = 115
+        )
+    }
+
+    @Test
+    fun shouldGetPublicRoomsWithFilter() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/publicRooms?server=example",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                        {
+                          "filter": {
+                            "generic_search_term": "foo"
+                          },
+                          "include_all_networks": false,
+                          "limit": 10,
+                          "third_party_instance_id": "irc"
+                        }
+                    """.trimToFlatJson()
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                                  "guest_can_join": false,
+                                  "join_rule": "public",
+                                  "name": "CHEESE",
+                                  "num_joined_members": 37,
+                                  "room_id": "!ol19s:bleecker.street",
+                                  "topic": "Tasty tasty cheese",
+                                  "world_readable": true
+                                }
+                              ],
+                              "next_batch": "p190q",
+                              "prev_batch": "p1902",
+                              "total_room_count_estimate": 115
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getPublicRooms(
+            limit = 10,
+            server = "example",
+            since = null,
+            filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
+            includeAllNetworks = false,
+            thirdPartyInstanceId = "irc"
+        ).getOrThrow() shouldBe GetPublicRoomsResponse(
+            chunk = listOf(
+                GetPublicRoomsResponse.PublicRoomsChunk(
+                    avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                    guestCanJoin = false,
+                    joinRule = JoinRulesEventContent.JoinRule.Public,
+                    name = "CHEESE",
+                    joinedMembersCount = 37,
+                    roomId = RoomId("!ol19s:bleecker.street"),
+                    topic = "Tasty tasty cheese",
+                    worldReadable = true
+                )
+            ),
+            nextBatch = "p190q",
+            prevBatch = "p1902",
+            totalRoomCountEstimate = 115
+        )
+    }
+
+    @Test
+    fun shouldGetTags() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "tags": {
+                                "m.favourite": {
+                                  "order": 0.1
+                                },
+                                "u.Customers": {},
+                                "u.Work": {
+                                  "order": 0.7
+                                }
+                              }
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getTags(UserId("user", "server"), RoomId("room", "server"))
+            .getOrThrow() shouldBe TagEventContent(
+            mapOf(
+                "m.favourite" to TagEventContent.Tag(0.1),
+                "u.Customers" to TagEventContent.Tag(),
+                "u.Work" to TagEventContent.Tag(0.7)
+            )
+        )
+    }
+
+    @Test
+    fun shouldSetTag() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """{"order":0.25}"""
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.setTag(
+            UserId("user", "server"), RoomId("room", "server"), "m.dino",
+            TagEventContent.Tag(0.25)
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldDeleteTag() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Delete, request.method)
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.deleteTag(UserId("user", "server"), RoomId("room", "server"), "m.dino").getOrThrow()
+    }
+
+    @Test
+    fun shouldGetEventContext() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/%21room%3Aserver/context/event?filter=filter&limit=10",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "end": "t29-57_2_0_2",
+                              "event": {
+                                "content": {
+                                  "body": "filename.jpg",
+                                  "info": {
+                                    "h": 398,
+                                    "mimetype": "image/jpeg",
+                                    "size": 31037,
+                                    "w": 394
+                                  },
+                                  "msgtype": "m.image",
+                                  "url": "mxc://example.org/JWEIFJgwEIhweiWJE"
+                                },
+                                "event_id": "${'$'}f3h4d129462ha:example.com",
+                                "origin_server_ts": 1432735824653,
+                                "room_id": "!636q39766251:example.com",
+                                "sender": "@example:example.org",
+                                "type": "m.room.message",
+                                "unsigned": {
+                                  "age": 1234
+                                }
+                              },
+                              "events_after": [
+                                {
+                                  "content": {
+                                    "body": "This is an example text message",
+                                    "format": "org.matrix.custom.html",
+                                    "formatted_body": "<b>This is an example text message</b>",
+                                    "msgtype": "m.text"
+                                  },
+                                  "event_id": "${'$'}143273582443PhrSn:example.org",
+                                  "origin_server_ts": 1432735824653,
+                                  "room_id": "!636q39766251:example.com",
+                                  "sender": "@example:example.org",
+                                  "type": "m.room.message",
+                                  "unsigned": {
+                                    "age": 1234
+                                  }
+                                }
+                              ],
+                              "events_before": [
+                                {
+                                  "content": {
+                                    "body": "something-important.doc",
+                                    "filename": "something-important.doc",
+                                    "info": {
+                                      "mimetype": "application/msword",
+                                      "size": 46144
+                                    },
+                                    "msgtype": "m.file",
+                                    "url": "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe"
+                                  },
+                                  "event_id": "${'$'}143273582443PhrSn:example.org",
+                                  "origin_server_ts": 1432735824653,
+                                  "room_id": "!636q39766251:example.com",
+                                  "sender": "@example:example.org",
+                                  "type": "m.room.message",
+                                  "unsigned": {
+                                    "age": 1234
+                                  }
+                                }
+                              ],
+                              "start": "t27-54_2_0_2",
+                              "state": [
+                                {
+                                  "content": {
+                                    "creator": "@example:example.org",
+                                    "m.federate": true,
+                                    "predecessor": {
+                                      "event_id": "${'$'}something:example.org",
+                                      "room_id": "!oldroom:example.org"
+                                    },
+                                    "room_version": "1"
+                                  },
+                                  "event_id": "${'$'}143273582443PhrSn:example.org",
+                                  "origin_server_ts": 1432735824653,
+                                  "room_id": "!636q39766251:example.com",
+                                  "sender": "@example:example.org",
+                                  "state_key": "",
+                                  "type": "m.room.create",
+                                  "unsigned": {
+                                    "age": 1234
+                                  }
+                                },
+                                {
+                                  "content": {
+                                    "avatar_url": "mxc://example.org/SEsfnsuifSDFSSEF",
+                                    "displayname": "Alice Margatroid",
+                                    "membership": "join",
+                                    "reason": "Looking for support"
+                                  },
+                                  "event_id": "${'$'}143273582443PhrSn:example.org",
+                                  "origin_server_ts": 1432735824653,
+                                  "room_id": "!636q39766251:example.com",
+                                  "sender": "@example:example.org",
+                                  "state_key": "@alice:example.org",
+                                  "type": "m.room.member",
+                                  "unsigned": {
+                                    "age": 1234
+                                  }
+                                }
+                              ]
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getEventContext(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("event"),
+            filter = "filter",
+            limit = 10
+        ).getOrThrow() shouldBe GetEventContext.Response(
+            start = "t27-54_2_0_2",
+            end = "t29-57_2_0_2",
+            event = MessageEvent(
+                content = RoomMessageEventContent.ImageMessageEventContent(
+                    body = "filename.jpg",
+                    info = ImageInfo(
+                        height = 398,
+                        width = 394,
+                        mimeType = "image/jpeg",
+                        size = 31037,
+                        thumbnailUrl = null,
+                        thumbnailFile = null,
+                        thumbnailInfo = null
+                    ),
+                    url = "mxc://example.org/JWEIFJgwEIhweiWJE", file = null, relatesTo = null
+                ),
+                id = EventId("\$f3h4d129462ha:example.com"),
+                sender = UserId("@example:example.org"),
+                roomId = RoomId("!636q39766251:example.com"),
+                originTimestamp = 1432735824653,
+                unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                    age = 1234,
+                    redactedBecause = null,
+                    transactionId = null
+                )
+            ),
+            eventsBefore = listOf(
+                MessageEvent(
+                    content = RoomMessageEventContent.FileMessageEventContent(
+                        body = "something-important.doc",
+                        fileName = "something-important.doc",
+                        info = FileInfo(
+                            mimeType = "application/msword",
+                            size = 46144,
+                            thumbnailUrl = null,
+                            thumbnailFile = null,
+                            thumbnailInfo = null
+                        ),
+                        url = "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe", file = null, relatesTo = null
+                    ),
+                    id = EventId("$143273582443PhrSn:example.org"),
+                    sender = UserId("@example:example.org"),
+                    roomId = RoomId("!636q39766251:example.com"),
+                    originTimestamp = 1432735824653,
+                    unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                        age = 1234,
+                        redactedBecause = null,
+                        transactionId = null
+                    )
+                )
+            ),
+            eventsAfter = listOf(
+                MessageEvent(
+                    content = TextMessageEventContent(
+                        body = "This is an example text message",
+                        format = "org.matrix.custom.html",
+                        formattedBody = "<b>This is an example text message</b>",
+                        relatesTo = null
+                    ),
+                    id = EventId("$143273582443PhrSn:example.org"),
+                    sender = UserId("@example:example.org"),
+                    roomId = RoomId("!636q39766251:example.com"),
+                    originTimestamp = 1432735824653,
+                    unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                        age = 1234,
+                        redactedBecause = null,
+                        transactionId = null
+                    )
+                )
+            ),
+            state = listOf(
+                StateEvent(
+                    content = CreateEventContent(
+                        creator = UserId("@example:example.org"), federate = true, roomVersion = "1",
+                        predecessor = CreateEventContent.PreviousRoom(
+                            roomId = RoomId("!oldroom:example.org"), eventId = EventId("\$something:example.org")
+                        ),
+                        type = CreateEventContent.RoomType.Room
+                    ),
+                    id = EventId("$143273582443PhrSn:example.org"),
+                    sender = UserId("@example:example.org"),
+                    roomId = RoomId("!636q39766251:example.com"),
+                    originTimestamp = 1432735824653,
+                    unsigned = UnsignedStateEventData(
+                        age = 1234,
+                        redactedBecause = null,
+                        transactionId = null,
+                        previousContent = null
+                    ),
+                    stateKey = ""
+                ),
+                StateEvent(
+                    content = MemberEventContent(
+                        avatarUrl = "mxc://example.org/SEsfnsuifSDFSSEF",
+                        displayName = "Alice Margatroid",
+                        membership = Membership.JOIN,
+                        isDirect = null,
+                        joinAuthorisedViaUsersServer = null,
+                        thirdPartyInvite = null,
+                        reason = "Looking for support"
+                    ),
+                    id = EventId("$143273582443PhrSn:example.org"),
+                    sender = UserId("@example:example.org"),
+                    roomId = RoomId("!636q39766251:example.com"),
+                    originTimestamp = 1432735824653,
+                    unsigned = UnsignedStateEventData(
+                        age = 1234,
+                        redactedBecause = null,
+                        transactionId = null,
+                        previousContent = null
+                    ),
+                    stateKey = "@alice:example.org"
+                )
+            )
+        )
+    }
+
+    @Test
+    fun shouldReportEvent() = runTest {
+        val response = SendEventResponse(EventId("event"))
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/%21room%3Aserver/report/%24eventToRedact",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{"reason":"someReason","score":-100}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        json.encodeToString(response),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.reportEvent(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("\$eventToRedact"),
+            reason = "someReason",
+            score = -100
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldUpgradeRoom() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/%21room%3Aserver/upgrade",
+                        request.url.fullPath
+                    )
+                    request.body.toByteArray().decodeToString() shouldBe """{"new_version":"2"}"""
+                    assertEquals(HttpMethod.Post, request.method)
+                    respond(
+                        """{"replacement_room":"!nextRoom:server"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.upgradeRoom(RoomId("room", "server"), "2")
+            .getOrThrow() shouldBe RoomId("nextRoom", "server")
+    }
+
+    @Test
+    fun shouldGetHierarchy() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                             "next_batch": "next_batch_token",
+                             "rooms": [
+                               {
+                                 "avatar_url": "mxc://example.org/abcdef",
+                                 "canonical_alias": "#general:example.org",
+                                 "children_state": [
+                                   {
+                                     "content": {
+                                       "via": [
+                                         "example.org"
+                                       ]
+                                     },
+                                     "origin_server_ts": 1629413349153,
+                                     "sender": "@alice:example.org",
+                                     "state_key": "!a:example.org",
+                                     "type": "m.space.child"
+                                   }
+                                 ],
+                                 "guest_can_join": false,
+                                 "join_rule": "public",
+                                 "name": "The First Space",
+                                 "num_joined_members": 42,
+                                 "room_id": "!space:example.org",
+                                 "room_type": "m.space",
+                                 "topic": "No other spaces were created first, ever",
+                                 "world_readable": true
+                               }
+                             ]
+                           }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getHierarchy(
+            roomId = RoomId("room", "server"),
+            from = "from",
+            limit = 10,
+            maxDepth = 4,
+            suggestedOnly = true,
+        ).getOrThrow() shouldBe GetHierarchy.Response(
+            nextBatch = "next_batch_token",
+            rooms = listOf(
+                GetHierarchy.Response.PublicRoomsChunk(
+                    avatarUrl = "mxc://example.org/abcdef",
+                    canonicalAlias = RoomAliasId("#general:example.org"),
+                    childrenState = setOf(
+                        Event.StrippedStateEvent(
+                            ChildEventContent(via = setOf("example.org")),
+                            originTimestamp = 1629413349153,
+                            sender = UserId("@alice:example.org"),
+                            stateKey = "!a:example.org",
+                        )
+                    ),
+                    guestCanJoin = false,
+                    joinRule = JoinRulesEventContent.JoinRule.Public,
+                    name = "The First Space",
+                    joinedMembersCount = 42,
+                    roomId = RoomId("!space:example.org"),
+                    roomType = CreateEventContent.RoomType.Space,
+                    topic = "No other spaces were created first, ever",
+                    worldReadable = true
+                )
+            )
+        )
     }
 }

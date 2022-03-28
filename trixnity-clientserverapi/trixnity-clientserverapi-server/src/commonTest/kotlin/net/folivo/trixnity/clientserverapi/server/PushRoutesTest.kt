@@ -22,7 +22,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleSet
+import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.test.AfterTest
@@ -242,8 +242,8 @@ class PushRoutesTest {
             .whenInvokedWith(any())
             .then {
                 GetPushRules.Response(
-                    global = PushRuleSet(
-                        content = listOf(
+                    global = mapOf(
+                        PushRuleKind.CONTENT to listOf(
                             PushRule(
                                 actions = setOf(
                                     PushAction.Notify,
@@ -256,9 +256,10 @@ class PushRoutesTest {
                                 ruleId = ".m.rule.contains_user_name"
                             )
                         ),
-                        override = listOf(
+                        PushRuleKind.OVERRIDE to listOf(
                             PushRule(
                                 actions = setOf(PushAction.DontNotify),
+                                conditions = setOf(),
                                 default = true,
                                 enabled = false,
                                 ruleId = ".m.rule.master"
@@ -271,9 +272,9 @@ class PushRoutesTest {
                                 ruleId = ".m.rule.suppress_notices"
                             )
                         ),
-                        room = listOf(),
-                        sender = listOf(),
-                        underride = listOf(
+                        PushRuleKind.ROOM to listOf(),
+                        PushRuleKind.SENDER to listOf(),
+                        PushRuleKind.UNDERRIDE to listOf(
                             PushRule(
                                 actions = setOf(
                                     PushAction.Notify,
@@ -350,193 +351,194 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
-                  "global":{
-                    "content":[
+                  "global": {
+                    "content": [
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"sound",
-                            "value":"default"
+                            "set_tweak": "sound",
+                            "value": "default"
                           },
                           {
-                            "set_tweak":"highlight"
+                            "set_tweak": "highlight"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "pattern":"alice",
-                        "rule_id":".m.rule.contains_user_name"
+                        "default": true,
+                        "enabled": true,
+                        "pattern": "alice",
+                        "rule_id": ".m.rule.contains_user_name"
                       }
                     ],
-                    "override":[
+                    "override": [
                       {
-                        "actions":[
+                        "actions": [
                           "dont_notify"
                         ],
-                        "default":true,
-                        "enabled":false,
-                        "rule_id":".m.rule.master"
+                        "conditions": [],
+                        "default": true,
+                        "enabled": false,
+                        "rule_id": ".m.rule.master"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "dont_notify"
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "key":"content.msgtype",
-                            "pattern":"m.notice",
-                            "kind":"event_match"
+                            "key": "content.msgtype",
+                            "pattern": "m.notice",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.suppress_notices"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.suppress_notices"
                       }
                     ],
-                    "room":[],
-                    "sender":[],
-                    "underride":[
+                    "room": [],
+                    "sender": [],
+                    "underride": [
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"sound",
-                            "value":"ring"
+                            "set_tweak": "sound",
+                            "value": "ring"
                           },
                           {
-                            "set_tweak":"highlight",
-                            "value":false
+                            "set_tweak": "highlight",
+                            "value": false
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "key":"type",
-                            "pattern":"m.call.invite",
-                            "kind":"event_match"
+                            "key": "type",
+                            "pattern": "m.call.invite",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.call"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.call"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"sound",
-                            "value":"default"
+                            "set_tweak": "sound",
+                            "value": "default"
                           },
                           {
-                            "set_tweak":"highlight"
+                            "set_tweak": "highlight"
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "kind":"contains_display_name"
+                            "kind": "contains_display_name"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.contains_display_name"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.contains_display_name"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"sound",
-                            "value":"default"
+                            "set_tweak": "sound",
+                            "value": "default"
                           },
                           {
-                            "set_tweak":"highlight",
-                            "value":false
+                            "set_tweak": "highlight",
+                            "value": false
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "is":"2",
-                            "kind":"room_member_count"
+                            "is": "2",
+                            "kind": "room_member_count"
                           },
                           {
-                            "key":"type",
-                            "pattern":"m.room.message",
-                            "kind":"event_match"
+                            "key": "type",
+                            "pattern": "m.room.message",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.room_one_to_one"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.room_one_to_one"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"sound",
-                            "value":"default"
+                            "set_tweak": "sound",
+                            "value": "default"
                           },
                           {
-                            "set_tweak":"highlight",
-                            "value":false
+                            "set_tweak": "highlight",
+                            "value": false
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "key":"type",
-                            "pattern":"m.room.member",
-                            "kind":"event_match"
+                            "key": "type",
+                            "pattern": "m.room.member",
+                            "kind": "event_match"
                           },
                           {
-                            "key":"content.membership",
-                            "pattern":"invite",
-                            "kind":"event_match"
+                            "key": "content.membership",
+                            "pattern": "invite",
+                            "kind": "event_match"
                           },
                           {
-                            "key":"state_key",
-                            "pattern":"@alice:example.com",
-                            "kind":"event_match"
+                            "key": "state_key",
+                            "pattern": "@alice:example.com",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.invite_for_me"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.invite_for_me"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"highlight",
-                            "value":false
+                            "set_tweak": "highlight",
+                            "value": false
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "key":"type",
-                            "pattern":"m.room.member",
-                            "kind":"event_match"
+                            "key": "type",
+                            "pattern": "m.room.member",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.member_event"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.member_event"
                       },
                       {
-                        "actions":[
+                        "actions": [
                           "notify",
                           {
-                            "set_tweak":"highlight",
-                            "value":false
+                            "set_tweak": "highlight",
+                            "value": false
                           }
                         ],
-                        "conditions":[
+                        "conditions": [
                           {
-                            "key":"type",
-                            "pattern":"m.room.message",
-                            "kind":"event_match"
+                            "key": "type",
+                            "pattern": "m.room.message",
+                            "kind": "event_match"
                           }
                         ],
-                        "default":true,
-                        "enabled":true,
-                        "rule_id":".m.rule.message"
+                        "default": true,
+                        "enabled": true,
+                        "rule_id": ".m.rule.message"
                       }
                     ]
                   }
@@ -563,7 +565,7 @@ class PushRoutesTest {
                 )
             }
         val response =
-            client.get("/_matrix/client/v3/pushrules/scope/kind/ruleId") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/pushrules/scope/content/ruleId") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -582,7 +584,7 @@ class PushRoutesTest {
         verify(handlerMock).suspendFunction(handlerMock::getPushRule)
             .with(matching {
                 it.endpoint.scope shouldBe "scope"
-                it.endpoint.kind shouldBe "kind"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
                 true
             })
@@ -592,7 +594,7 @@ class PushRoutesTest {
     @Test
     fun shouldSetPushRule() = testApplication {
         initCut()
-        val response = client.put("/_matrix/client/v3/pushrules/scope/kind/ruleId?before=before&after=after") {
+        val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId?before=before&after=after") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
             setBody(
@@ -625,7 +627,7 @@ class PushRoutesTest {
         verify(handlerMock).suspendFunction(handlerMock::setPushRule)
             .with(matching {
                 it.endpoint.scope shouldBe "scope"
-                it.endpoint.kind shouldBe "kind"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
                 it.endpoint.beforeRuleId shouldBe "before"
                 it.endpoint.afterRuleId shouldBe "after"
@@ -642,7 +644,7 @@ class PushRoutesTest {
     @Test
     fun shouldDeletePushRule() = testApplication {
         initCut()
-        val response = client.delete("/_matrix/client/v3/pushrules/scope/kind/ruleId") {
+        val response = client.delete("/_matrix/client/v3/pushrules/scope/content/ruleId") {
             bearerAuth("token")
         }
         assertSoftly(response) {
@@ -653,8 +655,136 @@ class PushRoutesTest {
         verify(handlerMock).suspendFunction(handlerMock::deletePushRule)
             .with(matching {
                 it.endpoint.scope shouldBe "scope"
-                it.endpoint.kind shouldBe "kind"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetPushRuleActions() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getPushRuleActions)
+            .whenInvokedWith(any())
+            .then {
+                GetPushRuleActions.Response(setOf(PushAction.DontNotify))
+            }
+        val response =
+            client.get("/_matrix/client/v3/pushrules/scope/content/ruleId/actions") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "actions":[
+                    "dont_notify"
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getPushRuleActions)
+            .with(matching {
+                it.endpoint.scope shouldBe "scope"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
+                it.endpoint.ruleId shouldBe "ruleId"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldSetPushRuleActions() = testApplication {
+        initCut()
+        val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId/actions") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "actions":[
+                    "notify",
+                    {
+                        "set_tweak":"sound",
+                        "value":"default"
+                     }
+                  ]
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::setPushRuleActions)
+            .with(matching {
+                it.endpoint.scope shouldBe "scope"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
+                it.endpoint.ruleId shouldBe "ruleId"
+                it.requestBody shouldBe SetPushRuleActions.Request(
+                    setOf(PushAction.Notify, PushAction.SetSoundTweak("default"))
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetPushRuleEnabled() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getPushRuleEnabled)
+            .whenInvokedWith(any())
+            .then {
+                GetPushRuleEnabled.Response(false)
+            }
+        val response =
+            client.get("/_matrix/client/v3/pushrules/scope/content/ruleId/enabled") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "enabled":false
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getPushRuleEnabled)
+            .with(matching {
+                it.endpoint.scope shouldBe "scope"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
+                it.endpoint.ruleId shouldBe "ruleId"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldSetPushRuleEnabled() = testApplication {
+        initCut()
+        val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId/enabled") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "enabled":false
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::setPushRuleEnabled)
+            .with(matching {
+                it.endpoint.scope shouldBe "scope"
+                it.endpoint.kind shouldBe PushRuleKind.CONTENT
+                it.endpoint.ruleId shouldBe "ruleId"
+                it.requestBody shouldBe SetPushRuleEnabled.Request(false)
                 true
             })
             .wasInvoked()

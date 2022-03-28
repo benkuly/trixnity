@@ -62,9 +62,12 @@ sealed interface Event<C : EventContent> {
     @Serializable
     data class StrippedStateEvent<C : StateEventContent>(
         @SerialName("content") override val content: C,
-        @SerialName("sender") val sender: UserId,
-        @SerialName("room_id") val roomId: RoomId,
-        @SerialName("state_key") val stateKey: String
+        @SerialName("event_id") val id: EventId? = null,
+        @SerialName("sender") val sender: UserId? = null,
+        @SerialName("room_id") val roomId: RoomId? = null,
+        @SerialName("origin_server_ts") val originTimestamp: Long? = null,
+        @SerialName("unsigned") val unsigned: UnsignedStateEventData<C>? = null,
+        @SerialName("state_key") val stateKey: String,
     ) : Event<C>
 
     @Serializable

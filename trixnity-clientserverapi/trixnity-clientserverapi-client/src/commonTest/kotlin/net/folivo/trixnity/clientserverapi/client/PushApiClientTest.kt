@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction.*
 import net.folivo.trixnity.core.model.push.PushCondition.*
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleSet
+import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -418,8 +418,8 @@ class PushApiClientTest {
         val result = matrixRestClient.push.getPushRules().getOrThrow()
         assertEquals(
             GetPushRules.Response(
-                global = PushRuleSet(
-                    content = listOf(
+                global = mapOf(
+                    PushRuleKind.CONTENT to listOf(
                         PushRule(
                             actions = setOf(Notify, SetSoundTweak("default"), SetHighlightTweak()),
                             default = true,
@@ -428,7 +428,7 @@ class PushApiClientTest {
                             ruleId = ".m.rule.contains_user_name"
                         )
                     ),
-                    override = listOf(
+                    PushRuleKind.OVERRIDE to listOf(
                         PushRule(
                             actions = setOf(DontNotify),
                             conditions = setOf(),
@@ -444,9 +444,9 @@ class PushApiClientTest {
                             ruleId = ".m.rule.suppress_notices"
                         )
                     ),
-                    room = listOf(),
-                    sender = listOf(),
-                    underride = listOf(
+                    PushRuleKind.ROOM to listOf(),
+                    PushRuleKind.SENDER to listOf(),
+                    PushRuleKind.UNDERRIDE to listOf(
                         PushRule(
                             actions = setOf(Notify, SetSoundTweak("ring"), SetHighlightTweak(false)),
                             conditions = setOf(EventMatch("type", "m.call.invite")),
@@ -518,7 +518,7 @@ class PushApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/pushrules/scope/kind/ruleId",
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -529,7 +529,7 @@ class PushApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.push.getPushRule("scope", "kind", "ruleId").getOrThrow()
+        val result = matrixRestClient.push.getPushRule("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
         assertEquals(
             PushRule(
                 actions = setOf(DontNotify),
@@ -568,7 +568,7 @@ class PushApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/pushrules/scope/kind/ruleId?before=before&after=after",
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId?before=before&after=after",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -582,7 +582,7 @@ class PushApiClientTest {
             })
         matrixRestClient.push.setPushRule(
             scope = "scope",
-            kind = "kind",
+            kind = PushRuleKind.CONTENT,
             ruleId = "ruleId",
             pushRule = SetPushRule.Request(
                 actions = setOf(Notify, SetSoundTweak("default")),
@@ -601,7 +601,7 @@ class PushApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/pushrules/scope/kind/ruleId",
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Delete, request.method)
@@ -614,8 +614,134 @@ class PushApiClientTest {
             })
         matrixRestClient.push.deletePushRule(
             scope = "scope",
-            kind = "kind",
+            kind = PushRuleKind.CONTENT,
             ruleId = "ruleId",
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetPushRuleActions() = runTest {
+        val response = """
+            {
+              "actions": [
+                "dont_notify"
+              ]
+            }
+        """.trimIndent()
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId/actions",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        response,
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.push.getPushRuleActions("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
+        assertEquals(setOf(DontNotify), result)
+    }
+
+    @Test
+    fun shouldSetPushRuleActions() = runTest {
+        val expectedRequest = """
+            {
+              "actions":[
+                "notify",
+                {
+                    "set_tweak":"sound",
+                    "value":"default"
+                 }
+              ]
+            }
+        """.trimToFlatJson()
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId/actions",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.push.setPushRuleActions(
+            scope = "scope",
+            kind = PushRuleKind.CONTENT,
+            ruleId = "ruleId",
+            actions = setOf(Notify, SetSoundTweak("default")),
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldGetPushRuleEnabled() = runTest {
+        val response = """
+            {
+              "enabled": true
+            }
+        """.trimIndent()
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId/enabled",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        response,
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.push.getPushRuleEnabled("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
+        assertEquals(true, result)
+    }
+
+    @Test
+    fun shouldSetPushRuleEnabled() = runTest {
+        val expectedRequest = """
+            {
+              "enabled":false
+            }
+        """.trimToFlatJson()
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/pushrules/scope/content/ruleId/enabled",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Put, request.method)
+                    assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.push.setPushRuleEnabled(
+            scope = "scope",
+            kind = PushRuleKind.CONTENT,
+            ruleId = "ruleId",
+            enabled = false
         ).getOrThrow()
     }
 }

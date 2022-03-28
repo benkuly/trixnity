@@ -9,6 +9,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import io.mockative.*
 import kotlinx.serialization.json.JsonArray
@@ -16,8 +17,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
-import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA.Success
+import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
@@ -54,6 +56,84 @@ class AuthenticationRouteTest {
     }
 
     @Test
+    fun shouldGetWhoami() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::whoAmI)
+            .whenInvokedWith(any())
+            .then {
+                WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
+            }
+        val response = client.get("/_matrix/client/v3/account/whoami") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"user_id":"@user:server","device_id":"ABCDEF","is_guest":false}"""
+        }
+        verify(handlerMock).suspendFunction(handlerMock::whoAmI)
+            .with(any())
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetWellKnown() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getWellKnown)
+            .whenInvokedWith(any())
+            .then {
+                DiscoveryInformation(
+                    homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
+                    identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
+                )
+            }
+        val response = client.get("/.well-known/matrix/client")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "m.homeserver": {
+                        "base_url": "https://matrix.example.com"
+                      },
+                      "m.identity_server": {
+                        "base_url": "https://identity.example.com"
+                      }
+                    }
+                """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::getWellKnown)
+            .with(any())
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldIsRegistrationTokenValid() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::isRegistrationTokenValid)
+            .whenInvokedWith(any())
+            .then {
+                IsRegistrationTokenValid.Response(true)
+            }
+        val response = client.get("/_matrix/client/v1/register/m.login.registration_token/validity?token=token")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                          "valid": true
+                    }
+                """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::isRegistrationTokenValid)
+            .with(matching {
+                it.endpoint.token shouldBe "token"
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
     fun shouldIsUsernameAvailable() = testApplication {
         initCut()
         val response = client.get("/_matrix/client/v3/register/available?username=user")
@@ -69,11 +149,215 @@ class AuthenticationRouteTest {
     }
 
     @Test
+    fun shouldGetEmailRequestTokenForPassword() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForPassword)
+            .whenInvokedWith(any())
+            .then {
+                GetEmailRequestTokenForPassword.Response(
+                    sessionId = "123abc",
+                    submitUrl = "https://example.org/path/to/submitToken"
+                )
+            }
+        val response = client.post("/_matrix/client/v3/account/password/email/requestToken") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "client_secret": "monkeys_are_GREAT",
+                      "email": "foo@example.com",
+                      "id_server": "id.example.com",
+                      "next_link": "https://example.org/congratulations.html",
+                      "send_attempt": 1
+                    }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "sid": "123abc",
+                  "submit_url": "https://example.org/path/to/submitToken"
+                }
+            """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForPassword)
+            .with(matching {
+                it.requestBody shouldBe GetEmailRequestTokenForPassword.Request(
+                    clientSecret = "monkeys_are_GREAT",
+                    email = "foo@example.com",
+                    idServer = "id.example.com",
+                    nextLink = "https://example.org/congratulations.html",
+                    sendAttempt = 1
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetEmailRequestTokenForRegistration() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForRegistration)
+            .whenInvokedWith(any())
+            .then {
+                GetEmailRequestTokenForRegistration.Response(
+                    sessionId = "123abc",
+                    submitUrl = "https://example.org/path/to/submitToken"
+                )
+            }
+        val response = client.post("/_matrix/client/v3/register/email/requestToken") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "client_secret": "monkeys_are_GREAT",
+                      "email": "foo@example.com",
+                      "id_server": "id.example.com",
+                      "next_link": "https://example.org/congratulations.html",
+                      "send_attempt": 1
+                    }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "sid": "123abc",
+                  "submit_url": "https://example.org/path/to/submitToken"
+                }
+            """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForRegistration)
+            .with(matching {
+                it.requestBody shouldBe GetEmailRequestTokenForRegistration.Request(
+                    clientSecret = "monkeys_are_GREAT",
+                    email = "foo@example.com",
+                    idServer = "id.example.com",
+                    nextLink = "https://example.org/congratulations.html",
+                    sendAttempt = 1
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetMsisdnRequestTokenForPassword() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForPassword)
+            .whenInvokedWith(any())
+            .then {
+                GetMsisdnRequestTokenForPassword.Response(
+                    sessionId = "123abc",
+                    submitUrl = "https://example.org/path/to/submitToken"
+                )
+            }
+        val response = client.post("/_matrix/client/v3/account/password/msisdn/requestToken") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "client_secret": "monkeys_are_GREAT",
+                      "country": "GB",
+                      "id_server": "id.example.com",
+                      "next_link": "https://example.org/congratulations.html",
+                      "phone_number": "07700900001",
+                      "send_attempt": 1
+                    }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "sid": "123abc",
+                  "submit_url": "https://example.org/path/to/submitToken"
+                }
+            """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForPassword)
+            .with(matching {
+                it.requestBody shouldBe GetMsisdnRequestTokenForPassword.Request(
+                    clientSecret = "monkeys_are_GREAT",
+                    country = "GB",
+                    idServer = "id.example.com",
+                    nextLink = "https://example.org/congratulations.html",
+                    phoneNumber = "07700900001",
+                    sendAttempt = 1
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetMsisdnRequestTokenForRegistration() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForRegistration)
+            .whenInvokedWith(any())
+            .then {
+                GetMsisdnRequestTokenForRegistration.Response(
+                    sessionId = "123abc",
+                    submitUrl = "https://example.org/path/to/submitToken"
+                )
+            }
+        val response = client.post("/_matrix/client/v3/register/msisdn/requestToken") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "client_secret": "monkeys_are_GREAT",
+                      "country": "GB",
+                      "id_server": "id.example.com",
+                      "next_link": "https://example.org/congratulations.html",
+                      "phone_number": "07700900001",
+                      "send_attempt": 1
+                    }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "sid": "123abc",
+                  "submit_url": "https://example.org/path/to/submitToken"
+                }
+            """.trimToFlatJson()
+        }
+
+        verify(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForRegistration)
+            .with(matching {
+                it.requestBody shouldBe GetMsisdnRequestTokenForRegistration.Request(
+                    clientSecret = "monkeys_are_GREAT",
+                    country = "GB",
+                    idServer = "id.example.com",
+                    nextLink = "https://example.org/congratulations.html",
+                    phoneNumber = "07700900001",
+                    sendAttempt = 1
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
     fun shouldRegister() = testApplication {
         initCut()
         given(handlerMock).suspendFunction(handlerMock::register)
             .whenInvokedWith(any())
-            .then { Success(Register.Response(UserId("user", "server"))) }
+            .then { ResponseWithUIA.Success(Register.Response(UserId("user", "server"))) }
         val response = client.post("/_matrix/client/v3/register?kind=user") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -165,7 +449,6 @@ class AuthenticationRouteTest {
                 }
                 """.trimToFlatJson()
         }
-
         verify(handlerMock).suspendFunction(handlerMock::getLoginTypes)
             .with(any())
             .wasInvoked()
@@ -181,9 +464,9 @@ class AuthenticationRouteTest {
                     userId = UserId("@cheeky_monkey:matrix.org"),
                     accessToken = "abc123",
                     deviceId = "GHTYAJCE",
-                    discoveryInformation = Login.Response.DiscoveryInformation(
-                        Login.Response.DiscoveryInformation.HomeserverInformation("https://example.org"),
-                        Login.Response.DiscoveryInformation.IdentityServerInformation("https://id.example.org")
+                    discoveryInformation = DiscoveryInformation(
+                        DiscoveryInformation.HomeserverInformation("https://example.org"),
+                        DiscoveryInformation.IdentityServerInformation("https://id.example.org")
                     )
                 )
             }
@@ -270,7 +553,7 @@ class AuthenticationRouteTest {
         initCut()
         given(handlerMock).suspendFunction(handlerMock::deactivateAccount)
             .whenInvokedWith(any())
-            .then { Success(DeactivateAccount.Response(DeactivateAccount.Response.IdServerUnbindResult.SUCCESS)) }
+            .then { ResponseWithUIA.Success(DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)) }
         val response = client.post("/_matrix/client/v3/account/deactivate") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -295,7 +578,7 @@ class AuthenticationRouteTest {
         initCut()
         given(handlerMock).suspendFunction(handlerMock::changePassword)
             .whenInvokedWith(any())
-            .then { Success(Unit) }
+            .then { ResponseWithUIA.Success(Unit) }
         val response = client.post("/_matrix/client/v3/account/password") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -310,6 +593,217 @@ class AuthenticationRouteTest {
         verify(handlerMock).suspendFunction(handlerMock::changePassword)
             .with(matching {
                 it.requestBody shouldBe RequestWithUIA(ChangePassword.Request("newPassword", false), null)
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetThirdPartyIdentifiers() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getThirdPartyIdentifiers)
+            .whenInvokedWith(any())
+            .then {
+                GetThirdPartyIdentifiers.Response(
+                    setOf(
+                        ThirdPartyIdentifier(
+                            addedAt = 1535336848756,
+                            address = "monkey@banana.island",
+                            medium = Medium.EMAIL,
+                            validatedAt = 1535176800000
+                        )
+                    )
+                )
+            }
+        val response = client.get("/_matrix/client/v3/account/3pid") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "threepids": [
+                    {
+                      "added_at": 1535336848756,
+                      "address": "monkey@banana.island",
+                      "medium": "email",
+                      "validated_at": 1535176800000
+                    }
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getThirdPartyIdentifiers)
+            .with(any())
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldAddThirdPartyIdentifiers() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::addThirdPartyIdentifiers)
+            .whenInvokedWith(any())
+            .then { ResponseWithUIA.Success(Unit) }
+        val response = client.post("/_matrix/client/v3/account/3pid/add") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "client_secret": "d0nt-T3ll",
+                  "sid": "abc123987"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::addThirdPartyIdentifiers)
+            .with(matching {
+                it.requestBody.request shouldBe AddThirdPartyIdentifiers.Request("d0nt-T3ll", "abc123987")
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldBindThirdPartyIdentifiers() = testApplication {
+        initCut()
+        val response = client.post("/_matrix/client/v3/account/3pid/bind") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "client_secret": "d0nt-T3ll",
+                  "id_access_token": "abc123_OpaqueString",
+                  "id_server": "example.org",
+                  "sid": "abc123987"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verify(handlerMock).suspendFunction(handlerMock::bindThirdPartyIdentifiers)
+            .with(matching {
+                it.requestBody shouldBe BindThirdPartyIdentifiers.Request(
+                    clientSecret = "d0nt-T3ll",
+                    idAccessToken = "abc123_OpaqueString",
+                    idServer = "example.org",
+                    sessionId = "abc123987"
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldDeleteThirdPartyIdentifiers() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::deleteThirdPartyIdentifiers)
+            .whenInvokedWith(any())
+            .then { DeleteThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS) }
+        val response = client.post("/_matrix/client/v3/account/3pid/delete") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "address": "example@example.org",
+                  "id_server": "example.org",
+                  "medium": "email"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
+        }
+        verify(handlerMock).suspendFunction(handlerMock::deleteThirdPartyIdentifiers)
+            .with(matching {
+                it.requestBody shouldBe DeleteThirdPartyIdentifiers.Request(
+                    address = "example@example.org",
+                    idServer = "example.org",
+                    medium = Medium.EMAIL
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldUnbindThirdPartyIdentifiers() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::unbindThirdPartyIdentifiers)
+            .whenInvokedWith(any())
+            .then { UnbindThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS) }
+        val response = client.post("/_matrix/client/v3/account/3pid/unbind") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "address": "example@example.org",
+                  "id_server": "example.org",
+                  "medium": "email"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
+        }
+        verify(handlerMock).suspendFunction(handlerMock::unbindThirdPartyIdentifiers)
+            .with(matching {
+                it.requestBody shouldBe UnbindThirdPartyIdentifiers.Request(
+                    address = "example@example.org",
+                    idServer = "example.org",
+                    medium = Medium.EMAIL
+                )
+                true
+            })
+            .wasInvoked()
+    }
+
+    @Test
+    fun shouldGetOIDCRequestToken() = testApplication {
+        initCut()
+        given(handlerMock).suspendFunction(handlerMock::getOIDCRequestToken)
+            .whenInvokedWith(any())
+            .then {
+                GetOIDCRequestToken.Response(
+                    accessToken = "SomeT0kenHere",
+                    expiresIn = 3600,
+                    matrixServerName = "example.com",
+                )
+            }
+        val response =
+            client.get("/_matrix/client/v3/user/%40user%3Aserver/openid/request_token") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                 "access_token": "SomeT0kenHere",
+                 "expires_in": 3600,
+                 "matrix_server_name": "example.com",
+                 "token_type": "Bearer"
+               }
+            """.trimToFlatJson()
+        }
+        verify(handlerMock).suspendFunction(handlerMock::getOIDCRequestToken)
+            .with(matching {
+                it.endpoint.userId shouldBe UserId("user", "server")
                 true
             })
             .wasInvoked()

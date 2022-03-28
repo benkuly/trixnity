@@ -79,8 +79,8 @@ class MediaService(
 
     suspend fun getThumbnail(
         mxcUri: String,
-        width: UInt,
-        height: UInt,
+        width: Long,
+        height: Long,
         method: ThumbnailResizingMethod = CROP,
         progress: MutableStateFlow<FileTransferProgress?>? = null
     ): Result<ByteArray> = kotlin.runCatching {
