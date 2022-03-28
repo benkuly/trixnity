@@ -4,14 +4,18 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 
 @Serializable
 data class TimelineEvent(
     val event: @Contextual RoomEvent<*>,
+    /**
+     * If the event is encrypted, this will be the decrypted event content. If the event is not encrypted, this will immediately
+     * contain the event content from the event. Therefore, if this is null, the event content is not yet decrypted.
+     */
     @Transient
-    val decryptedEvent: Result<MegolmEvent<*>>? = null,
+    val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
 
     val roomId: RoomId,
     val eventId: EventId,
@@ -20,6 +24,9 @@ data class TimelineEvent(
     val nextEventId: EventId?,
     val gap: Gap?,
 ) {
+    @Transient
+    val isEncrypted: Boolean = event.isEncrypted
+
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
     @JsonClassDiscriminator("position")

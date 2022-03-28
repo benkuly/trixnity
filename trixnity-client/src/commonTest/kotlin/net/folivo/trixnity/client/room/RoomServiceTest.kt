@@ -207,7 +207,7 @@ class RoomServiceTest : ShouldSpec({
                     listOf(
                         TimelineEvent(
                             event = event1,
-                            decryptedEvent = null,
+                            content = null,
                             roomId = room,
                             eventId = event1.id,
                             previousEventId = null,
@@ -216,7 +216,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
+                            content = Result.failure(DecryptionException.ValidationFailed),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -225,7 +225,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event3,
-                            decryptedEvent = null,
+                            content = null,
                             roomId = room,
                             eventId = event3.id,
                             previousEventId = event3.id,
@@ -253,7 +253,7 @@ class RoomServiceTest : ShouldSpec({
                             redactedBecause = redactionEvent
                         )
                     )
-                    decryptedEvent shouldBe null
+                    content shouldBe null
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -268,7 +268,7 @@ class RoomServiceTest : ShouldSpec({
                     listOf(
                         TimelineEvent(
                             event = event1,
-                            decryptedEvent = null,
+                            content = null,
                             roomId = room,
                             eventId = event1.id,
                             previousEventId = null,
@@ -277,7 +277,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
+                            content = Result.failure(DecryptionException.ValidationFailed),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -286,7 +286,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event3,
-                            decryptedEvent = null,
+                            content = null,
                             roomId = room,
                             eventId = event3.id,
                             previousEventId = event3.id,
@@ -315,7 +315,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         ""
                     )
-                    decryptedEvent shouldBe null
+                    content shouldBe null
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -329,7 +329,7 @@ class RoomServiceTest : ShouldSpec({
                 val event2 = nameEvent(2)
                 val timelineEvent1 = TimelineEvent(
                     event = event1,
-                    decryptedEvent = null,
+                    content = null,
                     roomId = room,
                     eventId = event1.id,
                     previousEventId = null,
@@ -338,7 +338,7 @@ class RoomServiceTest : ShouldSpec({
                 )
                 val timelineEvent2 = TimelineEvent(
                     event = event2,
-                    decryptedEvent = Result.failure(DecryptionException.ValidationFailed),
+                    content = Result.failure(DecryptionException.ValidationFailed),
                     roomId = room,
                     eventId = event2.id,
                     previousEventId = event1.id,
@@ -440,10 +440,10 @@ class RoomServiceTest : ShouldSpec({
             withData(
                 mapOf(
                     "with already encrypted event" to encryptedTimelineEvent.copy(
-                        decryptedEvent = Result.success(MegolmEvent(TextMessageEventContent("hi"), room))
+                        content = Result.success(TextMessageEventContent("hi"))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
-                        decryptedEvent = Result.failure(DecryptionException.ValidationFailed)
+                        content = Result.failure(DecryptionException.ValidationFailed)
                     ),
                     "without RoomEvent" to encryptedTimelineEvent.copy(
                         event = nameEvent(24)
@@ -480,7 +480,7 @@ class RoomServiceTest : ShouldSpec({
                 assertSoftly(result[1]) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                    content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
             }
             should("handle error") {
@@ -492,7 +492,7 @@ class RoomServiceTest : ShouldSpec({
                 assertSoftly(result[1]) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    decryptedEvent?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed
+                    content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed
                 }
             }
             should("wait for olm session and ask key backup for it") {
@@ -510,7 +510,7 @@ class RoomServiceTest : ShouldSpec({
                 assertSoftly(result.value) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                    content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
                 coVerify { key.backup.loadMegolmSession(room, session, senderKey) }
             }
@@ -536,7 +536,7 @@ class RoomServiceTest : ShouldSpec({
                 assertSoftly(result.value) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    decryptedEvent?.getOrNull() shouldBe expectedDecryptedEvent
+                    content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
                 coVerify(exactly = 1) { key.backup.loadMegolmSession(room, session, senderKey) }
 
@@ -550,7 +550,7 @@ class RoomServiceTest : ShouldSpec({
             val event2 = textEvent(2)
             val event2Timeline = TimelineEvent(
                 event = event2,
-                decryptedEvent = null,
+                content = null,
                 roomId = room,
                 eventId = event2.id,
                 previousEventId = null,

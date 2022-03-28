@@ -84,7 +84,7 @@ suspend fun timelineExample() = coroutineScope {
                     content is RoomMessageEventContent ->
                         println("${sender}: ${content.body}")
                     content is MegolmEncryptedEventContent -> {
-                        val decryptedEvent = timelineEvent.value?.decryptedEvent
+                        val decryptedEvent = timelineEvent.value?.content
                         val decryptedEventContent = decryptedEvent?.getOrNull()?.content
                         val decryptionException = decryptedEvent?.exceptionOrNull()
                         when {

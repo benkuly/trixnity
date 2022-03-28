@@ -309,14 +309,10 @@ class VerificationService(
                     activeUserVerifications.value.find { it.roomId == timelineEvent.roomId && it.relatesTo?.eventId == timelineEvent.eventId }
                 if (cache != null) cache
                 else {
-                    val eventContent = timelineEvent.event.content
+                    val eventContent = timelineEvent.content?.getOrNull()
                     val request =
                         if (eventContent is VerificationRequestMessageEventContent) eventContent
-                        else {
-                            val decryptedEventContent = timelineEvent.decryptedEvent?.getOrNull()?.content
-                            if (decryptedEventContent is VerificationRequestMessageEventContent) decryptedEventContent
-                            else null
-                        }
+                        else null
                     val sender = timelineEvent.event.sender
                     if (request != null && sender != ownUserId && request.to == ownUserId) {
                         ActiveUserVerification(

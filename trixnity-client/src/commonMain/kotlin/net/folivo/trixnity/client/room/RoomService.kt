@@ -455,7 +455,7 @@ class RoomService(
                                         redactedBecause = redactionEvent
                                     )
                                 ),
-                                decryptedEvent = null,
+                                content = null,
                             )
                         }
                         is StateEvent -> {
@@ -475,7 +475,7 @@ class RoomService(
                                     ),
                                     oldEvent.stateKey,
                                 ),
-                                decryptedEvent = null,
+                                content = null,
                             )
                         }
                     }
@@ -537,7 +537,7 @@ class RoomService(
                             roomId = roomId,
                             eventId = event.id,
                             previousEventId = previousEventId,
-                            nextEventId = events.getOrNull(index + 1)?.id,
+                            nextEventId = events.getOrNull(1)?.id,
                             gap = if (hasGapBefore && previousBatch != null)
                                 GapBefore(previousBatch)
                             else null
@@ -556,10 +556,10 @@ class RoomService(
                 }
             }
             val replaceOwnMessagesWithOutboxContent = timelineEvents.map {
-                if (it.event.content is MegolmEncryptedEventContent) {
+                if (it.event.isEncrypted) {
                     it.event.unsigned?.transactionId?.let { transactionId ->
                         store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
-                            it.copy(decryptedEvent = Result.success(MegolmEvent(roomOutboxMessage.content, roomId)))
+                            it.copy(content = Result.success(roomOutboxMessage.content))
                         }
                     } ?: it
                 } else it
@@ -612,7 +612,7 @@ class RoomService(
                                         event = event,
                                         roomId = roomId,
                                         eventId = event.id,
-                                        previousEventId = events.getOrNull(index + 1)?.id,
+                                        previousEventId = events.getOrNull(1)?.id,
                                         nextEventId = startEvent.eventId,
                                         gap = null
                                     )
@@ -721,7 +721,7 @@ class RoomService(
                                         roomId = roomId,
                                         eventId = event.id,
                                         previousEventId = startEvent.eventId,
-                                        nextEventId = events.getOrNull(index + 1)?.id,
+                                        nextEventId = events.getOrNull(1)?.id,
                                         gap = null
                                     )
                                 }
@@ -780,16 +780,16 @@ class RoomService(
 
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
-                && this.event.content is MegolmEncryptedEventContent
-                && this.decryptedEvent == null
+                && this.event.isEncrypted
+                && this.content == null
 
     suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         coroutineScope: CoroutineScope
     ): StateFlow<TimelineEvent?> {
-        return store.roomTimeline.get(eventId, roomId, coroutineScope).also {
-            val timelineEvent = it.value
+        return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
+            val timelineEvent = timelineEventFlow.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                 coroutineScope.launch {
@@ -826,7 +826,7 @@ class RoomService(
                         } else decryptEventAttempt
                     store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
                         // we check here again, because an event could be redacted at the same time
-                        if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(decryptedEvent = decryptedEvent)
+                        if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEvent.map { it.content })
                         else oldEvent
                     }
                 }

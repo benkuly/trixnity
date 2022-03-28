@@ -26,7 +26,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "1.2.0-RC2"
+    version = "2.0.0-RC1"
 
     repositories {
         // TODO remove when ktor 2.0.0 or another beta is released

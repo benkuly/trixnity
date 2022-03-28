@@ -25,7 +25,6 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -348,13 +347,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                 )
 
                 assertSoftly(store.roomTimeline.get(eventId1, room)!!) {
-                    decryptedEvent shouldBe Result.success(Event.MegolmEvent(TextMessageEventContent("Hello!"), room))
+                    content shouldBe Result.success(TextMessageEventContent("Hello!"))
                 }
                 assertSoftly(store.roomTimeline.get(eventId2, room)!!) {
-                    decryptedEvent shouldBe null
+                    content shouldBe null
                 }
                 assertSoftly(store.roomTimeline.get(eventId3, room)!!) {
-                    decryptedEvent shouldBe null
+                    content shouldBe null
                 }
             }
         }
