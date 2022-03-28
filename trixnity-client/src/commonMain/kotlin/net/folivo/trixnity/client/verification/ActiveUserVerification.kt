@@ -26,7 +26,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 
 private val log = KotlinLogging.logger {}
@@ -94,15 +93,9 @@ class ActiveUserVerification(
                     .first()
 
                 val searchResult = currentTimelineEvent.filterNotNull().map {
-                    when (val eventContent = it.event.content) {
+                    when (val eventContent = it.content?.getOrNull()) {
+                        null -> MaybeVerificationStep // this allows us to wait for decryption
                         is VerificationStep -> IsVerificationStep(eventContent, it.event.sender)
-                        is EncryptedEventContent -> {
-                            when (val decryptedEventContent = it.decryptedEvent?.getOrNull()?.content) {
-                                null -> MaybeVerificationStep // this allows us to wait for decryption
-                                is VerificationStep -> IsVerificationStep(decryptedEventContent, it.event.sender)
-                                else -> NoVerificationStep
-                            }
-                        }
                         else -> NoVerificationStep
                     }
                 }.first { it is IsVerificationStep || it is NoVerificationStep }

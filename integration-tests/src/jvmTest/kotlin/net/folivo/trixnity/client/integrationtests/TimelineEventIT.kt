@@ -119,7 +119,7 @@ class TimelineEventIT {
                     while (currentCoroutineContext().isActive && decryptedMessages.size < 3) {
                         val currentTimelineEventValue = currentTimelineEvent
                             .filterNotNull()
-                            .filter { it.event.content !is EncryptedEventContent || it.decryptedEvent?.isSuccess == true }
+                            .filter { it.event.content !is EncryptedEventContent || it.content?.isSuccess == true }
                             .first()
 
                         if (currentTimelineEventValue.event.content is EncryptedEventContent) {

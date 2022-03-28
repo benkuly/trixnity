@@ -78,21 +78,11 @@ suspend fun timelineExample() = coroutineScope {
                 }
             }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
                 val event = timelineEvent.value?.event
-                val content = event?.content
+                val content = timelineEvent.value?.content?.getOrNull()
                 val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
                 when {
-                    content is RoomMessageEventContent ->
-                        println("${sender}: ${content.body}")
-                    content is MegolmEncryptedEventContent -> {
-                        val decryptedEvent = timelineEvent.value?.decryptedEvent
-                        val decryptedEventContent = decryptedEvent?.getOrNull()?.content
-                        val decryptionException = decryptedEvent?.exceptionOrNull()
-                        when {
-                            decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
-                            decryptedEvent == null -> println("${sender}: not yet decrypted")
-                            decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
-                        }
-                    }
+                    content is RoomMessageEventContent -> println("${sender}: ${content.body}")
+                    content == null -> println("${sender}: not yet decrypted")
                     event is MessageEvent -> println("${sender}: $event")
                     event is StateEvent -> println("${sender}: $event")
                     else -> {

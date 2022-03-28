@@ -22,7 +22,6 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event.MegolmEvent
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
@@ -159,9 +158,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                         MegolmEncryptedEventContent("cipher", mockk(), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    decryptedEvent = Result.success(
-                        MegolmEvent(TextMessageEventContent("hi"), roomId)
-                    ),
+                    content = Result.success(TextMessageEventContent("hi")),
                     roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
@@ -172,9 +169,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                         MegolmEncryptedEventContent("cipher", mockk(), bobDevice, "session"),
                         EventId("$2"), alice, roomId, 1234
                     ),
-                    decryptedEvent = Result.success(
-                        MegolmEvent(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null), roomId)
-                    ),
+                    content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
                     roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
@@ -185,15 +180,12 @@ class ActiveUserVerificationTest : ShouldSpec({
                         MegolmEncryptedEventContent("cipher", mockk(), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    decryptedEvent = Result.success(
-                        MegolmEvent(
-                            VerificationCancelEventContent(
-                                MismatchedSas,
-                                "",
-                                RelatesTo.Reference(EventId("$0")),
-                                null
-                            ),
-                            roomId
+                    content = Result.success(
+                        VerificationCancelEventContent(
+                            MismatchedSas,
+                            "",
+                            RelatesTo.Reference(EventId("$0")),
+                            null
                         )
                     ),
                     roomId = roomId, eventId = event,
@@ -210,7 +202,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                 MegolmEncryptedEventContent("cipher", mockk(), bobDevice, "session"),
                 EventId("$2"), bob, roomId, 1234
             ),
-            decryptedEvent = Result.success(MegolmEvent(cancelEvent, roomId)),
+            content = Result.success(cancelEvent),
             roomId = roomId, eventId = event,
             previousEventId = null, nextEventId = null, gap = null
         )

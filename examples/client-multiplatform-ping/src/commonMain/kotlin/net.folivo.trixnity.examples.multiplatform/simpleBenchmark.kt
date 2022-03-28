@@ -78,7 +78,7 @@ suspend fun simpleBenchmark() = coroutineScope {
                 }
             }.filterNotNull().take(20).toList()
                 .also { println("${Clock.System.now()} collectedEventsCount=${it.count()}") }
-                .forEach { it.first { it?.decryptedEvent?.isSuccess == true } }
+                .forEach { it.first { it?.content?.isSuccess == true } }
             println("${Clock.System.now()} decrypted all events")
         }
     }
