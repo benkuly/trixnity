@@ -85,7 +85,7 @@ class ActiveDeviceVerification(
     }
 
     private suspend fun handleOlmDecryptedVerificationRequestEvents(
-        event: OlmService.DecryptedOlmEvent,
+        event: OlmService.DecryptedOlmEventContainer,
     ) {
         val content = event.decrypted.content
         if (content is VerificationStep) handleVerificationStepEvent(content, event.decrypted.sender)

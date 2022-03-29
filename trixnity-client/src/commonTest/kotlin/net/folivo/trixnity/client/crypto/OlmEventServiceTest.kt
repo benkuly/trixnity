@@ -34,7 +34,10 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
@@ -88,12 +91,12 @@ private val body: ShouldSpec.() -> Unit = {
     val bobCurveKey = Curve25519Key(bobDeviceId, bobAccount.identityKeys.curve25519)
     val bobEdKey = Ed25519Key(bobDeviceId, bobAccount.identityKeys.ed25519)
 
-    @OptIn(ExperimentalSerializationApi::class) val olmEventSerializer =
-        json.serializersModule.getContextual(OlmEvent::class)
-    @OptIn(ExperimentalSerializationApi::class) val megolmEventSerializer =
-        json.serializersModule.getContextual(MegolmEvent::class)
-    requireNotNull(olmEventSerializer)
-    requireNotNull(megolmEventSerializer)
+    @OptIn(ExperimentalSerializationApi::class) val decryptedOlmEventSerializer =
+        json.serializersModule.getContextual(DecryptedOlmEvent::class)
+    @OptIn(ExperimentalSerializationApi::class) val decryptedMegolmEventSerializer =
+        json.serializersModule.getContextual(DecryptedMegolmEvent::class)
+    requireNotNull(decryptedOlmEventSerializer)
+    requireNotNull(decryptedMegolmEventSerializer)
 
     fun MockEngineConfig.claimKeysEndpoint() {
         bobAccount.generateOneTimeKeys(1)
@@ -162,7 +165,7 @@ private val body: ShouldSpec.() -> Unit = {
             "sessionKey",
             EncryptionAlgorithm.Megolm,
         )
-        val olmEvent = OlmEvent(
+        val decryptedOlmEvent = DecryptedOlmEvent(
             content = eventContent,
             sender = alice,
             senderKeys = keysOf(aliceEdKey.copy(keyId = null)),
@@ -191,9 +194,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 ) { bobSession ->
                     json.decodeFromString(
-                        olmEventSerializer,
+                        decryptedOlmEventSerializer,
                         bobSession.decrypt(OlmMessage(encryptedCipherText.body, OlmMessageType.INITIAL_PRE_KEY))
-                    ) shouldBe olmEvent
+                    ) shouldBe decryptedOlmEvent
                 }
                 store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
             }
@@ -242,14 +245,14 @@ private val body: ShouldSpec.() -> Unit = {
                     encryptedCipherText.type shouldBe INITIAL_PRE_KEY
 
                     json.decodeFromString(
-                        olmEventSerializer,
+                        decryptedOlmEventSerializer,
                         bobSession.decrypt(
                             OlmMessage(
                                 encryptedCipherText.body,
                                 OlmMessageType.INITIAL_PRE_KEY
                             )
                         )
-                    ) shouldBe olmEvent
+                    ) shouldBe decryptedOlmEvent
                     store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
                     store.olm.getOlmSessions(bobCurveKey)?.first() shouldNotBe storedOlmSession
                 }
@@ -263,7 +266,7 @@ private val body: ShouldSpec.() -> Unit = {
             "sessionKey",
             EncryptionAlgorithm.Megolm
         )
-        val olmEvent = OlmEvent(
+        val decryptedOlmEvent = DecryptedOlmEvent(
             content = eventContent,
             sender = bob,
             senderKeys = keysOf(bobEdKey),
@@ -282,7 +285,7 @@ private val body: ShouldSpec.() -> Unit = {
                         aliceAccount.oneTimeKeys.curve25519.values.first()
                     )
                 ) { bobSession ->
-                    bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                    bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                 }
                 cut.decryptOlm(
                     OlmEncryptedEventContent(
@@ -291,7 +294,7 @@ private val body: ShouldSpec.() -> Unit = {
                         ),
                         senderKey = bobCurveKey
                     ), bob
-                ) shouldBe olmEvent
+                ) shouldBe decryptedOlmEvent
                 store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
 
                 // we check, that the one time key cannot be used twice
@@ -307,7 +310,7 @@ private val body: ShouldSpec.() -> Unit = {
                         aliceAccount.oneTimeKeys.curve25519.values.first()
                     )
                 ) { bobSession ->
-                    bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                    bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                 }
                 repeat(5) { pseudoSessionId ->
                     freeAfter(OlmAccount.create()) { dummyAccount ->
@@ -363,7 +366,7 @@ private val body: ShouldSpec.() -> Unit = {
                         aliceAccount.oneTimeKeys.curve25519.values.first()
                     )
                 ) { bobSession ->
-                    bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                    bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                 }
                 shouldThrow<SessionException.CouldNotDecrypt> {
                     cut.decryptOlm(
@@ -382,7 +385,7 @@ private val body: ShouldSpec.() -> Unit = {
                 assertNotNull(ciphertext)
                 freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
                     json.decodeFromString(
-                        olmEventSerializer,
+                        decryptedOlmEventSerializer,
                         session.decrypt(OlmMessage(ciphertext, OlmMessageType.INITIAL_PRE_KEY))
                     ).content shouldBe DummyEventContent
                 }
@@ -403,7 +406,7 @@ private val body: ShouldSpec.() -> Unit = {
                         OlmSession.createInbound(bobAccount, firstMessage.cipherText)
                     ) { bobSession ->
                         // we do not decrypt the message, so the next is an initial pre key message
-                        bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                        bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                     }
                     val storedOlmSession = StoredOlmSession(
                         bobCurveKey,
@@ -421,7 +424,7 @@ private val body: ShouldSpec.() -> Unit = {
                             ),
                             senderKey = bobCurveKey
                         ), bob
-                    ) shouldBe olmEvent
+                    ) shouldBe decryptedOlmEvent
                     store.olm.getOlmSessions(bobCurveKey)?.first() shouldNotBe storedOlmSession
                 }
             }
@@ -439,7 +442,7 @@ private val body: ShouldSpec.() -> Unit = {
                         OlmSession.createInbound(bobAccount, firstMessage.cipherText)
                     ) { bobSession ->
                         bobSession.decrypt(firstMessage)
-                        bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                        bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                     }
                     val storedOlmSession = StoredOlmSession(
                         bobCurveKey,
@@ -457,7 +460,7 @@ private val body: ShouldSpec.() -> Unit = {
                             ),
                             senderKey = bobCurveKey
                         ), bob
-                    ) shouldBe olmEvent
+                    ) shouldBe decryptedOlmEvent
                     store.olm.getOlmSessions(bobCurveKey)?.first() shouldNotBe storedOlmSession
                 }
             }
@@ -474,7 +477,7 @@ private val body: ShouldSpec.() -> Unit = {
                         OlmSession.createInbound(bobAccount, firstMessage.cipherText)
                     ) { bobSession ->
                         bobSession.decrypt(firstMessage)
-                        bobSession.encrypt(json.encodeToString(olmEventSerializer, olmEvent))
+                        bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, decryptedOlmEvent))
                     }
                     val storedOlmSession1 = StoredOlmSession(
                         bobCurveKey,
@@ -512,7 +515,7 @@ private val body: ShouldSpec.() -> Unit = {
                             ),
                             senderKey = bobCurveKey
                         ), bob
-                    ) shouldBe olmEvent
+                    ) shouldBe decryptedOlmEvent
                     store.olm.getOlmSessions(bobCurveKey)!! shouldNotContain storedOlmSession1
                 }
             }
@@ -520,10 +523,17 @@ private val body: ShouldSpec.() -> Unit = {
         context("handle olm event with manipulated") {
             withData(
                 mapOf(
-                    "sender" to olmEvent.copy(sender = UserId("cedric", "server")),
-                    "senderKeys" to olmEvent.copy(senderKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key"))),
-                    "recipient" to olmEvent.copy(recipient = UserId("cedric", "server")),
-                    "recipientKeys" to olmEvent.copy(recipientKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key")))
+                    "sender" to decryptedOlmEvent.copy(sender = UserId("cedric", "server")),
+                    "senderKeys" to decryptedOlmEvent.copy(senderKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key"))),
+                    "recipient" to decryptedOlmEvent.copy(recipient = UserId("cedric", "server")),
+                    "recipientKeys" to decryptedOlmEvent.copy(
+                        recipientKeys = keysOf(
+                            Ed25519Key(
+                                "CEDRICKEY",
+                                "cedrics key"
+                            )
+                        )
+                    )
                 )
             ) { manipulatedOlmEvent ->
                 val job1 = launch {
@@ -543,7 +553,7 @@ private val body: ShouldSpec.() -> Unit = {
                         OlmSession.createInbound(bobAccount, firstMessage.cipherText)
                     ) { bobSession ->
                         bobSession.decrypt(firstMessage)
-                        bobSession.encrypt(json.encodeToString(olmEventSerializer, manipulatedOlmEvent))
+                        bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, manipulatedOlmEvent))
                     }
                     val storedOlmSession = StoredOlmSession(
                         bobCurveKey,
@@ -572,7 +582,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(OlmEventService::encryptMegolm.name) {
         val eventContent = TextMessageEventContent("Hi", relatesTo = relatesTo)
         val room = RoomId("room", "server")
-        val megolmEvent = MegolmEvent(eventContent, room)
+        val decryptedMegolmEvent = DecryptedMegolmEvent(eventContent, room)
         beforeTest {
             store.room.update(room) { Room(room, membership = JOIN, membersLoaded = true) }
             listOf(
@@ -638,7 +648,7 @@ private val body: ShouldSpec.() -> Unit = {
                     freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
                         assertSoftly(
                             json.decodeFromString(
-                                olmEventSerializer,
+                                decryptedOlmEventSerializer,
                                 session.decrypt(OlmMessage(ciphertext, OlmMessageType.INITIAL_PRE_KEY))
                             ).content
                         ) {
@@ -664,8 +674,8 @@ private val body: ShouldSpec.() -> Unit = {
 
                     freeAfter(OlmInboundGroupSession.unpickle("", storedInboundSession.pickled)) { inboundSession ->
                         json.decodeFromString(
-                            megolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
-                        ) shouldBe megolmEvent
+                            decryptedMegolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
+                        ) shouldBe decryptedMegolmEvent
                     }
                 }
             }
@@ -795,7 +805,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(OlmEventService::decryptMegolm.name) {
         val eventContent = TextMessageEventContent("Hi")
         val room = RoomId("room", "server")
-        val megolmEvent = MegolmEvent(eventContent, room)
+        val decryptedMegolmEvent = DecryptedMegolmEvent(eventContent, room)
         should("decrypt megolm event") {
             freeAfter(OlmOutboundGroupSession.create()) { session ->
                 store.olm.storeTrustedInboundMegolmSession(
@@ -806,7 +816,8 @@ private val body: ShouldSpec.() -> Unit = {
                     sessionKey = session.sessionKey,
                     pickleKey = ""
                 )
-                val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
+                val ciphertext =
+                    session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
                 cut.decryptMegolm(
                     MessageEvent(
                         MegolmEncryptedEventContent(
@@ -821,7 +832,7 @@ private val body: ShouldSpec.() -> Unit = {
                         room,
                         1234
                     )
-                ) shouldBe megolmEvent.copy(content = megolmEvent.content.copy(relatesTo = relatesTo))
+                ) shouldBe decryptedMegolmEvent.copy(content = decryptedMegolmEvent.content.copy(relatesTo = relatesTo))
                 store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
                     it shouldBe StoredInboundMegolmMessageIndex(
                         bobCurveKey, session.sessionId, room, 0, EventId("\$event"), 1234
@@ -832,7 +843,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("throw when no keys were send to us") {
             freeAfter(OlmOutboundGroupSession.create()) { session ->
-                val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
+                val ciphertext =
+                    session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
                 shouldThrow<DecryptionException> {
                     cut.decryptMegolm(
                         MessageEvent(
@@ -864,8 +876,8 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                     val ciphertext = session.encrypt(
                         json.encodeToString(
-                            megolmEventSerializer,
-                            megolmEvent.copy(roomId = RoomId("other", "server"))
+                            decryptedMegolmEventSerializer,
+                            decryptedMegolmEvent.copy(roomId = RoomId("other", "server"))
                         )
                     )
                     shouldThrow<DecryptionException> {
@@ -896,7 +908,8 @@ private val body: ShouldSpec.() -> Unit = {
                         sessionKey = session.sessionKey,
                         pickleKey = ""
                     )
-                    val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
+                    val ciphertext =
+                        session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
                     store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
                         StoredInboundMegolmMessageIndex(
                             bobCurveKey, session.sessionId, room, 0, EventId("\$otherEvent"), 1234
@@ -951,7 +964,8 @@ private val body: ShouldSpec.() -> Unit = {
                         sessionKey = session.sessionKey,
                         pickleKey = ""
                     )
-                    val ciphertext = session.encrypt(json.encodeToString(megolmEventSerializer, megolmEvent))
+                    val ciphertext =
+                        session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
                             MessageEvent(

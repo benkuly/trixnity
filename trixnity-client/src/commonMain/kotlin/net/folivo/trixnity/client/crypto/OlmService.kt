@@ -13,8 +13,10 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -83,9 +85,12 @@ class OlmService(
         signService = sign,
     )
 
-    data class DecryptedOlmEvent(val encrypted: Event<OlmEncryptedEventContent>, val decrypted: OlmEvent<*>)
+    data class DecryptedOlmEventContainer(
+        val encrypted: Event<OlmEncryptedEventContent>,
+        val decrypted: DecryptedOlmEvent<*>
+    )
 
-    private val _decryptedOlmEvents = MutableSharedFlow<DecryptedOlmEvent>()
+    private val _decryptedOlmEvents = MutableSharedFlow<DecryptedOlmEventContainer>()
     internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
 
     internal suspend fun start(scope: CoroutineScope) {
@@ -118,7 +123,7 @@ class OlmService(
         if (event is ToDeviceEvent) {
             try {
                 val decryptedEvent = events.decryptOlm(event.content, event.sender)
-                _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
+                _decryptedOlmEvents.emit(DecryptedOlmEventContainer(event, decryptedEvent))
             } catch (e: Exception) {
                 log.error(e) { "could not decrypt $event" }
                 if (e is CancellationException) throw e
@@ -126,7 +131,7 @@ class OlmService(
         }
     }
 
-    internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEvent) {
+    internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (content is RoomKeyEventContent) {
             log.debug { "got inbound megolm session for room ${content.roomId}" }

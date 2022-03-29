@@ -10,41 +10,41 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
-import net.folivo.trixnity.core.model.events.Event.MegolmEvent
+import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 private val log = KotlinLogging.logger {}
 
-class MegolmEventSerializer(
+class DecryptedMegolmEventSerializer(
     private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
-) : KSerializer<MegolmEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MegolmEventSerializer")
+) : KSerializer<DecryptedMegolmEvent<*>> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DecryptedMegolmEventSerializer")
 
-    override fun deserialize(decoder: Decoder): MegolmEvent<*> {
+    override fun deserialize(decoder: Decoder): DecryptedMegolmEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
         val contentSerializer = roomEventContentSerializers.contentDeserializer(type)
         return try {
-            decoder.json.decodeFromJsonElement(MegolmEvent.serializer(contentSerializer), jsonObj)
+            decoder.json.decodeFromJsonElement(DecryptedMegolmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: Exception) {
             log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
-                MegolmEvent.serializer(UnknownRoomEventContentSerializer(type)), jsonObj
+                DecryptedMegolmEvent.serializer(UnknownRoomEventContentSerializer(type)), jsonObj
             )
         }
     }
 
-    override fun serialize(encoder: Encoder, value: MegolmEvent<*>) {
+    override fun serialize(encoder: Encoder, value: DecryptedMegolmEvent<*>) {
         require(encoder is JsonEncoder)
         val (type, serializer) = roomEventContentSerializers.contentSerializer(value.content)
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
-                MegolmEvent.serializer(serializer) as KSerializer<MegolmEvent<*>>,
+                DecryptedMegolmEvent.serializer(serializer) as KSerializer<DecryptedMegolmEvent<*>>,
                 "type" to type
             ), value
         )

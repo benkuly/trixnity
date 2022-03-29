@@ -10,41 +10,41 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
-import net.folivo.trixnity.core.model.events.Event.OlmEvent
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 private val log = KotlinLogging.logger {}
 
-class OlmEventSerializer(
+class DecryptedOlmEventSerializer(
     private val eventContentSerializers: Set<EventContentSerializerMapping<out EventContent>>,
-) : KSerializer<OlmEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("OlmEventSerializer")
+) : KSerializer<DecryptedOlmEvent<*>> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DecryptedOlmEventSerializer")
 
-    override fun deserialize(decoder: Decoder): OlmEvent<*> {
+    override fun deserialize(decoder: Decoder): DecryptedOlmEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
         val contentSerializer = eventContentSerializers.contentDeserializer(type)
         return try {
-            decoder.json.decodeFromJsonElement(OlmEvent.serializer(contentSerializer), jsonObj)
+            decoder.json.decodeFromJsonElement(DecryptedOlmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: Exception) {
             log.warn(error) { "could not deserialize event" }
             decoder.json.decodeFromJsonElement(
-                OlmEvent.serializer(UnknownEventContentSerializer(type)), jsonObj
+                DecryptedOlmEvent.serializer(UnknownEventContentSerializer(type)), jsonObj
             )
         }
     }
 
-    override fun serialize(encoder: Encoder, value: OlmEvent<*>) {
+    override fun serialize(encoder: Encoder, value: DecryptedOlmEvent<*>) {
         require(encoder is JsonEncoder)
         val (type, serializer) = eventContentSerializers.contentSerializer(value.content)
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
-                OlmEvent.serializer(serializer) as KSerializer<OlmEvent<*>>,
+                DecryptedOlmEvent.serializer(serializer) as KSerializer<DecryptedOlmEvent<*>>,
                 "type" to type
             ), value
         )

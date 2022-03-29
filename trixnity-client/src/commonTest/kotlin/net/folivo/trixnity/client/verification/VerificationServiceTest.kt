@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
-import kotlinx.serialization.KSerializer
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
@@ -38,10 +37,10 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -51,7 +50,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -84,7 +82,7 @@ private val body: ShouldSpec.() -> Unit = {
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
-    lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEvent>
+    lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEventContainer>
 
     lateinit var cut: VerificationService
 
@@ -208,8 +206,8 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.start(eventHandlingCoroutineScope)
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEvent(
-                        mockk(), Event.OlmEvent(request, bobUserId, mockk(), mockk(), mockk())
+                    OlmService.DecryptedOlmEventContainer(
+                        mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
                 cut.activeDeviceVerification.value shouldBe null
@@ -223,8 +221,8 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction1"
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEvent(
-                        mockk(), Event.OlmEvent(request, bobUserId, mockk(), mockk(), mockk())
+                    OlmService.DecryptedOlmEventContainer(
+                        mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -250,13 +248,13 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction2"
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEvent(
-                        mockk(), Event.OlmEvent(request1, bobUserId, mockk(), mockk(), mockk())
+                    OlmService.DecryptedOlmEventContainer(
+                        mockk(), DecryptedOlmEvent(request1, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEvent(
-                        mockk(), Event.OlmEvent(request2, aliceUserId, mockk(), mockk(), mockk())
+                    OlmService.DecryptedOlmEventContainer(
+                        mockk(), DecryptedOlmEvent(request2, aliceUserId, mockk(), mockk(), mockk())
                     )
                 )
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
