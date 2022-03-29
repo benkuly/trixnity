@@ -24,7 +24,7 @@ typealias SyncResponseSubscriber = suspend (SyncResponse) -> Unit
 typealias DeviceListsSubscriber = suspend (DeviceLists?) -> Unit
 typealias DeviceOneTimeKeysCountSubscriber = suspend (DeviceOneTimeKeysCount?) -> Unit
 
-typealias AfterSyncResponseSubscriber = suspend () -> Unit
+typealias AfterSyncResponseSubscriber = suspend (SyncResponse) -> Unit
 
 private val log = KotlinLogging.logger {}
 
@@ -254,7 +254,7 @@ class SyncApiClient(
                 }
             }
             coroutineScope {
-                afterSyncResponseSubscribers.value.forEach { launch { it.invoke() } }
+                afterSyncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
             }
         }
     }

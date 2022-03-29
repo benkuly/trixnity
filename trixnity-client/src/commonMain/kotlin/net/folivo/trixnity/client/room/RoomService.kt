@@ -73,10 +73,10 @@ class RoomService(
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
         api.sync.subscribe(::setReadReceipts)
-        api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
-        api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
-        api.sync.subscribeAfterSyncResponse(::handleDirectEventContent)
-        api.sync.subscribeAfterSyncResponse(::setDirectRoomsAfterSync)
+        api.sync.subscribeAfterSyncResponse { removeOldOutboxMessages() }
+        api.sync.subscribeAfterSyncResponse { handleSetRoomDisplayNamesQueue() }
+        api.sync.subscribeAfterSyncResponse { handleDirectEventContent() }
+        api.sync.subscribeAfterSyncResponse { setDirectRoomsAfterSync() }
     }
 
     // TODO test
@@ -788,6 +788,7 @@ class RoomService(
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also {
             val timelineEvent = it.value
+            if (timelineEvent == null) log.warn { "cannot find TimelineEvent in store; decryption will not trigger!" }
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                 coroutineScope.launch {

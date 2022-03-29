@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.originalName
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -130,7 +131,7 @@ class UserService(
         }
     }
 
-    private suspend fun reloadProfile() {
+    private suspend fun reloadProfile(syncResponse: SyncResponse) {
         if (reloadOwnProfile.value) {
             reloadOwnProfile.value = false
 

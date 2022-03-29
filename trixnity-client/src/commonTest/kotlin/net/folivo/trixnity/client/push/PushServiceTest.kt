@@ -162,7 +162,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent.content)
+                PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
@@ -222,7 +222,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, megolmEvent.content)
+                PushService.Notification(messageEvent, megolmEvent.content)
             )
         }
 
@@ -290,8 +290,8 @@ class PushServiceTest {
 
             advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent1.content),
-                PushService.Notification(roomId, otherUser, messageEvent2.content)
+                PushService.Notification(messageEvent1, messageEvent1.content),
+                PushService.Notification(messageEvent2, messageEvent2.content)
             )
         }
 
@@ -350,7 +350,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent.content)
+                PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
@@ -418,7 +418,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent.content)
+                PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
@@ -645,7 +645,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent.content)
+                PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
@@ -700,7 +700,7 @@ class PushServiceTest {
 
             advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(roomId, otherUser, messageEvent.content)
+                PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
