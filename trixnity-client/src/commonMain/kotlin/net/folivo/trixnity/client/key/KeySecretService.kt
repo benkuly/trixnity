@@ -63,7 +63,7 @@ class KeySecretService(
 
     private val incomingSecretKeyRequests = MutableStateFlow<Set<SecretKeyRequestEventContent>>(setOf())
 
-    internal fun handleEncryptedIncomingKeyRequests(event: OlmService.DecryptedOlmEvent) {
+    internal fun handleEncryptedIncomingKeyRequests(event: OlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
             handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
@@ -108,7 +108,7 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun handleOutgoingKeyRequestAnswer(event: OlmService.DecryptedOlmEvent) {
+    internal suspend fun handleOutgoingKeyRequestAnswer(event: OlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
             log.trace { "handle outgoing key request answer $content" }

@@ -8,7 +8,6 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.keys.Keys
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#types-of-room-events">matrix spec</a>
@@ -88,21 +87,6 @@ sealed interface Event<C : EventContent> {
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId? = null,
         @SerialName("room_id") val roomId: RoomId? = null
-    ) : Event<C>
-
-    @Serializable
-    data class OlmEvent<C : EventContent>(
-        @SerialName("content") override val content: C,
-        @SerialName("sender") val sender: UserId,
-        @SerialName("keys") val senderKeys: Keys,
-        @SerialName("recipient") val recipient: UserId,
-        @SerialName("recipient_keys") val recipientKeys: Keys
-    ) : Event<C>
-
-    @Serializable
-    data class MegolmEvent<C : RoomEventContent>(
-        @SerialName("content") override val content: C,
-        @SerialName("room_id") val roomId: RoomId
     ) : Event<C>
 
     @Serializable

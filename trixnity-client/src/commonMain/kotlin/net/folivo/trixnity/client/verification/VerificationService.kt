@@ -109,7 +109,7 @@ class VerificationService(
         }
     }
 
-    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEvent) {
+    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
             is VerificationRequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {

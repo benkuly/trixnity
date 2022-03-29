@@ -40,11 +40,9 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -468,7 +466,7 @@ class RoomServiceTest : ShouldSpec({
         }
         context("event can be decrypted") {
             should("decrypt event") {
-                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                val expectedDecryptedEvent = DecryptedMegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
@@ -496,7 +494,7 @@ class RoomServiceTest : ShouldSpec({
                 }
             }
             should("wait for olm session and ask key backup for it") {
-                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                val expectedDecryptedEvent = DecryptedMegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) } returns expectedDecryptedEvent
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
@@ -515,7 +513,7 @@ class RoomServiceTest : ShouldSpec({
                 coVerify { key.backup.loadMegolmSession(room, session, senderKey) }
             }
             should("wait for olm session and ask key backup for it when existing session does not known the index") {
-                val expectedDecryptedEvent = MegolmEvent(TextMessageEventContent("decrypted"), room)
+                val expectedDecryptedEvent = DecryptedMegolmEvent(TextMessageEventContent("decrypted"), room)
                 coEvery { olmService.events.decryptMegolm(any()) }
                     .throws(OlmLibraryException("OLM_UNKNOWN_MESSAGE_INDEX"))
                     .andThen(expectedDecryptedEvent)

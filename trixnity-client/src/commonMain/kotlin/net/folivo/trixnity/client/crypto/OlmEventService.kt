@@ -17,10 +17,8 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -118,8 +116,8 @@ class OlmEventService internal constructor(
         deviceId: String,
         identityKey: Curve25519Key
     ): OlmEncryptedEventContent {
-        val serializer = json.serializersModule.getContextual(OlmEvent::class)
-        val event = OlmEvent(
+        val serializer = json.serializersModule.getContextual(DecryptedOlmEvent::class)
+        val event = DecryptedOlmEvent(
             content = content,
             sender = ownUserId,
             senderKeys = keysOf(ownEd25519Key.copy(keyId = null)),
@@ -151,7 +149,7 @@ class OlmEventService internal constructor(
         } else newSessions
     }
 
-    suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): OlmEvent<*> {
+    suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): DecryptedOlmEvent<*> {
         log.debug { "start decrypt olm event $encryptedContent" }
         val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value]
             ?: throw SessionException.SenderDidNotEncryptForThisDeviceException
@@ -159,7 +157,7 @@ class OlmEventService internal constructor(
             store.keys.getDeviceKeyByValue<Curve25519Key>(senderId, encryptedContent.senderKey.value)
                 ?: throw KeyVerificationFailedException("the sender key of the event is not known for this device")
 
-        lateinit var finalDecryptionResult: OlmEvent<*>
+        lateinit var finalDecryptionResult: DecryptedOlmEvent<*>
         store.olm.updateOlmSessions(senderIdentityKey) { storedSessions ->
             val (decryptionResult, newStoredSession) = try {
                 storedSessions?.sortedByDescending { it.lastUsedAt }?.firstNotNullOfOrNull { storedSession ->
@@ -236,7 +234,7 @@ class OlmEventService internal constructor(
                 throw decryptError
             }
 
-            val serializer = json.serializersModule.getContextual(OlmEvent::class)
+            val serializer = json.serializersModule.getContextual(DecryptedOlmEvent::class)
             requireNotNull(serializer)
             val decryptedEvent =
                 json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult, encryptedContent.relatesTo))
@@ -346,8 +344,8 @@ class OlmEventService internal constructor(
             if (eventsToSend.isNotEmpty()) api.users.sendToDevice(eventsToSend).getOrThrow()
         }
 
-        val serializer = json.serializersModule.getContextual(MegolmEvent::class)
-        val event = MegolmEvent(content, roomId).also { log.trace { "megolm event: $it" } }
+        val serializer = json.serializersModule.getContextual(DecryptedMegolmEvent::class)
+        val event = DecryptedMegolmEvent(content, roomId).also { log.trace { "megolm event: $it" } }
         requireNotNull(serializer)
 
         val encryptedContent = session.encrypt(json.encodeToString(serializer, event))
@@ -361,7 +359,7 @@ class OlmEventService internal constructor(
         ).also { log.trace { "encrypted event: $it" } }
     }
 
-    suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): MegolmEvent<*> {
+    suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
         val roomId = encryptedEvent.roomId
         val encryptedContent = encryptedEvent.content
         val sessionId = encryptedContent.sessionId
@@ -378,7 +376,7 @@ class OlmEventService internal constructor(
             throw DecryptionException.SessionException(e)
         }
 
-        val serializer = json.serializersModule.getContextual(MegolmEvent::class)
+        val serializer = json.serializersModule.getContextual(DecryptedMegolmEvent::class)
         requireNotNull(serializer)
         val decryptedEvent =
             json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult.message, encryptedContent.relatesTo))

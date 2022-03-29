@@ -29,7 +29,7 @@ import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -196,9 +196,9 @@ class OlmServiceTest : ShouldSpec({
                     )
 
                     cutWithAccount.handleOlmEncryptedRoomKeyEventContent(
-                        OlmService.DecryptedOlmEvent(
+                        OlmService.DecryptedOlmEventContainer(
                             encryptedEvent,
-                            Event.OlmEvent(
+                            DecryptedOlmEvent(
                                 eventContent,
                                 bob,
                                 keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!),
@@ -342,7 +342,7 @@ class OlmServiceTest : ShouldSpec({
                 ) {
                     assertNotNull(this)
                     encrypted shouldBe encryptedEvent
-                    decrypted shouldBe Event.OlmEvent(
+                    decrypted shouldBe DecryptedOlmEvent(
                         eventContent,
                         bob,
                         keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!.copy(keyId = null)),

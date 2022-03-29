@@ -834,7 +834,7 @@ class RoomService(
         }
     }
 
-    private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<MegolmEvent<*>> {
+    private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<DecryptedMegolmEvent<*>> {
         return try {
             Result.success(olm.events.decryptMegolm(this))
         } catch (ex: Exception) {

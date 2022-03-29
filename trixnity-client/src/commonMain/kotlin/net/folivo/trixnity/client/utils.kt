@@ -7,12 +7,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -53,7 +53,6 @@ fun Event<*>?.getRoomId(): RoomId? {
     return when (this) {
         is RoomEvent -> this.roomId
         is StrippedStateEvent -> this.roomId
-        is MegolmEvent -> this.roomId
         is RoomAccountDataEvent -> this.roomId
         is EphemeralEvent -> this.roomId
         else -> null
@@ -67,7 +66,6 @@ fun Event<*>?.getSender(): UserId? {
         is RoomEvent -> this.sender
         is ToDeviceEvent -> this.sender
         is EphemeralEvent -> this.sender
-        is OlmEvent -> this.sender
         else -> null
     }
 }

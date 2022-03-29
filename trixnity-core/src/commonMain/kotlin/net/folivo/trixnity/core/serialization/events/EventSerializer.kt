@@ -21,8 +21,6 @@ class EventSerializer(
     private val initialStateEventSerializer: KSerializer<InitialStateEvent<*>>,
     private val ephemeralEventSerializer: KSerializer<EphemeralEvent<*>>,
     private val toDeviceEventSerializer: KSerializer<ToDeviceEvent<*>>,
-    private val olmEventSerializer: KSerializer<OlmEvent<*>>,
-    private val megolmEventSerializer: KSerializer<MegolmEvent<*>>,
     private val globalAccountDataEventSerializer: KSerializer<GlobalAccountDataEvent<*>>,
     private val roomAccountDataEventSerializer: KSerializer<RoomAccountDataEvent<*>>,
 ) : KSerializer<Event<*>> {
@@ -39,7 +37,7 @@ class EventSerializer(
             hasEventId && hasRoomId && hasSenderId -> roomEventSerializer
             !hasEventId && hasStateKey && hasRoomId && hasSenderId -> strippedStateEventSerializer
             !hasEventId && !hasStateKey && !hasRoomId && hasSenderId -> toDeviceEventSerializer
-            // it is hard to detect if an event is e.g. an MegolmEvent, EphemeralEvent or RoomAccountDataEvent and we don't need it
+            // it is hard to detect if an event is e.g. an EphemeralEvent or RoomAccountDataEvent and we don't need it
             // -> that's why we skip some event types here.
             else -> unknownEventSerializer
         }
@@ -59,8 +57,6 @@ class EventSerializer(
             is InitialStateEvent -> encoder.json.encodeToJsonElement(initialStateEventSerializer, value)
             is EphemeralEvent -> encoder.json.encodeToJsonElement(ephemeralEventSerializer, value)
             is ToDeviceEvent -> encoder.json.encodeToJsonElement(toDeviceEventSerializer, value)
-            is OlmEvent -> encoder.json.encodeToJsonElement(olmEventSerializer, value)
-            is MegolmEvent -> encoder.json.encodeToJsonElement(megolmEventSerializer, value)
             is GlobalAccountDataEvent -> encoder.json.encodeToJsonElement(globalAccountDataEventSerializer, value)
             is RoomAccountDataEvent -> encoder.json.encodeToJsonElement(roomAccountDataEventSerializer, value)
             is UnknownEvent -> encoder.json.encodeToJsonElement(unknownEventSerializer, value)
