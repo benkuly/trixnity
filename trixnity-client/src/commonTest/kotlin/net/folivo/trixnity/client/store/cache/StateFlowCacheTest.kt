@@ -99,6 +99,7 @@ class StateFlowCacheTest : ShouldSpec({
                     },
                     readScope1
                 ).value shouldBe "a new value"
+                cache.first { it.isNotEmpty() }
                 readScope1.cancel()
                 cache.first { it.isEmpty() }
                 cut.readWithCache(
