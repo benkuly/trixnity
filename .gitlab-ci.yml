@@ -16,10 +16,9 @@ variables:
     - .konan
 
 .docker-variables: &docker-variables
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
 
 .artifact-reports: &artifact-reports
   name: reports
@@ -31,7 +30,8 @@ build-trixnity-build-linux-image:
   stage: prepare-build
   image: docker:20
   services:
-    - docker:20-dind
+    - name: docker:20-dind
+      command: [ "--tls=false" ]
   when: manual
   script:
     - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
@@ -42,7 +42,8 @@ build-linux:
   stage: build
   image: $BUILD_LINUX_IMAGE_NAME
   services:
-    - docker:20-dind
+    - name: docker:20-dind
+      command: [ "--tls=false" ]
   cache: *build-cache
   variables: *docker-variables
   artifacts: *artifact-reports
@@ -71,7 +72,8 @@ publish:
   stage: publish
   image: $BUILD_LINUX_IMAGE_NAME
   services:
-    - docker:20-dind
+    - name: docker:20-dind
+      command: [ "--tls=false" ]
   cache: *build-cache
   variables: *docker-variables
   artifacts: *artifact-reports
