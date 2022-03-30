@@ -486,7 +486,28 @@ class KeyService(
         scope: CoroutineScope,
     ): StateFlow<List<DeviceKeys>?> {
         return store.keys.getDeviceKeys(userId, scope).map {
-            it?.values?.map { storedDeviceKeys -> storedDeviceKeys.value.signed }
+            it?.values?.map { storedKeys -> storedKeys.value.signed }
         }.stateIn(scope)
+    }
+
+    suspend fun getDeviceKeys(
+        userId: UserId,
+    ): List<DeviceKeys>? {
+        return store.keys.getDeviceKeys(userId)?.values?.map { it.value.signed }
+    }
+
+    suspend fun getCrossSigningKeys(
+        userId: UserId,
+        scope: CoroutineScope,
+    ): StateFlow<List<CrossSigningKeys>?> {
+        return store.keys.getCrossSigningKeys(userId, scope).map {
+            it?.map { storedKeys -> storedKeys.value.signed }
+        }.stateIn(scope)
+    }
+
+    suspend fun getCrossSigningKeys(
+        userId: UserId,
+    ): List<CrossSigningKeys>? {
+        return store.keys.getCrossSigningKeys(userId)?.map { it.value.signed }
     }
 }
