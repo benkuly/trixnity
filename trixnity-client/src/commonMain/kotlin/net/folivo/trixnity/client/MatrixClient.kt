@@ -42,6 +42,9 @@ class MatrixClient private constructor(
     olmPickleKey: String,
     val userId: UserId,
     val deviceId: String,
+    /**
+     * Use this for more advanced access to matrix client-server-API.
+     */
     val api: MatrixClientServerApiClient,
     private val store: Store,
     json: Json,

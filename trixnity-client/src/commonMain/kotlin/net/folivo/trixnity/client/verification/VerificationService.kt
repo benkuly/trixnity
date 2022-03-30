@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -30,6 +30,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.subscribe
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
@@ -44,7 +45,7 @@ class VerificationService(
     private val userService: UserService,
     private val keyService: KeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    private val currentSyncState: StateFlow<SyncState>,
 ) {
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
     val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
@@ -258,7 +259,7 @@ class VerificationService(
                     }
                 },
         ) { currentSyncState, deviceKeys, defaultKey ->
-            if (currentSyncState != SyncApiClient.SyncState.RUNNING) return@combine null
+            if (currentSyncState != SyncState.RUNNING) return@combine null
             if (deviceKeys == null) return@combine null
             if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned) return@combine setOf()
 

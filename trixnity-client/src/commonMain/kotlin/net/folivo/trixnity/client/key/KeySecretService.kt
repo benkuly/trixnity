@@ -19,7 +19,7 @@ import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
@@ -33,6 +33,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.UserSigningKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.days
@@ -45,7 +46,7 @@ class KeySecretService(
     private val store: Store,
     private val olm: OlmService,
     private val api: MatrixClientServerApiClient,
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    private val currentSyncState: StateFlow<SyncState>,
 ) {
     @OptIn(FlowPreview::class)
     internal suspend fun start(scope: CoroutineScope) {
@@ -239,7 +240,7 @@ class KeySecretService(
 
     internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            SyncApiClient.SyncState.RUNNING,
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
             scope = this
         ) {

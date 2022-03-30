@@ -13,8 +13,8 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -53,7 +53,7 @@ class KeyService(
     private val store: Store,
     private val olm: OlmService,
     private val api: MatrixClientServerApiClient,
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    private val currentSyncState: StateFlow<SyncState>,
     internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api, currentSyncState),
     internal val backup: KeyBackupService = KeyBackupService(
         olmPickleKey,

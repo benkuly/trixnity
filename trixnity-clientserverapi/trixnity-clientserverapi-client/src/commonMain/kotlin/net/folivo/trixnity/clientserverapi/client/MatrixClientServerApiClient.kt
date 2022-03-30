@@ -26,13 +26,13 @@ class MatrixClientServerApiClient(
         httpClientFactory
     )
 
-    val authentication = AuthenticationApiClient(httpClient)
-    val server = ServerApiClient(httpClient)
-    val users = UsersApiClient(httpClient, json, eventContentSerializerMappings)
-    val rooms = RoomsApiClient(httpClient, json, eventContentSerializerMappings)
-    val sync = SyncApiClient(httpClient)
-    val keys = KeysApiClient(httpClient, json)
-    val media = MediaApiClient(httpClient)
-    val devices = DevicesApiClient(httpClient)
-    val push = PushApiClient(httpClient)
+    val authentication: IAuthenticationApiClient = AuthenticationApiClient(httpClient)
+    val server: IServerApiClient = ServerApiClient(httpClient)
+    val users: IUsersApiClient = UsersApiClient(httpClient, json, eventContentSerializerMappings)
+    val rooms: IRoomsApiClient = RoomsApiClient(httpClient, eventContentSerializerMappings)
+    val sync: ISyncApiClient = SyncApiClient(httpClient)
+    val keys: IKeysApiClient = KeysApiClient(httpClient, json)
+    val media: IMediaApiClient = MediaApiClient(httpClient)
+    val devices: IDevicesApiClient = DevicesApiClient(httpClient)
+    val push: IPushApiClient = PushApiClient(httpClient)
 }

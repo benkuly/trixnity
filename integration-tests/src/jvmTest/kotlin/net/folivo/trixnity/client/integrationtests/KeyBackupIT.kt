@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
@@ -123,7 +123,7 @@ class KeyBackupIT {
                     scope = scope,
                 ).getOrThrow()
                 client3.startSync()
-                client3.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+                client3.syncState.first { it == SyncState.RUNNING }
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =

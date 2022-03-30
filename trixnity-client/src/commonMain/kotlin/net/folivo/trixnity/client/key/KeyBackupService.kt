@@ -15,8 +15,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
 import net.folivo.trixnity.core.ErrorResponse
@@ -41,7 +40,7 @@ class KeyBackupService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val olm: OlmService,
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>
+    private val currentSyncState: StateFlow<SyncState>
 ) {
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
@@ -60,7 +59,7 @@ class KeyBackupService(
 
     internal suspend fun setAndSignNewKeyBackupVersion() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
             scope = this
@@ -147,7 +146,7 @@ class KeyBackupService(
                     launch {
                         retryWhen(
                             combine(version, currentSyncState) { currentVersion, currentSyncState ->
-                                currentVersion != null && currentSyncState == RUNNING
+                                currentVersion != null && currentSyncState == SyncState.RUNNING
                             }.stateIn(this),
                             scheduleBase = 1.seconds,
                             scheduleLimit = 6.hours,
@@ -211,7 +210,7 @@ class KeyBackupService(
     @OptIn(FlowPreview::class)
     internal suspend fun uploadRoomKeyBackup() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
             scope = this

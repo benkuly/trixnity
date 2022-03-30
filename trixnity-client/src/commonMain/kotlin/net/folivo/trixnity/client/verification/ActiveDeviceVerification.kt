@@ -14,6 +14,8 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}

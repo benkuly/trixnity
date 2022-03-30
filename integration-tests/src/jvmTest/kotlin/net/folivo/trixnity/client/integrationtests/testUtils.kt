@@ -11,7 +11,7 @@ import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -63,7 +63,7 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
         getLoginInfo = { it.register(username, password, name) }
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+    client.syncState.first { it == SyncState.RUNNING }
     return StartedClient(scope, database, client, password)
 }
 
@@ -81,6 +81,6 @@ suspend fun startClient(name: String, username: String = name, baseUrl: Url): St
         scope = scope,
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+    client.syncState.first { it == SyncState.RUNNING }
     return StartedClient(scope, database, client, password)
 }
