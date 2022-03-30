@@ -287,11 +287,12 @@ class RoomService(
         val stateKey = event.getStateKey()
         val sender = event.getSender()
         if (roomId != null && stateKey != null && sender != null) {
-            val invitee = UserId(stateKey)
+            val userWithMembershipChange = UserId(stateKey)
             val directUser =
-                when (ownUserId) {
-                    sender -> invitee
-                    invitee -> sender
+                when {
+                    ownUserId == sender -> userWithMembershipChange
+                    ownUserId == userWithMembershipChange -> sender
+                    sender == userWithMembershipChange -> sender
                     else -> return
                 }
 
@@ -303,20 +304,31 @@ class RoomService(
                 val newDirectRooms =
                     currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
                         ?: DirectEventContent(mapOf(directUser to setOf(roomId)))
-                if (newDirectRooms != currentDirectRooms)
-                    setDirectRoomsEventContent.value = newDirectRooms
+                setDirectRoomsEventContent.value = newDirectRooms
             }
-            if (directUser == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
-                log.debug { "unmark room $roomId as direct room with $directUser" }
-                val currentDirectRooms = setDirectRoomsEventContent.value
-                    ?: store.globalAccountData.get<DirectEventContent>()?.content
-                if (currentDirectRooms != null) {
-                    val newDirectRooms = DirectEventContent(
-                        currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
-                            .filterValues { it.isNullOrEmpty().not() }
-                    )
-                    if (newDirectRooms != currentDirectRooms)
+            if (event.content.membership == LEAVE || event.content.membership == BAN) {
+                if (directUser != ownUserId) {
+                    log.debug { "unmark room $roomId as direct room with $directUser" }
+                    val currentDirectRooms = setDirectRoomsEventContent.value
+                        ?: store.globalAccountData.get<DirectEventContent>()?.content
+                    if (currentDirectRooms != null) {
+                        val newDirectRooms = DirectEventContent(
+                            (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
+                                .filterValues { it.isNullOrEmpty().not() }
+                        )
                         setDirectRoomsEventContent.value = newDirectRooms
+                    }
+                } else {
+                    log.debug { "remove room $roomId from direct rooms, because we left it" }
+                    val currentDirectRooms = setDirectRoomsEventContent.value
+                        ?: store.globalAccountData.get<DirectEventContent>()?.content
+                    if (currentDirectRooms != null) {
+                        val newDirectRooms = DirectEventContent(
+                            currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
+                                .filterValues { it.isNullOrEmpty().not() }
+                        )
+                        setDirectRoomsEventContent.value = newDirectRooms
+                    }
                 }
             }
         }

@@ -317,6 +317,60 @@ class RoomServiceDirectTest : ShouldSpec({
                 setDirectCalled shouldBe true
             }
         }
+        context("others membership is leave or ban") {
+            beforeTest {
+                store.globalAccountData.update(
+                    Event.GlobalAccountDataEvent(
+                        DirectEventContent(
+                            mapOf(
+                                alice to setOf(room),
+                                UserId("2", "server") to setOf(room, otherRoom)
+                            )
+                        )
+                    )
+                )
+            }
+            should("remove direct room on leave") {
+                val event = Event.StateEvent(
+                    MemberEventContent(membership = Membership.LEAVE),
+                    EventId("$123"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+                var setDirectCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
+                        setDirectCalled = true
+                    }
+                }
+                cut.setDirectRooms(event)
+                cut.setDirectRoomsAfterSync()
+                setDirectCalled shouldBe true
+            }
+            should("remove direct room on ban") {
+                val event = Event.StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId("$123"),
+                    bob,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+                var setDirectCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
+                        setDirectCalled = true
+                    }
+                }
+                cut.setDirectRooms(event)
+                cut.setDirectRoomsAfterSync()
+                setDirectCalled shouldBe true
+            }
+        }
     }
 
     context(RoomService::setRoomIsDirect.name) {
