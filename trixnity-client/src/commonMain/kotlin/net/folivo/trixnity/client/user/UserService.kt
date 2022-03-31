@@ -14,7 +14,6 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.originalName
-import net.folivo.trixnity.clientserverapi.client.IUsersApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.RoomId
@@ -33,7 +32,7 @@ class UserService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
-) : IUsersApiClient by api.users {
+) {
     private val reloadOwnProfile = MutableStateFlow(false)
     private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
     private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())

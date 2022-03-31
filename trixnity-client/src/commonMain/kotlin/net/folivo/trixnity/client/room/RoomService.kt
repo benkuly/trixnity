@@ -18,7 +18,6 @@ import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.clientserverapi.client.IRoomsApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
@@ -57,7 +56,7 @@ class RoomService(
     private val currentSyncState: StateFlow<SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
-) : IRoomsApiClient by api.rooms {
+) {
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
