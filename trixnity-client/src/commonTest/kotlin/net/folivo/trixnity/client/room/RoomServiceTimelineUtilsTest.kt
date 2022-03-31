@@ -6,11 +6,8 @@ import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.store.InMemoryStore
@@ -178,6 +175,30 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
         }
+        context("toList") {
+            beforeTest {
+                store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
+            }
+            should("transform to list") {
+                val size = MutableStateFlow(2)
+                val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
+                scope.launch {
+                    cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, this), scope = this)
+                        .toFlowList(size)
+                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+                }
+                resultList.first { it?.size == 2 } shouldBe listOf(
+                    timelineEvent3,
+                    timelineEvent2
+                )
+                size.value = 3
+                resultList.first { it?.size == 3 } shouldBe listOf(
+                    timelineEvent3,
+                    timelineEvent2,
+                    timelineEvent1
+                )
+            }
+        }
     }
     context(RoomService::getLastTimelineEvents.name) {
         beforeTest {
@@ -197,22 +218,60 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         should("cancel old timeline event flow") {
             store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
-            val collectedEvents = mutableListOf<TimelineEvent?>()
-            cut.getLastTimelineEvents(room, scope = scope).take(2)
-                .filterNotNull()
-                .collectLatest { timelineEventFlow ->
-                    collectedEvents.addAll(timelineEventFlow.take(2).toList().map { it.value })
-                    store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
-                }
+            val collectedEvents = MutableStateFlow<List<TimelineEvent?>?>(null)
+            val job = scope.launch {
+                cut.getLastTimelineEvents(room, scope = scope)
+                    .filterNotNull()
+                    .collectLatest { timelineEventFlow ->
+                        collectedEvents.value = timelineEventFlow.take(2).toList().map { it.value }
+                    }
+            }
 
-            collectedEvents shouldBe listOf(
-                // first collect
+            collectedEvents.first { it?.size == 2 }
+            collectedEvents.value shouldBe listOf(
                 timelineEvent2,
                 timelineEvent1,
-                // second collect
+            )
+
+            store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
+            collectedEvents.first { it?.first()?.eventId == event3.id }
+            collectedEvents.value shouldBe listOf(
                 timelineEvent3,
                 timelineEvent2,
             )
+            job.cancelAndJoin()
+            scope.coroutineContext.job.children.count() shouldBe 1
+        }
+        should("transform to list") {
+            val size = MutableStateFlow(2)
+            val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
+
+            store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
+            val job = scope.launch {
+                cut.getLastTimelineEvents(room, scope = scope)
+                    .toFlowList(size)
+                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+            }
+
+            resultList.first { it?.size == 2 } shouldBe listOf(
+                timelineEvent2,
+                timelineEvent1,
+            )
+
+            store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
+            size.value = 1
+            resultList.first { it?.size == 1 && it.first().eventId == event3.id } shouldBe listOf(
+                timelineEvent3
+            )
+
+            size.value = 3
+            resultList.first { it?.size == 3 } shouldBe listOf(
+                timelineEvent3,
+                timelineEvent2,
+                timelineEvent1
+            )
+
+            job.cancelAndJoin()
             scope.coroutineContext.job.children.count() shouldBe 1
         }
     }

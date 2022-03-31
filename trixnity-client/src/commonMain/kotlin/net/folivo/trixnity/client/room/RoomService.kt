@@ -884,6 +884,15 @@ class RoomService(
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
 
+    /**
+     * You can use this to timeline events beginning from a specific timeline event.
+     *
+     * You can use [toFlowList] to convert it to a list or e.g. manually consume the events.
+     *
+     * Be aware, that the manual approach needs proper understanding of how flows work. For example: if you are offline
+     * and there are 5 timeline events in store, but you want to `take(10)`, then `take(10)` will suspend until there
+     * are 10 timeline events.
+     */
     suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
         direction: Direction = BACKWARDS,
@@ -917,6 +926,21 @@ class RoomService(
             } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
         }
 
+    /**
+     * You can use this to always get the last timeline events as flow.
+     *
+     * You can use [toFlowList] to convert it to a list or e.g. manually consume the events:
+     * ```kotlin
+     * launch {
+     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
+     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
+     *   }
+     * }
+     * ```
+     * Be aware, that the manual approach needs proper understanding of how flows work. For example: if you are offline
+     * and there are 5 timeline events in store, but you want to `take(10)`, then `toList()` will never be reached,
+     * because `take(10)` will suspend until there are 10 timeline events.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?> =
         getLastTimelineEvent(roomId, scope)
