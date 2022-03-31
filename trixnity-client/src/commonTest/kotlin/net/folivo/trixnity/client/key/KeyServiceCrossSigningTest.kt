@@ -26,7 +26,7 @@ import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
@@ -65,7 +65,7 @@ private val body: ShouldSpec.() -> Unit = {
     val backup: KeyBackupService = mockk()
     val trust: KeyTrustService = mockk()
     lateinit var apiConfig: PortableMockEngineConfig
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     mockkStatic(::decryptSecret)
 

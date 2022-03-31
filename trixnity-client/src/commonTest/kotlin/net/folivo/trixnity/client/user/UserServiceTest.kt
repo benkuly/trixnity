@@ -19,7 +19,7 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
@@ -46,14 +46,14 @@ class UserServiceTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: UserService
 
     beforeTest {
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        currentSyncState.value = SyncApiClient.SyncState.RUNNING
+        currentSyncState.value = SyncState.RUNNING
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
         cut = UserService(store, api, currentSyncState)
@@ -484,7 +484,7 @@ class UserServiceTest : ShouldSpec({
         }
     }
 
-    context(UserService::setPresence.name) {
+    context("setPresence") {
         should("set the presence for a user whose presence is not known") {
             cut.userPresence.value[alice] shouldBe null
             cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.ONLINE), sender = alice))

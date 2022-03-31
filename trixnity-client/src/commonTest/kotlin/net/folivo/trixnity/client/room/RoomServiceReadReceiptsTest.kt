@@ -18,7 +18,7 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -36,11 +36,11 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>()
+    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val olm = mockk<OlmService>()
     val key = mockk<KeyService>()
     val users = mockk<UserService>(relaxUnitFun = true)
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService
 

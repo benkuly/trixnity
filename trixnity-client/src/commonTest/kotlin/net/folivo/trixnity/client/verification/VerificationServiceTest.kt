@@ -28,7 +28,7 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
@@ -81,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
     val keyService = mockk<KeyService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEventContainer>
 
     lateinit var cut: VerificationService
@@ -454,11 +454,11 @@ private val body: ShouldSpec.() -> Unit = {
         lateinit var scope: CoroutineScope
         beforeTest {
             scope = CoroutineScope(Dispatchers.Default)
-            currentSyncState.value = SyncApiClient.SyncState.RUNNING
+            currentSyncState.value = SyncState.RUNNING
         }
         afterTest { scope.cancel() }
         should("return null, when sync state is not running") {
-            currentSyncState.value = SyncApiClient.SyncState.INITIAL_SYNC
+            currentSyncState.value = SyncState.INITIAL_SYNC
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),

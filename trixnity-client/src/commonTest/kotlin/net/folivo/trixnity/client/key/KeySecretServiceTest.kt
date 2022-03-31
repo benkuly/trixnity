@@ -26,7 +26,7 @@ import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
@@ -75,7 +75,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val olm = mockk<OlmService>()
     lateinit var apiConfig: PortableMockEngineConfig
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
 
     lateinit var cut: KeySecretService
@@ -634,7 +634,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeySecretService::requestSecretKeysWhenCrossSigned.name) {
         should("request secret keys, when cross signed and verified") {
-            currentSyncState.value = SyncApiClient.SyncState.RUNNING
+            currentSyncState.value = SyncState.RUNNING
 
             val spyCut = spyk(cut)
             coEvery { spyCut.requestSecretKeys() } just Runs

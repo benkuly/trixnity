@@ -29,7 +29,7 @@ import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
@@ -65,7 +65,7 @@ private val body: ShouldSpec.() -> Unit = {
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
     val trust = mockk<KeyTrustService>(relaxUnitFun = true)
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
 
     lateinit var cut: KeyService
@@ -123,7 +123,7 @@ private val body: ShouldSpec.() -> Unit = {
             DeviceKeys(alice, aliceDevice2, setOf(), keysOf(Ed25519Key("id", "value"))), mapOf()
         )
         beforeTest {
-            currentSyncState.value = SyncApiClient.SyncState.RUNNING
+            currentSyncState.value = SyncState.RUNNING
             scope.launch {
                 cut.handleOutdatedKeys()
             }

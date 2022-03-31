@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -91,9 +91,9 @@ suspend fun possiblyEncryptEvent(
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
-    syncState: SyncApiClient.SyncState,
-    vararg moreSyncStates: SyncApiClient.SyncState,
+suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
+    syncState: SyncState,
+    vararg moreSyncStates: SyncState,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,
@@ -162,9 +162,9 @@ suspend fun <T> retryWhen(
     }.first()
 }
 
-suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
-    syncState: SyncApiClient.SyncState,
-    vararg moreSyncStates: SyncApiClient.SyncState,
+suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
+    syncState: SyncState,
+    vararg moreSyncStates: SyncState,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,

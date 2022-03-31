@@ -19,8 +19,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
@@ -37,11 +36,14 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
+
+typealias TimelineEventSubscriber = suspend (TimelineEvent) -> Unit
 
 class RoomService(
     private val ownUserId: UserId,
@@ -51,7 +53,7 @@ class RoomService(
     private val key: KeyService,
     private val user: UserService,
     private val media: MediaService,
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    private val currentSyncState: StateFlow<SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
 ) {
@@ -948,7 +950,7 @@ class RoomService(
     @OptIn(FlowPreview::class)
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this
