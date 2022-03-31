@@ -14,7 +14,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
+import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -34,6 +34,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -384,7 +385,7 @@ class SyncApiClientTest {
             }
         )
 
-        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val stateResult = mutableListOf<SyncState>()
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
@@ -441,7 +442,7 @@ class SyncApiClientTest {
             }
         )
 
-        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val stateResult = mutableListOf<SyncState>()
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
@@ -497,7 +498,7 @@ class SyncApiClientTest {
             }
         )
 
-        val stateResult = mutableListOf<SyncApiClient.SyncState>()
+        val stateResult = mutableListOf<SyncState>()
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }

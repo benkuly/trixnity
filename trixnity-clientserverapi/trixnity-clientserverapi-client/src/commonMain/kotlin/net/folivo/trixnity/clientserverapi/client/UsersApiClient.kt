@@ -262,7 +262,7 @@ class UsersApiClient(
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
  */
-suspend inline fun <reified C : GlobalAccountDataEventContent> UsersApiClient.getAccountData(
+suspend inline fun <reified C : GlobalAccountDataEventContent> IUsersApiClient.getAccountData(
     userId: UserId,
     key: String = "",
     asUserId: UserId? = null
