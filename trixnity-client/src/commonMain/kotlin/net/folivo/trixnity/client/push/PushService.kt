@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
@@ -96,11 +97,11 @@ class PushService(
             val rule = allRules.find { pushRule ->
                 pushRule.enabled && pushRule.conditions.all { pushCondition ->
                     matchPushCondition(decryptedEvent, pushCondition)
-                }
+                } && if (pushRule.pattern != null) bodyContainsPattern(decryptedEvent, pushRule.pattern!!) else true
             }
             rule?.actions?.forEach { pushAction ->
                 if (pushAction is PushAction.Notify) {
-                    log.debug { "notify for event ${event.getEventId()}" }
+                    log.debug { "notify for event ${event.getEventId()} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
                     _notifications.emit(Notification(event, decryptedEvent.content))
                 }
             }
@@ -148,6 +149,13 @@ class PushService(
             }
             is PushCondition.Unknown -> false
         }
+    }
+
+    private fun bodyContainsPattern(event: Event<*>, pattern: String): Boolean {
+        val content = event.content
+        return if (content is TextMessageEventContent) {
+            pattern.globToRegExp().containsMatchIn(content.body)
+        } else false
     }
 
     private suspend fun possiblyDecryptEvent(

@@ -36,6 +36,8 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -50,12 +52,9 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PushServiceTest {
-
-    private val testDispatcher = UnconfinedTestDispatcher()
 
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
@@ -79,9 +78,8 @@ class PushServiceTest {
         storeScope.cancel()
     }
 
-    @OptIn(ExperimentalTime::class)
     @Test
-    fun whenNoEventsAreInTimelineShouldDoNothing() = runTest(context = testDispatcher, dispatchTimeoutMs = 3_000) {
+    fun whenNoEventsAreInTimelineShouldDoNothing() = runTest(dispatchTimeoutMs = 3_000) {
         store.init()
         store.globalAccountData.update(
             Event.GlobalAccountDataEvent(
@@ -104,18 +102,17 @@ class PushServiceTest {
         coEvery { api.sync } returns syncApiClient
 
         val cut = PushService(api, room, store, json)
-        val scope = CoroutineScope(testDispatcher)
+        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
         cut.start(scope)
         syncApiClient.startOnce { }.getOrThrow()
 
-        advanceUntilIdle()
         notifications.replayCache should beEmpty()
     }
 
     @Test
     fun whenOneInterestingEventInTimelineThenShouldCheckPushRules() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -155,12 +152,11 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             notifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, messageEvent.content)
             )
@@ -168,7 +164,7 @@ class PushServiceTest {
 
     @Test
     fun whenThereIsOneInterestingEncryptedEventInTheTimelineThenShouldCheckPushRules() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -215,12 +211,11 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             notifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, megolmEvent.content)
             )
@@ -228,7 +223,7 @@ class PushServiceTest {
 
     @Test
     fun multipleInterestingTimelineEventsShouldBeCheckedForPushRules() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -283,12 +278,11 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent2.id, roomId, any()) } returns MutableStateFlow(timelineEvent2)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent1, messageEvent1.content),
                 PushService.Notification(messageEvent2, messageEvent2.content)
@@ -297,7 +291,7 @@ class PushServiceTest {
 
     @Test
     fun whenRoomMemberCountIsMetShouldSetNotification() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -343,20 +337,19 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
-            allNotifications.replayCache shouldContainExactly listOf(
+            notifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
     @Test
     fun whenPermissionLevelIsMetShouldSetNotification() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -411,20 +404,19 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
-            allNotifications.replayCache shouldContainExactly listOf(
+            notifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, messageEvent.content)
             )
         }
 
     @Test
     fun whenPushRuleConditionIsNotMetShouldNotSetNotification() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -479,18 +471,17 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
-            allNotifications.replayCache should beEmpty()
+            notifications.replayCache should beEmpty()
         }
 
     @Test
     fun whenActionOfPushRuleDoesNotSayNotifyShouldNotSetNotification() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -532,18 +523,17 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
-            allNotifications.replayCache should beEmpty()
+            notifications.replayCache should beEmpty()
         }
 
     @Test
     fun whenPushRuleIsNotEnableButWouldBeSatisfiedShouldNotSetNotification() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -585,18 +575,17 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             allNotifications.replayCache should beEmpty()
         }
 
     @Test
     fun allConditionsOfAPushRuleShouldMatchToNotify() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -638,12 +627,11 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, messageEvent.content)
             )
@@ -651,7 +639,7 @@ class PushServiceTest {
 
     @Test
     fun aRuleWithNoConditionsAlwaysMatches() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -693,12 +681,11 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
-            advanceUntilIdle()
             allNotifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(messageEvent, messageEvent.content)
             )
@@ -706,7 +693,7 @@ class PushServiceTest {
 
     @Test
     fun overrideShouldBeOfHigherPriorityThanOtherRules() =
-        runTest(context = testDispatcher, dispatchTimeoutMs = 2_000) {
+        runTest(dispatchTimeoutMs = 2_000) {
             val roomId = RoomId("room", "localhost")
             store.init()
             store.globalAccountData.update(
@@ -762,13 +749,63 @@ class PushServiceTest {
             coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
 
             val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(testDispatcher)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
             syncApiClient.startOnce { }.getOrThrow()
 
             advanceUntilIdle()
             allNotifications.replayCache should beEmpty()
+        }
+
+    @Test
+    fun anInvitationToARoomShouldResultInANotificationWhenPushRulesAllowIt() =
+        runTest(dispatchTimeoutMs = 2_000) {
+            val roomId = RoomId("room", "localhost")
+            store.init()
+            store.globalAccountData.update(
+                Event.GlobalAccountDataEvent(
+                    pushRules(
+                        listOf(
+                            pushRuleInvitation(),
+                        )
+                    )
+                )
+            )
+            store.account.userId.value = user1
+            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+
+            val invitation = Event.StrippedStateEvent(
+                content = MemberEventContent(
+                    membership = INVITE,
+                    displayName = "user1",
+                ),
+                sender = otherUser,
+                roomId = roomId,
+                stateKey = user1.full,
+            )
+            val syncApiClient = syncApiClientWithResponse(
+                SyncResponse.Rooms(
+                    invite = mapOf(
+                        roomId to SyncResponse.Rooms.InvitedRoom(
+                            inviteState = SyncResponse.Rooms.InvitedRoom.InviteState(
+                                events = listOf(invitation)
+                            )
+                        )
+                    )
+                ),
+            )
+            coEvery { api.sync } returns syncApiClient
+
+            val cut = PushService(api, room, store, json)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
+            cut.start(scope)
+            syncApiClient.startOnce { }.getOrThrow()
+
+            allNotifications.replayCache shouldContainExactly listOf(
+                PushService.Notification(invitation, invitation.content)
+            )
         }
 
     private fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
@@ -786,6 +823,18 @@ class PushServiceTest {
         enabled = true,
         default = true,
         conditions = setOf(PushCondition.ContainsDisplayName),
+        actions = setOf(Notify),
+    )
+
+    private fun pushRuleInvitation() = PushRule(
+        ruleId = ".m.rule.invite_for_me",
+        enabled = true,
+        default = true,
+        conditions = setOf(
+            PushCondition.EventMatch(key = "type", pattern = "m.room.member"),
+            PushCondition.EventMatch(key = "content.membership", "invite"),
+            PushCondition.EventMatch(key = "state_key", pattern = user1.full),
+        ),
         actions = setOf(Notify),
     )
 
