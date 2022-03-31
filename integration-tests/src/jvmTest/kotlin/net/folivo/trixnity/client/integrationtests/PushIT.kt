@@ -22,6 +22,7 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class PushIT {
@@ -69,6 +70,7 @@ class PushIT {
     @Test
     fun testPushNotificationForNormalMessage(): Unit = runBlocking {
         withTimeout(30_000) {
+            startedClient2.client.push.enableNotifications()
             val notifications = startedClient2.client.push.notifications.shareIn(scope, SharingStarted.Eagerly, 10)
 
             val room = startedClient1.client.api.rooms.createRoom(
@@ -76,7 +78,7 @@ class PushIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            delay(1_000)
+            delay(2.seconds)
             val invite = notifications.replayCache.first {it.event is Event.StrippedStateEvent }
             invite.event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
             val inviteContent = invite.content
@@ -87,7 +89,7 @@ class PushIT {
             startedClient2.client.api.rooms.joinRoom(room).getOrThrow()
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
-            delay(1_000)
+            delay(2.seconds)
             val lastNotificationContent = notifications.replayCache.first { it.event is Event.MessageEvent}.content
             lastNotificationContent.shouldBeInstanceOf<TextMessageEventContent>()
             lastNotificationContent.body shouldStartWith "Hello"

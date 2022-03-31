@@ -1,9 +1,7 @@
 package net.folivo.trixnity.client.push
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
@@ -13,6 +11,7 @@ import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
+import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
 import net.folivo.trixnity.core.model.events.Event
@@ -24,6 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
+import kotlin.time.Duration.Companion.seconds
 
 
 private val log = KotlinLogging.logger { }
@@ -43,10 +43,19 @@ class PushService(
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
     private val _notifications = MutableSharedFlow<Notification>(0)
+
+    /**
+     * In order to get notifications, manually call [enableNotifications].
+     */
     val notifications = _notifications.asSharedFlow()
 
-    suspend fun start(scope: CoroutineScope) {
-        val allRules =
+    private val allRules = MutableStateFlow(listOf<PushRule>())
+    private val subscriber: AfterSyncResponseSubscriber = { // _after_ sync since we need access to timeline events
+        evaluatePushRules(it, allRules)
+    }
+
+    internal suspend fun start(scope: CoroutineScope) {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             store.globalAccountData.get(PushRulesEventContent::class, "", scope).map { event ->
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
@@ -57,22 +66,36 @@ class PushService(
                             globalRuleSet.underride.orEmpty()
                 } ?: listOf()
             }
-                .stateIn(scope) // do _not_ provide a default here as we need to suspend here; otherwise we could miss messages
-        api.sync.subscribeAfterSyncResponse { // _after_ sync since we need access to timeline events
-            evaluatePushRules(it, allRules, scope)
+                .collect {
+                    allRules.value = it
+                } // do _not_ provide a default here as we need to suspend here; otherwise we could miss messages
         }
     }
 
-    private fun evaluatePushRules(
+    fun enableNotifications() {
+        api.sync.subscribeAfterSyncResponse(subscriber)
+    }
+
+    fun disableNotifications() {
+        api.sync.unsubscribeAfterSyncResponse(subscriber)
+    }
+
+    private suspend fun evaluatePushRules(
         syncResponse: SyncResponse,
         allRules: StateFlow<List<PushRule>>,
-        scope: CoroutineScope,
-    ) {
-        findInterestingEvents(syncResponse).forEach { event ->
-            scope.launch {
-                findMatchingPushRule(event, allRules.value)
+    ) = coroutineScope {
+        findInterestingEvents(syncResponse).map { event ->
+            async {
+                try {
+                    withTimeout(2.seconds) {
+                        findMatchingPushRule(event, allRules.value)
+                    }
+                } catch (exc: CancellationException) {
+                    log.warn { "could not decrypt event ${event.getEventId()}" }
+                    null
+                }
             }
-        }
+        }.awaitAll().filterNotNull().forEach { _notifications.emit(it) }
     }
 
     private fun findInterestingEvents(syncResponse: SyncResponse): List<Event<*>> {
@@ -91,7 +114,7 @@ class PushService(
     private suspend fun findMatchingPushRule(
         event: Event<*>,
         allRules: List<PushRule>,
-    ) {
+    ): Notification? {
         log.trace { "find matching push rule for event ${event.getEventId()}" }
         possiblyDecryptEvent(event)?.let { decryptedEvent ->
             val rule = allRules.find { pushRule ->
@@ -102,10 +125,11 @@ class PushService(
             rule?.actions?.forEach { pushAction ->
                 if (pushAction is PushAction.Notify) {
                     log.debug { "notify for event ${event.getEventId()} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
-                    _notifications.emit(Notification(event, decryptedEvent.content))
+                    return Notification(event, decryptedEvent.content)
                 }
             }
         }
+        return null
     }
 
     private suspend fun matchPushCondition(
@@ -161,7 +185,7 @@ class PushService(
     private suspend fun possiblyDecryptEvent(
         event: Event<*>
     ): Event<*>? = coroutineScope {
-        if (event is Event.RoomEvent) {
+        if (event is Event.MessageEvent) { // TODO has to be changed to RoomEvent with merge of 2.0.0
             val theRoom = store.room.get(event.roomId).value
             val isNotEncrypted = theRoom?.encryptionAlgorithm == null
             val timelineEvent =

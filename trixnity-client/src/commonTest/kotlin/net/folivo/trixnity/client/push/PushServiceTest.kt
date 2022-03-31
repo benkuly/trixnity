@@ -105,6 +105,7 @@ class PushServiceTest {
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
         cut.start(scope)
+        cut.enableNotifications()
         syncApiClient.startOnce { }.getOrThrow()
 
         notifications.replayCache should beEmpty()
@@ -155,6 +156,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache shouldContainExactly listOf(
@@ -214,6 +216,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache shouldContainExactly listOf(
@@ -281,6 +284,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             allNotifications.replayCache shouldContainExactly listOf(
@@ -340,6 +344,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache shouldContainExactly listOf(
@@ -407,6 +412,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache shouldContainExactly listOf(
@@ -474,6 +480,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache should beEmpty()
@@ -526,6 +533,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             notifications.replayCache should beEmpty()
@@ -578,6 +586,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             allNotifications.replayCache should beEmpty()
@@ -630,6 +639,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             allNotifications.replayCache shouldContainExactly listOf(
@@ -684,6 +694,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             allNotifications.replayCache shouldContainExactly listOf(
@@ -752,6 +763,7 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             advanceUntilIdle()
@@ -801,11 +813,155 @@ class PushServiceTest {
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
             val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
             cut.start(scope)
+            cut.enableNotifications()
             syncApiClient.startOnce { }.getOrThrow()
 
             allNotifications.replayCache shouldContainExactly listOf(
                 PushService.Notification(invitation, invitation.content)
             )
+        }
+
+    @Test
+    fun notificationsShouldBeEmittedInCorrectOrder() =
+        runTest(dispatchTimeoutMs = 2_000) {
+            val roomId = RoomId("room", "localhost")
+            store.init()
+            store.globalAccountData.update(
+                Event.GlobalAccountDataEvent(
+                    pushRules(
+                        listOf(
+                            pushRuleDisplayName(),
+                        )
+                    )
+                )
+            )
+            store.account.userId.value = user1
+            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+
+            val messageEvents = (0..999).map { i ->
+                messageEventWithContent(
+                    roomId, TextMessageEventContent("Hello @user1! ($i)")
+                )
+            }
+            val syncApiClient = syncApiClientWithResponse(
+                SyncResponse.Rooms(
+                    join = mapOf(
+                        roomId to SyncResponse.Rooms.JoinedRoom(
+                            timeline = SyncResponse.Rooms.Timeline(
+                                events = messageEvents
+                            )
+                        )
+                    )
+                ),
+            )
+            coEvery { api.sync } returns syncApiClient
+
+            (0..999).forEach { i ->
+                val timelineEvent = TimelineEvent(
+                    event = messageEvents[i],
+                    roomId = roomId,
+                    eventId = messageEvents[i].id,
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                )
+                coEvery {
+                    room.getTimelineEvent(
+                        messageEvents[i].id,
+                        roomId,
+                        any()
+                    )
+                } returns MutableStateFlow(timelineEvent)
+            }
+
+            val cut = PushService(api, room, store, json)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 1000)
+            cut.start(scope)
+            cut.enableNotifications()
+            syncApiClient.startOnce { }.getOrThrow()
+
+            advanceUntilIdle()
+            val expected: List<PushService.Notification> =
+                (0..999).map { i -> PushService.Notification(messageEvents[i], messageEvents[i].content) }
+            allNotifications.replayCache shouldContainExactly expected
+        }
+
+    @Test
+    fun notificationsThatCannotBeDecryptedShouldNotSuspendTheSync() =
+        runTest(dispatchTimeoutMs = 2_000) {
+            val roomId = RoomId("room", "localhost")
+            store.init()
+            store.globalAccountData.update(
+                Event.GlobalAccountDataEvent(
+                    pushRules(
+                        listOf(
+                            pushRuleDisplayName(),
+                        )
+                    )
+                )
+            )
+            store.account.userId.value = user1
+            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+
+            val messageEvents = (0..9).map { i ->
+                messageEventWithContent(
+                    roomId, EncryptedEventContent.MegolmEncryptedEventContent(
+                        ciphertext = "123abc456$i",
+                        senderKey = Key.Curve25519Key(value = ""),
+                        deviceId = "",
+                        sessionId = ""
+                    )
+                )
+            }
+            val syncApiClient = syncApiClientWithResponse(
+                SyncResponse.Rooms(
+                    join = mapOf(
+                        roomId to SyncResponse.Rooms.JoinedRoom(
+                            timeline = SyncResponse.Rooms.Timeline(
+                                events = messageEvents
+                            )
+                        )
+                    )
+                ),
+            )
+            coEvery { api.sync } returns syncApiClient
+
+            val megolmEvents =
+                (1..9).map { i -> Event.MegolmEvent(TextMessageEventContent(body = "Hello @user1! ($i)"), roomId) }
+            coEvery { room.getTimelineEvent(any(), roomId, any()) } returns MutableStateFlow(null) // no decryption
+            (1..9).map { i ->
+                val timelineEvent = TimelineEvent(
+                    event = messageEvents[i - 1],
+                    roomId = roomId,
+                    eventId = messageEvents[i - 1].id,
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                    decryptedEvent = Result.success(
+                        megolmEvents[i - 1]
+                    )
+                )
+                coEvery {
+                    room.getTimelineEvent(
+                        messageEvents[i - 1].id,
+                        roomId,
+                        any()
+                    )
+                } returns MutableStateFlow(timelineEvent)
+            }
+
+            val cut = PushService(api, room, store, json)
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 10)
+            cut.start(scope)
+            cut.enableNotifications()
+            syncApiClient.startOnce { }.getOrThrow()
+
+            advanceUntilIdle()
+            val expected: List<PushService.Notification> =
+                (1..9).map { i -> PushService.Notification(messageEvents[i - 1], megolmEvents[i - 1].content) }
+            allNotifications.replayCache shouldContainExactly expected
         }
 
     private fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
