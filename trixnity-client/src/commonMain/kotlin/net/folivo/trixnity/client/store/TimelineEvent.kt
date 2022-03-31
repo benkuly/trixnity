@@ -30,6 +30,9 @@ data class TimelineEvent(
     @Transient
     val isEncrypted: Boolean = event.isEncrypted
 
+    @Transient
+    val isFirst: Boolean = previousEventId == null && gap == null
+
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
     @JsonClassDiscriminator("position")
