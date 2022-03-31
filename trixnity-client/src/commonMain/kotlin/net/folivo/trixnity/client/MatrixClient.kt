@@ -43,7 +43,7 @@ class MatrixClient private constructor(
     val userId: UserId,
     val deviceId: String,
     /**
-     * Use this for more advanced access to matrix client-server-API.
+     * Use this for further access to matrix client-server-API.
      */
     val api: MatrixClientServerApiClient,
     private val store: Store,
