@@ -382,6 +382,8 @@ class MatrixClient private constructor(
         )
     }
 
+    suspend fun syncOnce(timeout: Long = 0L): Result<Unit> = syncOnce(timeout = timeout) { }
+
     suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend () -> T): Result<T> {
         startMatrixClient()
         return api.sync.startOnce(

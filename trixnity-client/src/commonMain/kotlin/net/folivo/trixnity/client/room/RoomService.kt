@@ -18,6 +18,7 @@ import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
@@ -42,11 +43,13 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-typealias TimelineEventSubscriber = suspend (TimelineEvent) -> Unit
+typealias TimelineEventsSubscriber = suspend (StateFlow<TimelineEvent?>) -> Unit
 
 class RoomService(
     private val ownUserId: UserId,
@@ -79,10 +82,10 @@ class RoomService(
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
         api.sync.subscribe(::setReadReceipts)
-        api.sync.subscribeAfterSyncResponse(::removeOldOutboxMessages)
-        api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
-        api.sync.subscribeAfterSyncResponse(::handleDirectEventContent)
-        api.sync.subscribeAfterSyncResponse(::setDirectRoomsAfterSync)
+        api.sync.subscribeAfterSyncResponse { removeOldOutboxMessages() }
+        api.sync.subscribeAfterSyncResponse { handleSetRoomDisplayNamesQueue() }
+        api.sync.subscribeAfterSyncResponse { handleDirectEventContent() }
+        api.sync.subscribeAfterSyncResponse { setDirectRoomsAfterSync() }
     }
 
     // TODO test
@@ -954,6 +957,40 @@ class RoomService(
                 }
             }
 
+    /**
+     * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
+     *
+     * It is possible, that the matrix server does not send all timeline events.
+     * These gaps in the timeline are not filled automatically. Gap filling is available in
+     * [getTimelineEvents] and [getLastTimelineEvents].
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getTimelineEventsFromNowOn(decryptionTimeout: Duration = 1.seconds): Flow<TimelineEvent> =
+        channelFlow {
+            val subscriber: AfterSyncResponseSubscriber = { syncResponse ->
+                val timelineEvents =
+                    syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                            syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                timelineEvents.map {
+                    async {
+                        // we open and cancel a new scope, because it is possible, that an event never gets decrypted
+                        // and therefore the scope of async never could be left
+                        val scope = CoroutineScope(Dispatchers.Default)
+                        val timelineEvent = getTimelineEvent(it.id, it.roomId, scope)
+                        (withTimeoutOrNull(decryptionTimeout) {
+                            timelineEvent.first { it?.content != null }
+                        } ?: timelineEvent.value)
+                            .also { scope.cancel() }
+                    }
+                }.awaitAll()
+                    .filterNotNull()
+                    .forEach { send(it) }
+            }
+            invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+            api.sync.subscribeAfterSyncResponse(subscriber)
+            delay(INFINITE)
+        }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getLastMessageEvent(
         roomId: RoomId,
@@ -962,13 +999,7 @@ class RoomService(
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
                 if (room?.lastMessageEventId != null)
-                    emit(
-                        getTimelineEvent(
-                            room.lastMessageEventId,
-                            roomId,
-                            this,
-                        )
-                    )
+                    emit(getTimelineEvent(room.lastMessageEventId, roomId, this))
                 else emit(null)
             }
         }.stateIn(coroutineScope)
