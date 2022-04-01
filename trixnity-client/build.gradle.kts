@@ -2,7 +2,6 @@ plugins {
     id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("kotlinx-atomicfu")
 }
 
 android {
@@ -59,7 +58,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
-                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
 
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
 

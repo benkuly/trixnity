@@ -7,7 +7,6 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.kotlinxAtomicfu}")
     }
 }
 

@@ -1,16 +1,15 @@
 package net.folivo.trixnity.olm
 
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.getAndUpdate
 import kotlinx.coroutines.await
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 
 object Init {
-    private val isInitialized = atomic(false)
+    private val isInitialized = MutableStateFlow(false)
 
     suspend operator fun invoke() {
-        isInitialized.getAndUpdate {
-            if (!it) init().await()
-            true
+        if (!isInitialized.getAndUpdate { true }) {
+            init().await()
         }
     }
 }
