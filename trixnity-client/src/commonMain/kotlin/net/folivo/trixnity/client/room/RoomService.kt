@@ -888,13 +888,13 @@ class RoomService(
     }
 
     /**
-     * You can use this to timeline events beginning from a specific timeline event.
+     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
+     * at the end of the timeline.
      *
-     * You can use [toFlowList] to convert it to a list or e.g. manually consume the events.
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
      *
-     * Be aware, that the manual approach needs proper understanding of how flows work. For example: if you are offline
-     * and there are 5 timeline events in store, but you want to `take(10)`, then `take(10)` will suspend until there
-     * are 10 timeline events.
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
     suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
@@ -930,9 +930,9 @@ class RoomService(
         }
 
     /**
-     * You can use this to always get the last timeline events as flow.
+     * Returns the last timeline events as flow.
      *
-     * You can use [toFlowList] to convert it to a list or e.g. manually consume the events:
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
      * ```kotlin
      * launch {
      *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
@@ -940,9 +940,8 @@ class RoomService(
      *   }
      * }
      * ```
-     * Be aware, that the manual approach needs proper understanding of how flows work. For example: if you are offline
-     * and there are 5 timeline events in store, but you want to `take(10)`, then `toList()` will never be reached,
-     * because `take(10)` will suspend until there are 10 timeline events.
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?> =

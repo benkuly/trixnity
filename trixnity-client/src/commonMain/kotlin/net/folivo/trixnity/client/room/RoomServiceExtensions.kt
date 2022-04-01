@@ -39,6 +39,14 @@ suspend inline fun <reified C : StateEventContent> RoomService.getState(
     return getState(roomId, stateKey, C::class)
 }
 
+/**
+ * Converts a flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ *
+ * ```
+ * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
+ * Output: ([EEE]) -> delay -> ([EEEE])
+ * ```
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toList")
 suspend fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
@@ -51,6 +59,14 @@ suspend fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow
             }
     }
 
+/**
+ * Converts a flow of flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ *
+ * ```
+ * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
+ * Output: ([EEE]) -> delay -> ([EEEE])
+ * ```
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toListFromLatest")
 suspend fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
