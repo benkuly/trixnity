@@ -49,14 +49,11 @@ suspend inline fun <reified C : StateEventContent> RoomService.getState(
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toList")
-suspend fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
+fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
     maxSize.flatMapLatest { listSize ->
-        val list = mutableListOf<StateFlow<TimelineEvent?>>()
         take(listSize)
-            .transform {
-                list.add(it)
-                emit(list as List<StateFlow<TimelineEvent?>>)
-            }
+            // TODO could be optimized with mutable list and transform, but may have consequences (ConcurrentModificationException), when this list is not synchronized
+            .scan(listOf()) { old, new -> old + new }
     }
 
 /**
@@ -69,7 +66,7 @@ suspend fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toListFromLatest")
-suspend fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
+fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
     flatMapLatest {
         it?.toFlowList(maxSize) ?: flowOf(listOf())
     }
