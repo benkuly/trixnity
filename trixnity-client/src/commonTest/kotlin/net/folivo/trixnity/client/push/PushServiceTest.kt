@@ -38,6 +38,7 @@ import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -64,6 +65,7 @@ class PushServiceTest {
 
     private val user1 = UserId("user1", "localhost")
     private val otherUser = UserId("otherUser", "localhost")
+    private val user1DisplayName = "User1 🦊"
 
     @BeforeTest
     fun before() {
@@ -123,10 +125,11 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvent = messageEventWithContent(
                 roomId, TextMessageEventContent(
-                    body = "Hello @user1!"
+                    body = "Hello User1 🦊!"
                 )
             )
             val syncApiClient = syncApiClientWithResponse(
@@ -176,6 +179,7 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm) }
+            setUser1DisplayName(roomId)
 
             val messageEvent = messageEventWithContent(
                 roomId, EncryptedEventContent.MegolmEncryptedEventContent(
@@ -198,7 +202,7 @@ class PushServiceTest {
             )
             coEvery { api.sync } returns syncApiClient
 
-            val megolmEvent = Event.MegolmEvent(TextMessageEventContent(body = "Hello @user1!"), roomId)
+            val megolmEvent = Event.MegolmEvent(TextMessageEventContent(body = "Hello User1 🦊!"), roomId)
             val timelineEvent = TimelineEvent(
                 event = messageEvent,
                 roomId = roomId,
@@ -241,9 +245,10 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvent1 = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello User1 🦊!")
             )
             val messageEvent2 = messageEventWithContent(
                 roomId, TextMessageEventContent("I am triggered.")
@@ -315,7 +320,7 @@ class PushServiceTest {
             }
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello user1!")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -383,7 +388,7 @@ class PushServiceTest {
             )
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello user1!")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -451,7 +456,7 @@ class PushServiceTest {
             )
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello user1!")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -608,9 +613,10 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1! I am triggered.")
+                roomId, TextMessageEventContent("Hello User1 🦊! I am triggered.")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -665,7 +671,7 @@ class PushServiceTest {
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello user1!")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -716,7 +722,7 @@ class PushServiceTest {
                                     ruleId = "customRule10",
                                     enabled = true,
                                     default = false,
-                                    conditions = setOf(PushCondition.EventMatch("content.body", "*user*")),
+                                    conditions = setOf(PushCondition.EventMatch("content.body", "*User*")),
                                     actions = setOf(DontNotify)
                                 )
                             ),
@@ -732,9 +738,10 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello @user1!")
+                roomId, TextMessageEventContent("Hello User1 🦊!")
             )
             val syncApiClient = syncApiClientWithResponse(
                 SyncResponse.Rooms(
@@ -790,7 +797,7 @@ class PushServiceTest {
             val invitation = Event.StrippedStateEvent(
                 content = MemberEventContent(
                     membership = INVITE,
-                    displayName = "user1",
+                    displayName = user1DisplayName,
                 ),
                 sender = otherUser,
                 roomId = roomId,
@@ -837,10 +844,11 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvents = (0..999).map { i ->
                 messageEventWithContent(
-                    roomId, TextMessageEventContent("Hello @user1! ($i)")
+                    roomId, TextMessageEventContent("Hello User1 🦊! ($i)")
                 )
             }
             val syncApiClient = syncApiClientWithResponse(
@@ -903,6 +911,7 @@ class PushServiceTest {
             )
             store.account.userId.value = user1
             store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
+            setUser1DisplayName(roomId)
 
             val messageEvents = (0..9).map { i ->
                 messageEventWithContent(
@@ -928,7 +937,7 @@ class PushServiceTest {
             coEvery { api.sync } returns syncApiClient
 
             val megolmEvents =
-                (1..9).map { i -> Event.MegolmEvent(TextMessageEventContent(body = "Hello @user1! ($i)"), roomId) }
+                (1..9).map { i -> Event.MegolmEvent(TextMessageEventContent(body = "Hello User1 🦊! ($i)"), roomId) }
             coEvery { room.getTimelineEvent(any(), roomId, any()) } returns MutableStateFlow(null) // no decryption
             (1..9).map { i ->
                 val timelineEvent = TimelineEvent(
@@ -963,6 +972,27 @@ class PushServiceTest {
                 (1..9).map { i -> PushService.Notification(messageEvents[i - 1], megolmEvents[i - 1].content) }
             allNotifications.replayCache shouldContainExactly expected
         }
+
+    private suspend fun setUser1DisplayName(roomId: RoomId) {
+        store.roomUser.update(
+            user1,
+            roomId
+        ) {
+            RoomUser(
+                roomId,
+                user1,
+                user1DisplayName,
+                Event.StateEvent(
+                    MemberEventContent(membership = JOIN),
+                    EventId("JOIN"),
+                    user1,
+                    roomId,
+                    0,
+                    stateKey = ""
+                )
+            )
+        }
+    }
 
     private fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
         global = PushRuleSet(

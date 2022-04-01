@@ -140,8 +140,12 @@ class PushService(
             is PushCondition.ContainsDisplayName -> {
                 val content = event.content
                 if (content is RoomMessageEventContent) {
-                    store.account.userId.value?.let { userId ->
-                        content.body.contains(userId.sigilCharacter + userId.localpart)
+                    event.getRoomId()?.let { roomId ->
+                        store.account.userId.value?.let { userId ->
+                            store.roomUser.get(userId, roomId)?.name?.let { username ->
+                                content.body.contains(username)
+                            } ?: false
+                        } ?: false
                     } ?: false
                 } else false
             }
