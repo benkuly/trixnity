@@ -15,8 +15,7 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.originalName
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -24,6 +23,7 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
+import net.folivo.trixnity.core.subscribe
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
@@ -31,7 +31,7 @@ private val log = KotlinLogging.logger {}
 class UserService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val currentSyncState: StateFlow<SyncApiClient.SyncState>,
+    private val currentSyncState: StateFlow<SyncState>,
 ) {
     private val reloadOwnProfile = MutableStateFlow(false)
     private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
@@ -150,7 +150,7 @@ class UserService(
 
     internal suspend fun handleLoadMembersQueue() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed loading members" } },
             scope = this
         ) {

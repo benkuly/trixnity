@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.BindMode
@@ -81,8 +81,8 @@ class SasVerificationIT {
         ).getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
-        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client1.syncState.first { it == SyncState.RUNNING }
+        client2.syncState.first { it == SyncState.RUNNING }
     }
 
     @AfterTest

@@ -4,15 +4,17 @@ import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
+import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventEmitter
+import net.folivo.trixnity.core.IEventEmitter
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import kotlin.coroutines.cancellation.CancellationException
@@ -25,10 +27,17 @@ typealias AfterSyncResponseSubscriber = suspend () -> Unit
 
 private val log = KotlinLogging.logger {}
 
-class SyncApiClient(
-    private val httpClient: MatrixClientServerApiHttpClient,
-) : EventEmitter() {
+enum class SyncState {
+    INITIAL_SYNC,
+    STARTED,
+    RUNNING,
+    ERROR,
+    TIMEOUT,
+    STOPPING,
+    STOPPED,
+}
 
+interface ISyncApiClient : IEventEmitter {
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
      */
@@ -39,6 +48,63 @@ class SyncApiClient(
         setPresence: Presence? = null,
         timeout: Long = 0,
         asUserId: UserId? = null
+    ): Result<Sync.Response>
+
+    fun subscribeDeviceLists(subscriber: DeviceListsSubscriber)
+    fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber)
+    fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber)
+    fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber)
+    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber)
+    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber)
+    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber)
+    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber)
+
+    val currentSyncState: StateFlow<SyncState>
+
+    suspend fun start(
+        filter: String? = null,
+        setPresence: Presence? = null,
+        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
+        asUserId: UserId? = null,
+        wait: Boolean = false,
+        scope: CoroutineScope,
+    )
+
+    suspend fun startOnce(
+        filter: String? = null,
+        setPresence: Presence? = null,
+        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
+        asUserId: UserId? = null,
+    ): Result<Unit>
+
+    suspend fun <T> startOnce(
+        filter: String? = null,
+        setPresence: Presence? = null,
+        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        timeout: Long = 30000,
+        asUserId: UserId? = null,
+        runOnce: suspend () -> T,
+    ): Result<T>
+
+    suspend fun stop(wait: Boolean = false)
+}
+
+class SyncApiClient(
+    private val httpClient: MatrixClientServerApiHttpClient,
+) : EventEmitter(), ISyncApiClient {
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+     */
+    override suspend fun sync(
+        filter: String?,
+        since: String?,
+        fullState: Boolean,
+        setPresence: Presence?,
+        timeout: Long,
+        asUserId: UserId?
     ): Result<Sync.Response> =
         httpClient.request(
             Sync(filter, if (fullState) fullState else null, setPresence, since, timeout, asUserId),
@@ -52,52 +118,48 @@ class SyncApiClient(
     private val startStopMutex = Mutex()
     private val syncMutex = Mutex()
 
-    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
-    val currentSyncState = _currentSyncState.asStateFlow()
+    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
+    override val currentSyncState = _currentSyncState.asStateFlow()
 
     private val deviceListsSubscribers: MutableStateFlow<Set<DeviceListsSubscriber>> = MutableStateFlow(setOf())
-    fun subscribeDeviceLists(subscriber: DeviceListsSubscriber) = deviceListsSubscribers.update { it + subscriber }
-    fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber) = deviceListsSubscribers.update { it - subscriber }
+    override fun subscribeDeviceLists(subscriber: DeviceListsSubscriber) =
+        deviceListsSubscribers.update { it + subscriber }
+
+    override fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber) =
+        deviceListsSubscribers.update { it - subscriber }
 
     private val deviceOneTimeKeysCountSubscribers: MutableStateFlow<Set<DeviceOneTimeKeysCountSubscriber>> =
         MutableStateFlow(setOf())
 
-    fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+    override fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
         deviceOneTimeKeysCountSubscribers.update { it + subscriber }
 
-    fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+    override fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
         deviceOneTimeKeysCountSubscribers.update { it - subscriber }
 
     private val syncResponseSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> = MutableStateFlow(setOf())
-    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) = syncResponseSubscribers.update { it + subscriber }
-    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) = syncResponseSubscribers.update { it - subscriber }
+    override fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) =
+        syncResponseSubscribers.update { it + subscriber }
+
+    override fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) =
+        syncResponseSubscribers.update { it - subscriber }
 
     private val afterSyncResponseSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
         MutableStateFlow(setOf())
 
-    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
+    override fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
         afterSyncResponseSubscribers.update { it + subscriber }
 
-    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
+    override fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
         afterSyncResponseSubscribers.update { it - subscriber }
 
-    enum class SyncState {
-        INITIAL_SYNC,
-        STARTED,
-        RUNNING,
-        ERROR,
-        TIMEOUT,
-        STOPPING,
-        STOPPED,
-    }
-
-    suspend fun start(
-        filter: String? = null,
-        setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
-        asUserId: UserId? = null,
-        wait: Boolean = false,
+    override suspend fun start(
+        filter: String?,
+        setPresence: Presence?,
+        currentBatchToken: MutableStateFlow<String?>,
+        timeout: Long,
+        asUserId: UserId?,
+        wait: Boolean,
         scope: CoroutineScope,
     ) {
         stop(wait = true)
@@ -125,16 +187,15 @@ class SyncApiClient(
                                     }
                                 }
                                 delay(5000)// TODO better retry policy!
-                                if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC) else updateSyncState(
-                                    STARTED
-                                )
+                                if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC)
+                                else updateSyncState(STARTED)
                             }
                         }
                     }
                 }
                 syncJob?.invokeOnCompletion {
                     log.info { "stopped syncLoop" }
-                    _currentSyncState.value = STOPPED
+                    _currentSyncState.value = SyncState.STOPPED
                     syncJob = null
                 }
             }
@@ -142,12 +203,12 @@ class SyncApiClient(
         if (wait) syncJob?.join()
     }
 
-    suspend fun startOnce(
-        filter: String? = null,
-        setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
-        asUserId: UserId? = null,
+    override suspend fun startOnce(
+        filter: String?,
+        setPresence: Presence?,
+        currentBatchToken: MutableStateFlow<String?>,
+        timeout: Long,
+        asUserId: UserId?,
     ): Result<Unit> = startOnce(
         filter = filter,
         setPresence = setPresence,
@@ -157,12 +218,12 @@ class SyncApiClient(
         runOnce = {}
     )
 
-    suspend fun <T> startOnce(
-        filter: String? = null,
-        setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
-        asUserId: UserId? = null,
+    override suspend fun <T> startOnce(
+        filter: String?,
+        setPresence: Presence?,
+        currentBatchToken: MutableStateFlow<String?>,
+        timeout: Long,
+        asUserId: UserId?,
         runOnce: suspend () -> T,
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
@@ -257,7 +318,7 @@ class SyncApiClient(
         }
     }
 
-    suspend fun stop(wait: Boolean = false) {
+    override suspend fun stop(wait: Boolean) {
         startStopMutex.withLock {
             if (syncJob != null) {
                 _currentSyncState.value = STOPPING

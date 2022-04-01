@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
@@ -82,8 +82,8 @@ class TimelineEventIT {
         ).getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
-        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client1.syncState.first { it == SyncState.RUNNING }
+        client2.syncState.first { it == SyncState.RUNNING }
     }
 
     @AfterTest

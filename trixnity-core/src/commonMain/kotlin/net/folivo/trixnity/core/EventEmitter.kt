@@ -11,9 +11,16 @@ import kotlin.reflect.KClass
 
 typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
 
-private val log = KotlinLogging.logger {  }
+private val log = KotlinLogging.logger { }
 
-abstract class EventEmitter {
+interface IEventEmitter {
+    fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
+    fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
+    fun subscribeAllEvents(subscriber: EventSubscriber<EventContent>)
+    fun unsubscribeAllEvents(subscriber: EventSubscriber<EventContent>)
+}
+
+abstract class EventEmitter : IEventEmitter {
     private val eventSubscribers =
         MutableStateFlow<Map<KClass<out EventContent>, Set<EventSubscriber<out EventContent>>>>(mapOf())
 
@@ -23,14 +30,16 @@ abstract class EventEmitter {
                 it.isInstance(event.content)
             }
             .forEach { (_, subscribers) ->
-                subscribers.forEach { launch {
-                    log.trace { "called subscriber: $it" }
-                    it.invoke(event) }
+                subscribers.forEach {
+                    launch {
+                        log.trace { "called subscriber: $it" }
+                        it.invoke(event)
+                    }
                 }
             }
     }
 
-    fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>) {
+    override fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>) {
         @Suppress("UNCHECKED_CAST")
         subscriber as EventSubscriber<out EventContent>
         eventSubscribers.update {
@@ -42,14 +51,8 @@ abstract class EventEmitter {
         }
     }
 
-    /**
-     * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
-     */
-    inline fun <reified T : EventContent> subscribe(noinline subscriber: EventSubscriber<T>) {
-        subscribe(T::class, subscriber)
-    }
 
-    fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>) {
+    override fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>) {
         @Suppress("UNCHECKED_CAST")
         subscriber as EventSubscriber<out EventContent>
         eventSubscribers.update {
@@ -59,16 +62,22 @@ abstract class EventEmitter {
         }
     }
 
-    inline fun <reified T : EventContent> unsubscribe(noinline subscriber: EventSubscriber<T>) {
-        unsubscribe(T::class, subscriber)
-    }
-
-
-    fun subscribeAllEvents(subscriber: EventSubscriber<EventContent>) {
+    override fun subscribeAllEvents(subscriber: EventSubscriber<EventContent>) {
         subscribe(subscriber)
     }
 
-    fun unsubscribeAllEvents(subscriber: EventSubscriber<EventContent>) {
+    override fun unsubscribeAllEvents(subscriber: EventSubscriber<EventContent>) {
         unsubscribe(subscriber)
     }
+}
+
+/**
+ * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
+ */
+inline fun <reified T : EventContent> IEventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
+    subscribe(T::class, subscriber)
+}
+
+inline fun <reified T : EventContent> IEventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
+    unsubscribe(T::class, subscriber)
 }
