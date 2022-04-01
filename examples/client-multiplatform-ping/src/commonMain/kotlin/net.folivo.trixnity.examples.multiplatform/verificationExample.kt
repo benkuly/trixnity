@@ -87,6 +87,8 @@ suspend fun verificationExample() = coroutineScope {
                 is Cancel -> {
                     println("cancelled because ${state.content} (isOurOwn=${state.isOurOwn})")
                 }
+                AcceptedByOtherDevice -> println("another device accepted others request")
+                Undefined -> println("undefined")
             }
         }
     }

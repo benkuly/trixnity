@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
@@ -35,7 +35,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>()
     val olm = mockk<OlmService>()
-    val currentSyncState = MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+    val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomService
 
