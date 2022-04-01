@@ -7,9 +7,9 @@ import net.folivo.trixnity.core.model.EventId
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message_index") {
-    val senderKey = varchar("sender_key", length = 65535)
-    val sessionId = varchar("session_id", length = 65535)
-    val roomId = varchar("room_id", length = 65535)
+    val senderKey = varchar("sender_key", length = 16383)
+    val sessionId = varchar("session_id", length = 16383)
+    val roomId = varchar("room_id", length = 16383)
     val messageIndex = long("message_index")
     override val primaryKey = PrimaryKey(senderKey, sessionId, roomId, messageIndex)
     val eventId = text("event_id")

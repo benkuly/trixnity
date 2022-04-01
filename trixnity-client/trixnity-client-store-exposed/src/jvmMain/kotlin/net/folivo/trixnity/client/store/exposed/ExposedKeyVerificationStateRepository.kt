@@ -9,10 +9,10 @@ import net.folivo.trixnity.client.verification.KeyVerificationState
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedKeyVerificationState : Table("key_verification_state") {
-    val userId = varchar("user_id", length = 65535)
-    val deviceId = varchar("device_id", length = 65535)
-    val keyId = varchar("key_id", length = 65535)
-    val keyAlgorithm = varchar("key_algorithm", length = 65535)
+    val userId = varchar("user_id", length = 16383)
+    val deviceId = varchar("device_id", length = 16383)
+    val keyId = varchar("key_id", length = 16383)
+    val keyAlgorithm = varchar("key_algorithm", length = 16383)
     override val primaryKey = PrimaryKey(userId, deviceId, keyId, keyAlgorithm)
     val verificationState = text("verification_state")
 }

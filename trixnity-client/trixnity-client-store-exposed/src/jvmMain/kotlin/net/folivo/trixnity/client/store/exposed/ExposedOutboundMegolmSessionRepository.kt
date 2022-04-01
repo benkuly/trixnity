@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") {
-    val roomId = varchar("room_id", length = 65535)
+    val roomId = varchar("room_id", length = 16383)
     override val primaryKey = PrimaryKey(roomId)
     val value = text("value")
 }

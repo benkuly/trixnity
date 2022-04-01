@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 
 internal object ExposedMedia : Table("media") {
-    val url = varchar("url", length = 65535)
+    val url = varchar("url", length = 16383)
     override val primaryKey = PrimaryKey(url)
     val media = blob("media")
 }
