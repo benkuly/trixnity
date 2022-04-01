@@ -7,12 +7,12 @@ import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedKeyChainLink : Table("key_chain_link") {
-    val signingUserId = varchar("signing_user_id", length = 65535)
-    val signingKeyId = varchar("signing_key_id", length = 65535)
-    val signingKeyValue = varchar("signing_key_value", length = 65535)
-    val signedUserId = varchar("signed_user_id", length = 65535)
-    val signedKeyId = varchar("signed_key_id", length = 65535)
-    val signedKeyValue = varchar("signed_key_value", length = 65535)
+    val signingUserId = varchar("signing_user_id", length = 16383)
+    val signingKeyId = varchar("signing_key_id", length = 16383)
+    val signingKeyValue = varchar("signing_key_value", length = 16383)
+    val signedUserId = varchar("signed_user_id", length = 16383)
+    val signedKeyId = varchar("signed_key_id", length = 16383)
+    val signedKeyValue = varchar("signed_key_value", length = 16383)
     override val primaryKey = PrimaryKey(
         signingUserId, signingKeyId, signingKeyValue, signedUserId, signedKeyId, signedKeyValue
     )

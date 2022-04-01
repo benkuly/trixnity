@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedRoomOutboxMessage : Table("room_outbox") {
-    val transactionId = varchar("transaction_id", length = 65535)
+    val transactionId = varchar("transaction_id", length = 16383)
     override val primaryKey = PrimaryKey(transactionId)
     val value = text("value")
     val contentType = text("content_type")

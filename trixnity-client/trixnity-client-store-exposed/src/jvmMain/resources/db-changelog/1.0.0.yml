@@ -36,7 +36,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -50,7 +50,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -64,7 +64,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: type
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -78,19 +78,19 @@ databaseChangeLog:
             columns:
               - column:
                   name: sender_key
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: session_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -115,19 +115,19 @@ databaseChangeLog:
             columns:
               - column:
                   name: sender_key
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: session_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -141,37 +141,37 @@ databaseChangeLog:
             columns:
               - column:
                   name: signing_user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: signing_key_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: signing_key_value
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: signed_user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: signed_key_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: signed_key_value
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -180,25 +180,25 @@ databaseChangeLog:
             columns:
               - column:
                   name: user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: device_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: key_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: key_algorithm
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -212,7 +212,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: url
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -241,7 +241,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: sender_key
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -255,7 +255,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -284,13 +284,13 @@ databaseChangeLog:
             columns:
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: type
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -304,13 +304,13 @@ databaseChangeLog:
             columns:
               - column:
                   name: transaction_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
               - column:
@@ -331,7 +331,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -345,19 +345,19 @@ databaseChangeLog:
             columns:
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: type
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: state_key
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -371,13 +371,13 @@ databaseChangeLog:
             columns:
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: event_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -391,13 +391,13 @@ databaseChangeLog:
             columns:
               - column:
                   name: user_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
               - column:
                   name: room_id
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true
@@ -411,7 +411,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: cache_uri
-                  type: VARCHAR(65535)
+                  type: VARCHAR(16383)
                   constraints:
                     nullable: false
                     primaryKey: true

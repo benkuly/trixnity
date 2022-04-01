@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedSecretKeyRequest : Table("secret_key_request") {
-    val id = varchar("id", length = 65535)
+    val id = varchar("id", length = 16383)
     override val primaryKey = PrimaryKey(id)
     val value = text("value")
 }

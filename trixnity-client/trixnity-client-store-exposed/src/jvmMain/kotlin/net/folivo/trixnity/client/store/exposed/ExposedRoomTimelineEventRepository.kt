@@ -9,8 +9,8 @@ import net.folivo.trixnity.client.store.repository.RoomTimelineEventRepository
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedRoomTimeline : Table("room_timeline_event") {
-    val roomId = varchar("room_id", length = 65535)
-    val eventId = varchar("event_id", length = 65535)
+    val roomId = varchar("room_id", length = 16383)
+    val eventId = varchar("event_id", length = 16383)
     override val primaryKey = PrimaryKey(roomId, eventId)
     val value = text("value")
 }
