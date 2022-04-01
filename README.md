@@ -156,43 +156,23 @@ You can always get the last known `TimelineEvent` of a room with `matrixClient.r
 The following example will always print the last 20 events of a room:
 
 ```kotlin
-matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { lastEvent ->
-    flow {
-        var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
-        emit(lastEvent)
-        while (currentTimelineEvent?.value != null) {
-            val currentTimelineEventValue = currentTimelineEvent.value
-            if (currentTimelineEventValue?.gap is GapBefore) {
-                matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
-            }
-            currentTimelineEvent = currentTimelineEvent.value?.let {
-                matrixClient.room.getPreviousTimelineEvent(it, scope)
-            }
-            emit(currentTimelineEvent)
-        }
-    }.filterNotNull().take(20).toList().reversed().forEach { timelineEvent ->
-        val event = timelineEvent.value?.event
-        val content = event?.content
-        val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
-        when {
-            content is RoomMessageEventContent -> println("${sender}: ${content.body}")
-            content is MegolmEncryptedEventContent -> {
-                val decryptedEvent = timelineEvent.value?.decryptedEvent
-                val decryptedEventContent = decryptedEvent?.getOrNull()?.content
-                val decryptionException = decryptedEvent?.exceptionOrNull()
-                when {
-                    decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
-                    decryptedEvent == null -> println("${sender}: not yet decrypted")
-                    decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
+matrixClient.room.getLastTimelineEvents(roomId, this)
+    .toFlowList(MutableStateFlow(20)) // we always get maximal 20 TimelineEvents
+    .collectLatest { timelineEvents ->
+        timelineEvents.forEach { timelineEvent ->
+            val event = timelineEvent.value?.event
+            val content = timelineEvent.value?.content?.getOrNull()
+            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
+            when {
+                content is RoomMessageEventContent -> println("${sender}: ${content.body}")
+                content == null -> println("${sender}: not yet decrypted")
+                event is MessageEvent -> println("${sender}: $event")
+                event is StateEvent -> println("${sender}: $event")
+                else -> {
                 }
-            }
-            event is MessageEvent -> println("${sender}: $event")
-            event is StateEvent -> println("${sender}: $event")
-            else -> {
             }
         }
     }
-}
 ```
 
 #### Outbox

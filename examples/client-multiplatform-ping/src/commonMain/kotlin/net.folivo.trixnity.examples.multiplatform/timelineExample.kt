@@ -2,12 +2,13 @@ package net.folivo.trixnity.examples.multiplatform
 
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
@@ -60,37 +61,23 @@ suspend fun timelineExample() = coroutineScope {
     }
 
     val job = launch {
-        matrixClient.room.getLastTimelineEvent(roomId, this).filterNotNull().collect { lastEvent ->
-            val roomName = matrixClient.room.getById(roomId).value?.name
-            println("------------------------- $roomName")
-            flow {
-                var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
-                emit(lastEvent)
-                while (currentTimelineEvent?.value != null) {
-                    val currentTimelineEventValue = currentTimelineEvent.value
-                    if (currentTimelineEventValue?.gap is TimelineEvent.Gap.GapBefore) {
-                        matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
-                    }
-                    currentTimelineEvent =
-                        currentTimelineEvent.value?.let {
-                            matrixClient.room.getPreviousTimelineEvent(it, this@coroutineScope)
+        matrixClient.room.getLastTimelineEvents(roomId, this)
+            .toFlowList(MutableStateFlow(10))
+            .collectLatest { timelineEvents ->
+                timelineEvents.forEach { timelineEvent ->
+                    val event = timelineEvent.value?.event
+                    val content = timelineEvent.value?.content?.getOrNull()
+                    val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
+                    when {
+                        content is RoomMessageEventContent -> println("${sender}: ${content.body}")
+                        content == null -> println("${sender}: not yet decrypted")
+                        event is MessageEvent -> println("${sender}: $event")
+                        event is StateEvent -> println("${sender}: $event")
+                        else -> {
                         }
-                    emit(currentTimelineEvent)
-                }
-            }.filterNotNull().take(10).toList().reversed().forEach { timelineEvent ->
-                val event = timelineEvent.value?.event
-                val content = timelineEvent.value?.content?.getOrNull()
-                val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
-                when {
-                    content is RoomMessageEventContent -> println("${sender}: ${content.body}")
-                    content == null -> println("${sender}: not yet decrypted")
-                    event is MessageEvent -> println("${sender}: $event")
-                    event is StateEvent -> println("${sender}: $event")
-                    else -> {
                     }
                 }
             }
-        }
     }
 
     matrixClient.startSync()

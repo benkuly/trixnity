@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -36,3 +38,35 @@ suspend inline fun <reified C : StateEventContent> RoomService.getState(
 ): Event<C>? {
     return getState(roomId, stateKey, C::class)
 }
+
+/**
+ * Converts a flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ *
+ * ```
+ * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
+ * Output: ([EEE]) -> delay -> ([EEEE])
+ * ```
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+@JvmName("toList")
+fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
+    maxSize.flatMapLatest { listSize ->
+        take(listSize)
+            // TODO could be optimized with mutable list and transform, but may have consequences (ConcurrentModificationException), when this list is not synchronized
+            .scan(listOf()) { old, new -> old + new }
+    }
+
+/**
+ * Converts a flow of flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ *
+ * ```
+ * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
+ * Output: ([EEE]) -> delay -> ([EEEE])
+ * ```
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+@JvmName("toListFromLatest")
+fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
+    flatMapLatest {
+        it?.toFlowList(maxSize) ?: flowOf(listOf())
+    }

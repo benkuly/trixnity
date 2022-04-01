@@ -20,7 +20,10 @@ import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -596,12 +599,12 @@ class RoomService(
                         roomId = roomId,
                         from = startGap.batch,
                         to = destinationBatch,
-                        dir = Direction.BACKWARDS,
+                        dir = BACKWARDS,
                         limit = limit,
                         filter = """{"lazy_load_members":true}"""
-                    )
-                    val chunk = response.getOrThrow().chunk?.filterDuplicateEvents()
-                    val end = response.getOrThrow().end
+                    ).getOrThrow()
+                    val chunk = response.chunk?.filterDuplicateEvents()
+                    val end = response.end
                     if (!chunk.isNullOrEmpty()) {
                         log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
                         val previousEventIndex =
@@ -678,7 +681,7 @@ class RoomService(
                             timelineEvent
                         }
                         store.roomTimeline.addAll(timelineEvents, withTransaction = false)
-                    } else if (end == null || end == response.getOrThrow().start) {
+                    } else if (end == null || end == response.start) {
                         log.debug { "reached the start of visible timeline of $roomId" }
                         store.roomTimeline.update(
                             startEvent.eventId,
@@ -706,7 +709,7 @@ class RoomService(
                         roomId = roomId,
                         from = startGap.batch,
                         to = destinationBatch,
-                        dir = Direction.FORWARD,
+                        dir = FORWARD,
                         limit = limit,
                         filter = """{"lazy_load_members":true}"""
                     )
@@ -863,8 +866,10 @@ class RoomService(
         coroutineScope: CoroutineScope
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
-            if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, coroutineScope))
-            else emit(null)
+            coroutineScope {
+                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this))
+                else emit(null)
+            }
         }.stateIn(coroutineScope)
     }
 
@@ -881,6 +886,73 @@ class RoomService(
     ): StateFlow<TimelineEvent?>? {
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
     }
+
+    /**
+     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
+     * at the end of the timeline.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
+     *
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    suspend fun getTimelineEvents(
+        startFrom: StateFlow<TimelineEvent?>,
+        direction: Direction = BACKWARDS,
+        scope: CoroutineScope
+    ): Flow<StateFlow<TimelineEvent?>> =
+        flow {
+            var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
+            emit(currentTimelineEventFlow)
+            do {
+                currentTimelineEventFlow = currentTimelineEventFlow
+                    .filterNotNull()
+                    .map { currentTimelineEvent ->
+                        if (currentTimelineEvent.gap is GapBoth
+                            || direction == FORWARD && currentTimelineEvent.gap is GapAfter
+                            || direction == BACKWARDS && currentTimelineEvent.gap is GapBefore
+                        ) currentSyncState.retryWhenSyncIs(
+                            RUNNING,
+                            onError = { log.error(it) { "could not fetch missing events" } },
+                            scope = scope
+                        ) {
+                            fetchMissingEvents(currentTimelineEvent).getOrThrow()
+                        }
+                        when (direction) {
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, scope)
+                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, scope)
+                        }
+                    }
+                    .filterNotNull()
+                    .first()
+                emit(currentTimelineEventFlow)
+            } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
+        }
+
+    /**
+     * Returns the last timeline events as flow.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
+     * ```kotlin
+     * launch {
+     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
+     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
+     *   }
+     * }
+     * ```
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+        getLastTimelineEvent(roomId, scope)
+            .mapLatest { currentTimelineEventFlow ->
+                currentTimelineEventFlow?.let {
+                    coroutineScope {
+                        getTimelineEvents(it, scope = this)
+                    }
+                }
+            }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getLastMessageEvent(
@@ -950,7 +1022,7 @@ class RoomService(
     @OptIn(FlowPreview::class)
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
-            SyncState.RUNNING,
+            RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this

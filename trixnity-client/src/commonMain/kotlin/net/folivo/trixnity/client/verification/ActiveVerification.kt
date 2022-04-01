@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.getAndUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -51,7 +50,7 @@ abstract class ActiveVerification(
         )
     val state = mutableState.asStateFlow()
 
-    private val lifecycleStarted = atomic(false)
+    private val lifecycleStarted = MutableStateFlow(false)
     protected abstract suspend fun lifecycle(scope: CoroutineScope)
     internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
         log.debug { "start lifecycle of verification" }
