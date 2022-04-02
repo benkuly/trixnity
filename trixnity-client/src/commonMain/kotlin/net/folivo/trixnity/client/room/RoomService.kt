@@ -806,48 +806,53 @@ class RoomService(
     suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             val timelineEvent = timelineEventFlow.value
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                 coroutineScope.launch {
-                    val session =
-                        store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
-                    val firstKnownIndex = session.value?.firstKnownIndex
-                    if (session.value == null) {
-                        key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
-                        log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                        store.olm.waitForInboundMegolmSession(
-                            roomId, content.sessionId, content.senderKey, this@launch
-                        )
-                    }
-                    log.trace { "try to decrypt event $eventId in $roomId" }
-                    @Suppress("UNCHECKED_CAST")
-                    val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
-
-                    val decryptEventAttempt = encryptedEvent.decryptCatching()
-                    val exception = decryptEventAttempt.exceptionOrNull()
-                    val decryptedEvent =
-                        if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                            || exception is DecryptionException.SessionException && exception.cause.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                        ) {
+                    withTimeoutOrNull(decryptionTimeout) {
+                        val session =
+                            store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
+                        val firstKnownIndex = session.value?.firstKnownIndex
+                        if (session.value == null) {
                             key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
-                            log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                            log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
                             store.olm.waitForInboundMegolmSession(
-                                roomId,
-                                content.sessionId,
-                                content.senderKey,
-                                this@launch,
-                                firstKnownIndexLessThen = firstKnownIndex
+                                roomId, content.sessionId, content.senderKey, this@launch
                             )
-                            encryptedEvent.decryptCatching()
-                        } else decryptEventAttempt
-                    store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
-                        // we check here again, because an event could be redacted at the same time
-                        if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEvent.map { it.content })
-                        else oldEvent
+                        }
+                        log.trace { "try to decrypt event $eventId in $roomId" }
+                        @Suppress("UNCHECKED_CAST")
+                        val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
+
+                        val decryptEventAttempt = encryptedEvent.decryptCatching()
+                        val exception = decryptEventAttempt.exceptionOrNull()
+                        val decryptedEvent =
+                            if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
+                                || exception is DecryptionException.SessionException && exception.cause.message?.contains(
+                                    "UNKNOWN_MESSAGE_INDEX"
+                                ) == true
+                            ) {
+                                key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                                log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                                store.olm.waitForInboundMegolmSession(
+                                    roomId,
+                                    content.sessionId,
+                                    content.senderKey,
+                                    this@launch,
+                                    firstKnownIndexLessThen = firstKnownIndex
+                                )
+                                encryptedEvent.decryptCatching()
+                            } else decryptEventAttempt
+                        store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
+                            // we check here again, because an event could be redacted at the same time
+                            if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEvent.map { it.content })
+                            else oldEvent
+                        }
                     }
                 }
             }
@@ -866,11 +871,12 @@ class RoomService(
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getLastTimelineEvent(
         roomId: RoomId,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
-                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this))
+                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this, decryptionTimeout))
                 else emit(null)
             }
         }.stateIn(coroutineScope)
@@ -878,16 +884,18 @@ class RoomService(
 
     suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): StateFlow<TimelineEvent?>? {
-        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
+        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
     }
 
     suspend fun getNextTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): StateFlow<TimelineEvent?>? {
-        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
+        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
     }
 
     /**
@@ -902,7 +910,8 @@ class RoomService(
     suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
         direction: Direction = BACKWARDS,
-        scope: CoroutineScope
+        scope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): Flow<StateFlow<TimelineEvent?>> =
         flow {
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
@@ -922,8 +931,8 @@ class RoomService(
                             fetchMissingEvents(currentTimelineEvent).getOrThrow()
                         }
                         when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, scope)
-                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, scope)
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
+                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
                         }
                     }
                     .filterNotNull()
@@ -973,17 +982,10 @@ class RoomService(
                             syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
                 timelineEvents.map {
                     async {
-                        // we open and cancel a new scope, because it is possible, that an event never gets decrypted
-                        // and therefore the scope of async never could be left
-                        val scope = CoroutineScope(Dispatchers.Default)
-                        val timelineEvent = getTimelineEvent(it.id, it.roomId, scope)
-                        (withTimeoutOrNull(decryptionTimeout) {
-                            timelineEvent.first { it?.content != null }
-                        } ?: timelineEvent.value)
-                            .also { scope.cancel() }
+                        getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
                     }
                 }.awaitAll()
-                    .filterNotNull()
+                    .mapNotNull { it.value }
                     .forEach { send(it) }
             }
             invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
@@ -995,11 +997,12 @@ class RoomService(
     suspend fun getLastMessageEvent(
         roomId: RoomId,
         coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
                 if (room?.lastMessageEventId != null)
-                    emit(getTimelineEvent(room.lastMessageEventId, roomId, this))
+                    emit(getTimelineEvent(room.lastMessageEventId, roomId, this, decryptionTimeout))
                 else emit(null)
             }
         }.stateIn(coroutineScope)

@@ -15,6 +15,7 @@ import io.ktor.http.*
 import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
@@ -480,6 +481,16 @@ class RoomServiceTest : ShouldSpec({
                     event shouldBe encryptedTimelineEvent.event
                     content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
+            }
+            should("timeout when decryption takes too long") {
+                store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
+                    mapOf(encryptedEventContent.deviceId to StoredDeviceKeys(Signed(mockk(), mapOf()), Valid(true)))
+                }
+                store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
+                val result = async { cut.getTimelineEvent(eventId, room, this, 0.seconds).first() }
+                // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
+                result.await() shouldBe encryptedTimelineEvent
+                result.job.children.count() shouldBe 0
             }
             should("handle error") {
                 coEvery { olmService.events.decryptMegolm(any()) } throws DecryptionException.ValidationFailed
