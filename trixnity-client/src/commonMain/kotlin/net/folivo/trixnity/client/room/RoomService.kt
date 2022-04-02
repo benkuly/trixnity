@@ -972,25 +972,34 @@ class RoomService(
      * It is possible, that the matrix server does not send all timeline events.
      * These gaps in the timeline are not filled automatically. Gap filling is available in
      * [getTimelineEvents] and [getLastTimelineEvents].
+     *
+     * @param syncResponseBufferSize the size of the buffer for consuming the sync response. When set to 0, the sync will
+     * be suspended until all events from the sync response are consumed. This could prevent decryption, because keys may
+     * be received in a later sync response.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getTimelineEventsFromNowOn(decryptionTimeout: Duration = 1.seconds): Flow<TimelineEvent> =
+    fun getTimelineEventsFromNowOn(
+        decryptionTimeout: Duration = 30.seconds,
+        syncResponseBufferSize: Int = 10,
+    ): Flow<TimelineEvent> =
         channelFlow {
-            val subscriber: AfterSyncResponseSubscriber = { syncResponse ->
-                val timelineEvents =
-                    syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                            syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
-                timelineEvents.map {
-                    async {
-                        getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
-                    }
-                }.awaitAll()
-                    .mapNotNull { it.value }
-                    .forEach { send(it) }
-            }
+            val syncResponseChannel = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+            val subscriber: AfterSyncResponseSubscriber = { syncResponseChannel.emit(it) }
             invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
             api.sync.subscribeAfterSyncResponse(subscriber)
-            delay(INFINITE)
+            syncResponseChannel
+                .collect { syncResponse ->
+                    val timelineEvents =
+                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                    timelineEvents.map {
+                        async {
+                            getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
+                        }
+                    }.awaitAll()
+                        .mapNotNull { it.value }
+                        .forEach { send(it) }
+                }
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
