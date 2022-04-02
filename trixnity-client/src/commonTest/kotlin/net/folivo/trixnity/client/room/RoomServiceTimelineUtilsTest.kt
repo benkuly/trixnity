@@ -331,7 +331,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 }
             }
             val result = async {
-                cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).onEach { println(it) }.take(2).toList()
+                cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
             api.sync.startOnce().getOrThrow()
             api.sync.startOnce().getOrThrow()
