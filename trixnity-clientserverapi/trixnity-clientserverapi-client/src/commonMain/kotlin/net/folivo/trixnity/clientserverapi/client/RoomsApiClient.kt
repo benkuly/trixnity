@@ -488,7 +488,7 @@ class RoomsApiClient(
         filter: String?,
         asUserId: UserId?
     ): Result<GetEvents.Response> =
-        httpClient.request(GetEvents(roomId.e(), from, to, dir, limit, filter?.e(), asUserId))
+        httpClient.request(GetEvents(roomId.e(), from, to, dir, limit, filter, asUserId))
 
     override suspend fun sendStateEvent(
         roomId: RoomId,

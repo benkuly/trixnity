@@ -42,7 +42,7 @@ class UserService(
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
         api.sync.subscribe(::setPresence)
-        api.sync.subscribeAfterSyncResponse(::reloadProfile)
+        api.sync.subscribeAfterSyncResponse { reloadProfile() }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleLoadMembersQueue() }
     }

@@ -30,17 +30,19 @@ This project contains the following modules, which can be used independently:
       implementation without logic.
     - [trixnity-clientserverapi-server](/trixnity-clientserverapi/trixnity-clientserverapi-server) is the server
       implementation without logic.
-- [trixnity-serverserverapi-*](/trixnity-serverserverapi) provides modules to use
+- coming soon: [trixnity-serverserverapi-*](/trixnity-serverserverapi) provides modules to use
   the [Server-Server API](https://spec.matrix.org/latest/server-server-api/).
     - [trixnity-serverserverapi-model](/trixnity-serverserverapi/trixnity-serverserverapi-model)  provides shared model
       classes.
-    - [trixnity-serverserverapi-client](/trixnity-serverserverapi/trixnity-serverserverapi-server) is the server
+    - [trixnity-serverserverapi-client](/trixnity-serverserverapi/trixnity-serverserverapi-client) is the client
+      implementation without logic.
+    - [trixnity-serverserverapi-server](/trixnity-serverserverapi/trixnity-serverserverapi-server) is the server
       implementation without logic.
 - [trixnity-applicationserviceapi-*](/trixnity-applicationserviceapi) provides modules to use
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
     - [trixnity-applicationserviceapi-model](/trixnity-applicationserviceapi/trixnity-applicationserviceapi-model)
       provides shared model classes.
-    - [trixnity-applicationserviceapi-client](/trixnity-applicationserviceapi/trixnity-applicationserviceapi-server) is
+    - [trixnity-applicationserviceapi-server](/trixnity-applicationserviceapi/trixnity-applicationserviceapi-server) is
       the server implementation without logic.
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity. The key features are:
@@ -156,13 +158,13 @@ You can always get the last known `TimelineEvent` of a room with `matrixClient.r
 The following example will always print the last 20 events of a room:
 
 ```kotlin
-matrixClient.room.getLastTimelineEvents(roomId, this)
-    .toFlowList(MutableStateFlow(20)) // we always get maximal 20 TimelineEvents
+matrixClient.room.getLastTimelineEvents(roomId, scope)
+    .toFlowList(MutableStateFlow(20)) // we always get max. 20 TimelineEvents
     .collectLatest { timelineEvents ->
         timelineEvents.forEach { timelineEvent ->
             val event = timelineEvent.value?.event
             val content = timelineEvent.value?.content?.getOrNull()
-            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
+            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
             when {
                 content is RoomMessageEventContent -> println("${sender}: ${content.body}")
                 content == null -> println("${sender}: not yet decrypted")

@@ -71,7 +71,6 @@ class MatrixClientServerApiServerTest {
             header(Origin, "https://localhost:2424")
             header(AccessControlRequestMethod, "GET")
         }
-        println(response)
         response.status shouldBe OK
         response.headers[AccessControlAllowOrigin] shouldBe "*"
         response.headers[AccessControlAllowMethods] shouldBe "DELETE, OPTIONS, PUT"
