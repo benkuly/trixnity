@@ -296,6 +296,74 @@ class SyncApiClientTest {
                     when (requestCount.value) {
                         0 -> {
                             assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                        1 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                        else -> {
+                            delay(10_000)
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                }
+            }
+        )
+
+        val currentBatchToken = MutableStateFlow<String?>("some")
+        val syncResponses = MutableSharedFlow<Response>(replay = 5)
+        matrixRestClient.sync.subscribeSyncResponse { syncResponses.emit(it) }
+        val job = launch {
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = PresenceEventContent.Presence.ONLINE,
+                currentBatchToken = currentBatchToken,
+                scope = this,
+                timeout = 30_000
+            )
+        }
+        syncResponses.take(3).collect()
+        job.cancelAndJoin()
+
+        assertEquals(2, requestCount.value)
+        assertEquals(serverResponse1, syncResponses.replayCache[0])
+        assertEquals(serverResponse2, syncResponses.replayCache[1])
+        assertEquals("nextBatch2", currentBatchToken.value)
+    }
+
+    @Test
+    fun shouldIntialSyncLoop() = runTest {
+        val requestCount = MutableStateFlow(0)
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (requestCount.value) {
+                        0 -> {
+                            assertEquals(
                                 "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
                                 request.url.fullPath
                             )
@@ -419,14 +487,25 @@ class SyncApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
-
                     assertEquals(
-                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=100",
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=0",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=100",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -530,7 +609,7 @@ class SyncApiClientTest {
                     when (requestCount.value) {
                         0 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?since=a&timeout=100",
+                                "/_matrix/client/v3/sync?since=a&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -540,7 +619,7 @@ class SyncApiClientTest {
                         }
                         else -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?since=a&timeout=100",
+                                "/_matrix/client/v3/sync?since=a&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -585,7 +664,7 @@ class SyncApiClientTest {
                         }
                         1 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
@@ -598,7 +677,7 @@ class SyncApiClientTest {
                         }
                         2 -> {
                             assertEquals(
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
                                 request.url.fullPath
                             )
                             assertEquals(HttpMethod.Get, request.method)
