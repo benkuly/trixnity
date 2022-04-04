@@ -5,9 +5,12 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
