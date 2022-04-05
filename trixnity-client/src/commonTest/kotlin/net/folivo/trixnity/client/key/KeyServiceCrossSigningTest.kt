@@ -22,7 +22,6 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
@@ -87,8 +86,8 @@ private val body: ShouldSpec.() -> Unit = {
             trust = trust,
             currentSyncState = currentSyncState
         )
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
+        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
+        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
     }
 
     afterTest {
@@ -251,7 +250,7 @@ private val body: ShouldSpec.() -> Unit = {
                         ResponseWithUIA.Success(Unit)
                     }
                 }
-                coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
+                coEvery { olm.sign.sign(any<CrossSigningKeys>(), any(), any()) }.answers {
                     Signed(firstArg(), mapOf())
                 }
                 coEvery {

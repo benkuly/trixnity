@@ -87,7 +87,7 @@ private val body: ShouldSpec.() -> Unit = {
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = KeySecretService(alice, aliceDevice, store, olm, api, currentSyncState)
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
+        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
     }
 
     afterTest {

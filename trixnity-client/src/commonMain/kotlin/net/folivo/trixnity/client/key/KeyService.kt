@@ -6,8 +6,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.*
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
@@ -64,7 +64,7 @@ class KeyService(
         olm,
         currentSyncState
     ),
-    internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm, api)
+    internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm.sign, api)
 ) {
 
     internal suspend fun start(scope: CoroutineScope) {

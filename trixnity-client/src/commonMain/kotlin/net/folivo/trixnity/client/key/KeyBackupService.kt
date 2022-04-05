@@ -7,7 +7,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.signatures
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1

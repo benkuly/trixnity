@@ -129,7 +129,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             val result = cut.signatures(
                 JsonObject(mapOf("key" to JsonPrimitive("value"))),
-                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING)
+                IOlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING)
             )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {
@@ -164,7 +164,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             val result = cut.signatures(
                 JsonObject(mapOf("key" to JsonPrimitive("value"))),
-                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING)
+                IOlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING)
             )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {

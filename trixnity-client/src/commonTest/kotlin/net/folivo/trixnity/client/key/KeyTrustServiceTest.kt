@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -13,10 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getDeviceKey
+import net.folivo.trixnity.client.mocks.MockOlmSignService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
@@ -29,7 +27,6 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 
 class KeyTrustServiceTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
@@ -39,17 +36,18 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDevice = "BOB_DEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
+    val olmSign = MockOlmSignService()
+
     val api = mockk<MatrixClientServerApiClient>()
 
     lateinit var cut: KeyTrustService
 
     beforeTest {
+        olmSign.returnOnVerify = VerifyResult.Valid
+
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeyTrustService(alice, store, olm, api)
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
+        cut = KeyTrustService(alice, store, olmSign, api)
     }
 
     afterTest {
@@ -416,14 +414,6 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeyTrustService::trustAndSignKeys.name) {
-        beforeTest {
-            coEvery { olm.sign.sign<DeviceKeys>(any(), any<SignWith>()) }.coAnswers {
-                Signed(firstArg(), mapOf())
-            }
-            coEvery { olm.sign.sign<CrossSigningKeys>(any(), any<SignWith>()) }.coAnswers {
-                Signed(firstArg(), mapOf())
-            }
-        }
         should("handle own account keys") {
             coEvery {
                 api.keys.addSignatures(any(), any(), any())
@@ -466,8 +456,8 @@ private val body: ShouldSpec.() -> Unit = {
 
             coVerify {
                 api.keys.addSignatures(
-                    setOf(Signed(ownAccountsDeviceKey, mapOf())),
-                    setOf(Signed(ownMasterKey, mapOf()))
+                    setOf(Signed(ownAccountsDeviceKey, null)),
+                    setOf(Signed(ownMasterKey, null))
                 )
             }
             store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
@@ -512,7 +502,7 @@ private val body: ShouldSpec.() -> Unit = {
             coVerify {
                 api.keys.addSignatures(
                     setOf(),
-                    setOf(Signed(othersMasterKey, mapOf()))
+                    setOf(Signed(othersMasterKey, null))
                 )
             }
             store.keys.getKeyVerificationState(othersDeviceEdKey, bob, "BBBBBB")

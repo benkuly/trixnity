@@ -37,8 +37,8 @@ import net.folivo.trixnity.olm.OlmUtility
 private val log = KotlinLogging.logger {}
 
 interface IOlmService {
-    val sign: OlmSignService
-    val events: OlmEventService
+    val sign: IOlmSignService
+    val events: IOlmEventService
 
     data class DecryptedOlmEventContainer(
         val encrypted: Event<OlmEncryptedEventContent>,

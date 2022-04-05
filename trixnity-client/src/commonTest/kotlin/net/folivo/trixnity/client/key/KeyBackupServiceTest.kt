@@ -21,9 +21,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.DeviceKey
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.DeviceKey
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.client.store.InMemoryStore
@@ -105,7 +105,7 @@ private val body: ShouldSpec.() -> Unit = {
         )
         store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), keyBackupPrivateKey))
         coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true
-        coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
+        coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>(), any()) } returns mapOf(
             ownUserId to keysOf(Ed25519Key("DEV", "s1"))
         )
         apiConfig.endpoints {
@@ -146,7 +146,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
             }
-            coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
+            coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>(), any()) } returns mapOf(
                 ownUserId to keysOf(Ed25519Key("DEV", "s1"))
             )
             coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true
@@ -170,7 +170,7 @@ private val body: ShouldSpec.() -> Unit = {
                         keyVersion
                     }
                 }
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
+                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>(), any()) } returns mapOf(
                     ownUserId to keysOf(Ed25519Key("DEV", "s1"))
                 )
                 val job = launch {
@@ -200,7 +200,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SetRoomKeyBackupVersion.Response("1")
                     }
                 }
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
+                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>(), any()) } returns mapOf(
                     ownUserId to keysOf(Ed25519Key("DEV", "s24"))
                 )
                 val job = launch {
@@ -238,7 +238,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SetRoomKeyBackupVersion.Response("1")
                     }
                 }
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
+                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>(), any()) } returns mapOf(
                     ownUserId to keysOf(Ed25519Key("DEV", "s1"))
                 )
                 val job = launch {

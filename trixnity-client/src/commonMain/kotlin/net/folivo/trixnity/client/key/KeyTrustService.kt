@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.*
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.client.store.KeyChainLink
@@ -29,7 +29,7 @@ private val log = KotlinLogging.logger {}
 class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
-    private val olm: IOlmService,
+    private val olmSign: IOlmSignService,
     private val api: MatrixClientServerApiClient,
 ) {
 
@@ -89,7 +89,7 @@ class KeyTrustService(
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olm.sign.verify(deviceKeys, it) },
+            { olmSign.verify(deviceKeys, it) },
             signedKey,
             deviceKeys.signatures ?: mapOf(),
             deviceKeys.getVerificationState(userId, deviceId),
@@ -104,7 +104,7 @@ class KeyTrustService(
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olm.sign.verify(crossSigningKeys, it) },
+            { olmSign.verify(crossSigningKeys, it) },
             signedKey,
             crossSigningKeys.signatures ?: mapOf(),
             crossSigningKeys.getVerificationState(userId),
@@ -165,7 +165,7 @@ class KeyTrustService(
                             else -> {
                                 searchSignaturesForTrustLevel(
                                     signingUserId,
-                                    { olm.sign.verify(crossSigningKey, it) },
+                                    { olmSign.verify(crossSigningKey, it) },
                                     signingCrossSigningKey,
                                     crossSigningKey.signatures ?: mapOf(),
                                     visitedKeys
@@ -190,7 +190,7 @@ class KeyTrustService(
                             is KeyVerificationState.Blocked -> Blocked
                             else -> searchSignaturesForTrustLevel(
                                 signedUserId,
-                                { olm.sign.verify(deviceKey, it) },
+                                { olmSign.verify(deviceKey, it) },
                                 signingDeviceKey,
                                 deviceKey.signatures ?: mapOf(),
                                 visitedKeys
@@ -226,7 +226,7 @@ class KeyTrustService(
                 try {
                     if (userId == ownUserId && deviceKey.get<Ed25519Key>() == key) {
                         log.info { "sign own accounts device with own self signing key" }
-                        olm.sign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
+                        olmSign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
                     } else null
                 } catch (error: Throwable) {
                     log.warn { "could not sign key $key: ${error.message}" }
@@ -246,10 +246,10 @@ class KeyTrustService(
                         if (crossSigningKey.get<Ed25519Key>() == key) {
                             if (userId == ownUserId) {
                                 log.info { "sign own master key with own device key" }
-                                olm.sign.sign(crossSigningKey, SignWith.DeviceKey)
+                                olmSign.sign(crossSigningKey, SignWith.DeviceKey)
                             } else {
                                 log.info { "sign other users master key with own user signing key" }
-                                olm.sign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
+                                olmSign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
                             }
                         } else null
                     } catch (error: Throwable) {
