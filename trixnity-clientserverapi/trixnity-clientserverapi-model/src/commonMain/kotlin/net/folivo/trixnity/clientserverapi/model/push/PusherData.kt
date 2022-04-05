@@ -30,7 +30,7 @@ object PusherDataSerializer : KSerializer<PusherData> {
                 putAll(jsonObject)
                 remove("format")
                 remove("url")
-            })
+            }).takeIf { it.isNotEmpty() }
         )
     }
 
