@@ -12,6 +12,8 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.mockative.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.EventId
@@ -125,7 +127,8 @@ class PushRoutesTest {
                   "append":false,
                   "data":{
                     "format":"event_id_only",
-                    "url":"https://push-gateway.location.here/_matrix/push/v1/notify"
+                    "url":"https://push-gateway.location.here/_matrix/push/v1/notify",
+                    "custom":"dino"
                   },
                   "device_display_name":"EiPhone 9",
                   "kind":"http",
@@ -149,7 +152,8 @@ class PushRoutesTest {
                     append = false,
                     data = SetPushers.Request.PusherData(
                         format = "event_id_only",
-                        url = "https://push-gateway.location.here/_matrix/push/v1/notify"
+                        url = "https://push-gateway.location.here/_matrix/push/v1/notify",
+                        customFields = buildJsonObject { put("custom", "dino") }
                     ),
                     deviceDisplayName = "EiPhone 9",
                     kind = "http",
