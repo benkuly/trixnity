@@ -2,15 +2,14 @@ package net.folivo.trixnity.client.crypto
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotContainAnyOf
+import io.kotest.matchers.collections.*
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -20,12 +19,15 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.SerializationException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredDeviceKeys
+import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
+import net.folivo.trixnity.clientserverapi.model.keys.SetKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -44,10 +46,13 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 
 class OlmServiceTest : ShouldSpec({
@@ -56,21 +61,28 @@ class OlmServiceTest : ShouldSpec({
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
     val bobDevice = "BOBDEVICE"
+    val aliceKeys = StoredDeviceKeys(Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()), Valid(false))
+    val bobKeys = StoredDeviceKeys(Signed(DeviceKeys(bob, bobDevice, setOf(), keysOf()), mapOf()), Valid(false))
+
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>()
+    lateinit var api: MatrixClientServerApiClient
+    lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
+    val contentMappings = createEventContentSerializerMappings()
     lateinit var cut: OlmService
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
         store.init()
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        api = newApi
+        apiConfig = newApiConfig
         cut = OlmService("", alice, aliceDevice, store, api, json)
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -79,33 +91,36 @@ class OlmServiceTest : ShouldSpec({
     }
 
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
+        lateinit var setKeys: MutableList<SetKeys.Request>
         beforeTest {
-            coEvery {
-                api.keys.setKeys(
-                    any(),
-                    any(),
-                    any()
-                )
-            } returns Result.success(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
+            setKeys = mutableListOf()
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, contentMappings, SetKeys()) {
+                    setKeys.add(it)
+                    SetKeys.Response(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
+                }
+                matrixJsonEndpoint(json, contentMappings, SetKeys()) {
+                    setKeys.add(it)
+                    SetKeys.Response(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
+                }
+            }
         }
         context("server has 49 one time keys") {
             should("create and upload new keys") {
-                val uploadedKeys = mutableListOf<Keys>()
-
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
 
-                coVerify { api.keys.setKeys(oneTimeKeys = capture(uploadedKeys)) }
-                uploadedKeys[0] shouldHaveSize 26
-                uploadedKeys[1] shouldHaveSize 26
+                setKeys.size shouldBe 2
+                setKeys[0].oneTimeKeys?.size shouldBe 26
+                setKeys[1].oneTimeKeys?.size shouldBe 26
 
-                uploadedKeys[1] shouldNotContainAnyOf uploadedKeys[0]
+                setKeys[0].oneTimeKeys!! shouldNotContainAnyOf setKeys[1].oneTimeKeys!!
             }
         }
         context("server has 50 one time keys") {
             should("do nothing") {
                 cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
-                coVerify { api wasNot Called }
+                setKeys should beEmpty()
             }
         }
     }
@@ -160,25 +175,26 @@ class OlmServiceTest : ShouldSpec({
                         )
                     }
 
-                    coEvery {
-                        api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
-                    } returns Result.success(
-                        ClaimKeys.Response(
-                            emptyMap(),
-                            mapOf(
-                                alice to mapOf(
-                                    aliceDevice to keysOf(
-                                        cutWithAccount.sign.signCurve25519Key(
-                                            Curve25519Key(
-                                                aliceDevice,
-                                                aliceAccount.oneTimeKeys.curve25519.values.first()
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(json, contentMappings, ClaimKeys()) {
+                            it.oneTimeKeys shouldBe mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519))
+                            ClaimKeys.Response(
+                                emptyMap(),
+                                mapOf(
+                                    alice to mapOf(
+                                        aliceDevice to keysOf(
+                                            cutWithAccount.sign.signCurve25519Key(
+                                                Curve25519Key(
+                                                    aliceDevice,
+                                                    aliceAccount.oneTimeKeys.curve25519.values.first()
+                                                )
                                             )
                                         )
                                     )
                                 )
                             )
-                        )
-                    )
+                        }
+                    }
 
                     val outboundSession = OlmOutboundGroupSession.create()
                     val eventContent = RoomKeyEventContent(
@@ -297,25 +313,26 @@ class OlmServiceTest : ShouldSpec({
                     )
                 }
 
-                coEvery {
-                    api.keys.claimKeys(mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519)))
-                } returns Result.success(
-                    ClaimKeys.Response(
-                        emptyMap(),
-                        mapOf(
-                            alice to mapOf(
-                                aliceDevice to keysOf(
-                                    cutWithAccount.sign.signCurve25519Key(
-                                        Curve25519Key(
-                                            aliceDevice,
-                                            aliceAccount.oneTimeKeys.curve25519.values.first()
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, contentMappings, ClaimKeys()) {
+                        it.oneTimeKeys shouldBe mapOf(alice to mapOf(aliceDevice to KeyAlgorithm.SignedCurve25519))
+                        ClaimKeys.Response(
+                            emptyMap(),
+                            mapOf(
+                                alice to mapOf(
+                                    aliceDevice to keysOf(
+                                        cutWithAccount.sign.signCurve25519Key(
+                                            Curve25519Key(
+                                                aliceDevice,
+                                                aliceAccount.oneTimeKeys.curve25519.values.first()
+                                            )
                                         )
                                     )
                                 )
                             )
                         )
-                    )
-                )
+                    }
+                }
 
                 val outboundSession = OlmOutboundGroupSession.create()
                 val eventContent = RoomKeyEventContent(
@@ -378,7 +395,7 @@ class OlmServiceTest : ShouldSpec({
             store.keys.outdatedKeys.value shouldHaveSize 0
         }
         should("remove megolm session on leave or ban") {
-            store.olm.updateOutboundMegolmSession(room) { mockk() }
+            store.olm.updateOutboundMegolmSession(room) { StoredOutboundMegolmSession(room, pickled = "") }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
@@ -391,7 +408,7 @@ class OlmServiceTest : ShouldSpec({
             )
             store.olm.getOutboundMegolmSession(room) should beNull()
 
-            store.olm.updateOutboundMegolmSession(room) { mockk() }
+            store.olm.updateOutboundMegolmSession(room) { StoredOutboundMegolmSession(room, pickled = "") }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = BAN),
@@ -405,7 +422,7 @@ class OlmServiceTest : ShouldSpec({
             store.olm.getOutboundMegolmSession(room) should beNull()
         }
         should("remove device keys on leave or ban of the last encrypted room") {
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = LEAVE),
@@ -418,7 +435,7 @@ class OlmServiceTest : ShouldSpec({
             )
             store.keys.getDeviceKeys(alice) should beNull()
 
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = Membership.BAN),
@@ -433,7 +450,7 @@ class OlmServiceTest : ShouldSpec({
         }
         should("not remove device keys on leave or ban when there are more rooms") {
             val otherRoom = RoomId("otherRoom", "server")
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             store.room.update(otherRoom) { simpleRoom.copy(roomId = otherRoom, encryptionAlgorithm = Megolm) }
             delay(500)
             store.roomState.update(
@@ -458,7 +475,7 @@ class OlmServiceTest : ShouldSpec({
             )
             store.keys.getDeviceKeys(alice) shouldNot beNull()
 
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = BAN),
@@ -515,7 +532,7 @@ class OlmServiceTest : ShouldSpec({
             store.keys.outdatedKeys.value shouldContain alice
         }
         should("not mark keys as outdated when join, but devices are already tracked") {
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.handleMemberEvents(
                 StateEvent(
                     MemberEventContent(membership = JOIN),
@@ -562,8 +579,8 @@ class OlmServiceTest : ShouldSpec({
             store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
         }
         should("not mark joined or invited users as outdated, when keys already tracked") {
-            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to mockk()) }
-            store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to mockk()) }
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to bobKeys) }
             listOf(
                 StateEvent(
                     MemberEventContent(membership = JOIN),

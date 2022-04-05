@@ -91,7 +91,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     }
                     currentVersion
                 } else {
@@ -110,7 +110,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     store.keys.secrets.update { it - M_MEGOLM_BACKUP_V1 }
                     null
                 }

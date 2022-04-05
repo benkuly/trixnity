@@ -24,11 +24,14 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.Keys
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
@@ -111,10 +114,10 @@ class OlmService(
         if (generateOneTimeKeysCount > 0) {
             account.generateOneTimeKeys(generateOneTimeKeysCount + account.maxNumberOfOneTimeKeys / 4)
             val signedOneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
-                sign.signCurve25519Key(Key.Curve25519Key(keyId = it.key, value = it.value))
+                sign.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
             }.toSet())
             log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
-            api.keys.setKeys(oneTimeKeys = signedOneTimeKeys)
+            api.keys.setKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
             account.markKeysAsPublished()
             store.olm.storeAccount(account, olmPickleKey)
         }
