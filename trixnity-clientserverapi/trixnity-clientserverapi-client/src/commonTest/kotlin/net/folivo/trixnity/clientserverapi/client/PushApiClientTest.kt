@@ -4,6 +4,8 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -62,7 +64,7 @@ class PushApiClientTest {
                     GetPushers.Response.Pusher(
                         appDisplayName = "Appy McAppface",
                         appId = "face.mcapp.appy.prod",
-                        data = GetPushers.Response.Pusher.PusherData(
+                        data = PusherData(
                             format = "format",
                             url = "https://example.com/_matrix/push/v1/notify"
                         ),
@@ -87,7 +89,8 @@ class PushApiClientTest {
               "append":false,
               "data":{
                 "format":"event_id_only",
-                "url":"https://push-gateway.location.here/_matrix/push/v1/notify"
+                "url":"https://push-gateway.location.here/_matrix/push/v1/notify",
+                "custom":"dino"
               },
               "device_display_name":"EiPhone 9",
               "kind":"http",
@@ -115,9 +118,10 @@ class PushApiClientTest {
                 appDisplayName = "Mat Rix",
                 appId = "com.example.app.ios",
                 append = false,
-                data = SetPushers.Request.PusherData(
+                data = PusherData(
                     format = "event_id_only",
-                    url = "https://push-gateway.location.here/_matrix/push/v1/notify"
+                    url = "https://push-gateway.location.here/_matrix/push/v1/notify",
+                    customFields = buildJsonObject { put("custom", "dino") }
                 ),
                 deviceDisplayName = "EiPhone 9",
                 kind = "http",

@@ -12,6 +12,8 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.mockative.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.EventId
@@ -69,7 +71,7 @@ class PushRoutesTest {
                         GetPushers.Response.Pusher(
                             appDisplayName = "Appy McAppface",
                             appId = "face.mcapp.appy.prod",
-                            data = GetPushers.Response.Pusher.PusherData(
+                            data = PusherData(
                                 format = "format",
                                 url = "https://example.com/_matrix/push/v1/notify"
                             ),
@@ -125,7 +127,8 @@ class PushRoutesTest {
                   "append":false,
                   "data":{
                     "format":"event_id_only",
-                    "url":"https://push-gateway.location.here/_matrix/push/v1/notify"
+                    "url":"https://push-gateway.location.here/_matrix/push/v1/notify",
+                    "custom":"dino"
                   },
                   "device_display_name":"EiPhone 9",
                   "kind":"http",
@@ -147,9 +150,10 @@ class PushRoutesTest {
                     appDisplayName = "Mat Rix",
                     appId = "com.example.app.ios",
                     append = false,
-                    data = SetPushers.Request.PusherData(
+                    data = PusherData(
                         format = "event_id_only",
-                        url = "https://push-gateway.location.here/_matrix/push/v1/notify"
+                        url = "https://push-gateway.location.here/_matrix/push/v1/notify",
+                        customFields = buildJsonObject { put("custom", "dino") }
                     ),
                     deviceDisplayName = "EiPhone 9",
                     kind = "http",

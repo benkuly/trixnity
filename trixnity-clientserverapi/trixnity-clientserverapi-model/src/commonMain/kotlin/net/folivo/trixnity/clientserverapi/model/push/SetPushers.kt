@@ -3,8 +3,8 @@ package net.folivo.trixnity.clientserverapi.model.push
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
@@ -34,13 +34,5 @@ data class SetPushers(
         val profileTag: String? = null,
         @SerialName("pushkey")
         val pushkey: String,
-    ) {
-        @Serializable
-        data class PusherData(
-            @SerialName("format")
-            val format: String? = null,
-            @SerialName("url")
-            val url: String? = null
-        )
-    }
+    )
 }
