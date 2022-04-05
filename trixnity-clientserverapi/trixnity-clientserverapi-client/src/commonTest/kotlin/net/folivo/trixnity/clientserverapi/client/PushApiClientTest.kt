@@ -64,7 +64,7 @@ class PushApiClientTest {
                     GetPushers.Response.Pusher(
                         appDisplayName = "Appy McAppface",
                         appId = "face.mcapp.appy.prod",
-                        data = GetPushers.Response.Pusher.PusherData(
+                        data = PusherData(
                             format = "format",
                             url = "https://example.com/_matrix/push/v1/notify"
                         ),
@@ -118,7 +118,7 @@ class PushApiClientTest {
                 appDisplayName = "Mat Rix",
                 appId = "com.example.app.ios",
                 append = false,
-                data = SetPushers.Request.PusherData(
+                data = PusherData(
                     format = "event_id_only",
                     url = "https://push-gateway.location.here/_matrix/push/v1/notify",
                     customFields = buildJsonObject { put("custom", "dino") }
