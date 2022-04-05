@@ -7,7 +7,6 @@ import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
-import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
@@ -212,7 +211,7 @@ class OlmServiceTest : ShouldSpec({
                     )
 
                     cutWithAccount.handleOlmEncryptedRoomKeyEventContent(
-                        OlmService.DecryptedOlmEventContainer(
+                        IOlmService.DecryptedOlmEventContainer(
                             encryptedEvent,
                             DecryptedOlmEvent(
                                 eventContent,

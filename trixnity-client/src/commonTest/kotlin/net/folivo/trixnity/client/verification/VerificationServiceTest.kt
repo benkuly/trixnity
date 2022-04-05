@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
@@ -82,7 +83,7 @@ private val body: ShouldSpec.() -> Unit = {
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-    lateinit var decryptedOlmEventFlow: MutableSharedFlow<OlmService.DecryptedOlmEventContainer>
+    lateinit var decryptedOlmEventFlow: MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>
 
     lateinit var cut: VerificationService
 
@@ -206,7 +207,7 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.start(eventHandlingCoroutineScope)
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
@@ -221,7 +222,7 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction1"
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
@@ -248,12 +249,12 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction2"
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(request1, bobUserId, mockk(), mockk(), mockk())
                     )
                 )
                 decryptedOlmEventFlow.emit(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(request2, aliceUserId, mockk(), mockk(), mockk())
                     )
                 )

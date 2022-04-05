@@ -8,7 +8,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import net.folivo.trixnity.api.client.retryOnRateLimit
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.user.UserService
@@ -77,7 +77,7 @@ suspend fun possiblyEncryptEvent(
     content: MessageEventContent,
     roomId: RoomId,
     store: Store,
-    olm: OlmService,
+    olm: IOlmService,
     user: UserService
 ): MessageEventContent {
     return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {

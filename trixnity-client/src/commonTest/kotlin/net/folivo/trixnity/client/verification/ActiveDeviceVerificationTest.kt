@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmService.DecryptedOlmEventContainer
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -51,7 +51,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     lateinit var cut: ActiveDeviceVerification
 
-    lateinit var encryptedStepFlow: MutableSharedFlow<DecryptedOlmEventContainer>
+    lateinit var encryptedStepFlow: MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>
 
     beforeTest {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -101,7 +101,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
         encryptedStepFlow.emit(
-            DecryptedOlmEventContainer(
+            IOlmService.DecryptedOlmEventContainer(
                 mockk(),
                 DecryptedOlmEvent(cancelEvent, bob, mockk(), mockk(), mockk())
             )

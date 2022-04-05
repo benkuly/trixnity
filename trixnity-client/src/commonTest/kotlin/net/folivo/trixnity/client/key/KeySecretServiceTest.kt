@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.encodeToJsonElement
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.OlmService
@@ -126,7 +127,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("ignore request from other user") {
             cut.handleEncryptedIncomingKeyRequests(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeyRequestEventContent(
                             M_CROSS_SIGNING_USER_SIGNING.id,
@@ -143,7 +144,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("add request on request") {
             cut.handleEncryptedIncomingKeyRequests(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeyRequestEventContent(
                             M_CROSS_SIGNING_USER_SIGNING.id,
@@ -160,7 +161,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("remove request on request cancellation") {
             cut.handleEncryptedIncomingKeyRequests(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeyRequestEventContent(
                             M_CROSS_SIGNING_USER_SIGNING.id,
@@ -173,7 +174,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.handleEncryptedIncomingKeyRequests(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeyRequestEventContent(
                             M_CROSS_SIGNING_USER_SIGNING.id,
@@ -222,7 +223,7 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(aliceDevice to mockk { every { trustLevel } returns returnedTrustLevel })
                 }
                 cut.handleEncryptedIncomingKeyRequests(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(
                             SecretKeyRequestEventContent(
                                 M_CROSS_SIGNING_USER_SIGNING.id,
@@ -247,7 +248,7 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(aliceDevice to mockk { every { trustLevel } returns returnedTrustLevel })
                 }
                 cut.handleEncryptedIncomingKeyRequests(
-                    OlmService.DecryptedOlmEventContainer(
+                    IOlmService.DecryptedOlmEventContainer(
                         mockk(), DecryptedOlmEvent(
                             SecretKeyRequestEventContent(
                                 M_CROSS_SIGNING_USER_SIGNING.id,
@@ -329,7 +330,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("ignore, when sender device id cannot be found") {
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -344,7 +345,7 @@ private val body: ShouldSpec.() -> Unit = {
             setDeviceKeys(true)
             setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf("OTHER_DEVICE"))
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -358,7 +359,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("ignore when sender is not trusted") {
             setDeviceKeys(false)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -374,7 +375,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(crossSigningPublicKey)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", "dino"),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -392,7 +393,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEventContent = MegolmBackupV1EventContent(mapOf())
             store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", keyBackupPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -410,7 +411,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEventContent = UserSigningKeyEventContent(mapOf())
             store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -428,7 +429,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEventContent = MegolmBackupV1EventContent(mapOf())
             store.globalAccountData.update(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", keyBackupPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -444,7 +445,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRequest(M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(crossSigningPublicKey)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -462,7 +463,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             store.globalAccountData.update(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -480,7 +481,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEvent = GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf()))
             store.globalAccountData.update(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", keyBackupPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()
@@ -508,7 +509,7 @@ private val body: ShouldSpec.() -> Unit = {
             val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             store.globalAccountData.update(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
-                OlmService.DecryptedOlmEventContainer(
+                IOlmService.DecryptedOlmEventContainer(
                     mockk(), DecryptedOlmEvent(
                         SecretKeySendEventContent("requestId", crossSigningPrivateKey),
                         alice, keysOf(aliceDevice2Key), alice, keysOf()

@@ -51,7 +51,7 @@ class KeyService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: OlmService,
+    private val olm: IOlmService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
     internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api, currentSyncState),

@@ -29,7 +29,7 @@ private val log = KotlinLogging.logger {}
 class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
-    private val olm: OlmService,
+    private val olm: IOlmService,
     private val api: MatrixClientServerApiClient,
 ) {
 

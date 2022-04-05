@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.get
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.crypto.getDeviceKey
@@ -44,7 +44,7 @@ class KeySecretService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: OlmService,
+    private val olm: IOlmService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
 ) {
@@ -64,7 +64,7 @@ class KeySecretService(
 
     private val incomingSecretKeyRequests = MutableStateFlow<Set<SecretKeyRequestEventContent>>(setOf())
 
-    internal fun handleEncryptedIncomingKeyRequests(event: OlmService.DecryptedOlmEventContainer) {
+    internal fun handleEncryptedIncomingKeyRequests(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
             handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
@@ -109,7 +109,7 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun handleOutgoingKeyRequestAnswer(event: OlmService.DecryptedOlmEventContainer) {
+    internal suspend fun handleOutgoingKeyRequestAnswer(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
             log.trace { "handle outgoing key request answer $content" }

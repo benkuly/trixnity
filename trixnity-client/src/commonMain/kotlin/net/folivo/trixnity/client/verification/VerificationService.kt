@@ -8,8 +8,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.RoomService
@@ -40,7 +40,7 @@ class VerificationService(
     private val ownDeviceId: String,
     private val api: MatrixClientServerApiClient,
     private val store: Store,
-    private val olmService: OlmService,
+    private val olmService: IOlmService,
     private val roomService: RoomService,
     private val userService: UserService,
     private val keyService: KeyService,
@@ -110,7 +110,7 @@ class VerificationService(
         }
     }
 
-    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: OlmService.DecryptedOlmEventContainer) {
+    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: IOlmService.DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
             is VerificationRequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {

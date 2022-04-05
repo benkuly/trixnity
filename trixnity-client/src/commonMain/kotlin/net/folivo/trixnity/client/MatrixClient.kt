@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
@@ -54,7 +55,8 @@ class MatrixClient private constructor(
 ) {
     val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
     val avatarUrl: StateFlow<String?> = store.account.avatarUrl.asStateFlow()
-    val olm: OlmService
+    private val _olm: OlmService
+    val olm: IOlmService
     val room: RoomService
     val user: UserService
     val media: MediaService
@@ -63,7 +65,7 @@ class MatrixClient private constructor(
     val syncState = api.sync.currentSyncState
 
     init {
-        olm = OlmService(
+        _olm = OlmService(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -71,6 +73,7 @@ class MatrixClient private constructor(
             api = api,
             json = json,
         )
+        olm = _olm
         media = MediaService(
             api = api,
             store = store,
@@ -351,7 +354,7 @@ class MatrixClient private constructor(
     private suspend fun deleteAll() {
         stopSync(true)
         store.deleteAll()
-        olm.free()
+        _olm.free()
     }
 
     /**
@@ -407,7 +410,7 @@ class MatrixClient private constructor(
             val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
                 key.start(this)
-                olm.start(this)
+                _olm.start(this)
                 room.start(this)
                 user.start(this)
                 verification.start(this)

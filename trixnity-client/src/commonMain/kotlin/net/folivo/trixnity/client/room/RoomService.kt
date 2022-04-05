@@ -9,7 +9,7 @@ import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -49,13 +49,11 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-typealias TimelineEventsSubscriber = suspend (StateFlow<TimelineEvent?>) -> Unit
-
 class RoomService(
     private val ownUserId: UserId,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olm: OlmService,
+    private val olm: IOlmService,
     private val key: KeyService,
     private val user: UserService,
     private val media: MediaService,

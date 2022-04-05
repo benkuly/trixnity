@@ -329,8 +329,19 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         )
                                     }
+                                    path == "/_matrix/client/v3/keys/upload" -> {
+                                        assertEquals(HttpMethod.Post, request.method)
+                                        respond(
+                                            """{"one_time_key_counts":{"ed25519":1}}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
+                                        )
+                                    }
                                     else -> {
-                                        respond("{}", HttpStatusCode.BadRequest)
+                                        throw IllegalArgumentException(path)
                                     }
                                 }
                             }
