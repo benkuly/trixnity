@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.key
 
 import io.ktor.util.*
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 
 private val recoveryKeyPrefix = listOf(0x8B.toByte(), 0x01.toByte())
 
@@ -33,10 +33,10 @@ internal fun decodeRecoveryKey(encodedRecoveryKey: String): Result<ByteArray> {
 @OptIn(InternalAPI::class)
 internal suspend fun recoveryKeyFromPassphrase(
     passphrase: String,
-    info: SecretKeyEventContent.SecretStorageKeyPassphrase
+    info: AesHmacSha2Key.SecretStorageKeyPassphrase
 ): Result<ByteArray> {
     return when (info) {
-        is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 -> {
+        is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 -> {
             runCatching {
                 generatePbkdf2Sha512(
                     password = passphrase,
@@ -46,13 +46,13 @@ internal suspend fun recoveryKeyFromPassphrase(
                 )
             }
         }
-        is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown ->
+        is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown ->
             Result.failure(IllegalArgumentException("unknown algorithm not supported"))
     }
 }
 
 @OptIn(InternalAPI::class)
-internal suspend fun checkRecoveryKey(key: ByteArray, info: SecretKeyEventContent.AesHmacSha2Key): Result<ByteArray> {
+internal suspend fun checkRecoveryKey(key: ByteArray, info: AesHmacSha2Key): Result<ByteArray> {
     val mac = createAesHmacSha2MacFromKey(
         key, info.iv?.decodeBase64Bytes()
             ?: return Result.failure(IllegalArgumentException("iv was null"))

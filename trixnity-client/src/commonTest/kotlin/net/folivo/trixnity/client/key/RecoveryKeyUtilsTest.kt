@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.key
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import kotlin.random.Random
 
 @OptIn(InternalAPI::class)
@@ -63,7 +63,8 @@ class RecoveryKeyUtilsTest : ShouldSpec({
                 keyBitLength = 32 * 8
             )
             recoveryKeyFromPassphrase(
-                "super secret passphrase", Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8)
+                "super secret passphrase",
+                Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8)
             ).getOrThrow() shouldBe key
         }
     }

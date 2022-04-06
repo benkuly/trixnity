@@ -532,7 +532,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("add ${AesHmacSha2RecoveryKey::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
                 name = "default key",
-                passphrase = SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2("salt", 300_000),
+                passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 300_000),
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))

@@ -31,7 +31,6 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -78,7 +77,7 @@ interface IKeyService {
     suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
         secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
-            val passphraseInfo = Pbkdf2(
+            val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
                 salt = SecureRandom.nextBytes(32).encodeBase64(),
                 iterations = 500_000,
                 bits = 32 * 8

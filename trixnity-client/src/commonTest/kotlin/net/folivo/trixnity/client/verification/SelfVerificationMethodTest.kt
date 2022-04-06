@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.key.generatePbkdf2Sha512
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import kotlin.random.Random
 
 @OptIn(InternalAPI::class)
@@ -72,7 +72,11 @@ class SelfVerificationMethodTest : ShouldSpec({
                     initialisationVector = iv
                 ).mac
                 val info = SecretKeyEventContent.AesHmacSha2Key(
-                    passphrase = Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8),
+                    passphrase = Pbkdf2(
+                        salt = salt.encodeBase64(),
+                        iterations = 300_000,
+                        bits = 32 * 8
+                    ),
                     iv = iv.encodeBase64(),
                     mac = mac
                 )

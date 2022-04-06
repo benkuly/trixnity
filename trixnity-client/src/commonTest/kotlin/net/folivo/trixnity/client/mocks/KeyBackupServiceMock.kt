@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.mocks
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
@@ -22,12 +23,15 @@ class KeyBackupServiceMock : IKeyBackupService {
         return returnKeyBackupCanBeTrusted
     }
 
+    var returnBootstrapRoomKeyBackup: Result<Unit> = Result.success(Unit)
+    val bootstrapRoomKeyBackupCalled = MutableStateFlow(false)
     override suspend fun bootstrapRoomKeyBackup(
         key: ByteArray,
         keyId: String,
         masterSigningPrivateKey: String,
         masterSigningPublicKey: String
     ): Result<Unit> {
-        throw NotImplementedError()
+        bootstrapRoomKeyBackupCalled.value = true
+        return returnBootstrapRoomKeyBackup
     }
 }

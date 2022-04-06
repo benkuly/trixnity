@@ -307,7 +307,7 @@ class VerificationService(
 
             val recoveryKeyMethods = when (val content = defaultKey?.content) {
                 is SecretKeyEventContent.AesHmacSha2Key -> when (content.passphrase) {
-                    is SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2 ->
+                    is SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 ->
                         setOf(
                             SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
                                 keyService,
@@ -316,7 +316,7 @@ class VerificationService(
                             ),
                             SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content)
                         )
-                    is SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown, null ->
+                    is SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown, null ->
                         setOf(SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content))
                 }
                 is SecretKeyEventContent.Unknown, null -> setOf()
