@@ -10,11 +10,13 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.crypto.IOlmSignService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getDeviceKey
-import net.folivo.trixnity.client.mocks.MockOlmSignService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
@@ -36,6 +38,45 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDevice = "BOB_DEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
+
+    class MockOlmSignService : IOlmSignService {
+        override suspend fun signatures(
+            jsonObject: JsonObject,
+            signWith: IOlmSignService.SignWith
+        ): Signatures<UserId> {
+            throw NotImplementedError()
+        }
+
+        override suspend fun <T> signatures(
+            unsignedObject: T,
+            serializer: KSerializer<T>,
+            signWith: IOlmSignService.SignWith
+        ): Signatures<UserId> {
+            throw NotImplementedError()
+        }
+
+        override suspend fun <T> sign(
+            unsignedObject: T,
+            serializer: KSerializer<T>,
+            signWith: IOlmSignService.SignWith
+        ): Signed<T, UserId> {
+            return Signed(unsignedObject, null)
+        }
+
+        override suspend fun signCurve25519Key(key: Key.Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
+            throw NotImplementedError()
+        }
+
+        var returnOnVerify: VerifyResult? = null
+        override suspend fun <T> verify(
+            signedObject: Signed<T, UserId>,
+            serializer: KSerializer<T>,
+            checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
+        ): VerifyResult {
+            return returnOnVerify ?: VerifyResult.Invalid("")
+        }
+    }
+
     val olmSign = MockOlmSignService()
 
     val api = mockk<MatrixClientServerApiClient>()

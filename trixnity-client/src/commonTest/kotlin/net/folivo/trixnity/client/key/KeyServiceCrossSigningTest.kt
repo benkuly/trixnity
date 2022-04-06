@@ -50,7 +50,6 @@ import kotlin.random.Random
 
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 

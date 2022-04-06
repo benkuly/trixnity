@@ -15,8 +15,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
@@ -27,6 +25,8 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import kotlinx.datetime.minus
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
@@ -81,7 +81,46 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
 
-    val signService = mockk<OlmSignService>()
+    class MockOlmSignService : IOlmSignService {
+        override suspend fun signatures(
+            jsonObject: JsonObject,
+            signWith: IOlmSignService.SignWith
+        ): Signatures<UserId> {
+            throw NotImplementedError()
+        }
+
+        override suspend fun <T> signatures(
+            unsignedObject: T,
+            serializer: KSerializer<T>,
+            signWith: IOlmSignService.SignWith
+        ): Signatures<UserId> {
+            throw NotImplementedError()
+        }
+
+        override suspend fun <T> sign(
+            unsignedObject: T,
+            serializer: KSerializer<T>,
+            signWith: IOlmSignService.SignWith
+        ): Signed<T, UserId> {
+            throw NotImplementedError()
+        }
+
+        override suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
+            throw NotImplementedError()
+        }
+
+        lateinit var returnVerify: VerifyResult
+        override suspend fun <T> verify(
+            signedObject: Signed<T, UserId>,
+            serializer: KSerializer<T>,
+            checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
+        ): VerifyResult {
+            return returnVerify
+        }
+
+    }
+
+    val signService = MockOlmSignService()
     lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: OlmEventService
@@ -129,8 +168,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
         }
-        coEvery { signService.verify(any<Key.SignedCurve25519Key>(), any()) } returns VerifyResult.Valid
-
+        signService.returnVerify = VerifyResult.Valid
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
 
@@ -201,12 +239,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
             }
             should("throw exception when one time key is invalid") {
-                coEvery {
-                    signService.verify(
-                        any<Key.SignedCurve25519Key>(),
-                        any()
-                    )
-                } returns VerifyResult.Invalid("dino")
+                signService.returnVerify = VerifyResult.Invalid("dino")
 
                 shouldThrow<KeyException.KeyVerificationFailedException> {
                     cut.encryptOlm(eventContent, bob, bobDeviceId).ciphertext.entries.first().value
