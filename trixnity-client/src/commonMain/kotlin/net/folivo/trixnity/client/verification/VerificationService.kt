@@ -35,6 +35,31 @@ import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
 
+interface IVerificationService {
+    val activeDeviceVerification: StateFlow<ActiveDeviceVerification?>
+
+    suspend fun createDeviceVerificationRequest(
+        theirUserId: UserId,
+        vararg theirDeviceIds: String
+    ): Result<ActiveDeviceVerification>
+
+    suspend fun createUserVerificationRequest(
+        theirUserId: UserId
+    ): Result<ActiveUserVerification>
+
+    /**
+     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculated available methods.
+     * If it is empty, it means that cross signing needs to be bootstrapped.
+     * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?>
+
+    suspend fun getActiveUserVerification(
+        timelineEvent: TimelineEvent
+    ): ActiveUserVerification?
+}
+
 class VerificationService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
@@ -46,9 +71,9 @@ class VerificationService(
     private val keyService: IKeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
     private val currentSyncState: StateFlow<SyncState>,
-) {
+) : IVerificationService {
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
-    val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
+    override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
 
     internal suspend fun start(scope: CoroutineScope) {
@@ -173,7 +198,7 @@ class VerificationService(
         }
     }
 
-    suspend fun createDeviceVerificationRequest(
+    override suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
         vararg theirDeviceIds: String
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
@@ -205,7 +230,7 @@ class VerificationService(
         }
     }
 
-    suspend fun createUserVerificationRequest(
+    override suspend fun createUserVerificationRequest(
         theirUserId: UserId
     ): Result<ActiveUserVerification> = kotlin.runCatching {
         log.info { "create new user verification request to $theirUserId" }
@@ -246,7 +271,7 @@ class VerificationService(
      * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
+    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
         return combine(
             currentSyncState,
             store.keys.getDeviceKeys(ownUserId, scope),
@@ -301,7 +326,7 @@ class VerificationService(
     }
 
     private val getActiveUserVerificationMutex = Mutex()
-    suspend fun getActiveUserVerification(
+    override suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
     ): ActiveUserVerification? {
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
