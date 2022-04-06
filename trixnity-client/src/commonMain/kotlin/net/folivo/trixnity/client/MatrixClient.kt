@@ -14,6 +14,8 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyBackupService
+import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.RoomService
@@ -61,6 +63,9 @@ class MatrixClient private constructor(
     val user: UserService
     val media: MediaService
     val verification: VerificationService
+    private val _keyBackup: KeyBackupService
+    private val _keySecret: KeySecretService
+    private val _key: KeyService
     val key: KeyService
     val syncState = api.sync.currentSyncState
 
@@ -83,7 +88,7 @@ class MatrixClient private constructor(
             store = store,
             currentSyncState = syncState,
         )
-        key = KeyService(
+        _keyBackup = KeyBackupService(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -92,12 +97,31 @@ class MatrixClient private constructor(
             olm = olm,
             currentSyncState = syncState,
         )
+        _keySecret = KeySecretService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
+            store = store,
+            api = api,
+            olm = olm,
+            currentSyncState = syncState,
+        )
+        _key = KeyService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
+            store = store,
+            api = api,
+            olm = olm,
+            currentSyncState = syncState,
+            backup = _keyBackup,
+            secret = _keySecret
+        )
+        key = _key
         room = RoomService(
             ownUserId = userId,
             store = store,
             api = api,
             olm = olm,
-            key = key,
+            keyBackup = _key.backup,
             user = user,
             media = media,
             currentSyncState = syncState,
@@ -112,7 +136,7 @@ class MatrixClient private constructor(
             olmService = olm,
             roomService = room,
             userService = user,
-            keyService = key,
+            keyService = _key,
             currentSyncState = syncState,
         )
 
@@ -409,7 +433,9 @@ class MatrixClient private constructor(
             }
             val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
-                key.start(this)
+                _key.start(this)
+                _keyBackup.start(this)
+                _keySecret.start(this)
                 _olm.start(this)
                 room.start(this)
                 user.start(this)

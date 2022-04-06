@@ -34,6 +34,33 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyBackupService {
+    /**
+     * This is the active key backup version.
+     * Is null, when the backup algorithm is not supported or there is no existing backup.
+     */
+    val version: StateFlow<GetRoomKeysBackupVersionResponse.V1?>
+
+    data class LoadMegolmSession(
+        val roomId: RoomId,
+        val sessionId: String,
+        val senderKey: Key.Curve25519Key,
+    )
+
+    fun loadMegolmSession(
+        roomId: RoomId,
+        sessionId: String,
+        senderKey: Key.Curve25519Key,
+    )
+
+    suspend fun bootstrapRoomKeyBackup(
+        key: ByteArray,
+        keyId: String,
+        masterSigningPrivateKey: String,
+        masterSigningPublicKey: String
+    ): Result<Unit>
+}
+
 class KeyBackupService(
     private val olmPickleKey: String,
     private val ownUserId: UserId,
@@ -42,14 +69,14 @@ class KeyBackupService(
     private val api: MatrixClientServerApiClient,
     private val olm: IOlmService,
     private val currentSyncState: StateFlow<SyncState>
-) {
+) : IKeyBackupService {
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
     /**
      * This is the active key backup version.
      * Is null, when the backup algorithm is not supported or there is no existing backup.
      */
-    val version = currentBackupVersion.asStateFlow()
+    override val version = currentBackupVersion.asStateFlow()
 
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -122,20 +149,14 @@ class KeyBackupService(
 
 
     private val currentlyLoadingMegolmSessions = MutableStateFlow<Set<Pair<RoomId, String>>>(setOf())
-    private val loadMegolmSessionsQueue = MutableStateFlow<Set<LoadMegolmSession>>(setOf())
+    private val loadMegolmSessionsQueue = MutableStateFlow<Set<IKeyBackupService.LoadMegolmSession>>(setOf())
 
-    data class LoadMegolmSession(
-        val roomId: RoomId,
-        val sessionId: String,
-        val senderKey: Key.Curve25519Key,
-    )
-
-    internal fun loadMegolmSession(
+    override fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
         senderKey: Key.Curve25519Key,
     ) {
-        loadMegolmSessionsQueue.update { it + LoadMegolmSession(roomId, sessionId, senderKey) }
+        loadMegolmSessionsQueue.update { it + IKeyBackupService.LoadMegolmSession(roomId, sessionId, senderKey) }
     }
 
     internal suspend fun handleLoadMegolmSessionQueue(): Unit = coroutineScope {
@@ -273,7 +294,7 @@ class KeyBackupService(
         }
     }
 
-    internal suspend fun bootstrapRoomKeyBackup(
+    override suspend fun bootstrapRoomKeyBackup(
         key: ByteArray,
         keyId: String,
         masterSigningPrivateKey: String,

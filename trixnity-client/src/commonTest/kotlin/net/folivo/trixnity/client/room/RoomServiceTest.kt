@@ -24,7 +24,7 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
@@ -73,7 +73,7 @@ class RoomServiceTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val users = mockk<UserService>(relaxUnitFun = true)
     val olmService = mockk<OlmService>()
-    val key = mockk<KeyService>()
+    val keyBackup = mockk<IKeyBackupService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val media = mockk<MediaService>()
@@ -86,7 +86,7 @@ class RoomServiceTest : ShouldSpec({
         store = InMemoryStore(storeScope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = RoomService(alice, store, api, olmService, key, users, media, currentSyncState)
+        cut = RoomService(alice, store, api, olmService, keyBackup, users, media, currentSyncState)
     }
 
     afterTest {
@@ -408,7 +408,7 @@ class RoomServiceTest : ShouldSpec({
     }
     context(RoomService::getTimelineEvent.name) {
         beforeTest {
-            coEvery { key.backup.loadMegolmSession(any(), any(), any()) } just Runs
+            coEvery { keyBackup.loadMegolmSession(any(), any(), any()) } just Runs
         }
         val eventId = EventId("\$event1")
         val session = "SESSION"
@@ -521,7 +521,7 @@ class RoomServiceTest : ShouldSpec({
                     event shouldBe encryptedTimelineEvent.event
                     content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
-                coVerify { key.backup.loadMegolmSession(room, session, senderKey) }
+                coVerify { keyBackup.loadMegolmSession(room, session, senderKey) }
             }
             should("wait for olm session and ask key backup for it when existing session does not known the index") {
                 val expectedDecryptedEvent = DecryptedMegolmEvent(TextMessageEventContent("decrypted"), room)
@@ -547,8 +547,7 @@ class RoomServiceTest : ShouldSpec({
                     event shouldBe encryptedTimelineEvent.event
                     content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
-                coVerify(exactly = 1) { key.backup.loadMegolmSession(room, session, senderKey) }
-
+                coVerify(exactly = 1) { keyBackup.loadMegolmSession(room, session, senderKey) }
             }
         }
     }

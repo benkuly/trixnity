@@ -39,7 +39,6 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.random.Random
 
-@OptIn(InternalAPI::class)
 class OlmSignServiceTest : ShouldSpec({
 
     val json = createMatrixJson()

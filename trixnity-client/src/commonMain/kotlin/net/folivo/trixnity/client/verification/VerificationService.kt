@@ -10,7 +10,7 @@ import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Store
@@ -43,7 +43,7 @@ class VerificationService(
     private val olmService: IOlmService,
     private val roomService: RoomService,
     private val userService: UserService,
-    private val keyService: KeyService,
+    private val keyService: IKeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
     private val currentSyncState: StateFlow<SyncState>,
 ) {
@@ -84,7 +84,7 @@ class VerificationService(
                             api = api,
                             olm = olmService,
                             store = store,
-                            key = keyService,
+                            keyTrust = keyService.trust,
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -98,7 +98,7 @@ class VerificationService(
                                 supportedMethods = supportedMethods,
                                 api = api,
                                 olm = olmService,
-                                key = keyService,
+                                keyTrust = keyService.trust,
                                 store = store,
                             )
                     }
@@ -127,7 +127,7 @@ class VerificationService(
                             supportedMethods = supportedMethods,
                             api = api,
                             olm = olmService,
-                            key = keyService,
+                            keyTrust = keyService.trust,
                             store = store,
                         ).cancel()
                     } else {
@@ -142,7 +142,7 @@ class VerificationService(
                                 supportedMethods = supportedMethods,
                                 api = api,
                                 olm = olmService,
-                                key = keyService,
+                                keyTrust = keyService.trust,
                                 store = store,
                             )
                     }
@@ -198,7 +198,7 @@ class VerificationService(
             supportedMethods = supportedMethods,
             api = api,
             olm = olmService,
-            key = keyService,
+            keyTrust = keyService.trust,
             store = store,
         ).also { newDeviceVerification ->
             _activeDeviceVerification.getAndUpdate { newDeviceVerification }?.cancel()
@@ -236,7 +236,7 @@ class VerificationService(
             olm = olmService,
             user = userService,
             room = roomService,
-            key = keyService,
+            keyTrust = keyService.trust,
         ).also { auv -> activeUserVerifications.update { it + auv } }
     }
 
@@ -332,7 +332,7 @@ class VerificationService(
                             olm = olmService,
                             user = userService,
                             room = roomService,
-                            key = keyService,
+                            keyTrust = keyService.trust,
                         ).also { auv -> activeUserVerifications.update { it + auv } }
                     } else null
                 }

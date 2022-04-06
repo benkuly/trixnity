@@ -79,7 +79,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,
-            key = mockk(),
+            keyTrust = mockk(),
         )
     }
 
@@ -301,7 +301,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,
-            key = mockk(),
+            keyTrust = mockk(),
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
@@ -342,7 +342,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,
-            key = mockk(),
+            keyTrust = mockk(),
         )
         cut.startLifecycle(this)
         cut.state.first { it == Undefined } shouldBe Undefined

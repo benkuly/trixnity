@@ -9,7 +9,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
@@ -54,11 +53,19 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        val key = mockk<KeyService>(relaxed = true)
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
-        cut = RoomService(UserId("alice", "server"), store, api, olm, key, mockk(), mockk(), currentSyncState)
+        cut = RoomService(
+            UserId("alice", "server"),
+            store,
+            api,
+            olm,
+            mockk(relaxed = true),
+            mockk(),
+            mockk(),
+            currentSyncState
+        )
     }
 
     afterTest {

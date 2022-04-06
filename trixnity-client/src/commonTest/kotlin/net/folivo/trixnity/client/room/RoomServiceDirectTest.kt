@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
@@ -43,7 +42,6 @@ class RoomServiceDirectTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val users = mockk<UserService>(relaxUnitFun = true)
     val olm = mockk<OlmService>()
-    val key = mockk<KeyService>()
     val media = mockk<MediaService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
@@ -57,7 +55,7 @@ class RoomServiceDirectTest : ShouldSpec({
         store = InMemoryStore(storeScope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = RoomService(bob, store, api, olm, key, users, media, currentSyncState)
+        cut = RoomService(bob, store, api, olm, mockk(), users, media, currentSyncState)
     }
 
     afterTest {

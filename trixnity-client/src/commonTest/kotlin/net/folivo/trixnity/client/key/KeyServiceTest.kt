@@ -11,7 +11,6 @@ import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -50,7 +49,6 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class KeyServiceTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 15_000
 
@@ -64,9 +62,9 @@ private val body: ShouldSpec.() -> Unit = {
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
-    val trust = mockk<KeyTrustService>(relaxUnitFun = true)
-    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    val trust = mockk<IKeyTrustService>(relaxUnitFun = true)
 
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: KeyService
 
@@ -75,7 +73,7 @@ private val body: ShouldSpec.() -> Unit = {
         store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyService("", alice, aliceDevice, store, olm, api, trust = trust, currentSyncState = currentSyncState)
+        cut = KeyService(alice, aliceDevice, store, olm, api, currentSyncState, mockk(), mockk(), trust)
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
         coEvery { trust.calculateCrossSigningKeysTrustLevel(any()) } returns CrossSigned(false)

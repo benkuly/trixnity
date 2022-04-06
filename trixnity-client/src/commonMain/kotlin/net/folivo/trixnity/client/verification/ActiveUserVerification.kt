@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.Store
@@ -46,7 +46,7 @@ class ActiveUserVerification(
     private val olm: IOlmService,
     private val user: UserService,
     private val room: RoomService,
-    key: KeyService,
+    keyTrust: IKeyTrustService,
 ) : ActiveVerification(
     request,
     requestIsFromOurOwn,
@@ -59,7 +59,7 @@ class ActiveUserVerification(
     RelatesTo.Reference(requestEventId),
     null,
     store,
-    key,
+    keyTrust,
     api.json,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {

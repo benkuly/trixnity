@@ -10,7 +10,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
@@ -54,7 +54,7 @@ class RoomService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val olm: IOlmService,
-    private val key: KeyService,
+    private val keyBackup: IKeyBackupService,
     private val user: UserService,
     private val media: MediaService,
     private val currentSyncState: StateFlow<SyncState>,
@@ -817,7 +817,7 @@ class RoomService(
                             store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
                         val firstKnownIndex = session.value?.firstKnownIndex
                         if (session.value == null) {
-                            key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                            keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
                             log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
                             store.olm.waitForInboundMegolmSession(
                                 roomId, content.sessionId, content.senderKey, this@launch
@@ -835,7 +835,7 @@ class RoomService(
                                     "UNKNOWN_MESSAGE_INDEX"
                                 ) == true
                             ) {
-                                key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                                keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
                                 log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
                                 store.olm.waitForInboundMegolmSession(
                                     roomId,

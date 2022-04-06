@@ -26,17 +26,29 @@ import kotlin.collections.component2
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyTrustService {
+    suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId)
+    suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel
+    suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel
+
+    suspend fun updateTrustLevelOfKeyChainSignedBy(
+        signingUserId: UserId,
+        signingKey: Ed25519Key,
+        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
+    )
+}
+
 class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
     private val olmSign: IOlmSignService,
     private val api: MatrixClientServerApiClient,
-) {
+) : IKeyTrustService {
 
-    internal suspend fun updateTrustLevelOfKeyChainSignedBy(
+    override suspend fun updateTrustLevelOfKeyChainSignedBy(
         signingUserId: UserId,
         signingKey: Ed25519Key,
-        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
+        visitedKeys: MutableSet<Pair<UserId, String?>>
     ) {
         log.trace { "update trust level of all keys signed by $signingUserId $signingKey" }
         visitedKeys.add(signingUserId to signingKey.keyId)
@@ -81,7 +93,7 @@ class KeyTrustService(
         } else log.warn { "could not update trust level, because key id of $key was null" }
     }
 
-    internal suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
+    override suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
         log.trace { "calculate trust level for ${deviceKeys.signed}" }
         val userId = deviceKeys.signed.userId
         val deviceId = deviceKeys.signed.deviceId
@@ -97,7 +109,7 @@ class KeyTrustService(
         ).also { log.trace { "calculated trust level of ${deviceKeys.signed} from $userId is $it" } }
     }
 
-    internal suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
+    override suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
         log.trace { "calculate trust level for ${crossSigningKeys.signed}" }
         val userId = crossSigningKeys.signed.userId
         val signedKey = crossSigningKeys.signed.keys.get<Ed25519Key>()
@@ -214,7 +226,7 @@ class KeyTrustService(
         }
     }
 
-    internal suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
+    override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
         log.debug { "sign keys (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
             val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed

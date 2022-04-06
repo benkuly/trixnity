@@ -1,12 +1,14 @@
 package net.folivo.trixnity.client.key
 
 import com.benasher44.uuid.uuid4
-import io.ktor.util.*
 import io.ktor.util.reflect.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
@@ -40,6 +42,14 @@ import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger {}
 
+interface IKeySecretService {
+    suspend fun decryptMissingSecrets(
+        key: ByteArray,
+        keyId: String,
+        keyInfo: SecretKeyEventContent,
+    )
+}
+
 class KeySecretService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
@@ -47,8 +57,7 @@ class KeySecretService(
     private val olm: IOlmService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
-) {
-    @OptIn(FlowPreview::class)
+) : IKeySecretService {
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
@@ -266,8 +275,7 @@ class KeySecretService(
         }
     }
 
-    @OptIn(InternalAPI::class)
-    internal suspend fun decryptMissingSecrets(
+    override suspend fun decryptMissingSecrets(
         key: ByteArray,
         keyId: String,
         keyInfo: SecretKeyEventContent,

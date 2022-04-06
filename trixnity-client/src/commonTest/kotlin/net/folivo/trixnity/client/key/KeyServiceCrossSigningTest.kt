@@ -61,8 +61,8 @@ private val body: ShouldSpec.() -> Unit = {
     val olm = mockk<OlmService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val backup: KeyBackupService = mockk()
-    val trust: KeyTrustService = mockk()
+    val backup: IKeyBackupService = mockk()
+    val trust: IKeyTrustService = mockk()
     lateinit var apiConfig: PortableMockEngineConfig
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -76,18 +76,19 @@ private val body: ShouldSpec.() -> Unit = {
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = KeyService(
-            "",
             alice,
             aliceDevice,
             store,
             olm,
             api,
-            backup = backup,
-            trust = trust,
-            currentSyncState = currentSyncState
+            currentSyncState,
+            mockk(),
+            backup,
+            trust,
         )
         coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
         coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
+        coEvery { backup.bootstrapRoomKeyBackup(any(), any(), any(), any()) } returns Result.success(Unit)
     }
 
     afterTest {

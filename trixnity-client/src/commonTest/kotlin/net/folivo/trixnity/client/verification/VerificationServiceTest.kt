@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
@@ -79,7 +79,7 @@ private val body: ShouldSpec.() -> Unit = {
     val olm = mockk<OlmService>()
     val room = mockk<RoomService>()
     val user = mockk<UserService>(relaxUnitFun = true)
-    val keyService = mockk<KeyService>()
+    val keyService = mockk<IKeyService>(relaxed = true)
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)

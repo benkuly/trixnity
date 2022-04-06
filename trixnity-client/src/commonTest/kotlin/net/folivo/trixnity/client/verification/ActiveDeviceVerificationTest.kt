@@ -76,7 +76,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             api = api,
             olm = olm,
             store = mockk(),
-            key = mockk(),
+            keyTrust = mockk(),
         )
     }
 
@@ -235,7 +235,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             api = api,
             olm = olm,
             store = mockk(),
-            key = mockk(),
+            keyTrust = mockk(),
         )
         cut.startLifecycle(this)
         api.sync.startOnce().getOrThrow()

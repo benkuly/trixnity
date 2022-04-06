@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -42,7 +42,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
     val bobDevice = "BBBBBB"
 
     val store = mockk<Store>()
-    val keyService = mockk<KeyService>()
+    val keyTrustService = mockk<IKeyTrustService>()
     val json = createMatrixJson()
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
 
@@ -61,7 +61,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             transactionId = "t",
             sendVerificationStep = { sendVerificationStepFlow.emit(it) },
             store = store,
-            keyService = keyService,
+            keyTrustService = keyTrustService,
             json = json,
         )
         assertNotNull(method)
@@ -87,7 +87,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 transactionId = "t",
                 sendVerificationStep = { sendVerificationStepFlow.emit(it) },
                 store = store,
-                keyService = keyService,
+                keyTrustService = keyTrustService,
                 json = json,
             )
             method shouldBe null
@@ -334,13 +334,13 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 SasKeyEventContent("key", null, "t"),
             )
             should("send ${VerificationDoneEventContent::class.simpleName}") {
-                coEvery { keyService.trust.trustAndSignKeys(any(), any()) } just Runs
+                coEvery { keyTrustService.trustAndSignKeys(any(), any()) } just Runs
                 val sasMacEventContent = sasMacFromBob
                 require(sasMacEventContent is SasMacEventContent)
                 cut.handleVerificationStep(sasMacEventContent, false)
                 sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
                 coVerify {
-                    keyService.trust.trustAndSignKeys(
+                    keyTrustService.trustAndSignKeys(
                         setOf(
                             Ed25519Key(bobDevice, "bobKey"),
                             Ed25519Key("HUHU", "buh"),

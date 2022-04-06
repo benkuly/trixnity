@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
@@ -31,7 +31,7 @@ class ActiveDeviceVerification(
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixClientServerApiClient,
     private val olm: IOlmService,
-    key: KeyService,
+    keyTrust: IKeyTrustService,
     store: Store,
 ) : ActiveVerification(
     request,
@@ -45,7 +45,7 @@ class ActiveDeviceVerification(
     null,
     request.transactionId,
     store,
-    key,
+    keyTrust,
     api.json,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {
