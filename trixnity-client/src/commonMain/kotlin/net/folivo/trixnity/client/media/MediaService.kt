@@ -216,8 +216,8 @@ class MediaService(
                     null
                 ),
                 progress = progress
-            ).map {
-                it.contentUri.also { mxcUri ->
+            ).map { response ->
+                response.contentUri.also { mxcUri ->
                     store.media.changeUri(cacheUri, mxcUri)
                     store.media.updateUploadCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
                 }

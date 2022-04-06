@@ -96,7 +96,7 @@ suspend inline fun RoomTimelineStore.getPrevious(
     event.previousEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
 
 suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
-    getDeviceKeys(userId).isNullOrEmpty().not()
+    getDeviceKeys(userId) != null
 
 suspend inline fun OlmStore.waitForInboundMegolmSession(
     roomId: RoomId,

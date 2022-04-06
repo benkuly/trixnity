@@ -34,7 +34,6 @@ interface IKeyTrustService {
     suspend fun updateTrustLevelOfKeyChainSignedBy(
         signingUserId: UserId,
         signingKey: Ed25519Key,
-        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
     )
 }
 
@@ -46,6 +45,13 @@ class KeyTrustService(
 ) : IKeyTrustService {
 
     override suspend fun updateTrustLevelOfKeyChainSignedBy(
+        signingUserId: UserId,
+        signingKey: Ed25519Key,
+    ) {
+        updateTrustLevelOfKeyChainSignedBy(signingUserId, signingKey, mutableSetOf())
+    }
+
+    private suspend fun updateTrustLevelOfKeyChainSignedBy(
         signingUserId: UserId,
         signingKey: Ed25519Key,
         visitedKeys: MutableSet<Pair<UserId, String?>>

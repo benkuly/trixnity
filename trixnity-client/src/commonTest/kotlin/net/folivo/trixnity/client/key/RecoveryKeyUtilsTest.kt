@@ -6,7 +6,6 @@ import io.ktor.util.*
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import kotlin.random.Random
 
-@OptIn(InternalAPI::class)
 class RecoveryKeyUtilsTest : ShouldSpec({
     timeout = 30_000
 

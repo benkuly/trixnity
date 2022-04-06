@@ -103,7 +103,7 @@ class InMemoryMediaRepository : MediaRepository, InMemoryMinimalStoreRepository<
         content.update {
             val value = it[oldUri]
             if (value != null) (it - oldUri) + (newUri to value)
-            it
+            else it
         }
     }
 }

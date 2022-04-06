@@ -14,19 +14,23 @@ class KeyTrustServiceMock : IKeyTrustService {
         trustAndSignKeysCalled.value = keys to userId
     }
 
+    lateinit var returnCalculateDeviceKeysTrustLevel: KeySignatureTrustLevel
     override suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
-        throw NotImplementedError()
+        return returnCalculateDeviceKeysTrustLevel
     }
 
+    lateinit var returnCalculateCrossSigningKeysTrustLevel: KeySignatureTrustLevel
     override suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
-        throw NotImplementedError()
+        return returnCalculateCrossSigningKeysTrustLevel
     }
+
+    val updateTrustLevelOfKeyChainSignedByCalled =
+        MutableStateFlow<Pair<UserId, Key.Ed25519Key>?>(null)
 
     override suspend fun updateTrustLevelOfKeyChainSignedBy(
         signingUserId: UserId,
         signingKey: Key.Ed25519Key,
-        visitedKeys: MutableSet<Pair<UserId, String?>>
     ) {
-        throw NotImplementedError()
+        updateTrustLevelOfKeyChainSignedByCalled.value = Pair(signingUserId, signingKey)
     }
 }
