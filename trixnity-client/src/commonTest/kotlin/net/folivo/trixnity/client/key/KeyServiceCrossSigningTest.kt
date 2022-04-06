@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.IOlmSignService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.*
@@ -57,7 +57,7 @@ private val body: ShouldSpec.() -> Unit = {
     val aliceDevice = "ALICEDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
+    val olmSign = mockk<IOlmSignService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val backup: IKeyBackupService = mockk()
@@ -78,15 +78,15 @@ private val body: ShouldSpec.() -> Unit = {
             alice,
             aliceDevice,
             store,
-            olm,
+            olmSign,
             api,
             currentSyncState,
             mockk(),
             backup,
             trust,
         )
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
+        coEvery { olmSign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
+        coEvery { olmSign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
         coEvery { backup.bootstrapRoomKeyBackup(any(), any(), any(), any()) } returns Result.success(Unit)
     }
 
@@ -250,7 +250,7 @@ private val body: ShouldSpec.() -> Unit = {
                         ResponseWithUIA.Success(Unit)
                     }
                 }
-                coEvery { olm.sign.sign(any<CrossSigningKeys>(), any(), any()) }.answers {
+                coEvery { olmSign.sign(any<CrossSigningKeys>(), any(), any()) }.answers {
                     Signed(firstArg(), mapOf())
                 }
                 coEvery {

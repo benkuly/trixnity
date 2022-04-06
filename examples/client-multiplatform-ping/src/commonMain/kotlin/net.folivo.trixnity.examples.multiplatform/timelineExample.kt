@@ -46,7 +46,7 @@ suspend fun timelineExample() = coroutineScope {
             if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                 delay(500)
                 try {
-                    val decryptedEvent = matrixClient.olm.events.decryptMegolm(event)
+                    val decryptedEvent = matrixClient.olm.event.decryptMegolm(event)
                     val content = decryptedEvent.content
                     if (content is TextMessageEventContent && content.body.startsWith("ping")) {
                         matrixClient.room.sendMessage(roomId) {

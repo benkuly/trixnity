@@ -113,7 +113,6 @@ interface IKeyService {
     /**
      * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getTrustLevel(
         userId: UserId,
         scope: CoroutineScope
@@ -148,12 +147,12 @@ class KeyService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: IOlmService,
+    private val olmSign: IOlmSignService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
     override val secret: IKeySecretService,
     override val backup: IKeyBackupService,
-    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olm.sign, api)
+    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olmSign, api)
 ) : IKeyService {
 
     internal suspend fun start(scope: CoroutineScope) {
@@ -177,7 +176,6 @@ class KeyService(
         }
     }
 
-    @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
             STARTED, INITIAL_SYNC, RUNNING,
@@ -228,7 +226,7 @@ class KeyService(
         signingOptional: Boolean = false
     ) {
         val signatureVerification =
-            olm.sign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
+            olmSign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
         if (signatureVerification == VerifyResult.Valid
             || signingOptional && signatureVerification is VerifyResult.MissingSignature
         ) {
@@ -257,7 +255,7 @@ class KeyService(
         val oldDevices = store.keys.getDeviceKeys(userId)
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
-                olm.sign.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
+                olmSign.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
             (userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                     && signatureVerification == VerifyResult.Valid)
                 .also {
@@ -361,7 +359,7 @@ class KeyService(
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val masterSigningKey = olm.sign.sign(
+                    val masterSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(MasterKey),
@@ -377,7 +375,7 @@ class KeyService(
                     )
                     val (selfSigningPrivateKey, selfSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val selfSigningKey = olm.sign.sign(
+                    val selfSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(SelfSigningKey),
@@ -399,7 +397,7 @@ class KeyService(
                     )
                     val (userSigningPrivateKey, userSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val userSigningKey = olm.sign.sign(
+                    val userSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(UserSigningKey),

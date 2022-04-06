@@ -22,10 +22,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -58,7 +58,7 @@ private val body: ShouldSpec.() -> Unit = {
     val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
+    lateinit var olmSignMock: OlmSignServiceMock
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
@@ -69,15 +69,15 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var cut: KeyService
 
     beforeTest {
+        olmSignMock = OlmSignServiceMock()
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyService(alice, aliceDevice, store, olm, api, currentSyncState, mockk(), mockk(), trust)
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any(), any()) } returns VerifyResult.Valid
+        cut = KeyService(alice, aliceDevice, store, olmSignMock, api, currentSyncState, mockk(), mockk(), trust)
         coEvery { trust.calculateCrossSigningKeysTrustLevel(any()) } returns CrossSigned(false)
         coEvery { trust.calculateDeviceKeysTrustLevel(any()) } returns CrossSigned(false)
+        olmSignMock.returnVerify = VerifyResult.Valid
     }
 
     afterTest {
@@ -148,7 +148,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { olm.sign.verify(key, any(), any()) } returns VerifyResult.MissingSignature("")
+                olmSignMock.returnVerify = VerifyResult.MissingSignature("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -170,7 +170,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any(), any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -212,7 +212,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any(), any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -282,7 +282,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any(), any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -596,7 +596,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("manipulation of ") {
                 should("signature") {
-                    coEvery { olm.sign.verify(cedricKey1, any(), any()) } returns VerifyResult.Invalid("")
+                    olmSignMock.returnVerify = VerifyResult.Invalid("")
                     apiConfig.endpoints {
                         matrixJsonEndpoint(json, mappings, GetKeys()) {
                             GetKeys.Response(

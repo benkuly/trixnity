@@ -8,7 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
@@ -44,7 +44,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
     val contentMappings = createEventContentSerializerMappings()
-    val olm = mockk<OlmService>()
+    val olmEventService = mockk<IOlmEventService>()
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomService
@@ -60,7 +60,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             UserId("alice", "server"),
             store,
             api,
-            olm,
+            olmEventService,
             mockk(relaxed = true),
             mockk(),
             mockk(),

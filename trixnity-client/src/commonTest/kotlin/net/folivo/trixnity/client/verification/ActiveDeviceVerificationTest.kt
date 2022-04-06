@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -47,7 +47,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     lateinit var api: MatrixClientServerApiClient
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val olm = mockk<OlmService>(relaxed = true)
+    val olmEventService = mockk<IOlmEventService>(relaxed = true)
 
     lateinit var cut: ActiveDeviceVerification
 
@@ -58,7 +58,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         apiConfig = newApiConfig
         api = newApi
         encryptedStepFlow = MutableSharedFlow()
-        coEvery { olm.decryptedOlmEvents } returns encryptedStepFlow
+        coEvery { olmEventService.decryptedOlmEvents } returns encryptedStepFlow
     }
     afterTest {
         clearAllMocks()
@@ -74,7 +74,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             theirDeviceId = bobDevice,
             supportedMethods = setOf(Sas),
             api = api,
-            olm = olm,
+            olmEvent = olmEventService,
             store = mockk(),
             keyTrust = mockk(),
         )
@@ -114,7 +114,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "key")
         )
-        coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
+        coEvery { olmEventService.encryptOlm(any(), any(), any()) } returns encrypted
 
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         apiConfig.endpoints {
@@ -131,7 +131,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
         cut.cancel()
         coVerify {
-            olm.events.encryptOlm(any(), bob, bobDevice)
+            olmEventService.encryptOlm(any(), bob, bobDevice)
         }
         cut.state.first { it is ActiveVerificationState.Cancel }
         sendToDeviceEvents shouldBe mapOf(bob to mapOf(bobDevice to encrypted))
@@ -147,7 +147,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 sendToDeviceEvents = it.messages
             }
         }
-        coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
+        coEvery { olmEventService.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
@@ -181,7 +181,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "key")
         )
-        coEvery { olm.events.encryptOlm(any(), any(), any()) } returns encrypted
+        coEvery { olmEventService.encryptOlm(any(), any(), any()) } returns encrypted
         apiConfig.endpoints {
             matrixJsonEndpoint(
                 json, mappings,
@@ -217,7 +217,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 sendToDeviceEvents = it.messages
             }
         }
-        coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
+        coEvery { olmEventService.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         cut = ActiveDeviceVerification(
             request = VerificationRequestEventContent(
                 aliceDevice,
@@ -233,7 +233,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             theirDeviceIds = setOf("ALICE_1", "ALICE_2"),
             supportedMethods = setOf(Sas),
             api = api,
-            olm = olm,
+            olmEvent = olmEventService,
             store = mockk(),
             keyTrust = mockk(),
         )

@@ -2,10 +2,8 @@ package net.folivo.trixnity.olm
 
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class OlmPkEncryptionTest {
 
     @Test

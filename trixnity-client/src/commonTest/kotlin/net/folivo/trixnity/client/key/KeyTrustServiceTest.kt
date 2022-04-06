@@ -3,29 +3,29 @@ package net.folivo.trixnity.client.key
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.crypto.IOlmSignService
+import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getDeviceKey
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
 class KeyTrustServiceTest : ShouldSpec(body)
 
@@ -39,60 +39,25 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
 
-    class MockOlmSignService : IOlmSignService {
-        override suspend fun signatures(
-            jsonObject: JsonObject,
-            signWith: IOlmSignService.SignWith
-        ): Signatures<UserId> {
-            throw NotImplementedError()
-        }
+    val olmSign = OlmSignServiceMock()
 
-        override suspend fun <T> signatures(
-            unsignedObject: T,
-            serializer: KSerializer<T>,
-            signWith: IOlmSignService.SignWith
-        ): Signatures<UserId> {
-            throw NotImplementedError()
-        }
-
-        override suspend fun <T> sign(
-            unsignedObject: T,
-            serializer: KSerializer<T>,
-            signWith: IOlmSignService.SignWith
-        ): Signed<T, UserId> {
-            return Signed(unsignedObject, null)
-        }
-
-        override suspend fun signCurve25519Key(key: Key.Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
-            throw NotImplementedError()
-        }
-
-        var returnOnVerify: VerifyResult? = null
-        override suspend fun <T> verify(
-            signedObject: Signed<T, UserId>,
-            serializer: KSerializer<T>,
-            checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
-        ): VerifyResult {
-            return returnOnVerify ?: VerifyResult.Invalid("")
-        }
-    }
-
-    val olmSign = MockOlmSignService()
-
-    val api = mockk<MatrixClientServerApiClient>()
+    val json = createMatrixJson()
+    val contentMappings = createEventContentSerializerMappings()
+    lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: KeyTrustService
 
     beforeTest {
-        olmSign.returnOnVerify = VerifyResult.Valid
+        olmSign.returnVerify = VerifyResult.Valid
 
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
         cut = KeyTrustService(alice, store, olmSign, api)
     }
 
     afterTest {
-        clearAllMocks()
         scope.cancel()
     }
 
@@ -456,9 +421,13 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeyTrustService::trustAndSignKeys.name) {
         should("handle own account keys") {
-            coEvery {
-                api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignatures.Response(mapOf()))
+            var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                    addSignaturesRequest = it
+                    AddSignatures.Response(mapOf())
+                }
+            }
 
             val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
             val ownMasterEdKey = Ed25519Key("A-MASTER", "valueMasterA")
@@ -495,12 +464,14 @@ private val body: ShouldSpec.() -> Unit = {
                 userId = alice,
             )
 
-            coVerify {
-                api.keys.addSignatures(
-                    setOf(Signed(ownAccountsDeviceKey, null)),
-                    setOf(Signed(ownMasterKey, null))
-                )
-            }
+            addSignaturesRequest shouldBe (
+                    mapOf(
+                        alice to mapOf(
+                            "AAAAAA" to json.encodeToJsonElement(ownAccountsDeviceKey),
+                            ownMasterEdKey.value to json.encodeToJsonElement(ownMasterKey)
+                        )
+                    )
+                    )
             store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
                 .shouldBe(Verified(ownAccountsDeviceEdKey.value))
             store.keys.getKeyVerificationState(ownMasterEdKey, alice, null)
@@ -509,9 +480,13 @@ private val body: ShouldSpec.() -> Unit = {
                 .shouldBe(Verified(otherCrossSigningEdKey.value))
         }
         should("handle others account keys") {
-            coEvery {
-                api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignatures.Response(mapOf()))
+            var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                    addSignaturesRequest = it
+                    AddSignatures.Response(mapOf())
+                }
+            }
 
             val othersDeviceEdKey = Ed25519Key("BBBBBB", "valueB") // should be ignored
             val othersMasterEdKey = Ed25519Key("B-MASTER", "valueMasterB")
@@ -540,21 +515,24 @@ private val body: ShouldSpec.() -> Unit = {
                 userId = bob,
             )
 
-            coVerify {
-                api.keys.addSignatures(
-                    setOf(),
-                    setOf(Signed(othersMasterKey, null))
-                )
-            }
+            addSignaturesRequest shouldBe (
+                    mapOf(
+                        bob to mapOf(
+                            othersMasterEdKey.value to json.encodeToJsonElement(othersMasterKey)
+                        )
+                    )
+                    )
             store.keys.getKeyVerificationState(othersDeviceEdKey, bob, "BBBBBB")
                 .shouldBe(Verified(othersDeviceEdKey.value))
             store.keys.getKeyVerificationState(othersMasterEdKey, bob, null)
                 .shouldBe(Verified(othersMasterEdKey.value))
         }
         should("throw exception, when signature upload fails") {
-            coEvery {
-                api.keys.addSignatures(any(), any(), any())
-            } returns Result.success(AddSignatures.Response(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh")))))
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                    AddSignatures.Response(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh"))))
+                }
+            }
 
             val ownAccountsDeviceEdKey = Ed25519Key("AAAAAA", "valueA")
 

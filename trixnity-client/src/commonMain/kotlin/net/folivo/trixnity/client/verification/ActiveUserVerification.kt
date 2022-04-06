@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.IRoomService
@@ -43,7 +43,7 @@ class ActiveUserVerification(
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixClientServerApiClient,
     store: Store,
-    private val olm: IOlmService,
+    private val olmEvent: IOlmEventService,
     private val user: IUserService,
     private val room: IRoomService,
     keyTrust: IKeyTrustService,
@@ -65,7 +65,7 @@ class ActiveUserVerification(
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val sendContent = try {
-            possiblyEncryptEvent(step, roomId, store, olm, user)
+            possiblyEncryptEvent(step, roomId, store, olmEvent, user)
         } catch (error: Exception) {
             log.debug { "could not encrypt verification step. will be send unencrypted." }
             step

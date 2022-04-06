@@ -1,11 +1,7 @@
 package net.folivo.trixnity.client.crypto
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -17,7 +13,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -38,7 +33,7 @@ private val log = KotlinLogging.logger {}
 
 interface IOlmService {
     val sign: IOlmSignService
-    val events: IOlmEventService
+    val event: IOlmEventService
 
     data class DecryptedOlmEventContainer(
         val encrypted: Event<OlmEncryptedEventContent>,
@@ -46,7 +41,6 @@ interface IOlmService {
     )
 
     suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
-    val decryptedOlmEvents: SharedFlow<DecryptedOlmEventContainer>
 }
 
 class OlmService(
@@ -87,7 +81,7 @@ class OlmService(
         account = account,
         utility = utility,
     )
-    override val events = OlmEventService(
+    override val event = OlmEventService(
         olmPickleKey = olmPickleKey,
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
@@ -100,16 +94,13 @@ class OlmService(
         signService = sign,
     )
 
-    private val _decryptedOlmEvents = MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>()
-    override val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
-
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         api.sync.subscribe(::handleMemberEvents)
-        api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
         api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
+        scope.launch(start = UNDISPATCHED) { event.decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
+        event.start(scope)
     }
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
@@ -126,18 +117,6 @@ class OlmService(
             api.keys.setKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
             account.markKeysAsPublished()
             store.olm.storeAccount(account, olmPickleKey)
-        }
-    }
-
-    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
-        if (event is ToDeviceEvent) {
-            try {
-                val decryptedEvent = events.decryptOlm(event.content, event.sender)
-                _decryptedOlmEvents.emit(IOlmService.DecryptedOlmEventContainer(event, decryptedEvent))
-            } catch (e: Exception) {
-                log.error(e) { "could not decrypt $event" }
-                if (e is CancellationException) throw e
-            }
         }
     }
 

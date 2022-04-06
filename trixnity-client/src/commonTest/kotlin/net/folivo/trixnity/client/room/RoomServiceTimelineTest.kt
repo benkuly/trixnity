@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -36,7 +36,7 @@ class RoomServiceTimelineTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olm = mockk<OlmService>()
+    val olmEventService = mockk<IOlmEventService>()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService
@@ -44,7 +44,16 @@ class RoomServiceTimelineTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
+        cut = RoomService(
+            UserId("alice", "server"),
+            store,
+            api,
+            olmEventService,
+            mockk(),
+            mockk(),
+            mockk(),
+            currentSyncState
+        )
     }
 
     afterTest {
@@ -297,7 +306,16 @@ class RoomServiceTimelineTest : ShouldSpec({
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
                 store = spyk(InMemoryStore(storeScope).apply { init() })
                 cut =
-                    RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
+                    RoomService(
+                        UserId("alice", "server"),
+                        store,
+                        api,
+                        olmEventService,
+                        mockk(),
+                        mockk(),
+                        mockk(),
+                        currentSyncState
+                    )
                 store.room.update(room) {
                     Room(
                         roomId = room,

@@ -102,7 +102,7 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olm = olm,
+            olmSign = olm.sign,
             currentSyncState = syncState,
         )
         _keySecret = KeySecretService(
@@ -110,7 +110,8 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olm = olm,
+            olmEvents = olm.event,
+            keyBackup = _keyBackup,
             currentSyncState = syncState,
         )
         _key = KeyService(
@@ -118,7 +119,7 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olm = olm,
+            olmSign = olm.sign,
             currentSyncState = syncState,
             backup = _keyBackup,
             secret = _keySecret
@@ -128,7 +129,7 @@ class MatrixClient private constructor(
             ownUserId = userId,
             store = store,
             api = api,
-            olm = olm,
+            olmEvent = olm.event,
             keyBackup = _key.backup,
             user = user,
             media = media,
@@ -142,7 +143,7 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             api = api,
             store = store,
-            olmService = olm,
+            olmEventService = olm.event,
             roomService = room,
             userService = user,
             keyService = _key,

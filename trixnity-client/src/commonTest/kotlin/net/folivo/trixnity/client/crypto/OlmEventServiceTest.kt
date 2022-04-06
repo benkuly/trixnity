@@ -14,32 +14,25 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
-import io.mockk.clearAllMocks
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import kotlinx.datetime.minus
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
-import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -81,46 +74,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
 
-    class MockOlmSignService : IOlmSignService {
-        override suspend fun signatures(
-            jsonObject: JsonObject,
-            signWith: IOlmSignService.SignWith
-        ): Signatures<UserId> {
-            throw NotImplementedError()
-        }
-
-        override suspend fun <T> signatures(
-            unsignedObject: T,
-            serializer: KSerializer<T>,
-            signWith: IOlmSignService.SignWith
-        ): Signatures<UserId> {
-            throw NotImplementedError()
-        }
-
-        override suspend fun <T> sign(
-            unsignedObject: T,
-            serializer: KSerializer<T>,
-            signWith: IOlmSignService.SignWith
-        ): Signed<T, UserId> {
-            throw NotImplementedError()
-        }
-
-        override suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
-            throw NotImplementedError()
-        }
-
-        lateinit var returnVerify: VerifyResult
-        override suspend fun <T> verify(
-            signedObject: Signed<T, UserId>,
-            serializer: KSerializer<T>,
-            checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
-        ): VerifyResult {
-            return returnVerify
-        }
-
-    }
-
-    val signService = MockOlmSignService()
+    val signService = OlmSignServiceMock()
+    lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: OlmEventService
@@ -169,7 +124,8 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
         signService.returnVerify = VerifyResult.Valid
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        api = newApi
         apiConfig = newApiConfig
 
         cut = OlmEventService(
@@ -187,7 +143,6 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -196,6 +151,139 @@ private val body: ShouldSpec.() -> Unit = {
         bobAccount.free()
     }
 
+    context(OlmEventService::handleOlmEncryptedToDeviceEvents.name) {
+        context("exceptions") {
+            val event = Event.ToDeviceEvent(
+                OlmEncryptedEventContent(
+                    mapOf(), Curve25519Key(null, "")
+                ),
+                UserId("sender", "server")
+            )
+            should("catch exceptions") {
+                cut.handleOlmEncryptedToDeviceEvents(event)
+            }
+        }
+        should("emit decrypted events") {
+            val bobStore = InMemoryStore(storeScope).apply { init() }
+            val bobOlmService = OlmService("", bob, bobDeviceId, bobStore, api, json)
+            freeAfter(
+                OlmAccount.create(),
+                OlmUtility.create()
+            ) { aliceAccount, olmUtility ->
+                aliceAccount.generateOneTimeKeys(1)
+                store.olm.storeAccount(aliceAccount, "")
+                val aliceSignService = OlmSignService(alice, aliceDeviceId, json, store, aliceAccount, olmUtility)
+                val cutWithAccount = OlmEventService(
+                    "",
+                    alice,
+                    aliceDeviceId,
+                    Ed25519Key(null, aliceAccount.identityKeys.ed25519),
+                    Curve25519Key(null, aliceAccount.identityKeys.curve25519),
+                    json,
+                    aliceAccount,
+                    store,
+                    api,
+                    aliceSignService
+                )
+                store.keys.updateDeviceKeys(bob) {
+                    mapOf(
+                        bobDeviceId to StoredDeviceKeys(
+                            Signed(
+                                DeviceKeys(
+                                    userId = bob,
+                                    deviceId = bobDeviceId,
+                                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                                    keys = Keys(
+                                        keysOf(
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
+                                        )
+                                    )
+                                ), mapOf()
+                            ), KeySignatureTrustLevel.Valid(true)
+                        )
+                    )
+                }
+                bobStore.keys.updateDeviceKeys(alice) {
+                    mapOf(
+                        aliceDeviceId to StoredDeviceKeys(
+                            Signed(
+                                DeviceKeys(
+                                    userId = alice,
+                                    deviceId = aliceDeviceId,
+                                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                                    keys = Keys(
+                                        keysOf(
+                                            Curve25519Key(null, aliceAccount.identityKeys.curve25519),
+                                            Ed25519Key(null, aliceAccount.identityKeys.ed25519)
+                                        )
+                                    )
+                                ), mapOf()
+                            ), KeySignatureTrustLevel.Valid(true)
+                        )
+                    )
+                }
+
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, ClaimKeys()) {
+                        it.oneTimeKeys shouldBe mapOf(alice to mapOf(aliceDeviceId to KeyAlgorithm.SignedCurve25519))
+                        ClaimKeys.Response(
+                            emptyMap(),
+                            mapOf(
+                                alice to mapOf(
+                                    aliceDeviceId to keysOf(
+                                        aliceSignService.signCurve25519Key(
+                                            Curve25519Key(
+                                                aliceDeviceId,
+                                                aliceAccount.oneTimeKeys.curve25519.values.first()
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    }
+                }
+
+                val outboundSession = OlmOutboundGroupSession.create()
+                val eventContent = RoomKeyEventContent(
+                    RoomId("room", "server"),
+                    outboundSession.sessionId,
+                    outboundSession.sessionKey,
+                    EncryptionAlgorithm.Megolm
+                )
+                val encryptedEvent = Event.ToDeviceEvent(
+                    bobOlmService.event.encryptOlm(
+                        eventContent,
+                        alice,
+                        aliceDeviceId
+                    ), bob
+                )
+
+                val scope = CoroutineScope(Dispatchers.Default)
+                val emittedEvent =
+                    cutWithAccount.decryptedOlmEvents.shareIn(scope, started = SharingStarted.Eagerly, replay = 1)
+                cutWithAccount.handleOlmEncryptedToDeviceEvents(encryptedEvent)
+
+                assertSoftly(
+                    emittedEvent.firstOrNull()
+                ) {
+                    assertNotNull(this)
+                    encrypted shouldBe encryptedEvent
+                    decrypted shouldBe DecryptedOlmEvent(
+                        eventContent,
+                        bob,
+                        keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!.copy(keyId = null)),
+                        alice,
+                        keysOf(Ed25519Key(null, aliceAccount.identityKeys.ed25519))
+                    )
+                }
+                scope.cancel()
+
+                bobOlmService.free()
+            }
+        }
+    }
     context(OlmEventService::encryptOlm.name) {
         val eventContent = RoomKeyEventContent(
             RoomId("room", "server"),

@@ -1,5 +1,9 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -32,13 +36,17 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
+import kotlin.coroutines.cancellation.CancellationException
 
 private val log = KotlinLogging.logger {}
 
 interface IOlmEventService {
+    val decryptedOlmEvents: SharedFlow<IOlmService.DecryptedOlmEventContainer>
+
     suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,
@@ -69,6 +77,26 @@ class OlmEventService internal constructor(
     private val api: MatrixClientServerApiClient,
     private val signService: IOlmSignService,
 ) : IOlmEventService {
+
+    internal suspend fun start(scope: CoroutineScope) {
+        api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
+    }
+
+    private val _decryptedOlmEvents = MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>()
+    override val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
+
+    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
+        if (event is Event.ToDeviceEvent) {
+            try {
+                val decryptedEvent = decryptOlm(event.content, event.sender)
+                _decryptedOlmEvents.emit(IOlmService.DecryptedOlmEventContainer(event, decryptedEvent))
+            } catch (e: Exception) {
+                log.error(e) { "could not decrypt $event" }
+                if (e is CancellationException) throw e
+            }
+        }
+    }
+
     override suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,

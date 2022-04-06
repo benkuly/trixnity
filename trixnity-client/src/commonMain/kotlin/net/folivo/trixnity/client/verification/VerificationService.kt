@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.key.IKeyService
@@ -65,7 +66,7 @@ class VerificationService(
     private val ownDeviceId: String,
     private val api: MatrixClientServerApiClient,
     private val store: Store,
-    private val olmService: IOlmService,
+    private val olmEventService: IOlmEventService,
     private val roomService: IRoomService,
     private val userService: IUserService,
     private val keyService: IKeyService,
@@ -80,7 +81,7 @@ class VerificationService(
         api.sync.subscribe(::handleDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
-            olmService.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
+            olmEventService.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
         scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
@@ -107,7 +108,7 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olm = olmService,
+                            olmEvent = olmEventService,
                             store = store,
                             keyTrust = keyService.trust,
                         ).cancel()
@@ -122,7 +123,7 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olm = olmService,
+                                olmEvent = olmEventService,
                                 keyTrust = keyService.trust,
                                 store = store,
                             )
@@ -151,7 +152,7 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olm = olmService,
+                            olmEvent = olmEventService,
                             keyTrust = keyService.trust,
                             store = store,
                         ).cancel()
@@ -166,7 +167,7 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olm = olmService,
+                                olmEvent = olmEventService,
                                 keyTrust = keyService.trust,
                                 store = store,
                             )
@@ -208,7 +209,7 @@ class VerificationService(
         )
         api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             try {
-                olmService.events.encryptOlm(request, theirUserId, it)
+                olmEventService.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
                 request
             }
@@ -222,7 +223,7 @@ class VerificationService(
             theirDeviceIds = theirDeviceIds.toSet(),
             supportedMethods = supportedMethods,
             api = api,
-            olm = olmService,
+            olmEvent = olmEventService,
             keyTrust = keyService.trust,
             store = store,
         ).also { newDeviceVerification ->
@@ -240,7 +241,7 @@ class VerificationService(
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
-            possiblyEncryptEvent(request, roomId, store, olmService, userService)
+            possiblyEncryptEvent(request, roomId, store, olmEventService, userService)
         } catch (error: Exception) {
             request
         }
@@ -258,7 +259,7 @@ class VerificationService(
             supportedMethods = supportedMethods,
             api = api,
             store = store,
-            olm = olmService,
+            olmEvent = olmEventService,
             user = userService,
             room = roomService,
             keyTrust = keyService.trust,
@@ -354,7 +355,7 @@ class VerificationService(
                             supportedMethods = supportedMethods,
                             api = api,
                             store = store,
-                            olm = olmService,
+                            olmEvent = olmEventService,
                             user = userService,
                             room = roomService,
                             keyTrust = keyService.trust,

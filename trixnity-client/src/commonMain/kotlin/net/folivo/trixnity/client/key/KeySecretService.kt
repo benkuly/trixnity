@@ -11,12 +11,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.get
-import net.folivo.trixnity.client.crypto.getCrossSigningKey
-import net.folivo.trixnity.client.crypto.getDeviceKey
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
@@ -54,14 +51,15 @@ class KeySecretService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: IOlmService,
+    private val olmEvents: IOlmEventService,
+    private val keyBackup: IKeyBackupService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
 ) : IKeySecretService {
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
         api.sync.subscribeAfterSyncResponse {
             processIncomingKeyRequests()
@@ -104,7 +102,7 @@ class KeySecretService(
                     api.users.sendToDevice(
                         mapOf(
                             ownUserId to mapOf(
-                                requestingDeviceId to olm.events.encryptOlm(
+                                requestingDeviceId to olmEvents.encryptOlm(
                                     SecretKeySendEventContent(
                                         request.requestId, requestedSecret.decryptedPrivateKey
                                     ), ownUserId, requestingDeviceId
@@ -159,7 +157,7 @@ class KeySecretService(
                 }
                 M_MEGOLM_BACKUP_V1 -> {
                     api.keys.getRoomKeysVersion().map {
-                        keyBackupCanBeTrusted(it, content.secret, ownUserId, store)
+                        keyBackup.keyBackupCanBeTrusted(it, content.secret)
                     }.onFailure { log.warn { "could not retrieve key backup version" } }
                         .getOrElse { false }
                 }

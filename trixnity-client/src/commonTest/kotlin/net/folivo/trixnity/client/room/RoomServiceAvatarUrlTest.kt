@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
@@ -33,7 +33,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olm = mockk<IOlmService>()
+    val olmEvent = mockk<IOlmEventService>()
     val users = mockk<IUserService>(relaxUnitFun = true)
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -43,7 +43,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(alice, store, api, olm, mockk(), users, mockk(), currentSyncState)
+        cut = RoomService(alice, store, api, olmEvent, mockk(), users, mockk(), currentSyncState)
     }
 
     afterTest {

@@ -5,10 +5,8 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class OlmOutboundGroupSessionTest {
 
     @Test

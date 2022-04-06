@@ -1,6 +1,5 @@
 package net.folivo.trixnity.olm
 
-import io.ktor.util.*
 import net.folivo.trixnity.olm.OlmLibrary.clear_pk_signing
 import net.folivo.trixnity.olm.OlmLibrary.pk_sign
 import net.folivo.trixnity.olm.OlmLibrary.pk_signature_length
@@ -16,7 +15,6 @@ actual class OlmPkSigning private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        @OptIn(InternalAPI::class)
         actual fun create(privateKey: String?): OlmPkSigning {
             val ptr = pk_signing()
             val publicKey = ByteArray(pk_signing_public_key_length().toInt())

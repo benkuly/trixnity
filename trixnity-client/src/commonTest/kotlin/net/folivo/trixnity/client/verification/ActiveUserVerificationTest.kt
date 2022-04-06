@@ -11,10 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -51,7 +49,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     val relatesTo = RelatesTo.Reference(event)
 
     val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olm = mockk<IOlmService>(relaxed = true)
+    val olmEventService = mockk<IOlmEventService>(relaxed = true)
     val room = mockk<IRoomService>(relaxed = true)
     val store = mockk<Store>(relaxed = true)
 
@@ -77,7 +75,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             roomId = roomId,
             supportedMethods = setOf(Sas),
             api = api,
-            olm = olm,
+            olmEvent = olmEventService,
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,
@@ -219,7 +217,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
         coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
         val encrypted = mockk<MegolmEncryptedEventContent>()
-        coEvery { olm.events.encryptMegolm(any(), any(), any()) } returns encrypted
+        coEvery { olmEventService.encryptMegolm(any(), any(), any()) } returns encrypted
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
@@ -234,7 +232,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         )
         coEvery { store.roomState.getByStateKey(roomId, "", EncryptionEventContent::class)?.content } returns mockk()
         coEvery { api.rooms.sendMessageEvent(any(), any()) } returns Result.success(EventId("$24"))
-        coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
+        coEvery { olmEventService.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "hu")
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
@@ -299,7 +297,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             roomId = roomId,
             supportedMethods = setOf(Sas),
             api = api,
-            olm = olm,
+            olmEvent = olmEventService,
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,
@@ -340,7 +338,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             roomId = roomId,
             supportedMethods = setOf(Sas),
             api = api,
-            olm = olm,
+            olmEvent = olmEventService,
             store = store,
             user = mockk(relaxUnitFun = true),
             room = room,

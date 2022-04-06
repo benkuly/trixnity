@@ -16,9 +16,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.room.IRoomService
@@ -75,7 +75,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var api: MatrixClientServerApiClient
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<IOlmService>()
+    val olmEventService = mockk<IOlmEventService>()
     val room = mockk<IRoomService>()
     val user = mockk<IUserService>(relaxUnitFun = true)
     val keyService = mockk<IKeyService>(relaxed = true)
@@ -90,7 +90,7 @@ private val body: ShouldSpec.() -> Unit = {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
         decryptedOlmEventFlow = MutableSharedFlow()
-        coEvery { olm.decryptedOlmEvents } returns decryptedOlmEventFlow
+        coEvery { olmEventService.decryptedOlmEvents } returns decryptedOlmEventFlow
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         api = newApi
@@ -99,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
             ownDeviceId = aliceDeviceId,
             api = api,
             store = store,
-            olmService = olm,
+            olmEventService = olmEventService,
             roomService = room,
             userService = user,
             keyService = keyService,
@@ -182,9 +182,6 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                val olmEvents: OlmEventService = mockk(relaxed = true)
-                every { olm.events } returns olmEvents
-
                 cut.start(eventHandlingCoroutineScope)
 
                 api.sync.startOnce().getOrThrow()
@@ -193,7 +190,7 @@ private val body: ShouldSpec.() -> Unit = {
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
                 coVerify {
-                    olmEvents.encryptOlm(
+                    olmEventService.encryptOlm(
                         match { it is VerificationCancelEventContent },
                         aliceUserId,
                         aliceDeviceId
@@ -230,9 +227,6 @@ private val body: ShouldSpec.() -> Unit = {
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second device verification") {
-                val olmEvents: OlmEventService = mockk(relaxed = true)
-                every { olm.events } returns olmEvents
-
                 cut.start(eventHandlingCoroutineScope)
 
                 val request1 = VerificationRequestEventContent(
@@ -261,7 +255,7 @@ private val body: ShouldSpec.() -> Unit = {
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
                 coVerify {
-                    olmEvents.encryptOlm(
+                    olmEventService.encryptOlm(
                         match { it is VerificationCancelEventContent },
                         aliceUserId,
                         aliceDeviceId
@@ -376,7 +370,7 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            coEvery { olm.events.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
+            coEvery { olmEventService.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
             val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
@@ -422,7 +416,13 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
+                coEvery {
+                    olmEventService.encryptMegolm(
+                        any(),
+                        any(),
+                        any()
+                    )
+                } throws OlmLibraryException(message = "dino")
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 sendMessageEventCalled shouldBe true
             }
@@ -441,7 +441,13 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                coEvery { olm.events.encryptMegolm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
+                coEvery {
+                    olmEventService.encryptMegolm(
+                        any(),
+                        any(),
+                        any()
+                    )
+                } throws OlmLibraryException(message = "dino")
                 store.globalAccountData.update(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )

@@ -9,7 +9,7 @@ import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -173,7 +173,7 @@ class RoomService(
     private val ownUserId: UserId,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olm: IOlmService,
+    private val olmEvent: IOlmEventService,
     private val keyBackup: IKeyBackupService,
     private val user: IUserService,
     private val media: IMediaService,
@@ -979,7 +979,7 @@ class RoomService(
 
     private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<DecryptedMegolmEvent<*>> {
         return try {
-            Result.success(olm.events.decryptMegolm(this))
+            Result.success(olmEvent.decryptMegolm(this))
         } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
             else Result.failure(ex)
@@ -1178,7 +1178,7 @@ class RoomService(
                                 val uploadedContent = uploader(content) { cacheUri ->
                                     media.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress).getOrThrow()
                                 }
-                                possiblyEncryptEvent(uploadedContent, roomId, store, olm, user)
+                                possiblyEncryptEvent(uploadedContent, roomId, store, olmEvent, user)
                             }
                         log.trace { "send to $roomId : $content" }
                         val eventId =

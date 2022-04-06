@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
@@ -30,7 +31,7 @@ class ActiveDeviceVerification(
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixClientServerApiClient,
-    private val olm: IOlmService,
+    private val olmEvent: IOlmEventService,
     keyTrust: IKeyTrustService,
     store: Store,
 ) : ActiveVerification(
@@ -54,7 +55,7 @@ class ActiveDeviceVerification(
         requireNotNull(theirDeviceId) { "their device id should never be null" }
         try {
             api.users.sendToDevice(
-                mapOf(theirUserId to mapOf(theirDeviceId to olm.events.encryptOlm(step, theirUserId, theirDeviceId)))
+                mapOf(theirUserId to mapOf(theirDeviceId to olmEvent.encryptOlm(step, theirUserId, theirDeviceId)))
             )
         } catch (error: Exception) {
             log.debug { "could not encrypt verification step. will be send unencrypted." }
@@ -66,7 +67,7 @@ class ActiveDeviceVerification(
         api.sync.subscribe(::handleVerificationStepEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         val job = scope.launch(start = UNDISPATCHED) {
-            olm.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
+            olmEvent.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
         }
         scope.launch(start = UNDISPATCHED) {
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
@@ -106,7 +107,7 @@ class ActiveDeviceVerification(
                     try {
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
-                                olm.events.encryptOlm(cancelEvent, theirUserId, it)
+                                olmEvent.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (olmError: OlmLibraryException) {
                                 cancelEvent
                             }
