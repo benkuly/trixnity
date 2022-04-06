@@ -11,7 +11,7 @@ import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -78,7 +78,7 @@ suspend fun possiblyEncryptEvent(
     roomId: RoomId,
     store: Store,
     olm: IOlmService,
-    user: UserService
+    user: IUserService
 ): MessageEventContent {
     return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
         user.loadMembers(roomId)

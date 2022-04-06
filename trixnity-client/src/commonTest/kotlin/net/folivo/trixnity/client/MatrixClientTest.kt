@@ -137,7 +137,7 @@ class MatrixClientTest : ShouldSpec({
                 }
             ).getOrThrow())
 
-            val userServiceMock: UserService = spyk(cut.user)
+            val userServiceMock: UserService = spyk(cut.user as UserService)
             every { cut.user } returns userServiceMock
             coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
 

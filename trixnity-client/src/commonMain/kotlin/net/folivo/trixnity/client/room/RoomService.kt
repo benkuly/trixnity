@@ -11,13 +11,13 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyBackupService
-import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -175,8 +175,8 @@ class RoomService(
     private val api: MatrixClientServerApiClient,
     private val olm: IOlmService,
     private val keyBackup: IKeyBackupService,
-    private val user: UserService,
-    private val media: MediaService,
+    private val user: IUserService,
+    private val media: IMediaService,
     private val currentSyncState: StateFlow<SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),

@@ -16,7 +16,7 @@ import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.get
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -42,7 +42,7 @@ class VerificationService(
     private val store: Store,
     private val olmService: IOlmService,
     private val roomService: IRoomService,
-    private val userService: UserService,
+    private val userService: IUserService,
     private val keyService: IKeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
     private val currentSyncState: StateFlow<SyncState>,

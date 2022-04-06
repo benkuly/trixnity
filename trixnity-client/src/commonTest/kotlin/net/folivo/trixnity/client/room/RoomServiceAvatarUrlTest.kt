@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
@@ -34,7 +34,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     val api = mockk<MatrixClientServerApiClient>(relaxed = true)
     val olm = mockk<IOlmService>()
-    val users = mockk<UserService>(relaxUnitFun = true)
+    val users = mockk<IUserService>(relaxUnitFun = true)
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService

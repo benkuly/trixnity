@@ -24,6 +24,7 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
@@ -63,7 +64,8 @@ class MatrixClient private constructor(
     val olm: IOlmService
     private val _room: RoomService
     val room: IRoomService
-    val user: UserService
+    private val _user: UserService
+    val user: IUserService
     val media: IMediaService
     val verification: VerificationService
     private val _keyBackup: KeyBackupService
@@ -86,11 +88,12 @@ class MatrixClient private constructor(
             api = api,
             store = store,
         )
-        user = UserService(
+        _user = UserService(
             api = api,
             store = store,
             currentSyncState = syncState,
         )
+        user = _user
         _keyBackup = KeyBackupService(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
@@ -442,7 +445,7 @@ class MatrixClient private constructor(
                 _keySecret.start(this)
                 _olm.start(this)
                 _room.start(this)
-                user.start(this)
+                _user.start(this)
                 verification.start(this)
                 launch {
                     loginState.debounce(100.milliseconds).collect {

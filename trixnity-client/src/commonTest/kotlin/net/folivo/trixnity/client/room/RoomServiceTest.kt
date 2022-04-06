@@ -25,11 +25,11 @@ import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.IKeyBackupService
-import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.client.SyncState.STARTED
@@ -71,12 +71,12 @@ class RoomServiceTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
-    val users = mockk<UserService>(relaxUnitFun = true)
+    val users = mockk<IUserService>(relaxUnitFun = true)
     val olmService = mockk<OlmService>()
     val keyBackup = mockk<IKeyBackupService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val media = mockk<MediaService>()
+    val media = mockk<IMediaService>()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService

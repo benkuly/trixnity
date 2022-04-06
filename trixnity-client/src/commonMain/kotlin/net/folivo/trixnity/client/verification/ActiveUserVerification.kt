@@ -14,7 +14,7 @@ import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -44,7 +44,7 @@ class ActiveUserVerification(
     private val api: MatrixClientServerApiClient,
     store: Store,
     private val olm: IOlmService,
-    private val user: UserService,
+    private val user: IUserService,
     private val room: IRoomService,
     keyTrust: IKeyTrustService,
 ) : ActiveVerification(

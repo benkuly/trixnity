@@ -28,17 +28,41 @@ import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
 
+interface IUserService {
+    val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
+    fun loadMembers(roomId: RoomId)
+
+    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?>
+
+    suspend fun getAll(roomId: RoomId): Set<RoomUser>?
+
+    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?>
+
+    suspend fun getById(userId: UserId, roomId: RoomId): RoomUser?
+
+    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+        eventContentClass: KClass<C>,
+        key: String = "",
+        scope: CoroutineScope
+    ): StateFlow<C?>
+
+    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): C?
+}
+
 class UserService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
-) {
+) : IUserService {
     private val reloadOwnProfile = MutableStateFlow(false)
     private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
     private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())
-    val userPresence = _userPresence.asStateFlow()
+    override val userPresence = _userPresence.asStateFlow()
 
-    suspend fun start(scope: CoroutineScope) {
+    internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
         api.sync.subscribe(::setPresence)
@@ -146,7 +170,7 @@ class UserService(
         }
     }
 
-    fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
+    override fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
 
     internal suspend fun handleLoadMembersQueue() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
@@ -185,25 +209,25 @@ class UserService(
         }
     }
 
-    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {
+    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {
         return store.roomUser.getAll(roomId, scope)
     }
 
-    suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
+    override suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
         return store.roomUser.getAll(roomId)
     }
 
-    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
+    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
         return store.roomUser.get(userId, roomId, scope)
     }
 
-    suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
+    override suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
         return store.roomUser.get(userId, roomId)
     }
 
-    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
         scope: CoroutineScope
     ): StateFlow<C?> {
         return store.globalAccountData.get(eventContentClass, key, scope)
@@ -211,9 +235,9 @@ class UserService(
             .stateIn(scope)
     }
 
-    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
     ): C? {
         return store.globalAccountData.get(eventContentClass, key)?.content
     }

@@ -19,13 +19,11 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.OlmEventService
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
@@ -79,7 +77,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val olm = mockk<IOlmService>()
     val room = mockk<IRoomService>()
-    val user = mockk<UserService>(relaxUnitFun = true)
+    val user = mockk<IUserService>(relaxUnitFun = true)
     val keyService = mockk<IKeyService>(relaxed = true)
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()

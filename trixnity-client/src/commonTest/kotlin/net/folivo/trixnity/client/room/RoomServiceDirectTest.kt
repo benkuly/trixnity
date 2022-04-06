@@ -9,14 +9,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.model.EventId
@@ -40,9 +40,9 @@ class RoomServiceDirectTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
-    val users = mockk<UserService>(relaxUnitFun = true)
-    val olm = mockk<OlmService>()
-    val media = mockk<MediaService>()
+    val users = mockk<IUserService>(relaxUnitFun = true)
+    val olm = mockk<IOlmService>()
+    val media = mockk<IMediaService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)

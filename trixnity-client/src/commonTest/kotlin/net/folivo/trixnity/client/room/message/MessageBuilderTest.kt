@@ -8,13 +8,13 @@ import io.ktor.http.ContentType.Video.MP4
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.mockk
-import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 class MessageBuilderTest : ShouldSpec({
-    val mediaService = mockk<MediaService>()
+    val mediaService = mockk<IMediaService>()
 
     afterTest { clearAllMocks() }
 
