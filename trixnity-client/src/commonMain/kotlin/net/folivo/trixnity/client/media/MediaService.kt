@@ -28,18 +28,54 @@ import net.folivo.trixnity.olm.freeAfter
 
 private val log = KotlinLogging.logger {}
 
+interface IMediaService {
+    suspend fun getMedia(
+        uri: String,
+        progress: MutableStateFlow<FileTransferProgress?>? = null
+    ): Result<ByteArray>
+
+    suspend fun getEncryptedMedia(
+        encryptedFile: EncryptedFile,
+        progress: MutableStateFlow<FileTransferProgress?>? = null
+    ): Result<ByteArray>
+
+    suspend fun getThumbnail(
+        mxcUri: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod = CROP,
+        progress: MutableStateFlow<FileTransferProgress?>? = null
+    ): Result<ByteArray>
+
+    suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String
+
+    suspend fun prepareUploadThumbnail(content: ByteArray, contentType: ContentType): Pair<String, ThumbnailInfo>?
+
+    suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile
+
+    suspend fun prepareUploadEncryptedThumbnail(
+        content: ByteArray,
+        contentType: ContentType
+    ): Pair<EncryptedFile, ThumbnailInfo>?
+
+    suspend fun uploadMedia(
+        cacheUri: String,
+        progress: MutableStateFlow<FileTransferProgress?>? = null
+    ): Result<String>
+}
+
 class MediaService(
     private val api: MatrixClientServerApiClient,
     private val store: Store,
-) {
+) : IMediaService {
     companion object {
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
         const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"
     }
 
-    suspend fun getMedia(
+    override suspend fun getMedia(
         uri: String,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
+        progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> store.media.getContent(uri)
@@ -55,9 +91,9 @@ class MediaService(
         }
     }
 
-    suspend fun getEncryptedMedia(
+    override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
+        progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         val media = getMedia(encryptedFile.url, progress).getOrThrow()
         val hash = freeAfter(OlmUtility.create()) {
@@ -77,12 +113,12 @@ class MediaService(
         )
     }
 
-    suspend fun getThumbnail(
+    override suspend fun getThumbnail(
         mxcUri: String,
         width: Long,
         height: Long,
-        method: ThumbnailResizingMethod = CROP,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
+        method: ThumbnailResizingMethod,
+        progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         store.media.getContent(thumbnailUrl)
@@ -93,14 +129,17 @@ class MediaService(
                 }
     }
 
-    suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
+    override suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             store.media.addContent(cacheUri, content)
             store.media.updateUploadCache(cacheUri) { UploadCache(cacheUri, contentType = contentType.toString()) }
         }
     }
 
-    suspend fun prepareUploadThumbnail(content: ByteArray, contentType: ContentType): Pair<String, ThumbnailInfo>? {
+    override suspend fun prepareUploadThumbnail(
+        content: ByteArray,
+        contentType: ContentType
+    ): Pair<String, ThumbnailInfo>? {
         val thumbnail = try {
             createThumbnail(content, contentType, 600, 600)
         } catch (e: ThumbnailCreationException) {
@@ -116,7 +155,7 @@ class MediaService(
         )
     }
 
-    suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
+    override suspend fun prepareUploadEncryptedMedia(content: ByteArray): EncryptedFile {
         val key = SecureRandom.nextBytes(32)
         val nonce = SecureRandom.nextBytes(8)
         val initialisationVector = nonce + ByteArray(8)
@@ -136,7 +175,7 @@ class MediaService(
         )
     }
 
-    suspend fun prepareUploadEncryptedThumbnail(
+    override suspend fun prepareUploadEncryptedThumbnail(
         content: ByteArray,
         contentType: ContentType
     ): Pair<EncryptedFile, ThumbnailInfo>? {
@@ -155,9 +194,9 @@ class MediaService(
         )
     }
 
-    suspend fun uploadMedia(
+    override suspend fun uploadMedia(
         cacheUri: String,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
+        progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<String> {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 

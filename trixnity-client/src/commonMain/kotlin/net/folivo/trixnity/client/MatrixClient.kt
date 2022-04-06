@@ -17,7 +17,9 @@ import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.Store
@@ -59,9 +61,10 @@ class MatrixClient private constructor(
     val avatarUrl: StateFlow<String?> = store.account.avatarUrl.asStateFlow()
     private val _olm: OlmService
     val olm: IOlmService
-    val room: RoomService
+    private val _room: RoomService
+    val room: IRoomService
     val user: UserService
-    val media: MediaService
+    val media: IMediaService
     val verification: VerificationService
     private val _keyBackup: KeyBackupService
     private val _keySecret: KeySecretService
@@ -116,7 +119,7 @@ class MatrixClient private constructor(
             secret = _keySecret
         )
         key = _key
-        room = RoomService(
+        _room = RoomService(
             ownUserId = userId,
             store = store,
             api = api,
@@ -128,6 +131,7 @@ class MatrixClient private constructor(
             setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
         )
+        room = _room
         verification = VerificationService(
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -437,7 +441,7 @@ class MatrixClient private constructor(
                 _keyBackup.start(this)
                 _keySecret.start(this)
                 _olm.start(this)
-                room.start(this)
+                _room.start(this)
                 user.start(this)
                 verification.start(this)
                 launch {

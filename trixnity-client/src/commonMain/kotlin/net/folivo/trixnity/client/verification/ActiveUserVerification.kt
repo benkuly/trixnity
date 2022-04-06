@@ -11,7 +11,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.possiblyEncryptEvent
-import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.user.UserService
@@ -45,7 +45,7 @@ class ActiveUserVerification(
     store: Store,
     private val olm: IOlmService,
     private val user: UserService,
-    private val room: RoomService,
+    private val room: IRoomService,
     keyTrust: IKeyTrustService,
 ) : ActiveVerification(
     request,

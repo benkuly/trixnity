@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 
-suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
+suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
     key: String = "",
     scope: CoroutineScope
@@ -17,14 +17,14 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAcco
     return getAccountData(roomId, C::class, key, scope)
 }
 
-suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
+suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
     key: String = "",
 ): C? {
     return getAccountData(roomId, C::class, key)
 }
 
-suspend inline fun <reified C : StateEventContent> RoomService.getState(
+suspend inline fun <reified C : StateEventContent> IRoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
@@ -32,7 +32,7 @@ suspend inline fun <reified C : StateEventContent> RoomService.getState(
     return getState(roomId, stateKey, C::class, scope)
 }
 
-suspend inline fun <reified C : StateEventContent> RoomService.getState(
+suspend inline fun <reified C : StateEventContent> IRoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
 ): Event<C>? {

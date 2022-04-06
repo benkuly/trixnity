@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
-import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.get
@@ -41,7 +41,7 @@ class VerificationService(
     private val api: MatrixClientServerApiClient,
     private val store: Store,
     private val olmService: IOlmService,
-    private val roomService: RoomService,
+    private val roomService: IRoomService,
     private val userService: UserService,
     private val keyService: IKeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),

@@ -22,6 +22,7 @@ import net.folivo.trixnity.client.crypto.OlmEventService
 import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
@@ -76,8 +77,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var api: MatrixClientServerApiClient
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
-    val room = mockk<RoomService>()
+    val olm = mockk<IOlmService>()
+    val room = mockk<IRoomService>()
     val user = mockk<UserService>(relaxUnitFun = true)
     val keyService = mockk<IKeyService>(relaxed = true)
     val json = createMatrixJson()

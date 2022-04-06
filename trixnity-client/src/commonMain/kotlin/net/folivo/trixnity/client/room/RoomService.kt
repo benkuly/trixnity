@@ -49,6 +49,126 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
+interface IRoomService {
+    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20): Result<Unit>
+
+    suspend fun getTimelineEvent(
+        eventId: EventId,
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>
+
+    suspend fun getLastTimelineEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<StateFlow<TimelineEvent?>?>
+
+    suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>?
+
+    suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>?
+
+    /**
+     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
+     * at the end of the timeline.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
+     *
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    suspend fun getTimelineEvents(
+        startFrom: StateFlow<TimelineEvent?>,
+        direction: Direction = BACKWARDS,
+        scope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): Flow<StateFlow<TimelineEvent?>>
+
+    /**
+     * Returns the last timeline events as flow.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
+     * ```kotlin
+     * launch {
+     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
+     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
+     *   }
+     * }
+     * ```
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?>
+
+    /**
+     * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
+     *
+     * It is possible, that the matrix server does not send all timeline events.
+     * These gaps in the timeline are not filled automatically. Gap filling is available in
+     * [getTimelineEvents] and [getLastTimelineEvents].
+     *
+     * @param syncResponseBufferSize the size of the buffer for consuming the sync response. When set to 0, the sync will
+     * be suspended until all events from the sync response are consumed. This could prevent decryption, because keys may
+     * be received in a later sync response.
+     */
+    fun getTimelineEventsFromNowOn(
+        decryptionTimeout: Duration = 30.seconds,
+        syncResponseBufferSize: Int = 10,
+    ): Flow<TimelineEvent>
+
+    suspend fun getLastMessageEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<StateFlow<TimelineEvent?>?>
+
+    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
+
+    suspend fun abortSendMessage(transactionId: String)
+
+    suspend fun retrySendMessage(transactionId: String)
+    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
+
+    suspend fun getById(roomId: RoomId): StateFlow<Room?>
+
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+        scope: CoroutineScope
+    ): StateFlow<C?>
+
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): C?
+
+    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
+
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): StateFlow<Event<C>?>
+
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+    ): Event<C>?
+}
+
 class RoomService(
     private val ownUserId: UserId,
     private val store: Store,
@@ -60,11 +180,11 @@ class RoomService(
     private val currentSyncState: StateFlow<SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
-) {
+) : IRoomService {
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
-    suspend fun start(scope: CoroutineScope) {
+    internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
         api.sync.subscribeSyncResponse(::handleSyncResponse)
@@ -586,7 +706,7 @@ class RoomService(
         }
     }
 
-    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20): Result<Unit> = kotlin.runCatching {
+    override suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long): Result<Unit> = kotlin.runCatching {
         store.transaction {
             val startGap = startEvent.gap
             if (startGap != null) {
@@ -801,11 +921,11 @@ class RoomService(
                 && this.event.isEncrypted
                 && this.content == null
 
-    suspend fun getTimelineEvent(
+    override suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             val timelineEvent = timelineEventFlow.value
@@ -867,10 +987,10 @@ class RoomService(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(
+    override suspend fun getLastTimelineEvent(
         roomId: RoomId,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
@@ -880,36 +1000,27 @@ class RoomService(
         }.stateIn(coroutineScope)
     }
 
-    suspend fun getPreviousTimelineEvent(
+    override suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): StateFlow<TimelineEvent?>? {
         return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
     }
 
-    suspend fun getNextTimelineEvent(
+    override suspend fun getNextTimelineEvent(
         event: TimelineEvent,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): StateFlow<TimelineEvent?>? {
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
     }
 
-    /**
-     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
-     * at the end of the timeline.
-     *
-     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
-     *
-     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
-     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
-     */
-    suspend fun getTimelineEvents(
+    override suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
-        direction: Direction = BACKWARDS,
+        direction: Direction,
         scope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): Flow<StateFlow<TimelineEvent?>> =
         flow {
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
@@ -939,22 +1050,11 @@ class RoomService(
             } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
         }
 
-    /**
-     * Returns the last timeline events as flow.
-     *
-     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
-     * ```kotlin
-     * launch {
-     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
-     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
-     *   }
-     * }
-     * ```
-     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
-     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
-     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+    override suspend fun getLastTimelineEvents(
+        roomId: RoomId,
+        scope: CoroutineScope
+    ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
         getLastTimelineEvent(roomId, scope)
             .mapLatest { currentTimelineEventFlow ->
                 currentTimelineEventFlow?.let {
@@ -964,21 +1064,10 @@ class RoomService(
                 }
             }
 
-    /**
-     * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
-     *
-     * It is possible, that the matrix server does not send all timeline events.
-     * These gaps in the timeline are not filled automatically. Gap filling is available in
-     * [getTimelineEvents] and [getLastTimelineEvents].
-     *
-     * @param syncResponseBufferSize the size of the buffer for consuming the sync response. When set to 0, the sync will
-     * be suspended until all events from the sync response are consumed. This could prevent decryption, because keys may
-     * be received in a later sync response.
-     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getTimelineEventsFromNowOn(
-        decryptionTimeout: Duration = 30.seconds,
-        syncResponseBufferSize: Int = 10,
+    override fun getTimelineEventsFromNowOn(
+        decryptionTimeout: Duration,
+        syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         channelFlow {
             val syncResponseChannel = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
@@ -1001,10 +1090,10 @@ class RoomService(
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastMessageEvent(
+    override suspend fun getLastMessageEvent(
         roomId: RoomId,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
@@ -1015,7 +1104,7 @@ class RoomService(
         }.stateIn(coroutineScope)
     }
 
-    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+    override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, media).build(builder)
         requireNotNull(content)
@@ -1031,11 +1120,11 @@ class RoomService(
         }
     }
 
-    suspend fun abortSendMessage(transactionId: String) {
+    override suspend fun abortSendMessage(transactionId: String) {
         store.roomOutboxMessage.update(transactionId) { null }
     }
 
-    suspend fun retrySendMessage(transactionId: String) {
+    override suspend fun retrySendMessage(transactionId: String) {
         store.roomOutboxMessage.update(transactionId) { it?.copy(retryCount = 0) }
     }
 
@@ -1060,7 +1149,6 @@ class RoomService(
         }
     }
 
-    @OptIn(FlowPreview::class)
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
@@ -1105,16 +1193,16 @@ class RoomService(
         }
     }
 
-    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = store.room.getAll()
+    override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = store.room.getAll()
 
-    suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+    override suspend fun getById(roomId: RoomId): StateFlow<Room?> {
         return store.room.get(roomId)
     }
 
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
         scope: CoroutineScope
     ): StateFlow<C?> {
         return store.roomAccountData.get(roomId, eventContentClass, key, scope)
@@ -1122,28 +1210,28 @@ class RoomService(
             .stateIn(scope)
     }
 
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
     ): C? {
         return store.roomAccountData.get(roomId, eventContentClass, key)?.content
     }
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = store.roomOutboxMessage.getAll()
+    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = store.roomOutboxMessage.getAll()
 
-    suspend fun <C : StateEventContent> getState(
+    override suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String = "",
+        stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
     ): StateFlow<Event<C>?> {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 
-    suspend fun <C : StateEventContent> getState(
+    override suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String = "",
+        stateKey: String,
         eventContentClass: KClass<C>,
     ): Event<C>? {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass)

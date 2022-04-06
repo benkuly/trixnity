@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.Store
@@ -49,8 +51,8 @@ class ActiveUserVerificationTest : ShouldSpec({
     val relatesTo = RelatesTo.Reference(event)
 
     val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olm = mockk<OlmService>(relaxed = true)
-    val room = mockk<RoomService>(relaxed = true)
+    val olm = mockk<IOlmService>(relaxed = true)
+    val room = mockk<IRoomService>(relaxed = true)
     val store = mockk<Store>(relaxed = true)
 
     lateinit var cut: ActiveUserVerification
