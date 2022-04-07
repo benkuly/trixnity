@@ -34,13 +34,13 @@ class OlmEventServiceMock(
         return returnDecryptOlm
     }
 
-    lateinit var returnEncryptMegolm: EncryptedEventContent.MegolmEncryptedEventContent
+    lateinit var returnEncryptMegolm: () -> EncryptedEventContent.MegolmEncryptedEventContent
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): EncryptedEventContent.MegolmEncryptedEventContent {
-        return returnEncryptMegolm
+        return returnEncryptMegolm()
     }
 
     val returnDecryptMegolm = mutableListOf<() -> DecryptedMegolmEvent<*>>()

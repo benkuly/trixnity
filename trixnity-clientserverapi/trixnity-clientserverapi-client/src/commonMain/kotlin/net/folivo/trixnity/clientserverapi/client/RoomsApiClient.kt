@@ -508,7 +508,7 @@ class RoomsApiClient(
         asUserId: UserId?
     ): Result<EventId> {
         val eventType = contentMappings.message.contentSerializer(eventContent).first
-        return httpClient.request(SendMessageEvent(roomId.e(), eventType, txnId.e(), asUserId), eventContent)
+        return httpClient.request(SendMessageEvent(roomId.e(), eventType, txnId, asUserId), eventContent)
             .mapCatching { it.eventId }
     }
 
@@ -519,7 +519,7 @@ class RoomsApiClient(
         txnId: String,
         asUserId: UserId?
     ): Result<EventId> =
-        httpClient.request(RedactEvent(roomId.e(), eventId.e(), txnId.e(), asUserId), RedactEvent.Request(reason))
+        httpClient.request(RedactEvent(roomId.e(), eventId.e(), txnId, asUserId), RedactEvent.Request(reason))
             .mapCatching { it.eventId }
 
     override suspend fun createRoom(

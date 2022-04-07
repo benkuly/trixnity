@@ -734,7 +734,7 @@ class RoomServiceTest : ShouldSpec({
                     SendEventResponse(EventId("event"))
                 }
             }
-            olmEventService.returnEncryptMegolm = megolmEventContent
+            olmEventService.returnEncryptMegolm = { megolmEventContent }
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(store.roomOutboxMessage.getAll()) }
 
