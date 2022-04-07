@@ -50,7 +50,6 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
             assertSoftly(request) {
                 if (skipUrlCheck.not()) url shouldBe expectedRequest.url
                 method shouldBe expectedRequest.method
-
             }
             request.method shouldBe expectedRequest.method
 
