@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 
 class RepositoryStateFlowCacheTest : ShouldSpec({
-    val repository = InMemoryMinimalStoreRepository<String, String>()
+    lateinit var repository: MinimalStoreRepository<String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: RepositoryStateFlowCache<String, String, MinimalStoreRepository<String, String>>
     val transactionWasCalled = MutableStateFlow(false)
@@ -24,13 +24,14 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
     beforeTest {
         cacheScope = CoroutineScope(Dispatchers.Default)
         transactionWasCalled.value = false
+        repository = InMemoryMinimalStoreRepository()
+        cut = RepositoryStateFlowCache(cacheScope, repository, rtm)
     }
     afterTest {
         cacheScope.cancel()
     }
 
     context("get") {
-        beforeTest { cut = RepositoryStateFlowCache(cacheScope, repository, rtm) }
         should("read from database") {
             repository.save("key", "value")
             cut.get("key") shouldBe "value"
@@ -50,7 +51,6 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
         }
     }
     context("update") {
-        beforeTest { cut = RepositoryStateFlowCache(cacheScope, repository, rtm) }
         should("read from database") {
             repository.save("key", "old")
             cut.update("key") {
