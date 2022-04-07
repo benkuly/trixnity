@@ -14,14 +14,16 @@ class OlmEventServiceMock(
     override val decryptedOlmEvents: SharedFlow<IOlmService.DecryptedOlmEventContainer> = MutableSharedFlow()
 ) : IOlmEventService {
 
-    lateinit var returnEncryptOlm: EncryptedEventContent.OlmEncryptedEventContent
+    lateinit var returnEncryptOlm: () -> EncryptedEventContent.OlmEncryptedEventContent
+    var encryptOlmCalled: Triple<EventContent, UserId, String>? = null
     override suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,
         deviceId: String,
         forceNewSession: Boolean
     ): EncryptedEventContent.OlmEncryptedEventContent {
-        return returnEncryptOlm
+        encryptOlmCalled = Triple(content, receiverId, deviceId)
+        return returnEncryptOlm()
     }
 
     lateinit var returnDecryptOlm: DecryptedOlmEvent<*>

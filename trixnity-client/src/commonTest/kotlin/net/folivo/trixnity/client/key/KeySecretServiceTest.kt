@@ -129,10 +129,12 @@ private val body: ShouldSpec.() -> Unit = {
                         "secretUserSigningKey"
                     )
                 )
-            olmEvent.returnEncryptOlm = EncryptedEventContent.OlmEncryptedEventContent(
-                ciphertext = mapOf(),
-                senderKey = Key.Curve25519Key("", "")
-            )
+            olmEvent.returnEncryptOlm = {
+                EncryptedEventContent.OlmEncryptedEventContent(
+                    ciphertext = mapOf(),
+                    senderKey = Key.Curve25519Key("", "")
+                )
+            }
         }
         should("ignore request from other user") {
             cut.handleEncryptedIncomingKeyRequests(
@@ -220,10 +222,12 @@ private val body: ShouldSpec.() -> Unit = {
                         "secretUserSigningKey"
                     )
                 )
-            olmEvent.returnEncryptOlm = EncryptedEventContent.OlmEncryptedEventContent(
-                ciphertext = mapOf(),
-                senderKey = Key.Curve25519Key("", "")
-            )
+            olmEvent.returnEncryptOlm = {
+                EncryptedEventContent.OlmEncryptedEventContent(
+                    ciphertext = mapOf(),
+                    senderKey = Key.Curve25519Key("", "")
+                )
+            }
         }
         suspend fun ShouldSpecContainerScope.answerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
             should("answer request with trust level $returnedTrustLevel") {
