@@ -5,10 +5,11 @@ import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
+import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.OwnSasStart
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -18,6 +19,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Unknown
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import kotlin.coroutines.EmptyCoroutineContext
 
 class ActiveVerificationTest : ShouldSpec({
     timeout = 30_000
@@ -40,9 +43,9 @@ class ActiveVerificationTest : ShouldSpec({
         setOf(Sas),
         null,
         "t",
-        mockk(),
-        mockk(),
-        mockk(),
+        InMemoryStore(CoroutineScope(EmptyCoroutineContext)),
+        KeyTrustServiceMock(),
+        createMatrixJson(),
     ) {
         override suspend fun lifecycle(scope: CoroutineScope) {
             lifecycleCalled++
