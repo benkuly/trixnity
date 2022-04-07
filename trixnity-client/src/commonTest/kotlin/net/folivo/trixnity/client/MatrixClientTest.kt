@@ -1,16 +1,10 @@
 package net.folivo.trixnity.client
 
-import io.kotest.assertions.until.fixed
-import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -21,7 +15,6 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.InMemoryStoreFactory
-import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Logout
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -39,7 +32,6 @@ import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
-import kotlin.time.Duration.Companion.milliseconds
 
 class MatrixClientTest : ShouldSpec({
     timeout = 30_000
@@ -64,88 +56,6 @@ class MatrixClientTest : ShouldSpec({
     }
     afterTest {
         scope.cancel()
-        clearAllMocks()
-    }
-
-    context(MatrixClient::startSync.name) {
-        should("write the last successfully processed batch token in the DB") {
-            val inMemoryStore = InMemoryStore(scope)
-            val cut = spyk(MatrixClient.loginWith(
-                baseUrl = Url("http://matrix.home"),
-                storeFactory = InMemoryStoreFactory(inMemoryStore),
-                httpClientFactory = {
-                    HttpClient(MockEngine) {
-                        it()
-                        engine {
-                            addHandler { request ->
-                                when (request.url.fullPath) {
-                                    "/_matrix/client/v3/keys/upload" -> {
-                                        assertEquals(HttpMethod.Post, request.method)
-                                        respond(
-                                            """{"one_time_key_counts":{"ed25519":1}}""",
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
-                                        )
-                                    }
-                                    "/_matrix/client/v3/user/${userId.e()}/filter" -> {
-                                        assertEquals(HttpMethod.Post, request.method)
-                                        respond(
-                                            """{"filter_id":"someFilter"}""",
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
-                                        )
-                                    }
-                                    "/_matrix/client/v3/sync?filter=someFilter&set_presence=online" -> {
-                                        assertEquals(HttpMethod.Get, request.method)
-                                        respond(
-                                            json.encodeToString(serverResponse),
-                                            HttpStatusCode.OK,
-                                            headersOf(
-                                                HttpHeaders.ContentType,
-                                                ContentType.Application.Json.toString()
-                                            )
-                                        )
-                                    }
-                                    else -> {
-                                        respond(
-                                            "",
-                                            HttpStatusCode.BadRequest
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                scope = scope,
-                getLoginInfo = {
-                    Result.success(
-                        MatrixClient.Companion.LoginInfo(
-                            userId,
-                            "deviceId",
-                            "accessToken",
-                            "displayName",
-                            "mxc://localhost/123456"
-                        )
-                    )
-                }
-            ).getOrThrow())
-
-            val userServiceMock: UserService = spyk(cut.user as UserService)
-            every { cut.user } returns userServiceMock
-            coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
-
-            cut.startSync().getOrThrow()
-            until(1_000.milliseconds, 50.milliseconds.fixed()) {
-                inMemoryStore.account.syncBatchToken.value == null
-            }
-        }
     }
 
     context(MatrixClient::displayName.name) {
