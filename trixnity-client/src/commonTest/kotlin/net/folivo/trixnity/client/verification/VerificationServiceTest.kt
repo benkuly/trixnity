@@ -1,29 +1,26 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
-import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.mocks.KeyServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.RoomServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
@@ -48,17 +45,23 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
 
 class VerificationServiceTest : ShouldSpec(body)
 
@@ -75,10 +78,9 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var api: MatrixClientServerApiClient
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
-    val olmEventService = mockk<IOlmEventService>()
-    val room = mockk<IRoomService>()
-    val user = mockk<IUserService>(relaxUnitFun = true)
-    val keyService = mockk<IKeyService>(relaxed = true)
+    lateinit var olmEventService: OlmEventServiceMock
+    val keyService = KeyServiceMock()
+    lateinit var room: RoomServiceMock
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
@@ -90,7 +92,8 @@ private val body: ShouldSpec.() -> Unit = {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
         decryptedOlmEventFlow = MutableSharedFlow()
-        coEvery { olmEventService.decryptedOlmEvents } returns decryptedOlmEventFlow
+        room = RoomServiceMock()
+        olmEventService = OlmEventServiceMock(decryptedOlmEventFlow)
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         api = newApi
@@ -101,15 +104,15 @@ private val body: ShouldSpec.() -> Unit = {
             store = store,
             olmEventService = olmEventService,
             roomService = room,
-            userService = user,
+            userService = UserServiceMock(),
             keyService = keyService,
             currentSyncState = currentSyncState
         )
     }
     afterTest {
         storeScope.cancel()
-        clearAllMocks()
     }
+
     context(VerificationService::start.name) {
         lateinit var eventHandlingCoroutineScope: CoroutineScope
         beforeTest {
@@ -181,6 +184,8 @@ private val body: ShouldSpec.() -> Unit = {
                             )
                         )
                     }
+                    matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                    }
                 }
                 cut.start(eventHandlingCoroutineScope)
 
@@ -189,9 +194,9 @@ private val body: ShouldSpec.() -> Unit = {
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
-                coVerify {
-                    olmEventService.encryptOlm(
-                        match { it is VerificationCancelEventContent },
+                eventually(1.seconds) {
+                    olmEventService.encryptOlmCalled shouldBe Triple(
+                        VerificationCancelEventContent(Code.User, "user cancelled verification", null, "transaction2"),
                         aliceUserId,
                         aliceDeviceId
                     )
@@ -204,7 +209,8 @@ private val body: ShouldSpec.() -> Unit = {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
                     IOlmService.DecryptedOlmEventContainer(
-                        mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
+                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 cut.activeDeviceVerification.value shouldBe null
@@ -219,7 +225,8 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 decryptedOlmEventFlow.emit(
                     IOlmService.DecryptedOlmEventContainer(
-                        mockk(), DecryptedOlmEvent(request, bobUserId, mockk(), mockk(), mockk())
+                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -227,6 +234,11 @@ private val body: ShouldSpec.() -> Unit = {
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second device verification") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                    }
+                }
+
                 cut.start(eventHandlingCoroutineScope)
 
                 val request1 = VerificationRequestEventContent(
@@ -243,20 +255,22 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 decryptedOlmEventFlow.emit(
                     IOlmService.DecryptedOlmEventContainer(
-                        mockk(), DecryptedOlmEvent(request1, bobUserId, mockk(), mockk(), mockk())
+                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 decryptedOlmEventFlow.emit(
                     IOlmService.DecryptedOlmEventContainer(
-                        mockk(), DecryptedOlmEvent(request2, aliceUserId, mockk(), mockk(), mockk())
+                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
-                coVerify {
-                    olmEventService.encryptOlm(
-                        match { it is VerificationCancelEventContent },
+                eventually(1.seconds) {
+                    olmEventService.encryptOlmCalled shouldBe Triple(
+                        VerificationCancelEventContent(Code.User, "user cancelled verification", null, "transaction2"),
                         aliceUserId,
                         aliceDeviceId
                     )
@@ -328,25 +342,27 @@ private val body: ShouldSpec.() -> Unit = {
                     nextEventId = nextEventId,
                     gap = null
                 )
-                coEvery { room.getTimelineEvent(eventId, roomId, any()) } returns MutableStateFlow(timelineEvent)
-                coEvery { room.getNextTimelineEvent(any(), any()) } returns MutableStateFlow(
-                    TimelineEvent(
-                        event = Event.MessageEvent(
-                            VerificationCancelEventContent(
-                                Code.User, "user",
-                                transactionId = null,
-                                relatesTo = RelatesTo.Reference(eventId)
+                room.returnGetTimelineEvent = MutableStateFlow(timelineEvent)
+                room.returnGetTimelineEvents = flowOf(
+                    MutableStateFlow(
+                        TimelineEvent(
+                            event = Event.MessageEvent(
+                                VerificationCancelEventContent(
+                                    Code.User, "user",
+                                    transactionId = null,
+                                    relatesTo = RelatesTo.Reference(eventId)
+                                ),
+                                nextEventId,
+                                bobUserId,
+                                roomId,
+                                Clock.System.now().toEpochMilliseconds()
                             ),
-                            nextEventId,
-                            bobUserId,
-                            roomId,
-                            Clock.System.now().toEpochMilliseconds()
-                        ),
-                        eventId = eventId,
-                        roomId = roomId,
-                        previousEventId = null,
-                        nextEventId = nextEventId,
-                        gap = null
+                            eventId = eventId,
+                            roomId = roomId,
+                            previousEventId = null,
+                            nextEventId = nextEventId,
+                            gap = null
+                        )
                     )
                 )
                 val result = cut.getActiveUserVerification(timelineEvent)?.state
@@ -370,7 +386,7 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            coEvery { olmEventService.encryptOlm(any(), any(), any()) } throws OlmLibraryException(message = "dino")
+            olmEventService.returnEncryptOlm = { throw OlmLibraryException(message = "dino") }
             val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
@@ -416,13 +432,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                coEvery {
-                    olmEventService.encryptMegolm(
-                        any(),
-                        any(),
-                        any()
-                    )
-                } throws OlmLibraryException(message = "dino")
+                olmEventService.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 sendMessageEventCalled shouldBe true
             }
@@ -441,13 +451,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                coEvery {
-                    olmEventService.encryptMegolm(
-                        any(),
-                        any(),
-                        any()
-                    )
-                } throws OlmLibraryException(message = "dino")
+                olmEventService.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
                 store.globalAccountData.update(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
@@ -467,9 +471,18 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = SyncState.INITIAL_SYNC
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
-                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),
-                    "DEV2" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
-                    "DEV3" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false))
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    ),
+                    "DEV2" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.CrossSigned(false)
+                    ),
+                    "DEV3" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV3", setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(false)
+                    )
                 )
             }
             val result = cut.getSelfVerificationMethods(scope)
@@ -479,41 +492,63 @@ private val body: ShouldSpec.() -> Unit = {
             val result = cut.getSelfVerificationMethods(scope)
             result.value shouldBe null
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
             }
             cut.getSelfVerificationMethods(scope).first { it?.isEmpty() == true }.shouldBeEmpty()
         }
         should("return empty set, when not ${KeySignatureTrustLevel.NotCrossSigned::class.simpleName}") {
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
             }
             cut.getSelfVerificationMethods(scope).value.shouldBeEmpty()
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
-            val spyCut = spyk(cut)
-            val deviceVerification = mockk<ActiveDeviceVerification>()
-            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } returns Result.success(deviceVerification)
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                }
+            }
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
-                    aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned),
-                    "DEV2" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.CrossSigned(false)),
-                    "DEV3" to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.Valid(false))
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    ),
+                    "DEV2" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.CrossSigned(false)
+                    ),
+                    "DEV3" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV3", setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(false)
+                    )
                 )
             }
-            val result = spyCut.getSelfVerificationMethods(scope).value
+            val result = cut.getSelfVerificationMethods(scope).value
             result?.size shouldBe 1
             val firstResult = result!!.first()
             firstResult.shouldBeInstanceOf<CrossSignedDeviceVerification>()
-            firstResult.createDeviceVerification().getOrThrow() shouldBe deviceVerification
-            coVerify { spyCut.createDeviceVerificationRequest(aliceUserId, "DEV2") }
+            firstResult.createDeviceVerification().getOrThrow().shouldBeInstanceOf<ActiveDeviceVerification>()
         }
         should("don't add ${CrossSignedDeviceVerification::class.simpleName} when there are no cross signed devices") {
-            val spyCut = spyk(cut)
-            coEvery { spyCut.createDeviceVerificationRequest(any(), any()) } returns Result.success(mockk())
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
             }
-            spyCut.getSelfVerificationMethods(scope).value?.size shouldBe 0
+            cut.getSelfVerificationMethods(scope).value?.size shouldBe 0
         }
         should("add ${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
@@ -523,7 +558,12 @@ private val body: ShouldSpec.() -> Unit = {
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
             }
             cut.getSelfVerificationMethods(scope).value shouldBe setOf(
                 AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey)
@@ -537,7 +577,12 @@ private val body: ShouldSpec.() -> Unit = {
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
             store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(aliceDeviceId to StoredDeviceKeys(mockk(), KeySignatureTrustLevel.NotCrossSigned))
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
             }
             cut.getSelfVerificationMethods(scope).value shouldBe setOf(
                 AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey),

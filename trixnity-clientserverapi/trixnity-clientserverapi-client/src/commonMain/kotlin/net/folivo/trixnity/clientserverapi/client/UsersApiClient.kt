@@ -210,7 +210,7 @@ class UsersApiClient(
         transactionId: String,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SendToDevice(type, transactionId.e(), asUserId), SendToDevice.Request(events))
+        httpClient.request(SendToDevice(type, transactionId, asUserId), SendToDevice.Request(events))
 
     override suspend fun getFilter(
         userId: UserId,

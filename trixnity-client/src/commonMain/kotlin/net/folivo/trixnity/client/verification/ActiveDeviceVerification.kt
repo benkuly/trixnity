@@ -58,7 +58,7 @@ class ActiveDeviceVerification(
                 mapOf(theirUserId to mapOf(theirDeviceId to olmEvent.encryptOlm(step, theirUserId, theirDeviceId)))
             )
         } catch (error: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted." }
+            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
             api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to step)))
         }.getOrThrow()
     }
