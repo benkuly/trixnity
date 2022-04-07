@@ -2,10 +2,6 @@ package net.folivo.trixnity.client.store
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -27,12 +23,12 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class RoomStateStoreTest : ShouldSpec({
-    val roomStateRepository = mockk<RoomStateRepository>(relaxUnitFun = true)
+    lateinit var roomStateRepository: RoomStateRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomStateStore
 
     beforeTest {
-        coEvery { roomStateRepository.getBySecondKey(any(), any()) } returns null
+        roomStateRepository = InMemoryTwoDimensionsStoreRepository()
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = RoomStateStore(
             roomStateRepository,
@@ -42,7 +38,6 @@ class RoomStateStoreTest : ShouldSpec({
         )
     }
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -69,30 +64,23 @@ class RoomStateStoreTest : ShouldSpec({
             cut.update(event1)
             cut.update(event2)
 
-            coVerify {
-                roomStateRepository.saveBySecondKey(
-                    RoomStateRepositoryKey(roomId, "m.room.member"),
-                    "@user:server",
-                    event1
-                )
-                roomStateRepository.saveBySecondKey(
-                    RoomStateRepositoryKey(roomId, "m.room.member"),
-                    "@alice:server",
-                    event2
-                )
-            }
+            roomStateRepository.getBySecondKey(
+                RoomStateRepositoryKey(roomId, "m.room.member"),
+                "@user:server"
+            ) shouldBe event1
+            roomStateRepository.getBySecondKey(
+                RoomStateRepositoryKey(roomId, "m.room.member"),
+                "@alice:server"
+            ) shouldBe event2
         }
         context("skipWhenAlreadyPresent is true") {
             should("only change, when already present") {
                 cut.update(event1, true)
                 cut.update(event1.copy(originTimestamp = 0), true)
-                coVerify(exactly = 2) {
-                    roomStateRepository.saveBySecondKey(
-                        RoomStateRepositoryKey(roomId, "m.room.member"),
-                        "@user:server",
-                        event1
-                    )
-                }
+                roomStateRepository.getBySecondKey(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    "@user:server"
+                ) shouldBe event1
             }
         }
 
@@ -100,32 +88,36 @@ class RoomStateStoreTest : ShouldSpec({
     context("get") {
         context("without scope") {
             should("return matching event") {
-                coEvery {
-                    roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
-                } returns mapOf("@user:server" to event1)
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1)
+                )
                 cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
             }
             should("prefer cache") {
-                coEvery {
-                    roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
-                } returns mapOf("@user:server" to event1)
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1)
+                )
                 cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1.copy(originTimestamp = 0))
+                )
                 cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
-                coVerify(exactly = 1) {
-                    roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
-                }
             }
             should("ignore unknown state event") {
-                coEvery {
-                    roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
-                } returns mapOf(
-                    "@user:server" to event1, "@bob:server" to Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
-                        EventId("\$event"),
-                        UserId("alice", "server"),
-                        roomId,
-                        1234,
-                        stateKey = "@bob:server"
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf(
+                        "@user:server" to event1, "@bob:server" to Event.StateEvent(
+                            UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                            EventId("\$event"),
+                            UserId("alice", "server"),
+                            roomId,
+                            1234,
+                            stateKey = "@bob:server"
+                        )
                     )
                 )
                 cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1, "@bob:server" to null)
@@ -133,9 +125,10 @@ class RoomStateStoreTest : ShouldSpec({
         }
         context("with scope") {
             should("ignore unknown state event") {
-                coEvery {
-                    roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.member"))
-                } returns mapOf("@user:server" to event1)
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1)
+                )
                 val scope = CoroutineScope(Dispatchers.Default)
                 val result = cut.get<MemberEventContent>(roomId, scope).shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it?.size == 1 }
@@ -160,20 +153,23 @@ class RoomStateStoreTest : ShouldSpec({
     context("getByStateKey") {
         context("without scope") {
             should("return matching event") {
-                coEvery {
-                    roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
-                } returns event1
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1)
+                )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
             }
             should("prefer cache") {
-                coEvery {
-                    roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
-                } returns event1
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1)
+                )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    mapOf("@user:server" to event1.copy(originTimestamp = 0))
+                )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
-                coVerify(exactly = 1) {
-                    roomStateRepository.getBySecondKey(RoomStateRepositoryKey(roomId, "m.room.member"), "@user:server")
-                }
             }
             should("ignore unknown state event") {
                 cut.update(
