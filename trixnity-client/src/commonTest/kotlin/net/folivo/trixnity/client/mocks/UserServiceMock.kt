@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.user.IUserService
@@ -14,8 +15,9 @@ class UserServiceMock : IUserService {
     override val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
         get() = throw NotImplementedError()
 
+    val loadMembersCalled = MutableStateFlow<RoomId?>(null)
     override fun loadMembers(roomId: RoomId) {
-        throw NotImplementedError()
+        loadMembersCalled.value = roomId
     }
 
     override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {

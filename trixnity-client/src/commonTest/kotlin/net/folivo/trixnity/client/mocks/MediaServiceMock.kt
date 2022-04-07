@@ -56,10 +56,13 @@ class MediaServiceMock : IMediaService {
         return returnPrepareUploadEncryptedThumbnail
     }
 
+    var returnUploadMedia: Result<String> = Result.success("")
+    val uploadMediaCalled = MutableStateFlow<String?>(null)
     override suspend fun uploadMedia(
         cacheUri: String,
         progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<String> {
-        throw NotImplementedError()
+        uploadMediaCalled.value = cacheUri
+        return returnUploadMedia
     }
 }

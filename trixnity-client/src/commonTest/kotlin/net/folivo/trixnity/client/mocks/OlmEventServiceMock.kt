@@ -14,7 +14,7 @@ class OlmEventServiceMock(
     override val decryptedOlmEvents: SharedFlow<IOlmService.DecryptedOlmEventContainer> = MutableSharedFlow()
 ) : IOlmEventService {
 
-    lateinit var returnEncryptOlm:EncryptedEventContent.OlmEncryptedEventContent
+    lateinit var returnEncryptOlm: EncryptedEventContent.OlmEncryptedEventContent
     override suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,
@@ -24,22 +24,28 @@ class OlmEventServiceMock(
         return returnEncryptOlm
     }
 
+    lateinit var returnDecryptOlm: DecryptedOlmEvent<*>
     override suspend fun decryptOlm(
         encryptedContent: EncryptedEventContent.OlmEncryptedEventContent,
         senderId: UserId
     ): DecryptedOlmEvent<*> {
-        throw NotImplementedError()
+        return returnDecryptOlm
     }
 
+    lateinit var returnEncryptMegolm: EncryptedEventContent.MegolmEncryptedEventContent
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): EncryptedEventContent.MegolmEncryptedEventContent {
-        throw NotImplementedError()
+        return returnEncryptMegolm
     }
 
+    val returnDecryptMegolm = mutableListOf<() -> DecryptedMegolmEvent<*>>()
     override suspend fun decryptMegolm(encryptedEvent: Event.MessageEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
-        throw NotImplementedError()
+        val returner =
+            if (returnDecryptMegolm.size > 1) returnDecryptMegolm.removeFirst()
+            else returnDecryptMegolm.first()
+        return returner()
     }
 }
