@@ -3,13 +3,14 @@ package net.folivo.trixnity.client.room
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
@@ -44,7 +45,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
     val contentMappings = createEventContentSerializerMappings()
-    val olmEventService = mockk<IOlmEventService>()
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomService
@@ -60,16 +60,15 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             UserId("alice", "server"),
             store,
             api,
-            olmEventService,
-            mockk(relaxed = true),
-            mockk(),
-            mockk(),
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
             currentSyncState
         )
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
         scope.cancel()
     }
