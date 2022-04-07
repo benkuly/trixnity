@@ -1,8 +1,5 @@
 package net.folivo.trixnity.olm
 
-import rethrow
-
-
 actual class OlmSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSessionPointer = rethrow { js("new Olm.Session()") }.unsafeCast<OlmSessionPointer>()
 

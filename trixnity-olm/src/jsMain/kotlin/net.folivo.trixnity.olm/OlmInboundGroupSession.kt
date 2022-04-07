@@ -1,8 +1,5 @@
 package net.folivo.trixnity.olm
 
-import rethrow
-
-
 actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmInboundGroupSessionPointer =
         rethrow { js("new Olm.InboundGroupSession()") }.unsafeCast<OlmInboundGroupSessionPointer>()

@@ -1,7 +1,5 @@
 package net.folivo.trixnity.olm
 
-import rethrow
-
 actual class OlmPkEncryption private constructor() : WantsToBeFree {
     internal actual val ptr: OlmPkEncryptionPointer =
         rethrow { js("new Olm.PkEncryption()") }.unsafeCast<OlmPkEncryptionPointer>()
