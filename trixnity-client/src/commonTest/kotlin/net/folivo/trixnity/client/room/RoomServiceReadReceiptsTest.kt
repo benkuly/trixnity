@@ -3,20 +3,20 @@ package net.folivo.trixnity.client.room
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
-import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.crypto.IOlmEventService
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.user.IUserService
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.serialization.createMatrixJson
 
 class RoomServiceReadReceiptsTest : ShouldSpec({
     timeout = 5_000
@@ -35,22 +36,28 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olmEvent = mockk<IOlmEventService>()
-    val users = mockk<IUserService>(relaxUnitFun = true)
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService
 
+    val json = createMatrixJson()
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(alice, store, api, olmEvent, mockk(), users, mockk(), currentSyncState)
+        cut = RoomService(
+            alice,
+            store,
+            mockMatrixClientServerApiClient(json).first,
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
+            currentSyncState
+        )
     }
 
     afterTest {
-        clearAllMocks()
         scope.cancel()
         storeScope.cancel()
     }
@@ -186,8 +193,8 @@ fun roomUser(roomId: RoomId, userId: UserId, lastReadMessage: EventId? = null): 
         userId.full,
         event = Event.StateEvent(
             MemberEventContent(membership = Membership.JOIN),
-            mockk(),
-            mockk(),
+            EventId("event"),
+            UserId("user", "server"),
             roomId,
             0L,
             stateKey = ""
