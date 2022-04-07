@@ -1,18 +1,16 @@
 package net.folivo.trixnity.client.store.cache
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.client.store.InMemoryMinimalStoreRepository
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 
 class RepositoryStateFlowCacheTest : ShouldSpec({
-    val repository = mockk<MinimalStoreRepository<String, String>>(relaxUnitFun = true)
+    val repository = InMemoryMinimalStoreRepository<String, String>()
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: RepositoryStateFlowCache<String, String, MinimalStoreRepository<String, String>>
     val transactionWasCalled = MutableStateFlow(false)
@@ -28,26 +26,25 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
         transactionWasCalled.value = false
     }
     afterTest {
-        clearAllMocks()
         cacheScope.cancel()
-        cut = mockk() // just in case we forgot to init a new cut for a test
     }
 
     context("get") {
         beforeTest { cut = RepositoryStateFlowCache(cacheScope, repository, rtm) }
         should("read from database") {
-            coEvery { repository.get("key") } returns "value"
+            repository.save("key", "value")
             cut.get("key") shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
         should("not use transaction when flag ist set") {
-            coEvery { repository.get("key") } returns "value"
+            repository.save("key", "value")
             cut.get("key", withTransaction = false) shouldBe "value"
             transactionWasCalled.value shouldBe false
         }
         should("prefer cache") {
-            coEvery { repository.get("key") } returns "value" andThen "value2"
+            repository.save("key", "value")
             cut.get("key") shouldBe "value"
+            repository.save("key", "value2")
             cut.get("key") shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
@@ -55,7 +52,7 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
     context("update") {
         beforeTest { cut = RepositoryStateFlowCache(cacheScope, repository, rtm) }
         should("read from database") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             cut.update("key") {
                 it shouldBe "old"
                 "value"
@@ -63,11 +60,12 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             transactionWasCalled.value shouldBe true
         }
         should("prefer cache") {
-            coEvery { repository.get("key") } returns "old" andThen "dino"
+            repository.save("key", "old")
             cut.update("key") {
                 it shouldBe "old"
                 "value"
             }
+            repository.save("key", "dino")
             cut.update("key") {
                 it shouldBe "value"
                 "new value"
@@ -75,13 +73,13 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             transactionWasCalled.value shouldBe true
         }
         should("save to database") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             cut.update("key") { "value" }
-            coVerify { repository.save("key", "value") }
+            repository.get("key") shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
         should("allow multiple writes") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             val job1 = launch {
                 cut.update("key") {
                     delay(200) // this ensures, that all updates are in here
@@ -96,27 +94,24 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             }
             job1.join()
             job2.join()
-            coVerify {
-                repository.save("key", "value1")
-                repository.save("key", "value2")
-            }
+            repository.get("key") shouldBeOneOf listOf("value1", "value2")
             transactionWasCalled.value shouldBe true
         }
         should("remove from database") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             cut.update("key") { null }
-            coVerify { repository.delete("key") }
+            repository.get("key") shouldBe null
             transactionWasCalled.value shouldBe true
         }
         should("not save to repository when flag is set") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             cut.update("key", persistIntoRepository = false) { "value" }
-            coVerify(exactly = 0) { repository.save("key", "value") }
+            repository.get("key") shouldBe "old"
         }
         should("not use transaction when flag is set") {
-            coEvery { repository.get("key") } returns "old"
+            repository.save("key", "old")
             cut.update("key", withTransaction = false) { "value" }
-            coVerify { repository.save("key", "value") }
+            repository.get("key") shouldBe "value"
             transactionWasCalled.value shouldBe false
         }
     }
