@@ -20,8 +20,8 @@ data class TimelineEvent(
     @Transient
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
 
-    val roomId: RoomId,
-    val eventId: EventId,
+    val roomId: RoomId = event.roomId,
+    val eventId: EventId = event.id,
 
     val previousEventId: EventId?,
     val nextEventId: EventId?,

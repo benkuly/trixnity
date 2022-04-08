@@ -74,11 +74,12 @@ class RoomServiceMock : IRoomService {
         throw NotImplementedError()
     }
 
+    var returnGetTimelineEventsFromNowOn: Flow<TimelineEvent> = flowOf()
     override fun getTimelineEventsFromNowOn(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int
     ): Flow<TimelineEvent> {
-        throw NotImplementedError()
+        return returnGetTimelineEventsFromNowOn
     }
 
     override suspend fun getLastMessageEvent(

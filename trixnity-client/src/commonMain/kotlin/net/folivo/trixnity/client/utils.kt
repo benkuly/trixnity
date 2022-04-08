@@ -61,9 +61,8 @@ fun Event<*>?.getRoomId(): RoomId? {
 
 fun Event<*>?.getSender(): UserId? {
     return when (this) {
-        is StateEvent -> this.sender
-        is StrippedStateEvent -> this.sender
         is RoomEvent -> this.sender
+        is StrippedStateEvent -> this.sender
         is ToDeviceEvent -> this.sender
         is EphemeralEvent -> this.sender
         else -> null

@@ -929,6 +929,7 @@ class RoomService(
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             val timelineEvent = timelineEventFlow.value
+            if (timelineEvent == null) log.warn { "cannot find TimelineEvent in store; decryption will not trigger!" }
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                 coroutineScope.launch {
@@ -1070,11 +1071,11 @@ class RoomService(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         channelFlow {
-            val syncResponseChannel = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
-            val subscriber: AfterSyncResponseSubscriber = { syncResponseChannel.emit(it) }
+            val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+            val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
             invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
             api.sync.subscribeAfterSyncResponse(subscriber)
-            syncResponseChannel
+            syncResponseFlow
                 .collect { syncResponse ->
                     val timelineEvents =
                         syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +

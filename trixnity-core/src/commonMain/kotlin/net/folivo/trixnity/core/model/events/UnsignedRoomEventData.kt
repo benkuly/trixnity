@@ -7,8 +7,6 @@ import kotlinx.serialization.Serializable
 sealed interface UnsignedRoomEventData {
     val age: Long?
     val redactedBecause: Event<*>?
-
-    @SerialName("transaction_id")
     val transactionId: String?
 
     @Serializable

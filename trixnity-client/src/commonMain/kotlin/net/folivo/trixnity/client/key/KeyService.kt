@@ -50,6 +50,8 @@ interface IKeyService {
     val trust: IKeyTrustService
     val secret: IKeySecretService
 
+    val bootstrapRunning: StateFlow<Boolean>
+
     data class BootstrapCrossSigning(
         val recoveryKey: String,
         val result: Result<UIA<Unit>>,
@@ -340,11 +342,16 @@ class KeyService(
         } else Result.failure(MasterKeyInvalidException("master public key $decryptedPublicKey did not match the advertised ${advertisedPublicKey?.value}"))
     }
 
+    private val _bootstrapRunning = MutableStateFlow(false)
+    override val bootstrapRunning = _bootstrapRunning.asStateFlow()
+
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,
         secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
     ): IKeyService.BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
+        _bootstrapRunning.value = true
+
         Random.Default
         val keyId = generateSequence {
             val alphabet = 'a'..'z'
@@ -446,7 +453,7 @@ class KeyService(
                                 userSigningKey = userSigningKey
                             )
                         }
-                }.map {
+                }.mapCatching {
                     it.injectOnSuccessIntoUIA {
                         store.keys.outdatedKeys.update { oldOutdatedKeys -> oldOutdatedKeys + ownUserId }
                         store.keys.waitForUpdateOutdatedKey(ownUserId)
@@ -458,7 +465,9 @@ class KeyService(
                         log.debug { "finished bootstrapping" }
                     }
                 }
-        )
+        ).also {
+            _bootstrapRunning.value = false
+        }
     }
 
     override suspend fun bootstrapCrossSigningFromPassphrase(

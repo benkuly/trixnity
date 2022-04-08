@@ -19,6 +19,7 @@ import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.push.PushService
 import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
@@ -32,6 +33,7 @@ import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
@@ -74,6 +76,7 @@ class MatrixClient private constructor(
     private val _keySecret: KeySecretService
     private val _key: KeyService
     val key: KeyService
+    val push: PushService
     val syncState = api.sync.currentSyncState
 
     init {
@@ -150,6 +153,13 @@ class MatrixClient private constructor(
             currentSyncState = syncState,
         )
         verification = _verification
+        push = PushService(
+            api = api,
+            room = room,
+            store = store,
+            json = json,
+        )
+
     }
 
     companion object {
@@ -421,7 +431,7 @@ class MatrixClient private constructor(
 
     suspend fun syncOnce(timeout: Long = 0L): Result<Unit> = syncOnce(timeout = timeout) { }
 
-    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend () -> T): Result<T> {
+    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend (Sync.Response) -> T): Result<T> {
         startMatrixClient()
         return api.sync.startOnce(
             filter = store.account.backgroundFilterId.value,

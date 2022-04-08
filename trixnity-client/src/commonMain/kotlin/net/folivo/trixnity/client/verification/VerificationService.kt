@@ -274,6 +274,7 @@ class VerificationService(
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
         return combine(
+            keyService.bootstrapRunning,
             currentSyncState,
             store.keys.getDeviceKeys(ownUserId, scope),
             store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
@@ -284,9 +285,10 @@ class VerificationService(
                         } ?: emit(null)
                     }
                 },
-        ) { currentSyncState, deviceKeys, defaultKey ->
+        ) { bootstrapRunning, currentSyncState, deviceKeys, defaultKey ->
             if (currentSyncState != SyncState.RUNNING) return@combine null
             if (deviceKeys == null) return@combine null
+            if (bootstrapRunning) return@combine setOf()
             if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned) return@combine setOf()
 
             val deviceVerificationMethod = deviceKeys.entries
