@@ -81,8 +81,8 @@ open class MatrixApiClient(
                 serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
                     ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
             method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
-            contentType(endpoint.requestContentType)
-            accept(endpoint.responseContentType)
+            endpoint.requestContentType?.let { contentType(it) }
+            endpoint.responseContentType?.let { accept(it) }
             if (requestBody != Unit) {
                 if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, requestBody))
                 else setBody(requestBody)

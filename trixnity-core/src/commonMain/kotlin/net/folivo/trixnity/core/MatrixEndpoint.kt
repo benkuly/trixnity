@@ -8,9 +8,9 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 interface MatrixEndpoint<REQUEST, RESPONSE> {
-    val requestContentType: ContentType
+    val requestContentType: ContentType?
         get() = ContentType.Application.Json
-    val responseContentType: ContentType
+    val responseContentType: ContentType?
         get() = ContentType.Application.Json
 
     fun requestSerializerBuilder(mappings: EventContentSerializerMappings, json: Json): KSerializer<REQUEST>? {

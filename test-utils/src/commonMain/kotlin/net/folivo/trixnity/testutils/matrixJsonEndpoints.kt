@@ -44,8 +44,8 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                     serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
                         ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
                 method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
-                contentType(endpoint.requestContentType)
-                accept(endpoint.responseContentType)
+                endpoint.requestContentType?.let { contentType(it) }
+                endpoint.responseContentType?.let { accept(it) }
             }.build()
             assertSoftly(request) {
                 if (skipUrlCheck.not()) url shouldBe expectedRequest.url
@@ -115,8 +115,8 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                     serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
                         ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
                 method = HttpMethod(endpointHttpMethod.type.name)
-                contentType(endpoint.requestContentType)
-                accept(endpoint.responseContentType)
+                endpoint.requestContentType?.let { contentType(it) }
+                endpoint.responseContentType?.let { accept(it) }
             }.build()
             assertSoftly(request) {
                 if (skipUrlCheck.not()) url shouldBe expectedRequest.url
