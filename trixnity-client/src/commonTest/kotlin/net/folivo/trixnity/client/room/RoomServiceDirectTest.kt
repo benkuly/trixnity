@@ -2,22 +2,21 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
-import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.model.EventId
@@ -41,10 +40,6 @@ class RoomServiceDirectTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
-    val users = mockk<UserService>(relaxUnitFun = true)
-    val olm = mockk<OlmService>()
-    val key = mockk<KeyService>()
-    val media = mockk<MediaService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
@@ -57,11 +52,19 @@ class RoomServiceDirectTest : ShouldSpec({
         store = InMemoryStore(storeScope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = RoomService(bob, store, api, olm, key, users, media, currentSyncState)
+        cut = RoomService(
+            bob,
+            store,
+            api,
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
+            currentSyncState
+        )
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -405,21 +408,4 @@ class RoomServiceDirectTest : ShouldSpec({
             store.room.get(room2).value?.isDirect shouldBe true
         }
     }
-
-    context(RoomService::handleDirectEventContent.name) {
-        should("call DirectEventContent handlers") {
-            val spyCut = spyk(cut) {
-                coEvery { setRoomIsDirect(any()) } just Runs
-                coEvery { setAvatarUrlForDirectRooms(any()) } just Runs
-            }
-            val eventContent = mockk<DirectEventContent>()
-            spyCut.setDirectEventContent(Event.GlobalAccountDataEvent(eventContent))
-            spyCut.handleDirectEventContent()
-            coVerify {
-                spyCut.setRoomIsDirect(eventContent)
-                spyCut.setAvatarUrlForDirectRooms(eventContent)
-            }
-        }
-    }
-
 })

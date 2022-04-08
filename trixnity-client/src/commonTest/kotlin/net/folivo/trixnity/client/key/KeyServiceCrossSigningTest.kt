@@ -9,7 +9,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
-import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,10 +20,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.KeySecretServiceMock
+import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -37,7 +38,7 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventConten
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -51,7 +52,6 @@ import kotlin.random.Random
 
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
@@ -59,53 +59,60 @@ private val body: ShouldSpec.() -> Unit = {
     val aliceDevice = "ALICEDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
-    val backup: KeyBackupService = mockk()
-    val trust: KeyTrustService = mockk()
+    lateinit var olmSign: OlmSignServiceMock
+    lateinit var backup: KeyBackupServiceMock
+    lateinit var trust: KeyTrustServiceMock
     lateinit var apiConfig: PortableMockEngineConfig
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-
-    mockkStatic(::decryptSecret)
 
     lateinit var cut: KeyService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
+        olmSign = OlmSignServiceMock()
+        backup = KeyBackupServiceMock()
+        trust = KeyTrustServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = KeyService(
-            "",
             alice,
             aliceDevice,
             store,
-            olm,
+            olmSign,
             api,
-            backup = backup,
-            trust = trust,
-            currentSyncState = currentSyncState
+            currentSyncState,
+            KeySecretServiceMock(),
+            backup,
+            trust,
         )
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
+        olmSign.returnVerify = VerifyResult.Valid
     }
 
     afterTest {
-        clearAllMocks()
         scope.cancel()
     }
 
     context(KeyService::checkOwnAdvertisedMasterKeyAndVerifySelf.name) {
-        beforeTest {
-            coEvery { trust.trustAndSignKeys(any(), any()) } just Runs
-        }
+        val recoveryKey = Random.nextBytes(32)
+        val iv = Random.nextBytes(16)
+        val keyInfo = AesHmacSha2Key(
+            iv = iv.encodeBase64(),
+            mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
+        )
+        val keyId = "keyId"
+        val (masterSigningPrivateKey, masterSigningPublicKey) =
+            freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
+        val encryptedMasterSigningKey = MasterKeyEventContent(
+            encryptSecret(recoveryKey, keyId, "m.cross_signing.master", masterSigningPrivateKey, json)
+        )
         should("fail when master key cannot be found") {
-            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("fail when master key does not match") {
-            val encryptedMasterKey = MasterKeyEventContent(mapOf())
-            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterKey))
+            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
             val publicKey = Random.nextBytes(32).encodeUnpaddedBase64()
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
@@ -121,23 +128,17 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns Random.nextBytes(32)
-                .encodeBase64()
-
-            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).isFailure shouldBe true
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("be success, when master key matches") {
-            val encryptedMasterKey = MasterKeyEventContent(mapOf())
-            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterKey))
-            val privateKey = Random.nextBytes(32).encodeBase64()
-            val publicKey = freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
+            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
                     StoredCrossSigningKeys(
                         SignedCrossSigningKeys(
                             CrossSigningKeys(
                                 alice, setOf(CrossSigningKeysUsage.MasterKey), keysOf(
-                                    Ed25519Key(publicKey, publicKey)
+                                    Ed25519Key(masterSigningPublicKey, masterSigningPublicKey)
                                 )
                             ), mapOf()
                         ), Valid(false)
@@ -158,24 +159,19 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            coEvery { decryptSecret(any(), any(), any(), any(), any(), any()) } returns privateKey
+            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).getOrThrow()
 
-            cut.checkOwnAdvertisedMasterKeyAndVerifySelf(ByteArray(32), "keyId", mockk()).getOrThrow()
-
-            coVerify {
-                trust.trustAndSignKeys(
-                    setOf(
-                        Ed25519Key(publicKey, publicKey),
+            trust.trustAndSignKeysCalled.value shouldBe
+                    (setOf(
+                        Ed25519Key(masterSigningPublicKey, masterSigningPublicKey),
                         Ed25519Key(aliceDevice, "dev")
-                    ), alice
-                )
-            }
+                    ) to alice)
         }
     }
     context(KeyService::bootstrapCrossSigning.name) {
         context("successfull") {
             var secretKeyEventContentCalled = false
-            var capturedPassphrase: SecretKeyEventContent.SecretStorageKeyPassphrase? = null
+            var capturedPassphrase: AesHmacSha2Key.SecretStorageKeyPassphrase? = null
             var defaultSecretKeyEventContentCalled = false
             var masterKeyEventContentCalled = false
             var userSigningKeyEventContentCalled = false
@@ -196,7 +192,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SetGlobalAccountData(alice.e(), "m.secret_storage.key."),
                         skipUrlCheck = true
                     ) {
-                        it.shouldBeInstanceOf<SecretKeyEventContent.AesHmacSha2Key>()
+                        it.shouldBeInstanceOf<AesHmacSha2Key>()
                         it.iv shouldNot beEmpty()
                         it.mac shouldNot beEmpty()
                         capturedPassphrase = it.passphrase
@@ -251,13 +247,6 @@ private val body: ShouldSpec.() -> Unit = {
                         ResponseWithUIA.Success(Unit)
                     }
                 }
-                coEvery { olm.sign.sign(any<CrossSigningKeys>(), any<OlmSignService.SignWith>()) }.answers {
-                    Signed(firstArg(), mapOf())
-                }
-                coEvery {
-                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
-                } returns Result.success(Unit)
-                coEvery { trust.trustAndSignKeys(any(), any()) } just Runs
                 store.keys.updateCrossSigningKeys(alice) {
                     setOf(
                         StoredCrossSigningKeys(
@@ -294,15 +283,11 @@ private val body: ShouldSpec.() -> Unit = {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))
                 }
-                coVerify {
-                    trust.trustAndSignKeys(
-                        setOf(
-                            Ed25519Key("A_MSK", "A_MSK"),
-                            Ed25519Key(aliceDevice, "dev")
-                        ), alice
-                    )
-                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
-                }
+                trust.trustAndSignKeysCalled.value shouldBe (setOf(
+                    Ed25519Key("A_MSK", "A_MSK"),
+                    Ed25519Key(aliceDevice, "dev")
+                ) to alice)
+                backup.bootstrapRoomKeyBackupCalled.value shouldBe true
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
@@ -324,21 +309,17 @@ private val body: ShouldSpec.() -> Unit = {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))
                 }
-                coVerify {
-                    trust.trustAndSignKeys(
-                        setOf(
-                            Ed25519Key("A_MSK", "A_MSK"),
-                            Ed25519Key(aliceDevice, "dev")
-                        ), alice
-                    )
-                    backup.bootstrapRoomKeyBackup(any(), any(), any(), any())
-                }
+                trust.trustAndSignKeysCalled.value shouldBe (setOf(
+                    Ed25519Key("A_MSK", "A_MSK"),
+                    Ed25519Key(aliceDevice, "dev")
+                ) to alice)
+                backup.bootstrapRoomKeyBackupCalled.value shouldBe true
                 store.keys.secrets.value.keys shouldBe setOf(
                     AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
                 )
                 secretKeyEventContentCalled shouldBe true
-                capturedPassphrase.shouldBeInstanceOf<SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2>()
+                capturedPassphrase.shouldBeInstanceOf<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>()
                 defaultSecretKeyEventContentCalled shouldBe true
                 masterKeyEventContentCalled shouldBe true
                 userSigningKeyEventContentCalled shouldBe true

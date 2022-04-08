@@ -11,11 +11,6 @@ import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -23,10 +18,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.KeySecretServiceMock
+import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -50,40 +48,48 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class KeyServiceTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 15_000
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
-    val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val olm = mockk<OlmService>()
+    lateinit var olmSignMock: OlmSignServiceMock
     val json = createMatrixJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
-    val trust = mockk<KeyTrustService>(relaxUnitFun = true)
-    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    lateinit var trust: KeyTrustServiceMock
 
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: KeyService
 
     beforeTest {
+        olmSignMock = OlmSignServiceMock()
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
+        trust = KeyTrustServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyService("", alice, aliceDevice, store, olm, api, trust = trust, currentSyncState = currentSyncState)
-        coEvery { olm.sign.verify(any<SignedDeviceKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { olm.sign.verify(any<SignedCrossSigningKeys>(), any()) } returns VerifyResult.Valid
-        coEvery { trust.calculateCrossSigningKeysTrustLevel(any()) } returns CrossSigned(false)
-        coEvery { trust.calculateDeviceKeysTrustLevel(any()) } returns CrossSigned(false)
+        cut = KeyService(
+            alice,
+            aliceDevice,
+            store,
+            olmSignMock,
+            api,
+            currentSyncState,
+            KeySecretServiceMock(),
+            KeyBackupServiceMock(),
+            trust
+        )
+        trust.returnCalculateCrossSigningKeysTrustLevel = CrossSigned(false)
+        trust.returnCalculateDeviceKeysTrustLevel = CrossSigned(false)
+        olmSignMock.returnVerify = VerifyResult.Valid
     }
 
     afterTest {
-        clearAllMocks()
         scope.cancel()
     }
 
@@ -91,13 +97,13 @@ private val body: ShouldSpec.() -> Unit = {
         context("device key is tracked") {
             should("add changed devices to outdated keys") {
                 store.keys.outdatedKeys.value = setOf(alice)
-                store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to mockk()) }
+                store.keys.updateDeviceKeys(bob) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)))
                 store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
             }
             should("remove key when user left") {
                 store.keys.outdatedKeys.value = setOf(alice, bob)
-                store.keys.updateDeviceKeys(alice) { mockk() }
+                store.keys.updateDeviceKeys(alice) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)))
                 store.keys.getDeviceKeys(alice) should beNull()
                 store.keys.outdatedKeys.value shouldContainExactly setOf(bob)
@@ -150,7 +156,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                coEvery { olm.sign.verify(key, any()) } returns VerifyResult.MissingSignature("")
+                olmSignMock.returnVerify = VerifyResult.MissingSignature("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -165,14 +171,16 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
             should("ignore when signatures are invalid") {
                 val invalidKey = Signed(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -185,7 +193,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
-                coVerify(exactly = 0) { trust.updateTrustLevelOfKeyChainSignedBy(any(), any()) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add master key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -205,7 +213,9 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
         }
         context("self signing keys") {
@@ -214,7 +224,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -227,7 +237,7 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
                 store.keys.getCrossSigningKeys(alice).shouldBeNull()
-                coVerify(exactly = 0) { trust.updateTrustLevelOfKeyChainSignedBy(any(), any()) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add self signing key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -247,7 +257,9 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
             should("replace self signing key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -275,7 +287,9 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
         }
         context("user signing keys") {
@@ -284,7 +298,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                coEvery { olm.sign.verify(invalidKey, any()) } returns VerifyResult.Invalid("")
+                olmSignMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -297,7 +311,7 @@ private val body: ShouldSpec.() -> Unit = {
                 continually(500.milliseconds, 50.milliseconds.fixed()) {
                     store.keys.getCrossSigningKeys(alice).shouldBeNull()
                 }
-                coVerify(exactly = 0) { trust.updateTrustLevelOfKeyChainSignedBy(any(), any()) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add user signing key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -316,7 +330,9 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
             should("replace user signing key") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -343,7 +359,9 @@ private val body: ShouldSpec.() -> Unit = {
                 store.keys.getCrossSigningKeys(alice) shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, CrossSigned(false))
                 )
-                coVerify { trust.updateTrustLevelOfKeyChainSignedBy(alice, Ed25519Key("id", "value")) }
+                trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
+                    alice, Ed25519Key("id", "value")
+                )
             }
         }
         context("device keys") {
@@ -490,7 +508,7 @@ private val body: ShouldSpec.() -> Unit = {
                             CrossSigned(true) to true,
                             CrossSigned(false) to false,
                         ) { (levelBefore, expectedVerified) ->
-                            coEvery { trust.calculateDeviceKeysTrustLevel(aliceKey2) } returns NotCrossSigned
+                            trust.returnCalculateDeviceKeysTrustLevel = NotCrossSigned
                             apiConfig.endpoints {
                                 matrixJsonEndpoint(json, mappings, GetKeys()) {
                                     GetKeys.Response(
@@ -598,7 +616,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("manipulation of ") {
                 should("signature") {
-                    coEvery { olm.sign.verify(cedricKey1, any()) } returns VerifyResult.Invalid("")
+                    olmSignMock.returnVerify = VerifyResult.Invalid("")
                     apiConfig.endpoints {
                         matrixJsonEndpoint(json, mappings, GetKeys()) {
                             GetKeys.Response(

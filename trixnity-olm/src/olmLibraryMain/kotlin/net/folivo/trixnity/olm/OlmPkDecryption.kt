@@ -1,6 +1,5 @@
 package net.folivo.trixnity.olm
 
-import io.ktor.util.*
 import net.folivo.trixnity.olm.OlmLibrary.clear_pk_decryption
 import net.folivo.trixnity.olm.OlmLibrary.pickle_pk_decryption
 import net.folivo.trixnity.olm.OlmLibrary.pickle_pk_decryption_length
@@ -19,7 +18,6 @@ actual class OlmPkDecryption private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        @OptIn(InternalAPI::class)
         actual fun create(privateKey: String?): OlmPkDecryption {
             val privateKeyLength = pk_private_key_length()
             val publicKey = ByteArray(pk_key_length().toInt())
@@ -52,7 +50,6 @@ actual class OlmPkDecryption private constructor(
         }
     }
 
-    @OptIn(InternalAPI::class)
     actual val privateKey: String
         get() {
             val privateKey = ByteArray(pk_private_key_length().toInt())

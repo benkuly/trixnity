@@ -1,8 +1,6 @@
 package net.folivo.trixnity.olm
 
-import io.ktor.util.*
 import org.khronos.webgl.Uint8Array
-import rethrow
 
 actual class OlmPkSigning private constructor(
     internal actual val ptr: OlmPkSigningPointer,
@@ -10,7 +8,6 @@ actual class OlmPkSigning private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        @OptIn(InternalAPI::class)
         actual fun create(privateKey: String?): OlmPkSigning {
             val ptr: PkSigning = rethrow { js("new Olm.PkSigning()") }.unsafeCast<OlmPkSigningPointer>()
             val newPrivateKey = privateKey?.decodeUnpaddedBase64Bytes()?.unsafeCast<Uint8Array>() ?: ptr.generate_seed()

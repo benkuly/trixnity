@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.IOlmSignService
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.signatures
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
@@ -33,22 +34,51 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyBackupService {
+    /**
+     * This is the active key backup version.
+     * Is null, when the backup algorithm is not supported or there is no existing backup.
+     */
+    val version: StateFlow<GetRoomKeysBackupVersionResponse.V1?>
+
+    data class LoadMegolmSession(
+        val roomId: RoomId,
+        val sessionId: String,
+        val senderKey: Key.Curve25519Key,
+    )
+
+    fun loadMegolmSession(
+        roomId: RoomId,
+        sessionId: String,
+        senderKey: Key.Curve25519Key,
+    )
+
+    suspend fun keyBackupCanBeTrusted(keyBackupVersion: GetRoomKeysBackupVersionResponse, privateKey: String): Boolean
+
+    suspend fun bootstrapRoomKeyBackup(
+        key: ByteArray,
+        keyId: String,
+        masterSigningPrivateKey: String,
+        masterSigningPublicKey: String
+    ): Result<Unit>
+}
+
 class KeyBackupService(
     private val olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olm: OlmService,
+    private val olmSign: IOlmSignService,
     private val currentSyncState: StateFlow<SyncState>
-) {
+) : IKeyBackupService {
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
     /**
      * This is the active key backup version.
      * Is null, when the backup algorithm is not supported or there is no existing backup.
      */
-    val version = currentBackupVersion.asStateFlow()
+    override val version = currentBackupVersion.asStateFlow()
 
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -76,8 +106,8 @@ class KeyBackupService(
         val currentVersion = api.keys.getRoomKeysVersion().getOrThrow().let { currentVersion ->
             if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
-                    olm.sign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
-                if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey, ownUserId, store)) {
+                    olmSign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
+                if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey)) {
                     if (deviceSignature != null &&
                         currentVersion.authData.signatures[ownUserId]?.none { it == deviceSignature } == true
                     ) {
@@ -91,7 +121,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     }
                     currentVersion
                 } else {
@@ -110,7 +140,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     store.keys.secrets.update { it - M_MEGOLM_BACKUP_V1 }
                     null
                 }
@@ -121,20 +151,14 @@ class KeyBackupService(
 
 
     private val currentlyLoadingMegolmSessions = MutableStateFlow<Set<Pair<RoomId, String>>>(setOf())
-    private val loadMegolmSessionsQueue = MutableStateFlow<Set<LoadMegolmSession>>(setOf())
+    private val loadMegolmSessionsQueue = MutableStateFlow<Set<IKeyBackupService.LoadMegolmSession>>(setOf())
 
-    data class LoadMegolmSession(
-        val roomId: RoomId,
-        val sessionId: String,
-        val senderKey: Key.Curve25519Key,
-    )
-
-    internal fun loadMegolmSession(
+    override fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
         senderKey: Key.Curve25519Key,
     ) {
-        loadMegolmSessionsQueue.update { it + LoadMegolmSession(roomId, sessionId, senderKey) }
+        loadMegolmSessionsQueue.update { it + IKeyBackupService.LoadMegolmSession(roomId, sessionId, senderKey) }
     }
 
     internal suspend fun handleLoadMegolmSessionQueue(): Unit = coroutineScope {
@@ -207,6 +231,42 @@ class KeyBackupService(
         }.collect()
     }
 
+    override suspend fun keyBackupCanBeTrusted(
+        keyBackupVersion: GetRoomKeysBackupVersionResponse,
+        privateKey: String,
+    ): Boolean {
+        val generatedPublicKey = try {
+            freeAfter(OlmPkDecryption.create(privateKey)) { it.publicKey }
+        } catch (error: Throwable) {
+            log.warn(error) { "could not generate public key from private backup key" }
+            return false
+        }
+        if (keyBackupVersion !is GetRoomKeysBackupVersionResponse.V1) {
+            log.warn { "current room key backup version does not match v1 or there was no backup" }
+            return false
+        }
+        val originalPublicKey = keyBackupVersion.authData.publicKey.value
+        if (originalPublicKey != generatedPublicKey) {
+            log.warn { "key backup private key does not match public key (expected: $originalPublicKey was: $generatedPublicKey" }
+            return false
+        }
+//    if ( // TODO this is only relevant, when we want to use the key backup without private key
+//        keyBackupVersion.authData.signatures[ownUserId]?.none {
+//            it.keyId?.let { keyId ->
+//                val keyTrustLevel = store.keys.getDeviceKey(ownUserId, keyId)?.trustLevel
+//                    ?: store.keys.getCrossSigningKey(ownUserId, keyId)?.trustLevel
+//                keyTrustLevel == KeySignatureTrustLevel.Valid(true)
+//                        || keyTrustLevel == KeySignatureTrustLevel.CrossSigned(true)
+//                        || keyTrustLevel == KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true)
+//            } == true
+//        } == true
+//    ) {
+//        log.warn { "key backup cannot be trusted, because it is not signed by any trusted key" }
+//        return false
+//    }
+        return true
+    }
+
     @OptIn(FlowPreview::class)
     internal suspend fun uploadRoomKeyBackup() = coroutineScope {
         currentSyncState.retryInfiniteWhenSyncIs(
@@ -272,7 +332,7 @@ class KeyBackupService(
         }
     }
 
-    internal suspend fun bootstrapRoomKeyBackup(
+    override suspend fun bootstrapRoomKeyBackup(
         key: ByteArray,
         keyId: String,
         masterSigningPrivateKey: String,
@@ -284,10 +344,10 @@ class KeyBackupService(
                 authData = with(
                     RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
                 ) {
-                    val ownDeviceSignature = olm.sign.signatures(this)[ownUserId]
+                    val ownDeviceSignature = olmSign.signatures(this)[ownUserId]
                         ?.firstOrNull()
                     val ownUsersSignature =
-                        olm.sign.signatures(this, Custom(masterSigningPrivateKey, masterSigningPublicKey))[ownUserId]
+                        olmSign.signatures(this, Custom(masterSigningPrivateKey, masterSigningPublicKey))[ownUserId]
                             ?.firstOrNull()
                     requireNotNull(ownUsersSignature)
                     requireNotNull(ownDeviceSignature)

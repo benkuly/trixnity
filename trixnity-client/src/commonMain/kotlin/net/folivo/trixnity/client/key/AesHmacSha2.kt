@@ -20,7 +20,6 @@ internal fun deriveKeys(key: ByteArray, name: String): DerivedKeys {
     return DerivedKeys(aesKey = aesKey, hmacKey = hmacKey)
 }
 
-@OptIn(InternalAPI::class)
 internal suspend fun encryptAesHmacSha2(
     content: ByteArray,
     key: ByteArray,
@@ -42,7 +41,6 @@ internal suspend fun encryptAesHmacSha2(
     )
 }
 
-@OptIn(InternalAPI::class)
 internal suspend fun decryptAesHmacSha2(
     content: AesHmacSha2EncryptedData,
     key: ByteArray,

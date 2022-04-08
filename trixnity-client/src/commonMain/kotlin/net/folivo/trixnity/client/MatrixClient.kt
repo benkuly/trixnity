@@ -12,14 +12,21 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.client.key.KeyBackupService
+import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoreFactory
+import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.verification.IVerificationService
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -54,16 +61,23 @@ class MatrixClient private constructor(
 ) {
     val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
     val avatarUrl: StateFlow<String?> = store.account.avatarUrl.asStateFlow()
-    val olm: OlmService
-    val room: RoomService
-    val user: UserService
-    val media: MediaService
-    val verification: VerificationService
+    private val _olm: OlmService
+    val olm: IOlmService
+    private val _room: RoomService
+    val room: IRoomService
+    private val _user: UserService
+    val user: IUserService
+    val media: IMediaService
+    private val _verification: VerificationService
+    val verification: IVerificationService
+    private val _keyBackup: KeyBackupService
+    private val _keySecret: KeySecretService
+    private val _key: KeyService
     val key: KeyService
     val syncState = api.sync.currentSyncState
 
     init {
-        olm = OlmService(
+        _olm = OlmService(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -71,48 +85,71 @@ class MatrixClient private constructor(
             api = api,
             json = json,
         )
+        olm = _olm
         media = MediaService(
             api = api,
             store = store,
         )
-        user = UserService(
+        _user = UserService(
             api = api,
             store = store,
             currentSyncState = syncState,
         )
-        key = KeyService(
+        user = _user
+        _keyBackup = KeyBackupService(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olm = olm,
+            olmSign = olm.sign,
             currentSyncState = syncState,
         )
-        room = RoomService(
+        _keySecret = KeySecretService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
+            store = store,
+            api = api,
+            olmEvents = olm.event,
+            keyBackup = _keyBackup,
+            currentSyncState = syncState,
+        )
+        _key = KeyService(
+            ownUserId = userId,
+            ownDeviceId = deviceId,
+            store = store,
+            api = api,
+            olmSign = olm.sign,
+            currentSyncState = syncState,
+            backup = _keyBackup,
+            secret = _keySecret
+        )
+        key = _key
+        _room = RoomService(
             ownUserId = userId,
             store = store,
             api = api,
-            olm = olm,
-            key = key,
+            olmEvent = olm.event,
+            keyBackup = _key.backup,
             user = user,
             media = media,
             currentSyncState = syncState,
             setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
             customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
         )
-        verification = VerificationService(
+        room = _room
+        _verification = VerificationService(
             ownUserId = userId,
             ownDeviceId = deviceId,
             api = api,
             store = store,
-            olmService = olm,
+            olmEventService = olm.event,
             roomService = room,
             userService = user,
-            keyService = key,
+            keyService = _key,
             currentSyncState = syncState,
         )
-
+        verification = _verification
     }
 
     companion object {
@@ -351,7 +388,7 @@ class MatrixClient private constructor(
     private suspend fun deleteAll() {
         stopSync(true)
         store.deleteAll()
-        olm.free()
+        _olm.free()
     }
 
     /**
@@ -406,11 +443,13 @@ class MatrixClient private constructor(
             }
             val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
-                key.start(this)
-                olm.start(this)
-                room.start(this)
-                user.start(this)
-                verification.start(this)
+                _key.start(this)
+                _keyBackup.start(this)
+                _keySecret.start(this)
+                _olm.start(this)
+                _room.start(this)
+                _user.start(this)
+                _verification.start(this)
                 launch {
                     loginState.debounce(100.milliseconds).collect {
                         log.info { "login state: $it" }

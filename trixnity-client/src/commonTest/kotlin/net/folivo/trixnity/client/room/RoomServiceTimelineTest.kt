@@ -5,19 +5,19 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.mockk
-import io.mockk.spyk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
@@ -30,13 +30,18 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
 class RoomServiceTimelineTest : ShouldSpec({
     val room = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>(relaxed = true)
-    val olm = mockk<OlmService>()
+    val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
+    lateinit var apiConfig: PortableMockEngineConfig
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService
@@ -44,11 +49,21 @@ class RoomServiceTimelineTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = RoomService(
+            UserId("alice", "server"),
+            store,
+            api,
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
+            currentSyncState
+        )
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -295,9 +310,6 @@ class RoomServiceTimelineTest : ShouldSpec({
         }
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
-                store = spyk(InMemoryStore(storeScope).apply { init() })
-                cut =
-                    RoomService(UserId("alice", "server"), store, api, olm, mockk(), mockk(), mockk(), currentSyncState)
                 store.room.update(room) {
                     Room(
                         roomId = room,
@@ -305,13 +317,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                         lastEventId = event1.id
                     )
                 }
-                coEvery { store.roomOutboxMessage.get("transactionId1") } returns RoomOutboxMessage(
-                    "transactionId1",
-                    room,
-                    TextMessageEventContent("Hello!")
-                )
-                coEvery { store.roomOutboxMessage.get("transactionId2") } returns null
-                coEvery { store.roomOutboxMessage.get("transactionId-unknown") } returns null
+                store.roomOutboxMessage.update("transactionId1") {
+                    RoomOutboxMessage(
+                        "transactionId1",
+                        room,
+                        TextMessageEventContent("Hello!")
+                    )
+                }
                 val eventId1 = EventId("\$event1")
                 val eventId2 = EventId("\$event2")
                 val eventId3 = EventId("\$event3")
@@ -379,23 +391,25 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("no previous event") {
                 should("add elements to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = null,
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event2, event1),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2, event1),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val startEvent = TimelineEvent(
                         event = event3,
                         roomId = room,
@@ -432,23 +446,25 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("add one element to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = null,
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event2),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val startEvent = TimelineEvent(
                         event = event3,
                         roomId = room,
@@ -477,23 +493,25 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("detect start of timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = null,
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "start",
-                            chunk = listOf(),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "start",
+                                chunk = listOf(),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val startEvent = TimelineEvent(
                         event = event3,
                         roomId = room,
@@ -516,23 +534,26 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("gap filled") {
                 should("add element to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "end",
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event2),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "end",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val previousEvent = TimelineEvent(
                         event = event1,
                         roomId = room,
@@ -577,23 +598,26 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("ignore overlapping events") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "end",
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event2, event1.copy(originTimestamp = 24)),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "end",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2, event1.copy(originTimestamp = 24)),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val previousEvent = TimelineEvent(
                         event = event1,
                         roomId = room,
@@ -640,23 +664,26 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("gap not filled") {
                 should("add element to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "next",
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event2),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "next",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val previousEvent = TimelineEvent(
                         event = event1,
                         roomId = room,
@@ -719,23 +746,26 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("gap filled") {
                 should("add elements to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "end",
-                            dir = FORWARD,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event3, event4),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "end",
+                                dir = FORWARD,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event3, event4),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val nextEvent = TimelineEvent(
                         event = event5,
                         roomId = room,
@@ -788,23 +818,26 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("ignore overlapping events") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "end",
-                            dir = FORWARD,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event4, event5.copy(originTimestamp = 24)),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "end",
+                                dir = FORWARD,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event4, event5.copy(originTimestamp = 24)),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val nextEvent = TimelineEvent(
                         event = event5,
                         roomId = room,
@@ -851,23 +884,26 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("gap not filled") {
                 should("add element to timeline") {
-                    coEvery {
-                        api.rooms.getEvents(
-                            roomId = room,
-                            from = "start",
-                            to = "next",
-                            dir = FORWARD,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    } returns Result.success(
-                        GetEvents.Response(
-                            start = "start",
-                            end = "end",
-                            chunk = listOf(event4),
-                            state = listOf()
-                        )
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                "next",
+                                dir = FORWARD,
+                                limit = 20,
+                                filter = """{"lazy_load_members":true}"""
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event4),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val nextEvent = TimelineEvent(
                         event = event5,
                         roomId = room,

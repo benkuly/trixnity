@@ -3,42 +3,39 @@ package net.folivo.trixnity.client.store
 import io.kotest.assertions.retry
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import kotlin.time.Duration.Companion.milliseconds
 
 class RoomOutboxMessageStoreTest : ShouldSpec({
     timeout = 60_000
 
-    val roomOutboxMessageRepository = mockk<RoomOutboxMessageRepository>(relaxUnitFun = true)
+    lateinit var roomOutboxMessageRepository: RoomOutboxMessageRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomOutboxMessageStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
+        roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository()
         cut = RoomOutboxMessageStore(roomOutboxMessageRepository, NoopRepositoryTransactionManager, storeScope)
     }
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
+    val room = RoomId("room", "server")
+
     context(RoomOutboxMessageStore::init.name) {
         should("fill cache with values from repository") {
-            val message1 = mockk<RoomOutboxMessage<*>> {
-                coEvery { transactionId } returns "t1"
-            }
-            val message2 = mockk<RoomOutboxMessage<*>> {
-                coEvery { transactionId } returns "t2"
-            }
-            coEvery { roomOutboxMessageRepository.getAll() }.returns(listOf(message1, message2))
+            val message1 = RoomOutboxMessage("t1", room, TextMessageEventContent(""))
+            val message2 = RoomOutboxMessage("t2", room, TextMessageEventContent(""))
+            roomOutboxMessageRepository.save("t1", message1)
+            roomOutboxMessageRepository.save("t2", message2)
 
             cut.init()
 
@@ -61,7 +58,9 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
             }
         }
         repeat(50) { i ->
-            cut.update(i.toString()) { RoomOutboxMessage(i.toString(), RoomId("room", "server"), mockk()) }
+            cut.update(i.toString()) {
+                RoomOutboxMessage(i.toString(), RoomId("room", "server"), TextMessageEventContent(""))
+            }
         }
         cut.getAll().first { it.isEmpty() } // we get a timeout if this never succeeds
         job1.cancel()

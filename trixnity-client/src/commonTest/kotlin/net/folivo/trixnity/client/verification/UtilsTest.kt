@@ -2,8 +2,9 @@ package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.mockk
 import kotlinx.datetime.Clock
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import kotlin.time.Duration.Companion.minutes
@@ -21,7 +22,7 @@ class UtilsTest : ShouldSpec({
         should("return false, when state is cancel") {
             isVerificationRequestActive(
                 Clock.System.now().toEpochMilliseconds(),
-                ActiveVerificationState.Cancel(mockk(), false)
+                ActiveVerificationState.Cancel(VerificationCancelEventContent(Code.User, "", null, null), false)
             ) shouldBe false
         }
         should("return false, when state is done") {

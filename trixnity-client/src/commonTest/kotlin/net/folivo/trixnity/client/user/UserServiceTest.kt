@@ -4,8 +4,6 @@ import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -13,12 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.getByStateKey
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.model.EventId
@@ -29,7 +25,10 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
+import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -60,7 +59,6 @@ class UserServiceTest : ShouldSpec({
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
@@ -135,7 +133,14 @@ class UserServiceTest : ShouldSpec({
                     )
                 }
             }
-            store.keys.updateDeviceKeys(alice) { mapOf("alice" to mockk()) } // we know alice keys, so only update bob keys
+            store.keys.updateDeviceKeys(alice) {
+                mapOf(
+                    "alice" to StoredDeviceKeys(
+                        Signed(DeviceKeys(alice, "A", setOf(), keysOf()), mapOf()),
+                        KeySignatureTrustLevel.Valid(false)
+                    )
+                )
+            } // we know alice keys, so only update bob keys
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
@@ -198,7 +203,7 @@ class UserServiceTest : ShouldSpec({
         val user3 = UserId("user3", "server")
         val user4 = UserId("user4", "server")
         val user1Event = StateEvent(
-            mockk<MemberEventContent>(),
+            MemberEventContent(membership = JOIN),
             EventId("\$event1"),
             UserId("sender", "server"),
             roomId,
@@ -206,7 +211,7 @@ class UserServiceTest : ShouldSpec({
             stateKey = user1.full
         )
         val user2Event = StateEvent(
-            mockk<MemberEventContent>(),
+            MemberEventContent(membership = JOIN),
             EventId("\$event2"),
             UserId("sender", "server"),
             roomId,
@@ -214,7 +219,7 @@ class UserServiceTest : ShouldSpec({
             stateKey = user2.full
         )
         val user3Event = StateEvent(
-            mockk<MemberEventContent>(),
+            MemberEventContent(membership = JOIN),
             EventId("\$event3"),
             UserId("sender", "server"),
             roomId,

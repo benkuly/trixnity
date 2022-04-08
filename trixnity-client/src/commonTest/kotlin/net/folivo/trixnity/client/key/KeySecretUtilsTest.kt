@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import io.mockk.clearAllMocks
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -12,15 +11,10 @@ import kotlin.random.Random
 
 class KeySecretUtilsTest : ShouldSpec(body)
 
-@OptIn(InternalAPI::class)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixJson()
-
-    afterTest {
-        clearAllMocks()
-    }
 
     context(::decryptSecret.name) {
         should("decrypt ${SecretKeyEventContent.AesHmacSha2Key::class.simpleName}") {

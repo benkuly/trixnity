@@ -2,7 +2,6 @@ package net.folivo.trixnity.olm
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import rethrow
 
 actual class OlmAccount private constructor() : WantsToBeFree {
     internal actual val ptr: OlmAccountPointer = rethrow { js("new Olm.Account()") }.unsafeCast<OlmAccountPointer>()

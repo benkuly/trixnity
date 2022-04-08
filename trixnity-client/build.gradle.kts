@@ -101,7 +101,6 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(project(":test-utils"))
 
-                implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
 
                 implementation("io.kotest:kotest-common:${Versions.kotest}")

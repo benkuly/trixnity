@@ -1,4 +1,4 @@
-import net.folivo.trixnity.olm.OlmLibraryException
+package net.folivo.trixnity.olm
 
 fun <T> rethrow(block: () -> T): T = try {
     block()

@@ -3,10 +3,8 @@ package net.folivo.trixnity.client.key
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
 import kotlin.random.Random
 
-@OptIn(InternalAPI::class)
 class AesHmacSha2Test : ShouldSpec({
     timeout = 30_000
 

@@ -22,7 +22,7 @@ fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClien
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClient(
         json = json,
-        httpClientFactory = mockEngineFactory() { configurePortableMockEngine(config) }
+        httpClientFactory = mockEngineFactory { configurePortableMockEngine(config) }
     )
     return api to config
 }

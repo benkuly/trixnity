@@ -3,14 +3,14 @@ package net.folivo.trixnity.client.room
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.Store
@@ -45,7 +45,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixJson()
     val contentMappings = createEventContentSerializerMappings()
-    val olm = mockk<OlmService>()
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomService
@@ -54,15 +53,22 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        val key = mockk<KeyService>(relaxed = true)
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
-        cut = RoomService(UserId("alice", "server"), store, api, olm, key, mockk(), mockk(), currentSyncState)
+        cut = RoomService(
+            UserId("alice", "server"),
+            store,
+            api,
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
+            currentSyncState
+        )
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
         scope.cancel()
     }

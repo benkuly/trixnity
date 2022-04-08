@@ -1,5 +1,9 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -32,13 +36,35 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
+import kotlin.coroutines.cancellation.CancellationException
 
 private val log = KotlinLogging.logger {}
 
-@OptIn(ExperimentalSerializationApi::class)
+interface IOlmEventService {
+    val decryptedOlmEvents: SharedFlow<IOlmService.DecryptedOlmEventContainer>
+
+    suspend fun encryptOlm(
+        content: EventContent,
+        receiverId: UserId,
+        deviceId: String,
+        forceNewSession: Boolean = false
+    ): OlmEncryptedEventContent
+
+    suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): DecryptedOlmEvent<*>
+
+    suspend fun encryptMegolm(
+        content: MessageEventContent,
+        roomId: RoomId,
+        settings: EncryptionEventContent
+    ): MegolmEncryptedEventContent
+
+    suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): DecryptedMegolmEvent<*>
+}
+
 class OlmEventService internal constructor(
     private val olmPickleKey: String,
     private val ownUserId: UserId,
@@ -49,13 +75,33 @@ class OlmEventService internal constructor(
     private val account: OlmAccount,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val signService: OlmSignService,
-) {
-    suspend fun encryptOlm(
+    private val signService: IOlmSignService,
+) : IOlmEventService {
+
+    internal suspend fun start(scope: CoroutineScope) {
+        api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
+    }
+
+    private val _decryptedOlmEvents = MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>()
+    override val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
+
+    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
+        if (event is Event.ToDeviceEvent) {
+            try {
+                val decryptedEvent = decryptOlm(event.content, event.sender)
+                _decryptedOlmEvents.emit(IOlmService.DecryptedOlmEventContainer(event, decryptedEvent))
+            } catch (e: Exception) {
+                log.error(e) { "could not decrypt $event" }
+                if (e is CancellationException) throw e
+            }
+        }
+    }
+
+    override suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,
         deviceId: String,
-        forceNewSession: Boolean = false
+        forceNewSession: Boolean
     ): OlmEncryptedEventContent {
         val identityKey = store.keys.getOrFetchKeyFromDevice<Curve25519Key>(receiverId, deviceId)
             ?: throw KeyNotFoundException("could not find curve25519 key for $receiverId ($deviceId)")
@@ -109,6 +155,7 @@ class OlmEventService internal constructor(
         return finalEncryptionResult
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private suspend fun encryptWithOlmSession(
         olmSession: OlmSession,
         content: EventContent,
@@ -149,7 +196,11 @@ class OlmEventService internal constructor(
         } else newSessions
     }
 
-    suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): DecryptedOlmEvent<*> {
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun decryptOlm(
+        encryptedContent: OlmEncryptedEventContent,
+        senderId: UserId
+    ): DecryptedOlmEvent<*> {
         log.debug { "start decrypt olm event $encryptedContent" }
         val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value]
             ?: throw SessionException.SenderDidNotEncryptForThisDeviceException
@@ -254,7 +305,7 @@ class OlmEventService internal constructor(
         return finalDecryptionResult.also { log.trace { "decrypted event: $it" } }
     }
 
-    suspend fun encryptMegolm(
+    override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
@@ -310,6 +361,8 @@ class OlmEventService internal constructor(
         return finalEncryptionResult
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+
     private suspend fun encryptWithMegolmSession(
         session: OlmOutboundGroupSession,
         content: MessageEventContent,
@@ -359,7 +412,8 @@ class OlmEventService internal constructor(
         ).also { log.trace { "encrypted event: $it" } }
     }
 
-    suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun decryptMegolm(encryptedEvent: MessageEvent<MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
         val roomId = encryptedEvent.roomId
         val encryptedContent = encryptedEvent.content
         val sessionId = encryptedContent.sessionId

@@ -1,20 +1,19 @@
 package net.folivo.trixnity.client.key
 
 import com.benasher44.uuid.uuid4
-import io.ktor.util.*
 import io.ktor.util.reflect.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import net.folivo.trixnity.client.crypto.*
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.get
-import net.folivo.trixnity.client.crypto.getCrossSigningKey
-import net.folivo.trixnity.client.crypto.getDeviceKey
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.*
@@ -40,19 +39,27 @@ import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger {}
 
+interface IKeySecretService {
+    suspend fun decryptMissingSecrets(
+        key: ByteArray,
+        keyId: String,
+        keyInfo: SecretKeyEventContent,
+    )
+}
+
 class KeySecretService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: OlmService,
+    private val olmEvents: IOlmEventService,
+    private val keyBackup: IKeyBackupService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
-) {
-    @OptIn(FlowPreview::class)
+) : IKeySecretService {
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { olm.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
         api.sync.subscribeAfterSyncResponse {
             processIncomingKeyRequests()
@@ -64,7 +71,7 @@ class KeySecretService(
 
     private val incomingSecretKeyRequests = MutableStateFlow<Set<SecretKeyRequestEventContent>>(setOf())
 
-    internal fun handleEncryptedIncomingKeyRequests(event: OlmService.DecryptedOlmEventContainer) {
+    internal fun handleEncryptedIncomingKeyRequests(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
             handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
@@ -95,7 +102,7 @@ class KeySecretService(
                     api.users.sendToDevice(
                         mapOf(
                             ownUserId to mapOf(
-                                requestingDeviceId to olm.events.encryptOlm(
+                                requestingDeviceId to olmEvents.encryptOlm(
                                     SecretKeySendEventContent(
                                         request.requestId, requestedSecret.decryptedPrivateKey
                                     ), ownUserId, requestingDeviceId
@@ -109,7 +116,7 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun handleOutgoingKeyRequestAnswer(event: OlmService.DecryptedOlmEventContainer) {
+    internal suspend fun handleOutgoingKeyRequestAnswer(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
             log.trace { "handle outgoing key request answer $content" }
@@ -150,7 +157,7 @@ class KeySecretService(
                 }
                 M_MEGOLM_BACKUP_V1 -> {
                     api.keys.getRoomKeysVersion().map {
-                        keyBackupCanBeTrusted(it, content.secret, ownUserId, store)
+                        keyBackup.keyBackupCanBeTrusted(it, content.secret)
                     }.onFailure { log.warn { "could not retrieve key backup version" } }
                         .getOrElse { false }
                 }
@@ -266,8 +273,7 @@ class KeySecretService(
         }
     }
 
-    @OptIn(InternalAPI::class)
-    internal suspend fun decryptMissingSecrets(
+    override suspend fun decryptMissingSecrets(
         key: ByteArray,
         keyId: String,
         keyInfo: SecretKeyEventContent,

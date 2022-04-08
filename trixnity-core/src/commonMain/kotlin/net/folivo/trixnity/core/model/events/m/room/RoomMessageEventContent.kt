@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -198,8 +199,8 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 val relatesTo: RelatesTo? =
                     jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
-                requireNotNull(type)
-                requireNotNull(body)
+                if (type == null) throw SerializationException("type must not be null")
+                if (body == null) throw SerializationException("body must not be null")
                 UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
             }
         }

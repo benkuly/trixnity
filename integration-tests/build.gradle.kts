@@ -28,7 +28,6 @@ kotlin {
                 implementation(project(":trixnity-client:trixnity-client-store-exposed"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
-                implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")

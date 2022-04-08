@@ -9,8 +9,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Unknown
 import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 
 /**
@@ -38,27 +36,27 @@ sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
             @SerialName("ciphertext") val ciphertext: String,
             @SerialName("mac") val mac: String
         )
+
+        @Serializable(with = SecretStorageKeyPassphraseSerializer::class)
+        sealed class SecretStorageKeyPassphrase {
+            @Serializable
+            data class Pbkdf2(
+                @SerialName("salt")
+                val salt: String,
+                @SerialName("iterations")
+                val iterations: Int,
+                @SerialName("bits")
+                val bits: Int? = 256
+            ) : SecretStorageKeyPassphrase() {
+                @SerialName("algorithm")
+                val algorithm: String = "m.pbkdf2"
+            }
+
+            data class Unknown(val raw: JsonObject) : SecretStorageKeyPassphrase()
+        }
     }
 
     data class Unknown(val raw: JsonObject) : SecretKeyEventContent()
-
-    @Serializable(with = SecretStorageKeyPassphraseSerializer::class)
-    sealed class SecretStorageKeyPassphrase {
-        @Serializable
-        data class Pbkdf2(
-            @SerialName("salt")
-            val salt: String,
-            @SerialName("iterations")
-            val iterations: Int,
-            @SerialName("bits")
-            val bits: Int? = 256
-        ) : SecretStorageKeyPassphrase() {
-            @SerialName("algorithm")
-            val algorithm: String = "m.pbkdf2"
-        }
-
-        data class Unknown(val raw: JsonObject) : SecretStorageKeyPassphrase()
-    }
 }
 
 object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
@@ -84,27 +82,29 @@ object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
     }
 }
 
-object SecretStorageKeyPassphraseSerializer : KSerializer<SecretKeyEventContent.SecretStorageKeyPassphrase> {
+object SecretStorageKeyPassphraseSerializer : KSerializer<AesHmacSha2Key.SecretStorageKeyPassphrase> {
     override val descriptor = buildClassSerialDescriptor("SecretStorageKeyPassphraseSerializer")
 
-    override fun deserialize(decoder: Decoder): SecretKeyEventContent.SecretStorageKeyPassphrase {
+    override fun deserialize(decoder: Decoder): AesHmacSha2Key.SecretStorageKeyPassphrase {
         require(decoder is JsonDecoder)
         val jsonElement = decoder.decodeJsonElement().jsonObject
         return try {
             when (jsonElement["algorithm"]?.jsonPrimitive?.content) {
-                "m.pbkdf2" -> decoder.json.decodeFromJsonElement<Pbkdf2>(jsonElement)
-                else -> Unknown(jsonElement)
+                "m.pbkdf2" -> decoder.json.decodeFromJsonElement<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>(
+                    jsonElement
+                )
+                else -> AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown(jsonElement)
             }
         } catch (error: Exception) {
-            Unknown(jsonElement)
+            AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown(jsonElement)
         }
     }
 
-    override fun serialize(encoder: Encoder, value: SecretKeyEventContent.SecretStorageKeyPassphrase) {
+    override fun serialize(encoder: Encoder, value: AesHmacSha2Key.SecretStorageKeyPassphrase) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
-            is Pbkdf2 -> encoder.json.encodeToJsonElement(value)
-            is Unknown -> value.raw
+            is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 -> encoder.json.encodeToJsonElement(value)
+            is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown -> value.raw
         }
         return encoder.encodeJsonElement(jsonElement)
     }
