@@ -102,19 +102,11 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify),
     )
 
-    fun pushRuleEventMatchTriggered() = PushRule(
-        ruleId = "customRule1",
-        enabled = true,
-        default = false,
-        conditions = setOf(PushCondition.EventMatch(key = "content.body", "*triggered*")),
-        actions = setOf(Notify),
-    )
-
     fun pushRuleEventMatchTriggeredDontNotify() = PushRule(
         ruleId = "customRule1",
         enabled = true,
         default = false,
-        conditions = setOf(PushCondition.EventMatch(key = "content.body", "*triggered*")),
+        conditions = setOf(PushCondition.EventMatch(key = "content.body", "*User*")),
         actions = setOf(DontNotify),
     )
 
@@ -122,7 +114,7 @@ private val body: ShouldSpec.() -> Unit = {
         ruleId = "customRule1",
         enabled = false,
         default = false,
-        conditions = setOf(PushCondition.EventMatch(key = "content.body", "*triggered*")),
+        conditions = setOf(PushCondition.EventMatch(key = "content.body", "*User*")),
         actions = setOf(Notify),
     )
 
@@ -154,7 +146,7 @@ private val body: ShouldSpec.() -> Unit = {
         ruleId = "customRule5",
         enabled = true,
         default = false,
-        conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.EventMatch("content.body", "*User1*")),
+        conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.EventMatch("content.body", "*User*")),
         actions = setOf(Notify)
     )
 
