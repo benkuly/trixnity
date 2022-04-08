@@ -70,8 +70,7 @@ class PushIT {
     @Test
     fun testPushNotificationForNormalMessage(): Unit = runBlocking {
         withTimeout(30_000) {
-            startedClient2.client.push.enableNotifications()
-            val notifications = startedClient2.client.push.notifications.shareIn(scope, SharingStarted.Eagerly, 10)
+            val notifications = startedClient2.client.push.getNotifications().shareIn(scope, SharingStarted.Eagerly, 10)
 
             val room = startedClient1.client.api.rooms.createRoom(
                 invite = setOf(startedClient2.client.userId),
@@ -79,9 +78,9 @@ class PushIT {
             ).getOrThrow()
 
             delay(2.seconds)
-            val invite = notifications.replayCache.first {it.event is Event.StrippedStateEvent }
+            val invite = notifications.replayCache.first { it.event is Event.StrippedStateEvent }
             invite.event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
-            val inviteContent = invite.content
+            val inviteContent = invite.event.content
             inviteContent.shouldBeInstanceOf<MemberEventContent>()
             inviteContent.displayName shouldBe "user2"
 
@@ -90,7 +89,8 @@ class PushIT {
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
             delay(2.seconds)
-            val lastNotificationContent = notifications.replayCache.first { it.event is Event.MessageEvent}.content
+            val lastNotificationContent =
+                notifications.replayCache.first { it.event is Event.MessageEvent }.event.content
             lastNotificationContent.shouldBeInstanceOf<TextMessageEventContent>()
             lastNotificationContent.body shouldStartWith "Hello"
         }
