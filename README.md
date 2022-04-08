@@ -65,9 +65,8 @@ This project contains the following modules, which can be used independently:
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
-    - [ ] push notifications
-        - [x] API
-        - [ ] high level abstraction
+    - [x] notifications
+
 - [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
   implementation. It does not support advanced features like E2E or persistence at the moment.
 
