@@ -401,7 +401,7 @@ private val body: ShouldSpec.() -> Unit = {
                     setUser1DisplayName(roomId)
                     cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
                 }
-                should("not notify when on condition matches") {
+                should("not notify when one condition matches") {
                     store.globalAccountData.update(
                         GlobalAccountDataEvent(
                             pushRules(listOf(pushRuleWithMultipleConditions()))
