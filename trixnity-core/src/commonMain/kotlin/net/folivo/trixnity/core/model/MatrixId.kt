@@ -19,9 +19,10 @@ abstract class MatrixId {
         domain = s.substringAfter(':', "")
 
         if (full.isEmpty()) log.error { "matrix identifier must not be empty" }
-        if (sigilCharacter != full.first()) log.error { "given sigil character $sigilCharacter does not match with full string $full" }
-        if (localpart.isEmpty()) log.error { "localpart must not be empty" }
-        if (domain.isEmpty()) log.error { "domain must not be empty" }
+        // TODO uncomment when https://youtrack.jetbrains.com/issue/KTOR-3953 is fixed
+//        if (sigilCharacter != full.first()) log.error { "given sigil character $sigilCharacter does not match with full string $full" }
+//        if (localpart.isEmpty()) log.error { "localpart must not be empty" }
+//        if (domain.isEmpty()) log.error { "domain must not be empty" }
     }
 
     constructor(localpart: String, domain: String, sigilCharacter: Char) {

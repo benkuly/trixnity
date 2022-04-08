@@ -3,18 +3,21 @@ package net.folivo.trixnity.client.room
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -25,13 +28,14 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixJson
 
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val api = mockk<MatrixClientServerApiClient>()
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+
     lateinit var cut: RoomService
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
@@ -39,15 +43,23 @@ class RoomServiceDisplayNameTest : ShouldSpec({
     val user4 = UserId("user4", "server")
     val user5 = UserId("user5", "server")
 
+    val json = createMatrixJson()
     beforeTest {
-        every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
-        cut = RoomService(UserId("alice", "server"), store, api, mockk(), mockk(), mockk(), mockk())
+        cut = RoomService(
+            UserId("alice", "server"),
+            store,
+            mockMatrixClientServerApiClient(json).first,
+            OlmEventServiceMock(),
+            KeyBackupServiceMock(),
+            UserServiceMock(),
+            MediaServiceMock(),
+            currentSyncState
+        )
     }
 
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 

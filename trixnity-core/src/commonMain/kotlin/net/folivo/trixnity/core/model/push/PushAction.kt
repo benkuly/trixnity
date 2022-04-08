@@ -70,16 +70,16 @@ object PushActionSerializer : KSerializer<PushAction> {
             is PushAction.DontNotify -> JsonPrimitive(PushAction.DontNotify.name)
             is PushAction.Coalesce -> JsonPrimitive(PushAction.Coalesce.name)
             is PushAction.SetSoundTweak -> JsonObject(
-                mapOf(
-                    "set_tweak" to JsonPrimitive(value.name),
-                    "value" to JsonPrimitive(value.value)
-                )
+                buildMap {
+                    put("set_tweak", JsonPrimitive(value.name))
+                    value.value?.let { put("value", JsonPrimitive(it)) }
+                }
             )
             is PushAction.SetHighlightTweak -> JsonObject(
-                mapOf(
-                    "set_tweak" to JsonPrimitive(value.name),
-                    "value" to JsonPrimitive(value.value)
-                )
+                buildMap {
+                    put("set_tweak", JsonPrimitive(value.name))
+                    value.value?.let { put("value", JsonPrimitive(it)) }
+                }
             )
             is PushAction.Unknown -> value.raw
         }

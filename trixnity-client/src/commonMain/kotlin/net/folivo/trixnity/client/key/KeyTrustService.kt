@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.*
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.client.store.KeyChainLink
@@ -26,17 +26,35 @@ import kotlin.collections.component2
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyTrustService {
+    suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId)
+    suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel
+    suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel
+
+    suspend fun updateTrustLevelOfKeyChainSignedBy(
+        signingUserId: UserId,
+        signingKey: Ed25519Key,
+    )
+}
+
 class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
-    private val olm: OlmService,
+    private val olmSign: IOlmSignService,
     private val api: MatrixClientServerApiClient,
-) {
+) : IKeyTrustService {
 
-    internal suspend fun updateTrustLevelOfKeyChainSignedBy(
+    override suspend fun updateTrustLevelOfKeyChainSignedBy(
         signingUserId: UserId,
         signingKey: Ed25519Key,
-        visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
+    ) {
+        updateTrustLevelOfKeyChainSignedBy(signingUserId, signingKey, mutableSetOf())
+    }
+
+    private suspend fun updateTrustLevelOfKeyChainSignedBy(
+        signingUserId: UserId,
+        signingKey: Ed25519Key,
+        visitedKeys: MutableSet<Pair<UserId, String?>>
     ) {
         log.trace { "update trust level of all keys signed by $signingUserId $signingKey" }
         visitedKeys.add(signingUserId to signingKey.keyId)
@@ -81,7 +99,7 @@ class KeyTrustService(
         } else log.warn { "could not update trust level, because key id of $key was null" }
     }
 
-    internal suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
+    override suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
         log.trace { "calculate trust level for ${deviceKeys.signed}" }
         val userId = deviceKeys.signed.userId
         val deviceId = deviceKeys.signed.deviceId
@@ -89,24 +107,24 @@ class KeyTrustService(
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olm.sign.verify(deviceKeys, it) },
+            { olmSign.verify(deviceKeys, it) },
             signedKey,
-            deviceKeys.signatures,
+            deviceKeys.signatures ?: mapOf(),
             deviceKeys.getVerificationState(userId, deviceId),
             false
         ).also { log.trace { "calculated trust level of ${deviceKeys.signed} from $userId is $it" } }
     }
 
-    internal suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
+    override suspend fun calculateCrossSigningKeysTrustLevel(crossSigningKeys: SignedCrossSigningKeys): KeySignatureTrustLevel {
         log.trace { "calculate trust level for ${crossSigningKeys.signed}" }
         val userId = crossSigningKeys.signed.userId
         val signedKey = crossSigningKeys.signed.keys.get<Ed25519Key>()
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olm.sign.verify(crossSigningKeys, it) },
+            { olmSign.verify(crossSigningKeys, it) },
             signedKey,
-            crossSigningKeys.signatures,
+            crossSigningKeys.signatures ?: mapOf(),
             crossSigningKeys.getVerificationState(userId),
             crossSigningKeys.signed.usage.contains(MasterKey)
         ).also { log.trace { "calculated trust level of ${crossSigningKeys.signed} from $userId is $it" } }
@@ -165,9 +183,9 @@ class KeyTrustService(
                             else -> {
                                 searchSignaturesForTrustLevel(
                                     signingUserId,
-                                    { olm.sign.verify(crossSigningKey, it) },
+                                    { olmSign.verify(crossSigningKey, it) },
                                     signingCrossSigningKey,
-                                    crossSigningKey.signatures,
+                                    crossSigningKey.signatures ?: mapOf(),
                                     visitedKeys
                                 ) ?: if (crossSigningKey.signed.usage.contains(MasterKey)
                                     && crossSigningKey.signed.userId == signedUserId
@@ -190,9 +208,9 @@ class KeyTrustService(
                             is KeyVerificationState.Blocked -> Blocked
                             else -> searchSignaturesForTrustLevel(
                                 signedUserId,
-                                { olm.sign.verify(deviceKey, it) },
+                                { olmSign.verify(deviceKey, it) },
                                 signingDeviceKey,
-                                deviceKey.signatures,
+                                deviceKey.signatures ?: mapOf(),
                                 visitedKeys
                             )
                         } else null
@@ -214,7 +232,7 @@ class KeyTrustService(
         }
     }
 
-    internal suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
+    override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
         log.debug { "sign keys (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
             val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed
@@ -226,7 +244,7 @@ class KeyTrustService(
                 try {
                     if (userId == ownUserId && deviceKey.get<Ed25519Key>() == key) {
                         log.info { "sign own accounts device with own self signing key" }
-                        olm.sign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
+                        olmSign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
                     } else null
                 } catch (error: Throwable) {
                     log.warn { "could not sign key $key: ${error.message}" }
@@ -246,10 +264,10 @@ class KeyTrustService(
                         if (crossSigningKey.get<Ed25519Key>() == key) {
                             if (userId == ownUserId) {
                                 log.info { "sign own master key with own device key" }
-                                olm.sign.sign(crossSigningKey, SignWith.DeviceKey)
+                                olmSign.sign(crossSigningKey, SignWith.DeviceKey)
                             } else {
                                 log.info { "sign other users master key with own user signing key" }
-                                olm.sign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
+                                olmSign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
                             }
                         } else null
                     } catch (error: Throwable) {

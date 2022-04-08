@@ -1,15 +1,12 @@
 package net.folivo.trixnity.olm
 
-import io.ktor.util.*
 import org.khronos.webgl.Uint8Array
-import rethrow
 
 actual class OlmPkDecryption private constructor(
     internal actual val ptr: OlmPkDecryptionPointer,
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        @OptIn(InternalAPI::class)
         actual fun create(privateKey: String?): OlmPkDecryption {
             val ptr: PkDecryption = rethrow { js("new Olm.PkDecryption()") }.unsafeCast<OlmPkDecryptionPointer>()
             val publicKey = rethrow {
@@ -25,7 +22,6 @@ actual class OlmPkDecryption private constructor(
         }
     }
 
-    @OptIn(InternalAPI::class)
     actual val privateKey: String = rethrow { ptr.get_private_key() }.unsafeCast<ByteArray>().encodeUnpaddedBase64()
 
     actual override fun free() = ptr.free()

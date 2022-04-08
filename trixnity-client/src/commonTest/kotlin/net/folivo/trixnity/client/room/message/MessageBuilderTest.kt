@@ -5,25 +5,19 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.ContentType.Audio.OGG
 import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Video.MP4
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.mockk
-import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 class MessageBuilderTest : ShouldSpec({
-    val mediaService = mockk<MediaService>()
-
-    afterTest { clearAllMocks() }
+    val mediaService = MediaServiceMock()
 
     context(MessageBuilder::build.name) {
         should("call builder and return content") {
-            val mockContent = mockk<MessageEventContent>()
+            val eventContent = TextMessageEventContent("")
             MessageBuilder(true, mediaService).build {
-                content = mockContent
-            } shouldBe mockContent
+                content = eventContent
+            } shouldBe eventContent
         }
     }
 
@@ -50,11 +44,9 @@ class MessageBuilderTest : ShouldSpec({
     }
     context(MessageBuilder::image.name) {
         should("create image and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            coEvery { mediaService.prepareUploadThumbnail("fake_image".toByteArray(), PNG) }
-                .returns(Pair("thumbnailCacheUrl", thumbnailInfo))
-            coEvery { mediaService.prepareUploadMedia("fake_image".toByteArray(), PNG) }
-                .returns("mediaCacheUrl")
+            val thumbnailInfo = ThumbnailInfo()
+            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
+            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(false, mediaService).build {
                 image("body", "fake_image".toByteArray(), PNG, 1024, 1024)
             } shouldBe ImageMessageEventContent(
@@ -65,13 +57,11 @@ class MessageBuilderTest : ShouldSpec({
             )
         }
         should("create encrypted image and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            val encryptedFile = mockk<EncryptedFile>()
-            val encryptedThumbnail = mockk<EncryptedFile>()
-            coEvery { mediaService.prepareUploadEncryptedMedia("fake_image".toByteArray()) }
-                .returns(encryptedFile)
-            coEvery { mediaService.prepareUploadEncryptedThumbnail("fake_image".toByteArray(), PNG) }
-                .returns(encryptedThumbnail to thumbnailInfo)
+            val thumbnailInfo = ThumbnailInfo()
+            val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
+            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(true, mediaService).build {
                 image("body", "fake_image".toByteArray(), PNG, 1024, 1024)
             } shouldBe ImageMessageEventContent(
@@ -84,11 +74,9 @@ class MessageBuilderTest : ShouldSpec({
     }
     context(MessageBuilder::file.name) {
         should("create file and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            coEvery { mediaService.prepareUploadThumbnail("fake_file".toByteArray(), PNG) }
-                .returns(Pair("thumbnailCacheUrl", thumbnailInfo))
-            coEvery { mediaService.prepareUploadMedia("fake_file".toByteArray(), PNG) }
-                .returns("mediaCacheUrl")
+            val thumbnailInfo = ThumbnailInfo()
+            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
+            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(false, mediaService).build {
                 file("body", "fake_file".toByteArray(), PNG, "filename")
             } shouldBe FileMessageEventContent(
@@ -98,13 +86,11 @@ class MessageBuilderTest : ShouldSpec({
             )
         }
         should("create encrypted file and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            val encryptedFile = mockk<EncryptedFile>()
-            val encryptedThumbnail = mockk<EncryptedFile>()
-            coEvery { mediaService.prepareUploadEncryptedMedia("fake_file".toByteArray()) }
-                .returns(encryptedFile)
-            coEvery { mediaService.prepareUploadEncryptedThumbnail("fake_file".toByteArray(), PNG) }
-                .returns(encryptedThumbnail to thumbnailInfo)
+            val thumbnailInfo = ThumbnailInfo()
+            val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
+            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(true, mediaService).build {
                 file("body", "fake_file".toByteArray(), PNG, "filename")
             } shouldBe FileMessageEventContent(
@@ -116,11 +102,9 @@ class MessageBuilderTest : ShouldSpec({
     }
     context(MessageBuilder::video.name) {
         should("create video and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            coEvery { mediaService.prepareUploadThumbnail("fake_video".toByteArray(), MP4) }
-                .returns(Pair("thumbnailCacheUrl", thumbnailInfo))
-            coEvery { mediaService.prepareUploadMedia("fake_video".toByteArray(), MP4) }
-                .returns("mediaCacheUrl")
+            val thumbnailInfo = ThumbnailInfo()
+            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
+            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(false, mediaService).build {
                 video("body", "fake_video".toByteArray(), MP4, 1024, 1024, 1024)
             } shouldBe VideoMessageEventContent(
@@ -131,13 +115,11 @@ class MessageBuilderTest : ShouldSpec({
             )
         }
         should("create encrypted video and thumbnail") {
-            val thumbnailInfo = mockk<ThumbnailInfo>()
-            val encryptedFile = mockk<EncryptedFile>()
-            val encryptedThumbnail = mockk<EncryptedFile>()
-            coEvery { mediaService.prepareUploadEncryptedMedia("fake_video".toByteArray()) }
-                .returns(encryptedFile)
-            coEvery { mediaService.prepareUploadEncryptedThumbnail("fake_video".toByteArray(), MP4) }
-                .returns(encryptedThumbnail to thumbnailInfo)
+            val thumbnailInfo = ThumbnailInfo()
+            val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
+            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(true, mediaService).build {
                 video("body", "fake_video".toByteArray(), MP4, 1024, 1024, 1024)
             } shouldBe VideoMessageEventContent(
@@ -150,8 +132,7 @@ class MessageBuilderTest : ShouldSpec({
     }
     context(MessageBuilder::audio.name) {
         should("create audio") {
-            coEvery { mediaService.prepareUploadMedia("fake_audio".toByteArray(), OGG) }
-                .returns("mediaCacheUrl")
+            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(false, mediaService).build {
                 audio("body", "fake_audio".toByteArray(), OGG, 1024)
             } shouldBe AudioMessageEventContent(
@@ -159,9 +140,8 @@ class MessageBuilderTest : ShouldSpec({
             )
         }
         should("create encrypted audio") {
-            val encryptedFile = mockk<EncryptedFile>()
-            coEvery { mediaService.prepareUploadEncryptedMedia("fake_audio".toByteArray()) }
-                .returns(encryptedFile)
+            val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
+            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             MessageBuilder(true, mediaService).build {
                 audio("body", "fake_audio".toByteArray(), OGG, 1024)
             } shouldBe AudioMessageEventContent(

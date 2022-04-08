@@ -5,9 +5,12 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
@@ -35,7 +38,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
+                api("io.ktor:ktor-http:${Versions.ktor}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
@@ -48,7 +52,6 @@ kotlin {
         val mingwX64Main by getting {
             dependsOn(nativeMain)
         }
-        val jsMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

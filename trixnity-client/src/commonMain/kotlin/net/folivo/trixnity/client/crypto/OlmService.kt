@@ -1,10 +1,7 @@
 package net.folivo.trixnity.client.crypto
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -13,8 +10,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -27,10 +25,23 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 
 private val log = KotlinLogging.logger {}
+
+interface IOlmService {
+    val sign: IOlmSignService
+    val event: IOlmEventService
+
+    data class DecryptedOlmEventContainer(
+        val encrypted: Event<OlmEncryptedEventContent>,
+        val decrypted: DecryptedOlmEvent<*>
+    )
+
+    suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
+}
 
 class OlmService(
     private val olmPickleKey: String,
@@ -38,8 +49,8 @@ class OlmService(
     private val ownDeviceId: String,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    val json: Json,
-) {
+    json: Json,
+) : IOlmService {
     private val account: OlmAccount =
         store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
             ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) }
@@ -50,7 +61,7 @@ class OlmService(
         utility.free()
     }
 
-    suspend fun getSelfSignedDeviceKeys() = sign.sign(
+    override suspend fun getSelfSignedDeviceKeys() = sign.sign(
         DeviceKeys(
             userId = ownUserId,
             deviceId = ownDeviceId,
@@ -62,7 +73,7 @@ class OlmService(
     private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
     private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
 
-    val sign = OlmSignService(
+    override val sign = OlmSignService(
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
         json = json,
@@ -70,7 +81,7 @@ class OlmService(
         account = account,
         utility = utility,
     )
-    val events = OlmEventService(
+    override val event = OlmEventService(
         olmPickleKey = olmPickleKey,
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
@@ -83,18 +94,13 @@ class OlmService(
         signService = sign,
     )
 
-    data class DecryptedOlmEvent(val encrypted: Event<OlmEncryptedEventContent>, val decrypted: OlmEvent<*>)
-
-    private val _decryptedOlmEvents = MutableSharedFlow<DecryptedOlmEvent>()
-    internal val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
-
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         api.sync.subscribe(::handleMemberEvents)
-        api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
         api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) { decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
+        scope.launch(start = UNDISPATCHED) { event.decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
+        event.start(scope)
     }
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
@@ -105,28 +111,16 @@ class OlmService(
         if (generateOneTimeKeysCount > 0) {
             account.generateOneTimeKeys(generateOneTimeKeysCount + account.maxNumberOfOneTimeKeys / 4)
             val signedOneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
-                sign.signCurve25519Key(Key.Curve25519Key(keyId = it.key, value = it.value))
+                sign.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
             }.toSet())
             log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
-            api.keys.setDeviceKeys(oneTimeKeys = signedOneTimeKeys)
+            api.keys.setKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
             account.markKeysAsPublished()
             store.olm.storeAccount(account, olmPickleKey)
         }
     }
 
-    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
-        if (event is ToDeviceEvent) {
-            try {
-                val decryptedEvent = events.decryptOlm(event.content, event.sender)
-                _decryptedOlmEvents.emit(DecryptedOlmEvent(event, decryptedEvent))
-            } catch (e: Exception) {
-                log.error(e) { "could not decrypt $event" }
-                if (e is CancellationException) throw e
-            }
-        }
-    }
-
-    internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEvent) {
+    internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (content is RoomKeyEventContent) {
             log.debug { "got inbound megolm session for room ${content.roomId}" }

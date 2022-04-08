@@ -4,9 +4,12 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
@@ -27,7 +30,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-client-store-exposed"))
+                implementation(project(":trixnity-client:trixnity-client-store-exposed"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
@@ -62,8 +65,6 @@ kotlin {
 //            configurations.named("jvmRuntimeClasspath")
 //        )
 //        mainClass.set("net.folivo.trixnity.examples.multiplatform.JvmAppKt")
-//        systemProperty("jna.library.path", olm.build.canonicalPath)
 //        dependsOn("build")
-//        dependsOn(":buildOlm")
 //    }
 //}

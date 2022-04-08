@@ -1,27 +1,23 @@
 package net.folivo.trixnity.client
 
-import io.kotest.assertions.until.fixed
-import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
+import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.InMemoryStoreFactory
-import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.e
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.Logout
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -29,25 +25,28 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
-import kotlin.time.Duration.Companion.milliseconds
 
 class MatrixClientTest : ShouldSpec({
     timeout = 30_000
 
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
 
-    val serverResponse = SyncResponse(
+    val serverResponse = Sync.Response(
         nextBatch = "nextBatch",
-        accountData = SyncResponse.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
-        deviceLists = SyncResponse.DeviceLists(emptySet(), emptySet()),
+        accountData = Sync.Response.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
+        deviceLists = Sync.Response.DeviceLists(emptySet(), emptySet()),
         deviceOneTimeKeysCount = emptyMap(),
-        presence = SyncResponse.Presence(emptyList()),
-        room = SyncResponse.Rooms(emptyMap(), emptyMap(), emptyMap()),
-        toDevice = SyncResponse.ToDevice(emptyList())
+        presence = Sync.Response.Presence(emptyList()),
+        room = Sync.Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
+        toDevice = Sync.Response.ToDevice(emptyList())
     )
     val userId = UserId("user", "localhost")
 
@@ -57,85 +56,6 @@ class MatrixClientTest : ShouldSpec({
     }
     afterTest {
         scope.cancel()
-        clearAllMocks()
-    }
-
-    context(MatrixClient::startSync.name) {
-        should("write the last successfully processed batch token in the DB") {
-            val inMemoryStore = InMemoryStore(scope)
-            val cut = spyk(MatrixClient.loginWith(
-                baseUrl = Url("http://matrix.home"),
-                storeFactory = InMemoryStoreFactory(inMemoryStore),
-                baseHttpClient = HttpClient(MockEngine) {
-                    engine {
-                        addHandler { request ->
-                            when (request.url.fullPath) {
-                                "/_matrix/client/v3/keys/upload" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"one_time_key_counts":{"ed25519":1}}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
-                                    )
-                                }
-                                "/_matrix/client/v3/user/${userId.e()}/filter" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"filter_id":"someFilter"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
-                                    )
-                                }
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online" -> {
-                                    assertEquals(HttpMethod.Get, request.method)
-                                    respond(
-                                        json.encodeToString(serverResponse),
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
-                                    )
-                                }
-                                else -> {
-                                    respond(
-                                        "",
-                                        HttpStatusCode.BadRequest
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                scope = scope,
-                getLoginInfo = {
-                    Result.success(
-                        MatrixClient.Companion.LoginInfo(
-                            userId,
-                            "deviceId",
-                            "accessToken",
-                            "displayName",
-                            "mxc://localhost/123456"
-                        )
-                    )
-                }
-            ).getOrThrow())
-
-            val userServiceMock: UserService = spyk(cut.user)
-            every { cut.user } returns userServiceMock
-            coEvery { userServiceMock.setGlobalAccountData(any()) } throws RuntimeException("Oh no!")
-
-            cut.startSync().getOrThrow()
-            until(1_000.milliseconds, 50.milliseconds.fixed()) {
-                inMemoryStore.account.syncBatchToken.value == null
-            }
-        }
     }
 
     context(MatrixClient::displayName.name) {
@@ -146,57 +66,60 @@ class MatrixClientTest : ShouldSpec({
                 identifier = IdentifierType.User(userId.full),
                 passwordOrToken = "p4ssw0rd!",
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
-                baseHttpClient = HttpClient(MockEngine) {
-                    engine {
-                        addHandler { request ->
-                            when (request.url.fullPath) {
-                                "/_matrix/client/v3/login" -> {
-                                    respond(
-                                        """{"user_id":"${userId.full}","access_token":"abcdef","device_id":"deviceId"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString(),
+                httpClientFactory = {
+                    HttpClient(MockEngine) {
+                        it()
+                        engine {
+                            addHandler { request ->
+                                when (request.url.fullPath) {
+                                    "/_matrix/client/v3/login" -> {
+                                        respond(
+                                            """{"user_id":"${userId.full}","access_token":"abcdef","device_id":"deviceId"}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString(),
+                                            )
                                         )
-                                    )
-                                }
-                                "/_matrix/client/v3/profile/${userId.e()}" -> {
-                                    respond(
-                                        """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString(),
+                                    }
+                                    "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        respond(
+                                            """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString(),
+                                            )
                                         )
-                                    )
-                                }
-                                "/_matrix/client/v3/keys/upload" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"one_time_key_counts":{"ed25519":1}}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
+                                    }
+                                    "/_matrix/client/v3/keys/upload" -> {
+                                        assertEquals(HttpMethod.Post, request.method)
+                                        respond(
+                                            """{"one_time_key_counts":{"ed25519":1}}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
                                         )
-                                    )
-                                }
-                                "/_matrix/client/v3/user/${userId.e()}/filter" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"filter_id":"someFilter"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
+                                    }
+                                    "/_matrix/client/v3/user/${userId.e()}/filter" -> {
+                                        assertEquals(HttpMethod.Post, request.method)
+                                        respond(
+                                            """{"filter_id":"someFilter"}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
                                         )
-                                    )
-                                }
-                                else -> {
-                                    respond(
-                                        "",
-                                        HttpStatusCode.BadRequest
-                                    )
+                                    }
+                                    else -> {
+                                        respond(
+                                            "",
+                                            HttpStatusCode.BadRequest
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -228,99 +151,108 @@ class MatrixClientTest : ShouldSpec({
 
             val cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
-                baseHttpClient = HttpClient(MockEngine) {
-                    engine {
-                        addHandler { request ->
-                            when (request.url.fullPath) {
-                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online" -> {
-                                    assertEquals(HttpMethod.Get, request.method)
-                                    val roomId = RoomId("room1", "localhost")
-                                    respond(
-                                        json.encodeToString(
-                                            serverResponse.copy(
-                                                room = SyncResponse.Rooms(
-                                                    join = mapOf(
-                                                        roomId to SyncResponse.Rooms.JoinedRoom(
-                                                            timeline = SyncResponse.Rooms.Timeline(
-                                                                events = listOf(
-                                                                    Event.StateEvent(
-                                                                        MemberEventContent(membership = JOIN),
-                                                                        sender = userId,
-                                                                        id = EventId("event1"),
-                                                                        roomId = roomId,
-                                                                        originTimestamp = 0L,
-                                                                        stateKey = userId.full,
-                                                                    )
-                                                                ),
-                                                                previousBatch = "prevBatch"
+                httpClientFactory = {
+                    HttpClient(MockEngine) {
+                        it()
+                        engine {
+                            addHandler { request ->
+                                val path = request.url.fullPath
+                                when {
+                                    path.startsWith("/_matrix/client/v3/sync?filter=someFilter&set_presence=online") -> {
+                                        assertEquals(HttpMethod.Get, request.method)
+                                        val roomId = RoomId("room1", "localhost")
+                                        respond(
+                                            json.encodeToString(
+                                                serverResponse.copy(
+                                                    room = Sync.Response.Rooms(
+                                                        join = mapOf(
+                                                            roomId to Sync.Response.Rooms.JoinedRoom(
+                                                                timeline = Sync.Response.Rooms.Timeline(
+                                                                    events = listOf(
+                                                                        Event.StateEvent(
+                                                                            MemberEventContent(membership = JOIN),
+                                                                            sender = userId,
+                                                                            id = EventId("event1"),
+                                                                            roomId = roomId,
+                                                                            originTimestamp = 0L,
+                                                                            stateKey = userId.full,
+                                                                        )
+                                                                    ),
+                                                                    previousBatch = "prevBatch"
+                                                                )
                                                             )
                                                         )
                                                     )
                                                 )
+                                            ),
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
                                             )
-                                        ),
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
                                         )
-                                    )
-                                }
-                                "/_matrix/client/v3/sync?filter=someFilter" -> {
-                                    assertEquals(HttpMethod.Get, request.method)
-                                    val roomId = RoomId("room1", "localhost")
-                                    respond(
-                                        json.encodeToString(
-                                            serverResponse.copy(
-                                                room = SyncResponse.Rooms(
-                                                    join = mapOf(
-                                                        roomId to SyncResponse.Rooms.JoinedRoom(
-                                                            timeline = SyncResponse.Rooms.Timeline(
-                                                                events = listOf(
-                                                                    Event.StateEvent(
-                                                                        MemberEventContent(
-                                                                            membership = JOIN,
-                                                                            displayName = "bob", // display name in the room != global display name
-                                                                            avatarUrl = "mxc://localhost/123456"
-                                                                        ),
-                                                                        sender = userId,
-                                                                        id = EventId("event2"),
-                                                                        roomId = roomId,
-                                                                        originTimestamp = 1L,
-                                                                        stateKey = userId.full,
+                                    }
+                                    path.startsWith("/_matrix/client/v3/sync?filter=someFilter") -> {
+                                        assertEquals(HttpMethod.Get, request.method)
+                                        val roomId = RoomId("room1", "localhost")
+                                        respond(
+                                            json.encodeToString(
+                                                serverResponse.copy(
+                                                    room = Sync.Response.Rooms(
+                                                        join = mapOf(
+                                                            roomId to Sync.Response.Rooms.JoinedRoom(
+                                                                timeline = Sync.Response.Rooms.Timeline(
+                                                                    events = listOf(
+                                                                        Event.StateEvent(
+                                                                            MemberEventContent(
+                                                                                membership = JOIN,
+                                                                                displayName = "bob", // display name in the room != global display name
+                                                                                avatarUrl = "mxc://localhost/123456"
+                                                                            ),
+                                                                            sender = userId,
+                                                                            id = EventId("event2"),
+                                                                            roomId = roomId,
+                                                                            originTimestamp = 1L,
+                                                                            stateKey = userId.full,
+                                                                        )
                                                                     )
                                                                 )
                                                             )
                                                         )
                                                     )
                                                 )
+                                            ),
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
                                             )
-                                        ),
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
                                         )
-                                    )
-                                }
-                                "/_matrix/client/v3/profile/${userId.e()}" -> {
-                                    respond(
-                                        """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString(),
-                                        )
-                                    )
-                                }
-                                else -> {
-                                    respond(
-                                        json.encodeToString(
-                                            serverResponse.copy(
+                                    }
+                                    path == "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        respond(
+                                            """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString(),
                                             )
-                                        ),
-                                        HttpStatusCode.BadRequest
-                                    )
+                                        )
+                                    }
+                                    path == "/_matrix/client/v3/keys/upload" -> {
+                                        assertEquals(HttpMethod.Post, request.method)
+                                        respond(
+                                            """{"one_time_key_counts":{"ed25519":1}}""",
+                                            HttpStatusCode.OK,
+                                            headersOf(
+                                                HttpHeaders.ContentType,
+                                                ContentType.Application.Json.toString()
+                                            )
+                                        )
+                                    }
+                                    else -> {
+                                        throw IllegalArgumentException(path)
+                                    }
                                 }
                             }
                         }
@@ -352,8 +284,11 @@ class MatrixClientTest : ShouldSpec({
         inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
         val cut = MatrixClient.fromStore(
             storeFactory = InMemoryStoreFactory(inMemoryStore),
-            baseHttpClient = HttpClient(MockEngine) {
-                engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
+            httpClientFactory = {
+                HttpClient(MockEngine) {
+                    it()
+                    engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
+                }
             },
             scope = scope
         ).getOrThrow()!!
@@ -374,9 +309,7 @@ class MatrixClientTest : ShouldSpec({
         }
     }
     context(MatrixClient::logout.name) {
-        lateinit var apiMock: MatrixClientServerApiClient
         lateinit var inMemoryStore: InMemoryStore
-        lateinit var cut: MatrixClient
         beforeTest {
             inMemoryStore = InMemoryStore(scope).apply { init() }
             delay(50) // wait for init
@@ -388,38 +321,43 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
-            apiMock = mockk<MatrixClientServerApiClient> {
-                coEvery { authentication.logout() } returns Result.success(Unit)
-                coEvery { sync.stop(any()) } just Runs
-            }
-            cut = spyk(
-                MatrixClient.fromStore(
-                    storeFactory = InMemoryStoreFactory(inMemoryStore),
-                    baseHttpClient = HttpClient(MockEngine) {
-                        engine { addHandler { respond("{}", HttpStatusCode.OK) } }
-                    },
-                    scope = scope
-                ).getOrThrow()!!
-            ) {
-                coEvery { api } returns apiMock
-            }
         }
         should("delete All when $LOGGED_OUT_SOFT") {
+            var logoutCalled = false
+            val cut = MatrixClient.fromStore(
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
+                httpClientFactory = mockEngineFactory {
+                    matrixJsonEndpoint(json, mappings, Logout()) {
+                        logoutCalled = true
+                    }
+                },
+                scope = scope
+            ).getOrThrow()!!
+
             inMemoryStore.account.accessToken.value = null
             inMemoryStore.account.syncBatchToken.value = "sync"
             cut.loginState.first { it == LOGGED_OUT_SOFT }
             cut.logout().getOrThrow()
-            coVerify {
-                apiMock.sync.stop(true)
-            }
+
+            logoutCalled shouldBe false
             inMemoryStore.account.userId.value shouldBe null
         }
         should("call api and delete all") {
+            var logoutCalled = false
+            val cut = MatrixClient.fromStore(
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
+                httpClientFactory = mockEngineFactory {
+                    matrixJsonEndpoint(json, mappings, Logout()) {
+                        logoutCalled = true
+                    }
+                },
+                scope = scope
+            ).getOrThrow()!!
+
+            cut.loginState.first { it == LOGGED_IN }
             cut.logout().getOrThrow()
-            coVerify {
-                apiMock.authentication.logout()
-                apiMock.sync.stop(true)
-            }
+
+            logoutCalled shouldBe true
             inMemoryStore.account.userId.value shouldBe null
         }
     }

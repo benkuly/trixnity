@@ -4,19 +4,16 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
-import net.folivo.trixnity.core.serialization.events.*
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.createEventSerializersModule
 
 @OptIn(ExperimentalSerializationApi::class)
 fun createMatrixJson(
-    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = (
-            createEventSerializersModule(eventContentSerializerMappings)
-                    + createMessageEventContentSerializersModule()
-                    + createEncryptedEventContentSerializersModule()
-                    + createSecretKeyEventContentSerializersModule()
-            )
+    val modules = (createEventSerializersModule(eventContentSerializerMappings))
 
     return Json {
         classDiscriminator = "neverUsed"
@@ -27,3 +24,6 @@ fun createMatrixJson(
             if (customModule != null) modules + customModule else modules
     }
 }
+
+fun createEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+    DefaultEventContentSerializerMappings + customMappings

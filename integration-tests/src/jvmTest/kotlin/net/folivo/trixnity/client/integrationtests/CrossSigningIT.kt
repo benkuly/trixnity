@@ -18,7 +18,7 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
@@ -108,9 +108,9 @@ class CrossSigningIT {
         client1.startSync()
         client2.startSync()
         client3.startSync()
-        client1.syncState.first { it == SyncApiClient.SyncState.RUNNING }
-        client2.syncState.first { it == SyncApiClient.SyncState.RUNNING }
-        client3.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+        client1.syncState.first { it == SyncState.RUNNING }
+        client2.syncState.first { it == SyncState.RUNNING }
+        client3.syncState.first { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -128,9 +128,9 @@ class CrossSigningIT {
             val bootstrap = client1.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
                 bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             withClue("user1 invites user3, so user3 gets user1s keys") {
                 val roomId = client1.api.rooms.createRoom(
@@ -146,9 +146,9 @@ class CrossSigningIT {
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(AuthenticationRequest.Password(IdentifierType.User("user3"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
 
             withClue("observe trust level with client1 before self verification") {

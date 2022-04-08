@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.getAllKeysFromUser
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
@@ -29,7 +29,7 @@ class ActiveSasVerificationMethod private constructor(
     private val transactionId: String?,
     private val sendVerificationStep: suspend (step: VerificationStep) -> Unit,
     private val store: Store,
-    private val keyService: KeyService,
+    private val keyTrustService: IKeyTrustService,
     private val json: Json,
 ) : ActiveVerificationMethod() {
 
@@ -81,7 +81,7 @@ class ActiveSasVerificationMethod private constructor(
             transactionId: String?,
             sendVerificationStep: suspend (step: VerificationStep) -> Unit,
             store: Store,
-            keyService: KeyService,
+            keyTrustService: IKeyTrustService,
             json: Json,
         ): ActiveSasVerificationMethod? {
             return if (!startEventContent.keyAgreementProtocols.contains("curve25519-hkdf-sha256")) {
@@ -105,7 +105,7 @@ class ActiveSasVerificationMethod private constructor(
                 transactionId,
                 sendVerificationStep,
                 store,
-                keyService,
+                keyTrustService,
                 json,
             )
         }
@@ -272,7 +272,7 @@ class ActiveSasVerificationMethod private constructor(
                             }
                         }.contains(false)
                     if (!containsMismatchedMac) {
-                        keyService.trust.trustAndSignKeys(keysToMac.toSet(), theirUserId)
+                        keyTrustService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
                         sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
                     } else {
                         sendVerificationStep(

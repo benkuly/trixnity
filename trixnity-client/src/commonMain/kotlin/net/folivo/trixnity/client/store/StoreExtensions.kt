@@ -66,10 +66,10 @@ suspend inline fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
-): Int {
+): Long {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId)
-        ?.count { allMemberships.contains(it.value?.content?.membership) } ?: 0
+        ?.count { allMemberships.contains(it.value?.content?.membership) }?.toLong() ?: 0
 }
 
 fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
@@ -96,7 +96,7 @@ suspend inline fun RoomTimelineStore.getPrevious(
     event.previousEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
 
 suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
-    getDeviceKeys(userId).isNullOrEmpty().not()
+    getDeviceKeys(userId) != null
 
 suspend inline fun OlmStore.waitForInboundMegolmSession(
     roomId: RoomId,

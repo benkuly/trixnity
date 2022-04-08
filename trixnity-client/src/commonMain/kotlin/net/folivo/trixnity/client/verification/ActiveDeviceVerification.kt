@@ -5,8 +5,9 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.crypto.IOlmEventService
+import net.folivo.trixnity.client.crypto.IOlmService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
@@ -14,6 +15,8 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
@@ -28,8 +31,8 @@ class ActiveDeviceVerification(
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixClientServerApiClient,
-    private val olm: OlmService,
-    key: KeyService,
+    private val olmEvent: IOlmEventService,
+    keyTrust: IKeyTrustService,
     store: Store,
 ) : ActiveVerification(
     request,
@@ -43,26 +46,28 @@ class ActiveDeviceVerification(
     null,
     request.transactionId,
     store,
-    key,
+    keyTrust,
     api.json,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
         requireNotNull(theirDeviceId) { "their device id should never be null" }
-        val sendContent = try {
-            olm.events.encryptOlm(step, theirUserId, theirDeviceId)
+        try {
+            api.users.sendToDevice(
+                mapOf(theirUserId to mapOf(theirDeviceId to olmEvent.encryptOlm(step, theirUserId, theirDeviceId)))
+            )
         } catch (error: Exception) {
-            step
-        }
-        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to sendContent)))
+            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
+            api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to step)))
+        }.getOrThrow()
     }
 
     override suspend fun lifecycle(scope: CoroutineScope) {
         api.sync.subscribe(::handleVerificationStepEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         val job = scope.launch(start = UNDISPATCHED) {
-            olm.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
+            olmEvent.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
         }
         scope.launch(start = UNDISPATCHED) {
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
@@ -83,7 +88,7 @@ class ActiveDeviceVerification(
     }
 
     private suspend fun handleOlmDecryptedVerificationRequestEvents(
-        event: OlmService.DecryptedOlmEvent,
+        event: IOlmService.DecryptedOlmEventContainer,
     ) {
         val content = event.decrypted.content
         if (content is VerificationStep) handleVerificationStepEvent(content, event.decrypted.sender)
@@ -102,11 +107,11 @@ class ActiveDeviceVerification(
                     try {
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
-                                olm.events.encryptOlm(cancelEvent, theirUserId, it)
+                                olmEvent.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (olmError: OlmLibraryException) {
                                 cancelEvent
                             }
-                        }))
+                        })).getOrThrow()
                     } catch (error: Throwable) {
                         log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }
                     }

@@ -1,56 +1,59 @@
 package net.folivo.trixnity.client.store
 
+import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
+import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
+import kotlin.time.Duration.Companion.seconds
 
 class OlmStoreTest : ShouldSpec({
-    val olmAccountRepository = mockk<OlmAccountRepository>(relaxUnitFun = true)
-    val inboundMegolmSessionRepository = mockk<InboundMegolmSessionRepository>(relaxUnitFun = true)
+    lateinit var olmAccountRepository: OlmAccountRepository
+    lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
 
     lateinit var storeScope: CoroutineScope
     lateinit var cut: OlmStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
+        olmAccountRepository = InMemoryMinimalStoreRepository()
+        inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
         cut = OlmStore(
             olmAccountRepository,
-            mockk(),
+            InMemoryMinimalStoreRepository(),
             inboundMegolmSessionRepository,
-            mockk(),
-            mockk(),
+            InMemoryMinimalStoreRepository(),
+            InMemoryMinimalStoreRepository(),
             NoopRepositoryTransactionManager,
             storeScope
         )
     }
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
     context(OlmStore::init.name) {
         should("load values from database") {
-            coEvery { olmAccountRepository.get(1) } returns "olm_account"
+            olmAccountRepository.save(1, "olm_account")
 
             cut.init()
 
             cut.account.value shouldBe "olm_account"
         }
         should("start job, which saves changes to database and fills notBackedUp inbound megolm sessions") {
-            coEvery { olmAccountRepository.get(1) } returns null
-            coEvery { inboundMegolmSessionRepository.getByNotBackedUp() } returns setOf(
-                StoredInboundMegolmSession(
+            inboundMegolmSessionRepository.save(
+                InboundMegolmSessionRepositoryKey(
+                    senderKey = Key.Curve25519Key(null, "senderCurve1"),
+                    sessionId = "session1",
+                    roomId = RoomId("room", "server"),
+                ), StoredInboundMegolmSession(
                     senderKey = Key.Curve25519Key(null, "senderCurve1"),
                     senderSigningKey = Key.Ed25519Key(null, "senderEd1"),
                     sessionId = "session1",
@@ -60,8 +63,14 @@ class OlmStoreTest : ShouldSpec({
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
                     pickled = "pickled1"
-                ),
-                StoredInboundMegolmSession(
+                )
+            )
+            inboundMegolmSessionRepository.save(
+                InboundMegolmSessionRepositoryKey(
+                    senderKey = Key.Curve25519Key(null, "senderCurve2"),
+                    sessionId = "session2",
+                    roomId = RoomId("room", "server"),
+                ), StoredInboundMegolmSession(
                     senderKey = Key.Curve25519Key(null, "senderCurve2"),
                     senderSigningKey = Key.Ed25519Key(null, "senderEd2"),
                     sessionId = "session2",
@@ -77,10 +86,11 @@ class OlmStoreTest : ShouldSpec({
             cut.init()
 
             cut.account.value = "olm_account"
-            coVerify(timeout = 5_000) {
-                olmAccountRepository.save(1, "olm_account")
+
+            eventually(5.seconds) {
+                olmAccountRepository.get(1) shouldBe "olm_account"
+                cut.notBackedUpInboundMegolmSessions.value.size shouldBe 2
             }
-            cut.notBackedUpInboundMegolmSessions.value.size shouldBe 2
         }
     }
     context(OlmStore::updateInboundMegolmSession.name) {
@@ -96,7 +106,6 @@ class OlmStoreTest : ShouldSpec({
             pickled = "pickle"
         )
         should("add and remove to ${OlmStore::notBackedUpInboundMegolmSessions.name}") {
-            coEvery { inboundMegolmSessionRepository.get(any()) } returns null
             cut.updateInboundMegolmSession(session.senderKey, session.sessionId, session.roomId) { session }
             cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
             cut.updateInboundMegolmSession(session.senderKey, session.sessionId, session.roomId) {

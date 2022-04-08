@@ -8,10 +8,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class OlmAccountTest {
     @Test
     fun create_shouldCreateAndVerify() = initTest {

@@ -24,10 +24,21 @@ import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
+import java.io.IOException
 
 object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"
-    private val JNA_NATIVE_LIB: NativeLibrary = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
+
+    init {
+        try {
+            Native.extractFromResourcePath(JNA_LIBRARY_NAME)
+        } catch (_: IOException) {
+            // we don't want to fail, because the user may have added the library path manually
+        }
+        val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
+        Native.register(OlmLibraryWrapper::class.java, lib)
+    }
+
 
     external fun olm_inbound_group_session_size(): NativeSize
 
@@ -612,8 +623,4 @@ object OlmLibraryWrapper : Library {
         signature: Pointer?,
         signature_length: NativeSize
     ): NativeSize
-
-    init {
-        Native.register(OlmLibraryWrapper::class.java, JNA_NATIVE_LIB)
-    }
 }

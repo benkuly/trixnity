@@ -22,7 +22,7 @@ data class Keys(
 
 fun keysOf(vararg keys: Key) = Keys(keys.toSet())
 
-object KeysSerializer : KSerializer<Keys> { // TODO test
+object KeysSerializer : KSerializer<Keys> {
     override fun deserialize(decoder: Decoder): Keys {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
@@ -41,7 +41,7 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
                         requireNotNull(signatures)
                         Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures))
                     }
-                    else -> Key.UnknownKey(
+                    is KeyAlgorithm.Unknown -> Key.UnknownKey(
                         keyId,
                         decoder.json.encodeToString(it.value),
                         it.value,
@@ -55,7 +55,7 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
     override fun serialize(encoder: Encoder, value: Keys) {
         require(encoder is JsonEncoder)
         encoder.encodeJsonElement(
-            JsonObject(value.keys.map { key ->
+            JsonObject(value.keys.associate { key ->
                 when (key) {
                     is Key.Ed25519Key ->
                         "${key.algorithm}" + (key.keyId?.let { ":$it" } ?: "") to JsonPrimitive(key.value)
@@ -70,7 +70,7 @@ object KeysSerializer : KSerializer<Keys> { // TODO test
                         )
                     is Key.UnknownKey -> "${key.algorithm}:${key.keyId}" to key.raw
                 }
-            }.toMap())
+            })
         )
     }
 

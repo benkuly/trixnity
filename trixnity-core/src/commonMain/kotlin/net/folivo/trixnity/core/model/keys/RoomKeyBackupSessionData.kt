@@ -1,11 +1,14 @@
 package net.folivo.trixnity.core.model.keys
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
+@Serializable(with = RoomKeyBackupSessionDataSerializer::class)
 sealed class RoomKeyBackupSessionData {
-
     @Serializable
     data class EncryptedRoomKeyBackupV1SessionData(
         @SerialName("ciphertext")
@@ -28,6 +31,24 @@ sealed class RoomKeyBackupSessionData {
             @SerialName("algorithm")
             val algorithm: EncryptionAlgorithm = EncryptionAlgorithm.Megolm
         )
+    }
+}
+
+object RoomKeyBackupSessionDataSerializer : KSerializer<RoomKeyBackupSessionData> {
+    override val descriptor = buildClassSerialDescriptor("RoomKeyBackupSessionDataSerializer")
+
+    override fun deserialize(decoder: Decoder): RoomKeyBackupSessionData {
+        return decoder.decodeSerializableValue(RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.serializer())
+    }
+
+    override fun serialize(encoder: Encoder, value: RoomKeyBackupSessionData) {
+        when (value) {
+            is RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData ->
+                encoder.encodeSerializableValue(
+                    RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.serializer(),
+                    value
+                )
+        }
     }
 
 }

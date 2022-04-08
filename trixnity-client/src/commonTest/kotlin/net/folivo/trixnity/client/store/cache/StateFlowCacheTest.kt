@@ -3,8 +3,6 @@ package net.folivo.trixnity.client.store.cache
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
@@ -19,9 +17,7 @@ class StateFlowCacheTest : ShouldSpec({
         cacheScope = CoroutineScope(Dispatchers.Default)
     }
     afterTest {
-        clearAllMocks()
         cacheScope.cancel()
-        cut = mockk() // just in case we forgot to init a new cut for a test
     }
 
     context("readWithCache") {
@@ -99,6 +95,7 @@ class StateFlowCacheTest : ShouldSpec({
                     },
                     readScope1
                 ).value shouldBe "a new value"
+                cache.first { it.isNotEmpty() }
                 readScope1.cancel()
                 cache.first { it.isEmpty() }
                 cut.readWithCache(

@@ -6,7 +6,6 @@ import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 
@@ -62,9 +61,12 @@ sealed interface Event<C : EventContent> {
     @Serializable
     data class StrippedStateEvent<C : StateEventContent>(
         @SerialName("content") override val content: C,
-        @SerialName("sender") val sender: UserId,
-        @SerialName("room_id") val roomId: RoomId,
-        @SerialName("state_key") val stateKey: String
+        @SerialName("event_id") val id: EventId? = null,
+        @SerialName("sender") val sender: UserId? = null,
+        @SerialName("room_id") val roomId: RoomId? = null,
+        @SerialName("origin_server_ts") val originTimestamp: Long? = null,
+        @SerialName("unsigned") val unsigned: UnsignedStateEventData<C>? = null,
+        @SerialName("state_key") val stateKey: String,
     ) : Event<C>
 
     @Serializable
@@ -79,26 +81,12 @@ sealed interface Event<C : EventContent> {
         @SerialName("sender") val sender: UserId
     ) : Event<C>
 
+    // TODO could be split into GlobalEphemeralEvent and RoomEphemeralEvent
     @Serializable
     data class EphemeralEvent<C : EphemeralEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId? = null,
         @SerialName("room_id") val roomId: RoomId? = null
-    ) : Event<C>
-
-    @Serializable
-    data class OlmEvent<C : EventContent>(
-        @SerialName("content") override val content: C,
-        @SerialName("sender") val sender: UserId,
-        @SerialName("keys") val senderKeys: Keys,
-        @SerialName("recipient") val recipient: UserId,
-        @SerialName("recipient_keys") val recipientKeys: Keys
-    ) : Event<C>
-
-    @Serializable
-    data class MegolmEvent<C : RoomEventContent>(
-        @SerialName("content") override val content: C,
-        @SerialName("room_id") val roomId: RoomId
     ) : Event<C>
 
     @Serializable

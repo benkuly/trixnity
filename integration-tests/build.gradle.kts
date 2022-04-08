@@ -1,7 +1,3 @@
-import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
-import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -10,23 +6,14 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            when (HostManager.host) {
-                is LINUX_X64 -> {
-                    systemProperty("jna.library.path", olm.build.canonicalPath)
-                }
-                is MINGW_X64 -> {
-                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
-                }
-                else -> {}
-            }
         }
     }
 
@@ -38,10 +25,9 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation(project(":trixnity-client-store-exposed"))
+                implementation(project(":trixnity-client:trixnity-client-store-exposed"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
-                implementation("io.mockk:mockk:${Versions.mockk}")
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")

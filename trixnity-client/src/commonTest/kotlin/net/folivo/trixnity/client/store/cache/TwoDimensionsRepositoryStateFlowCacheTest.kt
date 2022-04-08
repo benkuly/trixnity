@@ -2,19 +2,16 @@ package net.folivo.trixnity.client.store.cache
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.client.store.InMemoryTwoDimensionsStoreRepository
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 
 class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
-    val repository = mockk<TwoDimensionsStoreRepository<String, String, String>>(relaxUnitFun = true)
+    lateinit var repository: TwoDimensionsStoreRepository<String, String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsStoreRepository<String, String, String>>
     val transactionWasCalled = MutableStateFlow(false)
@@ -28,69 +25,75 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     beforeTest {
         cacheScope = CoroutineScope(Dispatchers.Default)
         transactionWasCalled.value = false
+        repository = InMemoryTwoDimensionsStoreRepository()
         cut = TwoDimensionsRepositoryStateFlowCache(cacheScope, repository, rtm)
     }
     afterTest {
-        clearAllMocks()
         cacheScope.cancel()
-        cut = mockk() // just in case we forgot to init a new cut for a test
     }
 
     should("handle get after getBySecondKey") {
-        coEvery { repository.get("firstKey") } returns mapOf("secondKey1" to "value1", "secondKey2" to "value2")
-        coEvery { repository.getBySecondKey("firstKey", "secondKey1") } returns "value1"
+        repository.save("firstKey", mapOf("secondKey1" to "value1", "secondKey2" to "value2"))
         cut.getBySecondKey("firstKey", "secondKey1") shouldBe "value1"
         cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        repository.save("firstKey", mapOf())
         cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
-        coVerify(exactly = 1) { repository.get("firstKey") }
     }
     context("updateBySecondKey") {
         should("always save") {
-            coEvery { repository.get("firstKey") } returns mapOf("secondKey" to "value")
-            coEvery { repository.getBySecondKey("firstKey", "secondKey") } returns "value0"
-            cut.updateBySecondKey("firstKey", "secondKey") {
-                it shouldBe "value0"
-                "value"
+            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            cut.updateBySecondKey("firstKey", "secondKey1") {
+                it shouldBe "old"
+                "value1"
             }
-            coVerify { repository.saveBySecondKey("firstKey", "secondKey", "value") }
-            cut.get("firstKey") shouldBe mapOf("secondKey" to "value")
+            // we overwrite the repository to check, that only secondKey1 is updated
+            repository.save("firstKey", mapOf("secondKey1" to "old", "secondKey2" to "old"))
+            cut.updateBySecondKey("firstKey", "secondKey1") {
+                it shouldBe "value1"
+                "value2"
+            }
+            cut.get("firstKey") shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
+            repository.get("firstKey") shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
         }
         should("always delete") {
-            coEvery { repository.get("firstKey") } returns null
-            coEvery { repository.getBySecondKey("firstKey", "secondKey") } returns null
-            cut.updateBySecondKey("firstKey", "secondKey") {
+            repository.save("firstKey", mapOf())
+            cut.updateBySecondKey("firstKey", "secondKey1") {
                 it shouldBe null
                 null
             }
-            coVerify { repository.deleteBySecondKey("firstKey", "secondKey") }
-            cut.get("firstKey") shouldBe null
+            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            cut.updateBySecondKey("firstKey", "secondKey1") {
+                it shouldBe "old"
+                null
+            }
+            repository.get("firstKey") shouldBe mapOf()
+            cut.get("firstKey") shouldBe mapOf()
         }
         should("update existing cache value") {
-            coEvery { repository.get("firstKey") } returns mapOf("secondKey1" to "value1")
-            coEvery { repository.getBySecondKey("firstKey", "secondKey1") } returns "value0"
+            repository.save("firstKey", mapOf("secondKey1" to "old"))
             cut.updateBySecondKey("firstKey", "secondKey1") {
-                it shouldBe "value0"
+                it shouldBe "old"
                 "value1"
             }
             cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
             cut.updateBySecondKey("firstKey", "secondKey2") { "value2" }
             cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+            repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
         }
     }
     context("getBySecondKey") {
         should("load from database, when not exists in cache") {
-            coEvery { repository.getBySecondKey("firstKey", "secondKey2") } returns "value2"
-            cut.getBySecondKey("firstKey", "secondKey2") shouldBe "value2"
-            cut.getBySecondKey("firstKey", "secondKey2") shouldBe "value2"
-            coVerify(exactly = 1) { repository.getBySecondKey("firstKey", "secondKey2") }
+            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            cut.getBySecondKey("firstKey", "secondKey1") shouldBe "old"
+            repository.save("firstKey", mapOf("secondKey1" to "new"))
+            cut.getBySecondKey("firstKey", "secondKey1") shouldBe "old"
         }
         should("prefer cache") {
-            coEvery { repository.get("firstKey") } returns mapOf()
             cut.update("firstKey") {
                 mapOf("secondKey1" to "value1")
             }
+            repository.save("firstKey", mapOf())
             cut.getBySecondKey("firstKey", "secondKey1") shouldBe "value1"
-            coVerify(exactly = 0) { repository.getBySecondKey(any(), any()) }
         }
     }
 })

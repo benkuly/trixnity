@@ -5,6 +5,8 @@ import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.getStateEvent
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
@@ -12,6 +14,7 @@ import net.folivo.trixnity.core.model.events.m.room.ImageInfo
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.subscribe
 
 suspend fun example() = coroutineScope {
     val matrixRestClient =
@@ -31,7 +34,7 @@ suspend fun example() = coroutineScope {
                     body.startsWith("ping") -> {
                         matrixRestClient.rooms.sendMessageEvent(
                             roomId, TextMessageEventContent(body = "pong")
-                        )
+                        ).getOrThrow()
                     }
                     body.startsWith("me") -> {
                         val senderAvatar =
@@ -42,16 +45,19 @@ suspend fun example() = coroutineScope {
                         if (senderAvatar != null) {
                             val senderAvatarDownload = matrixRestClient.media.downloadThumbnail(
                                 senderAvatar,
-                                64u,
-                                64u,
+                                64,
+                                64,
                                 ThumbnailResizingMethod.CROP
                             ).getOrThrow()
                             val contentLength = senderAvatarDownload.contentLength
                             requireNotNull(contentLength)
                             val uploadedUrl = matrixRestClient.media.upload(
-                                senderAvatarDownload.content,
-                                contentLength,
-                                senderAvatarDownload.contentType ?: ContentType.Application.OctetStream
+                                Media(
+                                    senderAvatarDownload.content,
+                                    contentLength,
+                                    senderAvatarDownload.contentType ?: ContentType.Application.OctetStream,
+                                    null
+                                )
                             ).getOrThrow().contentUri
                             matrixRestClient.rooms.sendMessageEvent(
                                 roomId, ImageMessageEventContent(
@@ -59,7 +65,7 @@ suspend fun example() = coroutineScope {
                                     info = ImageInfo(),
                                     url = uploadedUrl
                                 )
-                            )
+                            ).getOrThrow()
                         }
 
                     }

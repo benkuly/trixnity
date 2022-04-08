@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
@@ -80,9 +80,9 @@ class KeyBackupIT {
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
                 bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(Password(IdentifierType.User("user1"), startedClient1.password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
                 startedClient1.client.api.rooms.createRoom(
@@ -123,7 +123,7 @@ class KeyBackupIT {
                     scope = scope,
                 ).getOrThrow()
                 client3.startSync()
-                client3.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+                client3.syncState.first { it == SyncState.RUNNING }
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =
@@ -137,10 +137,10 @@ class KeyBackupIT {
 
                 val lastEvent = client3.room.getLastMessageEvent(roomId, scope).first { it?.value != null }
                 assertNotNull(lastEvent)
-                lastEvent.first { it?.decryptedEvent != null }?.decryptedEvent?.getOrThrow()?.content
+                lastEvent.first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
                 lastEvent.value?.previousEventId?.let { client3.room.getTimelineEvent(it, roomId, scope) }
-                    ?.first { it?.decryptedEvent != null }?.decryptedEvent?.getOrThrow()?.content
+                    ?.first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()
             }

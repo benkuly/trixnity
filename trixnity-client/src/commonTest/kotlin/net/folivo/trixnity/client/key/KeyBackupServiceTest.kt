@@ -11,41 +11,39 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.DeviceKey
+import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.OlmSignServiceMock
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoredInboundMegolmSession
-import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixServerException
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.ErrorResponse
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
-import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysResponse
-import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysVersionRequest
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.keys.*
+import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.model.keys.RoomKeyBackupAlgorithm
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1AuthData
-import net.folivo.trixnity.core.model.keys.RoomKeyBackupData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
-import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.*
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
@@ -61,26 +59,38 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val api = mockk<MatrixClientServerApiClient>()
-    val olm = mockk<OlmService>()
+    lateinit var apiConfig: PortableMockEngineConfig
+
+    lateinit var olmSignMock: OlmSignServiceMock
     val json = createMatrixJson()
+    val mappings = createEventContentSerializerMappings()
     lateinit var cut: KeyBackupService
 
-    mockkStatic(::keyBackupCanBeTrusted)
+    lateinit var validKeyBackupPrivateKey: String
+    lateinit var validKeyBackupPublicKey: String
 
+    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     beforeTest {
-        coEvery { api.json } returns json
+        olmSignMock = OlmSignServiceMock()
+        val (newValidKeyBackupPrivateKey, newValidKeyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
+        validKeyBackupPrivateKey = newValidKeyBackupPrivateKey
+        validKeyBackupPublicKey = newValidKeyBackupPublicKey
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        cut = KeyBackupService("", ownUserId, ownDeviceId, store, api, olm)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        apiConfig = newApiConfig
+        cut = KeyBackupService("", ownUserId, ownDeviceId, store, api, olmSignMock, currentSyncState)
     }
     afterTest {
         scope.cancel()
-        clearAllMocks()
     }
 
-    suspend fun setVersion(keyBackupPrivateKey: String, keyBackupPublicKey: String, version: String) {
-        val keyVersion = GetRoomKeysVersionResponse.V1(
+    suspend fun setVersion(
+        keyBackupPrivateKey: String,
+        keyBackupPublicKey: String,
+        version: String
+    ) {
+        val keyVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
                 publicKey = Curve25519Key(null, keyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
@@ -89,12 +99,18 @@ private val body: ShouldSpec.() -> Unit = {
             etag = "etag",
             version = version
         )
-        store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), keyBackupPrivateKey))
-        coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true
-        coEvery { api.keys.getRoomKeysVersion() } returns Result.success(keyVersion)
-        coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
-            ownUserId to keysOf(Ed25519Key("DEV", "s1"))
+        store.keys.secrets.value = mapOf(
+            M_MEGOLM_BACKUP_V1 to StoredSecret(
+                Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                keyBackupPrivateKey
+            )
         )
+        olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
+        apiConfig.endpoints {
+            matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                keyVersion
+            }
+        }
         scope.launch {
             cut.setAndSignNewKeyBackupVersion()
         }.also {
@@ -104,113 +120,155 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(KeyBackupService::setAndSignNewKeyBackupVersion.name) {
-        val keyVersion = GetRoomKeysVersionResponse.V1(
-            authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519Key(null, "pub"),
-                signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
-            ),
-            count = 1,
-            etag = "etag",
-            version = "1"
-        )
+        lateinit var keyVersion: GetRoomKeysBackupVersionResponse.V1
         beforeTest {
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING)
+            currentSyncState.value = RUNNING
+            keyVersion = GetRoomKeysBackupVersionResponse.V1(
+                authData = RoomKeyBackupV1AuthData(
+                    publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                    signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
+                ),
+                count = 1,
+                etag = "etag",
+                version = "1"
+            )
         }
         should("set version to null when algorithm not supported") {
-            coEvery { api.keys.getRoomKeysVersion() } returns Result.success(keyVersion) andThen Result.success(
-                GetRoomKeysVersionResponse.Unknown(
-                    JsonObject(mapOf()),
-                    RoomKeyBackupAlgorithm.Unknown("")
-                )
-            )
-            coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
-                ownUserId to keysOf(Ed25519Key("DEV", "s1"))
-            )
-            coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                    keyVersion
+                }
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                    GetRoomKeysBackupVersionResponse.Unknown(
+                        JsonObject(mapOf()),
+                        RoomKeyBackupAlgorithm.Unknown("")
+                    )
+                }
+            }
+            olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
             val job = launch {
                 cut.setAndSignNewKeyBackupVersion()
             }
             cut.version.value shouldBe null
-            store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri1"))
+            store.keys.secrets.value = mapOf(
+                M_MEGOLM_BACKUP_V1 to StoredSecret(
+                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    validKeyBackupPrivateKey
+                )
+            )
             cut.version.first { it != null } shouldBe keyVersion
-            store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri2"))
+            store.keys.secrets.value = mapOf(
+                M_MEGOLM_BACKUP_V1 to StoredSecret(
+                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
+                    validKeyBackupPrivateKey
+                )
+            )
             cut.version.first { it == null } shouldBe null
             job.cancel()
         }
         context("key backup can be trusted") {
-            beforeTest {
-                coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true
-            }
             should("just set version when already signed") {
-                coEvery { api.keys.getRoomKeysVersion() } returns Result.success(keyVersion)
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
-                    ownUserId to keysOf(Ed25519Key("DEV", "s1"))
-                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                        keyVersion
+                    }
+                }
+                olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
                 val job = launch {
                     cut.setAndSignNewKeyBackupVersion()
                 }
-                store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri"))
+                store.keys.secrets.value = mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            MegolmBackupV1EventContent(mapOf())
+                        ), validKeyBackupPrivateKey
+                    )
+                )
                 cut.version.first { it != null } shouldBe keyVersion
                 job.cancel()
             }
             should("set version and sign when not signed by own device") {
-                coEvery { api.keys.getRoomKeysVersion() } returns Result.success(keyVersion)
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
-                    ownUserId to keysOf(Ed25519Key("DEV", "s24"))
-                )
-                coEvery { api.keys.setRoomKeysVersion(any()) } returns Result.success("1")
-                val job = launch {
-                    cut.setAndSignNewKeyBackupVersion()
-                }
-                store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri"))
-                cut.version.first { it != null } shouldBe keyVersion
-                job.cancel()
-                coVerify {
-                    api.keys.setRoomKeysVersion(coWithArg {
-                        it.shouldBeInstanceOf<SetRoomKeysVersionRequest.V1>()
+                var setRoomKeyBackupVersionCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                        keyVersion
+                    }
+                    matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersionByVersion("1")) {
+                        setRoomKeyBackupVersionCalled = true
+                        it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
-                        it.authData.publicKey shouldBe Curve25519Key(null, "pub")
+                        it.authData.publicKey shouldBe Curve25519Key(null, validKeyBackupPublicKey)
                         it.authData.signatures shouldBe mapOf(
                             ownUserId to keysOf(
                                 Ed25519Key("DEV", "s24"),
                                 Ed25519Key("MSK", "s2")
                             )
                         )
-                    })
+                        SetRoomKeyBackupVersion.Response("1")
+                    }
                 }
-            }
-        }
-        context("key backup cannot be trusted") {
-            beforeTest {
-                coEvery { keyBackupCanBeTrusted(any(), any(), any(), any()) } returns true andThen false
-            }
-            should("set version to null, remove secret and remove signatures when signed by own device") {
-                coEvery { api.keys.getRoomKeysVersion() } returns Result.success(keyVersion)
-                coEvery { olm.sign.signatures(any<RoomKeyBackupV1AuthData>()) } returns mapOf(
-                    ownUserId to keysOf(Ed25519Key("DEV", "s1"))
-                )
-                coEvery { api.keys.setRoomKeysVersion(any()) } returns Result.success("1")
+                olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s24"))))
                 val job = launch {
                     cut.setAndSignNewKeyBackupVersion()
                 }
-                store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri1"))
+                store.keys.secrets.value = mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            MegolmBackupV1EventContent(mapOf())
+                        ), validKeyBackupPrivateKey
+                    )
+                )
                 cut.version.first { it != null } shouldBe keyVersion
-                store.keys.secrets.value = mapOf(M_MEGOLM_BACKUP_V1 to StoredSecret(mockk(), "pri2"))
-                cut.version.first { it == null } shouldBe null
-
+                setRoomKeyBackupVersionCalled shouldBe true
                 job.cancel()
-                coVerify {
-                    api.keys.setRoomKeysVersion(coWithArg {
-                        it.shouldBeInstanceOf<SetRoomKeysVersionRequest.V1>()
+            }
+        }
+        context("key backup cannot be trusted") {
+            should("set version to null, remove secret and remove signatures when signed by own device") {
+                var setRoomKeyBackupVersionCalled = false
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                        keyVersion
+                    }
+                    matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                        keyVersion
+                    }
+                    matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersionByVersion("1")) {
+                        setRoomKeyBackupVersionCalled = true
+                        it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
-                        it.authData.publicKey shouldBe Curve25519Key(null, "pub")
+                        it.authData.publicKey shouldBe Curve25519Key(null, validKeyBackupPublicKey)
                         it.authData.signatures shouldBe mapOf(
                             ownUserId to keysOf(
                                 Ed25519Key("MSK", "s2")
                             )
                         )
-                    })
+                        SetRoomKeyBackupVersion.Response("1")
+                    }
                 }
+                olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
+                val job = launch {
+                    cut.setAndSignNewKeyBackupVersion()
+                }
+                store.keys.secrets.value = mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            MegolmBackupV1EventContent(mapOf())
+                        ), validKeyBackupPrivateKey
+                    )
+                )
+                cut.version.first { it != null } shouldBe keyVersion
+                store.keys.secrets.value = mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            MegolmBackupV1EventContent(mapOf())
+                        ), "invalidPri"
+                    )
+                )
+                cut.version.first { it == null } shouldBe null
+
+                job.cancel()
+                setRoomKeyBackupVersionCalled shouldBe true
                 store.keys.secrets.value.shouldBeEmpty()
             }
         }
@@ -222,12 +280,11 @@ private val body: ShouldSpec.() -> Unit = {
         val senderKey = Curve25519Key(null, "senderKey")
         beforeTest {
             scope.launch(start = CoroutineStart.UNDISPATCHED) { cut.handleLoadMegolmSessionQueue() }
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING)
+            currentSyncState.value = RUNNING
         }
         should("do nothing when version is null") {
             cut.loadMegolmSession(roomId, sessionId, senderKey)
             continually(500.milliseconds) {
-                coVerify { api.keys wasNot Called }
                 store.olm.getInboundMegolmSession(senderKey, sessionId, roomId) shouldBe null
             }
         }
@@ -256,11 +313,11 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("without error") {
                 beforeTest {
-                    coEvery {
-                        api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version, roomId, sessionId)
-                    } returns Result.success(
-                        RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                            RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
+                        }
+                    }
                 }
                 should("fetch megolm session and save, when index is older than known index") {
                     val currentSession = StoredInboundMegolmSession(
@@ -313,15 +370,15 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("with delay") {
                 val allLoadMegolmSessionsCalled = MutableStateFlow(false)
+                var getRoomKeyBackupDataCalled = false
                 beforeTest {
                     allLoadMegolmSessionsCalled.value = false
-                    coEvery {
-                        api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version, roomId, sessionId)
-                    } coAnswers {
-                        allLoadMegolmSessionsCalled.first { it }
-                        Result.success(
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                            allLoadMegolmSessionsCalled.first { it }
+                            getRoomKeyBackupDataCalled = true
                             RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
-                        )
+                        }
                     }
                 }
                 should("fetch one megolm session only once at a time") {
@@ -330,20 +387,24 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     allLoadMegolmSessionsCalled.value = true
                     store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope).first { it != null }
-                    api.keys.let {
-                        coVerify(exactly = 1) {
-                            it.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version, roomId, sessionId)
-                        }
-                    }
+                    getRoomKeyBackupDataCalled shouldBe true
                 }
             }
             context("with error") {
+                var getRoomKeyBackupDataCalled = false
                 beforeTest {
-                    coEvery {
-                        api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version, roomId, sessionId)
-                    } returns Result.failure(RuntimeException("")) andThen Result.success(
-                        RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
-                    )
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetRoomKeyBackupData(roomId.e(), sessionId, version)
+                        ) {
+                            throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                        }
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                            getRoomKeyBackupDataCalled = true
+                            RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
+                        }
+                    }
                 }
                 should("retry fetch megolm session") {
                     cut.loadMegolmSession(roomId, sessionId, senderKey)
@@ -357,11 +418,7 @@ private val body: ShouldSpec.() -> Unit = {
                         this.hasBeenBackedUp shouldBe true
                         this.pickled shouldNot beEmpty()
                     }
-                    api.keys.let {
-                        coVerify(exactly = 2) {
-                            it.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version, roomId, sessionId)
-                        }
-                    }
+                    getRoomKeyBackupDataCalled shouldBe true
                 }
             }
         }
@@ -370,18 +427,34 @@ private val body: ShouldSpec.() -> Unit = {
         should("upload new room key version and add secret to account data") {
             val (masterSigningPrivateKey, masterSigningPublicKey) =
                 freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-            coEvery { api.keys.setRoomKeysVersion(any()) } returns Result.success("1")
-            coEvery { api.users.setAccountData(any(), ownUserId) } returns Result.success(Unit)
-            coEvery { olm.sign.signatures<RoomKeyBackupV1AuthData>(any(), any(), signWith = DeviceKey) } returns mapOf(
-                ownUserId to keysOf(Ed25519Key(ownDeviceId, "s1"))
-            )
-            coEvery {
-                olm.sign.signatures<RoomKeyBackupV1AuthData>(
-                    any(), any(),
-                    signWith = Custom(masterSigningPrivateKey, masterSigningPublicKey)
+            var setRoomKeyBackupVersionCalled = false
+            var setGlobalAccountDataCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
+                    setRoomKeyBackupVersionCalled = true
+                    it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
+                    it.authData.publicKey.value shouldNot beEmpty()
+                    it.authData.signatures[ownUserId]?.keys shouldBe setOf(
+                        Ed25519Key(ownDeviceId, "s1"),
+                        Ed25519Key(masterSigningPublicKey, "s2")
+                    )
+                    it.version shouldBe null
+                    SetRoomKeyBackupVersion.Response("1")
+                }
+                matrixJsonEndpoint(
+                    json, mappings,
+                    SetGlobalAccountData(ownUserId.e(), "m.megolm_backup.v1")
+                ) {
+                    setGlobalAccountDataCalled = true
+                }
+            }
+            olmSignMock.returnSignatures = listOf(
+                mapOf(
+                    ownUserId to keysOf(Ed25519Key(ownDeviceId, "s1"))
+                ),
+                mapOf(
+                    ownUserId to keysOf(Ed25519Key(masterSigningPublicKey, "s2"))
                 )
-            } returns mapOf(
-                ownUserId to keysOf(Ed25519Key(masterSigningPublicKey, "s2"))
             )
 
             cut.bootstrapRoomKeyBackup(
@@ -391,20 +464,8 @@ private val body: ShouldSpec.() -> Unit = {
                 masterSigningPublicKey
             ).getOrThrow()
 
-            coVerify {
-                api.keys.setRoomKeysVersion(withArg { request ->
-                    request.shouldBeInstanceOf<SetRoomKeysVersionRequest.V1>()
-                    request.authData.publicKey.value shouldNot beEmpty()
-                    request.authData.signatures[ownUserId]?.keys shouldBe setOf(
-                        Ed25519Key(ownDeviceId, "s1"),
-                        Ed25519Key(masterSigningPublicKey, "s2")
-                    )
-                    request.version shouldBe null
-                })
-                api.users.setAccountData(coWithArg {
-                    it.shouldBeInstanceOf<MegolmBackupV1EventContent>()
-                }, ownUserId)
-            }
+            setRoomKeyBackupVersionCalled shouldBe true
+            setGlobalAccountDataCalled shouldBe true
             store.keys.secrets.value.keys shouldContain M_MEGOLM_BACKUP_V1
         }
     }
@@ -441,17 +502,24 @@ private val body: ShouldSpec.() -> Unit = {
             forwardingCurve25519KeyChain = listOf(Curve25519Key(null, "curve2")),
             pickled = pickle2
         )
+        lateinit var job: Job
         beforeTest {
-            coEvery { api.sync.currentSyncState } returns MutableStateFlow(RUNNING)
-            scope.launch(start = CoroutineStart.UNDISPATCHED) { cut.uploadRoomKeyBackup() }
+            currentSyncState.value = RUNNING
+            job = scope.launch(start = CoroutineStart.LAZY) { cut.uploadRoomKeyBackup() }
             session1.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
             session2.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
         }
         should("do nothing when version is null") {
-            continually(2.seconds) {
-                coVerify(exactly = 0) {
-                    api.keys.setRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), "1", any())
+            var setRoomKeyBackupVersionCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
+                    setRoomKeyBackupVersionCalled = true
+                    SetRoomKeyBackupVersion.Response("1")
                 }
+            }
+            job.start()
+            continually(2.seconds) {
+                setRoomKeyBackupVersionCalled shouldBe false
                 store.olm.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
                     store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
@@ -470,21 +538,24 @@ private val body: ShouldSpec.() -> Unit = {
             }
             val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
-            val keys = api.keys
-            continually(2.seconds) {
-                coVerify(exactly = 0) {
-                    keys.setRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), "1", any())
+            var setRoomKeyBackupVersionCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SetRoomKeyBackupVersion()) {
+                    setRoomKeyBackupVersionCalled = true
+                    SetRoomKeyBackupVersion.Response("2")
                 }
+            }
+            job.start()
+            continually(2.seconds) {
+                setRoomKeyBackupVersionCalled shouldBe false
             }
         }
         should("upload key backup and set flag, that session has been backed up") {
-            coEvery {
-                api.keys.setRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version = any(), backup = any())
-            } returns Result.success(SetRoomKeysResponse(2, "etag"))
-            val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-            setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
-            coVerify(timeout = 2_000) {
-                api.keys.setRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), "1", coWithArg {
+            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
+
+            var setRoomKeyBackupDataCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("1")) {
                     it.rooms.keys shouldBe setOf(RoomId("room1", "server"), RoomId("room2", "server"))
                     assertSoftly(it.rooms[room1]?.sessions?.get(sessionId1)) {
                         assertNotNull(this)
@@ -498,29 +569,143 @@ private val body: ShouldSpec.() -> Unit = {
                         this.isVerified shouldBe true
                         this.forwardedCount shouldBe 1
                     }
-                })
+                    setRoomKeyBackupDataCalled = true
+                    SetRoomKeysResponse(2, "etag")
+                }
             }
+
+            job.start()
+
             store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
+                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                    .first { it?.hasBeenBackedUp == true }
             }?.hasBeenBackedUp shouldBe true
             session2.run {
-                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
-            }?.hasBeenBackedUp shouldBe true
+                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                    .first { it?.hasBeenBackedUp == true }
+            }
         }
         should("update key backup version when error is M_WRONG_ROOM_KEYS_VERSION") {
-            coEvery {
-                api.keys.setRoomKeys<EncryptedRoomKeyBackupV1SessionData>(any(), version = any(), backup = any())
-            } returns Result.failure(
-                MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
-            ) andThen Result.success(SetRoomKeysResponse(2, "etag"))
-            val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-            setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
-            store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
-            val keys = api.keys
-            coVerify(exactly = 2) {
-                keys.getRoomKeysVersion()
+            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
+
+            var setRoomKeyBackupDataCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("1")) {
+                    throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
+                }
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                    GetRoomKeysBackupVersionResponse.V1(
+                        authData = RoomKeyBackupV1AuthData(
+                            publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                            signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
+                        ),
+                        count = 1,
+                        etag = "etag",
+                        version = "2"
+                    )
+                }
+                matrixJsonEndpoint(json, mappings, SetRoomsKeyBackup("2")) {
+                    setRoomKeyBackupDataCalled = true
+                    SetRoomKeysResponse(2, "etag")
+                }
             }
+
+            job.start()
+
+            store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            setRoomKeyBackupDataCalled shouldBe true
+        }
+    }
+    context(KeyBackupService::keyBackupCanBeTrusted.name) {
+        suspend fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
+            authData = RoomKeyBackupV1AuthData(
+                publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEVICE", "s1"), Ed25519Key("MSK", "s2")))
+            ),
+            count = 1,
+            etag = "etag",
+            version = "1"
+        )
+
+        suspend fun deviceKeyTrustLevel(level: KeySignatureTrustLevel) {
+            store.keys.updateDeviceKeys(ownUserId) {
+                mapOf(
+                    "DEVICE" to StoredDeviceKeys(
+                        SignedDeviceKeys(
+                            DeviceKeys(ownUserId, ownDeviceId, setOf(), keysOf()),
+                            null
+                        ), level
+                    )
+                )
+            }
+        }
+
+        suspend fun masterKeyTrustLevel(level: KeySignatureTrustLevel) {
+            store.keys.updateCrossSigningKeys(ownUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        SignedCrossSigningKeys(
+                            CrossSigningKeys(
+                                ownUserId, setOf(), keysOf(Ed25519Key("MSK", "msk_pub"))
+                            ),
+                            mapOf()
+                        ),
+                        level
+                    )
+                )
+            }
+        }
+        should("return false, when private key is invalid") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
+            cut.keyBackupCanBeTrusted(roomKeyVersion(), "dino") shouldBe false
+        }
+        should("return false, when key backup version not supported") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
+            cut.keyBackupCanBeTrusted(
+                GetRoomKeysBackupVersionResponse.Unknown(
+                    JsonObject(mapOf()),
+                    RoomKeyBackupAlgorithm.Unknown("")
+                ), "dino"
+            ) shouldBe false
+        }
+        should("return false, when public key does not match") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
+            cut.keyBackupCanBeTrusted(
+                roomKeyVersion(),
+                freeAfter(OlmPkDecryption.create(null)) { it.privateKey },
+            ) shouldBe false
+        }
+//        should("return false, when there is no signature we trust") {
+//            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+//            masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+//            keyBackupCanBeTrusted(
+//                roomKeyVersion,
+//                privateKey,
+//                ownUserId,
+//                store
+//            ) shouldBe false
+//        }
+        should("return true, when there is a device key is valid+verified") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
+            masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+            cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        }
+        should("return true, when there is a device key is crossSigned+verified") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
+            masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+            cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        }
+        should("return true, when there is a master key we crossSigned+verified") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+            masterKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
+            cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        }
+        should("return true, when there is a master key we notFullyCrossSigned+verified") {
+            deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
+            masterKeyTrustLevel(KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true))
+            cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
         }
     }
 }

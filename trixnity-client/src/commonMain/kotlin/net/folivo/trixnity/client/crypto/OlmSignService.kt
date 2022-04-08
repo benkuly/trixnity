@@ -6,7 +6,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.DeviceKey
 import net.folivo.trixnity.client.store.AllowedSecretType
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
@@ -26,6 +25,36 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 
+interface IOlmSignService {
+    sealed interface SignWith {
+        object DeviceKey : SignWith
+        data class AllowedSecrets(val allowedSecretType: AllowedSecretType) : SignWith
+        data class Custom(val privateKey: String, val publicKey: String) : SignWith
+    }
+
+    suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = SignWith.DeviceKey): Signatures<UserId>
+
+    suspend fun <T> signatures(
+        unsignedObject: T,
+        serializer: KSerializer<T>,
+        signWith: SignWith = SignWith.DeviceKey
+    ): Signatures<UserId>
+
+    suspend fun <T> sign(
+        unsignedObject: T,
+        serializer: KSerializer<T>,
+        signWith: SignWith = SignWith.DeviceKey
+    ): Signed<T, UserId>
+
+    suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String = "key"): Key.SignedCurve25519Key
+
+    suspend fun <T> verify(
+        signedObject: Signed<T, UserId>,
+        serializer: KSerializer<T>,
+        checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
+    ): VerifyResult
+}
+
 class OlmSignService internal constructor(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
@@ -33,17 +62,12 @@ class OlmSignService internal constructor(
     private val store: Store,
     private val account: OlmAccount,
     private val utility: OlmUtility,
-) {
-    sealed interface SignWith {
-        object DeviceKey : SignWith
-        data class AllowedSecrets(val allowedSecretType: AllowedSecretType) : SignWith
-        data class Custom(val privateKey: String, val publicKey: String) : SignWith
-    }
+) : IOlmSignService {
 
-    suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = DeviceKey): Signatures<UserId> {
+    override suspend fun signatures(jsonObject: JsonObject, signWith: IOlmSignService.SignWith): Signatures<UserId> {
         val stringToSign = canonicalFilteredJson(jsonObject)
         return when (signWith) {
-            DeviceKey -> {
+            IOlmSignService.SignWith.DeviceKey -> {
                 mapOf(
                     ownUserId to keysOf(
                         Ed25519Key(
@@ -53,7 +77,7 @@ class OlmSignService internal constructor(
                     )
                 )
             }
-            is SignWith.AllowedSecrets -> {
+            is IOlmSignService.SignWith.AllowedSecrets -> {
                 val privateKey = store.keys.secrets.value[signWith.allowedSecretType]?.decryptedPrivateKey
                 requireNotNull(privateKey) { "could not find private key of ${signWith.allowedSecretType}" }
                 val publicKey =
@@ -78,7 +102,7 @@ class OlmSignService internal constructor(
                     )
                 )
             }
-            is SignWith.Custom -> {
+            is IOlmSignService.SignWith.Custom -> {
                 mapOf(
                     ownUserId to keysOf(
                         Ed25519Key(
@@ -93,36 +117,26 @@ class OlmSignService internal constructor(
         }
     }
 
-    suspend fun <T> signatures(
+    override suspend fun <T> signatures(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: SignWith = DeviceKey
+        signWith: IOlmSignService.SignWith
     ): Signatures<UserId> {
         val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
         require(jsonObject is JsonObject)
         return signatures(jsonObject, signWith)
     }
 
-    suspend inline fun <reified T> signatures(
-        unsignedObject: T,
-        signWith: SignWith = DeviceKey
-    ): Signatures<UserId> {
-        return signatures(unsignedObject, serializer(), signWith)
-    }
-
-    suspend fun <T> sign(
+    override suspend fun <T> sign(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: SignWith = DeviceKey
+        signWith: IOlmSignService.SignWith
     ): Signed<T, UserId> {
         return Signed(unsignedObject, signatures(unsignedObject, serializer, signWith))
     }
 
-    suspend inline fun <reified T> sign(unsignedObject: T, signWith: SignWith = DeviceKey): Signed<T, UserId> {
-        return sign(unsignedObject, serializer(), signWith)
-    }
 
-    suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String = "key"): Key.SignedCurve25519Key {
+    override suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
@@ -130,19 +144,12 @@ class OlmSignService internal constructor(
         )
     }
 
-    suspend inline fun <reified T> verify(
-        signedObject: Signed<T, UserId>,
-        checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
-    ): VerifyResult {
-        return verify(signedObject, serializer(), checkSignaturesOf)
-    }
-
     @Serializable
     private data class VerifySignedKeyWrapper(
         val key: String
     )
 
-    suspend fun <T> verify(
+    override suspend fun <T> verify(
         signedObject: Signed<T, UserId>,
         serializer: KSerializer<T>,
         checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
@@ -163,7 +170,7 @@ class OlmSignService internal constructor(
                 val signedJson = canonicalFilteredJson(jsonObject)
                 val verifyResults = checkSignaturesOf.flatMap { (userId, signingKeys) ->
                     signingKeys.map { signingKey ->
-                        val signatureKey = signedObject.signatures[userId]?.find { it.keyId == signingKey.keyId }
+                        val signatureKey = signedObject.signatures?.get(userId)?.find { it.keyId == signingKey.keyId }
                             ?: return VerifyResult.MissingSignature("no signature found for signing key $signingKey")
                         try {
                             utility.verifyEd25519(
@@ -189,3 +196,21 @@ class OlmSignService internal constructor(
     private fun canonicalFilteredJson(input: JsonObject): String =
         canonicalJson(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 }
+
+suspend inline fun <reified T> IOlmSignService.sign(
+    unsignedObject: T,
+    signWith: IOlmSignService.SignWith = IOlmSignService.SignWith.DeviceKey
+): Signed<T, UserId> =
+    sign(unsignedObject, serializer(), signWith)
+
+suspend inline fun <reified T> IOlmSignService.signatures(
+    unsignedObject: T,
+    signWith: IOlmSignService.SignWith = IOlmSignService.SignWith.DeviceKey
+): Signatures<UserId> =
+    signatures(unsignedObject, serializer(), signWith)
+
+suspend inline fun <reified T> IOlmSignService.verify(
+    signedObject: Signed<T, UserId>,
+    checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
+): VerifyResult =
+    verify(signedObject, serializer(), checkSignaturesOf)

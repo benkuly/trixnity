@@ -14,9 +14,9 @@ fun createEventSerializersModule(
     val initialStateEventSerializer = InitialStateEventSerializer(mappings.state)
     val ephemeralEventSerializer = EphemeralEventSerializer(mappings.ephemeral)
     val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice)
-    val olmEventSerializer =
-        OlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice)
-    val megolmEventSerializer = MegolmEventSerializer(mappings.message)
+    val decryptedOlmEventSerializer =
+        DecryptedOlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice)
+    val decryptedMegolmEventSerializer = DecryptedMegolmEventSerializer(mappings.message)
     val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData)
     val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData)
     val eventSerializer = EventSerializer(
@@ -26,8 +26,6 @@ fun createEventSerializersModule(
         initialStateEventSerializer,
         ephemeralEventSerializer,
         toDeviceEventSerializer,
-        olmEventSerializer,
-        megolmEventSerializer,
         globalAccountDataEventSerializer,
         roomAccountDataEventSerializer
     )
@@ -41,8 +39,8 @@ fun createEventSerializersModule(
         contextual(initialStateEventSerializer)
         contextual(ephemeralEventSerializer)
         contextual(toDeviceEventSerializer)
-        contextual(olmEventSerializer)
-        contextual(megolmEventSerializer)
+        contextual(decryptedOlmEventSerializer)
+        contextual(decryptedMegolmEventSerializer)
         contextual(globalAccountDataEventSerializer)
         contextual(roomAccountDataEventSerializer)
     }

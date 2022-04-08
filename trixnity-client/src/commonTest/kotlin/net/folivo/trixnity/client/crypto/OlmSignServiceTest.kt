@@ -10,24 +10,21 @@ import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.mockk
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoredCrossSigningKeys
-import net.folivo.trixnity.client.store.StoredDeviceKeys
-import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
@@ -39,7 +36,6 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.random.Random
 
-@OptIn(InternalAPI::class)
 class OlmSignServiceTest : ShouldSpec({
 
     val json = createMatrixJson()
@@ -50,7 +46,8 @@ class OlmSignServiceTest : ShouldSpec({
     val ownUserId = UserId("me", "server")
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
-    val store = mockk<Store>()
+    lateinit var storeScope: CoroutineScope
+    lateinit var store: Store
 
     lateinit var cut: OlmSignService
     lateinit var aliceSigningAccountSignService: OlmSignService
@@ -58,32 +55,49 @@ class OlmSignServiceTest : ShouldSpec({
 
 
     beforeTest {
+        storeScope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(storeScope).apply { init() }
         aliceSigningAccountSignService =
-            OlmSignService(UserId("alice", "server"), "ALICE_DEVICE", json, mockk(), aliceSigningAccount, utility)
-        bobSigningAccountSignService =
-            OlmSignService(UserId("bob", "server"), "BBBBBB", json, mockk(), bobSigningAccount, utility)
-
-        coEvery { store.keys.getDeviceKeys(bob) } returns mapOf(
-            "BBBBBB" to StoredDeviceKeys(
-                Signed(
-                    DeviceKeys(
-                        bob,
-                        "BBBBBB",
-                        setOf(Olm, Megolm),
-                        keysOf(
-                            Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519),
-                            Curve25519Key("BBBBBB", bobSigningAccount.identityKeys.curve25519)
-                        )
-                    ), mapOf()
-                ), Valid(true)
+            OlmSignService(
+                alice,
+                "ALICE_DEVICE",
+                json,
+                InMemoryStore(storeScope),
+                aliceSigningAccount,
+                utility
             )
-        )
-        coEvery { store.keys.outdatedKeys } returns MutableStateFlow(setOf())
+        bobSigningAccountSignService =
+            OlmSignService(
+                UserId("bob", "server"),
+                "BBBBBB",
+                json,
+                InMemoryStore(storeScope),
+                bobSigningAccount,
+                utility
+            )
+
+        store.keys.updateDeviceKeys(bob) {
+            mapOf(
+                "BBBBBB" to StoredDeviceKeys(
+                    Signed(
+                        DeviceKeys(
+                            bob,
+                            "BBBBBB",
+                            setOf(Olm, Megolm),
+                            keysOf(
+                                Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519),
+                                Curve25519Key("BBBBBB", bobSigningAccount.identityKeys.curve25519)
+                            )
+                        ), mapOf()
+                    ), Valid(true)
+                )
+            )
+        }
         cut = OlmSignService(ownUserId, "ABCDEF", json, store, account, utility)
     }
 
     afterTest {
-        clearAllMocks()
+        storeScope.cancel()
     }
 
     afterSpec {
@@ -109,27 +123,31 @@ class OlmSignServiceTest : ShouldSpec({
             }
         }
         should("return signatures from self signing key") {
-            coEvery { store.keys.secrets } returns MutableStateFlow(
+            store.keys.secrets.value =
                 mapOf(
-                    M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(mockk(), Random.nextBytes(32).encodeBase64())
+                    M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                        Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                        Random.nextBytes(32).encodeBase64()
+                    )
                 )
-            )
-            coEvery { store.keys.getCrossSigningKeys(ownUserId) } returns setOf(
-                StoredCrossSigningKeys(
-                    Signed(
-                        CrossSigningKeys(
-                            ownUserId,
-                            setOf(CrossSigningKeysUsage.SelfSigningKey),
-                            keysOf(
-                                Ed25519Key("publicSelfSigningKey", "publicSelfSigningKey"),
-                            )
-                        ), mapOf()
-                    ), Valid(true)
+            store.keys.updateCrossSigningKeys(ownUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(
+                            CrossSigningKeys(
+                                ownUserId,
+                                setOf(CrossSigningKeysUsage.SelfSigningKey),
+                                keysOf(
+                                    Ed25519Key("publicSelfSigningKey", "publicSelfSigningKey"),
+                                )
+                            ), mapOf()
+                        ), Valid(true)
+                    )
                 )
-            )
+            }
             val result = cut.signatures(
                 JsonObject(mapOf("key" to JsonPrimitive("value"))),
-                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING)
+                IOlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING)
             )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {
@@ -144,27 +162,30 @@ class OlmSignServiceTest : ShouldSpec({
             }
         }
         should("return signatures from user signing key") {
-            coEvery { store.keys.secrets } returns MutableStateFlow(
-                mapOf(
-                    M_CROSS_SIGNING_USER_SIGNING to StoredSecret(mockk(), Random.nextBytes(32).encodeBase64())
+            store.keys.secrets.value = mapOf(
+                M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                    Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                    Random.nextBytes(32).encodeBase64()
                 )
             )
-            coEvery { store.keys.getCrossSigningKeys(ownUserId) } returns setOf(
-                StoredCrossSigningKeys(
-                    Signed(
-                        CrossSigningKeys(
-                            ownUserId,
-                            setOf(CrossSigningKeysUsage.UserSigningKey),
-                            keysOf(
-                                Ed25519Key("publicUserSigningKey", "publicUserSigningKey"),
-                            )
-                        ), mapOf()
-                    ), Valid(true)
+            store.keys.updateCrossSigningKeys(ownUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(
+                            CrossSigningKeys(
+                                ownUserId,
+                                setOf(CrossSigningKeysUsage.UserSigningKey),
+                                keysOf(
+                                    Ed25519Key("publicUserSigningKey", "publicUserSigningKey"),
+                                )
+                            ), mapOf()
+                        ), Valid(true)
+                    )
                 )
-            )
+            }
             val result = cut.signatures(
                 JsonObject(mapOf("key" to JsonPrimitive("value"))),
-                OlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING)
+                IOlmSignService.SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING)
             )
             result shouldHaveSize 1
             assertSoftly(result.entries.first()) {
@@ -205,7 +226,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             val result = cut.sign(event)
             result.signed shouldBe event
-            assertSoftly(result.signatures.entries.first()) {
+            assertSoftly(result.signatures!!.entries.first()) {
                 key shouldBe ownUserId
                 value.keys shouldHaveSize 1
                 assertSoftly(value.keys.first()) {
@@ -246,7 +267,7 @@ class OlmSignServiceTest : ShouldSpec({
                     "AAAAAQ",
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
                 )
-            ).signatures shouldHaveSize 1
+            ).signatures?.size shouldBe 1
         }
     }
     context("verify") {
@@ -268,8 +289,6 @@ class OlmSignServiceTest : ShouldSpec({
             ) shouldBe VerifyResult.Valid
         }
         should("return MissingSignature, when no key found") {
-            coEvery { store.keys.getDeviceKeys(alice) } returns null
-            coEvery { store.keys.getCrossSigningKeys(alice) } returns null
             val signedObject = aliceSigningAccountSignService.sign(
                 Event.StateEvent(
                     NameEventContent("room name"),
@@ -284,8 +303,6 @@ class OlmSignServiceTest : ShouldSpec({
             cut.verify(signedObject, mapOf(bob to setOf())).shouldBeInstanceOf<VerifyResult.MissingSignature>()
         }
         should("return MissingSignature when no signature found for sigining keys") {
-            coEvery { store.keys.getDeviceKeys(alice) } returns null
-            coEvery { store.keys.getCrossSigningKeys(alice) } returns null
             val signedObject = aliceSigningAccountSignService.sign(
                 Event.StateEvent(
                     NameEventContent("room name"),

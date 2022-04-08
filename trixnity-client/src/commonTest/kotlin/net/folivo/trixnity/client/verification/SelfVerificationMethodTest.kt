@@ -1,34 +1,27 @@
 package net.folivo.trixnity.client.verification
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import io.mockk.*
-import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.encodeRecoveryKey
 import net.folivo.trixnity.client.key.encryptAesHmacSha2
 import net.folivo.trixnity.client.key.generatePbkdf2Sha512
+import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import kotlin.random.Random
+import kotlin.test.assertNotNull
 
-@OptIn(InternalAPI::class)
 class SelfVerificationMethodTest : ShouldSpec({
     timeout = 30_000
 
-    val keyService = mockk<KeyService>(relaxUnitFun = true)
+    lateinit var keyService: KeyServiceMock
 
     beforeTest {
-        coEvery {
-            keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(any(), any(), any())
-        } returns Result.success(Unit)
-        coEvery {
-            keyService.secret.decryptMissingSecrets(any(), any(), any())
-        } just Runs
-    }
-    afterTest {
-        clearAllMocks()
+        keyService = KeyServiceMock()
     }
     context("${AesHmacSha2RecoveryKey::class.simpleName}") {
         context(AesHmacSha2RecoveryKey::verify.name) {
@@ -49,8 +42,18 @@ class SelfVerificationMethodTest : ShouldSpec({
                 )
                 val cut = AesHmacSha2RecoveryKey(keyService, "KEY", info)
                 cut.verify(encodeRecoveryKey(key)).getOrThrow()
-                coVerify { keyService.secret.decryptMissingSecrets(key, "KEY", info) }
-                coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
+                assertSoftly(keyService.secret.decryptMissingSecretsCalled.value) {
+                    assertNotNull(this)
+                    first shouldBe key
+                    second shouldBe "KEY"
+                    third shouldBe info
+                }
+                assertSoftly(keyService.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
+                    assertNotNull(this)
+                    first shouldBe key
+                    second shouldBe "KEY"
+                    third shouldBe info
+                }
             }
         }
     }
@@ -72,14 +75,28 @@ class SelfVerificationMethodTest : ShouldSpec({
                     initialisationVector = iv
                 ).mac
                 val info = SecretKeyEventContent.AesHmacSha2Key(
-                    passphrase = Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8),
+                    passphrase = Pbkdf2(
+                        salt = salt.encodeBase64(),
+                        iterations = 300_000,
+                        bits = 32 * 8
+                    ),
                     iv = iv.encodeBase64(),
                     mac = mac
                 )
                 val cut = AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", info)
                 cut.verify("password").getOrThrow()
-                coVerify { keyService.secret.decryptMissingSecrets(key, "KEY", info) }
-                coVerify { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(key, "KEY", info) }
+                assertSoftly(keyService.secret.decryptMissingSecretsCalled.value) {
+                    assertNotNull(this)
+                    first shouldBe key
+                    second shouldBe "KEY"
+                    third shouldBe info
+                }
+                assertSoftly(keyService.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
+                    assertNotNull(this)
+                    first shouldBe key
+                    second shouldBe "KEY"
+                    third shouldBe info
+                }
             }
         }
     }

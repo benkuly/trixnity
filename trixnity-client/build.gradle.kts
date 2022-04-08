@@ -1,12 +1,7 @@
-import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64
-import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
-
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("kotlinx-atomicfu")
 }
 
 android {
@@ -24,24 +19,21 @@ android {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-            when (HostManager.host) {
-                is LINUX_X64 -> {
-                    systemProperty("jna.library.path", olm.build.canonicalPath)
-                }
-                is MINGW_X64 -> {
-                    systemProperty("jna.library.path", olm.buildWin.canonicalPath)
-                }
-                else -> {}
-            }
         }
     }
     android {
         publishLibraryVariants("release")
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
     }
 //    js(IR) {
 //        browser {
@@ -64,16 +56,21 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                api(project(":trixnity-clientserverapi-client"))
+                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 implementation(project(":trixnity-olm"))
+
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
-                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.kotlinxAtomicfu}")
+
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
+
                 implementation("com.benasher44:uuid:${Versions.uuid}")
+
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
@@ -102,8 +99,10 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.mockk:mockk:${Versions.mockk}")
+                implementation(project(":test-utils"))
+
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")

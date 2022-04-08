@@ -4,8 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RoomKeyBackup<T : RoomKeyBackupSessionData>(
+data class RoomKeyBackup(
     @SerialName("sessions")
-    val sessions: Map<String, RoomKeyBackupData<T>>
+    val sessions: Map<String, RoomKeyBackupData>
 )
 

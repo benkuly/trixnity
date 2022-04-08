@@ -71,11 +71,14 @@ object PushConditionSerializer : KSerializer<PushCondition> {
                 value
             )
             is PushCondition.RoomMemberCount -> encoder.json.encodeToJsonElement(
-                AddFieldsSerializer(PushCondition.RoomMemberCount.serializer(), "kind" to "event_match"),
+                AddFieldsSerializer(PushCondition.RoomMemberCount.serializer(), "kind" to "room_member_count"),
                 value
             )
             is PushCondition.SenderNotificationPermission -> encoder.json.encodeToJsonElement(
-                AddFieldsSerializer(PushCondition.SenderNotificationPermission.serializer(), "kind" to "event_match"),
+                AddFieldsSerializer(
+                    PushCondition.SenderNotificationPermission.serializer(),
+                    "kind" to "sender_notification_permission"
+                ),
                 value
             )
             is PushCondition.ContainsDisplayName -> JsonObject(mapOf("kind" to JsonPrimitive("contains_display_name")))

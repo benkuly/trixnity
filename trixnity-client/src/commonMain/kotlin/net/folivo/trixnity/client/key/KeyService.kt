@@ -6,17 +6,18 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.*
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.*
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -30,7 +31,6 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.SecretStorageKeyPassphrase.Pbkdf2
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -45,27 +45,122 @@ import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyService {
+    val backup: IKeyBackupService
+    val trust: IKeyTrustService
+    val secret: IKeySecretService
+
+    data class BootstrapCrossSigning(
+        val recoveryKey: String,
+        val result: Result<UIA<Unit>>,
+    )
+
+    /**
+     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
+     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
+     */
+    suspend fun bootstrapCrossSigning(
+        recoveryKey: ByteArray = SecureRandom.nextBytes(32),
+        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent = {
+            val iv = SecureRandom.nextBytes(16)
+            AesHmacSha2Key(
+                iv = iv.encodeBase64(),
+                mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
+            )
+        }
+    ): BootstrapCrossSigning
+
+    /**
+     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
+     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
+     */
+    suspend fun bootstrapCrossSigningFromPassphrase(
+        passphrase: String,
+        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
+            val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
+                salt = SecureRandom.nextBytes(32).encodeBase64(),
+                iterations = 500_000,
+                bits = 32 * 8
+            )
+            val iv = SecureRandom.nextBytes(16)
+            val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo).getOrThrow()
+            key to AesHmacSha2Key(
+                passphrase = passphraseInfo,
+                iv = iv.encodeBase64(),
+                mac = createAesHmacSha2MacFromKey(key = key, iv = iv)
+            )
+        }
+    ): BootstrapCrossSigning
+
+    /**
+     * @return the trust level of a device.
+     */
+    suspend fun getTrustLevel(
+        userId: UserId,
+        deviceId: String,
+        scope: CoroutineScope
+    ): StateFlow<DeviceTrustLevel>
+
+    /**
+     * @return the trust level of a device or null, if the timeline event is not a megolm encrypted event.
+     */
+    suspend fun getTrustLevel(
+        timelineEvent: TimelineEvent,
+        scope: CoroutineScope
+    ): StateFlow<DeviceTrustLevel>?
+
+    /**
+     * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
+     */
+    suspend fun getTrustLevel(
+        userId: UserId,
+        scope: CoroutineScope
+    ): StateFlow<UserTrustLevel>
+
+    suspend fun getDeviceKeys(
+        userId: UserId,
+        scope: CoroutineScope,
+    ): StateFlow<List<DeviceKeys>?>
+
+    suspend fun getDeviceKeys(
+        userId: UserId,
+    ): List<DeviceKeys>?
+
+    suspend fun getCrossSigningKeys(
+        userId: UserId,
+        scope: CoroutineScope,
+    ): StateFlow<List<CrossSigningKeys>?>
+
+    suspend fun getCrossSigningKeys(
+        userId: UserId,
+    ): List<CrossSigningKeys>?
+
+    suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
+        key: ByteArray,
+        keyId: String,
+        keyInfo: SecretKeyEventContent
+    ): Result<Unit>
+}
+
 class KeyService(
-    olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olm: OlmService,
+    private val olmSign: IOlmSignService,
     private val api: MatrixClientServerApiClient,
-    internal val secret: KeySecretService = KeySecretService(ownUserId, ownDeviceId, store, olm, api),
-    internal val backup: KeyBackupService = KeyBackupService(olmPickleKey, ownUserId, ownDeviceId, store, api, olm),
-    internal val trust: KeyTrustService = KeyTrustService(ownUserId, store, olm, api)
-) {
+    private val currentSyncState: StateFlow<SyncState>,
+    override val secret: IKeySecretService,
+    override val backup: IKeyBackupService,
+    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olmSign, api)
+) : IKeyService {
 
     internal suspend fun start(scope: CoroutineScope) {
         api.sync.subscribeDeviceLists(::handleDeviceLists)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
-        secret.start(scope)
-        backup.start(scope)
     }
 
-    internal suspend fun handleDeviceLists(deviceList: SyncResponse.DeviceLists?) {
+    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?) {
         if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
@@ -80,9 +175,8 @@ class KeyService(
         }
     }
 
-    @OptIn(FlowPreview::class)
     internal suspend fun handleOutdatedKeys() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryInfiniteWhenSyncIs(
             STARTED, INITIAL_SYNC, RUNNING,
             scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },
@@ -131,7 +225,7 @@ class KeyService(
         signingOptional: Boolean = false
     ) {
         val signatureVerification =
-            olm.sign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
+            olmSign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
         if (signatureVerification == VerifyResult.Valid
             || signingOptional && signatureVerification is VerifyResult.MissingSignature
         ) {
@@ -160,7 +254,7 @@ class KeyService(
         val oldDevices = store.keys.getDeviceKeys(userId)
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
-                olm.sign.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
+                olmSign.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
             (userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                     && signatureVerification == VerifyResult.Valid)
                 .also {
@@ -223,8 +317,7 @@ class KeyService(
         }
     }
 
-    @OptIn(InternalAPI::class)
-    internal suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
+    override suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
         key: ByteArray,
         keyId: String,
         keyInfo: SecretKeyEventContent
@@ -247,27 +340,12 @@ class KeyService(
         } else Result.failure(MasterKeyInvalidException("master public key $decryptedPublicKey did not match the advertised ${advertisedPublicKey?.value}"))
     }
 
-    data class BootstrapCrossSigning(
-        val recoveryKey: String,
-        val result: Result<UIA<Unit>>,
-    )
-
     internal val bootstrapRunning = MutableStateFlow(false)
 
-    /**
-     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
-     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
-     */
-    suspend fun bootstrapCrossSigning(
-        recoveryKey: ByteArray = SecureRandom.nextBytes(32),
-        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent = {
-            val iv = SecureRandom.nextBytes(16)
-            AesHmacSha2Key(
-                iv = iv.encodeBase64(),
-                mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
-            )
-        }
-    ): BootstrapCrossSigning {
+    override suspend fun bootstrapCrossSigning(
+        recoveryKey: ByteArray,
+        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
+    ): IKeyService.BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
         bootstrapRunning.value = true
 
@@ -277,14 +355,14 @@ class KeyService(
             generateSequence { alphabet.random() }.take(24).joinToString("")
         }.first { store.globalAccountData.get<SecretKeyEventContent>(key = it) == null }
         val secretKeyEventContent = secretKeyEventContentGenerator()
-        return BootstrapCrossSigning(
+        return IKeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
             result = api.users.setAccountData(secretKeyEventContent, ownUserId, keyId)
                 .flatMapResult { api.users.setAccountData(DefaultSecretKeyEventContent(keyId), ownUserId) }
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val masterSigningKey = olm.sign.sign(
+                    val masterSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(MasterKey),
@@ -300,7 +378,7 @@ class KeyService(
                     )
                     val (selfSigningPrivateKey, selfSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val selfSigningKey = olm.sign.sign(
+                    val selfSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(SelfSigningKey),
@@ -322,7 +400,7 @@ class KeyService(
                     )
                     val (userSigningPrivateKey, userSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val userSigningKey = olm.sign.sign(
+                    val userSigningKey = olmSign.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(UserSigningKey),
@@ -389,37 +467,15 @@ class KeyService(
         }
     }
 
-    /**
-     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
-     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
-     */
-    @OptIn(InternalAPI::class)
-    suspend fun bootstrapCrossSigningFromPassphrase(
+    override suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
-        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
-            val passphraseInfo = Pbkdf2(
-                salt = SecureRandom.nextBytes(32).encodeBase64(),
-                iterations = 500_000,
-                bits = 32 * 8
-            )
-            val iv = SecureRandom.nextBytes(16)
-            val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo).getOrThrow()
-            key to AesHmacSha2Key(
-                passphrase = passphraseInfo,
-                iv = iv.encodeBase64(),
-                mac = createAesHmacSha2MacFromKey(key = key, iv = iv)
-            )
-        }
-    ): BootstrapCrossSigning {
+        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent>
+    ): IKeyService.BootstrapCrossSigning {
         val secretKeyEventContent = secretKeyEventContentGenerator()
         return bootstrapCrossSigning(secretKeyEventContent.first) { secretKeyEventContent.second }
     }
 
-    /**
-     * @return the trust level of a device.
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getTrustLevel(
+    override suspend fun getTrustLevel(
         userId: UserId,
         deviceId: String,
         scope: CoroutineScope
@@ -436,10 +492,7 @@ class KeyService(
         }.stateIn(scope)
     }
 
-    /**
-     * @return the trust level of a device or null, if the timeline event is not a megolm encrypted event.
-     */
-    suspend fun getTrustLevel(
+    override suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
         scope: CoroutineScope
     ): StateFlow<DeviceTrustLevel>? {
@@ -453,11 +506,7 @@ class KeyService(
         } else null
     }
 
-    /**
-     * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getTrustLevel(
+    override suspend fun getTrustLevel(
         userId: UserId,
         scope: CoroutineScope
     ): StateFlow<UserTrustLevel> {
@@ -476,12 +525,33 @@ class KeyService(
             }.stateIn(scope)
     }
 
-    suspend fun getDeviceKeys(
+    override suspend fun getDeviceKeys(
         userId: UserId,
         scope: CoroutineScope,
     ): StateFlow<List<DeviceKeys>?> {
         return store.keys.getDeviceKeys(userId, scope).map {
-            it?.values?.map { storedDeviceKeys -> storedDeviceKeys.value.signed }
+            it?.values?.map { storedKeys -> storedKeys.value.signed }
         }.stateIn(scope)
+    }
+
+    override suspend fun getDeviceKeys(
+        userId: UserId,
+    ): List<DeviceKeys>? {
+        return store.keys.getDeviceKeys(userId)?.values?.map { it.value.signed }
+    }
+
+    override suspend fun getCrossSigningKeys(
+        userId: UserId,
+        scope: CoroutineScope,
+    ): StateFlow<List<CrossSigningKeys>?> {
+        return store.keys.getCrossSigningKeys(userId, scope).map {
+            it?.map { storedKeys -> storedKeys.value.signed }
+        }.stateIn(scope)
+    }
+
+    override suspend fun getCrossSigningKeys(
+        userId: UserId,
+    ): List<CrossSigningKeys>? {
+        return store.keys.getCrossSigningKeys(userId)?.map { it.value.signed }
     }
 }

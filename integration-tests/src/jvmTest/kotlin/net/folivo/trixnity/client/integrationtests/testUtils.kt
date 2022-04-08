@@ -11,15 +11,15 @@ import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.authentication.RegisterResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
 
-const val synapseVersion = "v1.52.0" // TODO you should update this from time to time.
+const val synapseVersion = "v1.54.0" // TODO you should update this from time to time.
 private const val password = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(
@@ -33,9 +33,9 @@ suspend fun MatrixClientServerApiClient.register(
         deviceId = deviceId,
         accountType = AccountType.USER,
     ).getOrThrow()
-    registerStep.shouldBeInstanceOf<UIA.UIAStep<RegisterResponse>>()
+    registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
-    registerResult.shouldBeInstanceOf<UIA.UIASuccess<RegisterResponse>>()
+    registerResult.shouldBeInstanceOf<UIA.Success<Register.Response>>()
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
@@ -63,7 +63,7 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
         getLoginInfo = { it.register(username, password, name) }
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+    client.syncState.first { it == SyncState.RUNNING }
     return StartedClient(scope, database, client, password)
 }
 
@@ -81,6 +81,6 @@ suspend fun startClient(name: String, username: String = name, baseUrl: Url): St
         scope = scope,
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncApiClient.SyncState.RUNNING }
+    client.syncState.first { it == SyncState.RUNNING }
     return StartedClient(scope, database, client, password)
 }

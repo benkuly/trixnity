@@ -1,7 +1,6 @@
 package net.folivo.trixnity.olm
 
 import org.khronos.webgl.Uint8Array
-import rethrow
 
 actual class OlmUtility private constructor() : WantsToBeFree {
     internal actual val ptr: OlmUtilityPointer = rethrow { js("new Olm.Utility()") }.unsafeCast<OlmUtilityPointer>()

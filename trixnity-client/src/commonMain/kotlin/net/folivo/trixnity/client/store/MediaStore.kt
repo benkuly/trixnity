@@ -34,11 +34,11 @@ class MediaStore(
 
     private val uploadMediaCache = RepositoryStateFlowCache(storeScope, uploadMediaRepository, rtm)
 
-    suspend fun getUploadMedia(cacheUri: String): UploadMedia? =
+    suspend fun getUploadCache(cacheUri: String): UploadCache? =
         uploadMediaCache.get(cacheUri)
 
-    suspend fun updateUploadMedia(
+    suspend fun updateUploadCache(
         cacheUri: String,
-        updater: suspend (oldUploadMedia: UploadMedia?) -> UploadMedia?
+        updater: suspend (oldUploadCache: UploadCache?) -> UploadCache?
     ) = uploadMediaCache.update(cacheUri, updater = updater)
 }

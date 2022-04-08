@@ -7,12 +7,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
-import net.folivo.trixnity.client.crypto.OlmService
+import net.folivo.trixnity.api.client.retryOnRateLimit
+import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
-import net.folivo.trixnity.client.user.UserService
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.retryOnRateLimit
+import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -53,7 +53,6 @@ fun Event<*>?.getRoomId(): RoomId? {
     return when (this) {
         is RoomEvent -> this.roomId
         is StrippedStateEvent -> this.roomId
-        is MegolmEvent -> this.roomId
         is RoomAccountDataEvent -> this.roomId
         is EphemeralEvent -> this.roomId
         else -> null
@@ -66,7 +65,6 @@ fun Event<*>?.getSender(): UserId? {
         is StrippedStateEvent -> this.sender
         is ToDeviceEvent -> this.sender
         is EphemeralEvent -> this.sender
-        is OlmEvent -> this.sender
         else -> null
     }
 }
@@ -78,8 +76,8 @@ suspend fun possiblyEncryptEvent(
     content: MessageEventContent,
     roomId: RoomId,
     store: Store,
-    olm: OlmService,
-    user: UserService
+    olmEvent: IOlmEventService,
+    user: IUserService
 ): MessageEventContent {
     return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
         user.loadMembers(roomId)
@@ -87,14 +85,14 @@ suspend fun possiblyEncryptEvent(
 
         val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
         requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
-        olm.events.encryptMegolm(content, roomId, megolmSettings)
+        olmEvent.encryptMegolm(content, roomId, megolmSettings)
     } else content
 }
 
 @OptIn(ExperimentalTime::class)
-suspend fun StateFlow<SyncApiClient.SyncState>.retryInfiniteWhenSyncIs(
-    syncState: SyncApiClient.SyncState,
-    vararg moreSyncStates: SyncApiClient.SyncState,
+suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
+    syncState: SyncState,
+    vararg moreSyncStates: SyncState,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,
@@ -163,9 +161,9 @@ suspend fun <T> retryWhen(
     }.first()
 }
 
-suspend fun <T> StateFlow<SyncApiClient.SyncState>.retryWhenSyncIs(
-    syncState: SyncApiClient.SyncState,
-    vararg moreSyncStates: SyncApiClient.SyncState,
+suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
+    syncState: SyncState,
+    vararg moreSyncStates: SyncState,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,

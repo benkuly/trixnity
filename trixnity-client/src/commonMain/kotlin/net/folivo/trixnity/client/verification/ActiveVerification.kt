@@ -1,15 +1,14 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.getAndUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
@@ -34,7 +33,7 @@ abstract class ActiveVerification(
     val relatesTo: RelatesTo.Reference?,
     val transactionId: String?,
     protected val store: Store,
-    private val keyService: KeyService,
+    private val keyTrustService: IKeyTrustService,
     protected val json: Json,
 ) {
     var theirDeviceId: String? = theirInitialDeviceId
@@ -51,7 +50,7 @@ abstract class ActiveVerification(
         )
     val state = mutableState.asStateFlow()
 
-    private val lifecycleStarted = atomic(false)
+    private val lifecycleStarted = MutableStateFlow(false)
     protected abstract suspend fun lifecycle(scope: CoroutineScope)
     internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
         log.debug { "start lifecycle of verification" }
@@ -151,7 +150,7 @@ abstract class ActiveVerification(
                         transactionId = transactionId,
                         sendVerificationStep = ::sendVerificationStepAndHandleIt,
                         store = store,
-                        keyService = keyService,
+                        keyTrustService = keyTrustService,
                         json = json,
                     )
             }
@@ -207,7 +206,7 @@ abstract class ActiveVerification(
                     try {
                         sendVerificationStep(step)
                     } catch (error: Throwable) {
-                        log.debug { "could not send cancel event: ${error.message}" }
+                        log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
                 handleVerificationStep(step, ownUserId, true)

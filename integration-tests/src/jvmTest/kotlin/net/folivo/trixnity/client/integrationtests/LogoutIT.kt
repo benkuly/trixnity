@@ -9,8 +9,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.STOPPED
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
@@ -56,19 +55,19 @@ class LogoutIT {
 
         withClue("check client2 is logged in and sync is running") {
             withTimeout(30_000) {
-                startedClient2.client.syncState.first { it == RUNNING }
+                startedClient2.client.syncState.first { it == SyncState.RUNNING }
                 startedClient2.client.loginState.first { it == LOGGED_IN }
             }
         }
 
         val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
-        deleteStep.shouldBeInstanceOf<UIA.UIAStep<Unit>>()
+        deleteStep.shouldBeInstanceOf<UIA.Step<Unit>>()
             .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
-            .shouldBeInstanceOf<UIA.UIASuccess<Unit>>()
+            .shouldBeInstanceOf<UIA.Success<Unit>>()
 
         withClue("check client2 is logged out and sync is stopped") {
             withTimeout(30_000) {
-                startedClient2.client.syncState.first { it == STOPPED }
+                startedClient2.client.syncState.first { it == SyncState.STOPPED }
                 startedClient2.client.loginState.first { it == MatrixClient.LoginState.LOGGED_OUT }
             }
         }

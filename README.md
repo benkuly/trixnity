@@ -18,16 +18,41 @@ This project contains the following modules, which can be used independently:
 
 - [trixnity-core](/trixnity-core) contains the model and serialization stuff for Matrix.
 - [trixnity-olm](/trixnity-olm) implements the wrappers of the
-  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native.
-- [trixnity-clientserverapi-model](/trixnity-clientserverapi-model) provides
-  [Client-Server API](https://spec.matrix.org/latest/client-server-api/) model classes.
-- [trixnity-clientserverapi-client](/trixnity-clientserverapi-client) implements
+  E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native. It also ships the
+  olm binaries for Android packages and Windows/Linux binaries on JVM and Native packages.
+- [trixnity-api-client](/trixnity-api-client) provides tools for api client modules.
+- [trixnity-api-server](/trixnity-api-server) provides tools for api server modules.
+- [trixnity-clientserverapi-*](/trixnity-clientserverapi) provides modules to use
   the [Client-Server API](https://spec.matrix.org/latest/client-server-api/).
-- [trixnity-appservice](/trixnity-appservice) implements
+    - [trixnity-clientserverapi-model](/trixnity-clientserverapi/trixnity-clientserverapi-model) provides shared model
+      classes.
+    - [trixnity-clientserverapi-client](/trixnity-clientserverapi/trixnity-clientserverapi-client) is the client
+      implementation without logic.
+    - [trixnity-clientserverapi-server](/trixnity-clientserverapi/trixnity-clientserverapi-server) is the server
+      implementation without logic.
+- coming soon: [trixnity-serverserverapi-*](/trixnity-serverserverapi) provides modules to use
+  the [Server-Server API](https://spec.matrix.org/latest/server-server-api/).
+    - [trixnity-serverserverapi-model](/trixnity-serverserverapi/trixnity-serverserverapi-model)  provides shared model
+      classes.
+    - [trixnity-serverserverapi-client](/trixnity-serverserverapi/trixnity-serverserverapi-client) is the client
+      implementation without logic.
+    - [trixnity-serverserverapi-server](/trixnity-serverserverapi/trixnity-serverserverapi-server) is the server
+      implementation without logic.
+- [trixnity-applicationserviceapi-*](/trixnity-applicationserviceapi) provides modules to use
   the [Application Service API](https://spec.matrix.org/latest/application-service-api/).
+    - [trixnity-applicationserviceapi-model](/trixnity-applicationserviceapi/trixnity-applicationserviceapi-model)
+      provides shared model classes.
+    - [trixnity-applicationserviceapi-server](/trixnity-applicationserviceapi/trixnity-applicationserviceapi-server) is
+      the server implementation without logic.
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity. The key features are:
     - [x] exchangeable database
+        - [trixnity-client-store-exposed](/trixnity-client/trixnity-client-store-exposed) implements a database for
+          trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM based platforms.
+        - [trixnity-client-store-sqldelight](/trixnity-client/trixnity-client-store-sqldelight) implements a database
+          for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained
+          at the moment.
+        - We plan to add something like `trixnity-client-store-indexeddb` as a database backend for web in the future.
     - [x] fast cache on top of the database
     - [x] E2E (olm, megolm)
     - [x] verification
@@ -43,14 +68,10 @@ This project contains the following modules, which can be used independently:
     - [ ] push notifications
         - [x] API
         - [ ] high level abstraction
-- [trixnity-client-store-exposed](/trixnity-client-store-exposed) implements a database for trixnity-client
-  with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM based platforms.
-- [trixnity-client-store-sqldelight](/trixnity-client-store-sqldelight) implements a database for trixnity-client
-  with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained at the moment.
+- [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
+  implementation. It does not support advanced features like E2E or persistence at the moment.
 
 If you want to see Trixnity in action, take a look into the [examples](/examples).
-
-We plan to add something like `trixnity-client-store-indexeddb` as a database backend for web in the future.
 
 ### Add Trixnity to you project
 
@@ -66,12 +87,15 @@ can find [here](https://ktor.io/docs/http-client-engines.html).
 
 #### Olm-Library
 
-If you are using `trixnity-client` or `trixnity-olm` with JVM (except Android) or native, you will need to install olm.
-You can
-[Download or build it yourself](https://gitlab.matrix.org/matrix-org/olm).
+If you are using a module, which depends on `trixnity-olm` you may need to install olm.
 
-Make it available by your JVM (e.g. with `-Djna.library.path="build/olm/3.2.8/build"`). You can also look into this
-projects `build.gradle.kts` files for an automated way to build olm and e.g. use it for testing.
+- Android: Everything is packaged. There is nothing to do for you.
+- JS: You need to provide the url path `/olm.wasm`. The file can be found in the official olm js package.
+- JVM: If your platform is not build by Trixnity's CI, you
+  can [download or build it yourself](https://gitlab.matrix.org/matrix-org/olm). Make it available to your JVM (e.g.
+  with `-Djna.library.path="build/olm"`). You can also look into the `build.gradle.kts` file of `trixnity-olm`
+  for an automated way to build olm and e.g. use it for testing.
+- Native: If your platform is not supported, feel free to open a merge request for our CI.
 
 ## Trixnity-Client
 
@@ -134,43 +158,23 @@ You can always get the last known `TimelineEvent` of a room with `matrixClient.r
 The following example will always print the last 20 events of a room:
 
 ```kotlin
-matrixClient.room.getLastTimelineEvent(roomId, scope).filterNotNull().collect { lastEvent ->
-    flow {
-        var currentTimelineEvent: StateFlow<TimelineEvent?>? = lastEvent
-        emit(lastEvent)
-        while (currentTimelineEvent?.value != null) {
-            val currentTimelineEventValue = currentTimelineEvent.value
-            if (currentTimelineEventValue?.gap is GapBefore) {
-                matrixClient.room.fetchMissingEvents(currentTimelineEventValue)
-            }
-            currentTimelineEvent = currentTimelineEvent.value?.let {
-                matrixClient.room.getPreviousTimelineEvent(it, scope)
-            }
-            emit(currentTimelineEvent)
-        }
-    }.filterNotNull().take(20).toList().reversed().forEach { timelineEvent ->
-        val event = timelineEvent.value?.event
-        val content = event?.content
-        val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
-        when {
-            content is RoomMessageEventContent -> println("${sender}: ${content.body}")
-            content is MegolmEncryptedEventContent -> {
-                val decryptedEvent = timelineEvent.value?.decryptedEvent
-                val decryptedEventContent = decryptedEvent?.getOrNull()?.content
-                val decryptionException = decryptedEvent?.exceptionOrNull()
-                when {
-                    decryptedEventContent is RoomMessageEventContent -> println("${sender}: ${decryptedEventContent.body}")
-                    decryptedEvent == null -> println("${sender}: not yet decrypted")
-                    decryptionException != null -> println("${sender}: cannot decrypt (${decryptionException.message})")
+matrixClient.room.getLastTimelineEvents(roomId, scope)
+    .toFlowList(MutableStateFlow(20)) // we always get max. 20 TimelineEvents
+    .collectLatest { timelineEvents ->
+        timelineEvents.forEach { timelineEvent ->
+            val event = timelineEvent.value?.event
+            val content = timelineEvent.value?.content?.getOrNull()
+            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
+            when {
+                content is RoomMessageEventContent -> println("${sender}: ${content.body}")
+                content == null -> println("${sender}: not yet decrypted")
+                event is MessageEvent -> println("${sender}: $event")
+                event is StateEvent -> println("${sender}: $event")
+                else -> {
                 }
-            }
-            event is MessageEvent -> println("${sender}: $event")
-            event is StateEvent -> println("${sender}: $event")
-            else -> {
             }
         }
     }
-}
 ```
 
 #### Outbox
@@ -180,8 +184,9 @@ received (also called "echo") from the matrix server.
 
 ### Other operations
 
-Many operations can be done with [trixnity-clientserverapi-client](/trixnity-clientserverapi-client). You have access to
-it via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
+Many operations can be done
+with [trixnity-clientserverapi-client](/trixnity-clientserverapi/trixnity-clientserverapi-client). You have access to it
+via `matrixClient.api`. There are also some high level operations, which are managed by Trixnity. Some of them are
 described below.
 
 #### Send messages
@@ -259,28 +264,24 @@ You also need to add a server engine to your project, that you can find [here](h
 
 #### Register module in Ktor
 
-The ktor Application extension `matrixAppserviceModule` is used to register the appservice endpoints within a Ktor
-server. [See here](https://ktor.io/docs/create-server.html) for more informations how to create a Ktor server. The
-extension needs some parameters:
-
-- `MatrixAppserviceProperties`, which contains some configuration.
-- `AppserviceService` is needed to process incoming appservice requests. You can use `DefaultAppserviceService` for a
-  more abstract way.
+The ktor Application extension `matrixApplicationServiceApiServer` is used to register the appservice endpoints within a
+Ktor server. [See here](https://ktor.io/docs/create-server.html) for more information on how to create a Ktor server.
 
 ```kotlin
-val engine: ApplicationEngine = embeddedServer(CIO, port = properties.port) {
-    matrixAppserviceModule(MatrixAppserviceProperties("asToken"), appserviceService)
+val engine: ApplicationEngine = embeddedServer(CIO, port = 443) {
+    matrixAppserviceModule("asToken", handler)
 }
 engine.start(wait = true)
 ```
 
-#### Use `DefaultAppserviceService`
+#### Use `DefaultApplicationServiceApiServerHandler` as default handler
 
-The `DefaultAppserviceService` implements `AppserviceService`. It makes the implementation of a Matrix Appservice more
-abstract and easier. For that it uses `AppserviceEventService`, `AppserviceUserService` and `AppserviceRoomService`,
-which you need to implement.
+The `DefaultApplicationServiceApiServerHandler` implements `ApplicationServiceApiServerHandler`. It makes the
+implementation of a Matrix Appservice more abstract and easier. For that it uses `ApplicationServiceEventTxnService`
+, `ApplicationServiceUserService` and `ApplicationServiceRoomService`, which you need to implement.
 
-It also allows you to retrieve events in the same way as described [here](#use-matrix-client-server-api).
+It also allows you to retrieve events with `subscribe` in the same way as
+described [here](#use-matrix-client-server-api).
 
 ## Logging
 
@@ -288,6 +289,10 @@ This project uses [kotlin-logging](https://github.com/MicroUtils/kotlin-logging)
 You can use for example `implementation("ch.qos.logback:logback-classic:<version>")`.
 
 ## Build this project
+
+### Build Olm
+
+Build olm with the `buildOlm` gradle tasks.
 
 ### Android SDK
 

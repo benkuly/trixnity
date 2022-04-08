@@ -4,9 +4,12 @@ plugins {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
     jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+        }
         testRuns["test"].executionTask.configure {
             useJUnit()
         }
@@ -27,7 +30,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-clientserverapi-client"))
+                implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }

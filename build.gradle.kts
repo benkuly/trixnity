@@ -1,6 +1,3 @@
-import de.undercouch.gradle.tasks.download.Download
-import org.jetbrains.kotlin.konan.target.HostManager
-
 buildscript {
     repositories {
         google()
@@ -10,7 +7,6 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.kotlinxAtomicfu}")
     }
 }
 
@@ -23,14 +19,17 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("js") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
+    id("com.google.devtools.ksp") version Versions.ksp apply false
     id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
 allprojects {
     group = "net.folivo"
-    version = "1.2.0-RC1"
+    version = "2.0.0-RC1"
 
     repositories {
+        // TODO remove when ktor 2.0.0 or another beta is released
+        maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
         mavenCentral()
         google()
     }
@@ -40,72 +39,6 @@ allprojects {
     dependencies {
         dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
     }
-}
-
-val downloadOlm by tasks.registering(Download::class) {
-    group = "olm"
-    src("https://gitlab.matrix.org/matrix-org/olm/-/archive/${Versions.olm}/olm-${Versions.olm}.zip")
-    dest(olm.zip)
-    overwrite(false)
-}
-
-val extractOlm by tasks.registering(Copy::class) {
-    group = "olm"
-    from(zipTree(olm.zip)) {
-        include("olm-${Versions.olm}/**")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
-        }
-    }
-    into(olm.root)
-    dependsOn(downloadOlm)
-}
-
-val prepareBuildOlmWindows by tasks.registering(Exec::class) {
-    group = "olm"
-    workingDir(olm.root)
-    // TODO we disabled tests, because the linking of them fails
-    commandLine("cmake", ".", "-BbuildWin", "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF")
-    dependsOn(extractOlm)
-    outputs.cacheIf { true }
-    inputs.files(olm.cMakeLists)
-    outputs.dir(olm.buildWin)
-}
-
-val buildOlmWindows by tasks.registering(Exec::class) {
-    group = "olm"
-    workingDir(olm.root)
-    commandLine("cmake", "--build", "buildWin")
-    dependsOn(prepareBuildOlmWindows)
-    outputs.cacheIf { true }
-    inputs.files(olm.cMakeLists)
-    outputs.dir(olm.buildWin)
-}
-
-val prepareBuildOlmLinux by tasks.registering(Exec::class) {
-    group = "olm"
-    workingDir(olm.root)
-    commandLine("cmake", ".", "-Bbuild")
-    onlyIf { !HostManager.hostIsMingw }
-    dependsOn(extractOlm)
-    outputs.cacheIf { true }
-    inputs.files(olm.cMakeLists)
-    outputs.dir(olm.build)
-}
-
-val buildOlmLinux by tasks.registering(Exec::class) {
-    group = "olm"
-    workingDir(olm.root)
-    commandLine("cmake", "--build", "build")
-    onlyIf { !HostManager.hostIsMingw }
-    dependsOn(prepareBuildOlmLinux)
-    outputs.cacheIf { true }
-    inputs.files(olm.cMakeLists)
-    outputs.dir(olm.build)
-}
-
-val buildOlm by tasks.registering {
-    dependsOn(buildOlmLinux, buildOlmWindows)
 }
 
 subprojects {

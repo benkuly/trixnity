@@ -9,20 +9,23 @@ import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.key.KeyService
-import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.crypto.IOlmEventService
+import net.folivo.trixnity.client.key.IKeyBackupService
+import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.rooms.Direction
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -37,27 +40,151 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
+
+interface IRoomService {
+    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20): Result<Unit>
+
+    suspend fun getTimelineEvent(
+        eventId: EventId,
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>
+
+    suspend fun getLastTimelineEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<StateFlow<TimelineEvent?>?>
+
+    suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>?
+
+    suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<TimelineEvent?>?
+
+    /**
+     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
+     * at the end of the timeline.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
+     *
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    suspend fun getTimelineEvents(
+        startFrom: StateFlow<TimelineEvent?>,
+        direction: Direction = BACKWARDS,
+        scope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): Flow<StateFlow<TimelineEvent?>>
+
+    /**
+     * Returns the last timeline events as flow.
+     *
+     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
+     * ```kotlin
+     * launch {
+     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
+     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
+     *   }
+     * }
+     * ```
+     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     */
+    suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?>
+
+    /**
+     * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
+     *
+     * It is possible, that the matrix server does not send all timeline events.
+     * These gaps in the timeline are not filled automatically. Gap filling is available in
+     * [getTimelineEvents] and [getLastTimelineEvents].
+     *
+     * @param syncResponseBufferSize the size of the buffer for consuming the sync response. When set to 0, the sync will
+     * be suspended until all events from the sync response are consumed. This could prevent decryption, because keys may
+     * be received in a later sync response.
+     */
+    fun getTimelineEventsFromNowOn(
+        decryptionTimeout: Duration = 30.seconds,
+        syncResponseBufferSize: Int = 10,
+    ): Flow<TimelineEvent>
+
+    suspend fun getLastMessageEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration = INFINITE
+    ): StateFlow<StateFlow<TimelineEvent?>?>
+
+    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
+
+    suspend fun abortSendMessage(transactionId: String)
+
+    suspend fun retrySendMessage(transactionId: String)
+    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
+
+    suspend fun getById(roomId: RoomId): StateFlow<Room?>
+
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+        scope: CoroutineScope
+    ): StateFlow<C?>
+
+    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        key: String = "",
+    ): C?
+
+    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
+
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): StateFlow<Event<C>?>
+
+    suspend fun <C : StateEventContent> getState(
+        roomId: RoomId,
+        stateKey: String = "",
+        eventContentClass: KClass<C>,
+    ): Event<C>?
+}
 
 class RoomService(
     private val ownUserId: UserId,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olm: OlmService,
-    private val key: KeyService,
-    private val user: UserService,
-    private val media: MediaService,
+    private val olmEvent: IOlmEventService,
+    private val keyBackup: IKeyBackupService,
+    private val user: IUserService,
+    private val media: IMediaService,
+    private val currentSyncState: StateFlow<SyncState>,
     private val setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
-) {
+) : IRoomService {
     private val outboxMessageMediaUploaderMappings =
         DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
 
-    suspend fun start(scope: CoroutineScope) {
+    internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(store.roomOutboxMessage.getAll()) }
         api.sync.subscribeSyncResponse(::handleSyncResponse)
@@ -80,7 +207,7 @@ class RoomService(
     }
 
     // TODO test
-    internal suspend fun handleSyncResponse(syncResponse: SyncResponse) {
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             store.room.update(roomId) { it?.copy(membership = JOIN) ?: Room(roomId = roomId, membership = JOIN) }
@@ -141,7 +268,8 @@ class RoomService(
         }
     }
 
-    private val setRoomDisplayNamesQueue = MutableStateFlow(mapOf<RoomId, RoomSummary?>())
+    private val setRoomDisplayNamesQueue =
+        MutableStateFlow(mapOf<RoomId, Sync.Response.Rooms.JoinedRoom.RoomSummary?>())
 
     internal suspend fun handleSetRoomDisplayNamesQueue() {
         setRoomDisplayNamesQueue.value.forEach { (roomId, roomSummary) ->
@@ -152,11 +280,11 @@ class RoomService(
 
     internal suspend fun setRoomDisplayName(
         roomId: RoomId,
-        roomSummary: RoomSummary?,
+        roomSummary: Sync.Response.Rooms.JoinedRoom.RoomSummary?,
     ) {
         val oldRoomSummary = store.room.get(roomId).value?.name?.summary
 
-        val mergedRoomSummary = RoomSummary(
+        val mergedRoomSummary = Sync.Response.Rooms.JoinedRoom.RoomSummary(
             heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
             joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
             invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
@@ -285,11 +413,12 @@ class RoomService(
         val stateKey = event.getStateKey()
         val sender = event.getSender()
         if (roomId != null && stateKey != null && sender != null) {
-            val invitee = UserId(stateKey)
+            val userWithMembershipChange = UserId(stateKey)
             val directUser =
-                when (ownUserId) {
-                    sender -> invitee
-                    invitee -> sender
+                when {
+                    ownUserId == sender -> userWithMembershipChange
+                    ownUserId == userWithMembershipChange -> sender
+                    sender == userWithMembershipChange -> sender
                     else -> return
                 }
 
@@ -301,20 +430,31 @@ class RoomService(
                 val newDirectRooms =
                     currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
                         ?: DirectEventContent(mapOf(directUser to setOf(roomId)))
-                if (newDirectRooms != currentDirectRooms)
-                    setDirectRoomsEventContent.value = newDirectRooms
+                setDirectRoomsEventContent.value = newDirectRooms
             }
-            if (directUser == ownUserId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
-                log.debug { "unmark room $roomId as direct room with $directUser" }
-                val currentDirectRooms = setDirectRoomsEventContent.value
-                    ?: store.globalAccountData.get<DirectEventContent>()?.content
-                if (currentDirectRooms != null) {
-                    val newDirectRooms = DirectEventContent(
-                        currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
-                            .filterValues { it.isNullOrEmpty().not() }
-                    )
-                    if (newDirectRooms != currentDirectRooms)
+            if (event.content.membership == LEAVE || event.content.membership == BAN) {
+                if (directUser != ownUserId) {
+                    log.debug { "unmark room $roomId as direct room with $directUser" }
+                    val currentDirectRooms = setDirectRoomsEventContent.value
+                        ?: store.globalAccountData.get<DirectEventContent>()?.content
+                    if (currentDirectRooms != null) {
+                        val newDirectRooms = DirectEventContent(
+                            (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
+                                .filterValues { it.isNullOrEmpty().not() }
+                        )
                         setDirectRoomsEventContent.value = newDirectRooms
+                    }
+                } else {
+                    log.debug { "remove room $roomId from direct rooms, because we left it" }
+                    val currentDirectRooms = setDirectRoomsEventContent.value
+                        ?: store.globalAccountData.get<DirectEventContent>()?.content
+                    if (currentDirectRooms != null) {
+                        val newDirectRooms = DirectEventContent(
+                            currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
+                                .filterValues { it.isNullOrEmpty().not() }
+                        )
+                        setDirectRoomsEventContent.value = newDirectRooms
+                    }
                 }
             }
         }
@@ -402,7 +542,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Int) {
+    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Long) {
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(
                 unreadMessageCount = count
@@ -453,7 +593,7 @@ class RoomService(
                                         redactedBecause = redactionEvent
                                     )
                                 ),
-                                decryptedEvent = null,
+                                content = null,
                             )
                         }
                         is StateEvent -> {
@@ -473,7 +613,7 @@ class RoomService(
                                     ),
                                     oldEvent.stateKey,
                                 ),
-                                decryptedEvent = null,
+                                content = null,
                             )
                         }
                     }
@@ -535,7 +675,7 @@ class RoomService(
                             roomId = roomId,
                             eventId = event.id,
                             previousEventId = previousEventId,
-                            nextEventId = events.getOrNull(index + 1)?.id,
+                            nextEventId = events.getOrNull(1)?.id,
                             gap = if (hasGapBefore && previousBatch != null)
                                 GapBefore(previousBatch)
                             else null
@@ -554,10 +694,10 @@ class RoomService(
                 }
             }
             val replaceOwnMessagesWithOutboxContent = timelineEvents.map {
-                if (it.event.content is MegolmEncryptedEventContent) {
+                if (it.event.isEncrypted) {
                     it.event.unsigned?.transactionId?.let { transactionId ->
                         store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
-                            it.copy(decryptedEvent = Result.success(MegolmEvent(roomOutboxMessage.content, roomId)))
+                            it.copy(content = Result.success(roomOutboxMessage.content))
                         }
                     } ?: it
                 } else it
@@ -566,7 +706,7 @@ class RoomService(
         }
     }
 
-    suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long = 20): Result<Unit> = kotlin.runCatching {
+    override suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long): Result<Unit> = kotlin.runCatching {
         store.transaction {
             val startGap = startEvent.gap
             if (startGap != null) {
@@ -580,12 +720,12 @@ class RoomService(
                         roomId = roomId,
                         from = startGap.batch,
                         to = destinationBatch,
-                        dir = Direction.BACKWARDS,
+                        dir = BACKWARDS,
                         limit = limit,
                         filter = """{"lazy_load_members":true}"""
-                    )
-                    val chunk = response.getOrThrow().chunk?.filterDuplicateEvents()
-                    val end = response.getOrThrow().end
+                    ).getOrThrow()
+                    val chunk = response.chunk?.filterDuplicateEvents()
+                    val end = response.end
                     if (!chunk.isNullOrEmpty()) {
                         log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
                         val previousEventIndex =
@@ -610,7 +750,7 @@ class RoomService(
                                         event = event,
                                         roomId = roomId,
                                         eventId = event.id,
-                                        previousEventId = events.getOrNull(index + 1)?.id,
+                                        previousEventId = events.getOrNull(1)?.id,
                                         nextEventId = startEvent.eventId,
                                         gap = null
                                     )
@@ -662,7 +802,7 @@ class RoomService(
                             timelineEvent
                         }
                         store.roomTimeline.addAll(timelineEvents, withTransaction = false)
-                    } else if (end == null || end == response.getOrThrow().start) {
+                    } else if (end == null || end == response.start) {
                         log.debug { "reached the start of visible timeline of $roomId" }
                         store.roomTimeline.update(
                             startEvent.eventId,
@@ -690,7 +830,7 @@ class RoomService(
                         roomId = roomId,
                         from = startGap.batch,
                         to = destinationBatch,
-                        dir = Direction.FORWARD,
+                        dir = FORWARD,
                         limit = limit,
                         filter = """{"lazy_load_members":true}"""
                     )
@@ -719,7 +859,7 @@ class RoomService(
                                         roomId = roomId,
                                         eventId = event.id,
                                         previousEventId = startEvent.eventId,
-                                        nextEventId = events.getOrNull(index + 1)?.id,
+                                        nextEventId = events.getOrNull(1)?.id,
                                         gap = null
                                     )
                                 }
@@ -778,64 +918,69 @@ class RoomService(
 
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
-                && this.event.content is MegolmEncryptedEventContent
-                && this.decryptedEvent == null
+                && this.event.isEncrypted
+                && this.content == null
 
-    suspend fun getTimelineEvent(
+    override suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration
     ): StateFlow<TimelineEvent?> {
-        return store.roomTimeline.get(eventId, roomId, coroutineScope).also {
-            val timelineEvent = it.value
+        return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
+            val timelineEvent = timelineEventFlow.value
             if (timelineEvent == null) log.warn { "cannot find TimelineEvent in store; decryption will not trigger!" }
             val content = timelineEvent?.event?.content
             if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                 coroutineScope.launch {
-                    val session =
-                        store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
-                    val firstKnownIndex = session.value?.firstKnownIndex
-                    if (session.value == null) {
-                        key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
-                        log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                        store.olm.waitForInboundMegolmSession(
-                            roomId, content.sessionId, content.senderKey, this@launch
-                        )
-                    }
-                    log.trace { "try to decrypt event $eventId in $roomId" }
-                    @Suppress("UNCHECKED_CAST")
-                    val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
-
-                    val decryptEventAttempt = encryptedEvent.decryptCatching()
-                    val exception = decryptEventAttempt.exceptionOrNull()
-                    val decryptedEvent =
-                        if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                            || exception is DecryptionException.SessionException && exception.cause.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                        ) {
-                            key.backup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
-                            log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                    withTimeoutOrNull(decryptionTimeout) {
+                        val session =
+                            store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this@launch)
+                        val firstKnownIndex = session.value?.firstKnownIndex
+                        if (session.value == null) {
+                            keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                            log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
                             store.olm.waitForInboundMegolmSession(
-                                roomId,
-                                content.sessionId,
-                                content.senderKey,
-                                this@launch,
-                                firstKnownIndexLessThen = firstKnownIndex
+                                roomId, content.sessionId, content.senderKey, this@launch
                             )
-                            encryptedEvent.decryptCatching()
-                        } else decryptEventAttempt
-                    store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
-                        // we check here again, because an event could be redacted at the same time
-                        if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(decryptedEvent = decryptedEvent)
-                        else oldEvent
+                        }
+                        log.trace { "try to decrypt event $eventId in $roomId" }
+                        @Suppress("UNCHECKED_CAST")
+                        val encryptedEvent = timelineEvent.event as MessageEvent<MegolmEncryptedEventContent>
+
+                        val decryptEventAttempt = encryptedEvent.decryptCatching()
+                        val exception = decryptEventAttempt.exceptionOrNull()
+                        val decryptedEvent =
+                            if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
+                                || exception is DecryptionException.SessionException && exception.cause.message?.contains(
+                                    "UNKNOWN_MESSAGE_INDEX"
+                                ) == true
+                            ) {
+                                keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                                log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                                store.olm.waitForInboundMegolmSession(
+                                    roomId,
+                                    content.sessionId,
+                                    content.senderKey,
+                                    this@launch,
+                                    firstKnownIndexLessThen = firstKnownIndex
+                                )
+                                encryptedEvent.decryptCatching()
+                            } else decryptEventAttempt
+                        store.roomTimeline.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
+                            // we check here again, because an event could be redacted at the same time
+                            if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEvent.map { it.content })
+                            else oldEvent
+                        }
                     }
                 }
             }
         }
     }
 
-    private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<MegolmEvent<*>> {
+    private suspend fun MessageEvent<MegolmEncryptedEventContent>.decryptCatching(): Result<DecryptedMegolmEvent<*>> {
         return try {
-            Result.success(olm.events.decryptMegolm(this))
+            Result.success(olmEvent.decryptMegolm(this))
         } catch (ex: Exception) {
             if (ex is CancellationException) throw ex
             else Result.failure(ex)
@@ -843,51 +988,124 @@ class RoomService(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastTimelineEvent(
-        roomId: RoomId,
-        coroutineScope: CoroutineScope
-    ): StateFlow<StateFlow<TimelineEvent?>?> {
-        return store.room.get(roomId).transformLatest { room ->
-            if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, coroutineScope))
-            else emit(null)
-        }.stateIn(coroutineScope)
-    }
-
-    suspend fun getPreviousTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope
-    ): StateFlow<TimelineEvent?>? {
-        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
-    }
-
-    suspend fun getNextTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope
-    ): StateFlow<TimelineEvent?>? {
-        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope) }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getLastMessageEvent(
+    override suspend fun getLastTimelineEvent(
         roomId: RoomId,
         coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
-                if (room?.lastMessageEventId != null)
-                    emit(
-                        getTimelineEvent(
-                            room.lastMessageEventId,
-                            roomId,
-                            this,
-                        )
-                    )
+                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this, decryptionTimeout))
                 else emit(null)
             }
         }.stateIn(coroutineScope)
     }
 
-    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+    override suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration
+    ): StateFlow<TimelineEvent?>? {
+        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
+    }
+
+    override suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration
+    ): StateFlow<TimelineEvent?>? {
+        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
+    }
+
+    override suspend fun getTimelineEvents(
+        startFrom: StateFlow<TimelineEvent?>,
+        direction: Direction,
+        scope: CoroutineScope,
+        decryptionTimeout: Duration
+    ): Flow<StateFlow<TimelineEvent?>> =
+        flow {
+            var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
+            emit(currentTimelineEventFlow)
+            do {
+                currentTimelineEventFlow = currentTimelineEventFlow
+                    .filterNotNull()
+                    .map { currentTimelineEvent ->
+                        if (currentTimelineEvent.gap is GapBoth
+                            || direction == FORWARD && currentTimelineEvent.gap is GapAfter
+                            || direction == BACKWARDS && currentTimelineEvent.gap is GapBefore
+                        ) currentSyncState.retryWhenSyncIs(
+                            RUNNING,
+                            onError = { log.error(it) { "could not fetch missing events" } },
+                            scope = scope
+                        ) {
+                            fetchMissingEvents(currentTimelineEvent).getOrThrow()
+                        }
+                        when (direction) {
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
+                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
+                        }
+                    }
+                    .filterNotNull()
+                    .first()
+                emit(currentTimelineEventFlow)
+            } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun getLastTimelineEvents(
+        roomId: RoomId,
+        scope: CoroutineScope
+    ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+        getLastTimelineEvent(roomId, scope)
+            .mapLatest { currentTimelineEventFlow ->
+                currentTimelineEventFlow?.let {
+                    coroutineScope {
+                        getTimelineEvents(it, scope = this)
+                    }
+                }
+            }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getTimelineEventsFromNowOn(
+        decryptionTimeout: Duration,
+        syncResponseBufferSize: Int,
+    ): Flow<TimelineEvent> =
+        channelFlow {
+            val syncResponseChannel = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+            val subscriber: AfterSyncResponseSubscriber = { syncResponseChannel.emit(it) }
+            invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+            api.sync.subscribeAfterSyncResponse(subscriber)
+            syncResponseChannel
+                .collect { syncResponse ->
+                    val timelineEvents =
+                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                    timelineEvents.map {
+                        async {
+                            getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
+                        }
+                    }.awaitAll()
+                        .mapNotNull { it.value }
+                        .forEach { send(it) }
+                }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun getLastMessageEvent(
+        roomId: RoomId,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration
+    ): StateFlow<StateFlow<TimelineEvent?>?> {
+        return store.room.get(roomId).transformLatest { room ->
+            coroutineScope {
+                if (room?.lastMessageEventId != null)
+                    emit(getTimelineEvent(room.lastMessageEventId, roomId, this, decryptionTimeout))
+                else emit(null)
+            }
+        }.stateIn(coroutineScope)
+    }
+
+    override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, media).build(builder)
         requireNotNull(content)
@@ -903,11 +1121,11 @@ class RoomService(
         }
     }
 
-    suspend fun abortSendMessage(transactionId: String) {
+    override suspend fun abortSendMessage(transactionId: String) {
         store.roomOutboxMessage.update(transactionId) { null }
     }
 
-    suspend fun retrySendMessage(transactionId: String) {
+    override suspend fun retrySendMessage(transactionId: String) {
         store.roomOutboxMessage.update(transactionId) { it?.copy(retryCount = 0) }
     }
 
@@ -932,15 +1150,20 @@ class RoomService(
         }
     }
 
-    internal suspend fun processOutboxMessages(outboxMessages: StateFlow<List<RoomOutboxMessage<*>>>) = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
+    internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
+        currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this
         ) {
             log.info { "start sending outbox messages" }
-            outboxMessages.collect { outboxMessagesList ->
+            outboxMessages.scan(listOf<RoomOutboxMessage<*>>()) { old, new ->
+                // the flow from store.roomOutboxMessage.getAll() needs some time to get updated, when one entry is updated
+                // therefore we compare the lists and if they did not change, we do nothing (distinctUntilChanged)
+                if (old.map { it.transactionId }.toSet() != new.map { it.transactionId }.toSet()) new
+                else old
+            }.distinctUntilChanged().collect { outboxMessagesList ->
                 outboxMessagesList
                     .filter { it.sentAt == null && !it.reachedMaxRetryCount }
                     .forEach { outboxMessage ->
@@ -956,31 +1179,31 @@ class RoomService(
                                 val uploadedContent = uploader(content) { cacheUri ->
                                     media.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress).getOrThrow()
                                 }
-                                possiblyEncryptEvent(uploadedContent, roomId, store, olm, user)
+                                possiblyEncryptEvent(uploadedContent, roomId, store, olmEvent, user)
                             }
-                        log.trace { "send to $roomId -> $content" }
+                        log.trace { "send to $roomId : $content" }
                         val eventId =
                             api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId).getOrThrow()
                         if (setOwnMessagesAsFullyRead) {
                             api.rooms.setReadMarkers(roomId, eventId).getOrThrow()
                         }
                         store.roomOutboxMessage.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }
-                        log.debug { "sent message: $content" }
+                        log.debug { "sent message with transactionId '${outboxMessage.transactionId}' and content $content" }
                     }
             }
         }
     }
 
-    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = store.room.getAll()
+    override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = store.room.getAll()
 
-    suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+    override suspend fun getById(roomId: RoomId): StateFlow<Room?> {
         return store.room.get(roomId)
     }
 
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
         scope: CoroutineScope
     ): StateFlow<C?> {
         return store.roomAccountData.get(roomId, eventContentClass, key, scope)
@@ -988,28 +1211,28 @@ class RoomService(
             .stateIn(scope)
     }
 
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        key: String = "",
+        key: String,
     ): C? {
         return store.roomAccountData.get(roomId, eventContentClass, key)?.content
     }
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = store.roomOutboxMessage.getAll()
+    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = store.roomOutboxMessage.getAll()
 
-    suspend fun <C : StateEventContent> getState(
+    override suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String = "",
+        stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
     ): StateFlow<Event<C>?> {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 
-    suspend fun <C : StateEventContent> getState(
+    override suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String = "",
+        stateKey: String,
         eventContentClass: KClass<C>,
     ): Event<C>? {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass)

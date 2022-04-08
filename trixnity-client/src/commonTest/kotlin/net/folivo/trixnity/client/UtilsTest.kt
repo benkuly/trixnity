@@ -10,10 +10,10 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.clientserverapi.client.MatrixServerException
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.ErrorResponse
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -23,9 +23,9 @@ import kotlin.time.measureTime
 class UtilsTest : ShouldSpec({
     timeout = 10_000
 
-    context(StateFlow<SyncApiClient.SyncState>::retryInfiniteWhenSyncIs.name) {
+    context(StateFlow<SyncState>::retryInfiniteWhenSyncIs.name) {
         should("wait until connected, retry on error") {
-            val syncState = MutableStateFlow(SyncApiClient.SyncState.STARTED)
+            val syncState = MutableStateFlow(SyncState.STARTED)
 
             val onErrorCalled = MutableStateFlow(0)
             val onCancelCalled = MutableStateFlow(0)
@@ -34,7 +34,7 @@ class UtilsTest : ShouldSpec({
             val job = launch {
                 syncState.retryInfiniteWhenSyncIs(
                     RUNNING,
-                    SyncApiClient.SyncState.INITIAL_SYNC,
+                    SyncState.INITIAL_SYNC,
                     onError = { onErrorCalled.update { it + 1 } },
                     onCancel = { onCancelCalled.update { it + 1 } },
                     scope = this,
@@ -53,14 +53,14 @@ class UtilsTest : ShouldSpec({
             blockCalled.value shouldBe 0
             syncState.value = RUNNING
             blockCalled.first { it == 2 } shouldBe 2
-            syncState.value = SyncApiClient.SyncState.INITIAL_SYNC
+            syncState.value = SyncState.INITIAL_SYNC
             blockCalled.first { it == 4 } shouldBe 4
             job.cancelAndJoin()
             onErrorCalled.value shouldBe 1
             onCancelCalled.value shouldBe 1
         }
         should("retry on rate limit") {
-            val syncState = MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+            val syncState = MutableStateFlow(SyncState.RUNNING)
 
             val blockCalled = MutableStateFlow(0)
 
@@ -87,7 +87,7 @@ class UtilsTest : ShouldSpec({
     }
     context("retryWhenSyncIs") {
         should("wait until connected, retry on error") {
-            val syncState = MutableStateFlow(SyncApiClient.SyncState.STARTED)
+            val syncState = MutableStateFlow(SyncState.STARTED)
 
             val onErrorCalled = MutableStateFlow(0)
             val onCancelCalled = MutableStateFlow(0)
@@ -118,7 +118,7 @@ class UtilsTest : ShouldSpec({
             onCancelCalled.value shouldBe 0
         }
         should("retry on rate limit") {
-            val syncState = MutableStateFlow(SyncApiClient.SyncState.RUNNING)
+            val syncState = MutableStateFlow(SyncState.RUNNING)
 
             val blockCalled = MutableStateFlow(0)
 

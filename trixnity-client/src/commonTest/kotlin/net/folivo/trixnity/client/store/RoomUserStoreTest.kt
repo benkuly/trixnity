@@ -3,45 +3,69 @@ package net.folivo.trixnity.client.store
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 
 class RoomUserStoreTest : ShouldSpec({
-    val roomUserRepository = mockk<RoomUserRepository>(relaxUnitFun = true)
+    lateinit var roomUserRepository: RoomUserRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomUserStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
+        roomUserRepository = InMemoryTwoDimensionsStoreRepository()
         cut = RoomUserStore(roomUserRepository, NoopRepositoryTransactionManager, storeScope)
     }
     afterTest {
-        clearAllMocks()
         storeScope.cancel()
     }
 
     val roomId = RoomId("room", "server")
     val aliceId = UserId("alice", "server")
     val bobId = UserId("bob", "server")
+    val aliceUser = RoomUser(
+        roomId = roomId,
+        userId = aliceId,
+        name = "A",
+        event = StateEvent(
+            content = MemberEventContent(displayName = "A", membership = JOIN),
+            id = EventId("event1"),
+            sender = aliceId,
+            roomId = roomId,
+            originTimestamp = 1,
+            stateKey = aliceId.full
+        )
+    )
+    val bobUser = RoomUser(
+        roomId = roomId,
+        userId = bobId,
+        name = "A",
+        event = StateEvent(
+            content = MemberEventContent(displayName = "A", membership = JOIN),
+            id = EventId("event2"),
+            sender = bobId,
+            roomId = roomId,
+            originTimestamp = 1,
+            stateKey = bobId.full
+        )
+    )
 
     context("getAll") {
         should("get all users of a room") {
             val scope = CoroutineScope(Dispatchers.Default)
-            val aliceUser = mockk<RoomUser>()
-            val bobUser = mockk<RoomUser>()
-            coEvery { roomUserRepository.get(roomId) }.returns(
-                mapOf(
+
+            roomUserRepository.save(
+                roomId, mapOf(
                     aliceId to aliceUser,
                     bobId to bobUser
                 )
@@ -54,51 +78,42 @@ class RoomUserStoreTest : ShouldSpec({
     }
     context(RoomUserStore::getByOriginalNameAndMembership.name) {
         should("return matching userIds") {
-            val user1 = mockk<RoomUser> {
-                every { event } returns mockk {
-                    every { content } returns mockk {
-                        every { membership } returns JOIN
-                        every { displayName } returns "A"
-                    }
-                }
-            }
-            val user2 = mockk<RoomUser> {
-                every { event } returns mockk {
-                    every { content } returns mockk {
-                        every { membership } returns JOIN
-                        every { displayName } returns "A"
-                    }
-                }
-            }
-            val user3 = mockk<RoomUser> {
-                every { event } returns mockk {
-                    every { content } returns mockk {
-                        every { membership } returns JOIN
-                        every { displayName } returns "B"
-                    }
-                }
-            }
-            val user4 = mockk<RoomUser> {
-                every { event } returns mockk {
-                    every { content } returns mockk {
-                        every { membership } returns LEAVE
-                        every { displayName } returns "A"
-                    }
-                }
-            }
-            coEvery { roomUserRepository.get(roomId) }.returns(
-                mapOf(
-                    UserId("user1", "server") to user1,
-                    UserId("user2", "server") to user2,
-                    UserId("user3", "server") to user3,
-                    UserId("user4", "server") to user4
+            val user3 = UserId("user3", "server")
+            val user4 = UserId("user4", "server")
+            roomUserRepository.save(
+                roomId, mapOf(
+                    aliceId to aliceUser,
+                    bobId to bobUser,
+                    user3 to RoomUser(
+                        roomId = roomId,
+                        userId = user3,
+                        name = "A",
+                        event = StateEvent(
+                            content = MemberEventContent(displayName = "A", membership = LEAVE),
+                            id = EventId("event3"),
+                            sender = user3,
+                            roomId = roomId,
+                            originTimestamp = 1,
+                            stateKey = user3.full
+                        )
+                    ),
+                    user4 to RoomUser(
+                        roomId = roomId,
+                        userId = user4,
+                        name = "AB",
+                        event = StateEvent(
+                            content = MemberEventContent(displayName = "AB", membership = JOIN),
+                            id = EventId("event3"),
+                            sender = user4,
+                            roomId = roomId,
+                            originTimestamp = 1,
+                            stateKey = user4.full
+                        )
+                    )
                 )
             )
 
-            cut.getByOriginalNameAndMembership("A", setOf(JOIN), roomId) shouldBe setOf(
-                UserId("user1", "server"),
-                UserId("user2", "server")
-            )
+            cut.getByOriginalNameAndMembership("A", setOf(JOIN), roomId) shouldBe setOf(aliceId, bobId)
         }
     }
 })

@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.OlmService
-import net.folivo.trixnity.client.crypto.OlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.IOlmSignService
+import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.Custom
+import net.folivo.trixnity.client.crypto.signatures
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen
 import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
@@ -15,11 +16,11 @@ import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixServerException
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient.SyncState.RUNNING
-import net.folivo.trixnity.clientserverapi.model.ErrorResponse
-import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysVersionResponse
-import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeysVersionRequest
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -33,21 +34,51 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
+interface IKeyBackupService {
+    /**
+     * This is the active key backup version.
+     * Is null, when the backup algorithm is not supported or there is no existing backup.
+     */
+    val version: StateFlow<GetRoomKeysBackupVersionResponse.V1?>
+
+    data class LoadMegolmSession(
+        val roomId: RoomId,
+        val sessionId: String,
+        val senderKey: Key.Curve25519Key,
+    )
+
+    fun loadMegolmSession(
+        roomId: RoomId,
+        sessionId: String,
+        senderKey: Key.Curve25519Key,
+    )
+
+    suspend fun keyBackupCanBeTrusted(keyBackupVersion: GetRoomKeysBackupVersionResponse, privateKey: String): Boolean
+
+    suspend fun bootstrapRoomKeyBackup(
+        key: ByteArray,
+        keyId: String,
+        masterSigningPrivateKey: String,
+        masterSigningPublicKey: String
+    ): Result<Unit>
+}
+
 class KeyBackupService(
     private val olmPickleKey: String,
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olm: OlmService,
-) {
-    private val currentBackupVersion = MutableStateFlow<GetRoomKeysVersionResponse.V1?>(null)
+    private val olmSign: IOlmSignService,
+    private val currentSyncState: StateFlow<SyncState>
+) : IKeyBackupService {
+    private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
     /**
      * This is the active key backup version.
      * Is null, when the backup algorithm is not supported or there is no existing backup.
      */
-    val version = currentBackupVersion.asStateFlow()
+    override val version = currentBackupVersion.asStateFlow()
 
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -57,8 +88,8 @@ class KeyBackupService(
     }
 
     internal suspend fun setAndSignNewKeyBackupVersion() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+        currentSyncState.retryInfiniteWhenSyncIs(
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
             scope = this
@@ -73,16 +104,16 @@ class KeyBackupService(
     private suspend fun updateKeyBackupVersion(privateKey: String?) {
         log.debug { "check key backup version" }
         val currentVersion = api.keys.getRoomKeysVersion().getOrThrow().let { currentVersion ->
-            if (currentVersion is GetRoomKeysVersionResponse.V1) {
+            if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
-                    olm.sign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
-                if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey, ownUserId, store)) {
+                    olmSign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
+                if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey)) {
                     if (deviceSignature != null &&
                         currentVersion.authData.signatures[ownUserId]?.none { it == deviceSignature } == true
                     ) {
                         log.info { "sign key backup" }
                         api.keys.setRoomKeysVersion(
-                            SetRoomKeysVersionRequest.V1(
+                            SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures = signatures[ownUserId].orEmpty()
                                         .filterNot { it.keyId == ownDeviceId } + deviceSignature
@@ -90,7 +121,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     }
                     currentVersion
                 } else {
@@ -99,7 +130,7 @@ class KeyBackupService(
                     // when the private key does not match it's likely, that the key backup has been changed
                     if (currentVersion.authData.signatures[ownUserId]?.any { it.keyId == ownDeviceId } == true)
                         api.keys.setRoomKeysVersion(
-                            SetRoomKeysVersionRequest.V1(
+                            SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures =
                                         signatures[ownUserId].orEmpty()
@@ -109,7 +140,7 @@ class KeyBackupService(
                                 },
                                 version = currentVersion.version
                             )
-                        )
+                        ).getOrThrow()
                     store.keys.secrets.update { it - M_MEGOLM_BACKUP_V1 }
                     null
                 }
@@ -120,20 +151,14 @@ class KeyBackupService(
 
 
     private val currentlyLoadingMegolmSessions = MutableStateFlow<Set<Pair<RoomId, String>>>(setOf())
-    private val loadMegolmSessionsQueue = MutableStateFlow<Set<LoadMegolmSession>>(setOf())
+    private val loadMegolmSessionsQueue = MutableStateFlow<Set<IKeyBackupService.LoadMegolmSession>>(setOf())
 
-    data class LoadMegolmSession(
-        val roomId: RoomId,
-        val sessionId: String,
-        val senderKey: Key.Curve25519Key,
-    )
-
-    internal fun loadMegolmSession(
+    override fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
         senderKey: Key.Curve25519Key,
     ) {
-        loadMegolmSessionsQueue.update { it + LoadMegolmSession(roomId, sessionId, senderKey) }
+        loadMegolmSessionsQueue.update { it + IKeyBackupService.LoadMegolmSession(roomId, sessionId, senderKey) }
     }
 
     internal suspend fun handleLoadMegolmSessionQueue(): Unit = coroutineScope {
@@ -144,8 +169,8 @@ class KeyBackupService(
                 if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
                     launch {
                         retryWhen(
-                            combine(version, api.sync.currentSyncState) { currentVersion, currentSyncState ->
-                                currentVersion != null && currentSyncState == RUNNING
+                            combine(version, currentSyncState) { currentVersion, currentSyncState ->
+                                currentVersion != null && currentSyncState == SyncState.RUNNING
                             }.stateIn(this),
                             scheduleBase = 1.seconds,
                             scheduleLimit = 6.hours,
@@ -155,17 +180,13 @@ class KeyBackupService(
                             val version = version.value?.version
                             if (version != null) {
                                 log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
-                                val encryptedData =
-                                    api.keys.getRoomKeys<EncryptedRoomKeyBackupV1SessionData>(
-                                        version,
-                                        roomId,
-                                        sessionId
-                                    )
-                                        .getOrThrow()
+                                val encryptedSessionData =
+                                    api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
+                                require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
                                 val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                                 val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                                     it.decrypt(
-                                        with(encryptedData.sessionData) {
+                                        with(encryptedSessionData) {
                                             OlmPkMessage(
                                                 cipherText = ciphertext,
                                                 mac = mac,
@@ -210,10 +231,46 @@ class KeyBackupService(
         }.collect()
     }
 
+    override suspend fun keyBackupCanBeTrusted(
+        keyBackupVersion: GetRoomKeysBackupVersionResponse,
+        privateKey: String,
+    ): Boolean {
+        val generatedPublicKey = try {
+            freeAfter(OlmPkDecryption.create(privateKey)) { it.publicKey }
+        } catch (error: Throwable) {
+            log.warn(error) { "could not generate public key from private backup key" }
+            return false
+        }
+        if (keyBackupVersion !is GetRoomKeysBackupVersionResponse.V1) {
+            log.warn { "current room key backup version does not match v1 or there was no backup" }
+            return false
+        }
+        val originalPublicKey = keyBackupVersion.authData.publicKey.value
+        if (originalPublicKey != generatedPublicKey) {
+            log.warn { "key backup private key does not match public key (expected: $originalPublicKey was: $generatedPublicKey" }
+            return false
+        }
+//    if ( // TODO this is only relevant, when we want to use the key backup without private key
+//        keyBackupVersion.authData.signatures[ownUserId]?.none {
+//            it.keyId?.let { keyId ->
+//                val keyTrustLevel = store.keys.getDeviceKey(ownUserId, keyId)?.trustLevel
+//                    ?: store.keys.getCrossSigningKey(ownUserId, keyId)?.trustLevel
+//                keyTrustLevel == KeySignatureTrustLevel.Valid(true)
+//                        || keyTrustLevel == KeySignatureTrustLevel.CrossSigned(true)
+//                        || keyTrustLevel == KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true)
+//            } == true
+//        } == true
+//    ) {
+//        log.warn { "key backup cannot be trusted, because it is not signed by any trusted key" }
+//        return false
+//    }
+        return true
+    }
+
     @OptIn(FlowPreview::class)
     internal suspend fun uploadRoomKeyBackup() = coroutineScope {
-        api.sync.currentSyncState.retryInfiniteWhenSyncIs(
-            RUNNING,
+        currentSyncState.retryInfiniteWhenSyncIs(
+            SyncState.RUNNING,
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
             scope = this
@@ -275,7 +332,7 @@ class KeyBackupService(
         }
     }
 
-    internal suspend fun bootstrapRoomKeyBackup(
+    override suspend fun bootstrapRoomKeyBackup(
         key: ByteArray,
         keyId: String,
         masterSigningPrivateKey: String,
@@ -283,14 +340,14 @@ class KeyBackupService(
     ): Result<Unit> {
         val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
         return api.keys.setRoomKeysVersion(
-            SetRoomKeysVersionRequest.V1(
+            SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
                     RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
                 ) {
-                    val ownDeviceSignature = olm.sign.signatures(this)[ownUserId]
+                    val ownDeviceSignature = olmSign.signatures(this)[ownUserId]
                         ?.firstOrNull()
                     val ownUsersSignature =
-                        olm.sign.signatures(this, Custom(masterSigningPrivateKey, masterSigningPublicKey))[ownUserId]
+                        olmSign.signatures(this, Custom(masterSigningPrivateKey, masterSigningPublicKey))[ownUserId]
                             ?.firstOrNull()
                     requireNotNull(ownUsersSignature)
                     requireNotNull(ownDeviceSignature)
