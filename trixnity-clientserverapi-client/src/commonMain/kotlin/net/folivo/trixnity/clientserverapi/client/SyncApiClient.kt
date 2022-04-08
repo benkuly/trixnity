@@ -127,7 +127,13 @@ class SyncApiClient(
 
                         while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
                             try {
-                                syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+                                syncAndResponse(
+                                    currentBatchToken = currentBatchToken,
+                                    filter = filter,
+                                    setPresence = setPresence,
+                                    timeout = if (_currentSyncState.value == STARTED) 0 else timeout,
+                                    asUserId = asUserId
+                                )
                             } catch (error: Throwable) {
                                 when (error) {
                                     is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {

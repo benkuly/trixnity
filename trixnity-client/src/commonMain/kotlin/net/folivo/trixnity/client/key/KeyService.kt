@@ -252,11 +252,12 @@ class KeyService(
         val result: Result<UIA<Unit>>,
     )
 
+    internal val bootstrapRunning = MutableStateFlow(false)
+
     /**
      * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
      * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
      */
-    @OptIn(InternalAPI::class)
     suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray = SecureRandom.nextBytes(32),
         secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent = {
@@ -268,6 +269,8 @@ class KeyService(
         }
     ): BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
+        bootstrapRunning.value = true
+
         Random.Default
         val keyId = generateSequence {
             val alphabet = 'a'..'z'
@@ -369,7 +372,7 @@ class KeyService(
                                 userSigningKey = userSigningKey
                             )
                         }
-                }.map {
+                }.mapCatching {
                     it.injectOnSuccessIntoUIA {
                         store.keys.outdatedKeys.update { oldOutdatedKeys -> oldOutdatedKeys + ownUserId }
                         store.keys.waitForUpdateOutdatedKey(ownUserId)
@@ -381,7 +384,9 @@ class KeyService(
                         log.debug { "finished bootstrapping" }
                     }
                 }
-        )
+        ).also {
+            bootstrapRunning.value = false
+        }
     }
 
     /**
