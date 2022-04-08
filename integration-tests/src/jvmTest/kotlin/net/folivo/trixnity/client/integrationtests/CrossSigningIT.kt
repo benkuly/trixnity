@@ -142,7 +142,7 @@ class CrossSigningIT {
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 
-            client1.verification.getSelfVerificationMethods(scope1).first { it?.isEmpty() == true }
+            client1.verification.getSelfVerificationMethods(scope1).first { it?.isEmpty() == null }
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
@@ -186,6 +186,7 @@ class CrossSigningIT {
                 client2VerificationMethods?.filterIsInstance<AesHmacSha2RecoveryKey>()?.size shouldBe 1
                 client2VerificationMethods!!.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
+                client2.verification.getSelfVerificationMethods(scope2).first { it == null }
             }
 
             withClue("observe trust level with client1 after self verification") {

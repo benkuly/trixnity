@@ -28,8 +28,6 @@ allprojects {
     version = "2.0.0-RC1"
 
     repositories {
-        // TODO remove when ktor 2.0.0 or another beta is released
-        maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
         mavenCentral()
         google()
     }
