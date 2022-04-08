@@ -267,8 +267,9 @@ class VerificationService(
     }
 
     /**
-     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculated available methods.
-     * If it is empty, it means that cross signing needs to be bootstrapped.
+     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculate
+     * available methods or this device is already verified.
+     * If it is empty, it means, that cross signing needs to be bootstrapped.
      * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -288,8 +289,9 @@ class VerificationService(
         ) { bootstrapRunning, currentSyncState, deviceKeys, defaultKey ->
             if (currentSyncState != SyncState.RUNNING) return@combine null
             if (deviceKeys == null) return@combine null
+            val ownTrustLevel = deviceKeys[ownDeviceId]?.trustLevel
+            if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine null
             if (bootstrapRunning) return@combine setOf()
-            if (deviceKeys[ownDeviceId]?.trustLevel != KeySignatureTrustLevel.NotCrossSigned) return@combine setOf()
 
             val deviceVerificationMethod = deviceKeys.entries
                 .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }

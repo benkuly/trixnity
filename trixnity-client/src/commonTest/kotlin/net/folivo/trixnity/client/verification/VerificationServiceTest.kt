@@ -501,16 +501,16 @@ private val body: ShouldSpec.() -> Unit = {
             }
             cut.getSelfVerificationMethods(scope).first { it?.isEmpty() == true }.shouldBeEmpty()
         }
-        should("return empty set, when not ${KeySignatureTrustLevel.NotCrossSigned::class.simpleName}") {
+        should("return null when already cross signed") {
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned
+                        KeySignatureTrustLevel.CrossSigned(true)
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).value.shouldBeEmpty()
+            cut.getSelfVerificationMethods(scope).value shouldBe null
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             apiConfig.endpoints {
