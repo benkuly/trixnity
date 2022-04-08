@@ -75,7 +75,7 @@ interface ISyncApiClient : IEventEmitter {
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
+        timeout: Long = 0,
         asUserId: UserId? = null,
     ): Result<Unit>
 
@@ -83,9 +83,9 @@ interface ISyncApiClient : IEventEmitter {
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 30000,
+        timeout: Long = 0,
         asUserId: UserId? = null,
-        runOnce: suspend () -> T,
+        runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
 
     suspend fun stop(wait: Boolean = false)
@@ -201,7 +201,7 @@ class SyncApiClient(
                 }
                 syncJob?.invokeOnCompletion {
                     log.info { "stopped syncLoop" }
-                    _currentSyncState.value = SyncState.STOPPED
+                    _currentSyncState.value = STOPPED
                     syncJob = null
                 }
             }
@@ -213,8 +213,8 @@ class SyncApiClient(
         filter: String?,
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
-        timeout: Long=0,
-        asUserId: UserId?=null,
+        timeout: Long,
+        asUserId: UserId?,
     ): Result<Unit> = startOnce(
         filter = filter,
         setPresence = setPresence,
@@ -228,9 +228,9 @@ class SyncApiClient(
         filter: String?,
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
-        timeout: Long = 0,
-        asUserId: UserId? = null,
-        runOnce: suspend (SyncResponse) -> T,
+        timeout: Long,
+        asUserId: UserId?,
+        runOnce: suspend (Sync.Response) -> T,
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
@@ -254,7 +254,7 @@ class SyncApiClient(
         setPresence: Presence?,
         timeout: Long,
         asUserId: UserId?
-    ): SyncResponse {
+    ): Sync.Response {
         val batchToken = currentBatchToken.value
         val response = sync(
             filter = filter,

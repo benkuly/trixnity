@@ -15,7 +15,8 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 class KeyServiceMock(
     override val backup: KeyBackupServiceMock = KeyBackupServiceMock(),
     override val trust: KeyTrustServiceMock = KeyTrustServiceMock(),
-    override val secret: KeySecretServiceMock = KeySecretServiceMock()
+    override val secret: KeySecretServiceMock = KeySecretServiceMock(),
+    override val bootstrapRunning: StateFlow<Boolean> = MutableStateFlow(false)
 ) : IKeyService {
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,

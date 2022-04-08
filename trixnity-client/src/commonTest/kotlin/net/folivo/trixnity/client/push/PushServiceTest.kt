@@ -1,1010 +1,88 @@
 package net.folivo.trixnity.client.push
 
-import io.kotest.matchers.collections.beEmpty
-import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.should
-import io.ktor.client.*
-import io.ktor.client.engine.mock.*
-import io.ktor.http.*
-import io.mockk.clearAllMocks
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.client.room.RoomService
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.timing.continually
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.getEventId
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RoomServiceMock
+import net.folivo.trixnity.client.push.IPushService.Notification
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixHttpClient
-import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse.Rooms.JoinedRoom.RoomSummary
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.push.PushAction.DontNotify
 import net.folivo.trixnity.core.model.push.PushAction.Notify
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleSet
+import net.folivo.trixnity.core.model.push.PushRuleKind
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
+import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class PushServiceTest {
+class PushServiceTest : ShouldSpec(body)
+
+private val body: ShouldSpec.() -> Unit = {
+    timeout = 10_000
 
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val json = createMatrixJson()
-    val api: MatrixClientServerApiClient = mockk(relaxed = true)
-    val room: RoomService = mockk()
+    val mappings = createEventContentSerializerMappings()
+    lateinit var api: MatrixClientServerApiClient
+    lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var room: RoomServiceMock
 
-    private val user1 = UserId("user1", "localhost")
-    private val otherUser = UserId("otherUser", "localhost")
-    private val user1DisplayName = "User1 🦊"
+    val roomId = RoomId("room", "localhost")
+    val user1 = UserId("user1", "localhost")
+    val otherUser = UserId("otherUser", "localhost")
+    val user1DisplayName = "User1 🦊"
 
-    @BeforeTest
-    fun before() {
-        every { api.eventContentSerializerMappings } returns DefaultEventContentSerializerMappings
+    lateinit var cut: PushService
+
+    beforeTest {
+        room = RoomServiceMock()
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        api = newApi
+        apiConfig = newApiConfig
         storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope)
+        store = InMemoryStore(storeScope).apply { init() }
+        store.account.userId.value = user1
+        store.room.update(roomId) { Room(roomId) }
+        cut = PushService(api, room, store, json)
     }
 
-    @AfterTest
-    fun after() {
-        clearAllMocks()
+    afterTest {
         storeScope.cancel()
     }
 
-    @Test
-    fun whenNoEventsAreInTimelineShouldDoNothing() = runTest(dispatchTimeoutMs = 3_000) {
-        store.init()
-        store.globalAccountData.update(
-            Event.GlobalAccountDataEvent(
-                pushRules(listOf(pushRuleDisplayName()))
-            )
-        )
-
-        val roomId = RoomId("room", "localhost")
-        val syncApiClient = syncApiClientWithResponse(
-            SyncResponse.Rooms(
-                join = mapOf(
-                    roomId to SyncResponse.Rooms.JoinedRoom(
-                        timeline = SyncResponse.Rooms.Timeline(
-                            events = listOf()
-                        )
-                    )
-                )
-            )
-        )
-        coEvery { api.sync } returns syncApiClient
-
-        val cut = PushService(api, room, store, json)
-        val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-        val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-        cut.start(scope)
-        cut.enableNotifications()
-        syncApiClient.startOnce { }.getOrThrow()
-
-        notifications.replayCache should beEmpty()
-    }
-
-    @Test
-    fun whenOneInterestingEventInTimelineThenShouldCheckPushRules() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(listOf(pushRuleDisplayName()))
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent(
-                    body = "Hello User1 🦊!"
-                )
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, messageEvent.content)
-            )
-        }
-
-    @Test
-    fun whenThereIsOneInterestingEncryptedEventInTheTimelineThenShouldCheckPushRules() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(listOf(pushRuleDisplayName()))
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = EncryptionAlgorithm.Megolm) }
-            setUser1DisplayName(roomId)
-
-            val messageEvent = messageEventWithContent(
-                roomId, EncryptedEventContent.MegolmEncryptedEventContent(
-                    ciphertext = "123abc456",
-                    senderKey = Key.Curve25519Key(value = ""),
-                    deviceId = "",
-                    sessionId = ""
-                )
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val megolmEvent = Event.MegolmEvent(TextMessageEventContent(body = "Hello User1 🦊!"), roomId)
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-                decryptedEvent = Result.success(
-                    megolmEvent
-                )
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, megolmEvent.content)
-            )
-        }
-
-    @Test
-    fun multipleInterestingTimelineEventsShouldBeCheckedForPushRules() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleDisplayName(),
-                            pushRuleEventMatchTriggered(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvent1 = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello User1 🦊!")
-            )
-            val messageEvent2 = messageEventWithContent(
-                roomId, TextMessageEventContent("I am triggered.")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent1, messageEvent2)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent1 = TimelineEvent(
-                event = messageEvent1,
-                roomId = roomId,
-                eventId = messageEvent1.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            val timelineEvent2 = TimelineEvent(
-                event = messageEvent2,
-                roomId = roomId,
-                eventId = messageEvent2.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent1.id, roomId, any()) } returns MutableStateFlow(timelineEvent1)
-            coEvery { room.getTimelineEvent(messageEvent2.id, roomId, any()) } returns MutableStateFlow(timelineEvent2)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent1, messageEvent1.content),
-                PushService.Notification(messageEvent2, messageEvent2.content)
-            )
-        }
-
-    @Test
-    fun whenRoomMemberCountIsMetShouldSetNotification() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(pushRuleMemberCountGreaterEqual2())
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) {
-                Room(
-                    roomId,
-                    encryptionAlgorithm = null,
-                    name = RoomDisplayName(summary = RoomSummary(joinedMemberCount = 2))
-                )
-            }
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello user1!")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, messageEvent.content)
-            )
-        }
-
-    @Test
-    fun whenPermissionLevelIsMetShouldSetNotification() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(pushRulePowerLevelRoom())
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) {
-                Room(roomId, encryptionAlgorithm = null)
-            }
-            store.roomState.update(
-                Event.StateEvent(
-                    PowerLevelsEventContent(
-                        notifications = PowerLevelsEventContent.Notifications(50),
-                        users = mapOf(otherUser to 50, user1 to 30)
-                    ),
-                    id = EventId("\$powerLevel"),
-                    sender = user1,
-                    roomId = roomId,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello user1!")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, messageEvent.content)
-            )
-        }
-
-    @Test
-    fun whenPushRuleConditionIsNotMetShouldNotSetNotification() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(pushRulePowerLevelRoom())
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) {
-                Room(roomId, encryptionAlgorithm = null)
-            }
-            store.roomState.update(
-                Event.StateEvent(
-                    PowerLevelsEventContent(
-                        notifications = PowerLevelsEventContent.Notifications(50),
-                        users = mapOf(otherUser to 30, user1 to 30)
-                    ),
-                    id = EventId("\$powerLevel"),
-                    sender = user1,
-                    roomId = roomId,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello user1!")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache should beEmpty()
-        }
-
-    @Test
-    fun whenActionOfPushRuleDoesNotSayNotifyShouldNotSetNotification() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleEventMatchTriggeredDontNotify(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("I am triggered.")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val notifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            notifications.replayCache should beEmpty()
-        }
-
-    @Test
-    fun whenPushRuleIsNotEnableButWouldBeSatisfiedShouldNotSetNotification() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleEventMatchTriggeredNotEnabled(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("I am triggered.")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            allNotifications.replayCache should beEmpty()
-        }
-
-    @Test
-    fun allConditionsOfAPushRuleShouldMatchToNotify() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleWithMultipleConditions(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello User1 🦊! I am triggered.")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, messageEvent.content)
-            )
-        }
-
-    @Test
-    fun aRuleWithNoConditionsAlwaysMatches() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleNoCondition(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello user1!")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(messageEvent, messageEvent.content)
-            )
-        }
-
-    @Test
-    fun overrideShouldBeOfHigherPriorityThanOtherRules() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    PushRulesEventContent(
-                        global = PushRuleSet(
-                            override = listOf(
-                                PushRule(
-                                    ruleId = "customRule10",
-                                    enabled = true,
-                                    default = false,
-                                    conditions = setOf(PushCondition.EventMatch("content.body", "*User*")),
-                                    actions = setOf(DontNotify)
-                                )
-                            ),
-                            content = listOf(
-                                pushRuleDisplayName()
-                            ),
-                            room = listOf(),
-                            sender = listOf(),
-                            underride = listOf(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvent = messageEventWithContent(
-                roomId, TextMessageEventContent("Hello User1 🦊!")
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = listOf(messageEvent)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val timelineEvent = TimelineEvent(
-                event = messageEvent,
-                roomId = roomId,
-                eventId = messageEvent.id,
-                previousEventId = null,
-                nextEventId = null,
-                gap = null,
-            )
-            coEvery { room.getTimelineEvent(messageEvent.id, roomId, any()) } returns MutableStateFlow(timelineEvent)
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            advanceUntilIdle()
-            allNotifications.replayCache should beEmpty()
-        }
-
-    @Test
-    fun anInvitationToARoomShouldResultInANotificationWhenPushRulesAllowIt() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleInvitation(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-
-            val invitation = Event.StrippedStateEvent(
-                content = MemberEventContent(
-                    membership = INVITE,
-                    displayName = user1DisplayName,
-                ),
-                sender = otherUser,
-                roomId = roomId,
-                stateKey = user1.full,
-            )
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    invite = mapOf(
-                        roomId to SyncResponse.Rooms.InvitedRoom(
-                            inviteState = SyncResponse.Rooms.InvitedRoom.InviteState(
-                                events = listOf(invitation)
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 2)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            allNotifications.replayCache shouldContainExactly listOf(
-                PushService.Notification(invitation, invitation.content)
-            )
-        }
-
-    @Test
-    fun notificationsShouldBeEmittedInCorrectOrder() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleDisplayName(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvents = (0..999).map { i ->
-                messageEventWithContent(
-                    roomId, TextMessageEventContent("Hello User1 🦊! ($i)")
-                )
-            }
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = messageEvents
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            (0..999).forEach { i ->
-                val timelineEvent = TimelineEvent(
-                    event = messageEvents[i],
-                    roomId = roomId,
-                    eventId = messageEvents[i].id,
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null,
-                )
-                coEvery {
-                    room.getTimelineEvent(
-                        messageEvents[i].id,
-                        roomId,
-                        any()
-                    )
-                } returns MutableStateFlow(timelineEvent)
-            }
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 1000)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            advanceUntilIdle()
-            val expected: List<PushService.Notification> =
-                (0..999).map { i -> PushService.Notification(messageEvents[i], messageEvents[i].content) }
-            allNotifications.replayCache shouldContainExactly expected
-        }
-
-    @Test
-    fun notificationsThatCannotBeDecryptedShouldNotSuspendTheSync() =
-        runTest(dispatchTimeoutMs = 2_000) {
-            val roomId = RoomId("room", "localhost")
-            store.init()
-            store.globalAccountData.update(
-                Event.GlobalAccountDataEvent(
-                    pushRules(
-                        listOf(
-                            pushRuleDisplayName(),
-                        )
-                    )
-                )
-            )
-            store.account.userId.value = user1
-            store.room.update(roomId) { Room(roomId, encryptionAlgorithm = null) }
-            setUser1DisplayName(roomId)
-
-            val messageEvents = (0..9).map { i ->
-                messageEventWithContent(
-                    roomId, EncryptedEventContent.MegolmEncryptedEventContent(
-                        ciphertext = "123abc456$i",
-                        senderKey = Key.Curve25519Key(value = ""),
-                        deviceId = "",
-                        sessionId = ""
-                    )
-                )
-            }
-            val syncApiClient = syncApiClientWithResponse(
-                SyncResponse.Rooms(
-                    join = mapOf(
-                        roomId to SyncResponse.Rooms.JoinedRoom(
-                            timeline = SyncResponse.Rooms.Timeline(
-                                events = messageEvents
-                            )
-                        )
-                    )
-                ),
-            )
-            coEvery { api.sync } returns syncApiClient
-
-            val megolmEvents =
-                (1..9).map { i -> Event.MegolmEvent(TextMessageEventContent(body = "Hello User1 🦊! ($i)"), roomId) }
-            coEvery { room.getTimelineEvent(any(), roomId, any()) } returns MutableStateFlow(null) // no decryption
-            (1..9).map { i ->
-                val timelineEvent = TimelineEvent(
-                    event = messageEvents[i - 1],
-                    roomId = roomId,
-                    eventId = messageEvents[i - 1].id,
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null,
-                    decryptedEvent = Result.success(
-                        megolmEvents[i - 1]
-                    )
-                )
-                coEvery {
-                    room.getTimelineEvent(
-                        messageEvents[i - 1].id,
-                        roomId,
-                        any()
-                    )
-                } returns MutableStateFlow(timelineEvent)
-            }
-
-            val cut = PushService(api, room, store, json)
-            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
-            val allNotifications = cut.notifications.shareIn(scope, SharingStarted.Eagerly, replay = 10)
-            cut.start(scope)
-            cut.enableNotifications()
-            syncApiClient.startOnce { }.getOrThrow()
-
-            advanceUntilIdle()
-            val expected: List<PushService.Notification> =
-                (1..9).map { i -> PushService.Notification(messageEvents[i - 1], megolmEvents[i - 1].content) }
-            allNotifications.replayCache shouldContainExactly expected
-        }
-
-    private suspend fun setUser1DisplayName(roomId: RoomId) {
-        store.roomUser.update(
-            user1,
-            roomId
-        ) {
-            RoomUser(
-                roomId,
-                user1,
-                user1DisplayName,
-                Event.StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("JOIN"),
-                    user1,
-                    roomId,
-                    0,
-                    stateKey = ""
-                )
-            )
-        }
-    }
-
-    private fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
-        global = PushRuleSet(
-            content = contentPushRules,
-            override = listOf(),
-            room = listOf(),
-            sender = listOf(),
-            underride = listOf(),
+    fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
+        global = mapOf(
+            PushRuleKind.CONTENT to contentPushRules,
+            PushRuleKind.OVERRIDE to listOf(),
+            PushRuleKind.ROOM to listOf(),
+            PushRuleKind.SENDER to listOf(),
+            PushRuleKind.UNDERRIDE to listOf(),
         )
     )
 
-    private fun pushRuleDisplayName() = PushRule(
+    fun pushRuleDisplayName() = PushRule(
         ruleId = ".m.rule.contains_display_name",
         enabled = true,
         default = true,
@@ -1012,7 +90,7 @@ class PushServiceTest {
         actions = setOf(Notify),
     )
 
-    private fun pushRuleInvitation() = PushRule(
+    fun pushRuleInvitation() = PushRule(
         ruleId = ".m.rule.invite_for_me",
         enabled = true,
         default = true,
@@ -1024,7 +102,7 @@ class PushServiceTest {
         actions = setOf(Notify),
     )
 
-    private fun pushRuleEventMatchTriggered() = PushRule(
+    fun pushRuleEventMatchTriggered() = PushRule(
         ruleId = "customRule1",
         enabled = true,
         default = false,
@@ -1032,7 +110,7 @@ class PushServiceTest {
         actions = setOf(Notify),
     )
 
-    private fun pushRuleEventMatchTriggeredDontNotify() = PushRule(
+    fun pushRuleEventMatchTriggeredDontNotify() = PushRule(
         ruleId = "customRule1",
         enabled = true,
         default = false,
@@ -1040,7 +118,7 @@ class PushServiceTest {
         actions = setOf(DontNotify),
     )
 
-    private fun pushRuleEventMatchTriggeredNotEnabled() = PushRule(
+    fun pushRuleEventMatchTriggeredNotEnabled() = PushRule(
         ruleId = "customRule1",
         enabled = false,
         default = false,
@@ -1048,7 +126,7 @@ class PushServiceTest {
         actions = setOf(Notify),
     )
 
-    private fun pushRuleMemberCountGreaterEqual2() = PushRule(
+    fun pushRuleMemberCountGreaterEqual2() = PushRule(
         ruleId = "customRule2",
         enabled = true,
         default = false,
@@ -1056,7 +134,7 @@ class PushServiceTest {
         actions = setOf(Notify)
     )
 
-    private fun pushRulePowerLevelRoom() = PushRule(
+    fun pushRulePowerLevelRoom() = PushRule(
         ruleId = "customRule3",
         enabled = true,
         default = false,
@@ -1064,7 +142,7 @@ class PushServiceTest {
         actions = setOf(Notify)
     )
 
-    private fun pushRuleNoCondition() = PushRule(
+    fun pushRuleNoCondition() = PushRule(
         ruleId = "customRule4",
         enabled = true,
         default = false,
@@ -1072,45 +150,328 @@ class PushServiceTest {
         actions = setOf(Notify)
     )
 
-    private fun pushRuleWithMultipleConditions() = PushRule(
+    fun pushRuleWithMultipleConditions() = PushRule(
         ruleId = "customRule5",
         enabled = true,
         default = false,
-        conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.EventMatch("content.body", "*triggered*")),
+        conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.EventMatch("content.body", "*User1*")),
         actions = setOf(Notify)
     )
 
-    private fun syncApiClientWithResponse(rooms: SyncResponse.Rooms) = SyncApiClient(
-        MatrixHttpClient(
-            baseUrl = Url("https://matrix.host"),
-            initialHttpClient = HttpClient(MockEngine) {
-                engine {
-                    addHandler { _ ->
-                        respond(
-                            json.encodeToString(
-                                SyncResponseSerializer, SyncResponse(
-                                    nextBatch = "next",
-                                    room = rooms,
+    fun messageEventWithContent(
+        roomId: RoomId, content: MessageEventContent, decryptedContent: MessageEventContent = content
+    ) = TimelineEvent(
+        event = MessageEvent(
+            content = content,
+            id = EventId("\$event-${content.hashCode()}"),
+            sender = otherUser,
+            roomId = roomId,
+            originTimestamp = 0L,
+        ),
+        content = Result.success(decryptedContent),
+        previousEventId = null,
+        nextEventId = null,
+        gap = null
+    )
+
+    suspend fun setUser1DisplayName(roomId: RoomId) {
+        store.roomUser.update(
+            user1,
+            roomId
+        ) {
+            RoomUser(
+                roomId,
+                user1,
+                user1DisplayName,
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("JOIN"),
+                    user1,
+                    roomId,
+                    0,
+                    stateKey = ""
+                )
+            )
+        }
+    }
+
+    suspend fun checkNoNotification() = coroutineScope {
+        val notifications = async { cut.getNotifications(0.seconds).first() }
+        api.sync.startOnce().getOrThrow()
+
+        continually(50.milliseconds) {
+            notifications.isCompleted shouldBe false
+        }
+        notifications.cancel()
+    }
+
+    context(PushService::getNotifications.name) {
+        context("no events") {
+            should("do nothing") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response("next")
+                    }
+                }
+                store.globalAccountData.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+
+                checkNoNotification()
+            }
+        }
+        context("new invite events") {
+            should("notify on invite") {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(
+                        pushRules(
+                            listOf(
+                                pushRuleInvitation(),
+                            )
+                        )
+                    )
+                )
+                val invitation = Event.StrippedStateEvent(
+                    content = MemberEventContent(
+                        membership = Membership.INVITE,
+                        displayName = user1DisplayName,
+                    ),
+                    sender = otherUser,
+                    roomId = roomId,
+                    stateKey = user1.full,
+                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response(
+                            nextBatch = "next",
+                            room = Sync.Response.Rooms(
+                                invite = mapOf(
+                                    roomId to Sync.Response.Rooms.InvitedRoom(
+                                        inviteState = Sync.Response.Rooms.InvitedRoom.InviteState(
+                                            events = listOf(invitation)
+                                        )
+                                    )
                                 )
-                            ),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            )
                         )
                     }
                 }
-            },
-            json = json,
-            accessToken = MutableStateFlow("token")
-        )
-    )
+                val notification = async { cut.getNotifications(0.seconds).first() }
+                api.sync.startOnce().getOrThrow()
+                notification.await() shouldBe Notification(invitation)
+            }
+        }
+        context("new timeline events") {
+            val timelineEvent = messageEventWithContent(
+                roomId, RoomMessageEventContent.TextMessageEventContent(
+                    body = "Hello User1 🦊!"
+                )
+            )
+            beforeTest {
+                setUser1DisplayName(roomId)
+                store.globalAccountData.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response("next")
+                    }
+                }
+                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+            }
+            should("check push rules and notify") {
+                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+            }
+            should("have correct order") {
+                val timelineEvents = (0..99).map {
+                    messageEventWithContent(
+                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                            body = "Hello User1 🦊! ($it)"
+                        )
+                    )
+                }
+                room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
+                cut.getNotifications(0.seconds).take(100).toList() shouldBe timelineEvents.map {
+                    Notification(it.event)
+                }
+            }
+        }
+        context("new decrypted timeline events") {
+            val timelineEvent = messageEventWithContent(
+                roomId, EncryptedEventContent.MegolmEncryptedEventContent(
+                    "", Key.Curve25519Key(null, ""), "", ""
+                ), RoomMessageEventContent.TextMessageEventContent(
+                    body = "Hello User1 🦊!"
+                )
+            )
+            beforeTest {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response("next")
+                    }
+                }
+                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+            }
+            should("check push rules and notify") {
+                store.account.userId.value = user1
+                setUser1DisplayName(roomId)
+                store.globalAccountData.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
 
-    private fun messageEventWithContent(
-        roomId: RoomId, content: MessageEventContent
-    ): MessageEvent<*> = MessageEvent(
-        content = content,
-        id = EventId("\$event-${content.hashCode()}"),
-        sender = otherUser,
-        roomId = roomId,
-        originTimestamp = 0L,
-    )
+                assertSoftly(cut.getNotifications(0.seconds).first()) {
+                    event.getEventId() shouldBe timelineEvent.eventId
+                    event.content shouldBe timelineEvent.content?.getOrThrow()
+                }
+            }
+        }
+        context("push rules") {
+            val timelineEvent = messageEventWithContent(
+                roomId, RoomMessageEventContent.TextMessageEventContent(
+                    body = "Hello User1 🦊!"
+                )
+            )
+            beforeTest {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response("next")
+                    }
+                }
+                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+            }
+            context("room member count") {
+                beforeTest {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(pushRules(listOf(pushRuleMemberCountGreaterEqual2())))
+                    )
+                }
+                should("notify when met") {
+                    store.room.update(roomId) {
+                        Room(roomId, name = RoomDisplayName(summary = RoomSummary(joinedMemberCount = 2)))
+                    }
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                }
+                should("not notify when not met") {
+                    store.room.update(roomId) {
+                        Room(roomId, name = RoomDisplayName(summary = RoomSummary(joinedMemberCount = 1)))
+                    }
+                    checkNoNotification()
+                }
+            }
+            context("permission level") {
+                beforeTest {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(pushRules(listOf(pushRulePowerLevelRoom())))
+                    )
+                }
+                should("notify when met") {
+                    store.roomState.update(
+                        Event.StateEvent(
+                            PowerLevelsEventContent(
+                                notifications = PowerLevelsEventContent.Notifications(50),
+                                users = mapOf(otherUser to 50, user1 to 30)
+                            ),
+                            id = EventId("\$powerLevel"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 0L,
+                            stateKey = "",
+                        )
+                    )
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                }
+                should("not notify when not met") {
+                    store.roomState.update(
+                        Event.StateEvent(
+                            PowerLevelsEventContent(
+                                notifications = PowerLevelsEventContent.Notifications(100),
+                                users = mapOf(otherUser to 50, user1 to 30)
+                            ),
+                            id = EventId("\$powerLevel"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 0L,
+                            stateKey = "",
+                        )
+                    )
+                    checkNoNotification()
+                }
+            }
+            should("not notify when push rule disabled") {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(
+                        pushRules(listOf(pushRuleEventMatchTriggeredNotEnabled()))
+                    )
+                )
+                checkNoNotification()
+            }
+            context("multiple conditions") {
+                should("should notify when all conditions match") {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(
+                            pushRules(listOf(pushRuleWithMultipleConditions()))
+                        )
+                    )
+                    setUser1DisplayName(roomId)
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                }
+                should("not notify when on condition matches") {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(
+                            pushRules(listOf(pushRuleWithMultipleConditions()))
+                        )
+                    )
+                    checkNoNotification()
+                }
+            }
+            should("always notify when no conditions") {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(
+                        pushRules(listOf(pushRuleNoCondition()))
+                    )
+                )
+                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+            }
+            should("override") {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(
+                        PushRulesEventContent(
+                            global = mapOf(
+                                PushRuleKind.OVERRIDE to listOf(
+                                    PushRule(
+                                        ruleId = "customRule10",
+                                        enabled = true,
+                                        default = false,
+                                        conditions = setOf(PushCondition.EventMatch("content.body", "*User*")),
+                                        actions = setOf(DontNotify)
+                                    )
+                                ),
+                                PushRuleKind.CONTENT to listOf(
+                                    pushRuleDisplayName()
+                                )
+                            )
+                        )
+                    )
+                )
+                setUser1DisplayName(roomId)
+
+                checkNoNotification()
+            }
+        }
+        context("push actions") {
+            val timelineEvent = messageEventWithContent(
+                roomId, RoomMessageEventContent.TextMessageEventContent(
+                    body = "Hello User1 🦊!"
+                )
+            )
+            beforeTest {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                        Sync.Response("next")
+                    }
+                }
+                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+            }
+            should("not notify when action says it") {
+                store.globalAccountData.update(
+                    GlobalAccountDataEvent(pushRules(listOf(pushRuleEventMatchTriggeredDontNotify())))
+                )
+                checkNoNotification()
+            }
+        }
+    }
 }

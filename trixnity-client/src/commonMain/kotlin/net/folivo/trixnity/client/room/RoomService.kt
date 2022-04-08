@@ -1071,11 +1071,11 @@ class RoomService(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         channelFlow {
-            val syncResponseChannel = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
-            val subscriber: AfterSyncResponseSubscriber = { syncResponseChannel.emit(it) }
+            val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+            val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
             invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
             api.sync.subscribeAfterSyncResponse(subscriber)
-            syncResponseChannel
+            syncResponseFlow
                 .collect { syncResponse ->
                     val timelineEvents =
                         syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +

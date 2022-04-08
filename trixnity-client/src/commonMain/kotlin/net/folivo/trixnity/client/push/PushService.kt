@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.push
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -8,14 +9,18 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
-import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.push.IPushService.Notification
+import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.SyncResponse
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -23,113 +28,110 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
+import net.folivo.trixnity.core.model.push.PushRuleKind.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 
 private val log = KotlinLogging.logger { }
 
+interface IPushService {
+    data class Notification(
+        val event: Event<*>
+    )
+
+    suspend fun getNotifications(
+        decryptionTimeout: Duration = 5.seconds,
+        syncResponseBufferSize: Int = 0
+    ): Flow<Notification>
+}
+
 class PushService(
     private val api: MatrixClientServerApiClient,
-    private val room: RoomService,
+    private val room: IRoomService,
     private val store: Store,
     private val json: Json,
-) {
-
-    data class Notification(
-        val event: Event<*>,
-        val content: EventContent, // possibly decrypted
-    )
+) : IPushService {
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
-    private val _notifications = MutableSharedFlow<Notification>(0)
-
-    /**
-     * In order to get notifications, manually call [enableNotifications].
-     */
-    val notifications = _notifications.asSharedFlow()
-
-    private val allRules = MutableStateFlow(listOf<PushRule>())
-    private val subscriber: AfterSyncResponseSubscriber = { // _after_ sync since we need access to timeline events
-        evaluatePushRules(it, allRules)
-    }
-
-    internal suspend fun start(scope: CoroutineScope) {
-        scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            store.globalAccountData.get(PushRulesEventContent::class, "", scope).map { event ->
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    override suspend fun getNotifications(
+        decryptionTimeout: Duration,
+        syncResponseBufferSize: Int,
+    ): Flow<Notification> = channelFlow {
+        val pushRules =
+            store.globalAccountData.get<PushRulesEventContent>(scope = this).map { event ->
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
-                    globalRuleSet.override.orEmpty() +
-                            globalRuleSet.content.orEmpty() +
-                            globalRuleSet.room.orEmpty() +
-                            globalRuleSet.sender.orEmpty() +
-                            globalRuleSet.underride.orEmpty()
+                    setOf(OVERRIDE, CONTENT, ROOM, SENDER, UNDERRIDE)
+                        .mapNotNull { globalRuleSet[it] }
+                        .fold(listOf<PushRule>()) { old, new -> old + new }
                 } ?: listOf()
-            }
-                .collect {
-                    allRules.value = it
-                } // do _not_ provide a default here as we need to suspend here; otherwise we could miss messages
-        }
-    }
-
-    fun enableNotifications() {
+            }.stateIn(this)
+        val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+        val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
+        invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
         api.sync.subscribeAfterSyncResponse(subscriber)
+        val inviteEvents = syncResponseFlow
+            .map { syncResponse ->
+                syncResponse.room?.invite?.values?.flatMap { inviteRoom ->
+                    inviteRoom.inviteState?.events.orEmpty()
+                }?.asFlow()
+            }.filterNotNull()
+            .flattenConcat()
+
+        val timelineEvents =
+            room.getTimelineEventsFromNowOn(decryptionTimeout, syncResponseBufferSize)
+                .map { extractDecryptedEvent(it) }
+                .filterNotNull()
+        merge(inviteEvents, timelineEvents)
+            .map {
+                evaluatePushRules(
+                    event = it,
+                    allRules = pushRules.value
+                )
+            }.filterNotNull()
+            .collect { send(it) }
     }
 
-    fun disableNotifications() {
-        api.sync.unsubscribeAfterSyncResponse(subscriber)
+    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): Event<*>? {
+        val originalEvent = timelineEvent.event
+        val content = timelineEvent.content?.getOrNull()
+        return when {
+            timelineEvent.isEncrypted.not() -> originalEvent
+            content == null -> null
+            originalEvent is Event.MessageEvent && content is MessageEventContent ->
+                Event.MessageEvent(
+                    content = content,
+                    id = originalEvent.id,
+                    sender = originalEvent.sender,
+                    roomId = originalEvent.roomId,
+                    originTimestamp = originalEvent.originTimestamp,
+                    unsigned = originalEvent.unsigned
+                )
+            originalEvent is Event.StateEvent && content is StateEventContent ->
+                originalEvent
+            else -> null
+        }
     }
 
     private suspend fun evaluatePushRules(
-        syncResponse: SyncResponse,
-        allRules: StateFlow<List<PushRule>>,
-    ) = coroutineScope {
-        findInterestingEvents(syncResponse).map { event ->
-            async {
-                try {
-                    withTimeout(2.seconds) {
-                        findMatchingPushRule(event, allRules.value)
-                    }
-                } catch (exc: CancellationException) {
-                    log.warn { "could not decrypt event ${event.getEventId()}" }
-                    null
-                }
-            }
-        }.awaitAll().filterNotNull().forEach { _notifications.emit(it) }
-    }
-
-    private fun findInterestingEvents(syncResponse: SyncResponse): List<Event<*>> {
-        val roomEvents = syncResponse.room?.join?.values?.flatMap { joinedRoom ->
-            joinedRoom.timeline?.events.orEmpty()
-                .filter { roomEvent ->
-                    roomEvent.sender != store.account.userId.value
-                }
-        }.orEmpty()
-        val inviteEvents = syncResponse.room?.invite?.values?.flatMap { inviteRoom ->
-            inviteRoom.inviteState?.events.orEmpty()
-        }.orEmpty()
-        return roomEvents + inviteEvents
-    }
-
-    private suspend fun findMatchingPushRule(
         event: Event<*>,
         allRules: List<PushRule>,
     ): Notification? {
-        log.trace { "find matching push rule for event ${event.getEventId()}" }
-        possiblyDecryptEvent(event)?.let { decryptedEvent ->
-            val rule = allRules.find { pushRule ->
-                pushRule.enabled && pushRule.conditions.all { pushCondition ->
-                    matchPushCondition(decryptedEvent, pushCondition)
-                } && if (pushRule.pattern != null) bodyContainsPattern(decryptedEvent, pushRule.pattern!!) else true
-            }
-            rule?.actions?.forEach { pushAction ->
+        val rule = allRules.find { pushRule ->
+            pushRule.enabled
+                    && pushRule.conditions.orEmpty().all { matchPushCondition(event, it) }
+                    && if (pushRule.pattern != null) bodyContainsPattern(event, pushRule.pattern!!) else true
+        }
+        return rule?.actions?.asFlow()
+            ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
                     log.debug { "notify for event ${event.getEventId()} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
-                    return Notification(event, decryptedEvent.content)
+                    emit(Notification(event))
                 }
-            }
-        }
-        return null
+            }?.firstOrNull()
     }
 
     private suspend fun matchPushCondition(
@@ -186,56 +188,30 @@ class PushService(
         } else false
     }
 
-    private suspend fun possiblyDecryptEvent(
-        event: Event<*>
-    ): Event<*>? = coroutineScope {
-        if (event is Event.MessageEvent) { // TODO has to be changed to RoomEvent with merge of 2.0.0
-            val theRoom = store.room.get(event.roomId).value
-            val isNotEncrypted = theRoom?.encryptionAlgorithm == null
-            val timelineEvent =
-                room.getTimelineEvent(event.id, event.roomId, this)
-                    .filterNotNull()
-                    .first {
-                        it.decryptedEvent?.isSuccess == true || isNotEncrypted
-                    }
-            log.trace { "decrypted timelineEvent: ${timelineEvent.eventId}" }
-            if (timelineEvent.decryptedEvent == null) { // not encrypted
-                timelineEvent.event
-            } else { // encrypted
-                timelineEvent.decryptedEvent.getOrNull()
-            }
-        } else {
-            event
-        }
-    }
-
     @OptIn(ExperimentalSerializationApi::class)
     private fun getEventValue(
         event: Event<*>,
         pushCondition: PushCondition.EventMatch
     ): String? {
-        var eventJson: JsonElement? = json.serializersModule.getContextual(Event::class)?.let {
-            json.encodeToJsonElement(it, event) // TODO could be optimized
-        }
-        try {
+        return try {
+            var eventJson: JsonElement? = json.serializersModule.getContextual(Event::class)?.let {
+                json.encodeToJsonElement(it, event) // TODO could be optimized
+            }
             pushCondition.key.split('.').forEach { segment ->
                 eventJson = eventJson?.jsonObject?.get(segment)
             }
-        } catch (exc: IllegalArgumentException) {
-            eventJson = null
+            eventJson?.jsonPrimitive?.contentOrNull
+        } catch (exc: Exception) {
+            null
         }
-        if (eventJson != null && eventJson is JsonPrimitive) {
-            return (eventJson as JsonPrimitive).contentOrNull
-        }
-        return null
     }
 
-    private fun String.checkIsCount(size: Int): Boolean {
-        this.toIntOrNull()?.let { count ->
+    private fun String.checkIsCount(size: Long): Boolean {
+        this.toLongOrNull()?.let { count ->
             return size == count
         }
         val result = roomSizePattern.find(this)
-        val bound = result?.groupValues?.getOrNull(2)?.toIntOrNull() ?: 0
+        val bound = result?.groupValues?.getOrNull(2)?.toLongOrNull() ?: 0
         val operator = result?.groupValues?.getOrNull(1)
         log.debug { "room size ($size) $operator bound ($bound)" }
         return when (operator) {
