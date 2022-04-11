@@ -59,12 +59,10 @@ deleteAllOutdatedDeviceKeys:
 DELETE FROM sql_outdated_device_keys;
 
 CREATE TABLE sql_key_verification_state (
-    user_id TEXT NOT NULL,
-    device_id TEXT,
     key_id TEXT NOT NULL,
     key_algorithm TEXT NOT NULL,
     verification_state TEXT NOT NULL,
-    PRIMARY KEY (user_id,device_id,key_id,key_algorithm)
+    PRIMARY KEY (key_id,key_algorithm)
 );
 
 saveKeyVerificationState:
@@ -73,11 +71,11 @@ VALUES  ?;
 
 getKeyVerificationState:
 SELECT verification_state FROM sql_key_verification_state
-WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
+WHERE key_id = ? AND key_algorithm = ?;
 
 deleteKeyVerificationState:
 DELETE FROM sql_key_verification_state
-WHERE user_id = ? AND device_id = ? AND key_id = ? AND key_algorithm = ?;
+WHERE key_id = ? AND key_algorithm = ?;
 
 deleteAllKeyVerificationStates:
 DELETE FROM sql_key_verification_state;

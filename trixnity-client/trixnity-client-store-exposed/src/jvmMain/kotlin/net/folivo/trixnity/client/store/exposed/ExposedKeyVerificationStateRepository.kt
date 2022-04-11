@@ -9,20 +9,16 @@ import net.folivo.trixnity.client.verification.KeyVerificationState
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedKeyVerificationState : Table("key_verification_state") {
-    val userId = varchar("user_id", length = 16383)
-    val deviceId = varchar("device_id", length = 16383)
-    val keyId = varchar("key_id", length = 16383)
-    val keyAlgorithm = varchar("key_algorithm", length = 16383)
-    override val primaryKey = PrimaryKey(userId, deviceId, keyId, keyAlgorithm)
+    val keyId = varchar("key_id", length = 255)
+    val keyAlgorithm = varchar("key_algorithm", length = 255)
+    override val primaryKey = PrimaryKey(keyId, keyAlgorithm)
     val verificationState = text("verification_state")
 }
 
 internal class ExposedKeyVerificationStateRepository(private val json: Json) : KeyVerificationStateRepository {
     override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? {
         return ExposedKeyVerificationState.select {
-            ExposedKeyVerificationState.userId.eq(key.userId.full) and
-                    ExposedKeyVerificationState.deviceId.eq(key.deviceId ?: "") and
-                    ExposedKeyVerificationState.keyId.eq(key.keyId) and
+            ExposedKeyVerificationState.keyId.eq(key.keyId) and
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
         }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedKeyVerificationState.verificationState])
@@ -31,8 +27,6 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
 
     override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState) {
         ExposedKeyVerificationState.replace {
-            it[userId] = key.userId.full
-            it[deviceId] = key.deviceId ?: ""
             it[keyId] = key.keyId
             it[keyAlgorithm] = key.keyAlgorithm.name
             it[verificationState] = json.encodeToString(value)
@@ -41,9 +35,7 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
 
     override suspend fun delete(key: VerifiedKeysRepositoryKey) {
         ExposedKeyVerificationState.deleteWhere {
-            ExposedKeyVerificationState.userId.eq(key.userId.full) and
-                    ExposedKeyVerificationState.deviceId.eq(key.deviceId ?: "") and
-                    ExposedKeyVerificationState.keyId.eq(key.keyId) and
+            ExposedKeyVerificationState.keyId.eq(key.keyId) and
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
         }
     }

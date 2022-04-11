@@ -16,8 +16,6 @@ class SqlDelightKeyVerificationStateRepository(
 ) : KeyVerificationStateRepository {
     override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? = withContext(context) {
         db.getKeyVerificationState(
-            user_id = key.userId.full,
-            device_id = key.deviceId,
             key_id = key.keyId,
             key_algorithm = key.keyAlgorithm.name
         ).executeAsOneOrNull()?.let { json.decodeFromString(it) }
@@ -26,8 +24,6 @@ class SqlDelightKeyVerificationStateRepository(
     override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState) = withContext(context) {
         db.saveKeyVerificationState(
             Sql_key_verification_state(
-                user_id = key.userId.full,
-                device_id = key.deviceId,
                 key_id = key.keyId,
                 key_algorithm = key.keyAlgorithm.name,
                 verification_state = json.encodeToString(value)
@@ -37,8 +33,6 @@ class SqlDelightKeyVerificationStateRepository(
 
     override suspend fun delete(key: VerifiedKeysRepositoryKey) = withContext(context) {
         db.deleteKeyVerificationState(
-            user_id = key.userId.full,
-            device_id = key.deviceId,
             key_id = key.keyId,
             key_algorithm = key.keyAlgorithm.name
         )

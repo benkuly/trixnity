@@ -150,29 +150,25 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
-                    Verified("edKeyValue")
+                    Ed25519Key("AAAAAA", "edKeyValue"), Verified("edKeyValue")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
             should("be ${Valid::class.simpleName} + verified, when key is verified") {
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
-                    Verified("edKeyValue")
+                    Ed25519Key("AAAAAA", "edKeyValue"), Verified("edKeyValue")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(true)
             }
             should("be ${CrossSigned::class.simpleName} + verified, when key is verified and a master key") {
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key("edKeyValue", "edKeyValue"), alice, null,
-                    Verified("edKeyValue")
+                    Ed25519Key("edKeyValue", "edKeyValue"), Verified("edKeyValue")
                 )
                 cut.calculateCrossSigningKeysTrustLevel(masterKey) shouldBe CrossSigned(true)
             }
             should("be ${Blocked::class.simpleName}, when key is blocked") {
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key("AAAAAA", "edKeyValue"), alice, "AAAAAA",
-                    KeyVerificationState.Blocked("edKeyValue")
+                    Ed25519Key("AAAAAA", "edKeyValue"), KeyVerificationState.Blocked("edKeyValue")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
@@ -242,8 +238,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key(bobDevice, "..."), bob, bobDevice,
-                    Verified("...")
+                    Ed25519Key(bobDevice, "..."), Verified("...")
                 )
             }
             should("be ${NotCrossSigned::class.simpleName}") {
@@ -336,8 +331,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("be ${CrossSigned::class.simpleName} + verified, when there is a verified key in key chain") {
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key(aliceDevice, "..."), alice, aliceDevice,
-                    Verified("...")
+                    Ed25519Key(aliceDevice, "..."), Verified("...")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe CrossSigned(true)
                 store.keys.getKeyChainLinksBySigningKey(alice, Ed25519Key("ALICE_MSK", "...")) shouldBe setOf(
@@ -351,8 +345,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("be ${Blocked::class.simpleName}, when there is a blocked key in key chain") {
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key(bobDevice, "..."), bob, bobDevice,
-                    KeyVerificationState.Blocked("...")
+                    Ed25519Key(bobDevice, "..."), KeyVerificationState.Blocked("...")
                 )
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
@@ -410,8 +403,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 store.keys.saveKeyVerificationState(
-                    Ed25519Key(bobDevice, "..."), bob, bobDevice,
-                    Verified("...")
+                    Ed25519Key(bobDevice, "..."), Verified("...")
                 )
             }
             should("be ${CrossSigned::class.simpleName}, when there is a master key in key chain") {
@@ -472,11 +464,11 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                     )
-            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
+            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey)
                 .shouldBe(Verified(ownAccountsDeviceEdKey.value))
-            store.keys.getKeyVerificationState(ownMasterEdKey, alice, null)
+            store.keys.getKeyVerificationState(ownMasterEdKey)
                 .shouldBe(Verified(ownMasterEdKey.value))
-            store.keys.getKeyVerificationState(otherCrossSigningEdKey, alice, null)
+            store.keys.getKeyVerificationState(otherCrossSigningEdKey)
                 .shouldBe(Verified(otherCrossSigningEdKey.value))
         }
         should("handle others account keys") {
@@ -522,9 +514,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                     )
-            store.keys.getKeyVerificationState(othersDeviceEdKey, bob, "BBBBBB")
+            store.keys.getKeyVerificationState(othersDeviceEdKey)
                 .shouldBe(Verified(othersDeviceEdKey.value))
-            store.keys.getKeyVerificationState(othersMasterEdKey, bob, null)
+            store.keys.getKeyVerificationState(othersMasterEdKey)
                 .shouldBe(Verified(othersMasterEdKey.value))
         }
         should("throw exception, when signature upload fails") {
@@ -553,7 +545,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey, alice, "AAAAAA")
+            store.keys.getKeyVerificationState(ownAccountsDeviceEdKey)
                 .shouldBe(Verified(ownAccountsDeviceEdKey.value))
         }
     }

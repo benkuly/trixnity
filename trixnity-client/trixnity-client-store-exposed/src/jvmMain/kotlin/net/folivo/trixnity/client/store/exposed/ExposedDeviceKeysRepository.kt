@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.UserId
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedDeviceKeys : Table("device_keys") {
-    val userId = varchar("user_id", length = 16383)
+    val userId = varchar("user_id", length = 255)
     override val primaryKey = PrimaryKey(userId)
     val value = text("value")
 }

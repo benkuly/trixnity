@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedOlmSession : Table("olm_session") {
-    val senderKey = varchar("sender_key", length = 16383)
+    val senderKey = varchar("sender_key", length = 255)
     override val primaryKey = PrimaryKey(senderKey)
     val value = text("value")
 }

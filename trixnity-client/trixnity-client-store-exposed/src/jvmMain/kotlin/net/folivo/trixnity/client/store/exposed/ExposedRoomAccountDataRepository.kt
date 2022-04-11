@@ -8,10 +8,10 @@ import net.folivo.trixnity.core.model.events.Event
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedRoomAccountData : Table("room_account_data") {
-    val roomId = varchar("room_id", length = 16383)
-    val type = varchar("type", length = 16383)
-    val key = varchar("key", length = 16383)
-    override val primaryKey = PrimaryKey(roomId, type)
+    val roomId = varchar("room_id", length = 255)
+    val type = varchar("type", length = 255)
+    val key = varchar("key", length = 255)
+    override val primaryKey = PrimaryKey(roomId, type, key)
     val event = text("event")
 }
 

@@ -5,7 +5,7 @@ import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedUploadMedia : Table("upload_media") {
-    val cacheUri = varchar("cache_uri", length = 16383)
+    val cacheUri = varchar("cache_uri", length = 768)
     override val primaryKey = PrimaryKey(cacheUri)
     val mxcUri = text("mxc_uri").nullable()
     val contentType = text("content_type").nullable()

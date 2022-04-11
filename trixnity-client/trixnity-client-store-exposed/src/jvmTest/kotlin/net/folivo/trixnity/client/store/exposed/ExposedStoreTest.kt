@@ -27,7 +27,7 @@ class ExposedStoreTest : ShouldSpec({
         scope = CoroutineScope(Dispatchers.IO)
         database = createDatabase()
         newSuspendedTransaction(Dispatchers.IO, database) {
-            SchemaUtils.create(ExposedRoomTimeline)
+            SchemaUtils.create(ExposedRoomTimelineEvent)
         }
         cut = ExposedStore(
             database = database,

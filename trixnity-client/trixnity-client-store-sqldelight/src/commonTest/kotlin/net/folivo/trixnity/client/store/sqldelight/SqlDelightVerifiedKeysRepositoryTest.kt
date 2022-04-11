@@ -9,7 +9,6 @@ import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixJson
 
@@ -30,14 +29,10 @@ class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
     }
     should("save, get and delete") {
         val verifiedKey1Key = VerifiedKeysRepositoryKey(
-            userId = UserId("alice", "server"),
-            deviceId = "AAAAA",
             keyId = "key1",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
         val verifiedKey2Key = VerifiedKeysRepositoryKey(
-            userId = UserId("alice", "server"),
-            deviceId = null,
             keyId = "key2",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
