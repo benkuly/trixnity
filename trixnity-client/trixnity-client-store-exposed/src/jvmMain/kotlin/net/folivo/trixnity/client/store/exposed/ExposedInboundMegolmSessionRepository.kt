@@ -11,9 +11,9 @@ import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedInboundMegolmSession : Table("inbound_megolm_session") {
-    val senderKey = varchar("sender_key", length = 16383)
-    val sessionId = varchar("session_id", length = 16383)
-    val roomId = varchar("room_id", length = 16383)
+    val senderKey = varchar("sender_key", length = 255)
+    val sessionId = varchar("session_id", length = 255)
+    val roomId = varchar("room_id", length = 255)
     override val primaryKey = PrimaryKey(senderKey, sessionId, roomId)
     val firstKnownIndex = long("first_known_index")
     val hasBeenBackedUp = bool("has_been_backed_up")

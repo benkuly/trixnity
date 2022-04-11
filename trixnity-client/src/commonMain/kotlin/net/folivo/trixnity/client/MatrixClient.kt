@@ -266,9 +266,7 @@ class MatrixClient private constructor(
 
             val selfSignedDeviceKeys = matrixClient.olm.getSelfSignedDeviceKeys()
             selfSignedDeviceKeys.signed.keys.forEach {
-                store.keys.saveKeyVerificationState(
-                    it, userId, deviceId, KeyVerificationState.Verified(it.value)
-                )
+                store.keys.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value))
             }
             api.keys.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
             store.keys.outdatedKeys.update { it + userId }

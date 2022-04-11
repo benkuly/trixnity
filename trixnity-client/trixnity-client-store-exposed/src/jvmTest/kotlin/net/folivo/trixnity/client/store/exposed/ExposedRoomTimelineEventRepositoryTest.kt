@@ -18,7 +18,7 @@ class ExposedRoomTimelineEventRepositoryTest : ShouldSpec({
     beforeTest {
         createDatabase()
         newSuspendedTransaction {
-            SchemaUtils.create(ExposedRoomTimeline)
+            SchemaUtils.create(ExposedRoomTimelineEvent)
         }
         cut = ExposedRoomTimelineEventRepository(createMatrixJson())
     }

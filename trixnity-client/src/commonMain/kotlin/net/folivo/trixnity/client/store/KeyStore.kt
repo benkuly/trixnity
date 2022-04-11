@@ -105,8 +105,6 @@ class KeyStore(
 
     suspend fun getKeyVerificationState(
         key: Key,
-        userId: UserId,
-        deviceId: String? = null
     ): KeyVerificationState? {
         val keyId = key.keyId
         return keyId?.let {
@@ -114,8 +112,6 @@ class KeyStore(
                 VerifiedKeysRepositoryKey(
                     keyId = it,
                     keyAlgorithm = key.algorithm,
-                    userId = userId,
-                    deviceId = deviceId
                 )
             )?.let { state ->
                 if (state.keyValue == key.value) state
@@ -126,14 +122,12 @@ class KeyStore(
 
     suspend fun saveKeyVerificationState(
         key: Key,
-        userId: UserId,
-        deviceId: String? = null,
         state: KeyVerificationState
     ) {
         val keyId = key.keyId
         requireNotNull(keyId)
         keyVerificationStateCache.update(
-            VerifiedKeysRepositoryKey(keyId = keyId, keyAlgorithm = key.algorithm, userId = userId, deviceId = deviceId)
+            VerifiedKeysRepositoryKey(keyId = keyId, keyAlgorithm = key.algorithm)
         ) { state }
     }
 

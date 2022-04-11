@@ -102,7 +102,6 @@ class KeyTrustService(
     override suspend fun calculateDeviceKeysTrustLevel(deviceKeys: SignedDeviceKeys): KeySignatureTrustLevel {
         log.trace { "calculate trust level for ${deviceKeys.signed}" }
         val userId = deviceKeys.signed.userId
-        val deviceId = deviceKeys.signed.deviceId
         val signedKey = deviceKeys.signed.keys.get<Ed25519Key>()
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
@@ -110,7 +109,7 @@ class KeyTrustService(
             { olmSign.verify(deviceKeys, it) },
             signedKey,
             deviceKeys.signatures ?: mapOf(),
-            deviceKeys.getVerificationState(userId, deviceId),
+            deviceKeys.getVerificationState(),
             false
         ).also { log.trace { "calculated trust level of ${deviceKeys.signed} from $userId is $it" } }
     }
@@ -125,7 +124,7 @@ class KeyTrustService(
             { olmSign.verify(crossSigningKeys, it) },
             signedKey,
             crossSigningKeys.signatures ?: mapOf(),
-            crossSigningKeys.getVerificationState(userId),
+            crossSigningKeys.getVerificationState(),
             crossSigningKeys.signed.usage.contains(MasterKey)
         ).also { log.trace { "calculated trust level of ${crossSigningKeys.signed} from $userId is $it" } }
     }
@@ -177,7 +176,7 @@ class KeyTrustService(
                                 if (v != VerifyResult.Valid)
                                     log.warn { "signature was $v for key chain $signingCrossSigningKey ($signingUserId) ---> $signedKey ($signedUserId)" }
                             } == VerifyResult.Valid
-                        if (isValid) when (crossSigningKey.getVerificationState(signingUserId)) {
+                        if (isValid) when (crossSigningKey.getVerificationState()) {
                             is KeyVerificationState.Verified -> CrossSigned(true)
                             is KeyVerificationState.Blocked -> Blocked
                             else -> {
@@ -203,7 +202,7 @@ class KeyTrustService(
                                 if (v != VerifyResult.Valid)
                                     log.warn { "signature was $v for key chain $signingCrossSigningKey ($signingUserId) ---> $signedKey ($signedUserId)" }
                             } == VerifyResult.Valid
-                        if (isValid) when (deviceKey.getVerificationState(signingUserId, deviceKey.signed.deviceId)) {
+                        if (isValid) when (deviceKey.getVerificationState()) {
                             is KeyVerificationState.Verified -> CrossSigned(true)
                             is KeyVerificationState.Blocked -> Blocked
                             else -> searchSignaturesForTrustLevel(
@@ -238,7 +237,7 @@ class KeyTrustService(
             val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed
             if (deviceKey != null) {
                 store.keys.saveKeyVerificationState(
-                    key, deviceKey.userId, deviceKey.deviceId, KeyVerificationState.Verified(key.value)
+                    key, KeyVerificationState.Verified(key.value)
                 )
                 updateTrustLevelOfKey(userId, key)
                 try {
@@ -255,9 +254,7 @@ class KeyTrustService(
         val signedCrossSigningKeys = keys.mapNotNull { key ->
             val crossSigningKey = key.keyId?.let { store.keys.getCrossSigningKey(userId, it) }?.value?.signed
             if (crossSigningKey != null) {
-                store.keys.saveKeyVerificationState(
-                    key, crossSigningKey.userId, null, KeyVerificationState.Verified(key.value)
-                )
+                store.keys.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
                 updateTrustLevelOfKey(userId, key)
                 if (crossSigningKey.usage.contains(MasterKey)) {
                     try {
@@ -287,12 +284,14 @@ class KeyTrustService(
         }
     }
 
-    private suspend fun Keys.getVerificationState(userId: UserId, deviceId: String? = null) =
-        this.asFlow().mapNotNull { store.keys.getKeyVerificationState(it, userId, deviceId) }.firstOrNull()
+    private suspend fun Keys.getVerificationState() =
+        this.asFlow().mapNotNull { store.keys.getKeyVerificationState(it) }.firstOrNull()
 
-    private suspend fun SignedCrossSigningKeys.getVerificationState(userId: UserId) =
-        this.signed.keys.getVerificationState(userId)
+    @JvmName("getVerificationStateCsk")
+    private suspend fun SignedCrossSigningKeys.getVerificationState() =
+        this.signed.keys.getVerificationState()
 
-    private suspend fun SignedDeviceKeys.getVerificationState(userId: UserId, deviceId: String) =
-        this.signed.keys.getVerificationState(userId, deviceId)
+    @JvmName("getVerificationStateDk")
+    private suspend fun SignedDeviceKeys.getVerificationState() =
+        this.signed.keys.getVerificationState()
 }
