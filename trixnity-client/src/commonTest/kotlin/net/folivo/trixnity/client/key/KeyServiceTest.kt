@@ -4,11 +4,11 @@ import io.kotest.assertions.timing.continually
 import io.kotest.assertions.until.fixed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.beNull
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -151,6 +151,20 @@ private val body: ShouldSpec.() -> Unit = {
                 getKeysCalled shouldBe false
             }
         }
+        should("set to empty if there are no keys") {
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    GetKeys.Response(
+                        mapOf(), mapOf(),
+                        mapOf(),
+                        mapOf(), mapOf()
+                    )
+                }
+            }
+            store.keys.outdatedKeys.value = setOf(alice)
+            store.keys.getCrossSigningKeys(alice, this).first { it?.isEmpty() == true }
+            store.keys.getDeviceKeys(alice, this).first { it?.isEmpty() == true }
+        }
         context("master keys") {
             should("allow missing signature") {
                 val key = Signed<CrossSigningKeys, UserId>(
@@ -192,7 +206,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice).shouldBeNull()
+                store.keys.getCrossSigningKeys(alice).shouldBeEmpty()
                 trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add master key") {
@@ -236,7 +250,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 store.keys.outdatedKeys.value = setOf(alice)
                 store.keys.outdatedKeys.first { it.isEmpty() }
-                store.keys.getCrossSigningKeys(alice).shouldBeNull()
+                store.keys.getCrossSigningKeys(alice).shouldBeEmpty()
                 trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add self signing key") {
@@ -308,9 +322,8 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 store.keys.outdatedKeys.value = setOf(alice)
-                continually(500.milliseconds, 50.milliseconds.fixed()) {
-                    store.keys.getCrossSigningKeys(alice).shouldBeNull()
-                }
+                store.keys.outdatedKeys.first { it.isEmpty() }
+                store.keys.getCrossSigningKeys(alice).shouldBeEmpty()
                 trust.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add user signing key") {
