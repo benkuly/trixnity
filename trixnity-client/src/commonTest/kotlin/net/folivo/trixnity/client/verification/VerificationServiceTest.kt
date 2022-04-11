@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.verification
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -50,11 +49,8 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.model.keys.DeviceKeys
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmLibraryException
@@ -463,8 +459,8 @@ private val body: ShouldSpec.() -> Unit = {
     context(VerificationService::getSelfVerificationMethods.name) {
         lateinit var scope: CoroutineScope
         beforeTest {
-            scope = CoroutineScope(Dispatchers.Default)
             currentSyncState.value = SyncState.RUNNING
+            scope = CoroutineScope(Dispatchers.Default)
         }
         afterTest { scope.cancel() }
         should("return null, when sync state is not running") {
@@ -489,8 +485,13 @@ private val body: ShouldSpec.() -> Unit = {
             result.value shouldBe null
         }
         should("return null, when device keys not fetched yet") {
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf()
+            }
             val result = cut.getSelfVerificationMethods(scope)
             result.value shouldBe null
+        }
+        should("return null, when cross signing keys not fetched yet") {
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -499,7 +500,23 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).first { it?.isEmpty() == true }.shouldBeEmpty()
+            val result = cut.getSelfVerificationMethods(scope)
+            result.value shouldBe null
+        }
+        should("return empty set, when cross signing keys are fetched, but empty") {
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
+            }
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf()
+            }
+            val result = cut.getSelfVerificationMethods(scope)
+            result.value shouldBe setOf()
         }
         should("return null when already cross signed") {
             store.keys.updateDeviceKeys(aliceUserId) {
@@ -516,6 +533,14 @@ private val body: ShouldSpec.() -> Unit = {
             apiConfig.endpoints {
                 matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
                 }
+            }
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
             }
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
@@ -540,6 +565,14 @@ private val body: ShouldSpec.() -> Unit = {
             firstResult.createDeviceVerification().getOrThrow().shouldBeInstanceOf<ActiveDeviceVerification>()
         }
         should("don't add ${CrossSignedDeviceVerification::class.simpleName} when there are no cross signed devices") {
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
+            }
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -557,6 +590,14 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
+            }
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -576,6 +617,14 @@ private val body: ShouldSpec.() -> Unit = {
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
+            }
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(

@@ -213,6 +213,13 @@ class KeyService(
                         handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
                     }
                     joinedEncryptedRooms.cancel()
+
+                    // indicate, that we fetched the keys of the user
+                    userIds.forEach { userId ->
+                        store.keys.updateCrossSigningKeys(userId) { it ?: setOf() }
+                        store.keys.updateDeviceKeys(userId) { it ?: mapOf() }
+                    }
+
                     store.keys.outdatedKeys.update { it - userIds }
                 }
             }
@@ -462,12 +469,11 @@ class KeyService(
                         val ownDeviceKey = store.keys.getDeviceKey(ownUserId, ownDeviceId)?.value?.get<Ed25519Key>()
 
                         trust.trustAndSignKeys(setOfNotNull(masterKey, ownDeviceKey), ownUserId)
+                        _bootstrapRunning.value = false
                         log.debug { "finished bootstrapping" }
                     }
                 }
-        ).also {
-            _bootstrapRunning.value = false
-        }
+        )
     }
 
     override suspend fun bootstrapCrossSigningFromPassphrase(

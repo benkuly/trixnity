@@ -31,6 +31,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribe
 import kotlin.time.Duration.Companion.minutes
 
@@ -277,6 +278,7 @@ class VerificationService(
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
+            store.keys.getCrossSigningKeys(ownUserId, scope),
             store.keys.getDeviceKeys(ownUserId, scope),
             store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
                 .transformLatest { event ->
@@ -286,11 +288,19 @@ class VerificationService(
                         } ?: emit(null)
                     }
                 },
-        ) { bootstrapRunning, currentSyncState, deviceKeys, defaultKey ->
+        ) { bootstrapRunning, currentSyncState, crossSigningKeys, deviceKeys, defaultKey ->
+            log.trace {
+                "self verification preconditions: bootstrapRunning=$bootstrapRunning currentSyncState=$currentSyncState " +
+                        "crossSigningKeys=$crossSigningKeys deviceKeys=$deviceKeys defaultKey=$defaultKey"
+            }
+            // preconditions: sync running, login was successful and we are not yet cross-signed
             if (currentSyncState != SyncState.RUNNING) return@combine null
-            if (deviceKeys == null) return@combine null
+            if (deviceKeys == null || crossSigningKeys == null) return@combine null
             val ownTrustLevel = deviceKeys[ownDeviceId]?.trustLevel
             if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine null
+
+            // we need bootstrapping if this is the first device or bootstrapping is in progress
+            if (crossSigningKeys.isEmpty()) return@combine setOf()
             if (bootstrapRunning) return@combine setOf()
 
             val deviceVerificationMethod = deviceKeys.entries
@@ -310,8 +320,8 @@ class VerificationService(
                 }
 
             val recoveryKeyMethods = when (val content = defaultKey?.content) {
-                is SecretKeyEventContent.AesHmacSha2Key -> when (content.passphrase) {
-                    is SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 ->
+                is AesHmacSha2Key -> when (content.passphrase) {
+                    is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 ->
                         setOf(
                             SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
                                 keyService,
@@ -320,13 +330,13 @@ class VerificationService(
                             ),
                             SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content)
                         )
-                    is SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown, null ->
+                    is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown, null ->
                         setOf(SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content))
                 }
                 is SecretKeyEventContent.Unknown, null -> setOf()
             }
 
-            return@combine recoveryKeyMethods + deviceVerificationMethod
+            return@combine recoveryKeyMethods + deviceVerificationMethod // if empty: no other device & no key backup -> start bootstrapping
         }.stateIn(scope)
     }
 
