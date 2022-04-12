@@ -30,7 +30,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-client:trixnity-client-store-exposed"))
+                implementation(project(":trixnity-client"))
+                implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
@@ -38,8 +39,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
-                implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
-                implementation("com.h2database:h2:${Versions.h2}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
@@ -55,16 +54,3 @@ kotlin {
 //        }
     }
 }
-
-//tasks {
-//    create<JavaExec>("runJvm") {
-//        group = "run"
-//        classpath = objects.fileCollection().from(
-//            named("compileKotlinJvm"),
-//            named("compileJava"),
-//            configurations.named("jvmRuntimeClasspath")
-//        )
-//        mainClass.set("net.folivo.trixnity.examples.multiplatform.JvmAppKt")
-//        dependsOn("build")
-//    }
-//}
