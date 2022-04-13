@@ -169,6 +169,7 @@ object AuthenticationTypeSerializer : KSerializer<AuthenticationType> {
             AuthenticationType.EmailIdentity.name -> AuthenticationType.EmailIdentity
             AuthenticationType.Msisdn.name -> AuthenticationType.Msisdn
             AuthenticationType.Dummy.name -> AuthenticationType.Dummy
+            AuthenticationType.RegistrationToken.name -> AuthenticationType.RegistrationToken
             else -> AuthenticationType.Unknown(name)
         }
     }
