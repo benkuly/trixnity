@@ -22,7 +22,7 @@ object Versions {
     const val arrow = "1.0.1" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.37.3" // https://github.com/JetBrains/Exposed/releases
-    const val h2 = "2.1.210" // https://github.com/h2database/h2database/releases
+    const val h2 = "2.1.212" // https://github.com/h2database/h2database/releases
     const val thumbnailator = "0.4.17" // https://github.com/coobird/thumbnailator/tags
     const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
     const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
