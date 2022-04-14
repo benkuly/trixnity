@@ -1144,7 +1144,7 @@ class RoomService(
         outboxMessages.forEach {
             val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
-                log.warn { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
+                log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
                 store.roomOutboxMessage.update(it.transactionId) { null }
             }
         }
@@ -1157,7 +1157,7 @@ class RoomService(
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
             scope = this
         ) {
-            log.info { "start sending outbox messages" }
+            log.debug { "start sending outbox messages" }
             outboxMessages.scan(listOf<RoomOutboxMessage<*>>()) { old, new ->
                 // the flow from store.roomOutboxMessage.getAll() needs some time to get updated, when one entry is updated
                 // therefore we compare the lists and if they did not change, we do nothing (distinctUntilChanged)

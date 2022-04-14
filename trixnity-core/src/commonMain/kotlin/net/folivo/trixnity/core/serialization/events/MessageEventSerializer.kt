@@ -39,7 +39,7 @@ class MessageEventSerializer(
                 ), jsonObj
             )
         } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event of type $type" }
             decoder.json.decodeFromJsonElement(
                 MessageEvent.serializer(UnknownMessageEventContentSerializer(type)), jsonObj
             )

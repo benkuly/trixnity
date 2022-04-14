@@ -25,7 +25,7 @@ class ExposedStoreFactory(
         contentMappings: EventContentSerializerMappings,
         json: Json,
     ): Store {
-        log.info { "create missing tables and columns" }
+        log.debug { "create missing tables and columns" }
         newSuspendedTransaction(transactionDispatcher, database) {
             val tables = arrayOf(
                 ExposedAccount,
@@ -53,7 +53,7 @@ class ExposedStoreFactory(
             )
             SchemaUtils.createMissingTablesAndColumns(*tables)
         }
-        log.info { "finished create missing tables and columns" }
+        log.debug { "finished create missing tables and columns" }
 
         return ExposedStore(
             scope = scope,

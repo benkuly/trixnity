@@ -38,7 +38,7 @@ class GlobalAccountDataEventSerializer(
                 ), jsonObj
             )
         } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event of type $type" }
             decoder.json.decodeFromJsonElement(
                 GlobalAccountDataEvent.serializer(UnknownGlobalAccountDataEventContentSerializer(type)), jsonObj
             )
