@@ -30,7 +30,7 @@ class DecryptedMegolmEventSerializer(
         return try {
             decoder.json.decodeFromJsonElement(DecryptedMegolmEvent.serializer(contentSerializer), jsonObj)
         } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event" }
+            log.warn(error) { "could not deserialize event of type $type" }
             decoder.json.decodeFromJsonElement(
                 DecryptedMegolmEvent.serializer(UnknownRoomEventContentSerializer(type)), jsonObj
             )
