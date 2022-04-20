@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.DecryptionException
@@ -220,8 +219,6 @@ class RoomService(
                     hasGapBefore = it.limited ?: false
                 )
                 it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                it.events?.filterIsInstance<MessageEvent<*>>()?.lastOrNull()
-                    ?.also { event -> setLastMessageEvent(event) }
                 it.events?.forEach { event -> syncOutboxMessage(event) }
             }
             room.value.summary?.also { roomSummary ->
@@ -357,14 +354,6 @@ class RoomService(
         store.room.update(roomId) { oldRoom ->
             oldRoom?.copy(name = roomName)
                 ?: Room(roomId = roomId, name = roomName)
-        }
-    }
-
-    internal suspend fun setLastMessageEvent(event: MessageEvent<*>) {
-        val eventTime = Instant.fromEpochMilliseconds(event.originTimestamp)
-        store.room.update(event.roomId) { oldRoom ->
-            oldRoom?.copy(lastMessageEventAt = eventTime, lastMessageEventId = event.id)
-                ?: Room(roomId = event.roomId, lastMessageEventAt = eventTime, lastMessageEventId = event.id)
         }
     }
 

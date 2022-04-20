@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client
 
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.Room
@@ -11,8 +10,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.configurePortableMockEngine
 import net.folivo.trixnity.testutils.mockEngineFactory
 
-val simpleRoom =
-    Room(RoomId("room", "server"), lastMessageEventAt = Clock.System.now(), lastEventId = EventId("\$event"))
+val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 
 object NoopRepositoryTransactionManager : RepositoryTransactionManager {
     override suspend fun <T> transaction(block: suspend () -> T): T = block()
