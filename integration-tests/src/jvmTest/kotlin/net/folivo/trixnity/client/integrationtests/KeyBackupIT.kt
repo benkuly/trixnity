@@ -5,10 +5,13 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
+import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -28,7 +31,6 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertNotNull
 
 @Testcontainers
 class KeyBackupIT {
@@ -135,12 +137,15 @@ class KeyBackupIT {
                         .verify(bootstrap.recoveryKey).getOrThrow()
                 }
 
-                val lastEvent = client3.room.getLastMessageEvent(roomId, scope).first { it?.value != null }
-                assertNotNull(lastEvent)
-                lastEvent.first { it?.content != null }?.content?.getOrThrow()
+                val events = client3.room.getLastTimelineEvents(roomId, scope)
+                    .toFlowList(MutableStateFlow(2))
+                    .map { it.map { it.value?.eventId } }
+                    .first { it.size == 2 }
+                events[0]!!.let { client3.room.getTimelineEvent(it, roomId, scope) }
+                    .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
-                lastEvent.value?.previousEventId?.let { client3.room.getTimelineEvent(it, roomId, scope) }
-                    ?.first { it?.content != null }?.content?.getOrThrow()
+                events[1]!!.let { client3.room.getTimelineEvent(it, roomId, scope) }
+                    .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()
             }

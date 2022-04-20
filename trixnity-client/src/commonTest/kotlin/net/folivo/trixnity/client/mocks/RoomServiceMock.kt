@@ -82,14 +82,6 @@ class RoomServiceMock : IRoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override suspend fun getLastMessageEvent(
-        roomId: RoomId,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<StateFlow<TimelineEvent?>?> {
-        throw NotImplementedError()
-    }
-
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         throw NotImplementedError()
     }

@@ -124,12 +124,6 @@ interface IRoomService {
         syncResponseBufferSize: Int = 10,
     ): Flow<TimelineEvent>
 
-    suspend fun getLastMessageEvent(
-        roomId: RoomId,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
-    ): StateFlow<StateFlow<TimelineEvent?>?>
-
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
 
     suspend fun abortSendMessage(transactionId: String)
@@ -1078,21 +1072,6 @@ class RoomService(
                         .forEach { send(it) }
                 }
         }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getLastMessageEvent(
-        roomId: RoomId,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<StateFlow<TimelineEvent?>?> {
-        return store.room.get(roomId).transformLatest { room ->
-            coroutineScope {
-                if (room?.lastMessageEventId != null)
-                    emit(getTimelineEvent(room.lastMessageEventId, roomId, this, decryptionTimeout))
-                else emit(null)
-            }
-        }.stateIn(coroutineScope)
-    }
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
