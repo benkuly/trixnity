@@ -509,7 +509,7 @@ class RoomService(
     internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
         memberEvent.getRoomId()?.let { roomId ->
             val room = store.room.get(roomId).value
-            if (room?.isDirect == true && ownUserId != memberEvent.getSender()) {
+            if (room?.isDirect == true && ownUserId.full != memberEvent.getStateKey()) {
                 store.room.update(roomId) { oldRoom ->
                     oldRoom?.copy(avatarUrl = memberEvent.content.avatarUrl?.ifEmpty { null })
                 }
