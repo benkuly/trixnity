@@ -316,7 +316,7 @@ Linux:
   https://cmake.org/files/v3.23/cmake-3.23.1-linux-x86_64.sh).
 - libncurses5
 - ninja-build
-- mingw-w64 (Ubuntu: `sudo apt install x86_64-w64-mingw32-g++`)
+- mingw-w64
 
 Windows: Install msys2. Add cmake and run in msys2 mingw64
 shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
