@@ -311,7 +311,7 @@ sdk.dir=/path/to/android/sdk
 
 Linux:
 
-- cmake `3.22.1` (e.g. by running `sudo ./cmake-3.23.1-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
+- cmake `3.23.1` (e.g. by running `sudo ./cmake-3.23.1-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
   from
   https://cmake.org/files/v3.23/cmake-3.23.1-linux-x86_64.sh).
 - libncurses5
