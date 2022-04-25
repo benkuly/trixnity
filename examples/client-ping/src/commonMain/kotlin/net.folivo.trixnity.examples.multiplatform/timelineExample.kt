@@ -4,21 +4,18 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlinx.coroutines.flow.debounce
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.subscribe
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(FlowPreview::class)
 suspend fun timelineExample() = coroutineScope {
     val scope = CoroutineScope(Dispatchers.Default)
 
@@ -38,16 +35,11 @@ suspend fun timelineExample() = coroutineScope {
         scope = scope,
     ).getOrThrow()
 
-    val startTime = Clock.System.now()
-
-    matrixClient.api.sync.subscribe<MegolmEncryptedEventContent> { event ->
-        require(event is MessageEvent<MegolmEncryptedEventContent>)
-        if (event.roomId == roomId) {
-            if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
-                delay(500)
+    val job1 = launch {
+        matrixClient.room.getTimelineEventsFromNowOn().collect { timelineEvent ->
+            if (timelineEvent.roomId == roomId) {
                 try {
-                    val decryptedEvent = matrixClient.olm.event.decryptMegolm(event)
-                    val content = decryptedEvent.content
+                    val content = timelineEvent.content?.getOrNull()
                     if (content is TextMessageEventContent && content.body.startsWith("ping")) {
                         matrixClient.room.sendMessage(roomId) {
                             text("pong to ${content.body}")
@@ -60,23 +52,23 @@ suspend fun timelineExample() = coroutineScope {
         }
     }
 
-    val job = launch {
+    val job2 = launch {
         matrixClient.room.getLastTimelineEvents(roomId, this)
             .toFlowList(MutableStateFlow(10))
+            .debounce(100.milliseconds)
             .collectLatest { timelineEvents ->
-                timelineEvents.forEach { timelineEvent ->
+                timelineEvents.reversed().forEach { timelineEvent ->
                     val event = timelineEvent.value?.event
                     val content = timelineEvent.value?.content?.getOrNull()
                     val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
-                    when {
-                        content is RoomMessageEventContent -> println("${sender}: ${content.body}")
-                        content == null -> println("${sender}: not yet decrypted")
-                        event is MessageEvent -> println("${sender}: $event")
-                        event is StateEvent -> println("${sender}: $event")
+                    when (content) {
+                        is RoomMessageEventContent -> println("${sender}: ${content.body}")
+                        null -> println("${sender}: not yet decrypted")
                         else -> {
                         }
                     }
                 }
+                println("### END OF TIMELINE ###")
             }
     }
 
@@ -85,5 +77,6 @@ suspend fun timelineExample() = coroutineScope {
     delay(300000)
     scope.cancel()
 
-    job.cancelAndJoin()
+    job1.cancelAndJoin()
+    job2.cancelAndJoin()
 }
