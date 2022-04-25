@@ -2,10 +2,10 @@ FROM ubuntu:latest
 
 # make sure to update Versions.kt, when you change something here
 ARG ANDROID_CLI_TOOLS=7583922
-ARG ANDROID_PLATFORM=30
-ARG ANDROID_BUILD_TOOLS=30.0.3
+ARG ANDROID_PLATFORM=32
+ARG ANDROID_BUILD_TOOLS=32.0.0
 ARG ANDROID_NDK=23.1.7779620
-ARG CMAKE=3.22.1
+ARG CMAKE=3.23.1
 
 ENV ANDROID_SDK_ROOT=/android
 
@@ -13,6 +13,7 @@ ARG ANDROID_SDK_MANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
+    apt-get install apt-utils && \
     apt-get upgrade -y && \
     apt-get install -y docker.io wget unzip build-essential ninja-build mingw-w64 libncurses5 libcurl4-openssl-dev openjdk-17-jdk firefox
 RUN wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE}/cmake-${CMAKE}-linux-x86_64.sh" && \
