@@ -34,7 +34,7 @@ class ExposedStoreFactory(
         log.debug { "create missing tables and columns" }
         newSuspendedTransaction(transactionDispatcher, database) {
             val allTables = arrayOf(
-                ExposedVersion,
+                ExposedDbVersion,
                 ExposedAccount,
                 ExposedCrossSigningKeys,
                 ExposedDeviceKeys,
@@ -60,8 +60,8 @@ class ExposedStoreFactory(
             )
             withDataBaseLock {
                 SchemaUtils.createMissingTablesAndColumns(*allTables)
-                val currentDatabaseVersion = ExposedVersion.select { ExposedVersion.id.eq(0L) }.firstOrNull()
-                    ?.let { it[ExposedVersion.version] } ?: 0
+                val currentDatabaseVersion = ExposedDbVersion.select { ExposedDbVersion.id.eq(0L) }.firstOrNull()
+                    ?.let { it[ExposedDbVersion.version] } ?: 0
                 when {
                     currentDatabaseVersion < 1 -> {
                         execInBatch(
@@ -74,8 +74,8 @@ class ExposedStoreFactory(
                     }
                     else -> {}
                 }
-                ExposedVersion.replace {
-                    it[ExposedVersion.id] = 0
+                ExposedDbVersion.replace {
+                    it[ExposedDbVersion.id] = 0
                     it[version] = currentVersion
                 }
             }
