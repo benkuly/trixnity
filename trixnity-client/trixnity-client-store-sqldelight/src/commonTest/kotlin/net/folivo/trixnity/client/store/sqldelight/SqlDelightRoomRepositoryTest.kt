@@ -5,7 +5,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
@@ -26,8 +25,8 @@ class SqlDelightRoomRepositoryTest : ShouldSpec({
     should("save, get and delete") {
         val key1 = RoomId("room1", "server")
         val key2 = RoomId("room2", "server")
-        val room1 = Room(key1, lastMessageEventAt = Clock.System.now(), lastEventId = null)
-        val room2 = Room(key1, lastMessageEventAt = Clock.System.now(), lastEventId = null)
+        val room1 = Room(key1, lastEventId = null)
+        val room2 = Room(key1, lastEventId = null)
         val room2Copy = room2.copy(lastEventId = EventId("\$Event2"))
 
         cut.save(key1, room1)
@@ -42,8 +41,8 @@ class SqlDelightRoomRepositoryTest : ShouldSpec({
     should("get all") {
         val key1 = RoomId("room1", "server")
         val key2 = RoomId("room2", "server")
-        val room1 = Room(key1, lastMessageEventAt = Clock.System.now(), lastEventId = null)
-        val room2 = Room(key1, lastMessageEventAt = Clock.System.now(), lastEventId = null)
+        val room1 = Room(key1, lastEventId = null)
+        val room2 = Room(key1, lastEventId = null)
 
         cut.save(key1, room1)
         cut.save(key2, room2)

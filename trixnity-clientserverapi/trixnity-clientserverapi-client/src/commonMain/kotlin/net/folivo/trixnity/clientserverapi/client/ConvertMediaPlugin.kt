@@ -18,10 +18,7 @@ object ConvertMediaPlugin : HttpClientPlugin<Unit, Unit> {
 
     override fun install(plugin: Unit, scope: HttpClient) {
         scope.requestPipeline.intercept(HttpRequestPipeline.Transform) { body ->
-            if (body !is Media) {
-                proceedWith(body)
-                return@intercept
-            }
+            if (body !is Media) return@intercept
             proceedWith(
                 object : OutgoingContent.ReadChannelContent() {
                     override fun readFrom() = body.content

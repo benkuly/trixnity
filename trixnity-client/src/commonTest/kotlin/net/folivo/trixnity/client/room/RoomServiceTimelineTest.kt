@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
@@ -83,13 +82,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         context("with gap") {
             context("without previous events") {
                 should("add elements to timeline") {
-                    store.room.update(room) {
-                        Room(
-                            roomId = room,
-                            lastMessageEventAt = Instant.fromEpochMilliseconds(0),
-                            lastEventId = null
-                        )
-                    }
+                    store.room.update(room) { Room(roomId = room, lastEventId = null) }
                     cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "previous", true)
                     assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
                         event shouldBe event1
@@ -117,13 +110,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("add one element to timeline") {
-                    store.room.update(room) {
-                        Room(
-                            roomId = room,
-                            lastMessageEventAt = Instant.fromEpochMilliseconds(0),
-                            lastEventId = null
-                        )
-                    }
+                    store.room.update(room) { Room(roomId = room, lastEventId = null) }
                     cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", true)
                     assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
                         event shouldBe event1
@@ -137,13 +124,7 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
             context("with previous events") {
                 should("add elements to timeline") {
-                    store.room.update(room) {
-                        Room(
-                            roomId = room,
-                            lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
-                            lastEventId = event1.id
-                        )
-                    }
+                    store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                     store.roomTimeline.addAll(
                         listOf(
                             TimelineEvent(
@@ -183,13 +164,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 should("add one element to timeline") {
-                    store.room.update(room) {
-                        Room(
-                            roomId = room,
-                            lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
-                            lastEventId = event1.id
-                        )
-                    }
+                    store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                     store.roomTimeline.addAll(
                         listOf(
                             TimelineEvent(
@@ -224,13 +199,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         }
         context("without gap") {
             should("add elements to timeline") {
-                store.room.update(room) {
-                    Room(
-                        roomId = room,
-                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
-                        lastEventId = event1.id
-                    )
-                }
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                 store.roomTimeline.addAll(
                     listOf(
                         TimelineEvent(
@@ -270,13 +239,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                 }
             }
             should("add one element to timeline") {
-                store.room.update(room) {
-                    Room(
-                        roomId = room,
-                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
-                        lastEventId = event1.id
-                    )
-                }
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                 store.roomTimeline.addAll(
                     listOf(
                         TimelineEvent(
@@ -310,13 +273,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         }
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
-                store.room.update(room) {
-                    Room(
-                        roomId = room,
-                        lastMessageEventAt = Instant.fromEpochMilliseconds(event1.originTimestamp),
-                        lastEventId = event1.id
-                    )
-                }
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                 store.roomOutboxMessage.update("transactionId1") {
                     RoomOutboxMessage(
                         "transactionId1",
