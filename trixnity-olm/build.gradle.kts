@@ -13,7 +13,7 @@ plugins {
 }
 
 val currentPlatform: String = com.sun.jna.Platform.RESOURCE_PREFIX
-val windowsAmd64Platform = "windows-x86-64"
+val windowsAmd64Platform = "win32-x86-64"
 val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
 val olmRootDir = buildDir.resolve("olm").resolve(Versions.olm)
 val olmTmpDir = buildDir.resolve("tmp")
