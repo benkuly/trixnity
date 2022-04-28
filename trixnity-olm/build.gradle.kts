@@ -246,6 +246,9 @@ val buildOlmWindows by tasks.registering(Exec::class) {
     outputs.cacheIf { true }
     inputs.files(olmCMakeLists)
     outputs.dir(olmBuildWinAmd64Dir)
+    doLast {
+        olmBuildWinAmd64Dir.resolve("libolm.dll").renameTo(olmBuildWinAmd64Dir.resolve("olm.dll"))
+    }
 }
 
 val prepareBuildOlmCurrentPlatform by tasks.registering(Exec::class) {
@@ -278,7 +281,7 @@ val buildOlm by tasks.registering {
 val installOlmToResourcesCurrentPlatform by tasks.registering(Copy::class) {
     group = "olm"
     from(olmBuildCurrentPlatformDir)
-    include("libolm.so", "libolm.dll", "libolm.dylib")
+    include("libolm.so", "olm.dll", "libolm.dylib")
     into(jvmProcessedResourcesDir.resolve(currentPlatform))
     onlyIf { !HostManager.hostIsMingw }
     dependsOn(buildOlm)
@@ -287,7 +290,7 @@ val installOlmToResourcesCurrentPlatform by tasks.registering(Copy::class) {
 val installOlmToResourcesWindows by tasks.registering(Copy::class) {
     group = "olm"
     from(olmBuildWinAmd64Dir)
-    include("libolm.dll")
+    include("olm.dll")
     into(jvmProcessedResourcesDir.resolve(windowsAmd64Platform))
     dependsOn(buildOlm)
 }
