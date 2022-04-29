@@ -35,17 +35,17 @@ kotlin {
             kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
         }
     }
-//    js(IR) {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
+    js(IR) {
+        browser {
+            testTask {
+                useKarma {
+                    useFirefoxHeadless()
+                    useConfigDirectory(rootDir.resolve("karma.config.d"))
+                }
+            }
+        }
+        binaries.executable()
+    }
 
 //    linuxX64()
 //    mingwX64()

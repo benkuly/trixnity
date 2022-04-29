@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.jvm.JvmName
 
 private val log = KotlinLogging.logger {}
 

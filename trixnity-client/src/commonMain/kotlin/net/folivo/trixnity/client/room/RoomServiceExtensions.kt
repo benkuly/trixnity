@@ -8,6 +8,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import kotlin.jvm.JvmName
 
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
