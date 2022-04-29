@@ -74,17 +74,17 @@ kotlin {
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
-        val androidAndJvmMain by creating {
+        val jvmAndAndroidMain by creating {
             dependsOn(commonMain)
         }
         val jvmMain by getting {
-            dependsOn(androidAndJvmMain)
+            dependsOn(jvmAndAndroidMain)
             dependencies {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
         }
         val androidMain by getting {
-            dependsOn(androidAndJvmMain)
+            dependsOn(jvmAndAndroidMain)
         }
 //        val jsMain by getting
 //        val nativeMain = create("nativeMain") {

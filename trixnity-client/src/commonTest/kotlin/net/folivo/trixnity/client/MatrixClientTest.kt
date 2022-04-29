@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
@@ -332,7 +333,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope
-            ).getOrThrow()!!
+            ).getOrThrow().shouldNotBeNull()
 
             inMemoryStore.account.accessToken.value = null
             inMemoryStore.account.syncBatchToken.value = "sync"
@@ -352,7 +353,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope
-            ).getOrThrow()!!
+            ).getOrThrow().shouldNotBeNull()
 
             cut.loginState.first { it == LOGGED_IN }
             cut.logout().getOrThrow()

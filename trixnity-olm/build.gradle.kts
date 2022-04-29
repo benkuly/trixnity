@@ -126,11 +126,11 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val jvmTest by getting {}
+        val jvmTest by getting
         val androidTest by getting {
             kotlin.srcDirs("src/jvmTest/kotlin")
             dependencies {
-                implementation("androidx.test:runner:1.4.0")
+                implementation("androidx.test:runner:${Versions.androidxTestRunner}")
             }
         }
         val jsTest by getting
