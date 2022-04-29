@@ -17,6 +17,7 @@ import io.ktor.http.ContentType.Image.JPEG
 import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel

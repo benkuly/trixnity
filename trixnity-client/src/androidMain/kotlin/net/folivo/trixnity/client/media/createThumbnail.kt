@@ -17,14 +17,13 @@ actual suspend fun createThumbnail(
 ): Thumbnail =
     withContext(Dispatchers.IO) {
         val output = ByteArrayOutputStream()
-        val thumbnail = kotlin.runCatching {
-            ThumbnailUtils.extractThumbnail(BitmapFactory.decodeByteArray(file, 0, file.size), maxWidth, maxHeight).also {
-                it.compress(Bitmap.CompressFormat.PNG, 80, output)
-            }
-        }
-        thumbnail.exceptionOrNull()?.let { throw ThumbnailCreationException(it) }
-        val width = thumbnail.getOrNull()?.width
-        val height = thumbnail.getOrNull()?.height
-        thumbnail.getOrNull()?.recycle()
+        val thumbnail =
+            ThumbnailUtils.extractThumbnail(BitmapFactory.decodeByteArray(file, 0, file.size), maxWidth, maxHeight)
+                .also {
+                    it.compress(Bitmap.CompressFormat.PNG, 80, output)
+                }
+        val width = thumbnail?.width
+        val height = thumbnail?.height
+        thumbnail?.recycle()
         Thumbnail(output.toByteArray(), ContentType.Image.PNG, width, height)
     }

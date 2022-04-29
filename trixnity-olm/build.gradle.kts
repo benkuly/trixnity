@@ -68,6 +68,7 @@ kotlin {
                 useKarma {
                     useFirefoxHeadless()
                     useConfigDirectory(rootDir.resolve("karma.config.d"))
+                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }
             }
         }

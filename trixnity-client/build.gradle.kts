@@ -41,6 +41,7 @@ kotlin {
                 useKarma {
                     useFirefoxHeadless()
                     useConfigDirectory(rootDir.resolve("karma.config.d"))
+                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }
             }
         }
@@ -86,7 +87,7 @@ kotlin {
         val androidMain by getting {
             dependsOn(jvmAndAndroidMain)
         }
-//        val jsMain by getting
+        val jsMain by getting
 //        val nativeMain = create("nativeMain") {
 //            dependsOn(commonMain)
 //        }
@@ -115,7 +116,7 @@ kotlin {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-//        val jsTest by getting
+        val jsTest by getting
 //        val nativeTest = create("nativeTest") {
 //            dependsOn(commonTest)
 //        }

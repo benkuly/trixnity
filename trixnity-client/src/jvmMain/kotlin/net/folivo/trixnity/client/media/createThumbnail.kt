@@ -16,16 +16,13 @@ actual suspend fun createThumbnail(
 ): Thumbnail =
     withContext(Dispatchers.IO) {
         val output = ByteArrayOutputStream()
-        val thumbnail = kotlin.runCatching {
-            Thumbnails.of(ByteArrayInputStream(file))
-                .size(maxWidth, maxHeight)
-                .asBufferedImage()
-                .also {
-                    ImageIO.write(it, "jpg", output)
-                }
-        }
-        thumbnail.exceptionOrNull()?.let { throw ThumbnailCreationException(it) }
-        val width = thumbnail.getOrNull()?.width
-        val height = thumbnail.getOrNull()?.height
+        val thumbnail = Thumbnails.of(ByteArrayInputStream(file))
+            .size(maxWidth, maxHeight)
+            .asBufferedImage()
+            .also {
+                ImageIO.write(it, "jpg", output)
+            }
+        val width = thumbnail?.width
+        val height = thumbnail?.height
         Thumbnail(output.toByteArray(), ContentType.Image.JPEG, width, height)
     }
