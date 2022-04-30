@@ -2,7 +2,6 @@ import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest
-import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
 
@@ -66,7 +65,8 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useFirefoxHeadless()
+                    useChromiumHeadless() // FIXME
+//                    useFirefoxHeadless()
                     useConfigDirectory(rootDir.resolve("karma.config.d"))
                     webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }
@@ -174,12 +174,6 @@ kotlin {
                 }
             }
         }
-    }
-}
-
-tasks.withType<Kotlin2JsCompile> {
-    kotlinOptions {
-        freeCompilerArgs += "-Xir-property-lazy-initialization"
     }
 }
 
