@@ -1,21 +1,7 @@
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-}
-
-android {
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
-    defaultConfig {
-        minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    sourceSets.getByName("main") {
-        manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    }
 }
 
 kotlin {
@@ -28,12 +14,6 @@ kotlin {
         }
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
-        }
-    }
-    android {
-        publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
         }
     }
     js(IR) {
@@ -77,17 +57,10 @@ kotlin {
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
-        val jvmAndAndroidMain by creating {
-            dependsOn(commonMain)
-        }
         val jvmMain by getting {
-            dependsOn(jvmAndAndroidMain)
             dependencies {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
-        }
-        val androidMain by getting {
-            dependsOn(jvmAndAndroidMain)
         }
         val jsMain by getting
 //        val nativeMain = create("nativeMain") {

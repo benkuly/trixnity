@@ -14,9 +14,7 @@ class Thumbnail(
     val height: Int? = null
 )
 
-//expect suspend fun createThumbnail(file: ByteArray, contentType: ContentType, maxWidth: Int, maxHeight: Int): Thumbnail
-
-suspend fun createThumbnail(file: ByteArray, contentType: ContentType, maxWidth: Int, maxHeight: Int): Thumbnail {
+suspend fun createThumbnail(file: ByteArray, maxWidth: Int, maxHeight: Int): Thumbnail {
     val image = VfsFileFromData(file).readNativeImage()
     val resizedImage = image.resizedUpTo(maxWidth, maxHeight)
     return Thumbnail(resizedImage.encode(PNG), ContentType.Image.PNG, resizedImage.width, resizedImage.height)
