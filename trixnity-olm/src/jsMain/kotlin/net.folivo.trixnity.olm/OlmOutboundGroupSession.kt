@@ -5,13 +5,17 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
         rethrow { js("new Olm.OutboundGroupSession()") }.unsafeCast<OlmOutboundGroupSessionPointer>()
 
     actual companion object {
-        actual fun create(): OlmOutboundGroupSession =
-            OlmOutboundGroupSession()
+        actual suspend fun create(): OlmOutboundGroupSession {
+            initOlm()
+            return OlmOutboundGroupSession()
                 .apply { rethrow { ptr.create() } }
+        }
 
-        actual fun unpickle(key: String, pickle: String): OlmOutboundGroupSession =
-            OlmOutboundGroupSession()
+        actual suspend fun unpickle(key: String, pickle: String): OlmOutboundGroupSession {
+            initOlm()
+            return OlmOutboundGroupSession()
                 .apply { rethrow { ptr.unpickle(key, pickle) } }
+        }
     }
 
     actual val sessionId: String get() = rethrow { ptr.session_id() }

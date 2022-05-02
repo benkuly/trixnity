@@ -7,13 +7,18 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     internal actual val ptr: OlmAccountPointer = rethrow { js("new Olm.Account()") }.unsafeCast<OlmAccountPointer>()
 
     actual companion object {
-        actual fun create(): OlmAccount = OlmAccount()
-            .apply { rethrow { ptr.create() } }
+        actual suspend fun create(): OlmAccount {
+            initOlm()
+            return OlmAccount()
+                .apply { rethrow { ptr.create() } }
+        }
 
-        actual fun unpickle(key: String, pickle: String): OlmAccount =
-            OlmAccount().apply {
+        actual suspend fun unpickle(key: String, pickle: String): OlmAccount {
+            initOlm()
+            return OlmAccount().apply {
                 rethrow { ptr.unpickle(key, pickle) }
             }
+        }
     }
 
     actual val identityKeys: OlmIdentityKeys get() = Json.decodeFromString(rethrow { ptr.identity_keys() })

@@ -3,12 +3,15 @@ package net.folivo.trixnity.olm
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmPkSigningTest {
 
     @Test
-    fun signing() = initTest {
+    fun signing() = runTest {
         freeAfter(OlmPkSigning.create(), OlmUtility.create()) { pkSigning, utility ->
             val publicKey = pkSigning.publicKey
             publicKey shouldNot beBlank()
@@ -21,7 +24,7 @@ class OlmPkSigningTest {
     }
 
     @Test
-    fun createWithPrivateKey() = initTest {
+    fun createWithPrivateKey() = runTest {
         freeAfter(
             OlmPkSigning.create("p/fiOzzdWmXCUUWO6XUctZP6Q0rhNz9RAJ/goUJVbwk"),
             OlmUtility.create()

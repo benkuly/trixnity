@@ -4,7 +4,10 @@ actual class OlmSAS private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSASPointer = rethrow { js("new Olm.SAS()") }.unsafeCast<OlmSASPointer>()
 
     actual companion object {
-        actual fun create(): OlmSAS = OlmSAS()
+        actual suspend fun create(): OlmSAS {
+            initOlm()
+            return OlmSAS()
+        }
     }
 
     actual val publicKey: String get() = rethrow { ptr.get_pubkey() }

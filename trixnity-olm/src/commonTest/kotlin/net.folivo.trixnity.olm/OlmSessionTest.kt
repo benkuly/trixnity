@@ -3,12 +3,15 @@ package net.folivo.trixnity.olm
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmSessionTest {
 
     @Test
-    fun encryptWithOneTimeKey() = initTest {
+    fun encryptWithOneTimeKey() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -31,7 +34,7 @@ class OlmSessionTest {
 
 
     @Test
-    fun encryptAfterOneTimeKey() = initTest {
+    fun encryptAfterOneTimeKey() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -59,7 +62,7 @@ class OlmSessionTest {
 
 
     @Test
-    fun sessionIdShouldBeSameOnBothEnds() = initTest {
+    fun sessionIdShouldBeSameOnBothEnds() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -77,7 +80,7 @@ class OlmSessionTest {
     }
 
     @Test
-    fun matchesInboundSession() = initTest {
+    fun matchesInboundSession() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             val aliceIdentityKey = aliceAccount.identityKeys.curve25519
@@ -102,7 +105,7 @@ class OlmSessionTest {
     }
 
     @Test
-    fun description_shouldNotBeBlank() = initTest {
+    fun description_shouldNotBeBlank() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -114,7 +117,7 @@ class OlmSessionTest {
     }
 
     @Test
-    fun pickle() = initTest {
+    fun pickle() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -126,7 +129,7 @@ class OlmSessionTest {
     }
 
     @Test
-    fun unpickleAccount() = initTest {
+    fun unpickleAccount() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)

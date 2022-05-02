@@ -5,12 +5,18 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmOutboundGroupSessionTest {
 
     @Test
-    fun createOutboundSession() = initTest {
+    fun createOutboundSession() = runTest {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             outboundSession.sessionId shouldNot beBlank()
             outboundSession.sessionKey shouldNot beBlank()
@@ -19,7 +25,7 @@ class OlmOutboundGroupSessionTest {
     }
 
     @Test
-    fun encryptMessage() = initTest {
+    fun encryptMessage() = runTest {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             outboundSession.encrypt("I'm clear!") shouldNot beBlank()
             outboundSession.messageIndex shouldBe 1
@@ -27,10 +33,10 @@ class OlmOutboundGroupSessionTest {
     }
 
     @Test
-    fun create_shouldHaveUniqueIdAndKey() = initTest {
+    fun create_shouldHaveUniqueIdAndKey() = runTest {
         // This test validates random series are provide enough random values.
         val size = 10
-        val sessions = generateSequence { OlmOutboundGroupSession.create() }.take(size).toList()
+        val sessions = flow { while (true) emit(OlmOutboundGroupSession.create()) }.take(size).toList()
         assertSoftly {
             sessions.map { it.sessionId }.toSet() shouldHaveSize size
             sessions.map { it.sessionKey }.toSet() shouldHaveSize size
@@ -39,14 +45,14 @@ class OlmOutboundGroupSessionTest {
     }
 
     @Test
-    fun pickle() = initTest {
+    fun pickle() = runTest {
         freeAfter(OlmOutboundGroupSession.create()) { session ->
             session.pickle("someKey") shouldNot beBlank()
         }
     }
 
     @Test
-    fun unpickle() = initTest {
+    fun unpickle() = runTest {
         val pickle = freeAfter(OlmOutboundGroupSession.create()) { session ->
             session.pickle("someKey") to session.sessionId
         }

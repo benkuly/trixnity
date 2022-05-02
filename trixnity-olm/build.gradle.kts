@@ -65,8 +65,7 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useChromiumHeadless() // FIXME
-//                    useFirefoxHeadless()
+                    useFirefoxHeadless()
                     useConfigDirectory(rootDir.resolve("karma.config.d"))
                     webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }

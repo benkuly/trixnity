@@ -6,4 +6,4 @@ data class OlmVersion(
     val patch: Int
 )
 
-expect val olmVersion: OlmVersion
+expect suspend fun getOlmVersion(): OlmVersion

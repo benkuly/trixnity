@@ -7,7 +7,8 @@ actual class OlmPkDecryption private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        actual fun create(privateKey: String?): OlmPkDecryption {
+        actual suspend fun create(privateKey: String?): OlmPkDecryption {
+            initOlm()
             val ptr: PkDecryption = rethrow { js("new Olm.PkDecryption()") }.unsafeCast<OlmPkDecryptionPointer>()
             val publicKey = rethrow {
                 privateKey?.let { ptr.init_with_private_key(it.decodeUnpaddedBase64Bytes().unsafeCast<Uint8Array>()) }
@@ -16,7 +17,8 @@ actual class OlmPkDecryption private constructor(
             return OlmPkDecryption(ptr, publicKey)
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmPkDecryption {
+        actual suspend fun unpickle(key: String, pickle: String): OlmPkDecryption {
+            initOlm()
             val ptr: PkDecryption = rethrow { js("new Olm.PkDecryption()") }.unsafeCast<OlmPkDecryptionPointer>()
             return OlmPkDecryption(ptr, rethrow { ptr.unpickle(key, pickle) })
         }

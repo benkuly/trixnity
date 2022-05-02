@@ -8,7 +8,8 @@ actual class OlmPkSigning private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        actual fun create(privateKey: String?): OlmPkSigning {
+        actual suspend fun create(privateKey: String?): OlmPkSigning {
+            initOlm()
             val ptr: PkSigning = rethrow { js("new Olm.PkSigning()") }.unsafeCast<OlmPkSigningPointer>()
             val newPrivateKey = privateKey?.decodeUnpaddedBase64Bytes()?.unsafeCast<Uint8Array>() ?: ptr.generate_seed()
             val publicKey = rethrow { ptr.init_with_seed(newPrivateKey) }

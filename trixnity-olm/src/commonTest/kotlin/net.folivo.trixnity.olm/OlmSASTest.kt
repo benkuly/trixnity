@@ -3,11 +3,14 @@ package net.folivo.trixnity.olm
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmSASTest {
     @Test
-    fun testSASCode() = initTest {
+    fun testSASCode() = runTest {
         freeAfter(OlmSAS.create(), OlmSAS.create()) { aliceSAS, bobSAS ->
             val alicePKey = aliceSAS.publicKey
             val bobPKey = bobSAS.publicKey

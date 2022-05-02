@@ -6,7 +6,10 @@ actual class OlmUtility private constructor() : WantsToBeFree {
     internal actual val ptr: OlmUtilityPointer = rethrow { js("new Olm.Utility()") }.unsafeCast<OlmUtilityPointer>()
 
     actual companion object {
-        actual fun create(): OlmUtility = OlmUtility()
+        actual suspend fun create(): OlmUtility {
+            initOlm()
+            return OlmUtility()
+        }
     }
 
     actual override fun free() = ptr.free()
