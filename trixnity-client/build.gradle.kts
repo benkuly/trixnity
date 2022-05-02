@@ -74,6 +74,7 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+                implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
         val jvmAndAndroidMain by creating {

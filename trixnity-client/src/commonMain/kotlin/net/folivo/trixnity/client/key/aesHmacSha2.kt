@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import com.soywiz.krypto.HMAC
 import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
@@ -7,8 +8,7 @@ import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import kotlin.experimental.and
 
-// TODO can be implemented multiplatform with okio or krypto
-expect fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray
+internal fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray = HMAC.hmacSHA256(key, data).bytes
 
 internal class DerivedKeys(val aesKey: ByteArray, val hmacKey: ByteArray)
 
