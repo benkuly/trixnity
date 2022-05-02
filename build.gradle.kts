@@ -2,7 +2,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
+        maven("https://www.jetbrains.com/intellij-repository/releases")
     }
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
