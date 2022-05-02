@@ -39,10 +39,10 @@ import kotlin.random.Random
 class OlmSignServiceTest : ShouldSpec({
 
     val json = createMatrixJson()
-    val account = OlmAccount.create()
-    val aliceSigningAccount = OlmAccount.create()
-    val bobSigningAccount = OlmAccount.create()
-    val utility = OlmUtility.create()
+    lateinit var account: OlmAccount
+    lateinit var aliceSigningAccount: OlmAccount
+    lateinit var bobSigningAccount: OlmAccount
+    lateinit var utility: OlmUtility
     val ownUserId = UserId("me", "server")
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
@@ -55,6 +55,10 @@ class OlmSignServiceTest : ShouldSpec({
 
 
     beforeTest {
+        account = OlmAccount.create()
+        aliceSigningAccount = OlmAccount.create()
+        bobSigningAccount = OlmAccount.create()
+        utility = OlmUtility.create()
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
         aliceSigningAccountSignService =

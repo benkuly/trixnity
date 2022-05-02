@@ -42,6 +42,7 @@ import net.folivo.trixnity.core.serialization.createEventContentSerializerMappin
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
+import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -63,6 +64,9 @@ class OlmServiceTest : ShouldSpec({
     val contentMappings = createEventContentSerializerMappings()
     lateinit var cut: OlmService
 
+    lateinit var olmAccount: OlmAccount
+    lateinit var olmUtility: OlmUtility
+
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope)
@@ -70,7 +74,9 @@ class OlmServiceTest : ShouldSpec({
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
-        cut = OlmService("", alice, aliceDevice, store, api, json)
+        olmAccount = OlmAccount.create()
+        olmUtility = OlmUtility.create()
+        cut = OlmService("", alice, aliceDevice, store, api, json, olmAccount, olmUtility)
     }
 
     afterTest {
@@ -78,7 +84,8 @@ class OlmServiceTest : ShouldSpec({
     }
 
     afterSpec {
-        cut.free()
+        olmAccount.free()
+        olmUtility.free()
     }
 
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
@@ -120,13 +127,15 @@ class OlmServiceTest : ShouldSpec({
         context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
                 val bobStore = InMemoryStore(storeScope).apply { init() }
-                val bobOlmService = OlmService("", bob, bobDevice, bobStore, api, json)
+                val bobOlmService =
+                    OlmService("", bob, bobDevice, bobStore, api, json, OlmAccount.create(), OlmUtility.create())
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
-                    val cutWithAccount = OlmService("", alice, aliceDevice, store, api, json)
+                    val cutWithAccount =
+                        OlmService("", alice, aliceDevice, store, api, json, OlmAccount.create(), OlmUtility.create())
                     store.keys.updateDeviceKeys(bob) {
                         mapOf(
                             bobDevice to StoredDeviceKeys(
@@ -226,9 +235,6 @@ class OlmServiceTest : ShouldSpec({
                         sessionId shouldBe outboundSession.sessionId
                         senderKey shouldBe bobOlmService.getSelfSignedDeviceKeys().signed.get()!!
                     }
-
-                    bobOlmService.free()
-                    cutWithAccount.free()
                 }
             }
         }

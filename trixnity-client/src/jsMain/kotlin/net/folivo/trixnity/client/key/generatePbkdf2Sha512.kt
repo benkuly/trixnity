@@ -21,6 +21,7 @@ internal actual suspend fun generatePbkdf2Sha512(
                     (it[0].toInt() and 0xff)
         }.toTypedArray()),
         cfg = object : KDFOption {
+            override var keySize: Number? = keyBitLength
             override var iterations: Number? = iterationCount
             override var hasher: HasherStatic? = SHA512
         })

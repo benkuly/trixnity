@@ -71,7 +71,7 @@ class OlmEventService internal constructor(
     private val ownEd25519Key: Ed25519Key,
     private val ownCurve25519Key: Curve25519Key,
     private val json: Json,
-    private val account: OlmAccount,
+    private val olmAccount: OlmAccount,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val signService: IOlmSignService,
@@ -125,7 +125,7 @@ class OlmEventService internal constructor(
                     throw KeyVerificationFailedException(keyVerifyState.reason)
                 freeAfter(
                     OlmSession.createOutbound(
-                        account = account,
+                        account = olmAccount,
                         theirIdentityKey = identityKey.value,
                         theirOneTimeKey = oneTimeKey.signed.value
                     )
@@ -241,11 +241,11 @@ class OlmEventService internal constructor(
                     if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
                         log.debug { "decrypt olm event with new session for device with key $senderIdentityKey" }
                         freeAfter(
-                            OlmSession.createInboundFrom(account, senderIdentityKey.value, ciphertext.body)
+                            OlmSession.createInboundFrom(olmAccount, senderIdentityKey.value, ciphertext.body)
                         ) { olmSession ->
                             val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
-                            account.removeOneTimeKeys(olmSession)
-                            store.olm.storeAccount(account, olmPickleKey)
+                            olmAccount.removeOneTimeKeys(olmSession)
+                            store.olm.storeAccount(olmAccount, olmPickleKey)
                             decrypted to StoredOlmSession(
                                 sessionId = olmSession.sessionId,
                                 senderKey = senderIdentityKey,

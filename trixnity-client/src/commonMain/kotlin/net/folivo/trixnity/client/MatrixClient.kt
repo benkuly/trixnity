@@ -40,6 +40,8 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.olm.OlmAccount
+import net.folivo.trixnity.olm.OlmUtility
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -59,6 +61,8 @@ class MatrixClient private constructor(
     json: Json,
     setOwnMessagesAsFullyRead: Boolean = false,
     customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
+    private val olmAccount: OlmAccount,
+    private val olmUtility: OlmUtility,
     private val scope: CoroutineScope,
 ) {
     val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
@@ -87,6 +91,8 @@ class MatrixClient private constructor(
             store = store,
             api = api,
             json = json,
+            olmAccount = olmAccount,
+            olmUtility = olmUtility,
         )
         olm = _olm
         media = MediaService(
@@ -261,6 +267,9 @@ class MatrixClient private constructor(
                 json = json,
                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                olmAccount = store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
+                    ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) },
+                olmUtility = OlmUtility.create(),
                 scope = scope,
             )
 
@@ -343,6 +352,9 @@ class MatrixClient private constructor(
                                 json = json,
                                 setOwnMessagesAsFullyRead = setOwnMessagesAsFullyRead,
                                 customOutboxMessageMediaUploaderMappings = customOutboxMessageMediaUploaderMappings,
+                                olmAccount = store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
+                                    ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) },
+                                olmUtility = OlmUtility.create(),
                                 scope = scope,
                             )
                         }.apply {
@@ -396,7 +408,8 @@ class MatrixClient private constructor(
     private suspend fun deleteAll() {
         stopSync(true)
         store.deleteAll()
-        _olm.free()
+        olmAccount.free()
+        olmUtility.free()
     }
 
     /**
