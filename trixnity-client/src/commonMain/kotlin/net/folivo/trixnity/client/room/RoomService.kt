@@ -213,7 +213,10 @@ class RoomService(
                     hasGapBefore = it.limited ?: false
                 )
                 it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                it.events?.forEach { event -> syncOutboxMessage(event) }
+                it.events?.forEach { event ->
+                    syncOutboxMessage(event)
+                    setLastRelevantEvent(event)
+                }
             }
             room.value.summary?.also { roomSummary ->
                 setRoomDisplayNamesQueue.update { it + (roomId to roomSummary) }
@@ -229,6 +232,9 @@ class RoomService(
                     hasGapBefore = it.limited ?: false
                 )
                 it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                it.events?.forEach { event ->
+                    setLastRelevantEvent(event)
+                }
             }
         }
         syncResponse.room?.knock?.entries?.forEach { (room, _) ->
@@ -358,6 +364,14 @@ class RoomService(
                     ?: Room(roomId = event.roomId, lastEventId = event.id)
             }
         }
+    }
+
+    internal suspend fun setLastRelevantEvent(event: RoomEvent<*>) {
+        if (event is MessageEvent) // TODO make configurable
+            store.room.update(event.roomId) { oldRoom ->
+                oldRoom?.copy(lastRelevantEventId = event.id)
+                    ?: Room(roomId = event.roomId, lastRelevantEventId = event.id)
+            }
     }
 
     internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {

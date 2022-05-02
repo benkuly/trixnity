@@ -13,6 +13,7 @@ data class Room(
     val avatarUrl: String? = null,
     val isDirect: Boolean = false,
     val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventId !!!
+    val lastRelevantEventId: EventId? = null,
     val unreadMessageCount: Long = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,
     val membership: Membership = Membership.JOIN,
