@@ -13,6 +13,7 @@ object Versions {
     const val jna = "5.11.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.0.1" // https://github.com/ktorio/ktor/releases
     const val korlibs = "2.7.0" // https://github.com/korlibs/korge-next/releases
+    const val cryptoJs = "4.1.1" // https://www.npmjs.com/package/crypto-js
     const val mockative = "1.1.4" // https://github.com/mockative/mockative/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.2.3" // https://github.com/kotest/kotest/releases

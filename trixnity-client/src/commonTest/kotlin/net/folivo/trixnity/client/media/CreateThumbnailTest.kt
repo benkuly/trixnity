@@ -9,7 +9,7 @@ import io.ktor.http.ContentType.Image.PNG
 class CreateThumbnailTest : ShouldSpec({
     context(::createThumbnail.name) {
         should("create a thumbnail") {
-            val thumbnail = createThumbnail(miniPng, PNG, 30, 20)
+            val thumbnail = createThumbnail(miniPng, 30, 20)
             assertSoftly(thumbnail) {
                 file.size shouldBeGreaterThan 0
                 contentType shouldBe PNG

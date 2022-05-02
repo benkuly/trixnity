@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.crypto
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -78,7 +77,7 @@ class OlmEventService internal constructor(
     private val signService: IOlmSignService,
 ) : IOlmEventService {
 
-    internal suspend fun start(scope: CoroutineScope) {
+    internal suspend fun start() {
         api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
     }
 

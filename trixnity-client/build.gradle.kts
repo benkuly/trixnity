@@ -62,7 +62,12 @@ kotlin {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
         }
-        val jsMain by getting
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("crypto-js", Versions.cryptoJs))
+//                implementation(npm("@types/crypto-js", Versions.cryptoJs, true))
+            }
+        }
 //        val nativeMain = create("nativeMain") {
 //            dependsOn(commonMain)
 //        }
