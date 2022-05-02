@@ -31,6 +31,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.STARTED
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
@@ -40,13 +41,10 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.DeviceKeys
@@ -134,6 +132,49 @@ class RoomServiceTest : ShouldSpec({
                 )
             )
             store.room.get(room).value?.lastEventId shouldBe EventId("\$event1")
+        }
+    }
+
+    context(RoomService::setLastRelevantEvent.name) {
+        should("set last message event") {
+            cut.handleSyncResponse(
+                Sync.Response(
+                    room = Sync.Response.Rooms(
+                        join = mapOf(
+                            room to Sync.Response.Rooms.JoinedRoom(
+                                timeline = Sync.Response.Rooms.Timeline(
+                                    events = listOf(
+                                        StateEvent(
+                                            CreateEventContent(UserId("user1", "localhost")),
+                                            EventId("event1"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            0,
+                                            stateKey = ""
+                                        ),
+                                        MessageEvent(
+                                            TextMessageEventContent("Hello!"),
+                                            EventId("event2"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            5,
+                                        ),
+                                        StateEvent(
+                                            AvatarEventContent("mxc://localhost/123456"),
+                                            EventId("event3"),
+                                            UserId("user1", "localhost"),
+                                            room,
+                                            10,
+                                            stateKey = ""
+                                        ),
+                                    ), previousBatch = "abcdef"
+                                )
+                            )
+                        )
+                    ), nextBatch = "123456"
+                )
+            )
+            store.room.get(room).value?.lastRelevantEventId shouldBe EventId("event2")
         }
     }
 
