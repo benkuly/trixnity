@@ -16,7 +16,7 @@ object Versions {
     const val cryptoJs = "4.1.1" // https://www.npmjs.com/package/crypto-js
     const val mockative = "1.1.4" // https://github.com/mockative/mockative/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
-    const val kotest = "5.2.3" // https://github.com/kotest/kotest/releases
+    const val kotest = "5.3.0" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.1" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
