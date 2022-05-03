@@ -10,45 +10,39 @@ class AesTest : ShouldSpec({
     val key = Random.nextBytes(256 / 8)
     val nonce = Random.nextBytes(64 / 8)
     val initialisationVector = nonce + ByteArray(64 / 8)
-    context("aes256Ctr") {
-        context("encrypt") {
-            should("encrypt") {
-                val result = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
-                result.size shouldBeGreaterThan 0
-            }
-            should("handle empty content") {
-                val result = encryptAes256Ctr(ByteArray(0), key, initialisationVector)
-                result.size shouldBe 0
-            }
+    should("encrypt") {
+        val result = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
+        result.size shouldBeGreaterThan 0
+    }
+    should("encrypt empty content") {
+        val result = encryptAes256Ctr(ByteArray(0), key, initialisationVector)
+        result.size shouldBe 0
+    }
+    should("decrypt") {
+        val encrypted = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
+        decryptAes256Ctr(encrypted, key, initialisationVector).decodeToString() shouldBe "hello"
+    }
+    should("decrypt and handle wrong infos") {
+        shouldThrow<DecryptionException.OtherException> {
+            decryptAes256Ctr(
+                ByteArray(0),
+                ByteArray(0),
+                ByteArray(0)
+            )
         }
-        context("decrypt") {
-            should("decrypt") {
-                val encrypted = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
-                decryptAes256Ctr(encrypted, key, initialisationVector).decodeToString() shouldBe "hello"
-            }
-            should("handle wrong infos") {
-                shouldThrow<DecryptionException.OtherException> {
-                    decryptAes256Ctr(
-                        ByteArray(0),
-                        ByteArray(0),
-                        ByteArray(0)
-                    )
-                }
-                shouldThrow<DecryptionException.OtherException> {
-                    decryptAes256Ctr(
-                        Random.Default.nextBytes(ByteArray(1)),
-                        ByteArray(0),
-                        Random.Default.nextBytes(ByteArray(256 / 8))
-                    )
-                }
-                shouldThrow<DecryptionException.OtherException> {
-                    decryptAes256Ctr(
-                        Random.Default.nextBytes(ByteArray(1)),
-                        Random.Default.nextBytes(ByteArray(128 / 8)),
-                        ByteArray(0)
-                    )
-                }
-            }
+        shouldThrow<DecryptionException.OtherException> {
+            decryptAes256Ctr(
+                Random.Default.nextBytes(ByteArray(1)),
+                ByteArray(0),
+                Random.Default.nextBytes(ByteArray(256 / 8))
+            )
+        }
+        shouldThrow<DecryptionException.OtherException> {
+            decryptAes256Ctr(
+                Random.Default.nextBytes(ByteArray(1)),
+                Random.Default.nextBytes(ByteArray(128 / 8)),
+                ByteArray(0)
+            )
         }
     }
 })

@@ -65,8 +65,7 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
-                implementation(npm("crypto-js", Versions.cryptoJs))
-//                implementation(npm("@types/crypto-js", Versions.cryptoJs, true))
+//                implementation(npm("@types/node", "17.0.31", true))
             }
         }
 //        val nativeMain = create("nativeMain") {

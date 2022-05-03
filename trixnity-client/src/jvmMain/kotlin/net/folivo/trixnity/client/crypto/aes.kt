@@ -30,7 +30,7 @@ internal actual suspend fun decryptAes256Ctr(
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
         return cipher.doFinal(encryptedContent)
-    } catch (exception: Throwable) {
+    } catch (exception: Exception) {
         throw DecryptionException.OtherException(exception)
     }
 }
