@@ -57,8 +57,9 @@ fun Flow<StateFlow<TimelineEvent?>>.toFlowList(
     return maxSize.flatMapLatest { listSize ->
         take(listSize)
             .scan<StateFlow<TimelineEvent?>, List<StateFlow<TimelineEvent?>>>(listOf()) { old, new -> old + new }
-            .filter { it.size > minSize.value }
+            .filter { it.size >= if (maxSize.value < minSize.value) maxSize.value else minSize.value }
             .onEach { minSize.value = it.size }
+            .distinctUntilChanged()
     }
 }
 

@@ -2,7 +2,9 @@ package net.folivo.trixnity.client.crypto
 
 import com.soywiz.korio.util.toByteArray
 import com.soywiz.korio.util.toInt8Array
+import createCipheriv
 import crypto
+import io.ktor.util.*
 import kotlinx.coroutines.await
 import kotlin.js.json
 
@@ -11,8 +13,8 @@ internal actual suspend fun encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
 ): ByteArray {
-    val crypto = crypto?.subtle
-    return if (crypto != null) {
+    return if (PlatformUtils.IS_BROWSER) {
+        val crypto = crypto.subtle
         val aesKey = crypto.importKey(
             "raw",
             key.toInt8Array().buffer,
@@ -30,7 +32,8 @@ internal actual suspend fun encryptAes256Ctr(
             content.toInt8Array().buffer,
         ).await().toByteArray()
     } else {
-        throw RuntimeException("missing browser crypto (nodejs not supported yet)")
+        val cipher = createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
+        cipher.update(content.toInt8Array()).toByteArray() + cipher.final().toByteArray()
     }
 }
 
@@ -40,8 +43,8 @@ internal actual suspend fun decryptAes256Ctr(
     initialisationVector: ByteArray
 ): ByteArray {
     try {
-        val crypto = crypto?.subtle
-        return if (crypto != null) {
+        return if (PlatformUtils.IS_BROWSER) {
+            val crypto = crypto.subtle
             val aesKey = crypto.importKey(
                 "raw",
                 key.toInt8Array().buffer,
@@ -59,9 +62,11 @@ internal actual suspend fun decryptAes256Ctr(
                 encryptedContent.toInt8Array().buffer,
             ).await().toByteArray()
         } else {
-            throw RuntimeException("missing browser crypto (nodejs not supported yet)")
+            val decipher =
+                createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
+            decipher.update(encryptedContent.toInt8Array()).toByteArray() + decipher.final().toByteArray()
         }
-    } catch (exception: Exception) {
+    } catch (exception: Throwable) {
         throw DecryptionException.OtherException(exception)
     }
 }

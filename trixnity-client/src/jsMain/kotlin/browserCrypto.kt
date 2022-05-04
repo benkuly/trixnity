@@ -2,10 +2,10 @@ import org.khronos.webgl.ArrayBuffer
 import kotlin.js.Json
 import kotlin.js.Promise
 
-external val crypto: Crypto?
+external val crypto: Crypto
 
 external interface Crypto {
-    val subtle: SubtleCrypto?
+    val subtle: SubtleCrypto
 }
 
 external interface SubtleCrypto {

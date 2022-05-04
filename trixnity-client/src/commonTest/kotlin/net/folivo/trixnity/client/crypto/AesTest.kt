@@ -1,28 +1,32 @@
 package net.folivo.trixnity.client.crypto
 
+import com.soywiz.krypto.encoding.hex
+import com.soywiz.krypto.encoding.unhex
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import kotlin.random.Random
 
 class AesTest : ShouldSpec({
-    val key = Random.nextBytes(256 / 8)
-    val nonce = Random.nextBytes(64 / 8)
-    val initialisationVector = nonce + ByteArray(64 / 8)
+    val key = ByteArray(32) { (it + 1).toByte() }
+    val nonce = ByteArray(8) { (it + 1).toByte() }
+    val initialisationVector = nonce + ByteArray(8)
     should("encrypt") {
         val result = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
-        result.size shouldBeGreaterThan 0
+        result.hex shouldBe "14e2d5701d"
     }
     should("encrypt empty content") {
         val result = encryptAes256Ctr(ByteArray(0), key, initialisationVector)
         result.size shouldBe 0
     }
     should("decrypt") {
+        decryptAes256Ctr("14e2d5701d".unhex, key, initialisationVector).decodeToString() shouldBe "hello"
+    }
+    should("encrypt and decrypt") {
         val encrypted = encryptAes256Ctr("hello".encodeToByteArray(), key, initialisationVector)
         decryptAes256Ctr(encrypted, key, initialisationVector).decodeToString() shouldBe "hello"
     }
-    should("decrypt and handle wrong infos") {
+    should("decrypt and handle wrong infos 1") {
         shouldThrow<DecryptionException.OtherException> {
             decryptAes256Ctr(
                 ByteArray(0),
@@ -30,6 +34,8 @@ class AesTest : ShouldSpec({
                 ByteArray(0)
             )
         }
+    }
+    should("decrypt and handle wrong infos 2") {
         shouldThrow<DecryptionException.OtherException> {
             decryptAes256Ctr(
                 Random.Default.nextBytes(ByteArray(1)),
@@ -37,6 +43,8 @@ class AesTest : ShouldSpec({
                 Random.Default.nextBytes(ByteArray(256 / 8))
             )
         }
+    }
+    should("decrypt and handle wrong infos 3") {
         shouldThrow<DecryptionException.OtherException> {
             decryptAes256Ctr(
                 Random.Default.nextBytes(ByteArray(1)),

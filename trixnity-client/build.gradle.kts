@@ -27,6 +27,7 @@ kotlin {
                 }
             }
         }
+        nodejs()
         binaries.executable()
     }
 
@@ -63,11 +64,7 @@ kotlin {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
         }
-        val jsMain by getting {
-            dependencies {
-//                implementation(npm("@types/node", "17.0.31", true))
-            }
-        }
+        val jsMain by getting
 //        val nativeMain = create("nativeMain") {
 //            dependsOn(commonMain)
 //        }

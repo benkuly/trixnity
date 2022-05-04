@@ -4,7 +4,7 @@ import com.soywiz.korim.bitmap.resizedUpTo
 import com.soywiz.korim.format.PNG
 import com.soywiz.korim.format.encode
 import com.soywiz.korim.format.readNativeImage
-import com.soywiz.korio.file.std.VfsFileFromData
+import com.soywiz.korio.file.std.asMemoryVfsFile
 import io.ktor.http.*
 
 class Thumbnail(
@@ -15,7 +15,7 @@ class Thumbnail(
 )
 
 suspend fun createThumbnail(file: ByteArray, maxWidth: Int, maxHeight: Int): Thumbnail {
-    val image = VfsFileFromData(file).readNativeImage()
+    val image = file.asMemoryVfsFile().readNativeImage()
     val resizedImage = image.resizedUpTo(maxWidth, maxHeight)
     return Thumbnail(resizedImage.encode(PNG), ContentType.Image.PNG, resizedImage.width, resizedImage.height)
 }

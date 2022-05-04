@@ -11,6 +11,7 @@ private val isInitialized = MutableStateFlow(false)
 
 suspend fun initOlm() {
     if (!initializeStarted.getAndUpdate { true }) {
+        js("""global.Olm = require('@matrix-org/olm');""")
         init().await()
         isInitialized.value = true
     } else isInitialized.first { it }

@@ -121,7 +121,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
             }
             should("get timeline events backwards") {
-                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope), scope = scope)
+                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope))
                     .take(3).toList().map { it.value } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
@@ -129,7 +129,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
             should("get timeline events forwards") {
-                cut.getTimelineEvents(cut.getTimelineEvent(event1.id, room, scope), FORWARD, scope = scope)
+                cut.getTimelineEvents(cut.getTimelineEvent(event1.id, room, scope), FORWARD)
                     .take(3).toList().map { it.value } shouldBe listOf(
                     timelineEvent1,
                     timelineEvent2,
@@ -165,7 +165,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 }
             }
             should("fetch mssing events from server") {
-                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope), scope = scope)
+                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope))
                     .take(4).toList().map { it.value } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
@@ -185,7 +185,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
             should("flow should be finished when all collected") {
-                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope), scope = scope)
+                cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, scope))
                     .toList().map { it.value } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
@@ -201,7 +201,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val size = MutableStateFlow(2)
                 val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
                 scope.launch {
-                    cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, this), scope = this)
+                    cut.getTimelineEvents(cut.getTimelineEvent(event3.id, room, this))
                         .toFlowList(size)
                         .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
                 }
@@ -224,7 +224,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         should("get timeline events") {
             store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
-            cut.getLastTimelineEvents(room, scope = scope)
+            cut.getLastTimelineEvents(room)
                 .first()
                 .shouldNotBeNull()
                 .take(3).toList().map { it.value } shouldBe listOf(
@@ -232,13 +232,13 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent2,
                 timelineEvent1
             )
-            scope.coroutineContext.job.children.count() shouldBe 1
+            scope.coroutineContext.job.children.count() shouldBe 0
         }
         should("cancel old timeline event flow") {
             store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
             val collectedEvents = MutableStateFlow<List<TimelineEvent?>?>(null)
             val job = scope.launch {
-                cut.getLastTimelineEvents(room, scope = scope)
+                cut.getLastTimelineEvents(room)
                     .filterNotNull()
                     .collectLatest { timelineEventFlow ->
                         collectedEvents.value = timelineEventFlow.take(2).toList().map { it.value }
@@ -258,7 +258,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent2,
             )
             job.cancelAndJoin()
-            scope.coroutineContext.job.children.count() shouldBe 1
+            scope.coroutineContext.job.children.count() shouldBe 0
         }
         should("transform to list") {
             val size = MutableStateFlow(2)
@@ -266,7 +266,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
 
             store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
             val job = scope.launch {
-                cut.getLastTimelineEvents(room, scope = scope)
+                cut.getLastTimelineEvents(room)
                     .toFlowList(size)
                     .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
             }
@@ -290,7 +290,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             )
 
             job.cancelAndJoin()
-            scope.coroutineContext.job.children.count() shouldBe 1
+            scope.coroutineContext.job.children.count() shouldBe 0
         }
     }
     context(RoomService::getTimelineEventsFromNowOn.name) {

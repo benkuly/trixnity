@@ -60,9 +60,8 @@ interface IRoomService {
 
     suspend fun getLastTimelineEvent(
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE
-    ): StateFlow<StateFlow<TimelineEvent?>?>
+    ): Flow<StateFlow<TimelineEvent?>?>
 
     suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
@@ -88,7 +87,6 @@ interface IRoomService {
     suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
         direction: Direction = BACKWARDS,
-        scope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE
     ): Flow<StateFlow<TimelineEvent?>>
 
@@ -106,7 +104,7 @@ interface IRoomService {
      * The manual approach needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
-    suspend fun getLastTimelineEvents(roomId: RoomId, scope: CoroutineScope): Flow<Flow<StateFlow<TimelineEvent?>>?>
+    suspend fun getLastTimelineEvents(roomId: RoomId): Flow<Flow<StateFlow<TimelineEvent?>>?>
 
     /**
      * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
@@ -918,6 +916,10 @@ class RoomService(
                 && this.event.isEncrypted
                 && this.content == null
 
+    /**
+     * @param scope The [CoroutineScope] is used to decrypt the [TimelineEvent] and to determine,
+     * how long the [TimelineEvent] should be hold in cache.
+     */
     override suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
@@ -987,15 +989,15 @@ class RoomService(
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getLastTimelineEvent(
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration
-    ): StateFlow<StateFlow<TimelineEvent?>?> {
+    ): Flow<StateFlow<TimelineEvent?>?> {
         return store.room.get(roomId).transformLatest { room ->
             coroutineScope {
                 if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this, decryptionTimeout))
                 else emit(null)
+                delay(INFINITE) // ensure, that the TimelineEvent does not get removed from cache
             }
-        }.stateIn(coroutineScope)
+        }.distinctUntilChanged()
     }
 
     override suspend fun getPreviousTimelineEvent(
@@ -1014,15 +1016,17 @@ class RoomService(
         return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
     }
 
+    /**
+     * @param scope The [CoroutineScope] is used to determine, how long the [TimelineEvent]s should be hold in cache.
+     */
     override suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
         direction: Direction,
-        scope: CoroutineScope,
         decryptionTimeout: Duration
     ): Flow<StateFlow<TimelineEvent?>> =
-        flow {
+        channelFlow {
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
-            emit(currentTimelineEventFlow)
+            send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
                     .filterNotNull()
@@ -1033,32 +1037,32 @@ class RoomService(
                         ) currentSyncState.retryWhenSyncIs(
                             RUNNING,
                             onError = { log.error(it) { "could not fetch missing events" } },
-                            scope = scope
+                            scope = this
                         ) {
                             fetchMissingEvents(currentTimelineEvent).getOrThrow()
                         }
                         when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
-                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, scope, decryptionTimeout)
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
+                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
                         }
                     }
                     .filterNotNull()
                     .first()
-                emit(currentTimelineEventFlow)
+                send(currentTimelineEventFlow)
             } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
+            close()
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getLastTimelineEvents(
-        roomId: RoomId,
-        scope: CoroutineScope
-    ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
-        getLastTimelineEvent(roomId, scope)
-            .mapLatest { currentTimelineEventFlow ->
-                currentTimelineEventFlow?.let {
-                    coroutineScope {
-                        getTimelineEvents(it, scope = this)
+    override suspend fun getLastTimelineEvents(roomId: RoomId): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+        getLastTimelineEvent(roomId)
+            .distinctUntilChanged()
+            .transformLatest { currentTimelineEventFlow ->
+                coroutineScope {
+                    currentTimelineEventFlow?.let {
+                        emit(getTimelineEvents(it))
                     }
+                    delay(INFINITE) // ensure, that the TimelineEvents do not get removed from cache
                 }
             }
 

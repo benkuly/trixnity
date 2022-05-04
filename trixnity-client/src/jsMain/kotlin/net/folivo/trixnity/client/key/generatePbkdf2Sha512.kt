@@ -3,7 +3,12 @@ package net.folivo.trixnity.client.key
 import com.soywiz.korio.util.toByteArray
 import com.soywiz.korio.util.toInt8Array
 import crypto
+import io.ktor.util.*
 import kotlinx.coroutines.await
+import pbkdf2
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.js.json
 
 internal actual suspend fun generatePbkdf2Sha512(
@@ -12,8 +17,9 @@ internal actual suspend fun generatePbkdf2Sha512(
     iterationCount: Int,
     keyBitLength: Int
 ): ByteArray {
-    val crypto = crypto?.subtle
-    return if (crypto != null) {
+    val saltBuffer = salt.toInt8Array().buffer
+    return if (PlatformUtils.IS_BROWSER) {
+        val crypto = crypto.subtle
         val key = crypto.importKey(
             format = "raw",
             keyData = password.encodeToByteArray().toInt8Array().buffer,
@@ -24,7 +30,7 @@ internal actual suspend fun generatePbkdf2Sha512(
         val keybits = crypto.deriveBits(
             json(
                 "name" to "PBKDF2",
-                "salt" to salt.toInt8Array().buffer,
+                "salt" to saltBuffer,
                 "iterations" to iterationCount,
                 "hash" to "SHA-512"
             ),
@@ -33,6 +39,17 @@ internal actual suspend fun generatePbkdf2Sha512(
         ).await()
         keybits.toByteArray()
     } else {
-        throw RuntimeException("missing browser crypto (nodejs not supported yet)")
+        suspendCoroutine { continuation ->
+            pbkdf2(
+                password,
+                salt.toInt8Array(),
+                iterationCount,
+                keyBitLength / 8,
+                "sha512"
+            ) { err, key ->
+                if (err != null) continuation.resumeWithException(err)
+                continuation.resume(key.toByteArray())
+            }
+        }
     }
 }
