@@ -1057,12 +1057,9 @@ class RoomService(
     override suspend fun getLastTimelineEvents(roomId: RoomId): Flow<Flow<StateFlow<TimelineEvent?>>?> =
         getLastTimelineEvent(roomId)
             .distinctUntilChanged()
-            .transformLatest { currentTimelineEventFlow ->
-                coroutineScope {
-                    currentTimelineEventFlow?.let {
-                        emit(getTimelineEvents(it))
-                    }
-                    delay(INFINITE) // ensure, that the TimelineEvents do not get removed from cache
+            .mapLatest { currentTimelineEventFlow ->
+                currentTimelineEventFlow?.let {
+                    getTimelineEvents(it)
                 }
             }
 
