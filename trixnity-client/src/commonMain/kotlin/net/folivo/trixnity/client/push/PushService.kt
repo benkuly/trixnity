@@ -60,6 +60,11 @@ class PushService(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {
+        val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
+        val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
+        invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+        api.sync.subscribeAfterSyncResponse(subscriber)
+
         val pushRules =
             store.globalAccountData.get<PushRulesEventContent>(scope = this).map { event ->
                 event?.content?.global?.let { globalRuleSet ->
@@ -69,10 +74,6 @@ class PushService(
                         .fold(listOf<PushRule>()) { old, new -> old + new }
                 } ?: listOf()
             }.stateIn(this)
-        val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
-        val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
-        invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
-        api.sync.subscribeAfterSyncResponse(subscriber)
         val inviteEvents = syncResponseFlow
             .map { syncResponse ->
                 syncResponse.room?.invite?.values?.flatMap { inviteRoom ->

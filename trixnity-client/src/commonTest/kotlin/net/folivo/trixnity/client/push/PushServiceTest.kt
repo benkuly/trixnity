@@ -198,58 +198,55 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(PushService::getNotifications.name) {
-        context("no events") {
-            should("do nothing") {
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
-                        Sync.Response("next")
-                    }
+        should("do nothing when no events") {
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    Sync.Response("next")
                 }
-                store.globalAccountData.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
-
-                checkNoNotification()
             }
+            store.globalAccountData.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+
+            checkNoNotification()
         }
-        context("new invite events") {
-            should("notify on invite") {
-                store.globalAccountData.update(
-                    GlobalAccountDataEvent(
-                        pushRules(
-                            listOf(
-                                pushRuleInvitation(),
-                            )
+        should("notify on invite") {
+            store.globalAccountData.update(
+                GlobalAccountDataEvent(
+                    pushRules(
+                        listOf(
+                            pushRuleInvitation(),
                         )
                     )
                 )
-                val invitation = Event.StrippedStateEvent(
-                    content = MemberEventContent(
-                        membership = Membership.INVITE,
-                        displayName = user1DisplayName,
-                    ),
-                    sender = otherUser,
-                    roomId = roomId,
-                    stateKey = user1.full,
-                )
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
-                        Sync.Response(
-                            nextBatch = "next",
-                            room = Sync.Response.Rooms(
-                                invite = mapOf(
-                                    roomId to Sync.Response.Rooms.InvitedRoom(
-                                        inviteState = Sync.Response.Rooms.InvitedRoom.InviteState(
-                                            events = listOf(invitation)
-                                        )
+            )
+            val invitation = Event.StrippedStateEvent(
+                content = MemberEventContent(
+                    membership = Membership.INVITE,
+                    displayName = user1DisplayName,
+                ),
+                sender = otherUser,
+                roomId = roomId,
+                stateKey = user1.full,
+            )
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    Sync.Response(
+                        nextBatch = "next",
+                        room = Sync.Response.Rooms(
+                            invite = mapOf(
+                                roomId to Sync.Response.Rooms.InvitedRoom(
+                                    inviteState = Sync.Response.Rooms.InvitedRoom.InviteState(
+                                        events = listOf(invitation)
                                     )
                                 )
                             )
                         )
-                    }
+                    )
                 }
-                val notification = async { cut.getNotifications(0.seconds).first() }
-                api.sync.startOnce().getOrThrow()
-                notification.await() shouldBe Notification(invitation)
             }
+            val notification = async { cut.getNotifications(0.seconds).first() }
+            delay(50)
+            api.sync.startOnce().getOrThrow()
+            notification.await() shouldBe Notification(invitation)
         }
         context("new timeline events") {
             val timelineEvent = messageEventWithContent(
