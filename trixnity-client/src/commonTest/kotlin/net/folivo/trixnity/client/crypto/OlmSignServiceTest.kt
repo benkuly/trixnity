@@ -37,60 +37,47 @@ import net.folivo.trixnity.olm.OlmUtility
 import kotlin.random.Random
 
 class OlmSignServiceTest : ShouldSpec({
-
     val json = createMatrixJson()
     lateinit var account: OlmAccount
     lateinit var aliceSigningAccount: OlmAccount
-    lateinit var bobSigningAccount: OlmAccount
     lateinit var utility: OlmUtility
     val ownUserId = UserId("me", "server")
     val alice = UserId("alice", "server")
+    val aliceDevice = "AAAAAA"
     val bob = UserId("bob", "server")
     lateinit var storeScope: CoroutineScope
     lateinit var store: Store
 
     lateinit var cut: OlmSignService
     lateinit var aliceSigningAccountSignService: OlmSignService
-    lateinit var bobSigningAccountSignService: OlmSignService
 
-
-    beforeTest {
+    beforeEach {
         account = OlmAccount.create()
         aliceSigningAccount = OlmAccount.create()
-        bobSigningAccount = OlmAccount.create()
         utility = OlmUtility.create()
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
         aliceSigningAccountSignService =
             OlmSignService(
                 alice,
-                "ALICE_DEVICE",
+                aliceDevice,
                 json,
                 InMemoryStore(storeScope),
                 aliceSigningAccount,
                 utility
             )
-        bobSigningAccountSignService =
-            OlmSignService(
-                UserId("bob", "server"),
-                "BBBBBB",
-                json,
-                InMemoryStore(storeScope),
-                bobSigningAccount,
-                utility
-            )
 
-        store.keys.updateDeviceKeys(bob) {
+        store.keys.updateDeviceKeys(alice) {
             mapOf(
-                "BBBBBB" to StoredDeviceKeys(
+                aliceDevice to StoredDeviceKeys(
                     Signed(
                         DeviceKeys(
-                            bob,
-                            "BBBBBB",
+                            alice,
+                            aliceDevice,
                             setOf(Olm, Megolm),
                             keysOf(
-                                Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519),
-                                Curve25519Key("BBBBBB", bobSigningAccount.identityKeys.curve25519)
+                                Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519),
+                                Curve25519Key(aliceDevice, aliceSigningAccount.identityKeys.curve25519)
                             )
                         ), mapOf()
                     ), Valid(true)
@@ -100,15 +87,11 @@ class OlmSignServiceTest : ShouldSpec({
         cut = OlmSignService(ownUserId, "ABCDEF", json, store, account, utility)
     }
 
-    afterTest {
-        storeScope.cancel()
-    }
-
-    afterSpec {
+    afterEach {
         account.free()
         aliceSigningAccount.free()
-        bobSigningAccount.free()
         utility.free()
+        storeScope.cancel()
     }
 
     context("signatures") {
@@ -276,7 +259,7 @@ class OlmSignServiceTest : ShouldSpec({
     }
     context("verify") {
         should("return valid") {
-            val signedObject = bobSigningAccountSignService.sign(
+            val signedObject = aliceSigningAccountSignService.sign(
                 Event.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
@@ -287,9 +270,10 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
+            println(signedObject)
             cut.verify(
                 signedObject,
-                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+                mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
             ) shouldBe VerifyResult.Valid
         }
         should("return MissingSignature, when no key found") {
@@ -322,7 +306,7 @@ class OlmSignServiceTest : ShouldSpec({
                 .shouldBeInstanceOf<VerifyResult.MissingSignature>()
         }
         should("verify SignedCurve25519Key") {
-            val signedObject = bobSigningAccountSignService.signCurve25519Key(
+            val signedObject = aliceSigningAccountSignService.signCurve25519Key(
                 Curve25519Key(
                     "AAAAAQ",
                     "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
@@ -330,7 +314,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             cut.verify(
                 signedObject,
-                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+                mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
             ) shouldBe VerifyResult.Valid
         }
         should("return invalid") {
@@ -345,9 +329,9 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 ),
                 mapOf(
-                    UserId("bob", "server") to keysOf(
+                    alice to keysOf(
                         Ed25519Key(
-                            "BBBBBB",
+                            aliceDevice,
                             "qAwmMiFdBqJNVFnOcmIT1aIesjiecn6XHzutQZq2hGy1Z65FP7cMXRqarE/v9EinolFdli143bqwsl31fSPwBg"
                         )
                     )
@@ -355,7 +339,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             cut.verify(
                 signedObject,
-                mapOf(bob to setOf(Ed25519Key("BBBBBB", bobSigningAccount.identityKeys.ed25519)))
+                mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
             ).shouldBeInstanceOf<VerifyResult.Invalid>()
         }
     }

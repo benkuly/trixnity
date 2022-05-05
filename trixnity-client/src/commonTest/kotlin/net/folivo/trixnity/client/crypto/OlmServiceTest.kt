@@ -68,24 +68,24 @@ class OlmServiceTest : ShouldSpec({
     lateinit var olmUtility: OlmUtility
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope)
-        store.init()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
+    }
+
+    beforeEach {
         olmAccount = OlmAccount.create()
         olmUtility = OlmUtility.create()
+        storeScope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(storeScope)
+        store.init()
         cut = OlmService("", alice, aliceDevice, store, api, json, olmAccount, olmUtility)
     }
 
-    afterTest {
-        storeScope.cancel()
-    }
-
-    afterSpec {
+    afterEach {
         olmAccount.free()
         olmUtility.free()
+        storeScope.cancel()
     }
 
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
