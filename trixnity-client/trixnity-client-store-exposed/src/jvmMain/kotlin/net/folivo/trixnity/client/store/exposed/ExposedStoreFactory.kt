@@ -31,7 +31,6 @@ class ExposedStoreFactory(
         log.debug { "create missing tables and columns" }
         newSuspendedTransaction(transactionDispatcher, database) {
             val allTables = arrayOf(
-                ExposedDbVersion,
                 ExposedAccount,
                 ExposedCrossSigningKeys,
                 ExposedDeviceKeys,
