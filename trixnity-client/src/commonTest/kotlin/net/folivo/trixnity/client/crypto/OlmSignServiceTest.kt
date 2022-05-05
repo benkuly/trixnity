@@ -270,7 +270,6 @@ class OlmSignServiceTest : ShouldSpec({
                     stateKey = ""
                 )
             )
-            println(signedObject)
             cut.verify(
                 signedObject,
                 mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
