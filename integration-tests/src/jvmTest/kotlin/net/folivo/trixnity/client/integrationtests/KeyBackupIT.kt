@@ -6,6 +6,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClient
@@ -13,6 +14,7 @@ import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -77,7 +79,8 @@ class KeyBackupIT {
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
             startedClient1.client.verification.getSelfVerificationMethods(startedClient1.scope)
-                .first { it?.isEmpty() == true }
+                .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
+                .first()
 
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
@@ -129,10 +132,12 @@ class KeyBackupIT {
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =
-                        client3.verification.getSelfVerificationMethods(scope).first { it?.size == 2 }
-                    client3VerificationMethods?.filterIsInstance<SelfVerificationMethod.CrossSignedDeviceVerification>()?.size shouldBe 1
-                    client3VerificationMethods?.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()?.size shouldBe 1
-                    client3VerificationMethods!!.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
+                        client3.verification.getSelfVerificationMethods(scope)
+                            .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
+                            .first().methods
+                    client3VerificationMethods.filterIsInstance<SelfVerificationMethod.CrossSignedDeviceVerification>().size shouldBe 1
+                    client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>().size shouldBe 1
+                    client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
                         .first()
                         .verify(bootstrap.recoveryKey).getOrThrow()
                 }
