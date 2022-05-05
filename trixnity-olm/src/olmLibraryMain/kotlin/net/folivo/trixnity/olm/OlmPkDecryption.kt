@@ -18,7 +18,7 @@ actual class OlmPkDecryption private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        actual fun create(privateKey: String?): OlmPkDecryption {
+        actual suspend fun create(privateKey: String?): OlmPkDecryption {
             val privateKeyLength = pk_private_key_length()
             val publicKey = ByteArray(pk_key_length().toInt())
 
@@ -41,7 +41,7 @@ actual class OlmPkDecryption private constructor(
             return OlmPkDecryption(ptr, publicKey.decodeToString())
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmPkDecryption {
+        actual suspend fun unpickle(key: String, pickle: String): OlmPkDecryption {
             val ptr = pk_decryption()
             val publicKey = ByteArray(pk_key_length().toInt())
             val result = unpickle_pk_decryption(ptr, key.encodeToByteArray(), pickle.encodeToByteArray(), publicKey)

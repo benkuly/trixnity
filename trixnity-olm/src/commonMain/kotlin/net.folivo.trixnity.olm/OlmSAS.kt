@@ -4,7 +4,7 @@ expect class OlmSAS : WantsToBeFree {
     internal val ptr: OlmSASPointer
 
     companion object {
-        fun create(): OlmSAS
+        suspend fun create(): OlmSAS
     }
 
     val publicKey: String

@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.ContentType.Audio.OGG
 import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Video.MP4
+import io.ktor.utils.io.core.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*

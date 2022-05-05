@@ -8,20 +8,26 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmAccountTest {
     @Test
-    fun create_shouldCreateAndVerify() = initTest {
+    fun create_shouldCreateAndVerify() = runTest {
         val account = OlmAccount.create()
         account.free()
     }
 
     @Test
-    fun create_shouldHaveUniqueIdentityKeys() = initTest {
+    fun create_shouldHaveUniqueIdentityKeys() = runTest {
         // This test validates random series are provide enough random values.
         val size = 20
-        val accounts = generateSequence { OlmAccount.create() }.take(size).toList()
+        val accounts = flow { while (true) emit(OlmAccount.create()) }.take(size).toList()
 
         accounts.map { it.identityKeys.curve25519 }.toSet() shouldHaveSize size
 
@@ -29,7 +35,7 @@ class OlmAccountTest {
     }
 
     @Test
-    fun identityKeys_shouldContainKeys() = initTest {
+    fun identityKeys_shouldContainKeys() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             val identityKeys = account.identityKeys
             identityKeys.ed25519 shouldNot beBlank()
@@ -38,21 +44,21 @@ class OlmAccountTest {
     }
 
     @Test
-    fun maxNumberOfOneTimeKeys_shouldBeGreaterThanZero() = initTest {
+    fun maxNumberOfOneTimeKeys_shouldBeGreaterThanZero() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.maxNumberOfOneTimeKeys shouldBeGreaterThan 0
         }
     }
 
     @Test
-    fun generateOneTimeKeys_shouldRun() = initTest {
+    fun generateOneTimeKeys_shouldRun() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateOneTimeKeys(2)
         }
     }
 
     @Test
-    fun generateOneTimeKeys_shouldFailWithZero() = initTest {
+    fun generateOneTimeKeys_shouldFailWithZero() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             shouldThrow<IllegalArgumentException> {
                 account.generateOneTimeKeys(0)
@@ -62,7 +68,7 @@ class OlmAccountTest {
     }
 
     @Test
-    fun generateOneTimeKeys_shouldFailWithNegative() = initTest {
+    fun generateOneTimeKeys_shouldFailWithNegative() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             shouldThrow<IllegalArgumentException> {
                 account.generateOneTimeKeys(-50)
@@ -72,14 +78,14 @@ class OlmAccountTest {
     }
 
     @Test
-    fun oneTimeKeys_shouldBeEmptyBeforeGeneration() = initTest {
+    fun oneTimeKeys_shouldBeEmptyBeforeGeneration() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.oneTimeKeys.curve25519 shouldHaveSize 0
         }
     }
 
     @Test
-    fun oneTimeKeys_shouldContainKeysAfterGeneration() = initTest {
+    fun oneTimeKeys_shouldContainKeysAfterGeneration() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateOneTimeKeys(5)
 
@@ -94,7 +100,7 @@ class OlmAccountTest {
     }
 
     @Test
-    fun removeOneTimeKeys_shouldRemoveOneTimeKey() = initTest {
+    fun removeOneTimeKeys_shouldRemoveOneTimeKey() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { myAccount, theirAccount ->
             theirAccount.generateOneTimeKeys(1)
             val myIdentityKey = myAccount.identityKeys.curve25519
@@ -114,7 +120,7 @@ class OlmAccountTest {
     }
 
     @Test
-    fun markOneTimeKeysAsPublished_shouldPreventOneTimeKeysToBePresentAgain() = initTest {
+    fun markOneTimeKeysAsPublished_shouldPreventOneTimeKeysToBePresentAgain() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateOneTimeKeys(2)
             account.oneTimeKeys.curve25519 shouldHaveSize 2
@@ -124,21 +130,21 @@ class OlmAccountTest {
     }
 
     @Test
-    fun sign_shouldSign() = initTest {
+    fun sign_shouldSign() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.sign("String to be signed by olm") shouldNot beBlank()
         }
     }
 
     @Test
-    fun generateFallbackKey_shouldRun() = initTest {
+    fun generateFallbackKey_shouldRun() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateFallbackKey()
         }
     }
 
     @Test
-    fun unpublishedFallbackKey_shouldHaveSize1AfterGeneration() = initTest {
+    fun unpublishedFallbackKey_shouldHaveSize1AfterGeneration() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateFallbackKey()
             val key1 = account.unpublishedFallbackKey.curve25519
@@ -151,14 +157,14 @@ class OlmAccountTest {
     }
 
     @Test
-    fun unpublishedFallbackKey_shouldBeEmptyBeforeGeneration() = initTest {
+    fun unpublishedFallbackKey_shouldBeEmptyBeforeGeneration() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.unpublishedFallbackKey.curve25519 shouldHaveSize 0
         }
     }
 
     @Test
-    fun forgetOldFallbackKey_shouldRunAndRemoveFallbackKey() = initTest {
+    fun forgetOldFallbackKey_shouldRunAndRemoveFallbackKey() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.generateFallbackKey()
             account.unpublishedFallbackKey.curve25519 shouldHaveSize 1
@@ -170,14 +176,14 @@ class OlmAccountTest {
     }
 
     @Test
-    fun pickle() = initTest {
+    fun pickle() = runTest {
         freeAfter(OlmAccount.create()) { account ->
             account.pickle("someKey") shouldNot beBlank()
         }
     }
 
     @Test
-    fun unpickleAccount() = initTest {
+    fun unpickleAccount() = runTest {
         var keys: OlmIdentityKeys? = null
         val pickle = freeAfter(OlmAccount.create()) { account ->
             keys = account.identityKeys

@@ -20,7 +20,7 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmInboundGroupSessionPointer = inbound_group_session()
 
     actual companion object {
-        actual fun create(sessionKey: String): OlmInboundGroupSession =
+        actual suspend fun create(sessionKey: String): OlmInboundGroupSession =
             OlmInboundGroupSession().apply {
                 try {
                     val result = init_inbound_group_session(ptr, sessionKey.encodeToByteArray())
@@ -31,7 +31,7 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
                 }
             }
 
-        actual fun import(sessionKey: String): OlmInboundGroupSession =
+        actual suspend fun import(sessionKey: String): OlmInboundGroupSession =
             OlmInboundGroupSession().apply {
                 try {
                     val result = import_inbound_group_session(ptr, sessionKey.encodeToByteArray())
@@ -42,7 +42,7 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
                 }
             }
 
-        actual fun unpickle(key: String, pickle: String): OlmInboundGroupSession =
+        actual suspend fun unpickle(key: String, pickle: String): OlmInboundGroupSession =
             OlmInboundGroupSession().apply {
                 try {
                     val result =

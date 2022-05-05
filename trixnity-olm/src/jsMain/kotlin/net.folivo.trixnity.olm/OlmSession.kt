@@ -4,33 +4,44 @@ actual class OlmSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSessionPointer = rethrow { js("new Olm.Session()") }.unsafeCast<OlmSessionPointer>()
 
     actual companion object {
-        actual fun createOutbound(
+        actual suspend fun createOutbound(
             account: OlmAccount,
             theirIdentityKey: String,
             theirOneTimeKey: String
-        ): OlmSession = OlmSession().apply {
-            rethrow { ptr.create_outbound(account.ptr, theirIdentityKey, theirOneTimeKey) }
+        ): OlmSession {
+            initOlm()
+            return OlmSession().apply {
+                rethrow { ptr.create_outbound(account.ptr, theirIdentityKey, theirOneTimeKey) }
+            }
         }
 
-        actual fun createInbound(
+        actual suspend fun createInbound(
             account: OlmAccount,
             oneTimeKeyMessage: String
-        ): OlmSession = OlmSession().apply {
-            rethrow { ptr.create_inbound(account.ptr, oneTimeKeyMessage) }
+        ): OlmSession {
+            initOlm()
+            return OlmSession().apply {
+                rethrow { ptr.create_inbound(account.ptr, oneTimeKeyMessage) }
+            }
         }
 
-        actual fun createInboundFrom(
+        actual suspend fun createInboundFrom(
             account: OlmAccount,
             identityKey: String,
             oneTimeKeyMessage: String
-        ): OlmSession = OlmSession().apply {
-            rethrow { ptr.create_inbound_from(account.ptr, identityKey, oneTimeKeyMessage) }
+        ): OlmSession {
+            initOlm()
+            return OlmSession().apply {
+                rethrow { ptr.create_inbound_from(account.ptr, identityKey, oneTimeKeyMessage) }
+            }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmSession =
-            OlmSession().apply {
+        actual suspend fun unpickle(key: String, pickle: String): OlmSession {
+            initOlm()
+            return OlmSession().apply {
                 rethrow { ptr.unpickle(key, pickle) }
             }
+        }
     }
 
     actual val sessionId: String get() = rethrow { ptr.session_id() }

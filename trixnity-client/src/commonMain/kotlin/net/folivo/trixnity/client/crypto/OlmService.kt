@@ -50,16 +50,9 @@ class OlmService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     json: Json,
+    private val olmAccount: OlmAccount,
+    olmUtility: OlmUtility,
 ) : IOlmService {
-    private val account: OlmAccount =
-        store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
-            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) }
-    private val utility = OlmUtility.create()
-
-    fun free() {
-        account.free()
-        utility.free()
-    }
 
     override suspend fun getSelfSignedDeviceKeys() = sign.sign(
         DeviceKeys(
@@ -70,16 +63,16 @@ class OlmService(
         )
     )
 
-    private val ownEd25519Key = Ed25519Key(ownDeviceId, account.identityKeys.ed25519)
-    private val ownCurve25519Key = Curve25519Key(ownDeviceId, account.identityKeys.curve25519)
+    private val ownEd25519Key = Ed25519Key(ownDeviceId, olmAccount.identityKeys.ed25519)
+    private val ownCurve25519Key = Curve25519Key(ownDeviceId, olmAccount.identityKeys.curve25519)
 
     override val sign = OlmSignService(
         ownUserId = ownUserId,
         ownDeviceId = ownDeviceId,
         json = json,
         store = store,
-        account = account,
-        utility = utility,
+        account = olmAccount,
+        olmUtility = olmUtility,
     )
     override val event = OlmEventService(
         olmPickleKey = olmPickleKey,
@@ -88,7 +81,7 @@ class OlmService(
         ownEd25519Key = ownEd25519Key,
         ownCurve25519Key = ownCurve25519Key,
         json = json,
-        account = account,
+        olmAccount = olmAccount,
         store = store,
         api = api,
         signService = sign,
@@ -100,23 +93,23 @@ class OlmService(
         api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { event.decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
-        event.start(scope)
+        event.start()
     }
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
         if (count == null) return
         val generateOneTimeKeysCount =
-            (account.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
+            (olmAccount.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
                 .coerceAtLeast(0)
         if (generateOneTimeKeysCount > 0) {
-            account.generateOneTimeKeys(generateOneTimeKeysCount + account.maxNumberOfOneTimeKeys / 4)
-            val signedOneTimeKeys = Keys(account.oneTimeKeys.curve25519.map {
+            olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
+            val signedOneTimeKeys = Keys(olmAccount.oneTimeKeys.curve25519.map {
                 sign.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
             }.toSet())
             log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
             api.keys.setKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
-            account.markKeysAsPublished()
-            store.olm.storeAccount(account, olmPickleKey)
+            olmAccount.markKeysAsPublished()
+            store.olm.storeAccount(olmAccount, olmPickleKey)
         }
     }
 

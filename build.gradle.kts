@@ -2,7 +2,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
+        maven("https://www.jetbrains.com/intellij-repository/releases")
     }
     dependencies {
         classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
@@ -19,17 +19,19 @@ plugins {
     kotlin("jvm") version Versions.kotlin apply false
     kotlin("js") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
+    id("io.kotest.multiplatform") version Versions.kotest apply false
     id("com.google.devtools.ksp") version Versions.ksp apply false
     id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
 allprojects {
     group = "net.folivo"
-    version = "2.0.0-RC5"
+    version = "2.0.0-RC6"
 
     repositories {
         mavenCentral()
         google()
+        mavenLocal()
     }
 
     apply(plugin = "org.jetbrains.dokka")

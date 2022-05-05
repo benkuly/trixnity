@@ -61,7 +61,7 @@ class OlmSignService internal constructor(
     private val json: Json,
     private val store: Store,
     private val account: OlmAccount,
-    private val utility: OlmUtility,
+    private val olmUtility: OlmUtility,
 ) : IOlmSignService {
 
     override suspend fun signatures(jsonObject: JsonObject, signWith: IOlmSignService.SignWith): Signatures<UserId> {
@@ -173,7 +173,7 @@ class OlmSignService internal constructor(
                         val signatureKey = signedObject.signatures?.get(userId)?.find { it.keyId == signingKey.keyId }
                             ?: return VerifyResult.MissingSignature("no signature found for signing key $signingKey")
                         try {
-                            utility.verifyEd25519(
+                            olmUtility.verifyEd25519(
                                 signingKey.value,
                                 signedJson,
                                 signatureKey.value

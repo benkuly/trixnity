@@ -8,6 +8,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import kotlin.jvm.JvmName
 
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
@@ -49,12 +50,18 @@ suspend inline fun <reified C : StateEventContent> IRoomService.getState(
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toList")
-fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
-    maxSize.flatMapLatest { listSize ->
+fun Flow<StateFlow<TimelineEvent?>>.toFlowList(
+    maxSize: StateFlow<Int>,
+    minSize: MutableStateFlow<Int> = MutableStateFlow(0)
+): Flow<List<StateFlow<TimelineEvent?>>> {
+    return maxSize.flatMapLatest { listSize ->
         take(listSize)
-            // TODO could be optimized with mutable list and transform, but may have consequences (ConcurrentModificationException), when this list is not synchronized
-            .scan(listOf()) { old, new -> old + new }
+            .scan<StateFlow<TimelineEvent?>, List<StateFlow<TimelineEvent?>>>(listOf()) { old, new -> old + new }
+            .filter { it.size >= if (maxSize.value < minSize.value) maxSize.value else minSize.value }
+            .onEach { minSize.value = it.size }
+            .distinctUntilChanged()
     }
+}
 
 /**
  * Converts a flow of flow of timeline events into a flow of list of timeline events limited by `maxSize`.
@@ -66,7 +73,10 @@ fun Flow<StateFlow<TimelineEvent?>>.toFlowList(maxSize: MutableStateFlow<Int>): 
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toListFromLatest")
-fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(maxSize: MutableStateFlow<Int>): Flow<List<StateFlow<TimelineEvent?>>> =
+fun Flow<Flow<StateFlow<TimelineEvent?>>?>.toFlowList(
+    maxSize: StateFlow<Int>,
+    minSize: MutableStateFlow<Int> = MutableStateFlow(0)
+): Flow<List<StateFlow<TimelineEvent?>>> =
     flatMapLatest {
-        it?.toFlowList(maxSize) ?: flowOf(listOf())
+        it?.toFlowList(maxSize, minSize) ?: flowOf(listOf())
     }

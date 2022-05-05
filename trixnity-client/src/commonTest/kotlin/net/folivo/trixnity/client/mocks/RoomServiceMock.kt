@@ -35,7 +35,6 @@ class RoomServiceMock : IRoomService {
 
     override suspend fun getLastTimelineEvent(
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
         throw NotImplementedError()
@@ -61,7 +60,6 @@ class RoomServiceMock : IRoomService {
     override suspend fun getTimelineEvents(
         startFrom: StateFlow<TimelineEvent?>,
         direction: GetEvents.Direction,
-        scope: CoroutineScope,
         decryptionTimeout: Duration
     ): Flow<StateFlow<TimelineEvent?>> {
         return returnGetTimelineEvents
@@ -69,7 +67,6 @@ class RoomServiceMock : IRoomService {
 
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,
-        scope: CoroutineScope
     ): Flow<Flow<StateFlow<TimelineEvent?>>?> {
         throw NotImplementedError()
     }

@@ -7,9 +7,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.string.shouldNotBeBlank
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-
+@OptIn(ExperimentalCoroutinesApi::class)
 class OlmInboundGroupSessionTest {
 
     private val sessionKey = "AgAAAAAwMTIzNDU2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMzQ1Njc4OUFCREVGM" +
@@ -19,7 +21,7 @@ class OlmInboundGroupSessionTest {
             "8/mWQOW3VVTnDIlnwd8oHUYRuk8TCQ"
 
     @Test
-    fun createInboundSession() = initTest {
+    fun createInboundSession() = runTest {
         freeAfter(OlmOutboundGroupSession.create()) { aliceOutboundSession ->
             freeAfter(OlmInboundGroupSession.create(aliceOutboundSession.sessionKey)) { bobInboundSession ->
                 assertSoftly(bobInboundSession.sessionId) {
@@ -31,7 +33,7 @@ class OlmInboundGroupSessionTest {
     }
 
     @Test
-    fun decrypt() = initTest {
+    fun decrypt() = runTest {
         freeAfter(OlmOutboundGroupSession.create()) { aliceOutboundSession ->
             freeAfter(OlmInboundGroupSession.create(aliceOutboundSession.sessionKey)) { bobInboundSession ->
                 val encryptedMessage = aliceOutboundSession.encrypt("Hello from Alice!")
@@ -44,7 +46,7 @@ class OlmInboundGroupSessionTest {
     }
 
     @Test
-    fun decrypt_withEmoji() = initTest {
+    fun decrypt_withEmoji() = runTest {
         val sessionKey =
             "AgAAAAycZE6AekIctJWYxd2AWLOY15YmxZODm/WkgbpWkyycp6ytSp/R+wo84jRrzBNWmv6ySLTZ9R0EDOk9VI2eZyQ6Efdwyo1mAvrWvTkZl9yALPdkOIVHywyG65f1SNiLrnsln3hgsT1vUrISGyKtsljoUgQpr3JDPEhD0ilAi63QBjhnGCW252b+7nF+43rb6O6lwm93LaVwe2341Gdp6EkhTUvetALezEqDOtKN00wVqAbq0RQAnUJIowxHbMswg+FyoR1K1oCjnVEoF23O9xlAn5g1XtuBZP3moJlR2lwsBA"
         val msgWithEmoji =
@@ -60,7 +62,7 @@ class OlmInboundGroupSessionTest {
     }
 
     @Test
-    fun decrypt_withInvalidBase64() = initTest {
+    fun decrypt_withInvalidBase64() = runTest {
         val sessionKey =
             "AgAAAAycZE6AekIctJWYxd2AWLOY15YmxZODm/WkgbpWkyycp6ytSp/R+wo84jRrzBNWmv6ySLTZ9R0EDOk9VI2eZyQ6Efdwyo1mAvrWvTkZl9yALPdkOIVHywyG65f1SNiLrnsln3hgsT1vUrISGyKtsljoUgQpr3JDPEhD0ilAi63QBjhnGCW252b+7nF+43rb6O6lwm93LaVwe2341Gdp6EkhTUvetALezEqDOtKN00wVqAbq0RQAnUJIowxHbMswg+FyoR1K1oCjnVEoF23O9xlAn5g1XtuBZP3moJlR2lwsBA"
         val msgWithInvalidBase64 = "AwgANYTHINGf87ge45ge7gr*/rg5ganything4gr41rrgr4re55tanythingmcsXUkhDv0UePj922kgf+"
@@ -74,7 +76,7 @@ class OlmInboundGroupSessionTest {
 
 
     @Test
-    fun importExport() = initTest {
+    fun importExport() = runTest {
         val encryptedMessage = "AwgAEhAcbh6UpbByoyZxufQ+h2B+8XHMjhR69G8F4+qjMaFlnIXusJZX3r8LnRORG9T3D" +
                 "XFdbVuvIWrLyRfm4i8QRbe8VPwGRFG57B1CtmxanuP8bHtnnYqlwPsD"
         val export = freeAfter(OlmInboundGroupSession.create(sessionKey)) { inboundSession ->
@@ -98,14 +100,14 @@ class OlmInboundGroupSessionTest {
 
 
     @Test
-    fun pickle() = initTest {
+    fun pickle() = runTest {
         freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
             session.pickle("someKey") shouldNot beBlank()
         }
     }
 
     @Test
-    fun unpickle() = initTest {
+    fun unpickle() = runTest {
         val pickle = freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
             session.pickle("someKey") to session.sessionId
         }

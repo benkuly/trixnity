@@ -137,7 +137,7 @@ class KeyBackupIT {
                         .verify(bootstrap.recoveryKey).getOrThrow()
                 }
 
-                val events = client3.room.getLastTimelineEvents(roomId, scope)
+                val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
                     .map { it.map { it.value?.eventId } }
                     .first { it.size == 2 }

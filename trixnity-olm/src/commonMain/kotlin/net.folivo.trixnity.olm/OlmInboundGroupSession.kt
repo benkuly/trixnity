@@ -4,9 +4,9 @@ expect class OlmInboundGroupSession : WantsToBeFree {
     internal val ptr: OlmInboundGroupSessionPointer
 
     companion object {
-        fun create(sessionKey: String): OlmInboundGroupSession
-        fun import(sessionKey: String): OlmInboundGroupSession
-        fun unpickle(key: String, pickle: String): OlmInboundGroupSession
+        suspend fun create(sessionKey: String): OlmInboundGroupSession
+        suspend fun import(sessionKey: String): OlmInboundGroupSession
+        suspend fun unpickle(key: String, pickle: String): OlmInboundGroupSession
     }
 
     val sessionId: String

@@ -141,8 +141,8 @@ class MediaService(
         contentType: ContentType
     ): Pair<String, ThumbnailInfo>? {
         val thumbnail = try {
-            createThumbnail(content, contentType, 600, 600)
-        } catch (e: ThumbnailCreationException) {
+            createThumbnail(content, 600, 600)
+        } catch (e: Exception) {
             log.warn(e) { "could not create thumbnail from file with content type $contentType" }
             return null
         }
@@ -180,8 +180,8 @@ class MediaService(
         contentType: ContentType
     ): Pair<EncryptedFile, ThumbnailInfo>? {
         val thumbnail = try {
-            createThumbnail(content, contentType, 600, 600)
-        } catch (e: ThumbnailCreationException) {
+            createThumbnail(content, 600, 600)
+        } catch (e: Exception) {
             log.debug { "could not create thumbnail from file with content type $contentType" }
             return null
         }

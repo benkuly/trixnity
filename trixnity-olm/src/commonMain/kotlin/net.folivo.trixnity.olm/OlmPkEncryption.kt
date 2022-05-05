@@ -4,7 +4,7 @@ expect class OlmPkEncryption : WantsToBeFree {
     internal val ptr: OlmPkEncryptionPointer
 
     companion object {
-        fun create(recipientKey: String): OlmPkEncryption
+        suspend fun create(recipientKey: String): OlmPkEncryption
     }
 
     override fun free()

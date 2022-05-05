@@ -312,7 +312,7 @@ class RoomsApiClientTest {
         val result = matrixRestClient.rooms.getEvents(
             roomId = RoomId("room", "server"),
             from = "from",
-            dir = GetEvents.Direction.FORWARD,
+            dir = GetEvents.Direction.FORWARDS,
             limit = 10
         ).getOrThrow()
         assertEquals(response, result)

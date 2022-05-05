@@ -31,13 +31,12 @@ class ActiveSasVerificationMethod private constructor(
     private val store: Store,
     private val keyTrustService: IKeyTrustService,
     private val json: Json,
+    private val olmSas: OlmSAS,
 ) : ActiveVerificationMethod() {
 
     private val actualTransactionId = relatesTo?.eventId?.full
         ?: transactionId
         ?: throw IllegalArgumentException("actualTransactionId should never be null")
-
-    private val olmSas = OlmSAS.create()
 
     private val _state: MutableStateFlow<ActiveSasVerificationState> =
         MutableStateFlow(
@@ -107,6 +106,7 @@ class ActiveSasVerificationMethod private constructor(
                 store,
                 keyTrustService,
                 json,
+                OlmSAS.create()
             )
         }
     }

@@ -1,20 +1,7 @@
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-}
-
-android {
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
-    defaultConfig {
-        minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    sourceSets.getByName("main") {
-        manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    }
+    id("io.kotest.multiplatform")
 }
 
 kotlin {
@@ -29,23 +16,24 @@ kotlin {
             useJUnitPlatform()
         }
     }
-    android {
-        publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+    js(IR) {
+        browser {
+            testTask {
+                enabled = false
+                useKarma {
+                    useFirefoxHeadless()
+                    useConfigDirectory(rootDir.resolve("karma.config.d"))
+                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
+                }
+            }
         }
+        nodejs {
+            testTask {
+                enabled = false
+            }
+        }
+        binaries.executable()
     }
-//    js(IR) {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
 
 //    linuxX64()
 //    mingwX64()
@@ -72,21 +60,15 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+                implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
-        val androidAndJvmMain by creating {
-            dependsOn(commonMain)
-        }
         val jvmMain by getting {
-            dependsOn(androidAndJvmMain)
             dependencies {
                 implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
             }
         }
-        val androidMain by getting {
-            dependsOn(androidAndJvmMain)
-        }
-//        val jsMain by getting
+        val jsMain by getting
 //        val nativeMain = create("nativeMain") {
 //            dependsOn(commonMain)
 //        }

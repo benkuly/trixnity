@@ -4,7 +4,7 @@ expect class OlmPkSigning : WantsToBeFree {
     internal val ptr: OlmPkSigningPointer
 
     companion object {
-        fun create(privateKey: String? = null): OlmPkSigning
+        suspend fun create(privateKey: String? = null): OlmPkSigning
     }
 
     val privateKey: String

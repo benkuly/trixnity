@@ -111,7 +111,7 @@ class TimelineEventIT {
 
             val decryptedMessages = mutableSetOf<EventId>()
 
-            client2.room.getLastTimelineEvent(room, scope2)
+            client2.room.getLastTimelineEvent(room)
                 .filterNotNull()
                 .takeWhile { decryptedMessages.size < 3 }
                 .collectLatest { lastTimelineEvent ->

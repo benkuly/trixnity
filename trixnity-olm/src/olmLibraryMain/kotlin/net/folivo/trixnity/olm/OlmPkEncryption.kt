@@ -14,7 +14,7 @@ actual class OlmPkEncryption private constructor() : WantsToBeFree {
     internal actual val ptr: OlmPkEncryptionPointer = pk_encryption()
 
     actual companion object {
-        actual fun create(recipientKey: String): OlmPkEncryption = OlmPkEncryption().apply {
+        actual suspend fun create(recipientKey: String): OlmPkEncryption = OlmPkEncryption().apply {
             try {
                 val result = pk_encryption_set_recipient_key(ptr, recipientKey.encodeToByteArray())
                 checkError(ptr, result, ::pk_encryption_last_error)

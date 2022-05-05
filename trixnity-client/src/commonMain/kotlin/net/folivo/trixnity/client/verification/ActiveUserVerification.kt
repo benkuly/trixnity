@@ -16,7 +16,7 @@ import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -82,7 +82,7 @@ class ActiveUserVerification(
 
     override suspend fun lifecycle(scope: CoroutineScope) {
         val timelineJob = scope.launch {
-            room.getTimelineEvents(room.getTimelineEvent(requestEventId, roomId, this), FORWARD, this)
+            room.getTimelineEvents(room.getTimelineEvent(requestEventId, roomId, this), FORWARDS)
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
                         val contentResult = it.content

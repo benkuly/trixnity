@@ -53,7 +53,7 @@ suspend fun timelineExample() = coroutineScope {
     }
 
     val job2 = launch {
-        matrixClient.room.getLastTimelineEvents(roomId, this)
+        matrixClient.room.getLastTimelineEvents(roomId)
             .toFlowList(MutableStateFlow(10))
             .debounce(100.milliseconds)
             .collectLatest { timelineEvents ->

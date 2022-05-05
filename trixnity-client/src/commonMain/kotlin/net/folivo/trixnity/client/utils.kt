@@ -119,7 +119,7 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
                     block()
                 }
             }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             if (error is CancellationException) throw error
         }
     }
@@ -144,7 +144,7 @@ suspend fun <T> retryWhen(
         }
 
     return flow {
-        while (currentCoroutineContext().isActive) {
+        while (true) {
             condition.first { it } // just wait, until it is true again
             try {
                 emit(
@@ -154,7 +154,7 @@ suspend fun <T> retryWhen(
                         }
                     }
                 )
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 if (error is CancellationException) throw error
             }
         }

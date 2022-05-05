@@ -75,7 +75,7 @@ interface IRoomsApiClient {
     suspend fun getEvents(
         roomId: RoomId,
         from: String,
-        dir: GetEvents.Direction = GetEvents.Direction.FORWARD,
+        dir: GetEvents.Direction = GetEvents.Direction.FORWARDS,
         to: String? = null,
         limit: Long? = null,
         filter: String? = null,

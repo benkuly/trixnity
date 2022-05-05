@@ -13,10 +13,10 @@ import io.kotest.matchers.string.shouldStartWith
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.OctetStream
-import io.ktor.http.ContentType.Image.JPEG
 import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -146,10 +146,10 @@ class MediaServiceTest : ShouldSpec({
                 width shouldBe 600
                 height shouldBe 600
                 size.shouldNotBeNull() shouldBeGreaterThan 1000
-                mimeType shouldBe "image/jpeg"
+                mimeType shouldBe "image/png"
             }
             store.media.getContent(result.first).shouldNotBeNull().size shouldBeGreaterThan 24
-            store.media.getUploadCache(result.first) shouldBe UploadCache(result.first, null, JPEG.toString())
+            store.media.getUploadCache(result.first) shouldBe UploadCache(result.first, null, PNG.toString())
         }
         should("return null, when no thumbnail could be generated") {
             cut.prepareUploadThumbnail("test".toByteArray(), PNG) shouldBe null
@@ -183,7 +183,7 @@ class MediaServiceTest : ShouldSpec({
                 width shouldBe 600
                 height shouldBe 600
                 size.shouldNotBeNull() shouldBeGreaterThan 1000
-                mimeType shouldBe "image/jpeg"
+                mimeType shouldBe "image/png"
             }
             store.media.getContent(result.first.url).shouldNotBeNull().size shouldBeGreaterThan 24
             store.media.getUploadCache(result.first.url) shouldBe UploadCache(

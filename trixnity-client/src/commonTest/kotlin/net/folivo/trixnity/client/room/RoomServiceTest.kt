@@ -584,7 +584,7 @@ class RoomServiceTest : ShouldSpec({
             store.roomTimeline.addAll(listOf(event2Timeline))
             val scope = CoroutineScope(Dispatchers.Default)
             val result = async {
-                cut.getLastTimelineEvent(room, scope).take(3).toList()
+                cut.getLastTimelineEvent(room).take(3).toList()
             }
             delay(50)
             store.room.update(room) { initialRoom }

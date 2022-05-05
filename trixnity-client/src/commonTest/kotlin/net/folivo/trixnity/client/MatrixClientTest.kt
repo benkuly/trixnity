@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
@@ -272,26 +273,30 @@ class MatrixClientTest : ShouldSpec({
         }
     }
     context(MatrixClient::loginState.name) {
-        val inMemoryStore = InMemoryStore(scope).apply { init() }
-        delay(50) // wait for init
-        inMemoryStore.account.olmPickleKey.value = ""
-        inMemoryStore.account.accessToken.value = "abcdef"
-        inMemoryStore.account.userId.value = userId
-        inMemoryStore.account.deviceId.value = "deviceId"
-        inMemoryStore.account.baseUrl.value = Url("http://localhost")
-        inMemoryStore.account.filterId.value = "someFilter"
-        inMemoryStore.account.displayName.value = "bob"
-        inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
-        val cut = MatrixClient.fromStore(
-            storeFactory = InMemoryStoreFactory(inMemoryStore),
-            httpClientFactory = {
-                HttpClient(MockEngine) {
-                    it()
-                    engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
-                }
-            },
-            scope = scope
-        ).getOrThrow()!!
+        lateinit var cut: MatrixClient
+        lateinit var inMemoryStore: InMemoryStore
+        beforeTest {
+            inMemoryStore = InMemoryStore(scope).apply { init() }
+            delay(50) // wait for init
+            inMemoryStore.account.olmPickleKey.value = ""
+            inMemoryStore.account.accessToken.value = "abcdef"
+            inMemoryStore.account.userId.value = userId
+            inMemoryStore.account.deviceId.value = "deviceId"
+            inMemoryStore.account.baseUrl.value = Url("http://localhost")
+            inMemoryStore.account.filterId.value = "someFilter"
+            inMemoryStore.account.displayName.value = "bob"
+            inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            cut = MatrixClient.fromStore(
+                storeFactory = InMemoryStoreFactory(inMemoryStore),
+                httpClientFactory = {
+                    HttpClient(MockEngine) {
+                        it()
+                        engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
+                    }
+                },
+                scope = scope
+            ).getOrThrow().shouldNotBeNull()
+        }
         should("$LOGGED_IN when access token is not null") {
             inMemoryStore.account.accessToken.value = "access"
             inMemoryStore.account.syncBatchToken.value = "sync"
@@ -332,7 +337,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope
-            ).getOrThrow()!!
+            ).getOrThrow().shouldNotBeNull()
 
             inMemoryStore.account.accessToken.value = null
             inMemoryStore.account.syncBatchToken.value = "sync"
@@ -352,7 +357,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope
-            ).getOrThrow()!!
+            ).getOrThrow().shouldNotBeNull()
 
             cut.loginState.first { it == LOGGED_IN }
             cut.logout().getOrThrow()

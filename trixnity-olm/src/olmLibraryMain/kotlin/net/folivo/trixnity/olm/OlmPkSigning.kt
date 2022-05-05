@@ -15,7 +15,7 @@ actual class OlmPkSigning private constructor(
     actual val publicKey: String
 ) : WantsToBeFree {
     actual companion object {
-        actual fun create(privateKey: String?): OlmPkSigning {
+        actual suspend fun create(privateKey: String?): OlmPkSigning {
             val ptr = pk_signing()
             val publicKey = ByteArray(pk_signing_public_key_length().toInt())
 
