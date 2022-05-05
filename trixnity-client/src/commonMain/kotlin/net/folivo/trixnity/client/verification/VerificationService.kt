@@ -58,15 +58,18 @@ interface IVerificationService {
         object PreconditionsNotMet : SelfVerificationMethods
 
         /**
-         * Ccross signing needs to be bootstrapped.
+         * Cross signing can be bootstrapped.
          * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
          */
         object NoCrossSigningEnabled : SelfVerificationMethods
 
+        /**
+         * No self verification needed.
+         */
         object AlreadyCrossSigned : SelfVerificationMethods
 
         /**
-         * If empty: no other device & no key backup -> consider start bootstrapping.
+         * If empty: no other device & no key backup -> consider new bootstrapping of cross signing
          */
         @JvmInline
         value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
