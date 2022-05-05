@@ -59,7 +59,6 @@ This project contains the following modules, which can be used independently:
     - [x] cross signing
     - [x] room key backup
     - [x] room list
-    - [ ] spaces
     - [x] timelines
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
