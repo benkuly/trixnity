@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
+import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.UserId
@@ -33,6 +34,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribe
+import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
@@ -49,13 +51,31 @@ interface IVerificationService {
         theirUserId: UserId
     ): Result<ActiveUserVerification>
 
-    /**
-     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculated available methods.
-     * If it is empty, it means that cross signing needs to be bootstrapped.
-     * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?>
+    interface SelfVerificationMethods {
+        /**
+         * We don't have enough information yet to calculated available methods (e.g. waiting for the first sync).
+         */
+        object PreconditionsNotMet : SelfVerificationMethods
+
+        /**
+         * Cross signing can be bootstrapped.
+         * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
+         */
+        object NoCrossSigningEnabled : SelfVerificationMethods
+
+        /**
+         * No self verification needed.
+         */
+        object AlreadyCrossSigned : SelfVerificationMethods
+
+        /**
+         * If empty: no other device & no key backup -> consider new bootstrapping of cross signing
+         */
+        @JvmInline
+        value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
+    }
+
+    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<SelfVerificationMethods>
 
     suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
@@ -274,7 +294,7 @@ class VerificationService(
      * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<Set<SelfVerificationMethod>?> {
+    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
@@ -294,14 +314,13 @@ class VerificationService(
                         "crossSigningKeys=$crossSigningKeys deviceKeys=$deviceKeys defaultKey=$defaultKey"
             }
             // preconditions: sync running, login was successful and we are not yet cross-signed
-            if (currentSyncState != SyncState.RUNNING) return@combine null
-            if (deviceKeys == null || crossSigningKeys == null) return@combine null
+            if (deviceKeys == null || crossSigningKeys == null) return@combine SelfVerificationMethods.PreconditionsNotMet
             val ownTrustLevel = deviceKeys[ownDeviceId]?.trustLevel
-            if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine null
+            if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine SelfVerificationMethods.AlreadyCrossSigned
 
             // we need bootstrapping if this is the first device or bootstrapping is in progress
-            if (crossSigningKeys.isEmpty()) return@combine setOf()
-            if (bootstrapRunning) return@combine setOf()
+            if (crossSigningKeys.isEmpty()) return@combine SelfVerificationMethods.NoCrossSigningEnabled
+            if (bootstrapRunning) return@combine SelfVerificationMethods.NoCrossSigningEnabled
 
             val deviceVerificationMethod = deviceKeys.entries
                 .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
@@ -336,7 +355,7 @@ class VerificationService(
                 is SecretKeyEventContent.Unknown, null -> setOf()
             }
 
-            return@combine recoveryKeyMethods + deviceVerificationMethod // if empty: no other device & no key backup -> start bootstrapping
+            return@combine SelfVerificationMethods.CrossSigningEnabled(recoveryKeyMethods + deviceVerificationMethod)
         }.stateIn(scope)
     }
 

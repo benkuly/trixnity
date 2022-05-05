@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
@@ -16,6 +17,7 @@ import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
+import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -123,7 +125,9 @@ class CrossSigningIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.getSelfVerificationMethods(scope1).first { it?.isEmpty() == true }
+            client1.verification.getSelfVerificationMethods(scope1)
+                .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
+                .first()
 
             val bootstrap = client1.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
@@ -142,7 +146,9 @@ class CrossSigningIT {
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 
-            client1.verification.getSelfVerificationMethods(scope1).first { it?.isEmpty() == null }
+            client1.verification.getSelfVerificationMethods(scope1)
+                .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
+                .first()
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
@@ -181,12 +187,15 @@ class CrossSigningIT {
 
             withClue("self verification of client2") {
                 val client2VerificationMethods =
-                    client2.verification.getSelfVerificationMethods(scope2).first { it?.size == 2 }
-                client2VerificationMethods?.filterIsInstance<CrossSignedDeviceVerification>()?.size shouldBe 1
-                client2VerificationMethods?.filterIsInstance<AesHmacSha2RecoveryKey>()?.size shouldBe 1
-                client2VerificationMethods!!.filterIsInstance<AesHmacSha2RecoveryKey>().first()
+                    client2.verification.getSelfVerificationMethods(scope2)
+                        .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
+                        .first { it.methods.size == 2 }.methods
+                client2VerificationMethods.filterIsInstance<CrossSignedDeviceVerification>().size shouldBe 1
+                client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().size shouldBe 1
+                client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
-                client2.verification.getSelfVerificationMethods(scope2).first { it == null }
+                client2.verification.getSelfVerificationMethods(scope2)
+                    .first { it == SelfVerificationMethods.AlreadyCrossSigned }
             }
 
             withClue("observe trust level with client1 after self verification") {

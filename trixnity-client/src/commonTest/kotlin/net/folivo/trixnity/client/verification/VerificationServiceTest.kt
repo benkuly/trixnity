@@ -22,6 +22,7 @@ import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
+import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -463,35 +464,14 @@ private val body: ShouldSpec.() -> Unit = {
             scope = CoroutineScope(Dispatchers.Default)
         }
         afterTest { scope.cancel() }
-        should("return null, when sync state is not running") {
-            currentSyncState.value = SyncState.INITIAL_SYNC
-            store.keys.updateDeviceKeys(aliceUserId) {
-                mapOf(
-                    aliceDeviceId to StoredDeviceKeys(
-                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned
-                    ),
-                    "DEV2" to StoredDeviceKeys(
-                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.CrossSigned(false)
-                    ),
-                    "DEV3" to StoredDeviceKeys(
-                        Signed(DeviceKeys(aliceUserId, "DEV3", setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.Valid(false)
-                    )
-                )
-            }
-            val result = cut.getSelfVerificationMethods(scope)
-            result.value shouldBe null
-        }
-        should("return null, when device keys not fetched yet") {
+        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when device keys not fetched yet") {
             store.keys.updateCrossSigningKeys(aliceUserId) {
                 setOf()
             }
             val result = cut.getSelfVerificationMethods(scope)
-            result.value shouldBe null
+            result.value shouldBe SelfVerificationMethods.PreconditionsNotMet
         }
-        should("return null, when cross signing keys not fetched yet") {
+        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when cross signing keys not fetched yet") {
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -501,9 +481,9 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             val result = cut.getSelfVerificationMethods(scope)
-            result.value shouldBe null
+            result.value shouldBe SelfVerificationMethods.PreconditionsNotMet
         }
-        should("return empty set, when cross signing keys are fetched, but empty") {
+        should("return ${SelfVerificationMethods.NoCrossSigningEnabled}, when cross signing keys are fetched, but empty") {
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -516,9 +496,9 @@ private val body: ShouldSpec.() -> Unit = {
                 setOf()
             }
             val result = cut.getSelfVerificationMethods(scope)
-            result.value shouldBe setOf()
+            result.value shouldBe SelfVerificationMethods.NoCrossSigningEnabled
         }
-        should("return null when already cross signed") {
+        should("return ${SelfVerificationMethods.AlreadyCrossSigned} when already cross signed") {
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -527,7 +507,15 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).value shouldBe null
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
+            }
+            cut.getSelfVerificationMethods(scope).value shouldBe SelfVerificationMethods.AlreadyCrossSigned
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             apiConfig.endpoints {
@@ -559,8 +547,9 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             val result = cut.getSelfVerificationMethods(scope).value
-            result?.size shouldBe 1
-            val firstResult = result!!.first()
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods
+            result.size shouldBe 1
+            val firstResult = result.first()
             firstResult.shouldBeInstanceOf<CrossSignedDeviceVerification>()
             firstResult.createDeviceVerification().getOrThrow().shouldBeInstanceOf<ActiveDeviceVerification>()
         }
@@ -581,7 +570,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).value?.size shouldBe 0
+            cut.getSelfVerificationMethods(scope).value
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>()
+                .methods.size shouldBe 0
         }
         should("add ${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
@@ -606,7 +597,8 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).value shouldBe setOf(
+            cut.getSelfVerificationMethods(scope).value
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods shouldBe setOf(
                 AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey)
             )
         }
@@ -633,7 +625,8 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).value shouldBe setOf(
+            cut.getSelfVerificationMethods(scope).value
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods shouldBe setOf(
                 AesHmacSha2RecoveryKey(keyService, "KEY", defaultKey),
                 AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", defaultKey)
             )
