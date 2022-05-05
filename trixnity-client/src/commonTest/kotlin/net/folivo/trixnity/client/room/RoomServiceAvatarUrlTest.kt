@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -50,7 +51,8 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
             KeyBackupServiceMock(),
             UserServiceMock(),
             MediaServiceMock(),
-            currentSyncState
+            currentSyncState,
+            MatrixClientConfiguration()
         )
     }
 

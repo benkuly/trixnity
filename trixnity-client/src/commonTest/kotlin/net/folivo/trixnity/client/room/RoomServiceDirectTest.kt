@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -60,7 +61,8 @@ class RoomServiceDirectTest : ShouldSpec({
             KeyBackupServiceMock(),
             UserServiceMock(),
             MediaServiceMock(),
-            currentSyncState
+            currentSyncState,
+            MatrixClientConfiguration()
         )
     }
 

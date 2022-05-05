@@ -13,7 +13,6 @@ import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
-import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMapping
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.IUserService
@@ -169,11 +168,10 @@ class RoomService(
     private val user: IUserService,
     private val media: IMediaService,
     private val currentSyncState: StateFlow<SyncState>,
-    private val setOwnMessagesAsFullyRead: Boolean = false,
-    customOutboxMessageMediaUploaderMappings: Set<OutboxMessageMediaUploaderMapping<*>> = setOf(),
+    private val config: MatrixClientConfiguration,
 ) : IRoomService {
     private val outboxMessageMediaUploaderMappings =
-        DefaultOutboxMessageMediaUploaderMappings + customOutboxMessageMediaUploaderMappings
+        DefaultOutboxMessageMediaUploaderMappings + config.customOutboxMessageMediaUploaderMappings
 
     internal suspend fun start(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -365,7 +363,7 @@ class RoomService(
     }
 
     internal suspend fun setLastRelevantEvent(event: RoomEvent<*>) {
-        if (event is MessageEvent) // TODO make configurable
+        if (config.lastRelevantEventFilter(event))
             store.room.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(lastRelevantEventId = event.id)
                     ?: Room(roomId = event.roomId, lastRelevantEventId = event.id)
@@ -1167,7 +1165,7 @@ class RoomService(
                         log.trace { "send to $roomId : $content" }
                         val eventId =
                             api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId).getOrThrow()
-                        if (setOwnMessagesAsFullyRead) {
+                        if (config.setOwnMessagesAsFullyRead) {
                             api.rooms.setReadMarkers(roomId, eventId).getOrThrow()
                         }
                         store.roomOutboxMessage.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }

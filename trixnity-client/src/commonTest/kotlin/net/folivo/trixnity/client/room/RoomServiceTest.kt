@@ -16,6 +16,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -87,7 +88,10 @@ class RoomServiceTest : ShouldSpec({
         media = MediaServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = RoomService(alice, store, api, olmEventService, keyBackup, users, media, currentSyncState)
+        cut = RoomService(
+            alice, store, api, olmEventService, keyBackup, users, media, currentSyncState,
+            MatrixClientConfiguration()
+        )
     }
 
     afterTest {
