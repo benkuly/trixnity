@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.e
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -64,7 +65,8 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             KeyBackupServiceMock(),
             UserServiceMock(),
             MediaServiceMock(),
-            currentSyncState
+            currentSyncState,
+            MatrixClientConfiguration()
         )
     }
 

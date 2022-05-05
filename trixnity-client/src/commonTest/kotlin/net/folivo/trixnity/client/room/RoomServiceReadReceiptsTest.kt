@@ -9,6 +9,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -53,7 +54,8 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
             KeyBackupServiceMock(),
             UserServiceMock(),
             MediaServiceMock(),
-            currentSyncState
+            currentSyncState,
+            MatrixClientConfiguration()
         )
     }
 
