@@ -19,15 +19,19 @@ kotlin {
     js(IR) {
         browser {
             testTask {
+                enabled = false
                 useKarma {
-                    useChromiumHeadless()
-//                    useFirefoxHeadless() // FIXME
+                    useFirefoxHeadless()
                     useConfigDirectory(rootDir.resolve("karma.config.d"))
                     webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }
             }
         }
-        nodejs()
+        nodejs {
+            testTask {
+                enabled = false
+            }
+        }
         binaries.executable()
     }
 
@@ -93,7 +97,7 @@ kotlin {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-        val jsTest by getting
+//        val jsTest by getting
 //        val nativeTest = create("nativeTest") {
 //            dependsOn(commonTest)
 //        }
