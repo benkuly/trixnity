@@ -23,7 +23,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -825,7 +825,7 @@ class RoomService(
                         roomId = roomId,
                         from = startGap.batch,
                         to = destinationBatch,
-                        dir = FORWARD,
+                        dir = FORWARDS,
                         limit = limit,
                         filter = """{"lazy_load_members":true}"""
                     )
@@ -1032,7 +1032,7 @@ class RoomService(
                     .filterNotNull()
                     .map { currentTimelineEvent ->
                         if (currentTimelineEvent.gap is GapBoth
-                            || direction == FORWARD && currentTimelineEvent.gap is GapAfter
+                            || direction == FORWARDS && currentTimelineEvent.gap is GapAfter
                             || direction == BACKWARDS && currentTimelineEvent.gap is GapBefore
                         ) currentSyncState.retryWhenSyncIs(
                             RUNNING,
@@ -1043,7 +1043,7 @@ class RoomService(
                         }
                         when (direction) {
                             BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
-                            FORWARD -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
+                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
                         }
                     }
                     .filterNotNull()

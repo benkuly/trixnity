@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -710,7 +710,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 room.e(),
                                 "start",
                                 "end",
-                                dir = FORWARD,
+                                dir = FORWARDS,
                                 limit = 20,
                                 filter = """{"lazy_load_members":true}"""
                             )
@@ -782,7 +782,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 room.e(),
                                 "start",
                                 "end",
-                                dir = FORWARD,
+                                dir = FORWARDS,
                                 limit = 20,
                                 filter = """{"lazy_load_members":true}"""
                             )
@@ -848,7 +848,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 room.e(),
                                 "start",
                                 "next",
-                                dir = FORWARD,
+                                dir = FORWARDS,
                                 limit = 20,
                                 filter = """{"lazy_load_members":true}"""
                             )

@@ -26,7 +26,7 @@ data class GetEvents(
     @Serializable
     enum class Direction {
         @SerialName("f")
-        FORWARD,
+        FORWARDS,
 
         @SerialName("b")
         BACKWARDS

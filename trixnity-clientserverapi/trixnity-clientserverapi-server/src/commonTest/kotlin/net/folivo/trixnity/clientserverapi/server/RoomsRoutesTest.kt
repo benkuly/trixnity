@@ -401,7 +401,7 @@ class RoomsRoutesTest {
                 it.endpoint.from shouldBe "from"
                 it.endpoint.to shouldBe null
                 it.endpoint.filter shouldBe null
-                it.endpoint.dir shouldBe GetEvents.Direction.FORWARD
+                it.endpoint.dir shouldBe GetEvents.Direction.FORWARDS
                 it.endpoint.limit shouldBe 10
                 true
             })

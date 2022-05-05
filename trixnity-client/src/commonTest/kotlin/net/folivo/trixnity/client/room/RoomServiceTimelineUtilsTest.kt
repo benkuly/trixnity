@@ -19,7 +19,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARD
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -129,7 +129,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
             should("get timeline events forwards") {
-                cut.getTimelineEvents(cut.getTimelineEvent(event1.id, room, scope), FORWARD)
+                cut.getTimelineEvents(cut.getTimelineEvent(event1.id, room, scope), FORWARDS)
                     .take(3).toList().map { it.value } shouldBe listOf(
                     timelineEvent1,
                     timelineEvent2,
