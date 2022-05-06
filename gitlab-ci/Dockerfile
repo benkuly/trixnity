@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 # make sure to update Versions.kt, when you change something here
 ARG ANDROID_CLI_TOOLS=7583922
