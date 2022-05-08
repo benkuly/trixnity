@@ -1,4 +1,4 @@
-package net.folivo.trixnity.examples.multiplatform
+package net.folivo.trixnity.examples.client.ping
 
 import kotlinx.coroutines.runBlocking
 

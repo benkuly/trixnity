@@ -16,7 +16,7 @@ kotlin {
             useJUnitPlatform()
         }
     }
-//    js {
+//    js(IR) {
 //        browser {
 //            testTask {
 //                useKarma {

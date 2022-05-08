@@ -1,4 +1,4 @@
-package net.folivo.trixnity.examples.multiplatform
+package net.folivo.trixnity.examples.client.ping
 
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -24,14 +24,14 @@ suspend fun timelineExample() = coroutineScope {
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
     val matrixClient = MatrixClient.fromStore(
-        storeFactory = createStoreFactory(),
+        storeFactory = createStoreFactory(scope),
         scope = scope,
     ).getOrThrow() ?: MatrixClient.login(
         baseUrl = baseUrl,
         IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
-        storeFactory = createStoreFactory(),
+        storeFactory = createStoreFactory(scope),
         scope = scope,
     ).getOrThrow()
 
