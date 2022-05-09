@@ -10,8 +10,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
@@ -33,16 +31,18 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class RoomsRoutesTest {
+class RoomsRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
     private val json = createMatrixJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
-    val handlerMock: RoomsApiHandler = configure(RoomsApiHandlerMock()) { stubsUnitByDefault = true }
+    @Mock
+    lateinit var handlerMock: RoomsApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -59,18 +59,11 @@ class RoomsRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldGetEvent() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getEvent)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getEvent(isAny()) }
+            .returns(
                 Event.StateEvent(
                     id = EventId("event"),
                     roomId = RoomId("room", "server"),
@@ -80,7 +73,7 @@ class RoomsRoutesTest {
                     content = NameEventContent("a"),
                     stateKey = ""
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -100,23 +93,19 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getEvent(assert {
                 it.endpoint.evenId shouldBe EventId("\$event")
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetStateEvent() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getStateEvent)
-            .whenInvokedWith(any())
-            .then {
-                NameEventContent("name")
-            }
+        everySuspending { handlerMock.getStateEvent(isAny()) }
+            .returns(NameEventContent("name"))
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/") { bearerAuth("token") }
         assertSoftly(response) {
@@ -128,22 +117,20 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getStateEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getStateEvent(assert {
                 it.endpoint.type shouldBe "m.room.name"
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetState() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getState)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getState(isAny()) }
+            .returns(
                 listOf(
                     Event.StateEvent(
                         id = EventId("event1"),
@@ -164,7 +151,7 @@ class RoomsRoutesTest {
                         content = MemberEventContent(membership = Membership.INVITE)
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/state") { bearerAuth("token") }
         assertSoftly(response) {
@@ -199,20 +186,18 @@ class RoomsRoutesTest {
                 ]
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getState)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getState(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetMembers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getMembers)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getMembers(isAny()) }
+            .returns(
                 GetMembers.Response(
                     setOf(
                         Event.StateEvent(
@@ -235,7 +220,7 @@ class RoomsRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/members?at=someAt&membership=join") { bearerAuth("token") }
         assertSoftly(response) {
@@ -272,22 +257,20 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getMembers)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getMembers(assert {
                 it.endpoint.at shouldBe "someAt"
                 it.endpoint.membership shouldBe Membership.JOIN
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetJoinedMembers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getJoinedMembers)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getJoinedMembers(isAny()) }
+            .returns(
                 GetJoinedMembers.Response(
                     joined = mapOf(
                         UserId(
@@ -300,7 +283,7 @@ class RoomsRoutesTest {
                         ) to GetJoinedMembers.Response.RoomMember("Dino")
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/joined_members") { bearerAuth("token") }
         assertSoftly(response) {
@@ -319,20 +302,18 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getJoinedMembers)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getJoinedMembers(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetEvents() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getEvents)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getEvents(isAny()) }
+            .returns(
                 GetEvents.Response(
                     start = "start",
                     end = "end",
@@ -356,7 +337,7 @@ class RoomsRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/messages?from=from&dir=f&limit=10") { bearerAuth("token") }
         assertSoftly(response) {
@@ -395,27 +376,23 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getEvents)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getEvents(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.from shouldBe "from"
                 it.endpoint.to shouldBe null
                 it.endpoint.filter shouldBe null
                 it.endpoint.dir shouldBe GetEvents.Direction.FORWARDS
                 it.endpoint.limit shouldBe 10
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSendStateEvent() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sendStateEvent)
-            .whenInvokedWith(any())
-            .then {
-                SendEventResponse(EventId("event"))
-            }
+        everySuspending { handlerMock.sendStateEvent(isAny()) }
+            .returns(SendEventResponse(EventId("event")))
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/") {
                 bearerAuth("token")
@@ -431,25 +408,21 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sendStateEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sendStateEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.room.name"
                 it.requestBody shouldBe NameEventContent("name")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSendStateEventEventIfUnknown() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sendStateEvent)
-            .whenInvokedWith(any())
-            .then {
-                SendEventResponse(EventId("event"))
-            }
+        everySuspending { handlerMock.sendStateEvent(isAny()) }
+            .returns(SendEventResponse(EventId("event")))
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.unknown/") {
                 bearerAuth("token")
@@ -465,8 +438,8 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sendStateEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sendStateEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.unknown"
@@ -474,19 +447,15 @@ class RoomsRoutesTest {
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSendMessageEvent() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sendMessageEvent)
-            .whenInvokedWith(any())
-            .then {
-                SendEventResponse(EventId("event"))
-            }
+        everySuspending { handlerMock.sendMessageEvent(isAny()) }
+            .returns(SendEventResponse(EventId("event")))
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/send/m.room.message/someTxnId") {
                 bearerAuth("token")
@@ -502,25 +471,21 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sendMessageEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sendMessageEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.room.message"
                 it.requestBody shouldBe RoomMessageEventContent.TextMessageEventContent("someBody")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSendMessageEventEventIfUnknown() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sendMessageEvent)
-            .whenInvokedWith(any())
-            .then {
-                SendEventResponse(EventId("event"))
-            }
+        everySuspending { handlerMock.sendMessageEvent(isAny()) }
+            .returns(SendEventResponse(EventId("event")))
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/send/m.unknown/someTxnId") {
                 bearerAuth("token")
@@ -536,8 +501,8 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sendMessageEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sendMessageEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.unknown"
@@ -545,19 +510,15 @@ class RoomsRoutesTest {
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSendRedactEvent() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::redactEvent)
-            .whenInvokedWith(any())
-            .then {
-                SendEventResponse(EventId("event"))
-            }
+        everySuspending { handlerMock.redactEvent(isAny()) }
+            .returns(SendEventResponse(EventId("event")))
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/redact/%24eventToRedact/someTxnId") {
                 bearerAuth("token")
@@ -573,25 +534,21 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::redactEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.redactEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.eventId shouldBe EventId("\$eventToRedact")
                 it.requestBody shouldBe RedactEvent.Request("someReason")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldCreateRoom() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::createRoom)
-            .whenInvokedWith(any())
-            .then {
-                CreateRoom.Response(RoomId("room", "server"))
-            }
+        everySuspending { handlerMock.createRoom(isAny()) }
+            .returns(CreateRoom.Response(RoomId("room", "server")))
         val response = client.post("/_matrix/client/v3/createRoom") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -621,8 +578,8 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::createRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.createRoom(assert {
                 it.requestBody shouldBe CreateRoom.Request(
                     visibility = DirectoryVisibility.PRIVATE,
                     roomAliasLocalPart = null,
@@ -644,14 +601,15 @@ class RoomsRoutesTest {
                     isDirect = true,
                     powerLevelContentOverride = null
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomAlias() = testApplication {
         initCut()
+        everySuspending { handlerMock.setRoomAlias(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") {
                 bearerAuth("token")
@@ -663,26 +621,24 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomAlias)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomAlias(assert {
                 it.endpoint.roomAliasId shouldBe RoomAliasId("unicorns", "server")
                 it.requestBody shouldBe SetRoomAlias.Request(RoomId("!room:server"))
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomAlias() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomAlias)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomAlias(isAny()) }
+            .returns(
                 GetRoomAlias.Response(
                     roomId = RoomId("room", "server"),
                     servers = listOf("server1", "server2")
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") { bearerAuth("token") }
         assertSoftly(response) {
@@ -695,20 +651,18 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomAlias)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomAlias(assert {
                 it.endpoint.roomAliasId shouldBe RoomAliasId("unicorns", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomAliases() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomAliases)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomAliases(isAny()) }
+            .returns(
                 GetRoomAliases.Response(
                     setOf(
                         RoomAliasId("#somewhere:example.com"),
@@ -716,7 +670,7 @@ class RoomsRoutesTest {
                         RoomAliasId("#hat_trick:example.com")
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/aliases") { bearerAuth("token") }
         assertSoftly(response) {
@@ -732,17 +686,18 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomAliases)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomAliases(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteRoomAlias() = testApplication {
         initCut()
+        everySuspending { handlerMock.deleteRoomAlias(isAny()) }
+            .returns(Unit)
         val response =
             client.delete("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") { bearerAuth("token") }
         assertSoftly(response) {
@@ -750,26 +705,24 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteRoomAlias)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteRoomAlias(assert {
                 it.endpoint.roomAliasId shouldBe RoomAliasId("unicorns", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetJoinedRooms() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getJoinedRooms)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getJoinedRooms(isAny()) }
+            .returns(
                 GetJoinedRooms.Response(
                     setOf(
                         RoomId("room1", "server"), RoomId("room2", "server")
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/joined_rooms") { bearerAuth("token") }
         assertSoftly(response) {
@@ -779,14 +732,16 @@ class RoomsRoutesTest {
                 {"joined_rooms":["!room1:server","!room2:server"]}
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getJoinedRooms)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getJoinedRooms(isAny())
+        }
     }
 
     @Test
     fun shouldInviteUser() = testApplication {
         initCut()
+        everySuspending { handlerMock.inviteUser(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/invite") {
                 bearerAuth("token")
@@ -798,18 +753,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::inviteUser)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.inviteUser(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe InviteUser.Request(UserId("@user:server"), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldKickUser() = testApplication {
         initCut()
+        everySuspending { handlerMock.kickUser(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/kick") {
                 bearerAuth("token")
@@ -821,18 +777,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::kickUser)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.kickUser(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe KickUser.Request(UserId("@user:server"), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldBanUser() = testApplication {
         initCut()
+        everySuspending { handlerMock.banUser(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/ban") {
                 bearerAuth("token")
@@ -844,18 +801,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::banUser)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.banUser(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe BanUser.Request(UserId("@user:server"), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldUnbanUser() = testApplication {
         initCut()
+        everySuspending { handlerMock.unbanUser(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/unban") {
                 bearerAuth("token")
@@ -867,23 +825,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::unbanUser)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.unbanUser(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe UnbanUser.Request(UserId("@user:server"), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldJoinRoom() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::joinRoom)
-            .whenInvokedWith(any())
-            .then {
-                JoinRoom.Response(RoomId("room", "server"))
-            }
+        everySuspending { handlerMock.joinRoom(isAny()) }
+            .returns(JoinRoom.Response(RoomId("room", "server")))
         val response =
             client.post("/_matrix/client/v3/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
@@ -910,8 +864,8 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"room_id":"!room:server"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::joinRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.joinRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe JoinRoom.Request(
@@ -928,19 +882,15 @@ class RoomsRoutesTest {
                     ),
                     reason = null
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldKnockRoom() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::knockRoom)
-            .whenInvokedWith(any())
-            .then {
-                KnockRoom.Response(RoomId("room", "server"))
-            }
+        everySuspending { handlerMock.knockRoom(isAny()) }
+            .returns(KnockRoom.Response(RoomId("room", "server")))
         val response =
             client.post("/_matrix/client/v3/knock/%21room%3Aserver?server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
@@ -952,19 +902,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"room_id":"!room:server"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::knockRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.knockRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe KnockRoom.Request("reason")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldLeaveRoom() = testApplication {
         initCut()
+        everySuspending { handlerMock.leaveRoom(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/leave") {
                 bearerAuth("token")
@@ -976,18 +927,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::leaveRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.leaveRoom(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe LeaveRoom.Request("reason")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldForgetRoom() = testApplication {
         initCut()
+        everySuspending { handlerMock.forgetRoom(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/forget") {
                 bearerAuth("token")
@@ -997,17 +949,18 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::forgetRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.forgetRoom(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetReceipt() = testApplication {
         initCut()
+        everySuspending { handlerMock.setReceipt(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event") {
                 bearerAuth("token")
@@ -1017,19 +970,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setReceipt)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setReceipt(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.receiptType shouldBe SetReceipt.ReceiptType.READ
                 it.endpoint.eventId shouldBe EventId("\$event")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetReadMarkers() = testApplication {
         initCut()
+        everySuspending { handlerMock.setReadMarkers(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/read_markers") {
                 bearerAuth("token")
@@ -1048,26 +1002,22 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setReadMarkers)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setReadMarkers(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe SetReadMarkers.Request(
                     fullyRead = EventId("$1event"),
                     read = EventId("$2event")
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetAccountData() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getAccountData)
-            .whenInvokedWith(any())
-            .then {
-                FullyReadEventContent(EventId("$1event"))
-            }
+        everySuspending { handlerMock.getAccountData(isAny()) }
+            .returns(FullyReadEventContent(EventId("$1event")))
         val response =
             client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read") {
                 bearerAuth("token")
@@ -1077,24 +1027,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"event_id":"$1event"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::getAccountData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getAccountData(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.type shouldBe "m.fully_read"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetAccountDataWithKey() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getAccountData)
-            .whenInvokedWith(any())
-            .then {
-                FullyReadEventContent(EventId("$1event"))
-            }
+        everySuspending { handlerMock.getAccountData(isAny()) }
+            .returns(FullyReadEventContent(EventId("$1event")))
         val response =
             client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read-readkey") {
                 bearerAuth("token")
@@ -1104,19 +1050,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"event_id":"$1event"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::getAccountData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getAccountData(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.type shouldBe "m.fully_read-readkey"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetAccountData() = testApplication {
         initCut()
+        everySuspending { handlerMock.setAccountData(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read") {
                 bearerAuth("token")
@@ -1128,20 +1075,21 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setAccountData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setAccountData(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.type shouldBe "m.fully_read"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
                 it.requestBody shouldBe FullyReadEventContent(EventId("$1event"))
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetAccountDataWithKey() = testApplication {
         initCut()
+        everySuspending { handlerMock.setAccountData(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read-readkey") {
                 bearerAuth("token")
@@ -1153,20 +1101,21 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setAccountData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setAccountData(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.type shouldBe "m.fully_read-readkey"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
                 it.requestBody shouldBe FullyReadEventContent(EventId("$1event"))
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetTyping() = testApplication {
         initCut()
+        everySuspending { handlerMock.setTyping(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/rooms/%21room%3Aserver/typing/%40alice%3Aexample%2Ecom") {
                 bearerAuth("token")
@@ -1178,24 +1127,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setTyping)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setTyping(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
                 it.requestBody shouldBe SetTyping.Request(true, 10000)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetDirectoryVisibility() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getDirectoryVisibility)
-            .whenInvokedWith(any())
-            .then {
-                GetDirectoryVisibility.Response(DirectoryVisibility.PUBLIC)
-            }
+        everySuspending { handlerMock.getDirectoryVisibility(isAny()) }
+            .returns(GetDirectoryVisibility.Response(DirectoryVisibility.PUBLIC))
         val response =
             client.get("/_matrix/client/v3/directory/list/room/%21room%3Aserver")
         assertSoftly(response) {
@@ -1207,17 +1152,18 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getDirectoryVisibility)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getDirectoryVisibility(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetDirectoryVisibility() = testApplication {
         initCut()
+        everySuspending { handlerMock.setDirectoryVisibility(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/directory/list/room/%21room%3Aserver") {
                 bearerAuth("token")
@@ -1229,21 +1175,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setDirectoryVisibility)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setDirectoryVisibility(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.requestBody shouldBe SetDirectoryVisibility.Request(DirectoryVisibility.PUBLIC)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetPublicRooms() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPublicRooms)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getPublicRooms(isAny()) }
+            .returns(
                 GetPublicRoomsResponse(
                     chunk = listOf(
                         GetPublicRoomsResponse.PublicRoomsChunk(
@@ -1261,7 +1205,7 @@ class RoomsRoutesTest {
                     prevBatch = "p1902",
                     totalRoomCountEstimate = 115
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/publicRooms?limit=5&server=example&since=since")
         assertSoftly(response) {
@@ -1287,22 +1231,20 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPublicRooms)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getPublicRooms(assert {
                 it.endpoint.limit shouldBe 5
                 it.endpoint.server shouldBe "example"
                 it.endpoint.since shouldBe "since"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetPublicRoomsWithFilter() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPublicRoomsWithFilter)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getPublicRoomsWithFilter(isAny()) }
+            .returns(
                 GetPublicRoomsResponse(
                     chunk = listOf(
                         GetPublicRoomsResponse.PublicRoomsChunk(
@@ -1320,7 +1262,7 @@ class RoomsRoutesTest {
                     prevBatch = "p1902",
                     totalRoomCountEstimate = 115
                 )
-            }
+            )
         val response =
             client.post("/_matrix/client/v3/publicRooms?server=example") {
                 bearerAuth("token")
@@ -1361,8 +1303,8 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPublicRoomsWithFilter)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getPublicRoomsWithFilter(assert {
                 it.endpoint.server shouldBe "example"
                 it.requestBody shouldBe GetPublicRoomsWithFilter.Request(
                     filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
@@ -1370,17 +1312,15 @@ class RoomsRoutesTest {
                     limit = 10,
                     thirdPartyInstanceId = "irc"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetTags() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getTags)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getTags(isAny()) }
+            .returns(
                 TagEventContent(
                     mapOf(
                         "m.favourite" to TagEventContent.Tag(0.1),
@@ -1388,7 +1328,7 @@ class RoomsRoutesTest {
                         "u.Work" to TagEventContent.Tag(0.7)
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags") { bearerAuth("token") }
         assertSoftly(response) {
@@ -1408,18 +1348,19 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getTags)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getTags(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.userId shouldBe UserId("user", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetTag() = testApplication {
         initCut()
+        everySuspending { handlerMock.setTag(isAny()) }
+            .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
                 bearerAuth("token")
@@ -1431,20 +1372,21 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setTag)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setTag(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.endpoint.tag shouldBe "m.dino"
                 it.requestBody shouldBe TagEventContent.Tag(0.25)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteTag() = testApplication {
         initCut()
+        everySuspending { handlerMock.deleteTag(isAny()) }
+            .returns(Unit)
         val response =
             client.delete("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
                 bearerAuth("token")
@@ -1454,22 +1396,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteTag)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteTag(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.endpoint.tag shouldBe "m.dino"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetEventContext() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getEventContext)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getEventContext(isAny()) }
+            .returns(
                 GetEventContext.Response(
                     start = "t27-54_2_0_2",
                     end = "t29-57_2_0_2",
@@ -1587,7 +1527,7 @@ class RoomsRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/context/event?filter=filter&limit=10") { bearerAuth("token") }
         assertSoftly(response) {
@@ -1701,20 +1641,21 @@ class RoomsRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getEventContext)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getEventContext(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.eventId shouldBe EventId("event")
                 it.endpoint.filter shouldBe "filter"
                 it.endpoint.limit shouldBe 10
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldReportEvent() = testApplication {
         initCut()
+        everySuspending { handlerMock.reportEvent(isAny()) }
+            .returns(Unit)
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/report/%24eventToRedact") {
                 bearerAuth("token")
@@ -1726,24 +1667,20 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::reportEvent)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.reportEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.eventId shouldBe EventId("\$eventToRedact")
                 it.requestBody shouldBe ReportEvent.Request("someReason", -100)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldUpgradeRoom() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::upgradeRoom)
-            .whenInvokedWith(any())
-            .then {
-                UpgradeRoom.Response(RoomId("nextRoom", "server"))
-            }
+        everySuspending { handlerMock.upgradeRoom(isAny()) }
+            .returns(UpgradeRoom.Response(RoomId("nextRoom", "server")))
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/upgrade") {
                 bearerAuth("token")
@@ -1755,21 +1692,19 @@ class RoomsRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"replacement_room":"!nextRoom:server"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::upgradeRoom)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.upgradeRoom(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe UpgradeRoom.Request("2")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetHierarchy() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getHierarchy)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getHierarchy(isAny()) }
+            .returns(
                 GetHierarchy.Response(
                     nextBatch = "next_batch_token",
                     rooms = listOf(
@@ -1795,7 +1730,7 @@ class RoomsRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
                 bearerAuth(
@@ -1839,15 +1774,14 @@ class RoomsRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getHierarchy)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getHierarchy(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.from shouldBe "from"
                 it.endpoint.limit shouldBe 10
                 it.endpoint.maxDepth shouldBe 4
                 it.endpoint.suggestedOnly shouldBe true
-                true
             })
-            .wasInvoked()
+        }
     }
 }

@@ -10,37 +10,39 @@ import io.ktor.http.HttpHeaders.Origin
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
-import io.mockative.Mock
-import io.mockative.classOf
-import io.mockative.mock
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-class MatrixClientServerApiServerTest {
-    @Mock
-    val authenticationApiHandlerMock = mock(classOf<AuthenticationApiHandler>())
+class MatrixClientServerApiServerTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
 
     @Mock
-    val devicesApiHandlerMock = mock(classOf<DevicesApiHandler>())
+    lateinit var authenticationApiHandlerMock: AuthenticationApiHandler
 
     @Mock
-    val keysApiHandlerMock = mock(classOf<KeysApiHandler>())
+    lateinit var devicesApiHandlerMock: DevicesApiHandler
 
     @Mock
-    val mediaApiHandlerMock = mock(classOf<MediaApiHandler>())
+    lateinit var keysApiHandlerMock: KeysApiHandler
 
     @Mock
-    val pushApiHandlerMock = mock(classOf<PushApiHandler>())
-
-    val roomsApiHandlerMock = RoomsApiHandlerMock()
+    lateinit var mediaApiHandlerMock: MediaApiHandler
 
     @Mock
-    val serverApiHandlerMock = mock(classOf<ServerApiHandler>())
+    lateinit var pushApiHandlerMock: PushApiHandler
 
     @Mock
-    val syncApiHandlerMock = mock(classOf<SyncApiHandler>())
+    lateinit var roomsApiHandlerMock: RoomsApiHandler
 
     @Mock
-    val usersApiHandlerMock = mock(classOf<UsersApiHandler>())
+    lateinit var serverApiHandlerMock: ServerApiHandler
+
+    @Mock
+    lateinit var syncApiHandlerMock: SyncApiHandler
+
+    @Mock
+    lateinit var usersApiHandlerMock: UsersApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {

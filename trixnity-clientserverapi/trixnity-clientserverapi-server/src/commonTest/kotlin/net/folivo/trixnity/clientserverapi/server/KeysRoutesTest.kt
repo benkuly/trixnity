@@ -10,8 +10,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -24,18 +22,19 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class KeysRoutesTest {
+class KeysRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
     private val json = createMatrixJson()
     private val mapping = createEventContentSerializerMappings()
     private val alice = UserId("alice", "example.com")
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<KeysApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: KeysApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -52,20 +51,11 @@ class KeysRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldSetDeviceKeys() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setKeys)
-            .whenInvokedWith(any())
-            .then {
-                SetKeys.Response((mapOf(KeyAlgorithm.Curve25519 to 10, KeyAlgorithm.SignedCurve25519 to 20)))
-            }
+        everySuspending { handlerMock.setKeys(isAny()) }
+            .returns(SetKeys.Response((mapOf(KeyAlgorithm.Curve25519 to 10, KeyAlgorithm.SignedCurve25519 to 20))))
         val response = client.post("/_matrix/client/v3/keys/upload") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -124,8 +114,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::setKeys)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setKeys(assert {
                 it.requestBody shouldBe SetKeys.Request(
                     deviceKeys = Signed(
                         DeviceKeys(
@@ -170,17 +160,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldQueryKeys() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getKeys)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getKeys(isAny()) }
+            .returns(
                 GetKeys.Response(
                     failures = null,
                     deviceKeys = mapOf(
@@ -260,7 +248,7 @@ class KeysRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/keys/query") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -348,24 +336,22 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getKeys)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getKeys(assert {
                 it.requestBody shouldBe GetKeys.Request(
                     timeout = 10_000,
                     deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
                     token = "string"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldClaimKeys() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::claimKeys)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.claimKeys(isAny()) }
+            .returns(
                 ClaimKeys.Response(
                     failures = mapOf(),
                     oneTimeKeys = mapOf(
@@ -387,7 +373,7 @@ class KeysRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/keys/claim") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -427,28 +413,26 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::claimKeys)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.claimKeys(assert {
                 it.requestBody shouldBe ClaimKeys.Request(
                     timeout = 10_000,
                     oneTimeKeys = mapOf(alice to mapOf("JLAFKJWSCS" to KeyAlgorithm.SignedCurve25519)),
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetKeyChanges() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getKeyChanges)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getKeyChanges(isAny()) }
+            .returns(
                 GetKeyChanges.Response(
                     changed = setOf(UserId("@alice:example.com"), UserId("@bob:example.org")),
                     left = setOf(UserId("@clara:example.com"), UserId("@doug:example.org"))
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435") {
             bearerAuth("token")
         }
@@ -468,23 +452,19 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getKeyChanges)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getKeyChanges(assert {
                 it.endpoint.from shouldBe "s72594_4483_1934"
                 it.endpoint.to shouldBe "s75689_5632_2435"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetCrossSigningKeys() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setCrossSigningKeys)
-            .whenInvokedWith(any())
-            .then {
-                ResponseWithUIA.Success(Unit)
-            }
+        everySuspending { handlerMock.setCrossSigningKeys(isAny()) }
+            .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/keys/device_signing/upload") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -538,8 +518,8 @@ class KeysRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setCrossSigningKeys)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setCrossSigningKeys(assert {
                 it.requestBody shouldBe RequestWithUIA(
                     SetCrossSigningKeys.Request(
                         masterKey = Signed(
@@ -582,17 +562,15 @@ class KeysRoutesTest {
                         )
                     ), null
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldAddSignatures() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::addSignatures)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.addSignatures(isAny()) }
+            .returns(
                 AddSignatures.Response(
                     mapOf(
                         UserId("@alice:example.com") to mapOf(
@@ -605,7 +583,7 @@ class KeysRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/keys/signatures/upload") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -677,8 +655,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::addSignatures)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.addSignatures(assert {
                 it.requestBody shouldBe mapOf(
                     UserId("@alice:example.com") to JsonObject(
                         mapOf(
@@ -756,17 +734,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomsKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomsKeyBackup)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomsKeyBackup(isAny()) }
+            .returns(
                 RoomsKeyBackup(
                     mapOf(
                         RoomId("!room:example.org") to RoomKeyBackup(
@@ -785,7 +761,7 @@ class KeysRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/room_keys/keys?version=1") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -811,20 +787,18 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomsKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomKeyBackup)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomKeyBackup(isAny()) }
+            .returns(
                 RoomKeyBackup(
                     mapOf(
                         "+ess/ionId1" to RoomKeyBackupData(
@@ -839,7 +813,7 @@ class KeysRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") { bearerAuth("token") }
         assertSoftly(response) {
@@ -862,21 +836,19 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomKeyBackupData() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupData)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomKeyBackupData(isAny()) }
+            .returns(
                 RoomKeyBackupData(
                     firstMessageIndex = 1,
                     forwardedCount = 0,
@@ -887,7 +859,7 @@ class KeysRoutesTest {
                         mac = "base64+mac+of+ciphertext"
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
                 bearerAuth("token")
@@ -908,24 +880,20 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
                 it.endpoint.sessionId shouldBe "+ess/ionId1"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomsKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setRoomsKeyBackup)
-            .whenInvokedWith(any())
-            .then {
-                SetRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.setRoomsKeyBackup(isAny()) }
+            .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.put("/_matrix/client/v3/room_keys/keys?version=1") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -962,8 +930,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomsKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.requestBody shouldBe RoomsKeyBackup(
                     mapOf(
@@ -983,19 +951,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setRoomKeyBackup)
-            .whenInvokedWith(any())
-            .then {
-                SetRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.setRoomKeyBackup(isAny()) }
+            .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.put("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -1028,8 +992,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
                 it.requestBody shouldBe RoomKeyBackup(
@@ -1046,19 +1010,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomKeyBackupData() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setRoomKeyBackupData)
-            .whenInvokedWith(any())
-            .then {
-                SetRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.setRoomKeyBackupData(isAny()) }
+            .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
             client.put("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
                 bearerAuth("token")
@@ -1088,8 +1048,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomKeyBackupData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
                 it.endpoint.sessionId shouldBe "+ess/ionId1"
@@ -1103,19 +1063,15 @@ class KeysRoutesTest {
                         mac = "base64+mac+of+ciphertext"
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteRoomsKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::deleteRoomsKeyBackup)
-            .whenInvokedWith(any())
-            .then {
-                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.deleteRoomsKeyBackup(isAny()) }
+            .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.delete("/_matrix/client/v3/room_keys/keys?version=1") {
             bearerAuth("token")
         }
@@ -1129,22 +1085,18 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteRoomsKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteRoomKeyBackup() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::deleteRoomKeyBackup)
-            .whenInvokedWith(any())
-            .then {
-                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.deleteRoomKeyBackup(isAny()) }
+            .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.delete("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") {
             bearerAuth("token")
         }
@@ -1158,23 +1110,19 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteRoomKeyBackup)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteRoomKeyBackupData() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::deleteRoomKeyBackupData)
-            .whenInvokedWith(any())
-            .then {
-                DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
-            }
+        everySuspending { handlerMock.deleteRoomKeyBackupData(isAny()) }
+            .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
             client.delete("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
                 bearerAuth("token")
@@ -1189,22 +1137,20 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteRoomKeyBackupData)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
                 it.endpoint.sessionId shouldBe "+ess/ionId1"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetRoomKeyBackupVersion() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupVersion)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomKeyBackupVersion(isAny()) }
+            .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                         publicKey = Key.Curve25519Key(value = "abcdefg"),
@@ -1216,7 +1162,7 @@ class KeysRoutesTest {
                     etag = "anopaquestring",
                     version = "1"
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/room_keys/version") {
             bearerAuth("token")
         }
@@ -1240,19 +1186,16 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupVersion)
-            .with(matching {
-                true
-            })
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getRoomKeyBackupVersion(isAny())
+        }
     }
 
     @Test
     fun shouldGetRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupVersionByVersion)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getRoomKeyBackupVersionByVersion(isAny()) }
+            .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                         publicKey = Key.Curve25519Key(value = "abcdefg"),
@@ -1264,7 +1207,7 @@ class KeysRoutesTest {
                     etag = "anopaquestring",
                     version = "1"
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/room_keys/version/1") {
             bearerAuth("token")
         }
@@ -1288,22 +1231,18 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getRoomKeyBackupVersionByVersion)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getRoomKeyBackupVersionByVersion(assert {
                 it.endpoint.version shouldBe "1"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomKeyBackupVersion() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::setRoomKeyBackupVersion)
-            .whenInvokedWith(any())
-            .then {
-                SetRoomKeyBackupVersion.Response("1")
-            }
+        everySuspending { handlerMock.setRoomKeyBackupVersion(isAny()) }
+            .returns(SetRoomKeyBackupVersion.Response("1"))
         val response = client.post("/_matrix/client/v3/room_keys/version") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -1332,8 +1271,8 @@ class KeysRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomKeyBackupVersion)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomKeyBackupVersion(assert {
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                         publicKey = Key.Curve25519Key(value = "abcdefg"),
@@ -1342,14 +1281,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
+        everySuspending { handlerMock.setRoomKeyBackupVersionByVersion(isAny()) }
+            .returns(Unit)
         val response = client.put("/_matrix/client/v3/room_keys/version/1") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -1374,8 +1314,8 @@ class KeysRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setRoomKeyBackupVersionByVersion)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setRoomKeyBackupVersionByVersion(assert {
                 it.endpoint.version shouldBe "1"
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1385,14 +1325,15 @@ class KeysRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
+        everySuspending { handlerMock.deleteRoomKeyBackupVersion(isAny()) }
+            .returns(Unit)
         val response = client.delete("/_matrix/client/v3/room_keys/version/1") {
             bearerAuth("token")
         }
@@ -1401,11 +1342,10 @@ class KeysRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteRoomKeyBackupVersion)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deleteRoomKeyBackupVersion(assert {
                 it.endpoint.version shouldBe "1"
-                true
             })
-            .wasInvoked()
+        }
     }
 }

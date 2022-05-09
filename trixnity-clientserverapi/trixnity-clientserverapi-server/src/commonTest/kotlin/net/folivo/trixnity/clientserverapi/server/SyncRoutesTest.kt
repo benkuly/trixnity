@@ -10,8 +10,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
@@ -40,17 +38,18 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class SyncRoutesTest {
+class SyncRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
     private val json = createMatrixJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<SyncApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: SyncApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -67,18 +66,11 @@ class SyncRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldSync() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sync)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.sync(isAny()) }
+            .returns(
                 Sync.Response(
                     nextBatch = "s72595_4483_1934",
                     presence = Presence(
@@ -222,7 +214,7 @@ class SyncRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234") {
                 bearerAuth("token")
@@ -393,15 +385,14 @@ class SyncRoutesTest {
                 }
                 """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sync)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sync(assert {
                 it.endpoint.filter shouldBe "someFilter"
                 it.endpoint.fullState shouldBe true
                 it.endpoint.setPresence shouldBe ONLINE
                 it.endpoint.since shouldBe "someSince"
                 it.endpoint.timeout shouldBe 1234
-                true
             })
-            .wasInvoked()
+        }
     }
 }

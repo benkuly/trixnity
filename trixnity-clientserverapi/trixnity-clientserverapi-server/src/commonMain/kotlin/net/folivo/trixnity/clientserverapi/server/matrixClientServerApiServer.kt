@@ -8,7 +8,7 @@ import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.plugins.cors.*
+import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings

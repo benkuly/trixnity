@@ -20,7 +20,7 @@ plugins {
     kotlin("js") version Versions.kotlin apply false
     kotlin("plugin.serialization") version Versions.kotlin apply false
     id("io.kotest.multiplatform") version Versions.kotest apply false
-    id("com.google.devtools.ksp") version Versions.ksp apply false
+    id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
     id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 

@@ -10,8 +10,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.server.GetCapabilities
 import net.folivo.trixnity.clientserverapi.model.server.GetVersions
@@ -24,17 +22,18 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class ServerRoutesTest {
+class ServerRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
     private val json = createMatrixJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<ServerApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: ServerApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -51,23 +50,16 @@ class ServerRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldGetVersions() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getVersions)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getVersions(isAny()) }
+            .returns(
                 GetVersions.Response(
                     versions = emptyList(),
                     unstable_features = mapOf()
                 )
-            }
+            )
         val response = client.get("/_matrix/client/versions") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -76,24 +68,23 @@ class ServerRoutesTest {
                 {"versions":[],"unstable_features":{}}
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getVersions)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getVersions(isAny())
+        }
     }
 
     @Test
     fun shouldGetCapabilities() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getCapabilities)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getCapabilities(isAny()) }
+            .returns(
                 GetCapabilities.Response(
                     capabilities = GetCapabilities.Response.Capabilities(
                         GetCapabilities.Response.Capabilities.ChangePasswordCapability(true),
                         GetCapabilities.Response.Capabilities.RoomVersionsCapability("5", mapOf())
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/capabilities") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -121,17 +112,16 @@ class ServerRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getCapabilities)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getCapabilities(isAny())
+        }
     }
 
     @Test
     fun shouldSearch() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::search)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.search(isAny()) }
+            .returns(
                 Search.Response(
                     Search.Response.ResultCategories(
                         Search.Response.ResultCategories.RoomEventsResult(
@@ -162,7 +152,7 @@ class ServerRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/search") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -234,8 +224,8 @@ class ServerRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::search)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.search(assert {
                 it.requestBody shouldBe Search.Request(
                     Search.Request.Categories(
                         Search.Request.Categories.RoomEventsCriteria(
@@ -252,17 +242,15 @@ class ServerRoutesTest {
                         )
                     )
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldWhoIs() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::whoIs)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.whoIs(isAny()) }
+            .returns(
                 WhoIs.Response(
                     userId = UserId("@peter:rabbit.rocks"),
                     devices = mapOf(
@@ -286,7 +274,7 @@ class ServerRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/admin/whois/@peter:rabbit.rocks") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -317,11 +305,10 @@ class ServerRoutesTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::whoIs)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.whoIs(assert {
                 it.endpoint.userId shouldBe UserId("@peter:rabbit.rocks")
-                true
             })
-            .wasInvoked()
+        }
     }
 }
