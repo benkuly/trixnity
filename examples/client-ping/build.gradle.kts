@@ -16,7 +16,11 @@ kotlin {
         withJava()
     }
     js(IR) {
-        browser()
+        browser {
+            commonWebpackConfig {
+                this.configDirectory = rootDir.resolve("webpack.config.d")
+            }
+        }
         nodejs()
         binaries.executable()
     }
