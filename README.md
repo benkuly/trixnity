@@ -2,7 +2,8 @@
 
 # Trixnity - Multiplatform Matrix SDK
 
-Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. You can write clients, bots and appservices with
+Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. 
+You can write clients, bots and appservices with
 it. This SDK supports JVM (also Android), JS and Native as targets for most modules.
 [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
@@ -73,11 +74,16 @@ If you want to see Trixnity in action, take a look into the [examples](/examples
 
 ### Add Trixnity to you project
 
-Just add the following to your dependencies and fill `<module>` (with e.g. `client`) and `<version>` (with the current
-version):
+Select from the modules above, which dependency you need and add it to you project:
 
-```yml
-implementation("net.folivo:trixnity-<module>:<version>")
+```kotlin
+val trixnityVersion = "x.x.x" // get version from https://gitlab.com/benkuly/trixnity/-/releases
+
+fun trixnity(module: String, version: String = trixnityVersion) =
+	"net.folivo:trixnity-$module:$version"
+
+// for example:
+implementation(trixnity("client"))
 ```
 
 For Trixnity-Client and Trixnity-ClientServerAPI-Client you also need to add a client engine to your project, that you
