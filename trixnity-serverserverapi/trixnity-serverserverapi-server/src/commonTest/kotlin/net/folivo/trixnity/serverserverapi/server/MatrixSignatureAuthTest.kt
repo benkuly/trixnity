@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.server
+package net.folivo.trixnity.serverserverapi.server
 
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -19,30 +19,43 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
+import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.serverserverapi.model.RequestAuthenticationBody
 import kotlin.test.Test
 
-class MatrixAccessTokenAuthTest {
+class MatrixSignatureAuthTest {
     private val json = createMatrixJson()
     private val mapping = createEventContentSerializerMappings()
 
     private fun ApplicationTestBuilder.testEndpoint(
-        authenticationFunction: AccessTokenAuthenticationFunction = {
-            it.accessToken shouldBe "accessToken"
-            AccessTokenAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
+        authenticationFunction: SignatureAuthenticationFunction = {
+            it shouldBe Signed(
+                RequestAuthenticationBody(
+                    method = "POST",
+                    uri = "/test",
+                    origin = "other.hs.host",
+                    destination = "own.hs.host",
+                    content = "{}"
+                ),
+                mapOf("other.hs.host" to keysOf(Key.Ed25519Key("key1", "sig")))
+            )
+            SignatureAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
         }
     ) {
         application {
             install(ContentNegotiation) {
                 json(json)
             }
-            installMatrixAccessTokenAuth {
+            installMatrixSignatureAuth(hostname = "own.hs.host") {
                 this.authenticationFunction = authenticationFunction
             }
             routing {
                 authenticate {
-                    get("/test") {
+                    post("/test") {
                         call.respond(HttpStatusCode.OK)
                     }
                 }
@@ -51,59 +64,62 @@ class MatrixAccessTokenAuthTest {
     }
 
     @Test
-    fun shouldUseAccessTokenFromHeader() = testApplication {
+    fun shouldUseSignatureFromHeader() = testApplication {
         testEndpoint()
-        client.get("/test") {
-            header(HttpHeaders.Authorization, "Bearer accessToken")
+        client.post("/test") {
+            setBody("{}")
+            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
         }.status shouldBe HttpStatusCode.OK
     }
 
     @Test
-    fun shouldUseAccessTokenFromQueryParameter() = testApplication {
+    fun shouldRespondWithMissingSignatureWhenSignatureIsMissing() = testApplication {
         testEndpoint()
-        client.get("/test?access_token=accessToken").status shouldBe HttpStatusCode.OK
-    }
-
-    @Test
-    fun shouldRespondWithMissingTokenWhenTokenIsMissing() = testApplication {
-        testEndpoint()
-        val result = client.get("/test")
-        result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_MISSING_TOKEN"}"""
-    }
-
-    @Test
-    fun shouldRespondWitUnknownTokenWhenTokenIsWrong() = testApplication {
-        testEndpoint {
-            AccessTokenAuthenticationFunctionResult(null, AuthenticationFailedCause.InvalidCredentials)
+        val result = client.post("/test") {
+            setBody("{}")
         }
-        val result = client.get("/test?access_token=wrong")
         result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","soft_logout":false}"""
+        result.body<String>() shouldBe """{"errcode":"M_UNAUTHORIZED","error":"missing signature"}"""
     }
 
     @Test
-    fun shouldRespondWitUnknownTokenWhenPrincipalIsNull() = testApplication {
+    fun shouldRespondWithMissingSignatureWhenSignatureIsWrong() = testApplication {
         testEndpoint {
-            AccessTokenAuthenticationFunctionResult(null, null)
+            SignatureAuthenticationFunctionResult(null, AuthenticationFailedCause.InvalidCredentials)
         }
-        val result = client.get("/test?access_token=wrong")
+        val result = client.post("/test") {
+            setBody("{}")
+            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+        }
         result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","soft_logout":false}"""
+        result.body<String>() shouldBe """{"errcode":"M_UNAUTHORIZED","error":"wrong signature"}"""
+    }
+
+    @Test
+    fun shouldRespondWithMissingSignatureWhenPrincipalIsNull() = testApplication {
+        testEndpoint {
+            SignatureAuthenticationFunctionResult(null, null)
+        }
+        val result = client.post("/test") {
+            setBody("{}")
+            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+        }
+        result.status shouldBe HttpStatusCode.Unauthorized
+        result.body<String>() shouldBe """{"errcode":"M_UNAUTHORIZED","error":"wrong signature"}"""
     }
 
     @Test
     fun shouldAllowRetrievePrincipal() = testApplication {
         application {
-            install(ContentNegotiation) {
-                json(json)
-            }
-            installMatrixAccessTokenAuth {
+            installMatrixSignatureAuth(hostname = "own.hs.host") {
                 this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                    SignatureAuthenticationFunctionResult(UserIdPrincipal("user"), null)
                 }
             }
             routing {
+                install(ContentNegotiation) {
+                    json(json)
+                }
                 authenticate {
                     get("/test") {
                         call.principal<UserIdPrincipal>() shouldBe UserIdPrincipal("user")
@@ -133,9 +149,9 @@ class MatrixAccessTokenAuthTest {
                 json(json)
             }
             install(Resources)
-            installMatrixAccessTokenAuth {
+            installMatrixSignatureAuth(hostname = "own.hs.host") {
                 this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                    SignatureAuthenticationFunctionResult(UserIdPrincipal("user"), null)
                 }
             }
             routing {
@@ -154,9 +170,9 @@ class MatrixAccessTokenAuthTest {
                 json(json)
             }
             install(Resources)
-            installMatrixAccessTokenAuth {
+            installMatrixSignatureAuth(hostname = "own.hs.host") {
                 this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(null, null)
+                    SignatureAuthenticationFunctionResult(null, null)
                 }
             }
             routing {

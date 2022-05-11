@@ -2,6 +2,7 @@ package net.folivo.trixnity.clientserverapi.client
 
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.discovery.GetWellKnown
 import net.folivo.trixnity.core.model.UserId
 
 interface IAuthenticationApiClient {

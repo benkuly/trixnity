@@ -16,9 +16,6 @@ internal fun Route.authenticationApiRoutes(
         matrixEndpoint<WhoAmI, Unit, WhoAmI.Response>(json, contentMappings) {
             handler.whoAmI(this)
         }
-        matrixEndpoint<GetWellKnown, DiscoveryInformation>(json, contentMappings) {
-            handler.getWellKnown(this)
-        }
         matrixEndpoint<IsRegistrationTokenValid, IsRegistrationTokenValid.Response>(json, contentMappings) {
             handler.isRegistrationTokenValid(this)
         }

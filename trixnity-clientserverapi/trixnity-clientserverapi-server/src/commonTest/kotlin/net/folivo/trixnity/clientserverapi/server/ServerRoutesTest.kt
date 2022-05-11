@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
@@ -37,10 +36,8 @@ class ServerRoutesTest : TestsWithMocks() {
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
-                }
+            installMatrixAccessTokenAuth {
+                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
                 routing {

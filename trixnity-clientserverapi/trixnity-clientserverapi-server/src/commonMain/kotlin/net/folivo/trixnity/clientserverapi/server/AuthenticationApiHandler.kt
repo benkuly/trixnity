@@ -13,11 +13,6 @@ interface AuthenticationApiHandler {
     suspend fun whoAmI(context: MatrixEndpointContext<WhoAmI, Unit, WhoAmI.Response>): WhoAmI.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#getwell-knownmatrixclient">matrix spec</a>
-     */
-    suspend fun getWellKnown(context: MatrixEndpointContext<GetWellKnown, Unit, DiscoveryInformation>): DiscoveryInformation
-
-    /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv1registermloginregistration_tokenvalidity">matrix spec</a>
      */
     suspend fun isRegistrationTokenValid(context: MatrixEndpointContext<IsRegistrationTokenValid, Unit, IsRegistrationTokenValid.Response>): IsRegistrationTokenValid.Response

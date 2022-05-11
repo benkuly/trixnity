@@ -2,6 +2,7 @@ package net.folivo.trixnity.clientserverapi.server
 
 import io.ktor.http.*
 import io.ktor.http.auth.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.AuthenticationFailedCause.*
 import io.ktor.server.request.*
@@ -10,7 +11,7 @@ import net.folivo.trixnity.api.server.withoutAuthAttributeKey
 import net.folivo.trixnity.core.ErrorResponse
 
 class MatrixAccessTokenAuth internal constructor(
-    config: Config,
+    private val config: Config,
 ) : AuthenticationProvider(config) {
     class Config internal constructor(name: String? = null) : AuthenticationProvider.Config(name) {
         internal var authenticationFunction: AccessTokenAuthenticationFunction = {
@@ -18,12 +19,10 @@ class MatrixAccessTokenAuth internal constructor(
         }
     }
 
-    internal val authenticationFunction = config.authenticationFunction
-
     override suspend fun onAuthenticate(context: AuthenticationContext) {
         val call = context.call
         val credentials = call.request.getAccessToken()
-        val authResult = credentials?.let { authenticationFunction(it) }
+        val authResult = credentials?.let { config.authenticationFunction(it) }
         val principal = authResult?.principal
 
         val cause = when {
@@ -61,7 +60,7 @@ typealias AccessTokenAuthenticationFunction = suspend (UserAccessTokenCredential
 data class UserAccessTokenCredentials(val accessToken: String) : Credential
 data class AccessTokenAuthenticationFunctionResult(val principal: Principal?, val cause: AuthenticationFailedCause?)
 
-fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
+private fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
     return when (val authHeader = parseAuthorizationHeader()) {
         is HttpAuthHeader.Single -> {
             if (!authHeader.authScheme.equals("Bearer", ignoreCase = true)) null
@@ -83,4 +82,13 @@ fun AuthenticationConfig.matrixAccessTokenAuth(
             }
         })
     register(provider)
+}
+
+fun Application.installMatrixAccessTokenAuth(
+    name: String? = null,
+    configure: MatrixAccessTokenAuth.Config.() -> Unit
+) {
+    install(Authentication) {
+        matrixAccessTokenAuth(name, configure)
+    }
 }

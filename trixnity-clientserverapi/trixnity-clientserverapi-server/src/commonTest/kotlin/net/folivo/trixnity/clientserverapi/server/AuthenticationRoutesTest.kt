@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
@@ -26,7 +25,7 @@ import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-class AuthenticationRouteTest : TestsWithMocks() {
+class AuthenticationRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixJson()
@@ -37,10 +36,8 @@ class AuthenticationRouteTest : TestsWithMocks() {
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
-                }
+            installMatrixAccessTokenAuth {
+                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
                 routing {
@@ -63,36 +60,6 @@ class AuthenticationRouteTest : TestsWithMocks() {
         }
         verifyWithSuspend {
             handlerMock.whoAmI(isAny())
-        }
-    }
-
-    @Test
-    fun shouldGetWellKnown() = testApplication {
-        initCut()
-        everySuspending { handlerMock.getWellKnown(isAny()) }
-            .returns(
-                DiscoveryInformation(
-                    homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
-                    identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
-                )
-            )
-        val response = client.get("/.well-known/matrix/client")
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
-            this.body<String>() shouldBe """
-                    {
-                      "m.homeserver": {
-                        "base_url": "https://matrix.example.com"
-                      },
-                      "m.identity_server": {
-                        "base_url": "https://identity.example.com"
-                      }
-                    }
-                """.trimToFlatJson()
-        }
-        verifyWithSuspend {
-            handlerMock.getWellKnown(isAny())
         }
     }
 
