@@ -1,5 +1,7 @@
 package net.folivo.trixnity.serverserverapi.server
 
+import io.ktor.client.request.*
+import io.ktor.http.*
 import org.kodein.mock.ArgConstraint
 import org.kodein.mock.ArgConstraintsBuilder
 
@@ -14,3 +16,6 @@ inline fun <reified T> ArgConstraintsBuilder.assert(crossinline assertionBlock: 
             ArgConstraint.Result.Failure { error.message ?: "" }
         }
     }
+
+fun HttpRequestBuilder.someSignature() =
+    header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")

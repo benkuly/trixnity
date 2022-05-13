@@ -24,7 +24,7 @@ class EphemeralDataUnitSerializer(
     override fun deserialize(decoder: Decoder): EphemeralDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
+        val type = jsonObj["edu_type"]?.jsonPrimitive?.content
         requireNotNull(type)
         val contentSerializer = ephemeralEventContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(EphemeralDataUnit.serializer(contentSerializer), jsonObj) {

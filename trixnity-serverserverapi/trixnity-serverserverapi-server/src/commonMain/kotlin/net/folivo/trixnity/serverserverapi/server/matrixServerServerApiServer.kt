@@ -7,7 +7,6 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 fun Application.matrixServerServerApiServer(
@@ -15,6 +14,7 @@ fun Application.matrixServerServerApiServer(
     signatureAuthenticationFunction: SignatureAuthenticationFunction,
     getRoomVersion: (RoomId) -> String,
     discoveryApiHandler: DiscoveryApiHandler,
+    transactionApiHandler: TransactionApiHandler,
     customMappings: EventContentSerializerMappings? = null,
 ) {
     val contentMappings = createEventContentSerializerMappings(customMappings)
@@ -26,6 +26,7 @@ fun Application.matrixServerServerApiServer(
         }
         routing {
             discoveryApiRoutes(discoveryApiHandler, json, contentMappings)
+            transactionApiRoutes(transactionApiHandler, json, contentMappings)
         }
     }
 }

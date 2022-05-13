@@ -29,5 +29,4 @@ interface DiscoveryApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixkeyv2queryservernamekeyid">matrix spec</a>
      */
     suspend fun queryKeysByServer(context: MatrixEndpointContext<QueryServerKeysByServer, Unit, QueryServerKeysResponse>): QueryServerKeysResponse
-
 }
