@@ -27,15 +27,9 @@ class EphemeralEventSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
         val contentSerializer = ephemeralEventContentSerializers.contentDeserializer(type)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                EphemeralEvent.serializer(contentSerializer), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                EphemeralEvent.serializer(UnknownEphemeralEventContentSerializer(type)), jsonObj
-            )
+        return decoder.json.tryDeserializeOrElse(EphemeralEvent.serializer(contentSerializer), jsonObj) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            EphemeralEvent.serializer(UnknownEphemeralEventContentSerializer(type))
         }
     }
 

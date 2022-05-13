@@ -3,8 +3,7 @@ package net.folivo.trixnity.clientserverapi.server
 import org.kodein.mock.ArgConstraint
 import org.kodein.mock.ArgConstraintsBuilder
 
-fun String.trimToFlatJson() = this.trimIndent().lines()
-    .joinToString("") { it.replace(": ", ":").trim() }
+fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
 
 inline fun <reified T> ArgConstraintsBuilder.assert(crossinline assertionBlock: (T) -> Unit): T =
     isValid(null, { "assert" }) {

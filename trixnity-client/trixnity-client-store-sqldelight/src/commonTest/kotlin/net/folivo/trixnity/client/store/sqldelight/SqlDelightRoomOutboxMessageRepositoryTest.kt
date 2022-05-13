@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import kotlin.test.assertNotNull
 
@@ -23,7 +23,7 @@ class SqlDelightRoomOutboxMessageRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightRoomOutboxMessageRepository(
             Database(driver).roomOutboxMessageQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             DefaultEventContentSerializerMappings,
             Dispatchers.Default
         )

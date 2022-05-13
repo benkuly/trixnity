@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightSecretsRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightSecretsRepository
@@ -21,7 +21,7 @@ class SqlDelightSecretsRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightSecretsRepository(
             Database(driver).keysQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

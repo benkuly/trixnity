@@ -15,12 +15,12 @@ import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 open class MatrixApiClient(
     val baseUrl: Url? = null,
-    val json: Json = createMatrixJson(),
+    val json: Json = createMatrixEventJson(),
     val contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) {

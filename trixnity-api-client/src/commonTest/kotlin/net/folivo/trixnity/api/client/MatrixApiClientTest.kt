@@ -15,11 +15,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.HttpMethod
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,7 +27,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class MatrixApiClientTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Serializable
     @Resource("/path/{pathParam}")

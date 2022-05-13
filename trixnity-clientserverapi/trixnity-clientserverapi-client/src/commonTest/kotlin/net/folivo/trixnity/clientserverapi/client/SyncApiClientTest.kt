@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -44,7 +44,7 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest {
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     private val serverResponse1 = Response(
         nextBatch = "nextBatch1",

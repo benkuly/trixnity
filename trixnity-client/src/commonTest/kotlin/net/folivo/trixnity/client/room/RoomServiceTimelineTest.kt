@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
@@ -39,7 +39,7 @@ class RoomServiceTimelineTest : ShouldSpec({
     val room = RoomId("room", "server")
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)

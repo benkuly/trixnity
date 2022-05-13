@@ -36,7 +36,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
@@ -44,7 +44,7 @@ import kotlin.test.Test
 class SyncRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
     @Mock

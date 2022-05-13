@@ -12,9 +12,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.RoomIdSerializer
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 
 @Serializable(with = DirectEventContentSerializer::class)
@@ -27,7 +25,7 @@ object DirectEventContentSerializer : KSerializer<DirectEventContent> {
 
     override fun deserialize(decoder: Decoder): DirectEventContent {
         require(decoder is JsonDecoder)
-        val serializer = MapSerializer(UserIdSerializer, SetSerializer(RoomIdSerializer).nullable)
+        val serializer = MapSerializer(UserId.serializer(), SetSerializer(RoomId.serializer()).nullable)
         return DirectEventContent(decoder.json.decodeFromJsonElement(serializer, decoder.decodeJsonElement()))
     }
 

@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightGlobalAccountDataRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightGlobalAccountDataRepository
@@ -24,7 +24,7 @@ class SqlDelightGlobalAccountDataRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightGlobalAccountDataRepository(
             Database(driver).globalAccountDataQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

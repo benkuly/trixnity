@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStar
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmSAS
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.test.assertNotNull
@@ -47,7 +47,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var keyTrustService: KeyTrustServiceMock
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
 
     lateinit var cut: ActiveSasVerificationMethod

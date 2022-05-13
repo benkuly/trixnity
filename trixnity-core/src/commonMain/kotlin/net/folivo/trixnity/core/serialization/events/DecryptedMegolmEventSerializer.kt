@@ -26,14 +26,11 @@ class DecryptedMegolmEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
+
         val contentSerializer = roomEventContentSerializers.contentDeserializer(type)
-        return try {
-            decoder.json.decodeFromJsonElement(DecryptedMegolmEvent.serializer(contentSerializer), jsonObj)
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                DecryptedMegolmEvent.serializer(UnknownRoomEventContentSerializer(type)), jsonObj
-            )
+        return decoder.json.tryDeserializeOrElse(DecryptedMegolmEvent.serializer(contentSerializer), jsonObj) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            DecryptedMegolmEvent.serializer(UnknownRoomEventContentSerializer(type))
         }
     }
 

@@ -6,7 +6,7 @@ import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.api.server.matrixEndpoint
 import net.folivo.trixnity.applicationserviceapi.model.*
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
@@ -16,7 +16,7 @@ fun Application.matrixApplicationServiceApiServer(
     customMappings: EventContentSerializerMappings? = null
 ) {
     val contentMappings = DefaultEventContentSerializerMappings + customMappings
-    val json = createMatrixJson(contentMappings)
+    val json = createMatrixEventJson(contentMappings)
     matrixApiServer(json) {
         install(Authentication) {
             matrixQueryParameter(null, "access_token", hsToken)

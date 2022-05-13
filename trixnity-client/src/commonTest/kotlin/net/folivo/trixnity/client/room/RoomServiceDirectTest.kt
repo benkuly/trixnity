@@ -28,7 +28,7 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
@@ -41,7 +41,7 @@ class RoomServiceDirectTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 

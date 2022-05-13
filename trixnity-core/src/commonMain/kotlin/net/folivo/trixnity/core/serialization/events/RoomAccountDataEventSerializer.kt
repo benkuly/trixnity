@@ -29,19 +29,15 @@ class RoomAccountDataEventSerializer(
         requireNotNull(type)
         val mappingType = roomAccountDataEventContentSerializers.firstOrNull { type.startsWith(it.type) }?.type
         val contentSerializer = roomAccountDataEventContentSerializers.contentDeserializer(type)
-        return try {
-            val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
-            decoder.json.decodeFromJsonElement(
-                AddFieldsSerializer(
-                    Event.RoomAccountDataEvent.serializer(contentSerializer),
-                    "key" to key
-                ), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type)), jsonObj
-            )
+        val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
+        return decoder.json.tryDeserializeOrElse(
+            AddFieldsSerializer(
+                Event.RoomAccountDataEvent.serializer(contentSerializer),
+                "key" to key
+            ), jsonObj
+        ) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type))
         }
     }
 

@@ -26,18 +26,11 @@ class StateEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
-        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isRedacted)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                StateEvent.serializer(contentSerializer), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                StateEvent.serializer(UnknownStateEventContentSerializer(type)),
-                jsonObj
-            )
+        val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
+        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isFullyRedacted)
+        return decoder.json.tryDeserializeOrElse(StateEvent.serializer(contentSerializer), jsonObj) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            StateEvent.serializer(UnknownStateEventContentSerializer(type))
         }
     }
 

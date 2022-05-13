@@ -29,7 +29,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
@@ -37,7 +37,7 @@ import kotlin.test.Test
 class RoomsRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
     @Mock

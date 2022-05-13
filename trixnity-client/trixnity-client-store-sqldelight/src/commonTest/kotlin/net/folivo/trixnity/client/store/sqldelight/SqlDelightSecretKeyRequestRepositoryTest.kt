@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightSecretKeyRequestRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightSecretKeyRequestRepository
@@ -19,7 +19,11 @@ class SqlDelightSecretKeyRequestRepositoryTest : ShouldSpec({
     beforeTest {
         driver = createDriverWithSchema()
         cut =
-            SqlDelightSecretKeyRequestRepository(Database(driver).keysQueries, createMatrixJson(), Dispatchers.Default)
+            SqlDelightSecretKeyRequestRepository(
+                Database(driver).keysQueries,
+                createMatrixEventJson(),
+                Dispatchers.Default
+            )
     }
     afterTest {
         driver.close()

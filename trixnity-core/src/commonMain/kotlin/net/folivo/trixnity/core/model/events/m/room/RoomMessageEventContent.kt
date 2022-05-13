@@ -199,7 +199,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 val relatesTo: RelatesTo? =
                     jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
-                if (type == null) throw SerializationException("type must not be null")
+                if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
                 UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
             }

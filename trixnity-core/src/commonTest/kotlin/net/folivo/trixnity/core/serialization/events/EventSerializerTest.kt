@@ -18,13 +18,14 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadR
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.trimToFlatJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EventSerializerTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldSerializeStateEvent() {
@@ -50,7 +51,7 @@ class EventSerializerTest {
             "state_key":"",
             "type":"m.room.canonical_alias"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
@@ -75,7 +76,7 @@ class EventSerializerTest {
             "state_key":"",
             "prev_content":null
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
@@ -124,7 +125,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234},
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -152,7 +153,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234},
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -204,7 +205,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234},
             "type":"m.dino"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -283,7 +284,7 @@ class EventSerializerTest {
             "state_key":"@user:server",
             "type":"m.room.member"
         }]
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result =
             json.encodeToString(
                 ListSerializer(
@@ -321,7 +322,7 @@ class EventSerializerTest {
             "type":"m.room.redaction",
             "redacts":"$123"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -357,7 +358,7 @@ class EventSerializerTest {
                 },
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -429,7 +430,7 @@ class EventSerializerTest {
                 },
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -489,7 +490,7 @@ class EventSerializerTest {
                 "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                 "type":"org.example.mynamespace.custom"
             }
-            """.trimIndent().lines().joinToString("") { it.trim() }
+            """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(RoomAccountDataEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, event)
@@ -571,7 +572,7 @@ class EventSerializerTest {
             "state_key":"",
             "type":"m.room.canonical_alias"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
@@ -740,7 +741,7 @@ class EventSerializerTest {
             },
             "type":"m.receipt"
         }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(EphemeralEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, receipt)

@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -15,7 +15,7 @@ class ExposedOutdatedKeysRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOutdatedKeys)
         }
-        cut = ExposedOutdatedKeysRepository(createMatrixJson())
+        cut = ExposedOutdatedKeysRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val alice = UserId("alice", "server")

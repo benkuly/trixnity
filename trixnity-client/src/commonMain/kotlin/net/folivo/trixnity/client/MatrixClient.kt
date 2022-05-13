@@ -36,7 +36,7 @@ import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.time.Duration.Companion.milliseconds
@@ -217,7 +217,7 @@ class MatrixClient private constructor(
         ): Result<MatrixClient> = kotlin.runCatching {
             val config = MatrixClientConfiguration().apply(configuration)
             val eventContentSerializerMappings = createEventContentSerializerMappings(config.customMappings)
-            val json = createMatrixJson(eventContentSerializerMappings)
+            val json = createMatrixEventJson(eventContentSerializerMappings)
 
             val store = try {
                 storeFactory.createStore(eventContentSerializerMappings, json)
@@ -289,7 +289,7 @@ class MatrixClient private constructor(
                 }.apply {
                     log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
                 }.value
-                val json = createMatrixJson(eventContentSerializerMappings)
+                val json = createMatrixEventJson(eventContentSerializerMappings)
 
                 val store = try {
                     measureTimedValue {

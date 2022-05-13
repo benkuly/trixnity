@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightRoomTimelineEventRepository
@@ -22,7 +22,7 @@ class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightRoomTimelineEventRepository(
             Database(driver).roomTimelineQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

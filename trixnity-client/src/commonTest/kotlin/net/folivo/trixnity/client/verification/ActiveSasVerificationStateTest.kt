@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStar
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmSAS
 import net.folivo.trixnity.olm.freeAfter
 
@@ -50,7 +50,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                     val cut = TheirSasStart(
                         content = SasStartEventContent("AAAAAA", transactionId = "t", relatesTo = null),
                         olmSas = olmSas,
-                        json = createMatrixJson(),
+                        json = createMatrixEventJson(),
                         relatesTo = null,
                         transactionId = "t"
                     ) { step = it }
@@ -71,7 +71,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                             relatesTo = null
                         ),
                         olmSas = olmSas,
-                        json = createMatrixJson(),
+                        json = createMatrixEventJson(),
                         relatesTo = null,
                         transactionId = "t"
                     ) { step = it }

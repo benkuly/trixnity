@@ -6,7 +6,7 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.time.Duration.Companion.minutes
 
 class UtilsTest : ShouldSpec({
@@ -47,7 +47,7 @@ class UtilsTest : ShouldSpec({
                     transactionId = "transaction",
                     relatesTo = null
                 ),
-                createMatrixJson()
+                createMatrixEventJson()
             ) shouldBe "+w/v2hp3vXNFmn3RKqUKzq/BzSRwE8WzX5fNC83LFLE"
         }
     }

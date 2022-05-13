@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 sealed interface Event<C : EventContent> {
     val content: C
 
-    @Serializable
     data class UnknownEvent(
         override val content: EmptyEventContent,
         val type: String,
@@ -26,7 +25,6 @@ sealed interface Event<C : EventContent> {
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#room-event-fields">matrix spec</a>
      */
     sealed interface RoomEvent<C : RoomEventContent> : Event<C> {
-        override val content: C
         val id: EventId
         val sender: UserId
         val roomId: RoomId

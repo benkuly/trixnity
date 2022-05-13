@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -19,7 +19,7 @@ class ExposedSecretsRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedSecrets)
         }
-        cut = ExposedSecretsRepository(createMatrixJson())
+        cut = ExposedSecretsRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val secret1 = AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(

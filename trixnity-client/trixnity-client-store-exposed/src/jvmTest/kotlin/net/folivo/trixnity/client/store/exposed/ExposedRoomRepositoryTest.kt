@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -17,7 +17,7 @@ class ExposedRoomRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoom)
         }
-        cut = ExposedRoomRepository(createMatrixJson())
+        cut = ExposedRoomRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val key1 = RoomId("room1", "server")

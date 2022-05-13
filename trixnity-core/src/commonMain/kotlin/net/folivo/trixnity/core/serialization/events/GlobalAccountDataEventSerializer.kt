@@ -29,19 +29,15 @@ class GlobalAccountDataEventSerializer(
         requireNotNull(type)
         val mappingType = globalAccountDataEventContentSerializers.find { type.startsWith(it.type) }?.type
         val contentSerializer = globalAccountDataEventContentSerializers.contentDeserializer(type)
-        return try {
-            val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
-            decoder.json.decodeFromJsonElement(
-                AddFieldsSerializer(
-                    GlobalAccountDataEvent.serializer(contentSerializer),
-                    "key" to key
-                ), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                GlobalAccountDataEvent.serializer(UnknownGlobalAccountDataEventContentSerializer(type)), jsonObj
-            )
+        val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
+        return decoder.json.tryDeserializeOrElse(
+            AddFieldsSerializer(
+                GlobalAccountDataEvent.serializer(contentSerializer),
+                "key" to key
+            ), jsonObj
+        ) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            GlobalAccountDataEvent.serializer(UnknownGlobalAccountDataEventContentSerializer(type))
         }
     }
 

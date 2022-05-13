@@ -15,14 +15,18 @@ import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightRoomStateRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightRoomStateRepository
     lateinit var driver: SqlDriver
     beforeTest {
         driver = createDriverWithSchema()
-        cut = SqlDelightRoomStateRepository(Database(driver).roomStateQueries, createMatrixJson(), Dispatchers.Default)
+        cut = SqlDelightRoomStateRepository(
+            Database(driver).roomStateQueries,
+            createMatrixEventJson(),
+            Dispatchers.Default
+        )
     }
     afterTest {
         driver.close()

@@ -5,7 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 interface IMatrixClientServerApiClient {
@@ -27,7 +27,7 @@ class MatrixClientServerApiClient(
     baseUrl: Url? = null,
     onLogout: suspend (isSoft: Boolean) -> Unit = {},
     val eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
-    val json: Json = createMatrixJson(eventContentSerializerMappings),
+    val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) : IMatrixClientServerApiClient {
     override val accessToken = MutableStateFlow<String?>(null)

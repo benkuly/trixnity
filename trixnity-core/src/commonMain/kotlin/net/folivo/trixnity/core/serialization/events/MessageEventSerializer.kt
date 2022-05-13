@@ -21,28 +21,24 @@ private val log = KotlinLogging.logger {}
 class MessageEventSerializer(
     private val messageEventContentSerializers: Set<EventContentSerializerMapping<out MessageEventContent>>,
 ) : KSerializer<MessageEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventSerializer")
 
     override fun deserialize(decoder: Decoder): MessageEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content
+        requireNotNull(type)
         val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        requireNotNull(type)
         val contentSerializer = messageEventContentSerializers.contentDeserializer(type, isRedacted)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                MessageEvent.serializer(
-                    if (redacts == null) contentSerializer
-                    else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-                ), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                MessageEvent.serializer(UnknownMessageEventContentSerializer(type)), jsonObj
-            )
+        return decoder.json.tryDeserializeOrElse(
+            MessageEvent.serializer(
+                if (redacts == null) contentSerializer
+                else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
+            ), jsonObj
+        ) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            MessageEvent.serializer(UnknownMessageEventContentSerializer(type))
         }
     }
 

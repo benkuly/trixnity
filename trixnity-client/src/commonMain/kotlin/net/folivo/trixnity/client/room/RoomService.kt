@@ -598,6 +598,7 @@ class RoomService(
                                     ?: "UNKNOWN"
                             oldTimelineEvent.copy(
                                 event = StateEvent(
+                                    // TODO should keep some fields: https://spec.matrix.org/v1.2/rooms/v9/#redactions
                                     RedactedStateEventContent(eventType),
                                     oldEvent.id,
                                     oldEvent.sender,

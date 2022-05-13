@@ -19,7 +19,7 @@ import kotlin.test.fail
 
 @ExperimentalSerializationApi
 class JsonTest {
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldCreateSubtypeFromMessageEvent() {

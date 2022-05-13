@@ -22,12 +22,12 @@ import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class MatrixClientServerApiHttpClient(
     baseUrl: Url? = null,
-    json: Json = createMatrixJson(),
+    json: Json = createMatrixEventJson(),
     contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (isSoft: Boolean) -> Unit = {},

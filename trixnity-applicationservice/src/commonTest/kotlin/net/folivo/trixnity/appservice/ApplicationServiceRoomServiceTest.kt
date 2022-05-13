@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -21,7 +21,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationServiceRoomServiceTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mappings = createEventContentSerializerMappings()
     private val roomAlias = RoomAliasId("alias", "server")
     private val roomId = RoomId("room", "server")

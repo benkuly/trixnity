@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreTest : ShouldSpec({
@@ -29,7 +29,7 @@ class SqlDelightStoreTest : ShouldSpec({
         cut = SqlDelightStore(
             database = Database(driver),
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
             databaseCoroutineContext = Dispatchers.Default,
             blockingTransactionCoroutineContext = Dispatchers.Default,
             scope = scope

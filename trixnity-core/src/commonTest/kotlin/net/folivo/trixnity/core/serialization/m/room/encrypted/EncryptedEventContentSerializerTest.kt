@@ -12,13 +12,13 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEnc
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContentSerializer
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EncryptedEventContentSerializerTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldSerializeMegolm() {
