@@ -1,27 +1,20 @@
 package net.folivo.trixnity.core.model
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlin.jvm.JvmInline
 
-@Serializable(with = RoomIdSerializer::class)
-class RoomId : MatrixId {
-    constructor(full: String) : super(full, '!')
-    constructor(localpart: String, domain: String) : super(localpart, domain, '!')
-}
+@Serializable
+@JvmInline
+value class RoomId(val full: String) {
 
-object RoomIdSerializer : KSerializer<RoomId> {
-    override fun deserialize(decoder: Decoder): RoomId {
-        return RoomId(decoder.decodeString())
+    constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
+
+    companion object {
+        const val sigilCharacter = '!'
     }
 
-    override fun serialize(encoder: Encoder, value: RoomId) {
-        encoder.encodeString(value.full)
-    }
-
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomIdSerializer", PrimitiveKind.STRING)
+    val localpart: String
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
+    val domain: String
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
 }

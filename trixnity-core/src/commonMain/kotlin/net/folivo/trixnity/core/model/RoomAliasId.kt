@@ -1,27 +1,20 @@
 package net.folivo.trixnity.core.model
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlin.jvm.JvmInline
 
-@Serializable(with = RoomAliasIdSerializer::class)
-class RoomAliasId : MatrixId {
-    constructor(full: String) : super(full, '#')
-    constructor(localpart: String, domain: String) : super(localpart, domain, '#')
-}
+@Serializable
+@JvmInline
+value class RoomAliasId(val full: String) {
 
-object RoomAliasIdSerializer : KSerializer<RoomAliasId> {
-    override fun deserialize(decoder: Decoder): RoomAliasId {
-        return RoomAliasId(decoder.decodeString())
+    constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
+
+    companion object {
+        const val sigilCharacter = '#'
     }
 
-    override fun serialize(encoder: Encoder, value: RoomAliasId) {
-        encoder.encodeString(value.full)
-    }
-
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomAliasIdSerializer", PrimitiveKind.STRING)
+    val localpart: String
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
+    val domain: String
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
 }
