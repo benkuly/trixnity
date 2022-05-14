@@ -4,9 +4,11 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.core.model.RoomId
 
+typealias GetRoomVersionFunction = (RoomId) -> String
+
 fun createDataUnitSerializersModule(
     mappings: EventContentSerializerMappings,
-    getRoomVersion: (RoomId) -> String,
+    getRoomVersion: GetRoomVersionFunction,
 ): SerializersModule {
     val ephemeralDataUnitSerializer = EphemeralDataUnitSerializer(mappings.ephemeral)
     val persistentMessageDataUnitSerializer = PersistentMessageDataUnitSerializer(mappings.message, getRoomVersion)

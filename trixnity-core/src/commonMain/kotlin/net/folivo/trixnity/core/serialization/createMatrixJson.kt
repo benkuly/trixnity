@@ -4,11 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.createDataUnitSerializersModule
-import net.folivo.trixnity.core.serialization.events.createEventSerializersModule
+import net.folivo.trixnity.core.serialization.events.*
 
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -31,7 +27,7 @@ fun createMatrixEventJson(
 }
 
 fun createMatrixDataUnitJson(
-    getRoomVersion: (RoomId) -> String,
+    getRoomVersion: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
@@ -40,7 +36,7 @@ fun createMatrixDataUnitJson(
 }
 
 fun createMatrixEventAndDataUnitJson(
-    getRoomVersion: (RoomId) -> String,
+    getRoomVersion: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
