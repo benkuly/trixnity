@@ -21,6 +21,9 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
     lateinit var authenticationApiHandlerMock: AuthenticationApiHandler
 
     @Mock
+    lateinit var discoveryApiHandlerMock: DiscoveryApiHandler
+
+    @Mock
     lateinit var devicesApiHandlerMock: DevicesApiHandler
 
     @Mock
@@ -54,6 +57,7 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
                     )
                 },
                 authenticationApiHandler = authenticationApiHandlerMock,
+                discoveryApiHandler = discoveryApiHandlerMock,
                 devicesApiHandler = devicesApiHandlerMock,
                 keysApiHandler = keysApiHandlerMock,
                 mediaApiHandler = mediaApiHandlerMock,

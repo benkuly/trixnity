@@ -9,8 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
-import net.folivo.trixnity.core.model.events.PersistentDataUnit
-import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 
 @Serializable
 @Resource("/_matrix/federation/v1/send/{txnId}")
@@ -23,7 +22,7 @@ data class SendTransaction(
         @SerialName("edus") val edus: List<@Contextual EphemeralDataUnit<*>>? = null,
         @SerialName("origin") val origin: String,
         @SerialName("origin_server_ts") val originTimestamp: Long,
-        @SerialName("pdus") val pdus: List<Signed<@Contextual PersistentDataUnit<*>, String>>,
+        @SerialName("pdus") val pdus: List<SignedPersistentDataUnit<*>>,
     )
 
     @Serializable

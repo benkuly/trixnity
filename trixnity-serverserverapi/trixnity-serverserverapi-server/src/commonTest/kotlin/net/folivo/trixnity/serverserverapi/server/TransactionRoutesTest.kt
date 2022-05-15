@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
+import net.folivo.trixnity.serverserverapi.model.transaction.GetEventAuthChain
 import net.folivo.trixnity.serverserverapi.model.transaction.SendTransaction
 import net.folivo.trixnity.serverserverapi.model.transaction.SendTransaction.Response.PDUProcessingResult
 import org.kodein.mock.Mock
@@ -155,6 +156,84 @@ class TransactionRoutesTest : TestsWithMocks() {
                         )
                     )
                 )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetEventAuthChain() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getEventAuthChain(isAny()) }
+            .returns(
+                GetEventAuthChain.Response(
+                    listOf(
+                        Signed(
+                            PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
+                                authEvents = listOf(),
+                                content = RoomMessageEventContent.TextMessageEventContent("hi"),
+                                depth = 12u,
+                                hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                                origin = "example.com",
+                                originTimestamp = 1404838188000,
+                                prevEvents = listOf(),
+                                roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                                sender = UserId("@alice:example.com"),
+                                unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                            ),
+                            mapOf(
+                                "matrix.org" to keysOf(
+                                    Key.Ed25519Key(
+                                        "key",
+                                        "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/event_auth/!room:server/$1event") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "auth_chain": [
+                    {
+                      "auth_events": [],
+                      "content": {
+                        "body": "hi",
+                        "msgtype": "m.text"
+                      },
+                      "depth": 12,
+                      "hashes": {
+                        "sha256": "thishashcoversallfieldsincasethisisredacted"
+                      },
+                      "origin": "example.com",
+                      "origin_server_ts": 1404838188000,
+                      "prev_events": [],
+                      "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                      "sender": "@alice:example.com",
+                      "unsigned": {
+                        "age": 4612
+                      },
+                      "type": "m.room.message",
+                      "signatures": {
+                          "matrix.org": {
+                            "ed25519:key": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                          }
+                      }                      
+                    }
+                  ]
+                }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getEventAuthChain(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.eventId shouldBe EventId("$1event")
             })
         }
     }

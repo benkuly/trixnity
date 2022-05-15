@@ -1,9 +1,15 @@
 package net.folivo.trixnity.core.model
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 
-@Serializable
+@Serializable(with = RoomIdSerializer::class)
 @JvmInline
 value class RoomId(val full: String) {
 
@@ -13,8 +19,18 @@ value class RoomId(val full: String) {
         const val sigilCharacter = '!'
     }
 
+
     val localpart: String
         get() = full.trimStart(sigilCharacter).substringBefore(':')
     val domain: String
         get() = full.trimStart(sigilCharacter).substringBefore(':')
+}
+
+object RoomIdSerializer : KSerializer<RoomId> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("RoomIdSerializer", PrimitiveKind.STRING)
+    override fun deserialize(decoder: Decoder): RoomId = RoomId(decoder.decodeString())
+
+    override fun serialize(encoder: Encoder, value: RoomId) {
+        encoder.encodeString(value.full)
+    }
 }

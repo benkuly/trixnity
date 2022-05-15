@@ -51,7 +51,7 @@ class CanonicalJsonTest {
                 "auth" to JsonObject(
                     mapOf(
                         "success" to JsonPrimitive(true),
-                        "mxid" to JsonPrimitive(UserId("john.doe", "example.com").toString()),
+                        "mxid" to JsonPrimitive(UserId("john.doe", "example.com").full),
                         "profile" to JsonObject(
                             mapOf(
                                 "display_name" to JsonPrimitive("John Doe"),

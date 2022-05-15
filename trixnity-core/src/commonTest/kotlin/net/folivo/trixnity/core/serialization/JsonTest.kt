@@ -1,10 +1,12 @@
 package net.folivo.trixnity.core.serialization
 
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
@@ -344,5 +346,15 @@ class JsonTest {
         } else {
             fail("resultContent should be of type ${UnknownRoomMessageEventContent::class} but was ${resultContent::class}")
         }
+    }
+
+    @Test
+    fun shouldSerializeRoomId() {
+        json.encodeToString(RoomId("!room:server")) shouldBe """"!room:server""""
+    }
+
+    @Test
+    fun shouldDeserializeRoomId() {
+        json.decodeFromString<RoomId>(""""!room:server"""") shouldBe RoomId("!room:server")
     }
 }
