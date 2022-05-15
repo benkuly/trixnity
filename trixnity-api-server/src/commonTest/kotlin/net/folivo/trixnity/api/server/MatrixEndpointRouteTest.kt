@@ -63,9 +63,9 @@ class MatrixEndpointRouteTest {
             matrixApiServer(json) {
                 routing {
                     matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
-                        endpoint.pathParam shouldBe "unicorn"
-                        endpoint.requestParam shouldBe "2"
-                        requestBody.includeDino shouldBe true
+                        it.endpoint.pathParam shouldBe "unicorn"
+                        it.endpoint.requestParam shouldBe "2"
+                        it.requestBody.includeDino shouldBe true
                         PostPath.Response("dino")
                     }
                 }
@@ -87,7 +87,7 @@ class MatrixEndpointRouteTest {
         application {
             matrixApiServer(json) {
                 routing {
-                    matrixEndpoint<GetPath, GetPath.Response>(json, contentMappings) {
+                    matrixEndpoint<GetPath, Unit, GetPath.Response>(json, contentMappings) {
                         getHasBeenCalled = true
                         GetPath.Response("anti-dino")
                     }
@@ -185,7 +185,7 @@ class MatrixEndpointRouteTest {
                         json,
                         contentMappings
                     ) {
-                        requestBody.includeDino shouldBe false
+                        it.requestBody.includeDino shouldBe false
                         PostPathWithCustomSerializer.Response("dino")
                     }
                 }
@@ -211,7 +211,7 @@ class MatrixEndpointRouteTest {
             matrixApiServer(json) {
                 routing {
                     matrixEndpoint<UnitPath, Unit, Unit>(json, contentMappings) {
-                        requestBody shouldBe Unit
+                        it.requestBody shouldBe Unit
                     }
                 }
             }

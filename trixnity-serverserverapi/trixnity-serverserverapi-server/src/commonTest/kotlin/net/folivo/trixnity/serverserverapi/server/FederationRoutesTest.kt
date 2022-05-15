@@ -22,21 +22,22 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
-import net.folivo.trixnity.serverserverapi.model.transaction.GetEventAuthChain
-import net.folivo.trixnity.serverserverapi.model.transaction.SendTransaction
-import net.folivo.trixnity.serverserverapi.model.transaction.SendTransaction.Response.PDUProcessingResult
+import net.folivo.trixnity.serverserverapi.model.federation.GetEventAuthChain
+import net.folivo.trixnity.serverserverapi.model.federation.PduTransaction
+import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction
+import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-class TransactionRoutesTest : TestsWithMocks() {
+class FederationRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixDataUnitJson({ "3" })
     private val mapping = createEventContentSerializerMappings()
 
     @Mock
-    lateinit var handlerMock: TransactionApiHandler
+    lateinit var handlerMock: FederationApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -45,7 +46,7 @@ class TransactionRoutesTest : TestsWithMocks() {
             }
             matrixApiServer(json) {
                 routing {
-                    transactionApiRoutes(handlerMock, json, mapping)
+                    federationApiRoutes(handlerMock, json, mapping)
                 }
             }
         }
@@ -234,6 +235,89 @@ class TransactionRoutesTest : TestsWithMocks() {
             handlerMock.getEventAuthChain(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
+            })
+        }
+    }
+
+    @Test
+    fun shouldBackfillRoom() = testApplication {
+        initCut()
+        everySuspending { handlerMock.backfillRoom(isAny()) }
+            .returns(
+                PduTransaction(
+                    origin = "matrix.org",
+                    originTimestamp = 1234567890,
+                    pdus = listOf(
+                        Signed(
+                            PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
+                                authEvents = listOf(),
+                                content = RoomMessageEventContent.TextMessageEventContent("hi"),
+                                depth = 12u,
+                                hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                                origin = "example.com",
+                                originTimestamp = 1404838188000,
+                                prevEvents = listOf(),
+                                roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                                sender = UserId("@alice:example.com"),
+                                unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                            ),
+                            mapOf(
+                                "matrix.org" to keysOf(
+                                    Key.Ed25519Key(
+                                        "key",
+                                        "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        val response = client.get(" /_matrix/federation/v1/backfill/!room:server?v=$1event&limit=10") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "origin": "matrix.org",
+                  "origin_server_ts": 1234567890,
+                  "pdus": [
+                    {
+                      "auth_events": [],
+                      "content": {
+                        "body": "hi",
+                        "msgtype": "m.text"
+                      },
+                      "depth": 12,
+                      "hashes": {
+                        "sha256": "thishashcoversallfieldsincasethisisredacted"
+                      },
+                      "origin": "example.com",
+                      "origin_server_ts": 1404838188000,
+                      "prev_events": [],
+                      "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                      "sender": "@alice:example.com",
+                      "unsigned": {
+                        "age": 4612
+                      },
+                      "type": "m.room.message",
+                      "signatures": {
+                          "matrix.org": {
+                            "ed25519:key": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                          }
+                      }                      
+                    }
+                  ]
+                }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.backfillRoom(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.startFrom shouldBe listOf(EventId("$1event"))
+                it.endpoint.limit shouldBe 10
             })
         }
     }

@@ -30,7 +30,7 @@ val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointConfig")
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, REQUEST, RESPONSE>.() -> RESPONSE
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, REQUEST, RESPONSE>) -> RESPONSE,
 ) {
     matrixEndpointResource<ENDPOINT, REQUEST, RESPONSE> { endpoint ->
         val requestSerializer: KSerializer<REQUEST>? = endpoint.requestSerializerBuilder(mappings, json)
@@ -40,7 +40,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                 requestSerializer != null -> json.decodeFromString(requestSerializer, call.receiveText())
                 else -> call.receive()
             }
-        val responseBody: RESPONSE = MatrixEndpointContext(endpoint, requestBody, call).run { handler() }
+        val responseBody: RESPONSE = handler(MatrixEndpointContext(endpoint, requestBody, call))
         val responseSerializer = endpoint.responseSerializerBuilder(mappings, json)
         when {
             responseSerializer != null -> call.respond(
@@ -77,14 +77,14 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
 inline fun <reified ENDPOINT : MatrixEndpoint<Unit, Unit>> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, Unit, Unit>.() -> Unit
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, Unit, Unit>) -> Unit
 ) = matrixEndpoint<ENDPOINT, Unit, Unit>(json, mappings, handler = handler)
 
 @JvmName("matrixEndpointWithUnitResponse")
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, Unit>, reified REQUEST> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, REQUEST, Unit>.() -> Unit
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, REQUEST, Unit>) -> Unit
 ) = matrixEndpoint<ENDPOINT, REQUEST, Unit>(
     json,
     mappings,
@@ -95,7 +95,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, Unit>, reified REQUEST> R
 inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, Unit, RESPONSE>.() -> RESPONSE
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, Unit, RESPONSE>) -> RESPONSE
 ) = matrixEndpoint<ENDPOINT, Unit, RESPONSE>(
     json,
     mappings,

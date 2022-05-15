@@ -14,7 +14,7 @@ fun Application.matrixServerServerApiServer(
     signatureAuthenticationFunction: SignatureAuthenticationFunction,
     getRoomVersion: GetRoomVersionFunction,
     discoveryApiHandler: DiscoveryApiHandler,
-    transactionApiHandler: TransactionApiHandler,
+    federationApiHandler: FederationApiHandler,
     customMappings: EventContentSerializerMappings? = null,
 ) {
     val contentMappings = createEventContentSerializerMappings(customMappings)
@@ -26,7 +26,7 @@ fun Application.matrixServerServerApiServer(
         }
         routing {
             discoveryApiRoutes(discoveryApiHandler, json, contentMappings)
-            transactionApiRoutes(transactionApiHandler, json, contentMappings)
+            federationApiRoutes(federationApiHandler, json, contentMappings)
         }
     }
 }

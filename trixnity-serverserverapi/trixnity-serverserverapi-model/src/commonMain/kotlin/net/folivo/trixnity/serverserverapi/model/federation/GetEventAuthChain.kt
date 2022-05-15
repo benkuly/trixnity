@@ -1,4 +1,4 @@
-package net.folivo.trixnity.serverserverapi.model.transaction
+package net.folivo.trixnity.serverserverapi.model.federation
 
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName

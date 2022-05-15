@@ -25,7 +25,7 @@ typealias MatrixUIAEndpointContext<ENDPOINT, REQUEST, RESPONSE> = MatrixEndpoint
 inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixUIAEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>.() -> ResponseWithUIA<RESPONSE>
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>) -> ResponseWithUIA<RESPONSE>
 ) {
     matrixEndpointResource<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>> { endpoint ->
         val requestSerializer: KSerializer<REQUEST>? = endpoint.plainRequestSerializerBuilder(mappings, json)
@@ -37,8 +37,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                 )
                 else -> call.receive()
             }
-        val responseBody: ResponseWithUIA<RESPONSE> =
-            MatrixEndpointContext(endpoint, requestBody, call).run { handler() }
+        val responseBody: ResponseWithUIA<RESPONSE> = handler(MatrixEndpointContext(endpoint, requestBody, call))
         val responseSerializer: KSerializer<RESPONSE>? = endpoint.plainResponseSerializerBuilder(mappings, json)
         when (responseBody) {
             is Success -> {
