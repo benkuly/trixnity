@@ -84,7 +84,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        "/_matrix/client/v3/profile/${userId.e().full}" -> {
                                             respond(
                                                 """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
                                                 HttpStatusCode.OK,
@@ -105,7 +105,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        "/_matrix/client/v3/user/${userId.e()}/filter" -> {
+                                        "/_matrix/client/v3/user/${userId.e().full}/filter" -> {
                                             assertEquals(HttpMethod.Post, request.method)
                                             respond(
                                                 """{"filter_id":"someFilter"}""",
@@ -233,7 +233,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        path == "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        path == "/_matrix/client/v3/profile/${userId.e().full}" -> {
                                             respond(
                                                 """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
                                                 HttpStatusCode.OK,
@@ -255,7 +255,7 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         }
                                         else -> {
-                                            throw IllegalArgumentException(path)
+                                            throw IllegalStateException(path)
                                         }
                                     }
                                 }
