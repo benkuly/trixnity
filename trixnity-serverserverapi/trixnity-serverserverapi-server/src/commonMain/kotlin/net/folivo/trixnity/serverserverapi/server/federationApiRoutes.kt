@@ -15,5 +15,6 @@ internal fun Route.federationApiRoutes(
         matrixEndpoint(json, contentMappings, handler::sendTransaction)
         matrixEndpoint(json, contentMappings, handler::getEventAuthChain)
         matrixEndpoint(json, contentMappings, handler::backfillRoom)
+        matrixEndpoint(json, contentMappings, handler::getMissingEvents)
     }
 }
