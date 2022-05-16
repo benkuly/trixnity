@@ -1082,9 +1082,10 @@ class RoomService(
                     async {
                         getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
                     }
-                }.awaitAll()
-                    .mapNotNull { it.value }
-                    .asFlow()
+                }.asFlow()
+                    .map {
+                        it.await().value
+                    }.filterNotNull()
             }
         }
 

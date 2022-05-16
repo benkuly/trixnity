@@ -49,10 +49,7 @@ suspend inline fun <reified C : StateEventContent> IRoomService.getState(
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
  * the outer flow is debounced by default.
  */
-@OptIn(
-    FlowPreview::class, ExperimentalCoroutinesApi::
-    class
-)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration = 200.milliseconds): Flow<Set<Room>> =
     debounce(debounceTimeout)
         .flatMapLatest {
