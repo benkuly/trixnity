@@ -5,7 +5,6 @@ import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import kotlinx.coroutines.*
 import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
@@ -24,7 +23,7 @@ class UtilsTest : ShouldSpec({
         storeScope.cancel()
     }
 
-    context(KeyStore::waitForUpdateOutdatedKey.name) {
+    context("waitForUpdateOutdatedKey") {
         should("wait until outdated does not contain anything") {
             store.keys.outdatedKeys.value = setOf(UserId("alice", "server"))
             val job = launch(Dispatchers.Default) {
@@ -43,8 +42,10 @@ class UtilsTest : ShouldSpec({
             store.keys.outdatedKeys.value = setOf(UserId("alice", "server"))
             val job = launch(Dispatchers.Default) {
                 store.keys.waitForUpdateOutdatedKey(
-                    UserId("alice", "server"),
-                    UserId("cedric", "server")
+                    setOf(
+                        UserId("alice", "server"),
+                        UserId("cedric", "server")
+                    )
                 )
             }
             until(50.milliseconds, 25.milliseconds.fixed()) {

@@ -13,7 +13,8 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
 
-internal suspend fun KeyStore.waitForUpdateOutdatedKey(vararg users: UserId) {
+internal suspend fun KeyStore.waitForUpdateOutdatedKey(user: UserId) = waitForUpdateOutdatedKey(setOf(user))
+internal suspend fun KeyStore.waitForUpdateOutdatedKey(users: Set<UserId> = setOf()) {
     outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
 }
 
