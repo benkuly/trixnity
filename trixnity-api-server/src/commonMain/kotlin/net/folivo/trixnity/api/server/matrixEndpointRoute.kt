@@ -26,7 +26,7 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
 
 val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointConfig")
 
-// TODO inject json when ktor 2.0.0 is released
+// TODO inject json and mappings with content receivers with kotlin > 1.7.0
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
@@ -49,26 +49,6 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
             )
             responseBody == null -> call.respond(HttpStatusCode.OK)
             else -> call.respond(HttpStatusCode.OK, responseBody)
-        }
-    }
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpointResource(
-    crossinline block: suspend PipelineContext<Unit, ApplicationCall>.(ENDPOINT) -> Unit
-) {
-    resource<ENDPOINT> {
-        val annotations = serializer<ENDPOINT>().descriptor.annotations
-        val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
-            ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
-        val withoutAuth = annotations.filterIsInstance<WithoutAuth>().firstOrNull() != null
-        method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
-            intercept(ApplicationCallPipeline.Plugins) {
-                call.attributes.put(withoutAuthAttributeKey, withoutAuth)
-            }
-            handle<ENDPOINT> { endpoint ->
-                block(endpoint)
-            }
         }
     }
 }
@@ -101,3 +81,23 @@ inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE>
     mappings,
     handler = handler
 )
+
+@OptIn(ExperimentalSerializationApi::class)
+inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpointResource(
+    crossinline block: suspend PipelineContext<Unit, ApplicationCall>.(ENDPOINT) -> Unit
+) {
+    resource<ENDPOINT> {
+        val annotations = serializer<ENDPOINT>().descriptor.annotations
+        val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
+            ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+        val withoutAuth = annotations.filterIsInstance<WithoutAuth>().firstOrNull() != null
+        method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
+            intercept(ApplicationCallPipeline.Plugins) {
+                call.attributes.put(withoutAuthAttributeKey, withoutAuth)
+            }
+            handle<ENDPOINT> { endpoint ->
+                block(endpoint)
+            }
+        }
+    }
+}
