@@ -20,7 +20,7 @@ data class MemberEventContent(
     @SerialName("is_direct")
     val isDirect: Boolean? = null,
     @SerialName("join_authorised_via_users_server")
-    val joinAuthorisedViaUsersServer: String? = null,
+    val joinAuthorisedViaUsersServer: UserId? = null,
     @SerialName("third_party_invite")
     val thirdPartyInvite: Invite? = null,
     @SerialName("reason")

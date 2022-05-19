@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 private val log = KotlinLogging.logger {}
 
 class DecryptedMegolmEventSerializer(
-    private val roomEventContentSerializers: Set<EventContentSerializerMapping<out RoomEventContent>>,
+    private val roomEventContentSerializers: Set<SerializerMapping<out RoomEventContent>>,
 ) : KSerializer<DecryptedMegolmEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DecryptedMegolmEventSerializer")
 

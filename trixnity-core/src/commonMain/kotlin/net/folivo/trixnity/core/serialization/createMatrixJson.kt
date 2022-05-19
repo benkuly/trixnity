@@ -29,21 +29,34 @@ fun createMatrixEventJson(
 fun createMatrixDataUnitJson(
     getRoomVersion: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    ephemeralDateUnitContentSerializerMappings: EphemeralDataUnitContentMappings = createEphemeralDateUnitContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = createDataUnitSerializersModule(eventContentSerializerMappings, getRoomVersion)
+    val modules = createDataUnitSerializersModule(
+        eventContentSerializerMappings,
+        ephemeralDateUnitContentSerializerMappings,
+        getRoomVersion
+    )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 
 fun createMatrixEventAndDataUnitJson(
     getRoomVersion: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    ephemeralDateUnitContentSerializerMappings: EphemeralDataUnitContentMappings = createEphemeralDateUnitContentSerializerMappings(),
     customModule: SerializersModule? = null,
 ): Json {
     val modules = createEventSerializersModule(eventContentSerializerMappings) +
-            createDataUnitSerializersModule(eventContentSerializerMappings, getRoomVersion)
+            createDataUnitSerializersModule(
+                eventContentSerializerMappings,
+                ephemeralDateUnitContentSerializerMappings,
+                getRoomVersion
+            )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 
 fun createEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
     DefaultEventContentSerializerMappings + customMappings
+
+fun createEphemeralDateUnitContentSerializerMappings(customMappings: EphemeralDataUnitContentMappings? = null): EphemeralDataUnitContentMappings =
+    DefaultEphemeralDataUnitContentSerializerMappings + customMappings.orEmpty()

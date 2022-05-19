@@ -38,6 +38,20 @@ class UnknownEphemeralEventContentSerializer(val eventType: String) : KSerialize
     }
 }
 
+class UnknownEphemeralDataUnitContentSerializer(val eventType: String) : KSerializer<UnknownEphemeralDataUnitContent> {
+    override val descriptor = buildClassSerialDescriptor("UnknownEphemeralDataUnitContentSerializer")
+
+    override fun deserialize(decoder: Decoder): UnknownEphemeralDataUnitContent {
+        require(decoder is JsonDecoder)
+        return UnknownEphemeralDataUnitContent(decoder.decodeJsonElement().jsonObject, eventType)
+    }
+
+    override fun serialize(encoder: Encoder, value: UnknownEphemeralDataUnitContent) {
+        require(encoder is JsonEncoder)
+        encoder.encodeJsonElement(value.raw)
+    }
+}
+
 class UnknownGlobalAccountDataEventContentSerializer(val eventType: String) :
     KSerializer<UnknownGlobalAccountDataEventContent> {
     override val descriptor = buildClassSerialDescriptor("UnknownGlobalAccountDataEventContentSerializer")

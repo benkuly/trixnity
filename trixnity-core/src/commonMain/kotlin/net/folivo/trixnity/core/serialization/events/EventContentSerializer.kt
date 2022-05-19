@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.EventContent
 
 class EventContentSerializer(
     private val type: String,
-    private val mappings: Set<EventContentSerializerMapping<out EventContent>>
+    private val mappings: Set<SerializerMapping<out EventContent>>
 ) : KSerializer<EventContent> {
     override val descriptor = buildClassSerialDescriptor("EventContentSerializer")
 

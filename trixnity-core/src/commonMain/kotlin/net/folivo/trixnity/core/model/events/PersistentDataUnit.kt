@@ -139,7 +139,7 @@ sealed interface PersistentDataUnit<C : EventContent> {
             @SerialName("prev_events") override val prevEvents: List<EventId>,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("sender") override val sender: UserId,
-            @SerialName("state_key") val stateKey: String? = null,
+            @SerialName("state_key") val stateKey: String,
             @SerialName("unsigned") override val unsigned: UnsignedData? = null
         ) : PersistentStateDataUnit<C>, PersistentDataUnitV3<C>
     }

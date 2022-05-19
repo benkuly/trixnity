@@ -15,7 +15,10 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
+import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
@@ -123,7 +126,14 @@ class FederationRoutesTest : TestsWithMocks() {
                   "edus": [
                     {
                       "content": {
-                        "presence": "online"
+                        "key": "value",
+                        "push": [
+                          {
+                            "last_active_ago": 5000,
+                            "presence": "online",
+                            "user_id": "@john:matrix.org"
+                          }
+                        ]
                       },
                       "edu_type": "m.presence"
                     }
@@ -153,7 +163,19 @@ class FederationRoutesTest : TestsWithMocks() {
             handlerMock.sendTransaction(assert {
                 it.endpoint.txnId shouldBe "someTransactionId"
                 it.requestBody shouldBe SendTransaction.Request(
-                    edus = listOf(EphemeralDataUnit(PresenceEventContent(PresenceEventContent.Presence.ONLINE))),
+                    edus = listOf(
+                        EphemeralDataUnit(
+                            PresenceDataUnitContent(
+                                listOf(
+                                    PresenceDataUnitContent.PresenceUpdate(
+                                        userId = UserId("@john:matrix.org"),
+                                        presence = Presence.ONLINE,
+                                        lastActiveAgo = 5000
+                                    )
+                                )
+                            )
+                        )
+                    ),
                     origin = "matrix.org",
                     originTimestamp = 1234567890,
                     pdus = listOf(pdu)
@@ -368,6 +390,69 @@ class FederationRoutesTest : TestsWithMocks() {
             handlerMock.getStateIds(assert {
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.endpoint.roomId shouldBe RoomId("!room:server")
+            })
+        }
+    }
+
+    @Test
+    fun shouldMakeJoin() = testApplication {
+        initCut()
+        everySuspending { handlerMock.makeJoin(isAny()) }
+            .returns(
+                MakeJoin.Response(
+                    eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        authEvents = listOf(),
+                        content = MemberEventContent(
+                            joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
+                            membership = Membership.JOIN
+                        ),
+                        depth = 12u,
+                        hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                        origin = "example.com",
+                        originTimestamp = 1404838188000,
+                        prevEvents = listOf(),
+                        roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                        sender = UserId("@alice:example.com"),
+                        stateKey = "@alice:example.com",
+                        unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                    ),
+                    roomVersion = "3"
+                )
+            )
+        val response = client.get(" /_matrix/federation/v1/make_join/!room:server/@alice:example.com?ver=3") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "event": {
+                        "auth_events":[],
+                        "content": {
+                          "membership": "join",
+                          "join_authorised_via_users_server": "@anyone:resident.example.org"
+                        },
+                        "depth":12,
+                        "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                        "origin": "example.com",
+                        "origin_server_ts": 1404838188000,
+                        "prev_events":[],
+                        "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                        "sender": "@alice:example.com",
+                        "state_key": "@alice:example.com",
+                        "unsigned":{"age":4612},
+                        "type": "m.room.member"
+                      },
+                      "room_version": "3"
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.makeJoin(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.userId shouldBe UserId("@alice:example.com")
+                it.endpoint.supportedRoomVersions shouldBe setOf("3")
             })
         }
     }

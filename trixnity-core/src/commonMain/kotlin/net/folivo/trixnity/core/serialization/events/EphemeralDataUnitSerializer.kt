@@ -11,13 +11,13 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 private val log = KotlinLogging.logger {}
 
 class EphemeralDataUnitSerializer(
-    private val ephemeralEventContentSerializers: Set<EventContentSerializerMapping<out EphemeralEventContent>>,
+    private val ephemeralDataUnitContentSerializers: Set<SerializerMapping<out EphemeralDataUnitContent>>,
 ) : KSerializer<EphemeralDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EphemeralDataUnitSerializer")
 
@@ -26,16 +26,16 @@ class EphemeralDataUnitSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["edu_type"]?.jsonPrimitive?.content
         requireNotNull(type)
-        val contentSerializer = ephemeralEventContentSerializers.contentDeserializer(type)
+        val contentSerializer = ephemeralDataUnitContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(EphemeralDataUnit.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event of type $type" }
-            EphemeralDataUnit.serializer(UnknownEphemeralEventContentSerializer(type))
+            EphemeralDataUnit.serializer(UnknownEphemeralDataUnitContentSerializer(type))
         }
     }
 
     override fun serialize(encoder: Encoder, value: EphemeralDataUnit<*>) {
         require(encoder is JsonEncoder)
-        val (type, serializer) = ephemeralEventContentSerializers.contentSerializer(value.content)
+        val (type, serializer) = ephemeralDataUnitContentSerializers.contentSerializer(value.content)
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST")

@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 
 class GlobalAccountDataEventContentSerializer(
     private val type: String,
-    private val mappings: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>
+    private val mappings: Set<SerializerMapping<out GlobalAccountDataEventContent>>
 ) : KSerializer<GlobalAccountDataEventContent> {
     override val descriptor = buildClassSerialDescriptor("GlobalAccountDataEventContentSerializer")
 

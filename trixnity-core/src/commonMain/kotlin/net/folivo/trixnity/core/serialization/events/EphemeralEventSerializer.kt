@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 private val log = KotlinLogging.logger {}
 
 class EphemeralEventSerializer(
-    private val ephemeralEventContentSerializers: Set<EventContentSerializerMapping<out EphemeralEventContent>>,
+    private val ephemeralEventContentSerializers: Set<SerializerMapping<out EphemeralEventContent>>,
 ) : KSerializer<EphemeralEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EphemeralEventSerializer")
 

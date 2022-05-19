@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 private val log = KotlinLogging.logger {}
 
 class PersistentStateDataUnitSerializer(
-    private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
+    private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
     private val getRoomVersion: (RoomId) -> String,
 ) : KSerializer<PersistentDataUnit.PersistentStateDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentStateDataUnitSerializer")

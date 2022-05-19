@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 private val log = KotlinLogging.logger {}
 
 class StateEventSerializer(
-    private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
+    private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
 ) : KSerializer<StateEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StateEventSerializer")
 

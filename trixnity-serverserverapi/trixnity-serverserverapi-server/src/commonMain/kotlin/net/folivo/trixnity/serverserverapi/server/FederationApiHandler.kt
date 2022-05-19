@@ -38,4 +38,9 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1state_idsroomid">matrix spec</a>
      */
     suspend fun getStateIds(context: MatrixEndpointContext<GetStateIds, Unit, GetStateIds.Response>): GetStateIds.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1make_joinroomiduserid">matrix spec</a>
+     */
+    suspend fun makeJoin(context: MatrixEndpointContext<MakeJoin, Unit, MakeJoin.Response>): MakeJoin.Response
 }

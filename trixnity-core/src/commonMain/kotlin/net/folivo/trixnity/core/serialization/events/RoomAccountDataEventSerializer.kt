@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 private val log = KotlinLogging.logger {}
 
 class RoomAccountDataEventSerializer(
-    private val roomAccountDataEventContentSerializers: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>,
+    private val roomAccountDataEventContentSerializers: Set<SerializerMapping<out RoomAccountDataEventContent>>,
 ) : KSerializer<Event.RoomAccountDataEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
 
