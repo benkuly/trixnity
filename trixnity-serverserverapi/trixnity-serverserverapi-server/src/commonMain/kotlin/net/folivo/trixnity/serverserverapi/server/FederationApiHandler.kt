@@ -1,6 +1,10 @@
 package net.folivo.trixnity.serverserverapi.server
 
+import kotlinx.serialization.Contextual
 import net.folivo.trixnity.api.server.MatrixEndpointContext
+import net.folivo.trixnity.core.model.events.PersistentDataUnit
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.serverserverapi.model.federation.*
 
 interface FederationApiHandler {
@@ -43,4 +47,9 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1make_joinroomiduserid">matrix spec</a>
      */
     suspend fun makeJoin(context: MatrixEndpointContext<MakeJoin, Unit, MakeJoin.Response>): MakeJoin.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2send_joinroomideventid">matrix spec</a>
+     */
+    suspend fun sendJoin(context: MatrixEndpointContext<SendJoin, Signed<@Contextual PersistentDataUnit.PersistentStateDataUnit<MemberEventContent>, String>, SendJoin.Response>): SendJoin.Response
 }

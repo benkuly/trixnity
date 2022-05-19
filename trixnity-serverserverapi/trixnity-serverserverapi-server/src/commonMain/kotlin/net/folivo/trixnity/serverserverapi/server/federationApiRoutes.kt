@@ -20,5 +20,6 @@ internal fun Route.federationApiRoutes(
         matrixEndpoint(json, contentMappings, handler::getState)
         matrixEndpoint(json, contentMappings, handler::getStateIds)
         matrixEndpoint(json, contentMappings, handler::makeJoin)
+        matrixEndpoint(json, contentMappings, handler::sendJoin)
     }
 }
