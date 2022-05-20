@@ -96,4 +96,9 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixfederationv1publicrooms">matrix spec</a>
      */
     suspend fun getPublicRoomsWithFilter(context: MatrixEndpointContext<GetPublicRoomsWithFilter, GetPublicRoomsWithFilter.Request, GetPublicRoomsResponse>): GetPublicRoomsResponse
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
+     */
+    suspend fun getHierarchy(context: MatrixEndpointContext<GetHierarchy, Unit, GetHierarchy.Response>): GetHierarchy.Response
 }

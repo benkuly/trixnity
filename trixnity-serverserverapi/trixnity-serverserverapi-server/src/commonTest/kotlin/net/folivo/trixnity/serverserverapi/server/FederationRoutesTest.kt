@@ -12,6 +12,7 @@ import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
@@ -20,6 +21,7 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
 import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
@@ -1345,6 +1347,139 @@ class FederationRoutesTest : TestsWithMocks() {
                     limit = 10,
                     thirdPartyInstanceId = "irc"
                 )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetHierarchy() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getHierarchy(isAny()) }
+            .returns(
+                GetHierarchy.Response(
+                    rooms = listOf(
+                        GetHierarchy.Response.PublicRoomsChunk(
+                            allowedRoomIds = setOf(RoomId("!upstream:example.org")),
+                            avatarUrl = "mxc://example.org/abcdef2",
+                            canonicalAlias = RoomAliasId("#general:example.org"),
+                            childrenState = setOf(
+                                Event.StrippedStateEvent(
+                                    ChildEventContent(via = setOf("remote.example.org")),
+                                    originTimestamp = 1629422222222,
+                                    sender = UserId("@alice:example.org"),
+                                    stateKey = "!b:example.org",
+                                )
+                            ),
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Restricted,
+                            name = "The ~~First~~ Second Space",
+                            joinedMembersCount = 42,
+                            roomId = RoomId("!second_room:example.org"),
+                            roomType = CreateEventContent.RoomType.Space,
+                            topic = "Hello world",
+                            worldReadable = true
+                        )
+                    ),
+                    inaccessible_children = setOf(RoomId("!secret:example.org")),
+                    room = GetHierarchy.Response.PublicRoomsChunk(
+                        allowedRoomIds = setOf(),
+                        avatarUrl = "mxc://example.org/abcdef",
+                        canonicalAlias = RoomAliasId("#general:example.org"),
+                        childrenState = setOf(
+                            Event.StrippedStateEvent(
+                                ChildEventContent(via = setOf("remote.example.org")),
+                                originTimestamp = 1629413349153,
+                                sender = UserId("@alice:example.org"),
+                                stateKey = "!a:example.org",
+                            )
+                        ),
+                        guestCanJoin = false,
+                        joinRule = JoinRulesEventContent.JoinRule.Public,
+                        name = "The First Space",
+                        joinedMembersCount = 42,
+                        roomId = RoomId("!space:example.org"),
+                        roomType = CreateEventContent.RoomType.Space,
+                        topic = "No other spaces were created first, ever",
+                        worldReadable = true
+                    )
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/hierarchy/!room:server?suggested_only=true") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "children": [
+                    {
+                      "allowed_room_ids": [
+                        "!upstream:example.org"
+                      ],
+                      "avatar_url": "mxc://example.org/abcdef2",
+                      "canonical_alias": "#general:example.org",
+                      "children_state": [
+                        {
+                          "content": {
+                            "suggested": false,
+                            "via": [
+                              "remote.example.org"
+                            ]
+                          },
+                          "sender": "@alice:example.org",
+                          "origin_server_ts": 1629422222222,
+                          "state_key": "!b:example.org",
+                          "type": "m.space.child"
+                        }
+                      ],
+                      "guest_can_join": false,
+                      "join_rule": "restricted",
+                      "name": "The ~~First~~ Second Space",
+                      "num_joined_members": 42,
+                      "room_id": "!second_room:example.org",
+                      "room_type": "m.space",
+                      "topic": "Hello world",
+                      "world_readable": true
+                    }
+                  ],
+                  "inaccessible_children": [
+                    "!secret:example.org"
+                  ],
+                  "room": {
+                    "allowed_room_ids": [],
+                    "avatar_url": "mxc://example.org/abcdef",
+                    "canonical_alias": "#general:example.org",
+                    "children_state": [
+                      {
+                        "content": {
+                          "suggested": false,
+                          "via": [
+                            "remote.example.org"
+                          ]
+                        },
+                        "sender": "@alice:example.org",
+                        "origin_server_ts": 1629413349153,
+                        "state_key": "!a:example.org",
+                        "type": "m.space.child"
+                      }
+                    ],
+                    "guest_can_join": false,
+                    "join_rule": "public",
+                    "name": "The First Space",
+                    "num_joined_members": 42,
+                    "room_id": "!space:example.org",
+                    "room_type": "m.space",
+                    "topic": "No other spaces were created first, ever",
+                    "world_readable": true
+                  }
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getHierarchy(assert {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.suggestedOnly shouldBe true
             })
         }
     }
