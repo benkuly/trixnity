@@ -60,7 +60,7 @@ sealed interface Event<C : EventContent> {
     data class StrippedStateEvent<C : StateEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("event_id") val id: EventId? = null,
-        @SerialName("sender") val sender: UserId? = null,
+        @SerialName("sender") val sender: UserId,
         @SerialName("room_id") val roomId: RoomId? = null,
         @SerialName("origin_server_ts") val originTimestamp: Long? = null,
         @SerialName("unsigned") val unsigned: UnsignedStateEventData<C>? = null,

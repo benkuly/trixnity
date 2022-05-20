@@ -6,7 +6,7 @@ import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createEphemeralDateUnitContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
+import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.core.serialization.events.EphemeralDataUnitContentMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
@@ -22,7 +22,7 @@ fun Application.matrixServerServerApiServer(
 ) {
     val contentMappings = createEventContentSerializerMappings(customMappings)
     val ephemeralDataUnitContentMappings = createEphemeralDateUnitContentSerializerMappings(customEphemeralMappings)
-    val json = createMatrixDataUnitJson(getRoomVersion, contentMappings, ephemeralDataUnitContentMappings)
+    val json = createMatrixEventAndDataUnitJson(getRoomVersion, contentMappings, ephemeralDataUnitContentMappings)
     matrixApiServer(json) {
         install(DoubleReceive)
         installMatrixSignatureAuth(hostname = hostname) {

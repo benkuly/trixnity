@@ -14,17 +14,16 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
+import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
@@ -35,7 +34,7 @@ import kotlin.test.Test
 class FederationRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
-    private val json = createMatrixDataUnitJson({ "3" })
+    private val json = createMatrixEventAndDataUnitJson({ "3" })
     private val mapping = createEventContentSerializerMappings()
 
     @Mock
@@ -576,6 +575,179 @@ class FederationRoutesTest : TestsWithMocks() {
                         content = MemberEventContent(
                             joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
                             membership = Membership.JOIN
+                        ),
+                        depth = 12u,
+                        hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                        origin = "example.com",
+                        originTimestamp = 1404838188000,
+                        prevEvents = listOf(),
+                        roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                        sender = UserId("@alice:example.com"),
+                        stateKey = "@alice:example.com",
+                        unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                    ),
+                    mapOf(
+                        "example.com" to keysOf(
+                            Key.Ed25519Key(
+                                "key_version",
+                                "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                            )
+                        ),
+                    )
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldMakeKnock() = testApplication {
+        initCut()
+        everySuspending { handlerMock.makeKnock(isAny()) }
+            .returns(
+                MakeKnock.Response(
+                    eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        authEvents = listOf(),
+                        content = MemberEventContent(
+                            joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
+                            membership = Membership.KNOCK
+                        ),
+                        depth = 12u,
+                        hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                        origin = "example.com",
+                        originTimestamp = 1404838188000,
+                        prevEvents = listOf(),
+                        roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                        sender = UserId("@alice:example.com"),
+                        stateKey = "@alice:example.com",
+                        unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                    ),
+                    roomVersion = "3"
+                )
+            )
+        val response = client.get(" /_matrix/federation/v1/make_knock/!room:server/@alice:example.com?ver=3") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "event": {
+                        "auth_events":[],
+                        "content": {
+                          "membership": "knock",
+                          "join_authorised_via_users_server": "@anyone:resident.example.org"
+                        },
+                        "depth":12,
+                        "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                        "origin": "example.com",
+                        "origin_server_ts": 1404838188000,
+                        "prev_events":[],
+                        "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                        "sender": "@alice:example.com",
+                        "state_key": "@alice:example.com",
+                        "unsigned":{"age":4612},
+                        "type": "m.room.member"
+                      },
+                      "room_version": "3"
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.makeKnock(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.userId shouldBe UserId("@alice:example.com")
+                it.endpoint.supportedRoomVersions shouldBe setOf("3")
+            })
+        }
+    }
+
+    @Test
+    fun shouldSendKnock() = testApplication {
+        initCut()
+        everySuspending { handlerMock.sendKnock(isAny()) }
+            .returns(
+                SendKnock.Response(
+                    listOf(
+                        Event.StrippedStateEvent(
+                            content = NameEventContent("Example Room"),
+                            sender = UserId("@bob:example.org"),
+                            stateKey = ""
+                        ),
+                        Event.StrippedStateEvent(
+                            content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Knock),
+                            sender = UserId("@bob:example.org"),
+                            stateKey = ""
+                        )
+                    ),
+                )
+            )
+        val response = client.put(" /_matrix/federation/v1/send_knock/!room:server/$1event") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                    "auth_events":[],
+                    "content": {
+                      "membership": "knock",
+                      "join_authorised_via_users_server": "@anyone:resident.example.org"
+                    },
+                    "depth":12,
+                    "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                    "origin": "example.com",
+                    "origin_server_ts": 1404838188000,
+                    "prev_events":[],
+                    "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                    "sender": "@alice:example.com",
+                    "state_key": "@alice:example.com",
+                    "unsigned":{"age":4612},
+                    "type": "m.room.member",
+                    "signatures": {
+                          "example.com": {
+                            "ed25519:key_version": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                          }
+                    }
+                  }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "knock_room_state": [
+                        {
+                          "content": {
+                            "name": "Example Room"
+                          },
+                          "sender": "@bob:example.org",
+                          "state_key": "",
+                          "type": "m.room.name"
+                        },
+                        {
+                          "content": {
+                            "join_rule": "knock"
+                          },
+                          "sender": "@bob:example.org",
+                          "state_key": "",
+                          "type": "m.room.join_rules"
+                        }
+                      ]
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.sendKnock(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.eventId shouldBe EventId("$1event")
+                it.requestBody shouldBe Signed(
+                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        authEvents = listOf(),
+                        content = MemberEventContent(
+                            joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
+                            membership = Membership.KNOCK
                         ),
                         depth = 12u,
                         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
