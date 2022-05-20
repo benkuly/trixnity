@@ -66,4 +66,14 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2inviteroomideventid">matrix spec</a>
      */
     suspend fun invite(context: MatrixEndpointContext<Invite, Invite.Request, Invite.Response>): Invite.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1make_leaveroomiduserid">matrix spec</a>
+     */
+    suspend fun makeLeave(context: MatrixEndpointContext<MakeLeave, Unit, MakeLeave.Response>): MakeLeave.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2send_leaveroomideventid">matrix spec</a>
+     */
+    suspend fun sendLeave(context: MatrixEndpointContext<SendLeave, Signed<PersistentStateDataUnit<MemberEventContent>, String>, Unit>)
 }

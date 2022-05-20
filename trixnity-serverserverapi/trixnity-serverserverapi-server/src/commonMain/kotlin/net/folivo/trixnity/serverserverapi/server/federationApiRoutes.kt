@@ -24,5 +24,7 @@ internal fun Route.federationApiRoutes(
         matrixEndpoint(json, contentMappings, handler::makeKnock)
         matrixEndpoint(json, contentMappings, handler::sendKnock)
         matrixEndpoint(json, contentMappings, handler::invite)
+        matrixEndpoint(json, contentMappings, handler::makeLeave)
+        matrixEndpoint(json, contentMappings, handler::sendLeave)
     }
 }
