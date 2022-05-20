@@ -61,4 +61,9 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv1send_knockroomideventid">matrix spec</a>
      */
     suspend fun sendKnock(context: MatrixEndpointContext<SendKnock, Signed<PersistentStateDataUnit<MemberEventContent>, String>, SendKnock.Response>): SendKnock.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2inviteroomideventid">matrix spec</a>
+     */
+    suspend fun invite(context: MatrixEndpointContext<Invite, Invite.Request, Invite.Response>): Invite.Response
 }

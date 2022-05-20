@@ -608,7 +608,6 @@ class FederationRoutesTest : TestsWithMocks() {
                     eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
                         authEvents = listOf(),
                         content = MemberEventContent(
-                            joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
                             membership = Membership.KNOCK
                         ),
                         depth = 12u,
@@ -635,8 +634,7 @@ class FederationRoutesTest : TestsWithMocks() {
                       "event": {
                         "auth_events":[],
                         "content": {
-                          "membership": "knock",
-                          "join_authorised_via_users_server": "@anyone:resident.example.org"
+                          "membership": "knock"
                         },
                         "depth":12,
                         "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
@@ -690,8 +688,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 {
                     "auth_events":[],
                     "content": {
-                      "membership": "knock",
-                      "join_authorised_via_users_server": "@anyone:resident.example.org"
+                      "membership": "knock"
                     },
                     "depth":12,
                     "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
@@ -746,7 +743,6 @@ class FederationRoutesTest : TestsWithMocks() {
                     PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
                         authEvents = listOf(),
                         content = MemberEventContent(
-                            joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
                             membership = Membership.KNOCK
                         ),
                         depth = 12u,
@@ -767,6 +763,166 @@ class FederationRoutesTest : TestsWithMocks() {
                             )
                         ),
                     )
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldInvite() = testApplication {
+        initCut()
+        everySuspending { handlerMock.invite(isAny()) }
+            .returns(
+                Invite.Response(
+                    event = Signed(
+                        PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                            authEvents = listOf(),
+                            content = MemberEventContent(
+                                membership = Membership.INVITE
+                            ),
+                            depth = 12u,
+                            hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                            origin = "example.com",
+                            originTimestamp = 1404838188000,
+                            prevEvents = listOf(),
+                            roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                            sender = UserId("@alice:example.com"),
+                            stateKey = "@alice:example.com",
+                            unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                        ),
+                        mapOf(
+                            "example.com" to keysOf(
+                                Key.Ed25519Key(
+                                    "key_version",
+                                    "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        val response = client.put(" /_matrix/federation/v2/invite/!room:server/$1event") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "event": {
+                    "auth_events":[],
+                    "content": {
+                      "membership": "invite"
+                    },
+                    "depth":12,
+                    "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                    "origin": "example.com",
+                    "origin_server_ts": 1404838188000,
+                    "prev_events":[],
+                    "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                    "sender": "@alice:example.com",
+                    "state_key": "@alice:example.com",
+                    "unsigned":{"age":4612},
+                    "type": "m.room.member",
+                    "signatures": {
+                          "example.com": {
+                            "ed25519:key_version": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                          }
+                    }
+                  },
+                  "invite_room_state": [
+                        {
+                          "content": {
+                            "name": "Example Room"
+                          },
+                          "sender": "@bob:example.org",
+                          "state_key": "",
+                          "type": "m.room.name"
+                        },
+                        {
+                          "content": {
+                            "join_rule": "invite"
+                          },
+                          "sender": "@bob:example.org",
+                          "state_key": "",
+                          "type": "m.room.join_rules"
+                        }
+                  ],
+                  "room_version": "3"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "event": {
+                            "auth_events":[],
+                            "content": {
+                              "membership": "invite"
+                            },
+                            "depth":12,
+                            "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                            "origin": "example.com",
+                            "origin_server_ts": 1404838188000,
+                            "prev_events":[],
+                            "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                            "sender": "@alice:example.com",
+                            "state_key": "@alice:example.com",
+                            "unsigned":{"age":4612},
+                            "type": "m.room.member",
+                            "signatures": {
+                                  "example.com": {
+                                    "ed25519:key_version": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                                  }
+                            }
+                          }
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.invite(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.endpoint.eventId shouldBe EventId("$1event")
+                it.requestBody shouldBe Invite.Request(
+                    event = Signed(
+                        PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                            authEvents = listOf(),
+                            content = MemberEventContent(
+                                membership = Membership.INVITE
+                            ),
+                            depth = 12u,
+                            hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                            origin = "example.com",
+                            originTimestamp = 1404838188000,
+                            prevEvents = listOf(),
+                            roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                            sender = UserId("@alice:example.com"),
+                            stateKey = "@alice:example.com",
+                            unsigned = PersistentDataUnit.UnsignedData(age = 4612)
+                        ),
+                        mapOf(
+                            "example.com" to keysOf(
+                                Key.Ed25519Key(
+                                    "key_version",
+                                    "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
+                                )
+                            ),
+                        )
+                    ),
+                    inviteRoomState = listOf(
+                        Event.StrippedStateEvent(
+                            content = NameEventContent("Example Room"),
+                            sender = UserId("@bob:example.org"),
+                            stateKey = ""
+                        ),
+                        Event.StrippedStateEvent(
+                            content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Invite),
+                            sender = UserId("@bob:example.org"),
+                            stateKey = ""
+                        )
+                    ),
+                    roomVersion = "3"
                 )
             })
         }

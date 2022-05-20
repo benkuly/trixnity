@@ -31,10 +31,9 @@ class PersistentMessageDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentMessageDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        requireNotNull(type)
         val contentSerializer = messageEventContentSerializers.contentDeserializer(type, isRedacted)
         val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
         requireNotNull(roomId)

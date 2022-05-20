@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -24,8 +25,7 @@ class EphemeralEventSerializer(
     override fun deserialize(decoder: Decoder): EphemeralEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val contentSerializer = ephemeralEventContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(EphemeralEvent.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event of type $type" }

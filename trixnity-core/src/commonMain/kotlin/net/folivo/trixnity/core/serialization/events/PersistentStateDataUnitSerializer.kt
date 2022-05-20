@@ -29,8 +29,7 @@ class PersistentStateDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentDataUnit.PersistentStateDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
         val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isFullyRedacted)
         val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
