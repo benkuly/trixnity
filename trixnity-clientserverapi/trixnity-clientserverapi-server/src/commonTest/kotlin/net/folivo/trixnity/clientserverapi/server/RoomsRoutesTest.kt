@@ -583,8 +583,8 @@ class RoomsRoutesTest : TestsWithMocks() {
                     name = "someRoomName",
                     topic = null,
                     invite = setOf(UserId("user1", "server")),
-                    invite3Pid = setOf(
-                        CreateRoom.Request.Invite3Pid(
+                    inviteThirdPid = setOf(
+                        CreateRoom.Request.InviteThirdPid(
                             "identityServer",
                             "token",
                             "email",

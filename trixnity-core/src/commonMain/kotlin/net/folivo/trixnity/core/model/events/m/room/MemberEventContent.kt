@@ -36,7 +36,7 @@ data class MemberEventContent(
         @Serializable
         data class UserInfo(
             @SerialName("mxid")
-            val mxid: UserId,
+            val userId: UserId,
             @SerialName("token")
             val token: String
         )

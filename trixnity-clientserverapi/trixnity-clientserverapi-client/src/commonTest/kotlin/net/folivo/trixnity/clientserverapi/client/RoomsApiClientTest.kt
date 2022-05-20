@@ -490,7 +490,14 @@ class RoomsApiClientTest {
             invite = setOf(UserId("user1", "server")),
             isDirect = true,
             name = "someRoomName",
-            invite3Pid = setOf(CreateRoom.Request.Invite3Pid("identityServer", "token", "email", "user2@example.org"))
+            inviteThirdPid = setOf(
+                CreateRoom.Request.InviteThirdPid(
+                    "identityServer",
+                    "token",
+                    "email",
+                    "user2@example.org"
+                )
+            )
         ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }

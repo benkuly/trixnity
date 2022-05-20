@@ -76,4 +76,14 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2send_leaveroomideventid">matrix spec</a>
      */
     suspend fun sendLeave(context: MatrixEndpointContext<SendLeave, Signed<PersistentStateDataUnit<MemberEventContent>, String>, Unit>)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv13pidonbind">matrix spec</a>
+     */
+    suspend fun onBindThirdPid(context: MatrixEndpointContext<OnBindThirdPid, OnBindThirdPid.Request, Unit>)
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv1exchange_third_party_inviteroomid">matrix spec</a>
+     */
+    suspend fun exchangeThirdPartyInvite(context: MatrixEndpointContext<ExchangeThirdPartyInvite, Signed<PersistentStateDataUnit<MemberEventContent>, String>, Unit>)
 }

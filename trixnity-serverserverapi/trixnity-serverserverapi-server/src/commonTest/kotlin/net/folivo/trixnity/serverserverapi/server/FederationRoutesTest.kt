@@ -26,6 +26,7 @@ import net.folivo.trixnity.core.serialization.createEventContentSerializerMappin
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
+import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -223,7 +224,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     pdus = listOf(pdu)
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/backfill/!room:server?v=$1event&limit=10") {
+        val response = client.get("/_matrix/federation/v1/backfill/!room:server?v=$1event&limit=10") {
             someSignature()
         }
         assertSoftly(response) {
@@ -257,7 +258,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     pdus = listOf(pdu)
                 )
             )
-        val response = client.post(" /_matrix/federation/v1/get_missing_events/!room:server") {
+        val response = client.post("/_matrix/federation/v1/get_missing_events/!room:server") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
@@ -310,7 +311,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     pdus = listOf(pdu)
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/event/$1event") {
+        val response = client.get("/_matrix/federation/v1/event/$1event") {
             someSignature()
         }
         assertSoftly(response) {
@@ -341,7 +342,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     pdus = listOf(pdu)
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/state/!room:server?event_id=$1event") {
+        val response = client.get("/_matrix/federation/v1/state/!room:server?event_id=$1event") {
             someSignature()
         }
         assertSoftly(response) {
@@ -372,7 +373,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     pduIds = listOf(EventId("$2event"))
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/state_ids/!room:server?event_id=$1event") {
+        val response = client.get("/_matrix/federation/v1/state_ids/!room:server?event_id=$1event") {
             someSignature()
         }
         assertSoftly(response) {
@@ -418,7 +419,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     roomVersion = "3"
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/make_join/!room:server/@alice:example.com?ver=3") {
+        val response = client.get("/_matrix/federation/v1/make_join/!room:server/@alice:example.com?ver=3") {
             someSignature()
         }
         assertSoftly(response) {
@@ -499,7 +500,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     state = listOf()
                 )
             )
-        val response = client.put(" /_matrix/federation/v2/send_join/!room:server/$1event") {
+        val response = client.put("/_matrix/federation/v2/send_join/!room:server/$1event") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
@@ -623,7 +624,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     roomVersion = "3"
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/make_knock/!room:server/@alice:example.com?ver=3") {
+        val response = client.get("/_matrix/federation/v1/make_knock/!room:server/@alice:example.com?ver=3") {
             someSignature()
         }
         assertSoftly(response) {
@@ -680,7 +681,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     ),
                 )
             )
-        val response = client.put(" /_matrix/federation/v1/send_knock/!room:server/$1event") {
+        val response = client.put("/_matrix/federation/v1/send_knock/!room:server/$1event") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
@@ -801,7 +802,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     )
                 )
             )
-        val response = client.put(" /_matrix/federation/v2/invite/!room:server/$1event") {
+        val response = client.put("/_matrix/federation/v2/invite/!room:server/$1event") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
@@ -952,7 +953,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     roomVersion = "3"
                 )
             )
-        val response = client.get(" /_matrix/federation/v1/make_leave/!room:server/@alice:example.com") {
+        val response = client.get("/_matrix/federation/v1/make_leave/!room:server/@alice:example.com") {
             someSignature()
         }
         assertSoftly(response) {
@@ -993,7 +994,7 @@ class FederationRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.sendLeave(isAny()) }
             .returns(Unit)
-        val response = client.put(" /_matrix/federation/v2/send_leave/!room:server/$1event") {
+        val response = client.put("/_matrix/federation/v2/send_leave/!room:server/$1event") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
@@ -1054,6 +1055,158 @@ class FederationRoutesTest : TestsWithMocks() {
                                 "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                             )
                         ),
+                    )
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldOnBindThirdPid() = testApplication {
+        initCut()
+        everySuspending { handlerMock.onBindThirdPid(isAny()) }
+            .returns(Unit)
+        val response = client.put("/_matrix/federation/v1/3pid/onbind") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "address": "alice@example.com",
+                      "invites": [
+                        {
+                          "address": "alice@example.com",
+                          "medium": "email",
+                          "mxid": "@alice:matrix.org",
+                          "room_id": "!somewhere:example.org",
+                          "sender": "@bob:matrix.org",
+                          "signed": {
+                            "mxid": "@alice:matrix.org",
+                            "signatures": {
+                              "vector.im": {
+                                "ed25519:0": "SomeSignatureGoesHere"
+                              }
+                            },
+                            "token": "Hello World"
+                          }
+                        }
+                      ],
+                      "medium": "email",
+                      "mxid": "@alice:matrix.org"
+                    }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verifyWithSuspend {
+            handlerMock.onBindThirdPid(assert {
+                it.requestBody shouldBe OnBindThirdPid.Request(
+                    address = "alice@example.com",
+                    invites = listOf(
+                        ThirdPartyInvite(
+                            address = "alice@example.com",
+                            medium = "email",
+                            userId = UserId("@alice:matrix.org"),
+                            roomId = RoomId("!somewhere:example.org"),
+                            sender = UserId("@bob:matrix.org"),
+                            signed = Signed(
+                                ThirdPartyInvite.UserInfo(UserId("@alice:matrix.org"), "Hello World"),
+                                mapOf("vector.im" to keysOf(Key.Ed25519Key("0", "SomeSignatureGoesHere")))
+                            )
+                        )
+                    ),
+                    medium = "email",
+                    userId = UserId("@alice:matrix.org")
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldExchangeThirdPartyInvite() = testApplication {
+        initCut()
+        everySuspending { handlerMock.exchangeThirdPartyInvite(isAny()) }
+            .returns(Unit)
+        val response = client.put("/_matrix/federation/v1/exchange_third_party_invite/!room:server") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                    "auth_events":[],
+                    "content": {
+                        "membership": "invite",
+                        "third_party_invite": {
+                          "display_name": "alice",
+                          "signed": {
+                            "mxid": "@alice:localhost",
+                            "signatures": {
+                              "magic.forest": {
+                                "ed25519:3": "fQpGIW1Snz+pwLZu6sTy2aHy/DYWWTspTJRPyNp0PKkymfIsNffysMl6ObMMFdIJhk6g6pwlIqZ54rxo8SLmAg"
+                              }
+                            },
+                            "token": "abc123"
+                          }
+                        }
+                    },
+                    "depth":12,
+                    "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
+                    "origin": "example.com",
+                    "origin_server_ts": 1404838188000,
+                    "prev_events":[],
+                    "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
+                    "sender": "@alice:example.com",
+                    "state_key": "@alice:example.com",
+                    "unsigned":{"age":4612},
+                    "type": "m.room.member"
+                  }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verifyWithSuspend {
+            handlerMock.exchangeThirdPartyInvite(assert {
+                it.endpoint.roomId shouldBe RoomId("!room:server")
+                it.requestBody shouldBe Signed(
+                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        authEvents = listOf(),
+                        content = MemberEventContent(
+                            membership = Membership.INVITE,
+                            thirdPartyInvite = MemberEventContent.Invite(
+                                displayName = "alice",
+                                signed = Signed(
+                                    MemberEventContent.Invite.UserInfo(
+                                        userId = UserId("@alice:localhost"),
+                                        token = "abc123"
+                                    ),
+                                    mapOf(
+                                        "magic.forest" to keysOf(
+                                            Key.Ed25519Key(
+                                                "3",
+                                                "fQpGIW1Snz+pwLZu6sTy2aHy/DYWWTspTJRPyNp0PKkymfIsNffysMl6ObMMFdIJhk6g6pwlIqZ54rxo8SLmAg"
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        depth = 12u,
+                        hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
+                        origin = "example.com",
+                        originTimestamp = 1404838188000,
+                        prevEvents = listOf(),
+                        roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
+                        sender = UserId("@alice:example.com"),
+                        stateKey = "@alice:example.com",
+                        unsigned = PersistentDataUnit.UnsignedData(age = 4612)
                     )
                 )
             })

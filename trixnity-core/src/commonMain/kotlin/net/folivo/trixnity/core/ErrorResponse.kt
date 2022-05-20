@@ -133,21 +133,21 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_THREEPID_IN_USE")
-    data class ThreePIdInUse(override val error: String? = null) : ErrorResponse()
+    data class ThirdPIdInUse(override val error: String? = null) : ErrorResponse()
 
     /**
      * Sent when a threepid given to an API cannot be used because no record matching the threepid was found.
      */
     @Serializable
     @SerialName("M_THREEPID_NOT_FOUND")
-    data class ThreePIdNotFound(override val error: String? = null) : ErrorResponse()
+    data class ThirdPIdNotFound(override val error: String? = null) : ErrorResponse()
 
     /**
      * Authentication could not be performed on the third party identifier.
      */
     @Serializable
     @SerialName("M_THREEPID_AUTH_FAILED")
-    data class ThreePIdAuthFailed(override val error: String? = null) : ErrorResponse()
+    data class ThirdPIdAuthFailed(override val error: String? = null) : ErrorResponse()
 
     /**
      * The server does not permit this third party identifier.
@@ -155,7 +155,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_THREEPID_DENIED")
-    data class ThreePIdDenied(override val error: String? = null) : ErrorResponse()
+    data class ThirdPIdDenied(override val error: String? = null) : ErrorResponse()
 
     /**
      * The client's request used a third party server, eg. identity server, that this server does not trust.

@@ -24,7 +24,7 @@ interface ApplicationServiceRoomService {
             name = createRoomParameter.name,
             topic = createRoomParameter.topic,
             invite = createRoomParameter.invite,
-            invite3Pid = createRoomParameter.invite3Pid,
+            inviteThirdPid = createRoomParameter.inviteThirdPid,
             roomVersion = createRoomParameter.roomVersion,
             asUserId = createRoomParameter.asUserId,
             creationContent = createRoomParameter.creationContent,
