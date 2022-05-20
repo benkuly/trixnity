@@ -38,8 +38,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_MISSING_TOKEN")
-    data class MissingToken(override val error: String? = null) :
-        ErrorResponse()
+    data class MissingToken(override val error: String? = null) : ErrorResponse()
 
     /**
      * Request contained valid JSON, but it was malformed in some way, e.g. missing required keys, invalid values for keys.
@@ -84,16 +83,14 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_UNRECOGNIZED")
-    data class Unrecognized(override val error: String? = null) :
-        ErrorResponse()
+    data class Unrecognized(override val error: String? = null) : ErrorResponse()
 
     /**
      * The request was not correctly authorized. Usually due to login failures.
      */
     @Serializable
     @SerialName("M_UNAUTHORIZED")
-    data class Unauthorized(override val error: String? = null) :
-        ErrorResponse()
+    data class Unauthorized(override val error: String? = null) : ErrorResponse()
 
     /**
      * The user ID associated with the request has been deactivated. Typically for endpoints that prove authentication,
@@ -101,8 +98,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_USER_DEACTIVATED")
-    data class UserDeactivated(override val error: String? = null) :
-        ErrorResponse()
+    data class UserDeactivated(override val error: String? = null) : ErrorResponse()
 
     /**
      * Encountered when trying to register a user ID which has been taken.
@@ -116,8 +112,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_INVALID_USERNAME")
-    data class InvalidUsername(override val error: String? = null) :
-        ErrorResponse()
+    data class InvalidUsername(override val error: String? = null) : ErrorResponse()
 
     /**
      * Sent when the room alias given to the createRoom API is already in use.
@@ -131,32 +126,28 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_INVALID_ROOM_STATE")
-    data class InvalidRoomState(override val error: String? = null) :
-        ErrorResponse()
+    data class InvalidRoomState(override val error: String? = null) : ErrorResponse()
 
     /**
      * Sent when a threepid given to an API cannot be used because the same threepid is already in use.
      */
     @Serializable
     @SerialName("M_THREEPID_IN_USE")
-    data class ThreePIdInUse(override val error: String? = null) :
-        ErrorResponse()
+    data class ThreePIdInUse(override val error: String? = null) : ErrorResponse()
 
     /**
      * Sent when a threepid given to an API cannot be used because no record matching the threepid was found.
      */
     @Serializable
     @SerialName("M_THREEPID_NOT_FOUND")
-    data class ThreePIdNotFound(override val error: String? = null) :
-        ErrorResponse()
+    data class ThreePIdNotFound(override val error: String? = null) : ErrorResponse()
 
     /**
      * Authentication could not be performed on the third party identifier.
      */
     @Serializable
     @SerialName("M_THREEPID_AUTH_FAILED")
-    data class ThreePIdAuthFailed(override val error: String? = null) :
-        ErrorResponse()
+    data class ThreePIdAuthFailed(override val error: String? = null) : ErrorResponse()
 
     /**
      * The server does not permit this third party identifier.
@@ -164,24 +155,21 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_THREEPID_DENIED")
-    data class ThreePIdDenied(override val error: String? = null) :
-        ErrorResponse()
+    data class ThreePIdDenied(override val error: String? = null) : ErrorResponse()
 
     /**
      * The client's request used a third party server, eg. identity server, that this server does not trust.
      */
     @Serializable
     @SerialName("M_SERVER_NOT_TRUSTED")
-    data class ServerNotTrusted(override val error: String? = null) :
-        ErrorResponse()
+    data class ServerNotTrusted(override val error: String? = null) : ErrorResponse()
 
     /**
      * The client's request to create a room used a room version that the server does not support.
      */
     @Serializable
     @SerialName("M_UNSUPPORTED_ROOM_VERSION")
-    data class UnsupportedRoomVersion(override val error: String? = null) :
-        ErrorResponse()
+    data class UnsupportedRoomVersion(override val error: String? = null) : ErrorResponse()
 
     /**
      * The client attempted to join a room that has a version the server does not support. Inspect the `room_version`
@@ -206,32 +194,28 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_GUEST_ACCESS_FORBIDDEN")
-    data class GuestAccessForbidden(override val error: String? = null) :
-        ErrorResponse()
+    data class GuestAccessForbidden(override val error: String? = null) : ErrorResponse()
 
     /**
      * A Captcha is required to complete the request.
      */
     @Serializable
     @SerialName("M_CAPTCHA_NEEDED")
-    data class CaptchaNeeded(override val error: String? = null) :
-        ErrorResponse()
+    data class CaptchaNeeded(override val error: String? = null) : ErrorResponse()
 
     /**
      * The Captcha provided did not match what was expected.
      */
     @Serializable
     @SerialName("M_CAPTCHA_INVALID")
-    data class CaptchaInvalid(override val error: String? = null) :
-        ErrorResponse()
+    data class CaptchaInvalid(override val error: String? = null) : ErrorResponse()
 
     /**
      * A required parameter was missing from the request.
      */
     @Serializable
     @SerialName("M_MISSING_PARAM")
-    data class MissingParam(override val error: String? = null) :
-        ErrorResponse()
+    data class MissingParam(override val error: String? = null) : ErrorResponse()
 
     /**
      * A parameter that was specified has the wrong value. For example, the server expected an integer and instead
@@ -239,8 +223,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_INVALID_PARAM")
-    data class InvalidParam(override val error: String? = null) :
-        ErrorResponse()
+    data class InvalidParam(override val error: String? = null) : ErrorResponse()
 
     /**
      * The request or entity was too large.
@@ -279,8 +262,7 @@ sealed class ErrorResponse {
      */
     @Serializable
     @SerialName("M_CANNOT_LEAVE_SERVER_NOTICE_ROOM")
-    data class CannotLeaveServerNoticeRoom(override val error: String? = null) :
-        ErrorResponse()
+    data class CannotLeaveServerNoticeRoom(override val error: String? = null) : ErrorResponse()
 
     @Serializable
     @SerialName("M_WRONG_ROOM_KEYS_VERSION")
@@ -288,6 +270,14 @@ sealed class ErrorResponse {
         override val error: String? = null,
         @SerialName("current_version") val currentVersion: String? = null
     ) : ErrorResponse()
+
+    @Serializable
+    @SerialName("M_UNABLE_TO_AUTHORISE_JOIN")
+    data class UnableToAuthoriseJoin(override val error: String? = null) : ErrorResponse()
+
+    @Serializable
+    @SerialName("M_UNABLE_TO_GRANT_JOIN")
+    data class UnableToGrantJoin(override val error: String? = null) : ErrorResponse()
 
     /**
      * All ErrorResponses, that we cannot map to a subtype of ErrorResponse.

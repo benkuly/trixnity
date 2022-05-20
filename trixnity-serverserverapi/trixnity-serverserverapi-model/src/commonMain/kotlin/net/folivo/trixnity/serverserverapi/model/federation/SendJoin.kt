@@ -17,7 +17,7 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentStateDataUnit
 
 @Serializable
-@Resource("/_matrix/federation/v1/send_join/{roomId}/{eventId}")
+@Resource("/_matrix/federation/v2/send_join/{roomId}/{eventId}")
 @HttpMethod(PUT)
 data class SendJoin(
     @SerialName("roomId") val roomId: RoomId,

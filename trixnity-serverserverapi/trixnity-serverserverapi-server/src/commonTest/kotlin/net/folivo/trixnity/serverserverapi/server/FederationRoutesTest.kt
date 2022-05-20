@@ -500,7 +500,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     state = listOf()
                 )
             )
-        val response = client.put(" /_matrix/federation/v1/send_join/!room:server/$1event") {
+        val response = client.put(" /_matrix/federation/v2/send_join/!room:server/$1event") {
             someSignature()
             contentType(ContentType.Application.Json)
             setBody(
