@@ -8,6 +8,7 @@ import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
@@ -1208,6 +1209,141 @@ class FederationRoutesTest : TestsWithMocks() {
                         stateKey = "@alice:example.com",
                         unsigned = PersistentDataUnit.UnsignedData(age = 4612)
                     )
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetPublicRooms() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getPublicRooms(isAny()) }
+            .returns(
+                GetPublicRoomsResponse(
+                    chunk = listOf(
+                        GetPublicRoomsResponse.PublicRoomsChunk(
+                            avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Public,
+                            name = "CHEESE",
+                            joinedMembersCount = 37,
+                            roomId = RoomId("!ol19s:bleecker.street"),
+                            topic = "Tasty tasty cheese",
+                            worldReadable = true
+                        )
+                    ),
+                    nextBatch = "p190q",
+                    prevBatch = "p1902",
+                    totalRoomCountEstimate = 115
+                )
+            )
+        val response =
+            client.get("/_matrix/federation/v1/publicRooms?limit=5&include_all_networks=false&since=since&third_party_instance_id=instance") {
+                someSignature()
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "chunk": [
+                    {
+                      "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                      "guest_can_join": false,
+                      "join_rule": "public",
+                      "name": "CHEESE",
+                      "num_joined_members": 37,
+                      "room_id": "!ol19s:bleecker.street",
+                      "topic": "Tasty tasty cheese",
+                      "world_readable": true
+                    }
+                  ],
+                  "next_batch": "p190q",
+                  "prev_batch": "p1902",
+                  "total_room_count_estimate": 115
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getPublicRooms(assert {
+                it.endpoint.limit shouldBe 5
+                it.endpoint.includeAllNetworks shouldBe false
+                it.endpoint.since shouldBe "since"
+                it.endpoint.thirdPartyInstanceId shouldBe "instance"
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetPublicRoomsWithFilter() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getPublicRoomsWithFilter(isAny()) }
+            .returns(
+                GetPublicRoomsResponse(
+                    chunk = listOf(
+                        GetPublicRoomsResponse.PublicRoomsChunk(
+                            avatarUrl = "mxc://bleecker.street/CHEDDARandBRIE",
+                            guestCanJoin = false,
+                            joinRule = JoinRulesEventContent.JoinRule.Public,
+                            name = "CHEESE",
+                            joinedMembersCount = 37,
+                            roomId = RoomId("!ol19s:bleecker.street"),
+                            topic = "Tasty tasty cheese",
+                            worldReadable = true
+                        )
+                    ),
+                    nextBatch = "p190q",
+                    prevBatch = "p1902",
+                    totalRoomCountEstimate = 115
+                )
+            )
+        val response =
+            client.post("/_matrix/federation/v1/publicRooms") {
+                someSignature()
+                contentType(ContentType.Application.Json)
+                setBody(
+                    """
+                    {
+                      "filter": {
+                        "generic_search_term": "foo"
+                      },
+                      "include_all_networks": false,
+                      "limit": 10,
+                      "third_party_instance_id": "irc"
+                    }
+                """.trimIndent()
+                )
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "chunk": [
+                    {
+                      "avatar_url": "mxc://bleecker.street/CHEDDARandBRIE",
+                      "guest_can_join": false,
+                      "join_rule": "public",
+                      "name": "CHEESE",
+                      "num_joined_members": 37,
+                      "room_id": "!ol19s:bleecker.street",
+                      "topic": "Tasty tasty cheese",
+                      "world_readable": true
+                    }
+                  ],
+                  "next_batch": "p190q",
+                  "prev_batch": "p1902",
+                  "total_room_count_estimate": 115
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getPublicRoomsWithFilter(assert {
+                it.requestBody shouldBe GetPublicRoomsWithFilter.Request(
+                    filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
+                    includeAllNetworks = false,
+                    limit = 10,
+                    thirdPartyInstanceId = "irc"
                 )
             })
         }
