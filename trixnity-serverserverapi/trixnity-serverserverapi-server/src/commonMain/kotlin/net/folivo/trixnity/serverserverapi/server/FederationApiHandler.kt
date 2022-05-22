@@ -101,4 +101,14 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
      */
     suspend fun getHierarchy(context: MatrixEndpointContext<GetHierarchy, Unit, GetHierarchy.Response>): GetHierarchy.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1querydirectory">matrix spec</a>
+     */
+    suspend fun queryDirectory(context: MatrixEndpointContext<QueryDirectory, Unit, QueryDirectory.Response>): QueryDirectory.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1queryprofile">matrix spec</a>
+     */
+    suspend fun queryProfile(context: MatrixEndpointContext<QueryProfile, Unit, QueryProfile.Response>): QueryProfile.Response
 }

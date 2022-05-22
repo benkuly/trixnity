@@ -31,5 +31,7 @@ internal fun Route.federationApiRoutes(
         matrixEndpoint(json, contentMappings, handler::getPublicRooms)
         matrixEndpoint(json, contentMappings, handler::getPublicRoomsWithFilter)
         matrixEndpoint(json, contentMappings, handler::getHierarchy)
+        matrixEndpoint(json, contentMappings, handler::queryDirectory)
+        matrixEndpoint(json, contentMappings, handler::queryProfile)
     }
 }

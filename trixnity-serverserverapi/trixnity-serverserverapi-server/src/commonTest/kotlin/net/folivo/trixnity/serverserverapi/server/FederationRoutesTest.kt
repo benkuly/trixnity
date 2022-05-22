@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
@@ -1245,7 +1244,7 @@ class FederationRoutesTest : TestsWithMocks() {
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """
                 {
                   "chunk": [
@@ -1409,7 +1408,7 @@ class FederationRoutesTest : TestsWithMocks() {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """
                 {
                   "children": [
@@ -1480,6 +1479,75 @@ class FederationRoutesTest : TestsWithMocks() {
             handlerMock.getHierarchy(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.suggestedOnly shouldBe true
+            })
+        }
+    }
+
+    @Test
+    fun shouldQueryDirectory() = testApplication {
+        initCut()
+        everySuspending { handlerMock.queryDirectory(isAny()) }
+            .returns(
+                QueryDirectory.Response(
+                    roomId = RoomId("!roomid1234:example.org"),
+                    servers = setOf(
+                        "example.org",
+                        "example.com",
+                        "another.example.com:8449"
+                    )
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/query/directory?room_alias=%23alias:server") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "room_id": "!roomid1234:example.org",
+                  "servers": [
+                    "example.org",
+                    "example.com",
+                    "another.example.com:8449"
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.queryDirectory(assert {
+                it.endpoint.roomAlias shouldBe RoomAliasId("#alias:server")
+            })
+        }
+    }
+
+    @Test
+    fun shouldQueryProfile() = testApplication {
+        initCut()
+        everySuspending { handlerMock.queryProfile(isAny()) }
+            .returns(
+                QueryProfile.Response(
+                    displayname = "John Doe",
+                    avatarUrl = "mxc://matrix.org/MyC00lAvatar"
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/query/profile?user_id=@user:server&field=displayname") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "avatar_url": "mxc://matrix.org/MyC00lAvatar",
+                  "displayname": "John Doe"
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.queryProfile(assert {
+                it.endpoint.userId shouldBe UserId("@user:server")
+                it.endpoint.field shouldBe QueryProfile.Field.DISPLAYNNAME
             })
         }
     }
