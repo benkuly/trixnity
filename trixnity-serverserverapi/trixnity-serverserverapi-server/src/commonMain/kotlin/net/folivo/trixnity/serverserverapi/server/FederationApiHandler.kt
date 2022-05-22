@@ -111,4 +111,9 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1queryprofile">matrix spec</a>
      */
     suspend fun queryProfile(context: MatrixEndpointContext<QueryProfile, Unit, QueryProfile.Response>): QueryProfile.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1openiduserinfo">matrix spec</a>
+     */
+    suspend fun getOIDCUserInfo(context: MatrixEndpointContext<GetOIDCUserInfo, Unit, GetOIDCUserInfo.Response>): GetOIDCUserInfo.Response
 }

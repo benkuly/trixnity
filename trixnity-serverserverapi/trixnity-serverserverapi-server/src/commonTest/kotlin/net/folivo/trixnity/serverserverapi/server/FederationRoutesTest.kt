@@ -1551,4 +1551,32 @@ class FederationRoutesTest : TestsWithMocks() {
             })
         }
     }
+
+    @Test
+    fun shouldGetOIDCUserInfo() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getOIDCUserInfo(isAny()) }
+            .returns(
+                GetOIDCUserInfo.Response(
+                    sub = UserId("@alice:example.com")
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/openid/userinfo?access_token=token") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "sub": "@alice:example.com"
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getOIDCUserInfo(assert {
+                it.endpoint.accessToken shouldBe "token"
+            })
+        }
+    }
 }
