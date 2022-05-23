@@ -28,7 +28,7 @@ data class GetKeys(
     @Serializable
     data class Request(
         @SerialName("device_keys")
-        val deviceKeys: Map<UserId, Set<String>>,
+        val keysFrom: Map<UserId, Set<String>>,
         @SerialName("token")
         val token: String?,
         @SerialName("timeout")

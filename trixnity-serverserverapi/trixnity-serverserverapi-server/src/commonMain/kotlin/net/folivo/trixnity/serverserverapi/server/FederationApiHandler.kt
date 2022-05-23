@@ -116,4 +116,19 @@ interface FederationApiHandler {
      * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1openiduserinfo">matrix spec</a>
      */
     suspend fun getOIDCUserInfo(context: MatrixEndpointContext<GetOIDCUserInfo, Unit, GetOIDCUserInfo.Response>): GetOIDCUserInfo.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1userdevicesuserid">matrix spec</a>
+     */
+    suspend fun getDevices(context: MatrixEndpointContext<GetDevices, Unit, GetDevices.Response>): GetDevices.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixfederationv1userkeysclaim">matrix spec</a>
+     */
+    suspend fun claimKeys(context: MatrixEndpointContext<ClaimKeys, ClaimKeys.Request, ClaimKeys.Response>): ClaimKeys.Response
+
+    /**
+     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixfederationv1userkeysquery">matrix spec</a>
+     */
+    suspend fun getKeys(context: MatrixEndpointContext<GetKeys, GetKeys.Request, GetKeys.Response>): GetKeys.Response
 }

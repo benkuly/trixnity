@@ -34,5 +34,8 @@ internal fun Route.federationApiRoutes(
         matrixEndpoint(json, contentMappings, handler::queryDirectory)
         matrixEndpoint(json, contentMappings, handler::queryProfile)
         matrixEndpoint(json, contentMappings, handler::getOIDCUserInfo)
+        matrixEndpoint(json, contentMappings, handler::getDevices)
+        matrixEndpoint(json, contentMappings, handler::claimKeys)
+        matrixEndpoint(json, contentMappings, handler::getKeys)
     }
 }

@@ -162,7 +162,7 @@ class KeysRoutesTest : TestsWithMocks() {
     }
 
     @Test
-    fun shouldQueryKeys() = testApplication {
+    fun shouldGetKeys() = testApplication {
         initCut()
         everySuspending { handlerMock.getKeys(isAny()) }
             .returns(
@@ -337,7 +337,7 @@ class KeysRoutesTest : TestsWithMocks() {
             handlerMock.getKeys(assert {
                 it.requestBody shouldBe GetKeys.Request(
                     timeout = 10_000,
-                    deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
+                    keysFrom = mapOf(UserId("alice", "example.com") to setOf()),
                     token = "string"
                 )
             })

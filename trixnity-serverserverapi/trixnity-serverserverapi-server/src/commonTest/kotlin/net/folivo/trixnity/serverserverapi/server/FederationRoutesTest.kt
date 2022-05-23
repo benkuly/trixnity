@@ -8,6 +8,7 @@ import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
@@ -21,9 +22,13 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
@@ -71,7 +76,7 @@ class FederationRoutesTest : TestsWithMocks() {
         ),
         mapOf(
             "matrix.org" to keysOf(
-                Key.Ed25519Key(
+                Ed25519Key(
                     "key",
                     "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                 )
@@ -485,13 +490,13 @@ class FederationRoutesTest : TestsWithMocks() {
                         ),
                         mapOf(
                             "example.com" to keysOf(
-                                Key.Ed25519Key(
+                                Ed25519Key(
                                     "key_version",
                                     "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                                 )
                             ),
                             "resident.example.com" to keysOf(
-                                Key.Ed25519Key(
+                                Ed25519Key(
                                     "other_key_version",
                                     "a different signature"
                                 )
@@ -591,7 +596,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     ),
                     mapOf(
                         "example.com" to keysOf(
-                            Key.Ed25519Key(
+                            Ed25519Key(
                                 "key_version",
                                 "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                             )
@@ -760,7 +765,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     ),
                     mapOf(
                         "example.com" to keysOf(
-                            Key.Ed25519Key(
+                            Ed25519Key(
                                 "key_version",
                                 "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                             )
@@ -795,7 +800,7 @@ class FederationRoutesTest : TestsWithMocks() {
                         ),
                         mapOf(
                             "example.com" to keysOf(
-                                Key.Ed25519Key(
+                                Ed25519Key(
                                     "key_version",
                                     "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                                 )
@@ -906,7 +911,7 @@ class FederationRoutesTest : TestsWithMocks() {
                         ),
                         mapOf(
                             "example.com" to keysOf(
-                                Key.Ed25519Key(
+                                Ed25519Key(
                                     "key_version",
                                     "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                                 )
@@ -1052,7 +1057,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     ),
                     mapOf(
                         "example.com" to keysOf(
-                            Key.Ed25519Key(
+                            Ed25519Key(
                                 "key_version",
                                 "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
                             )
@@ -1117,7 +1122,7 @@ class FederationRoutesTest : TestsWithMocks() {
                             sender = UserId("@bob:matrix.org"),
                             signed = Signed(
                                 ThirdPartyInvite.UserInfo(UserId("@alice:matrix.org"), "Hello World"),
-                                mapOf("vector.im" to keysOf(Key.Ed25519Key("0", "SomeSignatureGoesHere")))
+                                mapOf("vector.im" to keysOf(Ed25519Key("0", "SomeSignatureGoesHere")))
                             )
                         )
                     ),
@@ -1191,7 +1196,7 @@ class FederationRoutesTest : TestsWithMocks() {
                                     ),
                                     mapOf(
                                         "magic.forest" to keysOf(
-                                            Key.Ed25519Key(
+                                            Ed25519Key(
                                                 "3",
                                                 "fQpGIW1Snz+pwLZu6sTy2aHy/DYWWTspTJRPyNp0PKkymfIsNffysMl6ObMMFdIJhk6g6pwlIqZ54rxo8SLmAg"
                                             )
@@ -1576,6 +1581,348 @@ class FederationRoutesTest : TestsWithMocks() {
         verifyWithSuspend {
             handlerMock.getOIDCUserInfo(assert {
                 it.endpoint.accessToken shouldBe "token"
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetDevices() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getDevices(isAny()) }
+            .returns(
+                GetDevices.Response(
+                    devices = setOf(
+                        GetDevices.Response.UserDevice(
+                            deviceDisplayName = "Alice's Mobile Phone",
+                            deviceId = "JLAFKJWSCS",
+                            keys = Signed(
+                                DeviceKeys(
+                                    userId = UserId("@alice:example.com"),
+                                    deviceId = "JLAFKJWSCS",
+                                    algorithms = setOf(Olm, Megolm),
+                                    keys = keysOf(
+                                        Curve25519Key("JLAFKJWSCS", "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI"),
+                                        Ed25519Key("JLAFKJWSCS", "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI")
+                                    )
+                                ),
+                                mapOf(
+                                    UserId("@alice:example.com") to keysOf(
+                                        Ed25519Key(
+                                            "JLAFKJWSCS",
+                                            "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    masterKey = Signed(
+                        CrossSigningKeys(
+                            userId = UserId("@alice:example.com"),
+                            usage = setOf(MasterKey),
+                            keys = keysOf(
+                                Ed25519Key("base64+master+public+key", "base64+master+public+key")
+                            ),
+                        ),
+                        mapOf(
+                            UserId("@alice:example.com") to keysOf(
+                                Ed25519Key("alice+base64+master+key", "signature+of+key")
+                            )
+                        )
+                    ),
+                    selfSigningKey = Signed(
+                        CrossSigningKeys(
+                            userId = UserId("@alice:example.com"),
+                            usage = setOf(SelfSigningKey),
+                            keys = keysOf(
+                                Ed25519Key("base64+self+signing+public+key", "base64+self+signing+public+key")
+                            ),
+                        ),
+                        mapOf(
+                            UserId("@alice:example.com") to keysOf(
+                                Ed25519Key("alice+base64+master+key", "signature+of+key")
+                            )
+                        )
+                    ),
+                    streamId = 5,
+                    userId = UserId("@alice:example.com")
+                )
+            )
+        val response = client.get("/_matrix/federation/v1/user/devices/@alice:example.com") {
+            someSignature()
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "devices": [
+                    {
+                      "device_display_name": "Alice's Mobile Phone",
+                      "device_id": "JLAFKJWSCS",
+                      "keys": {
+                        "user_id": "@alice:example.com",
+                        "device_id": "JLAFKJWSCS",
+                        "algorithms": [
+                          "m.olm.v1.curve25519-aes-sha2",
+                          "m.megolm.v1.aes-sha2"
+                        ],
+                        "keys": {
+                          "curve25519:JLAFKJWSCS": "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI",
+                          "ed25519:JLAFKJWSCS": "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI"
+                        },
+                        "signatures": {
+                          "@alice:example.com": {
+                            "ed25519:JLAFKJWSCS": "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "master_key": {
+                    "user_id": "@alice:example.com",
+                    "usage": ["master"],
+                    "keys": {
+                      "ed25519:base64+master+public+key": "base64+master+public+key"
+                    },
+                    "signatures": {
+                      "@alice:example.com": {
+                        "ed25519:alice+base64+master+key": "signature+of+key"
+                      }
+                    }
+                  },
+                  "self_signing_key": {
+                    "user_id": "@alice:example.com",
+                    "usage": ["self_signing"],
+                    "keys": {
+                      "ed25519:base64+self+signing+public+key": "base64+self+signing+public+key"
+                    },
+                    "signatures": {
+                      "@alice:example.com": {
+                        "ed25519:alice+base64+master+key": "signature+of+key"
+                      }
+                    }
+                  },
+                  "stream_id": 5,
+                  "user_id": "@alice:example.com"
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getDevices(assert {
+                it.endpoint.userId shouldBe UserId("@alice:example.com")
+            })
+        }
+    }
+
+    @Test
+    fun shouldClaimKeys() = testApplication {
+        initCut()
+        everySuspending { handlerMock.claimKeys(isAny()) }
+            .returns(
+                ClaimKeys.Response(
+                    oneTimeKeys = mapOf(
+                        UserId("@alice:example.com") to mapOf(
+                            "JLAFKJWSCS" to keysOf(
+                                Key.SignedCurve25519Key(
+                                    "AAAAHg",
+                                    "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                                    mapOf(
+                                        UserId("@alice:example.com") to keysOf(
+                                            Ed25519Key(
+                                                "JLAFKJWSCS",
+                                                "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        val response = client.post("/_matrix/federation/v1/user/keys/claim") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "one_time_keys":{
+                    "@alice:example.com":{
+                      "JLAFKJWSCS":"signed_curve25519"
+                    }
+                  }
+                }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "one_time_keys":{
+                    "@alice:example.com":{
+                      "JLAFKJWSCS":{
+                        "signed_curve25519:AAAAHg":{
+                          "key":"zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                          "signatures":{
+                            "@alice:example.com":{
+                              "ed25519:JLAFKJWSCS":"FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.claimKeys(assert {
+                it.requestBody shouldBe ClaimKeys.Request(
+                    oneTimeKeys = mapOf(UserId("@alice:example.com") to mapOf("JLAFKJWSCS" to KeyAlgorithm.SignedCurve25519)),
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetKeys() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getKeys(isAny()) }
+            .returns(
+                GetKeys.Response(
+                    deviceKeys = mapOf(
+                        UserId("@alice:example.com") to mapOf(
+                            "JLAFKJWSCS" to Signed(
+                                signed = DeviceKeys(
+                                    userId = UserId("@alice:example.com"),
+                                    deviceId = "JLAFKJWSCS",
+                                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                                    keys = keysOf(
+                                        Key.Curve25519Key("JLAFKJWSCS", "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI"),
+                                        Key.Ed25519Key("JLAFKJWSCS", "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI")
+                                    )
+                                ),
+                                signatures = mapOf(
+                                    UserId("@alice:example.com") to keysOf(
+                                        Key.Ed25519Key(
+                                            "JLAFKJWSCS",
+                                            "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                                        )
+                                    )
+                                ),
+                            )
+                        )
+                    ),
+                    masterKeys = mapOf(
+                        UserId("@alice:example.com") to Signed(
+                            signed = CrossSigningKeys(
+                                userId = UserId("@alice:example.com"),
+                                usage = setOf(CrossSigningKeysUsage.MasterKey),
+                                keys = keysOf(Key.Ed25519Key("base64+master+public+key", "base64+master+public+key"))
+                            )
+                        )
+                    ),
+                    selfSigningKeys = mapOf(
+                        UserId("@alice:example.com") to Signed(
+                            signed = CrossSigningKeys(
+                                userId = UserId("@alice:example.com"),
+                                usage = setOf(CrossSigningKeysUsage.SelfSigningKey),
+                                keys = keysOf(
+                                    Key.Ed25519Key(
+                                        "base64+self+signing+public+key",
+                                        "base64+self+signing+public+key"
+                                    )
+                                )
+                            ),
+                            signatures = mapOf(
+                                UserId("@alice:example.com") to keysOf(
+                                    Key.Ed25519Key(
+                                        "base64+master+public+key",
+                                        "signature+of+self+signing+key"
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        val response = client.post("/_matrix/federation/v1/user/keys/query") {
+            someSignature()
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "device_keys":{
+                    "@alice:example.com":[]
+                  }
+                }
+                """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "device_keys":{
+                    "@alice:example.com":{
+                      "JLAFKJWSCS":{
+                        "user_id":"@alice:example.com",
+                        "device_id":"JLAFKJWSCS",
+                        "algorithms":[
+                          "m.olm.v1.curve25519-aes-sha2",
+                          "m.megolm.v1.aes-sha2"
+                        ],
+                        "keys":{
+                          "curve25519:JLAFKJWSCS":"3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI",
+                          "ed25519:JLAFKJWSCS":"lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI"
+                        },
+                        "signatures":{
+                          "@alice:example.com":{
+                            "ed25519:JLAFKJWSCS":"dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "master_keys":{
+                    "@alice:example.com":{
+                      "user_id":"@alice:example.com",
+                      "usage":[
+                        "master"
+                      ],
+                      "keys":{
+                        "ed25519:base64+master+public+key":"base64+master+public+key"
+                      }
+                    }
+                  },
+                  "self_signing_keys":{
+                    "@alice:example.com":{
+                      "user_id":"@alice:example.com",
+                      "usage":[
+                        "self_signing"
+                      ],
+                      "keys":{
+                        "ed25519:base64+self+signing+public+key":"base64+self+signing+public+key"
+                      },
+                      "signatures":{
+                        "@alice:example.com":{
+                          "ed25519:base64+master+public+key":"signature+of+self+signing+key"
+                        }
+                      }
+                    }
+                  }
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getKeys(assert {
+                it.requestBody shouldBe GetKeys.Request(
+                    keysFrom = mapOf(UserId("alice", "example.com") to setOf()),
+                )
             })
         }
     }
