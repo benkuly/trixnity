@@ -10,6 +10,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidreporteventid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/report/{eventId}")
 @HttpMethod(POST)

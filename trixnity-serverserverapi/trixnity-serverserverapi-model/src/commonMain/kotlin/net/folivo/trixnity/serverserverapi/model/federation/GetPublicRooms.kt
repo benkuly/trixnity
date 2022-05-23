@@ -7,6 +7,9 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1publicrooms">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/publicRooms")
 @HttpMethod(GET)

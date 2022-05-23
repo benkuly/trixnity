@@ -7,59 +7,59 @@ import net.folivo.trixnity.core.model.UserId
 
 interface IAuthenticationApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3accountwhoami">matrix spec</a>
+     * @see [WhoAmI]
      */
     suspend fun whoAmI(asUserId: UserId? = null): Result<WhoAmI.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#getwell-knownmatrixclient">matrix spec</a>
+     * @see [GetWellKnown]
      */
     suspend fun getWellKnown(): Result<DiscoveryInformation>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv1registermloginregistration_tokenvalidity">matrix spec</a>
+     * @see [IsRegistrationTokenValid]
      */
     suspend fun isRegistrationTokenValid(
         token: String
     ): Result<Boolean>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3registeravailable">matrix spec</a>
+     * @see [IsUsernameAvailable]
      */
     suspend fun isUsernameAvailable(
         username: String
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountpasswordemailrequesttoken">matrix spec</a>
+     * @see [GetEmailRequestTokenForPassword]
      */
     suspend fun getEmailRequestTokenForPassword(
         request: GetEmailRequestTokenForPassword.Request
     ): Result<GetEmailRequestTokenForPassword.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3registeremailrequesttoken">matrix spec</a>
+     * @see [GetEmailRequestTokenForRegistration]
      */
     suspend fun getEmailRequestTokenForRegistration(
         request: GetEmailRequestTokenForRegistration.Request
     ): Result<GetEmailRequestTokenForRegistration.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountpasswordmsisdnrequesttoken">matrix spec</a>
+     * @see [GetMsisdnRequestTokenForPassword]
      */
     suspend fun getMsisdnRequestTokenForPassword(
         request: GetMsisdnRequestTokenForPassword.Request
     ): Result<GetMsisdnRequestTokenForPassword.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3registermsisdnrequesttoken">matrix spec</a>
+     * @see [GetMsisdnRequestTokenForRegistration]
      */
     suspend fun getMsisdnRequestTokenForRegistration(
         request: GetMsisdnRequestTokenForRegistration.Request
     ): Result<GetMsisdnRequestTokenForRegistration.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3register">matrix spec</a>
+     * @see [Register]
      */
     suspend fun register(
         username: String? = null,
@@ -72,12 +72,12 @@ interface IAuthenticationApiClient {
     ): Result<UIA<Register.Response>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3login">matrix spec</a>
+     * @see [GetLoginTypes]
      */
     suspend fun getLoginTypes(): Result<Set<LoginType>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3login">matrix spec</a>
+     * @see [Login]
      */
     suspend fun login(
         identifier: IdentifierType,
@@ -88,17 +88,17 @@ interface IAuthenticationApiClient {
     ): Result<Login.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3logout">matrix spec</a>
+     * @see [Logout]
      */
     suspend fun logout(asUserId: UserId? = null): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3logoutall">matrix spec</a>
+     * @see [LogoutAll]
      */
     suspend fun logoutAll(asUserId: UserId? = null): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
+     * @see [DeactivateAccount]
      */
     suspend fun deactivateAccount(
         identityServer: String? = null,
@@ -106,7 +106,7 @@ interface IAuthenticationApiClient {
     ): Result<UIA<DeactivateAccount.Response>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
+     * @see [ChangePassword]
      */
     suspend fun changePassword(
         newPassword: String,
@@ -114,14 +114,14 @@ interface IAuthenticationApiClient {
     ): Result<UIA<Unit>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3account3pid">matrix spec</a>
+     * @see [GetThirdPartyIdentifiers]
      */
     suspend fun getThirdPartyIdentifiers(
         asUserId: UserId? = null,
     ): Result<Set<ThirdPartyIdentifier>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3account3pidadd">matrix spec</a>
+     * @see [AddThirdPartyIdentifiers]
      */
     suspend fun addThirdPartyIdentifiers(
         clientSecret: String,
@@ -130,7 +130,7 @@ interface IAuthenticationApiClient {
     ): Result<UIA<Unit>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3account3pidbind">matrix spec</a>
+     * @see [BindThirdPartyIdentifiers]
      */
     suspend fun bindThirdPartyIdentifiers(
         clientSecret: String,
@@ -141,7 +141,7 @@ interface IAuthenticationApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3account3piddelete">matrix spec</a>
+     * @see [DeleteThirdPartyIdentifiers]
      */
     suspend fun deleteThirdPartyIdentifiers(
         address: String,
@@ -151,7 +151,7 @@ interface IAuthenticationApiClient {
     ): Result<DeleteThirdPartyIdentifiers.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3account3pidunbind">matrix spec</a>
+     * @see [UnbindThirdPartyIdentifiers]
      */
     suspend fun unbindThirdPartyIdentifiers(
         address: String,
@@ -161,7 +161,7 @@ interface IAuthenticationApiClient {
     ): Result<UnbindThirdPartyIdentifiers.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3useruseridopenidrequest_token">matrix spec</a>
+     * @see [GetOIDCRequestToken]
      */
     suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId? = null): Result<GetOIDCRequestToken.Response>
 }

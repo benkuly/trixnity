@@ -6,27 +6,27 @@ import net.folivo.trixnity.serverserverapi.model.discovery.*
 
 interface DiscoveryApiHandler {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#getwell-knownmatrixserver">matrix spec</a>
+     * @see [GetWellKnown]
      */
     suspend fun getWellKnown(context: MatrixEndpointContext<GetWellKnown, Unit, GetWellKnown.Response>): GetWellKnown.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1version">matrix spec</a>
+     * @see [GetServerVersion]
      */
     suspend fun getServerVersion(context: MatrixEndpointContext<GetServerVersion, Unit, GetServerVersion.Response>): GetServerVersion.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixkeyv2serverkeyid">matrix spec</a>
+     * @see [GetServerKeys]
      */
     suspend fun getServerKeys(context: MatrixEndpointContext<GetServerKeys, Unit, Signed<ServerKeys, String>>): Signed<ServerKeys, String>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixkeyv2query">matrix spec</a>
+     * @see [QueryServerKeys]
      */
     suspend fun queryServerKeys(context: MatrixEndpointContext<QueryServerKeys, QueryServerKeys.Request, QueryServerKeysResponse>): QueryServerKeysResponse
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixkeyv2queryservernamekeyid">matrix spec</a>
+     * @see [QueryServerKeysByServer]
      */
     suspend fun queryKeysByServer(context: MatrixEndpointContext<QueryServerKeysByServer, Unit, QueryServerKeysResponse>): QueryServerKeysResponse
 }

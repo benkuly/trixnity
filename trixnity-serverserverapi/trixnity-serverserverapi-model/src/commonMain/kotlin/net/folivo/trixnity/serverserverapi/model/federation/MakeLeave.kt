@@ -12,6 +12,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1make_leaveroomiduserid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/make_leave/{roomId}/{userId}")
 @HttpMethod(GET)

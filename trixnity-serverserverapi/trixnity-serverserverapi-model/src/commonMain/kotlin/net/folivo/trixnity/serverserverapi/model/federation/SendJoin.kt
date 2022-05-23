@@ -16,6 +16,9 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentStateDataUnit
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv2send_joinroomideventid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v2/send_join/{roomId}/{eventId}")
 @HttpMethod(PUT)

@@ -13,6 +13,9 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/hierarchy/{roomId}")
 @HttpMethod(GET)

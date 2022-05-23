@@ -10,6 +10,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Signed
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv13pidonbind">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/3pid/onbind")
 @HttpMethod(PUT)

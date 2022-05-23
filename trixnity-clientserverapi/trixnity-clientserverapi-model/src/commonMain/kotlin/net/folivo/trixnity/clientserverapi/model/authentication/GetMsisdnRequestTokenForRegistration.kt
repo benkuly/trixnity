@@ -8,6 +8,9 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3registermsisdnrequesttoken">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/register/msisdn/requestToken")
 @HttpMethod(POST)

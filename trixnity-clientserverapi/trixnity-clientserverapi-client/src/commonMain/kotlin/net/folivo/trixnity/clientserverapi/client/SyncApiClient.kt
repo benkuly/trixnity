@@ -16,7 +16,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.IEventEmitter
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
+import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.coroutines.cancellation.CancellationException
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
@@ -39,7 +39,7 @@ enum class SyncState {
 
 interface ISyncApiClient : IEventEmitter {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+     * @see [Sync]
      */
     suspend fun sync(
         filter: String? = null,
@@ -96,7 +96,7 @@ class SyncApiClient(
 ) : EventEmitter(), ISyncApiClient {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+     * @see []
      */
     override suspend fun sync(
         filter: String?,

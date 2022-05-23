@@ -7,7 +7,7 @@ import net.folivo.trixnity.clientserverapi.model.discovery.GetWellKnown
 interface DiscoveryApiHandler {
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#getwell-knownmatrixclient">matrix spec</a>
+     * @see [GetWellKnown]
      */
     suspend fun getWellKnown(context: MatrixEndpointContext<GetWellKnown, Unit, DiscoveryInformation>): DiscoveryInformation
 }

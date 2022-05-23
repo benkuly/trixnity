@@ -10,6 +10,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixfederationv1userkeysquery">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/user/keys/query")
 @HttpMethod(POST)

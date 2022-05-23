@@ -43,7 +43,7 @@ class MatrixClientServerApiClient(
 
     override val authentication: IAuthenticationApiClient = AuthenticationApiClient(httpClient)
     override val server: IServerApiClient = ServerApiClient(httpClient)
-    override val users: IUsersApiClient = UsersApiClient(httpClient, json, eventContentSerializerMappings)
+    override val users: IUsersApiClient = UsersApiClient(httpClient, eventContentSerializerMappings)
     override val rooms: IRoomsApiClient = RoomsApiClient(httpClient, eventContentSerializerMappings)
     override val sync: ISyncApiClient = SyncApiClient(httpClient)
     override val keys: IKeysApiClient = KeysApiClient(httpClient, json)

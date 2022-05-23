@@ -15,6 +15,9 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv1send_knockroomideventid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/send_knock/{roomId}/{eventId}")
 @HttpMethod(PUT)

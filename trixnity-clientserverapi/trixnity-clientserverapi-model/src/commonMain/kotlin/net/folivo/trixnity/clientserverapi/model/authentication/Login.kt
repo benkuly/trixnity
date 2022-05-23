@@ -9,6 +9,9 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.UserId
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3login">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/login")
 @HttpMethod(POST)

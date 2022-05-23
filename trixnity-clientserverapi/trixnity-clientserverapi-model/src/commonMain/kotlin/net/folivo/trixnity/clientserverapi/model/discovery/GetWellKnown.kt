@@ -8,6 +8,9 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#getwell-knownmatrixclient">matrix spec</a>
+ */
 @Serializable
 @Resource("/.well-known/matrix/client")
 @HttpMethod(GET)

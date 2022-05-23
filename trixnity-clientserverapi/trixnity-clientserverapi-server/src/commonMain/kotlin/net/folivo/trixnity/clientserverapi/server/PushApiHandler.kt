@@ -6,57 +6,57 @@ import net.folivo.trixnity.core.model.push.PushRule
 
 interface PushApiHandler {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushers">matrix spec</a>
+     * @see [GetPushers]
      */
     suspend fun getPushers(context: MatrixEndpointContext<GetPushers, Unit, GetPushers.Response>): GetPushers.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3pushersset">matrix spec</a>
+     * @see [SetPushers]
      */
     suspend fun setPushers(context: MatrixEndpointContext<SetPushers, SetPushers.Request, Unit>)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3notifications">matrix spec</a>
+     * @see [GetNotifications]
      */
     suspend fun getNotifications(context: MatrixEndpointContext<GetNotifications, Unit, GetNotifications.Response>): GetNotifications.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrules">matrix spec</a>
+     * @see [GetPushRules]
      */
     suspend fun getPushRules(context: MatrixEndpointContext<GetPushRules, Unit, GetPushRules.Response>): GetPushRules.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [GetPushRule]
      */
     suspend fun getPushRule(context: MatrixEndpointContext<GetPushRule, Unit, PushRule>): PushRule
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [SetPushRule]
      */
     suspend fun setPushRule(context: MatrixEndpointContext<SetPushRule, SetPushRule.Request, Unit>)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [DeletePushRule]
      */
     suspend fun deletePushRule(context: MatrixEndpointContext<DeletePushRule, Unit, Unit>)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     * @see [GetPushRuleActions]
      */
     suspend fun getPushRuleActions(context: MatrixEndpointContext<GetPushRuleActions, Unit, GetPushRuleActions.Response>): GetPushRuleActions.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     * @see [SetPushRuleActions]
      */
     suspend fun setPushRuleActions(context: MatrixEndpointContext<SetPushRuleActions, SetPushRuleActions.Request, Unit>)
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     * @see [GetPushRuleEnabled]
      */
     suspend fun getPushRuleEnabled(context: MatrixEndpointContext<GetPushRuleEnabled, Unit, GetPushRuleEnabled.Response>): GetPushRuleEnabled.Response
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     * @see [SetPushRuleEnabled]
      */
     suspend fun setPushRuleEnabled(context: MatrixEndpointContext<SetPushRuleEnabled, SetPushRuleEnabled.Request, Unit>)
 }

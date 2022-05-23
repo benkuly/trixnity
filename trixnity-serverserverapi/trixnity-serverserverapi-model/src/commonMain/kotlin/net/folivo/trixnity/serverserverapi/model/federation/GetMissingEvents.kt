@@ -9,6 +9,9 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#post_matrixfederationv1get_missing_eventsroomid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/federation/v1/get_missing_events/{roomId}")
 @HttpMethod(POST)
