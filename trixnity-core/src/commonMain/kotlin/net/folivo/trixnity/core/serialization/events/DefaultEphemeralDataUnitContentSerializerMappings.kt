@@ -9,4 +9,5 @@ val DefaultEphemeralDataUnitContentSerializerMappings: EphemeralDataUnitContentM
     of<ReceiptDataUnitContent>("m.receipt"),
     of<DeviceListUpdateDataUnitContent>("m.device_list_update"),
     of<SigningKeyUpdateDataUnitContent>("m.signing_key_update"),
+    of<DirectToDeviceDataUnitContent>("m.direct_to_device"),
 )
