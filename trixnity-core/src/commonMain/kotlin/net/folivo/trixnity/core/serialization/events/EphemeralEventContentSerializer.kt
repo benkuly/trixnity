@@ -4,7 +4,9 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonEncoder
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 class EphemeralEventContentSerializer(
     private val type: String,
@@ -17,8 +19,9 @@ class EphemeralEventContentSerializer(
     }
 
     override fun serialize(encoder: Encoder, value: EphemeralEventContent) {
+        require(encoder is JsonEncoder)
         @Suppress("UNCHECKED_CAST")
         val serializer = mappings.contentSerializer(value).second as KSerializer<EphemeralEventContent>
-        encoder.encodeSerializableValue(serializer, value)
+        encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(serializer, value)))
     }
 }
