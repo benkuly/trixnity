@@ -14,9 +14,9 @@ import net.folivo.trixnity.clientserverapi.model.users.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.Presence.ONLINE
+import net.folivo.trixnity.core.model.events.m.Presence.UNAVAILABLE
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence.ONLINE
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence.UNAVAILABLE
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm

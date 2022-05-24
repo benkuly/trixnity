@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUn
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
@@ -75,6 +76,6 @@ class PersistentStateDataUnitSerializer(
                     )), value
                 )
             }
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

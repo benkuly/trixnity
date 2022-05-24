@@ -14,6 +14,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
 import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
@@ -44,6 +45,6 @@ class EphemeralDataUnitSerializer(
                 "type" to type
             )), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

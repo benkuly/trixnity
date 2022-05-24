@@ -12,6 +12,7 @@ import net.folivo.trixnity.clientserverapi.model.users.SearchUsers
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -170,7 +171,7 @@ class UsersApiClientTest {
                 }
             })
         matrixRestClient.users.setPresence(
-            UserId("@user:server"), PresenceEventContent.Presence.ONLINE, "I am here."
+            UserId("@user:server"), Presence.ONLINE, "I am here."
         ).getOrThrow()
     }
 
@@ -195,7 +196,7 @@ class UsersApiClientTest {
                 }
             })
         val result = matrixRestClient.users.getPresence(UserId("@user:server")).getOrThrow()
-        assertEquals(PresenceEventContent(PresenceEventContent.Presence.UNAVAILABLE, lastActiveAgo = 420845), result)
+        assertEquals(PresenceEventContent(Presence.UNAVAILABLE, lastActiveAgo = 420845), result)
     }
 
     @Test

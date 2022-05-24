@@ -14,6 +14,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
@@ -45,6 +46,6 @@ class DecryptedMegolmEventSerializer(
                 "type" to type
             ), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

@@ -12,6 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.EmptyEventContent
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.UnknownPersistentDataUnit
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 object UnknownPersistentDataUnitSerializer : KSerializer<UnknownPersistentDataUnit> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("UnknownPersistentDataUnitSerializer")
@@ -26,6 +27,6 @@ object UnknownPersistentDataUnitSerializer : KSerializer<UnknownPersistentDataUn
 
     override fun serialize(encoder: Encoder, value: UnknownPersistentDataUnit) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }

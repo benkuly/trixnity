@@ -19,6 +19,7 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentMessag
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
@@ -93,6 +94,6 @@ class PersistentMessageDataUnitSerializer(
                     )), value
                 )
             }
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

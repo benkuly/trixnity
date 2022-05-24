@@ -25,10 +25,7 @@ import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -242,7 +239,7 @@ class SyncApiClientTest {
         val result = matrixRestClient.sync.sync(
             filter = "someFilter",
             fullState = true,
-            setPresence = PresenceEventContent.Presence.ONLINE,
+            setPresence = Presence.ONLINE,
             since = "someSince",
             timeout = 1234
         ).getOrThrow()
@@ -280,7 +277,7 @@ class SyncApiClientTest {
         matrixRestClient.sync.sync(
             filter = "someFilter",
             fullState = true,
-            setPresence = PresenceEventContent.Presence.ONLINE,
+            setPresence = Presence.ONLINE,
             since = "someSince",
             timeout = 200
         )
@@ -339,7 +336,7 @@ class SyncApiClientTest {
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 30_000
@@ -407,7 +404,7 @@ class SyncApiClientTest {
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 30_000
@@ -462,7 +459,7 @@ class SyncApiClientTest {
         val syncJob = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 300
@@ -530,7 +527,7 @@ class SyncApiClientTest {
         val sync = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 100
@@ -706,7 +703,7 @@ class SyncApiClientTest {
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 30_000
@@ -767,7 +764,7 @@ class SyncApiClientTest {
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
-                setPresence = PresenceEventContent.Presence.ONLINE,
+                setPresence = Presence.ONLINE,
                 currentBatchToken = currentBatchToken,
                 scope = this,
                 timeout = 0
@@ -802,7 +799,7 @@ class SyncApiClientTest {
             presence = Response.Presence(
                 listOf(
                     Event.EphemeralEvent(
-                        PresenceEventContent(PresenceEventContent.Presence.ONLINE),
+                        PresenceEventContent(Presence.ONLINE),
                         sender = UserId("dino", "server")
                     )
                 )
