@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.push
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -17,7 +17,6 @@ import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -55,15 +54,16 @@ class PushService(
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
-    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    @OptIn(FlowPreview::class)
     override suspend fun getNotifications(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {
-        val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
-        val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
-        invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
-        api.sync.subscribeAfterSyncResponse(subscriber)
+        val syncResponseFlow = callbackFlow {
+            val subscriber: AfterSyncResponseSubscriber = { send(it) }
+            api.sync.subscribeAfterSyncResponse(subscriber)
+            awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+        }
 
         val pushRules =
             store.globalAccountData.get<PushRulesEventContent>(scope = this).map { event ->
@@ -111,19 +111,29 @@ class PushService(
                     originTimestamp = originalEvent.originTimestamp,
                     unsigned = originalEvent.unsigned
                 )
-            originalEvent is Event.StateEvent && content is StateEventContent ->
-                originalEvent
+            originalEvent is Event.StateEvent && content is StateEventContent -> originalEvent
             else -> null
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private suspend fun evaluatePushRules(
         event: Event<*>,
         allRules: List<PushRule>,
     ): Notification? {
+        val eventJson = lazy {
+            try {
+                json.serializersModule.getContextual(Event::class)?.let {
+                    json.encodeToJsonElement(it, event) // TODO could be optimized
+                }?.jsonObject
+            } catch (exception: Exception) {
+                log.warn { "could not serialize event" }
+                null
+            }
+        }
         val rule = allRules.find { pushRule ->
             pushRule.enabled
-                    && pushRule.conditions.orEmpty().all { matchPushCondition(event, it) }
+                    && pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) }
                     && if (pushRule.pattern != null) bodyContainsPattern(event, pushRule.pattern!!) else true
         }
         return rule?.actions?.asFlow()
@@ -137,6 +147,7 @@ class PushService(
 
     private suspend fun matchPushCondition(
         event: Event<*>,
+        eventJson: Lazy<JsonObject?>,
         pushCondition: PushCondition
     ): Boolean {
         return when (pushCondition) {
@@ -170,7 +181,7 @@ class PushService(
                 } ?: false
             }
             is PushCondition.EventMatch -> {
-                val eventValue = getEventValue(event, pushCondition)
+                val eventValue = getEventValue(event, eventJson, pushCondition)
                 if (eventValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -189,20 +200,19 @@ class PushService(
         } else false
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     private fun getEventValue(
         event: Event<*>,
+        initialEventJson: Lazy<JsonObject?>,
         pushCondition: PushCondition.EventMatch
     ): String? {
         return try {
-            var eventJson: JsonElement? = json.serializersModule.getContextual(Event::class)?.let {
-                json.encodeToJsonElement(it, event) // TODO could be optimized
-            }
+            var eventJson: JsonElement? = initialEventJson.value
             pushCondition.key.split('.').forEach { segment ->
                 eventJson = eventJson?.jsonObject?.get(segment)
             }
             eventJson?.jsonPrimitive?.contentOrNull
         } catch (exc: Exception) {
+            log.warn(exc) { "could not evaluate event match push condition $pushCondition of event $event" }
             null
         }
     }

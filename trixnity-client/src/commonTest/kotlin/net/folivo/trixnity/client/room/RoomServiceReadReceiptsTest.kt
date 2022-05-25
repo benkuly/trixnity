@@ -28,7 +28,7 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomServiceReadReceiptsTest : ShouldSpec({
     timeout = 5_000
@@ -41,7 +41,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
 
     lateinit var cut: RoomService
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)

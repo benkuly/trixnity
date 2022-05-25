@@ -3,12 +3,12 @@ package net.folivo.trixnity.core.serialization.events
 import net.folivo.trixnity.core.model.events.*
 
 interface EventContentSerializerMappings {
-    val message: Set<EventContentSerializerMapping<out MessageEventContent>>
-    val state: Set<EventContentSerializerMapping<out StateEventContent>>
-    val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>>
-    val toDevice: Set<EventContentSerializerMapping<out ToDeviceEventContent>>
-    val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>
-    val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>
+    val message: Set<SerializerMapping<out MessageEventContent>>
+    val state: Set<SerializerMapping<out StateEventContent>>
+    val ephemeral: Set<SerializerMapping<out EphemeralEventContent>>
+    val toDevice: Set<SerializerMapping<out ToDeviceEventContent>>
+    val globalAccountData: Set<SerializerMapping<out GlobalAccountDataEventContent>>
+    val roomAccountData: Set<SerializerMapping<out RoomAccountDataEventContent>>
 
     operator fun plus(plus: EventContentSerializerMappings?): EventContentSerializerMappings {
         if (plus == null) return this

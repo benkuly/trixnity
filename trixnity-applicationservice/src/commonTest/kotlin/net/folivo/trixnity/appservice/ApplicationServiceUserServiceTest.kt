@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -24,7 +24,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationServiceUserServiceTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mappings = createEventContentSerializerMappings()
     private val userId = UserId("user", "server")
 
@@ -84,7 +84,7 @@ class ApplicationServiceUserServiceTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
-                throw                    MatrixServerException(
+                throw MatrixServerException(
                     HttpStatusCode.BadRequest,
                     ErrorResponse.UserInUse("Desired user ID is already taken.")
                 )

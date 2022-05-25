@@ -10,14 +10,14 @@ import net.folivo.trixnity.client.store.StoredOlmSession
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightOlmSessionRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightOlmSessionRepository
     lateinit var driver: SqlDriver
     beforeTest {
         driver = createDriverWithSchema()
-        cut = SqlDelightOlmSessionRepository(Database(driver).olmQueries, createMatrixJson(), Dispatchers.Default)
+        cut = SqlDelightOlmSessionRepository(Database(driver).olmQueries, createMatrixEventJson(), Dispatchers.Default)
     }
     afterTest {
         driver.close()

@@ -31,7 +31,7 @@ This project contains the following modules, which can be used independently:
       implementation without logic.
     - [trixnity-clientserverapi-server](/trixnity-clientserverapi/trixnity-clientserverapi-server) is the server
       implementation without logic.
-- coming soon: [trixnity-serverserverapi-*](/trixnity-serverserverapi) provides modules to use
+- [trixnity-serverserverapi-*](/trixnity-serverserverapi) provides modules to use
   the [Server-Server API](https://spec.matrix.org/latest/server-server-api/).
     - [trixnity-serverserverapi-model](/trixnity-serverserverapi/trixnity-serverserverapi-model)  provides shared model
       classes.

@@ -1,11 +1,16 @@
 package net.folivo.trixnity.client.integrationtests
 
+import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
+import net.folivo.trixnity.client.push.IPushService
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.InitialStateEvent
@@ -22,7 +27,6 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class PushIT {
@@ -70,29 +74,30 @@ class PushIT {
     @Test
     fun testPushNotificationForNormalMessage(): Unit = runBlocking {
         withTimeout(30_000) {
-            val notifications = startedClient2.client.push.getNotifications().shareIn(scope, SharingStarted.Eagerly, 10)
+            val notifications = startedClient2.client.push.getNotifications()
+                .scan(listOf<IPushService.Notification>()) { old, new -> old + new }
+                .stateIn(scope)
 
             val room = startedClient1.client.api.rooms.createRoom(
                 invite = setOf(startedClient2.client.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            delay(2.seconds)
-            val invite = notifications.replayCache.first { it.event is Event.StrippedStateEvent }
-            invite.event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
-            val inviteContent = invite.event.content
-            inviteContent.shouldBeInstanceOf<MemberEventContent>()
-            inviteContent.displayName shouldBe "user2"
+            withClue("first notification") {
+                notifications.first { it.size == 1 }.getOrNull(0).shouldNotBeNull()
+                    .event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
+                    .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
+            }
 
             startedClient2.client.room.getById(room).first { it?.membership == INVITE }
             startedClient2.client.api.rooms.joinRoom(room).getOrThrow()
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
-            delay(2.seconds)
-            val lastNotificationContent =
-                notifications.replayCache.first { it.event is Event.MessageEvent }.event.content
-            lastNotificationContent.shouldBeInstanceOf<TextMessageEventContent>()
-            lastNotificationContent.body shouldStartWith "Hello"
+            withClue("second notification") {
+                notifications.first { it.size == 3 }.getOrNull(2).shouldNotBeNull()
+                    .event.content.shouldBeInstanceOf<TextMessageEventContent>()
+                    .body shouldStartWith "Hello"
+            }
         }
     }
 }

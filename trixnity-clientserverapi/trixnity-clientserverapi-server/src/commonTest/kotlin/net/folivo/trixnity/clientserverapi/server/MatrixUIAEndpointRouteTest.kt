@@ -14,15 +14,15 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 
 class MatrixUIAEndpointRouteTest {
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
     @Serializable
@@ -62,10 +62,10 @@ class MatrixUIAEndpointRouteTest {
             matrixApiServer(json) {
                 routing {
                     matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        endpoint.pathParam shouldBe "unicorn"
-                        endpoint.requestParam shouldBe "2"
-                        requestBody.request.includeDino shouldBe true
-                        requestBody.authentication shouldBe AuthenticationRequestWithSession(
+                        it.endpoint.pathParam shouldBe "unicorn"
+                        it.endpoint.requestParam shouldBe "2"
+                        it.requestBody.request.includeDino shouldBe true
+                        it.requestBody.authentication shouldBe AuthenticationRequestWithSession(
                             AuthenticationRequest.Password(
                                 IdentifierType.User("user"),
                                 "password"
@@ -106,10 +106,10 @@ class MatrixUIAEndpointRouteTest {
             matrixApiServer(json) {
                 routing {
                     matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        endpoint.pathParam shouldBe "unicorn"
-                        endpoint.requestParam shouldBe "2"
-                        requestBody.request.includeDino shouldBe true
-                        requestBody.authentication shouldBe null
+                        it.endpoint.pathParam shouldBe "unicorn"
+                        it.endpoint.requestParam shouldBe "2"
+                        it.requestBody.request.includeDino shouldBe true
+                        it.requestBody.authentication shouldBe null
                         ResponseWithUIA.Step(
                             UIAState(
                                 flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
@@ -135,10 +135,10 @@ class MatrixUIAEndpointRouteTest {
             matrixApiServer(json) {
                 routing {
                     matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        endpoint.pathParam shouldBe "unicorn"
-                        endpoint.requestParam shouldBe "2"
-                        requestBody.request.includeDino shouldBe true
-                        requestBody.authentication shouldBe null
+                        it.endpoint.pathParam shouldBe "unicorn"
+                        it.endpoint.requestParam shouldBe "2"
+                        it.requestBody.request.includeDino shouldBe true
+                        it.requestBody.authentication shouldBe null
                         ResponseWithUIA.Error(
                             UIAState(
                                 flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),

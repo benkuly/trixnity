@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -14,34 +15,30 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class RoomAccountDataEventSerializer(
-    private val roomAccountDataEventContentSerializers: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>,
+    private val roomAccountDataEventContentSerializers: Set<SerializerMapping<out RoomAccountDataEventContent>>,
 ) : KSerializer<Event.RoomAccountDataEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
 
     override fun deserialize(decoder: Decoder): Event.RoomAccountDataEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val mappingType = roomAccountDataEventContentSerializers.firstOrNull { type.startsWith(it.type) }?.type
         val contentSerializer = roomAccountDataEventContentSerializers.contentDeserializer(type)
-        return try {
-            val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
-            decoder.json.decodeFromJsonElement(
-                AddFieldsSerializer(
-                    Event.RoomAccountDataEvent.serializer(contentSerializer),
-                    "key" to key
-                ), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type)), jsonObj
-            )
+        val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
+        return decoder.json.tryDeserializeOrElse(
+            AddFieldsSerializer(
+                Event.RoomAccountDataEvent.serializer(contentSerializer),
+                "key" to key
+            ), jsonObj
+        ) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type))
         }
     }
 
@@ -58,6 +55,6 @@ class RoomAccountDataEventSerializer(
                 ), "key"
             )), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +36,7 @@ import kotlin.test.fail
 @OptIn(ExperimentalSerializationApi::class, ExperimentalCoroutinesApi::class)
 class RoomsApiClientTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldEncodeUrlParameter() = runTest {
@@ -490,7 +490,14 @@ class RoomsApiClientTest {
             invite = setOf(UserId("user1", "server")),
             isDirect = true,
             name = "someRoomName",
-            invite3Pid = setOf(CreateRoom.Request.Invite3Pid("identityServer", "token", "email", "user2@example.org"))
+            inviteThirdPid = setOf(
+                CreateRoom.Request.InviteThirdPid(
+                    "identityServer",
+                    "token",
+                    "email",
+                    "user2@example.org"
+                )
+            )
         ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
     }

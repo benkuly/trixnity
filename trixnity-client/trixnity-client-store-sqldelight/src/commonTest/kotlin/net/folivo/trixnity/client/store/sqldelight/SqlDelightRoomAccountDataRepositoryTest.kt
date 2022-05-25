@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightRoomAccountDataRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightRoomAccountDataRepository
@@ -24,7 +24,7 @@ class SqlDelightRoomAccountDataRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightRoomAccountDataRepository(
             Database(driver).roomAccountDataQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

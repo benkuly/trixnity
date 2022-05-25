@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositor
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -18,7 +18,7 @@ class ExposedInboundMegolmSessionRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedInboundMegolmSession)
         }
-        cut = ExposedInboundMegolmSessionRepository(createMatrixJson())
+        cut = ExposedInboundMegolmSessionRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val roomId = RoomId("room", "server")

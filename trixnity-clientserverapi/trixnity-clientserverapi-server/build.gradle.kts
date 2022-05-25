@@ -1,11 +1,11 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.google.devtools.ksp")
+    id("org.kodein.mock.mockmp")
 }
 
-dependencies {
-    ksp("io.mockative:mockative-processor:${Versions.mockative}")
+mockmp {
+    usesHelper = true
 }
 
 kotlin {
@@ -17,7 +17,7 @@ kotlin {
             kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
         }
         testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
+//            useJUnitPlatform()
         }
         withJava()
     }
@@ -36,13 +36,8 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
 
-                implementation("io.ktor:ktor-server-core:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-cors:${Versions.ktor}")
-
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
@@ -52,9 +47,9 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
 
-                implementation("io.mockative:mockative:${Versions.mockative}")
-
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
+                implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
 
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")

@@ -54,7 +54,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -73,7 +73,7 @@ class RoomServiceTest : ShouldSpec({
     lateinit var olmEventService: OlmEventServiceMock
     lateinit var keyBackup: KeyBackupServiceMock
     lateinit var media: MediaServiceMock
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 

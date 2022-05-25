@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -21,7 +21,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoomUser)
         }
-        cut = ExposedRoomUserRepository(createMatrixJson())
+        cut = ExposedRoomUserRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val key1 = RoomId("room1", "server")

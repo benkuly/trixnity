@@ -4,14 +4,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ErrorResponseTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldSerializeErrorResponse() = runTest {

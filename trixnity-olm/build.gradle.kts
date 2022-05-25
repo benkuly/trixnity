@@ -222,7 +222,6 @@ val extractOlm by tasks.registering(Copy::class) {
 val prepareBuildOlmWindows by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olmRootDir)
-    // TODO we disabled tests, because the linking of them fails
     commandLine(
         "cmake", ".", "-B${olmBuildWinAmd64Dir.absolutePath}",
         "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF"
@@ -249,7 +248,7 @@ val buildOlmWindows by tasks.registering(Exec::class) {
 val prepareBuildOlmCurrentPlatform by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olmRootDir)
-    commandLine("cmake", ".", "-B${olmBuildCurrentPlatformDir.absolutePath}")
+    commandLine("cmake", ".", "-B${olmBuildCurrentPlatformDir.absolutePath}", "-DOLM_TESTS=OFF")
     onlyIf { !HostManager.hostIsMingw }
     dependsOn(extractOlm)
     outputs.cacheIf { true }

@@ -22,12 +22,12 @@ import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +35,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class MatrixClientServerApiHttpClientTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mappings = createEventContentSerializerMappings()
 
     @Serializable

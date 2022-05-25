@@ -7,16 +7,16 @@ import io.ktor.http.HttpMethod.Companion.Options
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.plugins.cors.*
+import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 fun Application.matrixClientServerApiServer(
     accessTokenAuthenticationFunction: AccessTokenAuthenticationFunction,
+    discoveryApiHandler: DiscoveryApiHandler,
     authenticationApiHandler: AuthenticationApiHandler,
     devicesApiHandler: DevicesApiHandler,
     keysApiHandler: KeysApiHandler,
@@ -29,14 +29,12 @@ fun Application.matrixClientServerApiServer(
     customMappings: EventContentSerializerMappings? = null,
 ) {
     val contentMappings = createEventContentSerializerMappings(customMappings)
-    val json = createMatrixJson(contentMappings)
+    val json = createMatrixEventJson(contentMappings)
     matrixApiServer(json) {
         // TODO rate limit
         install(ConvertMediaPlugin)
-        install(Authentication) {
-            matrixAccessTokenAuth {
-                this.authenticationFunction = accessTokenAuthenticationFunction
-            }
+        installMatrixAccessTokenAuth {
+            this.authenticationFunction = accessTokenAuthenticationFunction
         }
         // see also https://spec.matrix.org/v1.2/client-server-api/#web-browser-clients
         install(CORS) {
@@ -51,6 +49,7 @@ fun Application.matrixClientServerApiServer(
             allowHeader("X-Requested-With")
         }
         routing {
+            discoveryApiRoutes(discoveryApiHandler, json, contentMappings)
             authenticationApiRoutes(authenticationApiHandler, json, contentMappings)
             devicesApiRoutes(devicesApiHandler, json, contentMappings)
             keysApiRoutes(keysApiHandler, json, contentMappings)

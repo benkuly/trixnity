@@ -5,13 +5,10 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
@@ -30,8 +27,8 @@ import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.Presence.ONLINE
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence.ONLINE
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -39,25 +36,24 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class SyncRoutesTest {
-    private val json = createMatrixJson()
+class SyncRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<SyncApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: SyncApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
-                }
+            installMatrixAccessTokenAuth {
+                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
                 routing {
@@ -67,18 +63,11 @@ class SyncRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldSync() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::sync)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.sync(isAny()) }
+            .returns(
                 Sync.Response(
                     nextBatch = "s72595_4483_1934",
                     presence = Presence(
@@ -222,7 +211,7 @@ class SyncRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234") {
                 bearerAuth("token")
@@ -253,14 +242,14 @@ class SyncRoutesTest {
                                 "membership":"join"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "state_key":"@alice:example.org",
+                              "type":"m.room.member",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "state_key":"@alice:example.org",
-                              "type":"m.room.member"
+                              }                              
                             }
                           ]
                         },
@@ -273,14 +262,14 @@ class SyncRoutesTest {
                                 "membership":"join"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "state_key":"@alice:example.org",
+                              "type":"m.room.member",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "state_key":"@alice:example.org",
-                              "type":"m.room.member"
+                              }                              
                             },
                             {
                               "content":{
@@ -290,13 +279,13 @@ class SyncRoutesTest {
                                 "msgtype":"m.text"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "type":"m.room.message",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "type":"m.room.message"
+                              }                              
                             }
                           ],
                           "limited":true,
@@ -337,8 +326,8 @@ class SyncRoutesTest {
                               "content":{
                                 "name":"My Room Name"
                               },
-                              "sender":"@alice:example.com",
                               "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
                               "state_key":"",
                               "type":"m.room.name"
                             },
@@ -346,8 +335,8 @@ class SyncRoutesTest {
                               "content":{
                                 "membership":"invite"
                               },
-                              "sender":"@alice:example.com",
                               "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
                               "state_key":"@bob:example.com",
                               "type":"m.room.member"
                             }
@@ -360,10 +349,10 @@ class SyncRoutesTest {
                     "events":[
                       {
                         "content":{
-                          "presence":"online",
                           "avatar_url":"mxc://localhost:wefuiwegh8742w",
-                          "last_active_ago":2478593,
                           "currently_active":false,
+                          "last_active_ago":2478593,
+                          "presence":"online",
                           "status_msg":"Making cupcakes"
                         },
                         "sender":"@example:localhost",
@@ -393,15 +382,14 @@ class SyncRoutesTest {
                 }
                 """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::sync)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.sync(assert {
                 it.endpoint.filter shouldBe "someFilter"
                 it.endpoint.fullState shouldBe true
                 it.endpoint.setPresence shouldBe ONLINE
                 it.endpoint.since shouldBe "someSince"
                 it.endpoint.timeout shouldBe 1234
-                true
             })
-            .wasInvoked()
+        }
     }
 }

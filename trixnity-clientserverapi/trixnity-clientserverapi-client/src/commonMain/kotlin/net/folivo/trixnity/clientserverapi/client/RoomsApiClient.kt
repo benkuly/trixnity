@@ -27,7 +27,7 @@ interface IRoomsApiClient {
     val contentMappings: EventContentSerializerMappings
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
+     * @see [GetEvent]
      */
     suspend fun getEvent(
         roomId: RoomId,
@@ -36,7 +36,7 @@ interface IRoomsApiClient {
     ): Result<Event<*>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     * @see [GetStateEvent]
      */
     suspend fun getStateEvent(
         type: String,
@@ -46,12 +46,12 @@ interface IRoomsApiClient {
     ): Result<StateEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstate">matrix spec</a>
+     * @see [GetState]
      */
     suspend fun getState(roomId: RoomId, asUserId: UserId? = null): Result<List<StateEvent<*>>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
+     * @see [GetMembers]
      */
     suspend fun getMembers(
         roomId: RoomId,
@@ -62,7 +62,7 @@ interface IRoomsApiClient {
     ): Result<Set<StateEvent<MemberEventContent>>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidjoined_members">matrix spec</a>
+     * @see [GetJoinedMembers]
      */
     suspend fun getJoinedMembers(
         roomId: RoomId,
@@ -70,7 +70,7 @@ interface IRoomsApiClient {
     ): Result<GetJoinedMembers.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
+     * @see [GetEvents]
      */
     suspend fun getEvents(
         roomId: RoomId,
@@ -83,7 +83,7 @@ interface IRoomsApiClient {
     ): Result<GetEvents.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+     * @see [SendStateEvent]
      */
     suspend fun sendStateEvent(
         roomId: RoomId,
@@ -93,7 +93,7 @@ interface IRoomsApiClient {
     ): Result<EventId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
+     * @see [SendMessageEvent]
      */
     suspend fun sendMessageEvent(
         roomId: RoomId,
@@ -103,7 +103,7 @@ interface IRoomsApiClient {
     ): Result<EventId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidredacteventidtxnid">matrix spec</a>
+     * @see [RedactEvent]
      */
     suspend fun redactEvent(
         roomId: RoomId,
@@ -114,7 +114,7 @@ interface IRoomsApiClient {
     ): Result<EventId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
+     * @see [CreateRoom]
      */
     suspend fun createRoom(
         visibility: DirectoryVisibility = DirectoryVisibility.PRIVATE,
@@ -122,7 +122,7 @@ interface IRoomsApiClient {
         name: String? = null,
         topic: String? = null,
         invite: Set<UserId>? = null,
-        invite3Pid: Set<CreateRoom.Request.Invite3Pid>? = null,
+        inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>? = null,
         roomVersion: String? = null,
         creationContent: CreateEventContent? = null,
         initialState: List<Event.InitialStateEvent<*>>? = null,
@@ -133,7 +133,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see [SetRoomAlias]
      */
     suspend fun setRoomAlias(
         roomId: RoomId,
@@ -142,21 +142,21 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see [GetRoomAlias]
      */
     suspend fun getRoomAlias(
         roomAliasId: RoomAliasId,
     ): Result<GetRoomAlias.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidaliases">matrix spec</a>
+     * @see [GetRoomAliases]
      */
     suspend fun getRoomAliases(
         roomId: RoomId,
     ): Result<Set<RoomAliasId>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3directoryroomroomalias">matrix spec</a>
+     * @see [DeleteRoomAlias]
      */
     suspend fun deleteRoomAlias(
         roomAliasId: RoomAliasId,
@@ -164,12 +164,12 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3joined_rooms">matrix spec</a>
+     * @see [GetJoinedRooms]
      */
     suspend fun getJoinedRooms(asUserId: UserId? = null): Result<Set<RoomId>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidinvite">matrix spec</a>
+     * @see [InviteUser]
      */
     suspend fun inviteUser(
         roomId: RoomId,
@@ -179,7 +179,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidkick">matrix spec</a>
+     * @see [KickUser]
      */
     suspend fun kickUser(
         roomId: RoomId,
@@ -189,7 +189,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidban">matrix spec</a>
+     * @see [BanUser]
      */
     suspend fun banUser(
         roomId: RoomId,
@@ -199,7 +199,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidunban">matrix spec</a>
+     * @see [UnbanUser]
      */
     suspend fun unbanUser(
         roomId: RoomId,
@@ -209,7 +209,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
+     * @see [JoinRoom]
      */
     suspend fun joinRoom(
         roomId: RoomId,
@@ -220,7 +220,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3joinroomidoralias">matrix spec</a>
+     * @see [JoinRoom]
      */
     suspend fun joinRoom(
         roomAliasId: RoomAliasId,
@@ -231,7 +231,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
+     * @see [KnockRoom]
      */
     suspend fun knockRoom(
         roomId: RoomId,
@@ -241,7 +241,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3knockroomidoralias">matrix spec</a>
+     * @see [KnockRoom]
      */
     suspend fun knockRoom(
         roomAliasId: RoomAliasId,
@@ -251,7 +251,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidforget">matrix spec</a>
+     * @see [ForgetRoom]
      */
     suspend fun forgetRoom(
         roomId: RoomId,
@@ -259,7 +259,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidleave">matrix spec</a>
+     * @see [LeaveRoom]
      */
     suspend fun leaveRoom(
         roomId: RoomId,
@@ -268,7 +268,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidreceiptreceipttypeeventid">matrix spec</a>
+     * @see [SetReceipt]
      */
     suspend fun setReceipt(
         roomId: RoomId,
@@ -278,7 +278,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidread_markers">matrix spec</a>
+     * @see [SetReadMarkers]
      */
     suspend fun setReadMarkers(
         roomId: RoomId,
@@ -288,7 +288,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidtypinguserid">matrix spec</a>
+     * @see [SetTyping]
      */
     suspend fun setTyping(
         roomId: RoomId,
@@ -299,7 +299,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     * @see [GetRoomAccountData]
      */
     suspend fun getAccountData(
         type: String,
@@ -310,7 +310,7 @@ interface IRoomsApiClient {
     ): Result<RoomAccountDataEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+     * @see [SetRoomAccountData]
      */
     suspend fun setAccountData(
         content: RoomAccountDataEventContent,
@@ -321,14 +321,14 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3directorylistroomroomid">matrix spec</a>
+     * @see [GetDirectoryVisibility]
      */
     suspend fun getDirectoryVisibility(
         roomId: RoomId,
     ): Result<DirectoryVisibility>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3directorylistroomroomid">matrix spec</a>
+     * @see [SetDirectoryVisibility]
      */
     suspend fun setDirectoryVisibility(
         roomId: RoomId,
@@ -337,7 +337,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3publicrooms">matrix spec</a>
+     * @see [GetPublicRooms]
      */
     suspend fun getPublicRooms(
         limit: Long? = null,
@@ -346,7 +346,7 @@ interface IRoomsApiClient {
     ): Result<GetPublicRoomsResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3publicrooms">matrix spec</a>
+     * @see [GetPublicRoomsWithFilter]
      */
     suspend fun getPublicRooms(
         limit: Long? = null,
@@ -359,7 +359,7 @@ interface IRoomsApiClient {
     ): Result<GetPublicRoomsResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidtags">matrix spec</a>
+     * @see [GetRoomTags]
      */
     suspend fun getTags(
         userId: UserId,
@@ -368,7 +368,7 @@ interface IRoomsApiClient {
     ): Result<TagEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridroomsroomidtagstag">matrix spec</a>
+     * @see [SetRoomTag]
      */
     suspend fun setTag(
         userId: UserId,
@@ -379,7 +379,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3useruseridroomsroomidtagstag">matrix spec</a>
+     * @see [DeleteRoomTag]
      */
     suspend fun deleteTag(
         userId: UserId,
@@ -389,7 +389,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidcontexteventid">matrix spec</a>
+     * @see [GetEventContext]
      */
     suspend fun getEventContext(
         roomId: RoomId,
@@ -400,7 +400,7 @@ interface IRoomsApiClient {
     ): Result<GetEventContext.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidreporteventid">matrix spec</a>
+     * @see [ReportEvent]
      */
     suspend fun reportEvent(
         roomId: RoomId,
@@ -411,7 +411,7 @@ interface IRoomsApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3roomsroomidupgrade">matrix spec</a>
+     * @see [UpgradeRoom]
      */
     suspend fun upgradeRoom(
         roomId: RoomId,
@@ -420,7 +420,7 @@ interface IRoomsApiClient {
     ): Result<RoomId>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv1roomsroomidhierarchy">matrix spec</a>
+     * @see [GetHierarchy]
      */
     suspend fun getHierarchy(
         roomId: RoomId,
@@ -528,7 +528,7 @@ class RoomsApiClient(
         name: String?,
         topic: String?,
         invite: Set<UserId>?,
-        invite3Pid: Set<CreateRoom.Request.Invite3Pid>?,
+        inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>?,
         roomVersion: String?,
         creationContent: CreateEventContent?,
         initialState: List<Event.InitialStateEvent<*>>?,
@@ -545,7 +545,7 @@ class RoomsApiClient(
                 name = name,
                 topic = topic,
                 invite = invite,
-                invite3Pid = invite3Pid,
+                inviteThirdPid = inviteThirdPid,
                 roomVersion = roomVersion,
                 creationContent = creationContent,
                 initialState = initialState,
@@ -816,7 +816,7 @@ class RoomsApiClient(
 }
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
+ * @see []
  */
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.getAccountData(
     roomId: RoomId,
@@ -830,7 +830,7 @@ suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.get
 }
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+ * @see []
  */
 suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent(
     roomId: RoomId,

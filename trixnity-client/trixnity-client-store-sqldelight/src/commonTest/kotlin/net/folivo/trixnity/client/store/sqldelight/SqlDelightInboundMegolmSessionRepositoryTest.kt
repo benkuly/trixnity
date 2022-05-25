@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightInboundMegolmSessionRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightInboundMegolmSessionRepository
@@ -20,7 +20,7 @@ class SqlDelightInboundMegolmSessionRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightInboundMegolmSessionRepository(
             Database(driver).olmQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

@@ -6,7 +6,7 @@ import io.ktor.server.routing.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.api.server.matrixEndpoint
 import net.folivo.trixnity.applicationserviceapi.model.*
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
@@ -16,7 +16,7 @@ fun Application.matrixApplicationServiceApiServer(
     customMappings: EventContentSerializerMappings? = null
 ) {
     val contentMappings = DefaultEventContentSerializerMappings + customMappings
-    val json = createMatrixJson(contentMappings)
+    val json = createMatrixEventJson(contentMappings)
     matrixApiServer(json) {
         install(Authentication) {
             matrixQueryParameter(null, "access_token", hsToken)
@@ -24,22 +24,22 @@ fun Application.matrixApplicationServiceApiServer(
         routing {
             authenticate {
                 matrixEndpoint<AddTransaction, AddTransaction.Request, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
+                    applicationServiceApiServerHandler.addTransaction(it.endpoint.txnId, it.requestBody.events)
                 }
                 matrixEndpoint<AddTransactionLegacy, AddTransactionLegacy.Request, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
+                    applicationServiceApiServerHandler.addTransaction(it.endpoint.txnId, it.requestBody.events)
                 }
                 matrixEndpoint<HasUser, Unit, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.hasUser(endpoint.userId)
+                    applicationServiceApiServerHandler.hasUser(it.endpoint.userId)
                 }
                 matrixEndpoint<HasUserLegacy, Unit, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.hasUser(endpoint.userId)
+                    applicationServiceApiServerHandler.hasUser(it.endpoint.userId)
                 }
                 matrixEndpoint<HasRoom, Unit, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
+                    applicationServiceApiServerHandler.hasRoomAlias(it.endpoint.roomAlias)
                 }
                 matrixEndpoint<HasRoomLegacy, Unit, Unit>(json, contentMappings) {
-                    applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
+                    applicationServiceApiServerHandler.hasRoomAlias(it.endpoint.roomAlias)
 
                 }
             }

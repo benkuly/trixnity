@@ -39,7 +39,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import net.folivo.trixnity.olm.OlmUtility
@@ -60,7 +60,7 @@ class OlmServiceTest : ShouldSpec({
     lateinit var storeScope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val contentMappings = createEventContentSerializerMappings()
     lateinit var cut: OlmService
 

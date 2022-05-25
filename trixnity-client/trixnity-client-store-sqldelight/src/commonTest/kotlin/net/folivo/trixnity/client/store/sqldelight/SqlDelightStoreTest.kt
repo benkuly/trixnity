@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreTest : ShouldSpec({
@@ -29,7 +29,7 @@ class SqlDelightStoreTest : ShouldSpec({
         cut = SqlDelightStore(
             database = Database(driver),
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
             databaseCoroutineContext = Dispatchers.Default,
             blockingTransactionCoroutineContext = Dispatchers.Default,
             scope = scope
@@ -67,10 +67,10 @@ class SqlDelightStoreTest : ShouldSpec({
 
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$1e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"$1e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$1e","nextEventId":"$2e"}""")
+                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"${'$'}1e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}1e","nextEventId":"${'$'}2e"}""")
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$2e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"$2e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$2e","previousEventId":"$1e","gap":{"position":"after","batch":"batch"}}""")
+                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"${'$'}2e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}2e","previousEventId":"${'$'}1e","gap":{"position":"after","batch":"batch"}}""")
 
             shouldThrow<IllegalArgumentException> {
                 cut.transaction {
@@ -88,10 +88,10 @@ class SqlDelightStoreTest : ShouldSpec({
 
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$1e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"$1e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$1e","nextEventId":"$2e"}""")
+                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"${'$'}1e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}1e","nextEventId":"${'$'}2e"}""")
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$2e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"$2e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$2e","previousEventId":"$1e","gap":{"position":"after","batch":"batch"}}""")
+                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"${'$'}2e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}2e","previousEventId":"${'$'}1e","gap":{"position":"after","batch":"batch"}}""")
         }
     }
 })

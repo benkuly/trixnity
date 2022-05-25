@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -32,7 +32,7 @@ class ExposedStoreTest : ShouldSpec({
         cut = ExposedStore(
             database = database,
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
             transactionDispatcher = Dispatchers.IO,
             scope = scope
         )
@@ -67,7 +67,7 @@ class ExposedStoreTest : ShouldSpec({
             newSuspendedTransaction {
                 cut.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2))
             }
-            val timelineRepo = ExposedRoomTimelineEventRepository(createMatrixJson())
+            val timelineRepo = ExposedRoomTimelineEventRepository(createMatrixEventJson())
             newSuspendedTransaction {
                 timelineRepo.get(RoomTimelineKey(EventId("$1e"), RoomId("room", "server")))
                     .shouldBe(timelineEvent1)

@@ -5,7 +5,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 
 interface SyncApiHandler {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+     * @see [Sync]
      */
     suspend fun sync(context: MatrixEndpointContext<Sync, Unit, Sync.Response>): Sync.Response
 }

@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Unknown
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.coroutines.EmptyCoroutineContext
 
 class ActiveVerificationTest : ShouldSpec({
@@ -45,7 +45,7 @@ class ActiveVerificationTest : ShouldSpec({
         "t",
         InMemoryStore(CoroutineScope(EmptyCoroutineContext)),
         KeyTrustServiceMock(),
-        createMatrixJson(),
+        createMatrixEventJson(),
     ) {
         override suspend fun lifecycle(scope: CoroutineScope) {
             lifecycleCalled++

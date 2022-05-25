@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomServiceAvatarUrlTest : ShouldSpec({
     timeout = 5_000
@@ -35,7 +35,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
 
     lateinit var cut: RoomService
 

@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriver
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreFactoryTest : ShouldSpec({
@@ -26,7 +26,7 @@ class SqlDelightStoreFactoryTest : ShouldSpec({
     should("save schema version") {
         cut.createStore(
             DefaultEventContentSerializerMappings,
-            createMatrixJson(),
+            createMatrixEventJson(),
         )
         (driver.executeQuery(
             null, """
@@ -38,11 +38,11 @@ class SqlDelightStoreFactoryTest : ShouldSpec({
     should("handle existing database") {
         cut.createStore(
             DefaultEventContentSerializerMappings,
-            createMatrixJson(),
+            createMatrixEventJson(),
         )
         cut.createStore(
             DefaultEventContentSerializerMappings,
-            createMatrixJson(),
+            createMatrixEventJson(),
         )
     }
 })

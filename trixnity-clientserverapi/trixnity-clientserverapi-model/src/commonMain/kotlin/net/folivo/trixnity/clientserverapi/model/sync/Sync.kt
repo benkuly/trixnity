@@ -12,17 +12,21 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/sync")
 @HttpMethod(GET)
 data class Sync(
     @SerialName("filter") val filter: String? = null,
     @SerialName("full_state") val fullState: Boolean? = null,
-    @SerialName("set_presence") val setPresence: PresenceEventContent.Presence? = null,
+    @SerialName("set_presence") val setPresence: Presence? = null,
     @SerialName("since") val since: String? = null,
     @SerialName("timeout") val timeout: Long? = null,
     @SerialName("user_id") val asUserId: UserId? = null

@@ -14,15 +14,18 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentDeserializer
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/sendToDevice/{type}/{txnId}")
 @HttpMethod(PUT)

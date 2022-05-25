@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 
 class UnknownEventContentSerializer(val eventType: String) : KSerializer<UnknownEventContent> {
@@ -20,7 +21,7 @@ class UnknownEventContentSerializer(val eventType: String) : KSerializer<Unknown
 
     override fun serialize(encoder: Encoder, value: UnknownEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -34,7 +35,21 @@ class UnknownEphemeralEventContentSerializer(val eventType: String) : KSerialize
 
     override fun serialize(encoder: Encoder, value: UnknownEphemeralEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
+    }
+}
+
+class UnknownEphemeralDataUnitContentSerializer(val eventType: String) : KSerializer<UnknownEphemeralDataUnitContent> {
+    override val descriptor = buildClassSerialDescriptor("UnknownEphemeralDataUnitContentSerializer")
+
+    override fun deserialize(decoder: Decoder): UnknownEphemeralDataUnitContent {
+        require(decoder is JsonDecoder)
+        return UnknownEphemeralDataUnitContent(decoder.decodeJsonElement().jsonObject, eventType)
+    }
+
+    override fun serialize(encoder: Encoder, value: UnknownEphemeralDataUnitContent) {
+        require(encoder is JsonEncoder)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -49,7 +64,7 @@ class UnknownGlobalAccountDataEventContentSerializer(val eventType: String) :
 
     override fun serialize(encoder: Encoder, value: UnknownGlobalAccountDataEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -63,7 +78,7 @@ class UnknownMessageEventContentSerializer(val eventType: String) : KSerializer<
 
     override fun serialize(encoder: Encoder, value: UnknownMessageEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -78,7 +93,7 @@ class UnknownRoomAccountDataEventContentSerializer(val eventType: String) :
 
     override fun serialize(encoder: Encoder, value: UnknownRoomAccountDataEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -92,7 +107,7 @@ class UnknownRoomEventContentSerializer(val eventType: String) : KSerializer<Unk
 
     override fun serialize(encoder: Encoder, value: UnknownRoomEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -106,7 +121,7 @@ class UnknownStateEventContentSerializer(val eventType: String) : KSerializer<Un
 
     override fun serialize(encoder: Encoder, value: UnknownStateEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }
 
@@ -120,6 +135,6 @@ class UnknownToDeviceEventContentSerializer(val eventType: String) : KSerializer
 
     override fun serialize(encoder: Encoder, value: UnknownToDeviceEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(value.raw)
+        encoder.encodeJsonElement(canonicalJson(value.raw))
     }
 }

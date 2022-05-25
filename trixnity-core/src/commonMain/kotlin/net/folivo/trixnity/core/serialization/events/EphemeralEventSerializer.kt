@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -13,29 +14,23 @@ import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
 import net.folivo.trixnity.core.model.events.Event.EphemeralEvent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class EphemeralEventSerializer(
-    private val ephemeralEventContentSerializers: Set<EventContentSerializerMapping<out EphemeralEventContent>>,
+    private val ephemeralEventContentSerializers: Set<SerializerMapping<out EphemeralEventContent>>,
 ) : KSerializer<EphemeralEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EphemeralEventSerializer")
 
     override fun deserialize(decoder: Decoder): EphemeralEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val contentSerializer = ephemeralEventContentSerializers.contentDeserializer(type)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                EphemeralEvent.serializer(contentSerializer), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                EphemeralEvent.serializer(UnknownEphemeralEventContentSerializer(type)), jsonObj
-            )
+        return decoder.json.tryDeserializeOrElse(EphemeralEvent.serializer(contentSerializer), jsonObj) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            EphemeralEvent.serializer(UnknownEphemeralEventContentSerializer(type))
         }
     }
 
@@ -50,6 +45,6 @@ class EphemeralEventSerializer(
                 "type" to type
             ), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

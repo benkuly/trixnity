@@ -8,12 +8,12 @@ import net.folivo.trixnity.clientserverapi.model.media.*
 
 interface IMediaApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3config">matrix spec</a>
+     * @see [GetMediaConfig]
      */
     suspend fun getConfig(): Result<GetMediaConfig.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixmediav3upload">matrix spec</a>
+     * @see [UploadMedia]
      */
     suspend fun upload(
         media: Media,
@@ -22,7 +22,7 @@ interface IMediaApiClient {
     ): Result<UploadMedia.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
+     * @see [DownloadMedia]
      */
     suspend fun download(
         mxcUri: String,
@@ -32,7 +32,7 @@ interface IMediaApiClient {
     ): Result<Media>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
+     * @see [DownloadThumbnail]
      */
     suspend fun downloadThumbnail(
         mxcUri: String,
@@ -44,7 +44,7 @@ interface IMediaApiClient {
     ): Result<Media>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3preview_url">matrix spec</a>
+     * @see [GetUrlPreview]
      */
     suspend fun getUrlPreview(
         url: String,

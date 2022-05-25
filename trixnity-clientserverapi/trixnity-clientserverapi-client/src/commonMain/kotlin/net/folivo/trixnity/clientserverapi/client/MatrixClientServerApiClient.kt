@@ -5,7 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 interface IMatrixClientServerApiClient {
@@ -13,6 +13,7 @@ interface IMatrixClientServerApiClient {
     val httpClient: MatrixClientServerApiHttpClient
 
     val authentication: IAuthenticationApiClient
+    val discovery: IDiscoveryApiClient
     val server: IServerApiClient
     val users: IUsersApiClient
     val rooms: IRoomsApiClient
@@ -27,7 +28,7 @@ class MatrixClientServerApiClient(
     baseUrl: Url? = null,
     onLogout: suspend (isSoft: Boolean) -> Unit = {},
     val eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
-    val json: Json = createMatrixJson(eventContentSerializerMappings),
+    val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) : IMatrixClientServerApiClient {
     override val accessToken = MutableStateFlow<String?>(null)
@@ -41,13 +42,14 @@ class MatrixClientServerApiClient(
         httpClientFactory
     )
 
-    override val authentication: IAuthenticationApiClient = AuthenticationApiClient(httpClient)
-    override val server: IServerApiClient = ServerApiClient(httpClient)
-    override val users: IUsersApiClient = UsersApiClient(httpClient, json, eventContentSerializerMappings)
-    override val rooms: IRoomsApiClient = RoomsApiClient(httpClient, eventContentSerializerMappings)
-    override val sync: ISyncApiClient = SyncApiClient(httpClient)
-    override val keys: IKeysApiClient = KeysApiClient(httpClient, json)
-    override val media: IMediaApiClient = MediaApiClient(httpClient)
-    override val devices: IDevicesApiClient = DevicesApiClient(httpClient)
-    override val push: IPushApiClient = PushApiClient(httpClient)
+    override val authentication = AuthenticationApiClient(httpClient)
+    override val discovery = DiscoveryApiClient(httpClient)
+    override val server = ServerApiClient(httpClient)
+    override val users = UsersApiClient(httpClient, eventContentSerializerMappings)
+    override val rooms = RoomsApiClient(httpClient, eventContentSerializerMappings)
+    override val sync = SyncApiClient(httpClient)
+    override val keys = KeysApiClient(httpClient, json)
+    override val media = MediaApiClient(httpClient)
+    override val devices = DevicesApiClient(httpClient)
+    override val push = PushApiClient(httpClient)
 }

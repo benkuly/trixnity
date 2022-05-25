@@ -9,17 +9,17 @@ import net.folivo.trixnity.core.model.push.PushRuleKind
 
 interface IPushApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushers">matrix spec</a>
+     * @see [GetPushers]
      */
     suspend fun getPushers(asUserId: UserId? = null): Result<GetPushers.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3pushersset">matrix spec</a>
+     * @see [SetPushers]
      */
     suspend fun setPushers(request: SetPushers.Request, asUserId: UserId? = null): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3notifications">matrix spec</a>
+     * @see [GetNotifications]
      */
     suspend fun getNotifications(
         from: String? = null,
@@ -29,12 +29,12 @@ interface IPushApiClient {
     ): Result<GetNotifications.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrules">matrix spec</a>
+     * @see [GetPushRules]
      */
     suspend fun getPushRules(asUserId: UserId? = null): Result<GetPushRules.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [GetPushRule]
      */
     suspend fun getPushRule(
         scope: String,
@@ -44,7 +44,7 @@ interface IPushApiClient {
     ): Result<PushRule>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [SetPushRule]
      */
     suspend fun setPushRule(
         scope: String,
@@ -57,7 +57,7 @@ interface IPushApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+     * @see [DeletePushRule]
      */
     suspend fun deletePushRule(
         scope: String,
@@ -67,7 +67,7 @@ interface IPushApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     * @see [GetPushRuleActions]
      */
     suspend fun getPushRuleActions(
         scope: String,
@@ -77,7 +77,7 @@ interface IPushApiClient {
     ): Result<Set<PushAction>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidactions">matrix spec</a>
+     * @see [SetPushRuleActions]
      */
     suspend fun setPushRuleActions(
         scope: String,
@@ -88,7 +88,7 @@ interface IPushApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     * @see [GetPushRuleEnabled]
      */
     suspend fun getPushRuleEnabled(
         scope: String,
@@ -98,7 +98,7 @@ interface IPushApiClient {
     ): Result<Boolean>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3pushrulesscopekindruleidenabled">matrix spec</a>
+     * @see [SetPushRuleEnabled]
      */
     suspend fun setPushRuleEnabled(
         scope: String,

@@ -43,7 +43,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Veri
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -62,7 +62,7 @@ class ActiveUserVerificationTest : ShouldSpec({
 
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var api: MatrixClientServerApiClient
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var olmEventService: OlmEventServiceMock
     lateinit var room: RoomServiceMock

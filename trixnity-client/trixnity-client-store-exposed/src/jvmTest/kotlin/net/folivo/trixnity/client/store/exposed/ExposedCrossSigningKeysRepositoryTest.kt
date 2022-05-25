@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -18,7 +18,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedCrossSigningKeys)
         }
-        cut = ExposedCrossSigningKeysRepository(createMatrixJson())
+        cut = ExposedCrossSigningKeysRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val alice = UserId("alice", "server")

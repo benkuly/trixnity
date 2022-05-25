@@ -143,7 +143,7 @@ class KeysApiClientTest {
     }
 
     @Test
-    fun shouldQueryKeys() = runTest {
+    fun shouldGetKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClient(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {

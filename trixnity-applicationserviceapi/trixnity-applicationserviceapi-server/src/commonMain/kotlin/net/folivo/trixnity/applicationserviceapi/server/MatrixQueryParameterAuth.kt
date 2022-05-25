@@ -13,7 +13,6 @@ class MatrixQueryParameterAuthenticationProvider internal constructor(
     class Configuration internal constructor(name: String? = null) : Config(name)
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
-        // TODO simplify
         val credentials = context.call.request.queryParameters[field]
         val cause = when {
             credentials == null -> AuthenticationFailedCause.NoCredentials

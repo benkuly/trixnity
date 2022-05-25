@@ -3,14 +3,13 @@ package net.folivo.trixnity.clientserverapi.client
 import com.benasher44.uuid.uuid4
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.users.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent.Presence
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentSerializer
 import net.folivo.trixnity.core.serialization.events.fromClass
@@ -19,14 +18,14 @@ interface IUsersApiClient {
     val contentMappings: EventContentSerializerMappings
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseriddisplayname">matrix spec</a>
+     * @see [GetDisplayName]
      */
     suspend fun getDisplayName(
         userId: UserId,
     ): Result<String?>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseriddisplayname">matrix spec</a>
+     * @see [SetDisplayName]
      */
     suspend fun setDisplayName(
         userId: UserId,
@@ -35,14 +34,14 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseridavatar_url">matrix spec</a>
+     * @see [GetAvatarUrl]
      */
     suspend fun getAvatarUrl(
         userId: UserId,
     ): Result<String?>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
+     * @see [SetAvatarUrl]
      */
     suspend fun setAvatarUrl(
         userId: UserId,
@@ -51,14 +50,14 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuserid">matrix spec</a>
+     * @see [GetProfile]
      */
     suspend fun getProfile(
         userId: UserId,
     ): Result<GetProfile.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3presenceuseridstatus">matrix spec</a>
+     * @see [GetPresence]
      */
     suspend fun getPresence(
         userId: UserId,
@@ -66,7 +65,7 @@ interface IUsersApiClient {
     ): Result<PresenceEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3presenceuseridstatus">matrix spec</a>
+     * @see [SetPresence]
      */
     suspend fun setPresence(
         userId: UserId,
@@ -76,7 +75,7 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
+     * @see [SendToDevice]
      */
     suspend fun <C : ToDeviceEventContent> sendToDevice(
         events: Map<UserId, Map<String, C>>,
@@ -85,7 +84,7 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
+     * @see [SendToDevice]
      */
     suspend fun sendToDevice(
         type: String,
@@ -95,7 +94,7 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridfilterfilterid">matrix spec</a>
+     * @see [GetFilter]
      */
     suspend fun getFilter(
         userId: UserId,
@@ -104,7 +103,7 @@ interface IUsersApiClient {
     ): Result<Filters>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3useruseridfilter">matrix spec</a>
+     * @see [setFilter]
      */
     suspend fun setFilter(
         userId: UserId,
@@ -113,7 +112,7 @@ interface IUsersApiClient {
     ): Result<String>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     * @see [getAccountData]
      */
     suspend fun getAccountData(
         type: String,
@@ -123,7 +122,7 @@ interface IUsersApiClient {
     ): Result<GlobalAccountDataEventContent>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+     * @see [setAccountData]
      */
     suspend fun setAccountData(
         content: GlobalAccountDataEventContent,
@@ -133,7 +132,7 @@ interface IUsersApiClient {
     ): Result<Unit>
 
     /**
-     *  @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3user_directorysearch">matrix spec</a>
+     *  @see [SearchUsers]
      */
     suspend fun searchUsers(
         searchTerm: String,
@@ -145,7 +144,6 @@ interface IUsersApiClient {
 
 class UsersApiClient(
     private val httpClient: MatrixClientServerApiHttpClient,
-    private val json: Json,
     override val contentMappings: EventContentSerializerMappings
 ) : IUsersApiClient {
 
@@ -260,7 +258,7 @@ class UsersApiClient(
 }
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+ * @see []
  */
 suspend inline fun <reified C : GlobalAccountDataEventContent> IUsersApiClient.getAccountData(
     userId: UserId,

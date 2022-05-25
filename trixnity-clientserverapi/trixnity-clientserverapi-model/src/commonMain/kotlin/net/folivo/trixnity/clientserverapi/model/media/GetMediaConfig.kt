@@ -7,6 +7,9 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixmediav3config">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/media/v3/config")
 @HttpMethod(GET)

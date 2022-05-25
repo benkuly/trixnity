@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
-import net.folivo.trixnity.core.serialization.canonicalJson
+import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.minutes
@@ -36,7 +36,7 @@ internal suspend fun createSasCommitment(
 ): String {
     val jsonObject = json.encodeToJsonElement(content)
     require(jsonObject is JsonObject)
-    val canonicalJson = canonicalJson(jsonObject)
+    val canonicalJson = canonicalJsonString(jsonObject)
     return freeAfter(OlmUtility.create()) { olmUtil ->
         olmUtil.sha256(publicKey + canonicalJson)
     }

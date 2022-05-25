@@ -27,7 +27,7 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ import kotlin.test.fail
 class MatrixClientTest : ShouldSpec({
     timeout = 30_000
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
 
     val serverResponse = Sync.Response(
@@ -84,7 +84,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        "/_matrix/client/v3/profile/${userId.e().full}" -> {
                                             respond(
                                                 """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
                                                 HttpStatusCode.OK,
@@ -105,7 +105,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        "/_matrix/client/v3/user/${userId.e()}/filter" -> {
+                                        "/_matrix/client/v3/user/${userId.e().full}/filter" -> {
                                             assertEquals(HttpMethod.Post, request.method)
                                             respond(
                                                 """{"filter_id":"someFilter"}""",
@@ -233,7 +233,7 @@ class MatrixClientTest : ShouldSpec({
                                                 )
                                             )
                                         }
-                                        path == "/_matrix/client/v3/profile/${userId.e()}" -> {
+                                        path == "/_matrix/client/v3/profile/${userId.e().full}" -> {
                                             respond(
                                                 """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
                                                 HttpStatusCode.OK,
@@ -255,7 +255,7 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         }
                                         else -> {
-                                            throw IllegalArgumentException(path)
+                                            throw IllegalStateException(path)
                                         }
                                     }
                                 }
@@ -290,6 +290,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            delay(50) // wait for init
             cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
                 configuration = {

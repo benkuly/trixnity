@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.Signatures
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.core.serialization.canonicalJson
+import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.OlmUtility
@@ -194,7 +194,7 @@ class OlmSignService internal constructor(
     }
 
     private fun canonicalFilteredJson(input: JsonObject): String =
-        canonicalJson(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
+        canonicalJsonString(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 }
 
 suspend inline fun <reified T> IOlmSignService.sign(

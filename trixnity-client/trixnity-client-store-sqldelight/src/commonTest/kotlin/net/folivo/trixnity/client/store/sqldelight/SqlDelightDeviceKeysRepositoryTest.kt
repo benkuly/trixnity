@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightDeviceKeysRepository
@@ -25,7 +25,7 @@ class SqlDelightDeviceKeysRepositoryTest : ShouldSpec({
     beforeTest {
         driver = createDriverWithSchema()
         cut =
-            SqlDelightDeviceKeysRepository(Database(driver).keysQueries, createMatrixJson(), Dispatchers.Default)
+            SqlDelightDeviceKeysRepository(Database(driver).keysQueries, createMatrixEventJson(), Dispatchers.Default)
     }
     afterTest {
         driver.close()

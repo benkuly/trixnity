@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.model.events.Event.*
 private val log = KotlinLogging.logger {}
 
 class EventSerializer(
-    private val unknownEventSerializer: KSerializer<UnknownEvent>,
     private val roomEventSerializer: KSerializer<RoomEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
     private val initialStateEventSerializer: KSerializer<InitialStateEvent<*>>,
@@ -39,13 +38,11 @@ class EventSerializer(
             !hasEventId && !hasStateKey && !hasRoomId && hasSenderId -> toDeviceEventSerializer
             // it is hard to detect if an event is e.g. an EphemeralEvent or RoomAccountDataEvent and we don't need it
             // -> that's why we skip some event types here.
-            else -> unknownEventSerializer
+            else -> UnknownEventSerializer
         }
-        return try {
-            decoder.json.decodeFromJsonElement(serializer, jsonObj)
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event" }
-            decoder.json.decodeFromJsonElement(unknownEventSerializer, jsonObj)
+        return decoder.json.tryDeserializeOrElse(serializer, jsonObj) {
+            log.warn(it) { "could not deserialize event" }
+            UnknownEventSerializer
         }
     }
 
@@ -59,7 +56,7 @@ class EventSerializer(
             is ToDeviceEvent -> encoder.json.encodeToJsonElement(toDeviceEventSerializer, value)
             is GlobalAccountDataEvent -> encoder.json.encodeToJsonElement(globalAccountDataEventSerializer, value)
             is RoomAccountDataEvent -> encoder.json.encodeToJsonElement(roomAccountDataEventSerializer, value)
-            is UnknownEvent -> encoder.json.encodeToJsonElement(unknownEventSerializer, value)
+            is UnknownEvent -> encoder.json.encodeToJsonElement(UnknownEventSerializer, value)
         }
         encoder.encodeJsonElement(jsonElement)
     }

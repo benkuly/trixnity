@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -18,7 +18,7 @@ class ExposedVerifiedKeysRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedKeyVerificationState)
         }
-        cut = ExposedKeyVerificationStateRepository(createMatrixJson())
+        cut = ExposedKeyVerificationStateRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val verifiedKey1Key = VerifiedKeysRepositoryKey(

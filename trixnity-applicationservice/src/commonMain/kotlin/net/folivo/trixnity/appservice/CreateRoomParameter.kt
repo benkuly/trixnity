@@ -12,7 +12,7 @@ data class CreateRoomParameter(
     val name: String? = null,
     val topic: String? = null,
     val invite: Set<UserId>? = null,
-    val invite3Pid: Set<CreateRoom.Request.Invite3Pid>? = null,
+    val inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>? = null,
     val roomVersion: String? = null,
     val creationContent: CreateEventContent? = null,
     val initialState: List<Event.InitialStateEvent<*>>? = null,

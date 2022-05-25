@@ -16,10 +16,10 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.events.m.space.ParentEventContent
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMapping.Companion.of
+import net.folivo.trixnity.core.serialization.events.SerializerMapping.Companion.of
 
 object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
-    override val message: Set<EventContentSerializerMapping<out MessageEventContent>> = setOf(
+    override val message: Set<SerializerMapping<out MessageEventContent>> = setOf(
         of("m.room.message", RoomMessageEventContentSerializer),
         of<RedactionEventContent>("m.room.redaction"),
         of("m.room.encrypted", EncryptedEventContentSerializer),
@@ -31,7 +31,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<SasKeyEventContent>("m.key.verification.key"),
         of<SasMacEventContent>("m.key.verification.mac"),
     )
-    override val state: Set<EventContentSerializerMapping<out StateEventContent>> = setOf(
+    override val state: Set<SerializerMapping<out StateEventContent>> = setOf(
         of<AvatarEventContent>("m.room.avatar"),
         of<CanonicalAliasEventContent>("m.room.canonical_alias"),
         of<CreateEventContent>("m.room.create"),
@@ -53,13 +53,13 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<ParentEventContent>("m.space.parent"),
         of<ChildEventContent>("m.space.child"),
     )
-    override val ephemeral: Set<EventContentSerializerMapping<out EphemeralEventContent>> = setOf(
+    override val ephemeral: Set<SerializerMapping<out EphemeralEventContent>> = setOf(
         of<PresenceEventContent>("m.presence"),
         of<TypingEventContent>("m.typing"),
         of<ReceiptEventContent>("m.receipt"),
     )
 
-    override val toDevice: Set<EventContentSerializerMapping<out ToDeviceEventContent>> = setOf(
+    override val toDevice: Set<SerializerMapping<out ToDeviceEventContent>> = setOf(
         of("m.room.encrypted", EncryptedEventContentSerializer),
         of<RoomKeyEventContent>("m.room_key"),
         of<RoomKeyRequestEventContent>("m.room_key_request"),
@@ -76,7 +76,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<SecretKeyRequestEventContent>("m.secret.request"),
         of<SecretKeySendEventContent>("m.secret.send"),
     )
-    override val globalAccountData: Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>> = setOf(
+    override val globalAccountData: Set<SerializerMapping<out GlobalAccountDataEventContent>> = setOf(
         of<IdentityServerEventContent>("m.identity_server"),
         of<DirectEventContent>("m.direct"),
         of<PushRulesEventContent>("m.push_rules"),
@@ -88,7 +88,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<MegolmBackupV1EventContent>("m.megolm_backup.v1"),
         of<IgnoredUserListEventContent>("m.ignored_user_list"),
     )
-    override val roomAccountData: Set<EventContentSerializerMapping<out RoomAccountDataEventContent>> = setOf(
+    override val roomAccountData: Set<SerializerMapping<out RoomAccountDataEventContent>> = setOf(
         of<FullyReadEventContent>("m.fully_read"),
         of<TagEventContent>("m.tag"),
     )

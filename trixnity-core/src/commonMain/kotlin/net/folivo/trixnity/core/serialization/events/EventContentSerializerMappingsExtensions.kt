@@ -9,20 +9,20 @@ class UnsupportedEventContentTypeException(eventType: KClass<*>) : IllegalArgume
     "Event content type $eventType is not supported. If it is a custom type, you should register it!"
 )
 
-fun <C : EventContent> Set<EventContentSerializerMapping<out C>>.fromClass(
+fun <C : EventContent> Set<SerializerMapping<out C>>.fromClass(
     eventContentClass: KClass<out C>
-): EventContentSerializerMapping<out C> =
+): SerializerMapping<out C> =
     firstOrNull { it.kClass == eventContentClass }
         ?: throw UnsupportedEventContentTypeException(eventContentClass)
 
 @JvmName("eventContentDeserializer")
-fun Set<EventContentSerializerMapping<out EventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out EventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out EventContent> =
     firstOrNull { it.type == type }?.serializer ?: UnknownEventContentSerializer(type)
 
 @JvmName("eventContentSerializer")
-fun Set<EventContentSerializerMapping<out EventContent>>.contentSerializer(
+fun Set<SerializerMapping<out EventContent>>.contentSerializer(
     content: EventContent,
 ): Pair<String, KSerializer<out EventContent>> =
     when (content) {
@@ -35,13 +35,19 @@ fun Set<EventContentSerializerMapping<out EventContent>>.contentSerializer(
     }
 
 @JvmName("ephemeralEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out EphemeralEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out EphemeralEventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out EphemeralEventContent> =
     firstOrNull { it.type == type }?.serializer ?: UnknownEphemeralEventContentSerializer(type)
 
+@JvmName("ephemeralDataUnitContentDeserializer")
+fun Set<SerializerMapping<out EphemeralDataUnitContent>>.contentDeserializer(
+    type: String,
+): KSerializer<out EphemeralDataUnitContent> =
+    firstOrNull { it.type == type }?.serializer ?: UnknownEphemeralDataUnitContentSerializer(type)
+
 @JvmName("ephemeralEventContentSerializer")
-fun Set<EventContentSerializerMapping<out EphemeralEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out EphemeralEventContent>>.contentSerializer(
     content: EphemeralEventContent,
 ): Pair<String, KSerializer<out EphemeralEventContent>> =
     when (content) {
@@ -53,14 +59,27 @@ fun Set<EventContentSerializerMapping<out EphemeralEventContent>>.contentSeriali
         }
     }
 
+@JvmName("ephemeralDataUnitContentSerializer")
+fun Set<SerializerMapping<out EphemeralDataUnitContent>>.contentSerializer(
+    content: EphemeralDataUnitContent,
+): Pair<String, KSerializer<out EphemeralDataUnitContent>> =
+    when (content) {
+        is UnknownEphemeralDataUnitContent -> content.eventType to UnknownEphemeralDataUnitContentSerializer(content.eventType)
+        else -> {
+            val contentSerializerMapping =
+                find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
+            contentSerializerMapping.type to contentSerializerMapping.serializer
+        }
+    }
+
 @JvmName("globalAccountDataEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out GlobalAccountDataEventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out GlobalAccountDataEventContent> =
     firstOrNull { type.startsWith(it.type) }?.serializer ?: UnknownGlobalAccountDataEventContentSerializer(type)
 
 @JvmName("globalAccountDataEventContentSerializer")
-fun Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out GlobalAccountDataEventContent>>.contentSerializer(
     content: GlobalAccountDataEventContent,
 ): Pair<String, KSerializer<out GlobalAccountDataEventContent>> =
     when (content) {
@@ -74,13 +93,13 @@ fun Set<EventContentSerializerMapping<out GlobalAccountDataEventContent>>.conten
     }
 
 @JvmName("roomAccountDataEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out RoomAccountDataEventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out RoomAccountDataEventContent> =
     firstOrNull { type.startsWith(it.type) }?.serializer ?: UnknownRoomAccountDataEventContentSerializer(type)
 
 @JvmName("roomAccountDataEventContentSerializer")
-fun Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out RoomAccountDataEventContent>>.contentSerializer(
     content: RoomAccountDataEventContent,
 ): Pair<String, KSerializer<out RoomAccountDataEventContent>> =
     when (content) {
@@ -94,13 +113,13 @@ fun Set<EventContentSerializerMapping<out RoomAccountDataEventContent>>.contentS
     }
 
 @JvmName("roomEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out RoomEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out RoomEventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out RoomEventContent> =
     firstOrNull { it.type == type }?.serializer ?: UnknownRoomEventContentSerializer(type)
 
 @JvmName("roomEventContentSerializer")
-fun Set<EventContentSerializerMapping<out RoomEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out RoomEventContent>>.contentSerializer(
     content: RoomEventContent,
 ): Pair<String, KSerializer<out RoomEventContent>> =
     when (content) {
@@ -115,7 +134,7 @@ fun Set<EventContentSerializerMapping<out RoomEventContent>>.contentSerializer(
     }
 
 @JvmName("stateEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out StateEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out StateEventContent>>.contentDeserializer(
     type: String,
     isRedacted: Boolean,
 ): KSerializer<out StateEventContent> =
@@ -123,7 +142,7 @@ fun Set<EventContentSerializerMapping<out StateEventContent>>.contentDeserialize
     else RedactedStateEventContentSerializer(type)
 
 @JvmName("stateEventContentSerializer")
-fun Set<EventContentSerializerMapping<out StateEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out StateEventContent>>.contentSerializer(
     content: StateEventContent,
 ): Pair<String, KSerializer<out StateEventContent>> =
     when (content) {
@@ -141,7 +160,7 @@ fun Set<EventContentSerializerMapping<out StateEventContent>>.contentSerializer(
     }
 
 @JvmName("messageEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out MessageEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out MessageEventContent>>.contentDeserializer(
     type: String,
     isRedacted: Boolean,
 ): KSerializer<out MessageEventContent> =
@@ -149,7 +168,7 @@ fun Set<EventContentSerializerMapping<out MessageEventContent>>.contentDeseriali
     else RedactedMessageEventContentSerializer(type)
 
 @JvmName("messageEventContentSerializer")
-fun Set<EventContentSerializerMapping<out MessageEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out MessageEventContent>>.contentSerializer(
     content: MessageEventContent,
 ): Pair<String, KSerializer<out MessageEventContent>> =
     when (content) {
@@ -167,13 +186,13 @@ fun Set<EventContentSerializerMapping<out MessageEventContent>>.contentSerialize
     }
 
 @JvmName("toDeviceEventContentDeserializer")
-fun Set<EventContentSerializerMapping<out ToDeviceEventContent>>.contentDeserializer(
+fun Set<SerializerMapping<out ToDeviceEventContent>>.contentDeserializer(
     type: String,
 ): KSerializer<out ToDeviceEventContent> =
     firstOrNull { it.type == type }?.serializer ?: UnknownToDeviceEventContentSerializer(type)
 
 @JvmName("toDeviceEventContentSerializer")
-fun Set<EventContentSerializerMapping<out ToDeviceEventContent>>.contentSerializer(
+fun Set<SerializerMapping<out ToDeviceEventContent>>.contentSerializer(
     content: ToDeviceEventContent,
 ): Pair<String, KSerializer<out ToDeviceEventContent>> =
     when (content) {

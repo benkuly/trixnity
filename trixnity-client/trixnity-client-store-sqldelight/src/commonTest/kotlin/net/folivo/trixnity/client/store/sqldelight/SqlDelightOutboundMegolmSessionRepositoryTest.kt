@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightOutboundMegolmSessionRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightOutboundMegolmSessionRepository
@@ -18,7 +18,7 @@ class SqlDelightOutboundMegolmSessionRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightOutboundMegolmSessionRepository(
             Database(driver).olmQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

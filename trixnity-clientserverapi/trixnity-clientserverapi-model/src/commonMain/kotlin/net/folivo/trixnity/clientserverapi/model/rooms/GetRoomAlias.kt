@@ -10,6 +10,9 @@ import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3directoryroomroomalias">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/directory/room/{roomAliasId}")
 @HttpMethod(GET)

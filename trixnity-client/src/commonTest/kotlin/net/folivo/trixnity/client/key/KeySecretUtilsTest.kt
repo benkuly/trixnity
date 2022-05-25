@@ -6,7 +6,7 @@ import io.ktor.util.*
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.random.Random
 
 class KeySecretUtilsTest : ShouldSpec(body)
@@ -14,7 +14,7 @@ class KeySecretUtilsTest : ShouldSpec(body)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
 
     context(::decryptSecret.name) {
         should("decrypt ${SecretKeyEventContent.AesHmacSha2Key::class.simpleName}") {
