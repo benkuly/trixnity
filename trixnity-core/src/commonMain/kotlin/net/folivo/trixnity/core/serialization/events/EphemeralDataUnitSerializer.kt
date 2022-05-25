@@ -42,7 +42,7 @@ class EphemeralDataUnitSerializer(
             @Suppress("UNCHECKED_CAST")
             (AddFieldsSerializer(
                 EphemeralDataUnit.serializer(serializer) as KSerializer<EphemeralDataUnit<*>>,
-                "type" to type
+                "edu_type" to type
             )), value
         )
         encoder.encodeJsonElement(canonicalJson(jsonElement))

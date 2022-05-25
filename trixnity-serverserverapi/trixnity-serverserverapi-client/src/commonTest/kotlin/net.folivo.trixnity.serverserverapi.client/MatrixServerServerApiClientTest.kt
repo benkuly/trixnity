@@ -26,6 +26,7 @@ class MatrixServerServerApiClientTest {
                 "otherHostDelegate" to 443
             },
             sign = { Key.Ed25519Key("ABC", "signature") },
+            getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     request.url.host shouldBe "otherHostDelegate"
@@ -51,6 +52,7 @@ class MatrixServerServerApiClientTest {
                 it shouldBe """{"content":{"key":"value"},"destination":"otherHost:80","method":"POST","origin":"myHost","uri":"/test"}"""
                 Key.Ed25519Key("ABC", "signature")
             },
+            getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",key="ed25519:ABC",sig="signature""""
@@ -78,6 +80,7 @@ class MatrixServerServerApiClientTest {
                 it shouldBe """{"destination":"otherHost:80","method":"GET","origin":"myHost","uri":"/test"}"""
                 Key.Ed25519Key("ABC", "signature")
             },
+            getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",key="ed25519:ABC",sig="signature""""
