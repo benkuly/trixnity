@@ -45,7 +45,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-api-client"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
+                api(project(":trixnity-serverserverapi:trixnity-serverserverapi-model"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
@@ -54,8 +54,6 @@ kotlin {
                 implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-resources:${Versions.ktor}")
-
-                implementation("com.benasher44:uuid:${Versions.uuid}")
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
