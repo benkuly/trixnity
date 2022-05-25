@@ -10,6 +10,9 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 
 interface IMatrixServerServerApiClient {
     val httpClient: MatrixApiClient
+
+    val discovery: IDiscoveryApiClient
+    val federation: IFederationApiClient
 }
 
 class MatrixServerServerApiClient(
@@ -27,4 +30,7 @@ class MatrixServerServerApiClient(
             install(MatrixDestinationPlugin(getDelegatedDestination))
         }
     }
+
+    override val discovery = DiscoveryApiClient(httpClient)
+    override val federation = FederationApiClient(httpClient)
 }
