@@ -20,11 +20,8 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
-import net.folivo.trixnity.serverserverapi.model.RequestAuthenticationBody
 import kotlin.test.Test
 
 class MatrixSignatureAuthTest {
@@ -33,15 +30,10 @@ class MatrixSignatureAuthTest {
 
     private fun ApplicationTestBuilder.testEndpoint(
         authenticationFunction: SignatureAuthenticationFunction = {
-            it shouldBe Signed(
-                RequestAuthenticationBody(
-                    method = "POST",
-                    uri = "/test",
-                    origin = "other.hs.host",
-                    destination = "own.hs.host",
-                    content = "{}"
-                ),
-                mapOf("other.hs.host" to keysOf(Key.Ed25519Key("key1", "sig")))
+            it shouldBe SignedRequestAuthenticationBody(
+                signed = """{"content":{},"destination":"own.hs.host","method":"POST","origin":"other.hs.host","uri":"/test"}""",
+                signature = Key.Ed25519Key("key1", "sig"),
+                origin = "other.hs.host",
             )
             SignatureAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
         }
@@ -58,6 +50,9 @@ class MatrixSignatureAuthTest {
                     post("/test") {
                         call.respond(HttpStatusCode.OK)
                     }
+                    get("/test") {
+                        call.respond(HttpStatusCode.OK)
+                    }
                 }
             }
         }
@@ -68,6 +63,22 @@ class MatrixSignatureAuthTest {
         testEndpoint()
         client.post("/test") {
             setBody("{}")
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+        }.status shouldBe HttpStatusCode.OK
+    }
+
+    @Test
+    fun shouldUseSignatureFromHeaderWithNoBody() = testApplication {
+        testEndpoint {
+            it shouldBe SignedRequestAuthenticationBody(
+                signed = """{"destination":"own.hs.host","method":"GET","origin":"other.hs.host","uri":"/test"}""",
+                signature = Key.Ed25519Key("key1", "sig"),
+                origin = "other.hs.host",
+            )
+            SignatureAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
+        }
+        client.get("/test") {
             header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
         }.status shouldBe HttpStatusCode.OK
     }
@@ -76,6 +87,7 @@ class MatrixSignatureAuthTest {
     fun shouldRespondWithMissingSignatureWhenSignatureIsMissing() = testApplication {
         testEndpoint()
         val result = client.post("/test") {
+            contentType(ContentType.Application.Json)
             setBody("{}")
         }
         result.status shouldBe HttpStatusCode.Unauthorized
@@ -88,6 +100,7 @@ class MatrixSignatureAuthTest {
             SignatureAuthenticationFunctionResult(null, AuthenticationFailedCause.InvalidCredentials)
         }
         val result = client.post("/test") {
+            contentType(ContentType.Application.Json)
             setBody("{}")
             header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
         }
@@ -101,6 +114,7 @@ class MatrixSignatureAuthTest {
             SignatureAuthenticationFunctionResult(null, null)
         }
         val result = client.post("/test") {
+            contentType(ContentType.Application.Json)
             setBody("{}")
             header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
         }

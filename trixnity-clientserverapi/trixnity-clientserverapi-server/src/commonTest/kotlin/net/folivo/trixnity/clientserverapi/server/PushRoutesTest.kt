@@ -204,9 +204,9 @@ class PushRoutesTest : TestsWithMocks() {
                           "msgtype":"m.text"
                         },
                         "event_id":"$143273582443PhrSn:example.org",
-                        "sender":"@example:example.org",
-                        "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                         "origin_server_ts":1432735824653,
+                        "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                        "sender":"@example:example.org",
                         "type":"m.room.message"
                       },
                       "profile_tag":"hcbvkzxhcvb",

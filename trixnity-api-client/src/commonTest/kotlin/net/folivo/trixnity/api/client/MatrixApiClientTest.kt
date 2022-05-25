@@ -50,11 +50,10 @@ class MatrixApiClientTest {
     @Test
     fun itShouldDoNormalRequest() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
-                    assertEquals("matrix.host", request.url.host)
+                    assertEquals("localhost", request.url.host)
                     assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
                     assertEquals(Post, request.method)
                     assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
@@ -74,7 +73,6 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler {
                     respond(
@@ -103,7 +101,6 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler {
                     respond(

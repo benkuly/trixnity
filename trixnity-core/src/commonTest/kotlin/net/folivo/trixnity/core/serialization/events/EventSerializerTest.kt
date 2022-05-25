@@ -44,12 +44,12 @@ class EventSerializerTest {
                 "alias":"#somewhere:example.org"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
             "state_key":"",
-            "type":"m.room.canonical_alias"
+            "type":"m.room.canonical_alias",
+            "unsigned":{"age":1234}
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
@@ -119,11 +119,12 @@ class EventSerializerTest {
                 "msgtype":"m.text"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
-            "type":"m.room.message"
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{"age":1234}
+            
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
@@ -265,24 +266,24 @@ class EventSerializerTest {
                 "name":"test"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@sender:server",
-            "room_id":"!room:server",
             "origin_server_ts":1234,
-            "unsigned":{},
+            "room_id":"!room:server",
+            "sender":"@sender:server",
             "state_key":"",
-            "type":"m.room.name"
+            "type":"m.room.name",
+            "unsigned":{}
         },
         {
             "content":{
                 "membership":"invite"
             },
             "event_id":"$143273584443PhrSn",
-            "sender":"@sender:server",
-            "room_id":"!room:server",
             "origin_server_ts":1234,
-            "unsigned":{},
+            "room_id":"!room:server",
+            "sender":"@sender:server",
             "state_key":"@user:server",
-            "type":"m.room.member"
+            "type":"m.room.member",
+            "unsigned":{}
         }]
     """.trimToFlatJson()
         val result =
@@ -313,14 +314,14 @@ class EventSerializerTest {
                 "reason":"spam"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
+             "redacts":"$123",
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.redaction",
             "unsigned":{
                 "age":1234
-            },
-            "type":"m.room.redaction",
-            "redacts":"$123"
+            }
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
@@ -408,9 +409,10 @@ class EventSerializerTest {
         {
             "content":{},
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
             "unsigned":{
                 "age":1234,
                 "redacted_because":{
@@ -418,17 +420,16 @@ class EventSerializerTest {
                         "reason":"spam"
                     },
                     "event_id":"$143273582443PhrSn",
-                    "sender":"@example:example.org",
-                    "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                     "origin_server_ts":1432735824653,
+                    "redacts":"${'$'}143273582443PhrSn",
+                    "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                    "sender":"@example:example.org",
+                    "type":"m.room.redaction",
                     "unsigned":{
                         "age":1234
-                    },
-                    "type":"m.room.redaction",
-                    "redacts":"$143273582443PhrSn"
                     }
-                },
-            "type":"m.room.message"
+                    }
+                }
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
@@ -565,12 +566,12 @@ class EventSerializerTest {
                 "unicorns":[]
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
             "state_key":"",
-            "type":"m.room.canonical_alias"
+            "type":"m.room.canonical_alias",
+            "unsigned":{"age":1234}
         }
     """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(Event::class)

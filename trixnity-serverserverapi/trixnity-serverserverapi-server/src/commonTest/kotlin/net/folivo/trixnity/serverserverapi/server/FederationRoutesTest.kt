@@ -100,10 +100,10 @@ class FederationRoutesTest : TestsWithMocks() {
           "prev_events": [],
           "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
           "sender": "@alice:example.com",
+          "type": "m.room.message",
           "unsigned": {
             "age": 4612
           },
-          "type": "m.room.message",
           "signatures": {
               "matrix.org": {
                 "ed25519:key": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
@@ -437,8 +437,8 @@ class FederationRoutesTest : TestsWithMocks() {
                       "event": {
                         "auth_events":[],
                         "content": {
-                          "membership": "join",
-                          "join_authorised_via_users_server": "@anyone:resident.example.org"
+                          "join_authorised_via_users_server": "@anyone:resident.example.org",
+                          "membership": "join"
                         },
                         "depth":12,
                         "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
@@ -448,8 +448,8 @@ class FederationRoutesTest : TestsWithMocks() {
                         "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
                         "sender": "@alice:example.com",
                         "state_key": "@alice:example.com",
-                        "unsigned":{"age":4612},
-                        "type": "m.room.member"
+                        "type": "m.room.member",
+                        "unsigned":{"age":4612}
                       },
                       "room_version": "3"
                     }
@@ -546,8 +546,8 @@ class FederationRoutesTest : TestsWithMocks() {
                       "event": {
                         "auth_events":[],
                         "content": {
-                          "membership": "join",
-                          "join_authorised_via_users_server": "@anyone:resident.example.org"
+                          "join_authorised_via_users_server": "@anyone:resident.example.org",
+                          "membership": "join"
                         },
                         "depth":12,
                         "hashes":{"sha256":"thishashcoversallfieldsincasethisisredacted"},
@@ -557,8 +557,8 @@ class FederationRoutesTest : TestsWithMocks() {
                         "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
                         "sender": "@alice:example.com",
                         "state_key": "@alice:example.com",
-                        "unsigned":{"age":4612},
                         "type": "m.room.member",
+                        "unsigned":{"age":4612},
                         "signatures": {
                           "example.com": {
                             "ed25519:key_version": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
@@ -652,8 +652,8 @@ class FederationRoutesTest : TestsWithMocks() {
                         "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
                         "sender": "@alice:example.com",
                         "state_key": "@alice:example.com",
-                        "unsigned":{"age":4612},
-                        "type": "m.room.member"
+                        "type": "m.room.member",
+                        "unsigned":{"age":4612}
                       },
                       "room_version": "3"
                     }
@@ -877,8 +877,8 @@ class FederationRoutesTest : TestsWithMocks() {
                             "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
                             "sender": "@alice:example.com",
                             "state_key": "@alice:example.com",
-                            "unsigned":{"age":4612},
                             "type": "m.room.member",
+                            "unsigned":{"age":4612},
                             "signatures": {
                                   "example.com": {
                                     "ed25519:key_version": "these86bytesofbase64signaturecoveressentialfieldsincludinghashessocancheckredactedpdus"
@@ -981,8 +981,8 @@ class FederationRoutesTest : TestsWithMocks() {
                         "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
                         "sender": "@alice:example.com",
                         "state_key": "@alice:example.com",
-                        "unsigned":{"age":4612},
-                        "type": "m.room.member"
+                        "type": "m.room.member",
+                        "unsigned":{"age":4612}
                       },
                       "room_version": "3"
                     }
@@ -1431,8 +1431,8 @@ class FederationRoutesTest : TestsWithMocks() {
                               "remote.example.org"
                             ]
                           },
-                          "sender": "@alice:example.org",
                           "origin_server_ts": 1629422222222,
+                          "sender": "@alice:example.org",
                           "state_key": "!b:example.org",
                           "type": "m.space.child"
                         }
@@ -1462,8 +1462,8 @@ class FederationRoutesTest : TestsWithMocks() {
                             "remote.example.org"
                           ]
                         },
-                        "sender": "@alice:example.org",
                         "origin_server_ts": 1629413349153,
+                        "sender": "@alice:example.org",
                         "state_key": "!a:example.org",
                         "type": "m.space.child"
                       }

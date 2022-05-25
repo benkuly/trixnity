@@ -81,12 +81,12 @@ class RoomsRoutesTest : TestsWithMocks() {
                     "name":"a"
                   },
                   "event_id":"event",
-                  "sender":"@sender:server",
-                  "room_id":"!room:server",
                   "origin_server_ts":1234,
-                  "unsigned":{},
+                  "room_id":"!room:server",
+                  "sender":"@sender:server",
                   "state_key":"",
-                  "type":"m.room.name"
+                  "type":"m.room.name",
+                  "unsigned":{}
                 }
             """.trimToFlatJson()
         }
@@ -161,24 +161,24 @@ class RoomsRoutesTest : TestsWithMocks() {
                       "name":"a"
                     },
                     "event_id":"event1",
-                    "sender":"@sender:server",
-                    "room_id":"!room:server",
                     "origin_server_ts":12341,
-                    "unsigned":{},
+                    "room_id":"!room:server",
+                    "sender":"@sender:server",
                     "state_key":"",
-                    "type":"m.room.name"
+                    "type":"m.room.name",
+                    "unsigned":{}
                   },
                   {
                     "content":{
                       "membership":"invite"
                     },
                     "event_id":"event2",
-                    "sender":"@sender:server",
-                    "room_id":"!room:server",
                     "origin_server_ts":12342,
-                    "unsigned":{},
+                    "room_id":"!room:server",
+                    "sender":"@sender:server",
                     "state_key":"@user:server",
-                    "type":"m.room.member"
+                    "type":"m.room.member",
+                    "unsigned":{}
                   }
                 ]
             """.trimToFlatJson()
@@ -231,24 +231,24 @@ class RoomsRoutesTest : TestsWithMocks() {
                         "membership":"invite"
                       },
                       "event_id":"event1",
-                      "sender":"@sender:server",
-                      "room_id":"!room:server",
                       "origin_server_ts":12341,
-                      "unsigned":{},
+                      "room_id":"!room:server",
+                      "sender":"@sender:server",
                       "state_key":"@user1:server",
-                      "type":"m.room.member"
+                      "type":"m.room.member",
+                      "unsigned":{}
                     },
                     {
                       "content":{
                         "membership":"invite"
                       },
                       "event_id":"event2",
-                      "sender":"@sender:server",
-                      "room_id":"!room:server",
                       "origin_server_ts":12342,
-                      "unsigned":{},
+                      "room_id":"!room:server",
+                      "sender":"@sender:server",
                       "state_key":"@user2:server",
-                      "type":"m.room.member"
+                      "type":"m.room.member",
+                      "unsigned":{}
                     }
                   ]
                 }
@@ -351,9 +351,9 @@ class RoomsRoutesTest : TestsWithMocks() {
                         "msgtype":"m.text"
                       },
                       "event_id":"event",
-                      "sender":"@user:server",
-                      "room_id":"!room:server",
                       "origin_server_ts":1234,
+                      "room_id":"!room:server",
+                      "sender":"@user:server",
                       "type":"m.room.message"
                     }
                   ],
@@ -363,9 +363,9 @@ class RoomsRoutesTest : TestsWithMocks() {
                         "membership":"join"
                       },
                       "event_id":"event",
-                      "sender":"@user:server",
-                      "room_id":"!room:server",
                       "origin_server_ts":1234,
+                      "room_id":"!room:server",
+                      "sender":"@user:server",
                       "state_key":"@dino:server",
                       "type":"m.room.member"
                     }
@@ -1539,21 +1539,21 @@ class RoomsRoutesTest : TestsWithMocks() {
                       "body": "filename.jpg",
                       "info": {
                         "h": 398,
-                        "w": 394,
                         "mimetype": "image/jpeg",
-                        "size": 31037
+                        "size": 31037,
+                        "w": 394
                       },
-                      "url": "mxc://example.org/JWEIFJgwEIhweiWJE",
-                      "msgtype": "m.image"
+                      "msgtype": "m.image",
+                      "url": "mxc://example.org/JWEIFJgwEIhweiWJE"
                     },
                     "event_id": "${'$'}f3h4d129462ha:example.com",
-                    "sender": "@example:example.org",
-                    "room_id": "!636q39766251:example.com",
                     "origin_server_ts": 1432735824653,
+                    "room_id": "!636q39766251:example.com",
+                    "sender": "@example:example.org",
+                    "type": "m.room.message",
                     "unsigned": {
                       "age": 1234
-                    },
-                    "type": "m.room.message"
+                    }                    
                   },
                   "events_before": [
                     {
@@ -1564,17 +1564,17 @@ class RoomsRoutesTest : TestsWithMocks() {
                           "mimetype": "application/msword",
                           "size": 46144
                         },
-                        "url": "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe",
-                        "msgtype": "m.file"
+                        "msgtype": "m.file",
+                        "url": "mxc://example.org/FHyPlCeYUSFFxlgbQYZmoEoe"
                       },
                       "event_id": "${'$'}143273582443PhrSn:example.org",
-                      "sender": "@example:example.org",
-                      "room_id": "!636q39766251:example.com",
                       "origin_server_ts": 1432735824653,
+                      "room_id": "!636q39766251:example.com",
+                      "sender": "@example:example.org",
+                      "type": "m.room.message",
                       "unsigned": {
                         "age": 1234
-                      },
-                      "type": "m.room.message"
+                      }                      
                     }
                   ],
                   "events_after": [
@@ -1586,13 +1586,13 @@ class RoomsRoutesTest : TestsWithMocks() {
                         "msgtype": "m.text"
                       },
                       "event_id": "${'$'}143273582443PhrSn:example.org",
-                      "sender": "@example:example.org",
-                      "room_id": "!636q39766251:example.com",
                       "origin_server_ts": 1432735824653,
+                      "room_id": "!636q39766251:example.com",
+                      "sender": "@example:example.org",
+                      "type": "m.room.message",
                       "unsigned": {
                         "age": 1234
-                      },
-                      "type": "m.room.message"
+                      }
                     }
                   ],
                   "state": [
@@ -1600,22 +1600,22 @@ class RoomsRoutesTest : TestsWithMocks() {
                       "content": {
                         "creator": "@example:example.org",
                         "m.federate": true,
-                        "room_version": "1",
                         "predecessor": {
-                          "room_id": "!oldroom:example.org",
-                          "event_id": "${'$'}something:example.org"
+                          "event_id": "${'$'}something:example.org",
+                          "room_id": "!oldroom:example.org"
                         },
+                        "room_version": "1",
                         "type": null
                       },
                       "event_id": "${'$'}143273582443PhrSn:example.org",
-                      "sender": "@example:example.org",
-                      "room_id": "!636q39766251:example.com",
                       "origin_server_ts": 1432735824653,
+                      "room_id": "!636q39766251:example.com",
+                      "sender": "@example:example.org",
+                      "state_key": "",
+                      "type": "m.room.create",
                       "unsigned": {
                         "age": 1234
-                      },
-                      "state_key": "",
-                      "type": "m.room.create"
+                      }                      
                     },
                     {
                       "content": {
@@ -1625,14 +1625,14 @@ class RoomsRoutesTest : TestsWithMocks() {
                         "reason": "Looking for support"
                       },
                       "event_id": "${'$'}143273582443PhrSn:example.org",
-                      "sender": "@example:example.org",
-                      "room_id": "!636q39766251:example.com",
                       "origin_server_ts": 1432735824653,
+                      "room_id": "!636q39766251:example.com",
+                      "sender": "@example:example.org",
+                      "state_key": "@alice:example.org",
+                      "type": "m.room.member",
                       "unsigned": {
                         "age": 1234
-                      },
-                      "state_key": "@alice:example.org",
-                      "type": "m.room.member"
+                      }                      
                     }
                   ]
                 }
@@ -1752,8 +1752,8 @@ class RoomsRoutesTest : TestsWithMocks() {
                              "example.org"
                            ]
                          },
-                         "sender": "@alice:example.org",
                          "origin_server_ts": 1629413349153,
+                         "sender": "@alice:example.org",
                          "state_key": "!a:example.org",
                          "type": "m.space.child"
                        }

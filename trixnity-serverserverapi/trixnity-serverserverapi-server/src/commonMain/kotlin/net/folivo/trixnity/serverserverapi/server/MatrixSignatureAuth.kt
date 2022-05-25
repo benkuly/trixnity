@@ -12,10 +12,7 @@ import net.folivo.trixnity.api.server.withoutAuthAttributeKey
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.serverserverapi.model.RequestAuthenticationBody
-import net.folivo.trixnity.serverserverapi.model.SignedRequestAuthenticationBody
+import net.folivo.trixnity.serverserverapi.model.requestAuthenticationBody
 
 class MatrixSignatureAuth internal constructor(
     private val config: Config,
@@ -26,7 +23,6 @@ class MatrixSignatureAuth internal constructor(
             throw NotImplementedError("MatrixSignatureAuth validate function is not specified.")
         }
     }
-
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
         val call = context.call
@@ -67,9 +63,15 @@ class MatrixSignatureAuth internal constructor(
     }
 }
 
-typealias SignatureAuthenticationFunction = suspend (SignedRequestAuthenticationBody) -> SignatureAuthenticationFunctionResult
+data class SignedRequestAuthenticationBody(
+    val signed: String,
+    val signature: Key.Ed25519Key,
+    val origin: String,
+)
 
 data class SignatureAuthenticationFunctionResult(val principal: Principal?, val cause: AuthenticationFailedCause?)
+
+typealias SignatureAuthenticationFunction = suspend (SignedRequestAuthenticationBody) -> SignatureAuthenticationFunctionResult
 
 private suspend fun ApplicationRequest.getSignature(hostname: String): SignedRequestAuthenticationBody? {
     return when (val authHeader = parseAuthorizationHeader()) {
@@ -81,23 +83,21 @@ private suspend fun ApplicationRequest.getSignature(hostname: String): SignedReq
                     KeyAlgorithm.of(it.substringBefore(":")) to it.substringAfter(":")
                 } ?: return null
                 val signatureValue = authHeader.parameter("sig") ?: return null
-                val signature = mapOf(
-                    origin to keysOf(
-                        when (keyAlgorithm) {
-                            is KeyAlgorithm.Ed25519 -> Key.Ed25519Key(keyId, signatureValue)
-                            else -> return null
-                        }
-                    )
-                )
-                Signed(
-                    signed = RequestAuthenticationBody(
-                        method = httpMethod.value,
-                        uri = this.uri,
-                        origin = origin,
+                val signature =
+                    when (keyAlgorithm) {
+                        is KeyAlgorithm.Ed25519 -> Key.Ed25519Key(keyId, signatureValue)
+                        else -> return null
+                    }
+                SignedRequestAuthenticationBody(
+                    signed = requestAuthenticationBody(
+                        content = call.receiveOrNull(),
                         destination = hostname,
-                        content = call.receiveText()
+                        method = httpMethod.value,
+                        origin = origin,
+                        uri = uri
                     ),
-                    signatures = signature
+                    signature = signature,
+                    origin = origin
                 )
             }
         }

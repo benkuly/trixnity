@@ -209,9 +209,9 @@ class ServerRoutesTest : TestsWithMocks() {
                               "msgtype": "m.text"
                             },
                             "event_id": "${'$'}144429830826TWwbB:localhost",
-                            "sender": "@example:example.org",
-                            "room_id": "!qPewotXpIctQySfjSy:localhost",
                             "origin_server_ts": 1432735824653,
+                            "room_id": "!qPewotXpIctQySfjSy:localhost",
+                            "sender": "@example:example.org",
                             "type": "m.room.message"
                           }
                         }

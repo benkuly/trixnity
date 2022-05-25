@@ -399,7 +399,7 @@ class UsersApiClientTest {
                     )
                     assertEquals(HttpMethod.Put, request.method)
                     assertEquals(
-                        """{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}""",
+                        """{"algorithm":"m.secret_storage.v1.aes-hmac-sha2","name":"name"}""",
                         request.body.toByteArray().decodeToString()
                     )
                     respond(

@@ -81,10 +81,10 @@ class PersistentDataUnitSerializerTest {
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "state_key": "@user:server",
+              "type": "m.room.member",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.member"
+              }
             }
     """.trimToFlatJson()
 
@@ -136,10 +136,10 @@ class PersistentDataUnitSerializerTest {
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "state_key": "@user:server",
+              "type": "m.room.member",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.member"
+              }
             }
     """.trimToFlatJson()
 
@@ -206,10 +206,10 @@ class PersistentDataUnitSerializerTest {
               ],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
+              "type": "m.room.message",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.message"
+              }
             }
     """.trimToFlatJson()
 
@@ -260,10 +260,10 @@ class PersistentDataUnitSerializerTest {
               ],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
+              "type": "m.room.message",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.message"
+              }
             }
     """.trimToFlatJson()
 
@@ -297,10 +297,10 @@ class PersistentDataUnitSerializerTest {
               "prev_events": [],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
+              "type": "o",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "o"
+              }
             }
         """.trimIndent()
         jsonV3.decodeFromString(serializer, input) shouldBe PersistentMessageDataUnitV3(
@@ -330,13 +330,13 @@ class PersistentDataUnitSerializerTest {
               "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [],
+              "redacts": "${'$'}1event",
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
+              "type": "m.room.redaction",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.redaction",
-              "redacts": "${'$'}1event"
+              }
             }
         """.trimToFlatJson()
 
@@ -378,10 +378,10 @@ class PersistentDataUnitSerializerTest {
               "prev_events": [],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
+              "type": "m.room.message",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.message"
+              }
             }
         """.trimToFlatJson()
 
@@ -424,10 +424,10 @@ class PersistentDataUnitSerializerTest {
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "state_key": "@user:server",
+              "type": "m.room.avatar",
               "unsigned": {
                 "age": 4612
-              },
-              "type": "m.room.avatar"
+              }
             }
         """.trimToFlatJson()
 

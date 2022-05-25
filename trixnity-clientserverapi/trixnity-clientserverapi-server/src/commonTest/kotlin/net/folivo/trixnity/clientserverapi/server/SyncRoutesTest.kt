@@ -242,14 +242,14 @@ class SyncRoutesTest : TestsWithMocks() {
                                 "membership":"join"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "state_key":"@alice:example.org",
+                              "type":"m.room.member",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "state_key":"@alice:example.org",
-                              "type":"m.room.member"
+                              }                              
                             }
                           ]
                         },
@@ -262,14 +262,14 @@ class SyncRoutesTest : TestsWithMocks() {
                                 "membership":"join"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "state_key":"@alice:example.org",
+                              "type":"m.room.member",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "state_key":"@alice:example.org",
-                              "type":"m.room.member"
+                              }                              
                             },
                             {
                               "content":{
@@ -279,13 +279,13 @@ class SyncRoutesTest : TestsWithMocks() {
                                 "msgtype":"m.text"
                               },
                               "event_id":"${'$'}143273582443PhrSn:example.org",
-                              "sender":"@example:example.org",
-                              "room_id":"!726s6s6q:example.com",
                               "origin_server_ts":1432735824653,
+                              "room_id":"!726s6s6q:example.com",
+                              "sender":"@example:example.org",
+                              "type":"m.room.message",
                               "unsigned":{
                                 "age":1234
-                              },
-                              "type":"m.room.message"
+                              }                              
                             }
                           ],
                           "limited":true,
@@ -326,8 +326,8 @@ class SyncRoutesTest : TestsWithMocks() {
                               "content":{
                                 "name":"My Room Name"
                               },
-                              "sender":"@alice:example.com",
                               "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
                               "state_key":"",
                               "type":"m.room.name"
                             },
@@ -335,8 +335,8 @@ class SyncRoutesTest : TestsWithMocks() {
                               "content":{
                                 "membership":"invite"
                               },
-                              "sender":"@alice:example.com",
                               "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
                               "state_key":"@bob:example.com",
                               "type":"m.room.member"
                             }
@@ -349,10 +349,10 @@ class SyncRoutesTest : TestsWithMocks() {
                     "events":[
                       {
                         "content":{
-                          "presence":"online",
                           "avatar_url":"mxc://localhost:wefuiwegh8742w",
-                          "last_active_ago":2478593,
                           "currently_active":false,
+                          "last_active_ago":2478593,
+                          "presence":"online",
                           "status_msg":"Making cupcakes"
                         },
                         "sender":"@example:localhost",

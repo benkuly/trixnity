@@ -367,7 +367,7 @@ class UsersRoutesTest : TestsWithMocks() {
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe """{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}"""
+            this.body<String>() shouldBe """{"algorithm":"m.secret_storage.v1.aes-hmac-sha2","name":"name"}"""
         }
         verifyWithSuspend {
             handlerMock.getAccountData(assert {

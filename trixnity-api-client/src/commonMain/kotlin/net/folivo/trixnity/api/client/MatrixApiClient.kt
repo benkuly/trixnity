@@ -19,7 +19,6 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 open class MatrixApiClient(
-    val baseUrl: Url? = null,
     val json: Json = createMatrixEventJson(),
     val contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
@@ -29,9 +28,6 @@ open class MatrixApiClient(
             json(json)
         }
         install(Resources)
-        install(DefaultRequest) {
-            if (baseUrl != null) url.takeFrom(baseUrl)
-        }
         install(HttpTimeout) {
             requestTimeoutMillis = 30000
         }

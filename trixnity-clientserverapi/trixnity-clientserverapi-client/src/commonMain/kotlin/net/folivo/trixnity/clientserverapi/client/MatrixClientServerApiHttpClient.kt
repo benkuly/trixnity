@@ -26,14 +26,13 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class MatrixClientServerApiHttpClient(
-    baseUrl: Url? = null,
+    private val baseUrl: Url? = null,
     json: Json = createMatrixEventJson(),
     contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) : MatrixApiClient(
-    baseUrl,
     json,
     contentMappings,
     {
@@ -41,6 +40,7 @@ class MatrixClientServerApiHttpClient(
             it()
             install(DefaultRequest) {
                 accessToken.value?.let { bearerAuth(it) }
+                if (baseUrl != null) url.takeFrom(baseUrl)
             }
             install(ConvertMediaPlugin)
         }

@@ -67,10 +67,10 @@ class SqlDelightStoreTest : ShouldSpec({
 
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$1e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"$1e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$1e","nextEventId":"$2e"}""")
+                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"${'$'}1e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}1e","nextEventId":"${'$'}2e"}""")
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$2e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"$2e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$2e","previousEventId":"$1e","gap":{"position":"after","batch":"batch"}}""")
+                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"${'$'}2e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}2e","previousEventId":"${'$'}1e","gap":{"position":"after","batch":"batch"}}""")
 
             shouldThrow<IllegalArgumentException> {
                 cut.transaction {
@@ -88,10 +88,10 @@ class SqlDelightStoreTest : ShouldSpec({
 
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$1e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"$1e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$1e","nextEventId":"$2e"}""")
+                .shouldBe("""{"event":{"content":{"body":"hi","msgtype":"m.text"},"event_id":"${'$'}1e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}1e","nextEventId":"${'$'}2e"}""")
             Database(driver).roomTimelineQueries.getTimelineEvent(EventId("$2e").full, RoomId("room", "server").full)
                 .executeAsOne()
-                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"$2e","sender":"@sender:server","room_id":"!room:server","origin_server_ts":1234,"type":"m.room.message"},"roomId":"!room:server","eventId":"$2e","previousEventId":"$1e","gap":{"position":"after","batch":"batch"}}""")
+                .shouldBe("""{"event":{"content":{"body":"ok","msgtype":"m.text"},"event_id":"${'$'}2e","origin_server_ts":1234,"room_id":"!room:server","sender":"@sender:server","type":"m.room.message"},"roomId":"!room:server","eventId":"${'$'}2e","previousEventId":"${'$'}1e","gap":{"position":"after","batch":"batch"}}""")
         }
     }
 })
