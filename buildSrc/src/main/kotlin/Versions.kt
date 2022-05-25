@@ -12,7 +12,7 @@ object Versions {
     const val jna = "5.11.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.0.1" // https://github.com/ktorio/ktor/releases
     const val korlibs = "2.7.0" // https://github.com/korlibs/korge-next/releases
-    const val mocKmp = "1.5.0" // https://github.com/Kodein-Framework/MocKMP/releases
+    const val mocKmp = "1.6.1" // https://github.com/Kodein-Framework/MocKMP/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.3.0" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.1" // https://github.com/testcontainers/testcontainers-java/releases
@@ -23,7 +23,7 @@ object Versions {
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.38.2" // https://github.com/JetBrains/Exposed/releases
     const val h2 = "2.1.212" // https://github.com/h2database/h2database/releases
-    const val kotlinLogging = "2.1.21" // https://github.com/MicroUtils/kotlin-logging/releases
+    const val kotlinLogging = "2.1.23" // https://github.com/MicroUtils/kotlin-logging/releases
     const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
