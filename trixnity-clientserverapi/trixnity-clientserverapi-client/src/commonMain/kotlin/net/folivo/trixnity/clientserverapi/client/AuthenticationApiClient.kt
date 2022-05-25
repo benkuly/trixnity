@@ -2,7 +2,6 @@ package net.folivo.trixnity.clientserverapi.client
 
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.authentication.*
-import net.folivo.trixnity.clientserverapi.model.discovery.GetWellKnown
 import net.folivo.trixnity.core.model.UserId
 
 interface IAuthenticationApiClient {
@@ -10,11 +9,6 @@ interface IAuthenticationApiClient {
      * @see [WhoAmI]
      */
     suspend fun whoAmI(asUserId: UserId? = null): Result<WhoAmI.Response>
-
-    /**
-     * @see [GetWellKnown]
-     */
-    suspend fun getWellKnown(): Result<DiscoveryInformation>
 
     /**
      * @see [IsRegistrationTokenValid]
@@ -172,9 +166,6 @@ class AuthenticationApiClient(
 
     override suspend fun whoAmI(asUserId: UserId?): Result<WhoAmI.Response> =
         httpClient.request(WhoAmI(asUserId))
-
-    override suspend fun getWellKnown(): Result<DiscoveryInformation> =
-        httpClient.request(GetWellKnown)
 
     override suspend fun isRegistrationTokenValid(
         token: String

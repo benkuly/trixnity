@@ -13,6 +13,7 @@ interface IMatrixClientServerApiClient {
     val httpClient: MatrixClientServerApiHttpClient
 
     val authentication: IAuthenticationApiClient
+    val discovery: IDiscoveryApiClient
     val server: IServerApiClient
     val users: IUsersApiClient
     val rooms: IRoomsApiClient
@@ -41,13 +42,14 @@ class MatrixClientServerApiClient(
         httpClientFactory
     )
 
-    override val authentication: IAuthenticationApiClient = AuthenticationApiClient(httpClient)
-    override val server: IServerApiClient = ServerApiClient(httpClient)
-    override val users: IUsersApiClient = UsersApiClient(httpClient, eventContentSerializerMappings)
-    override val rooms: IRoomsApiClient = RoomsApiClient(httpClient, eventContentSerializerMappings)
-    override val sync: ISyncApiClient = SyncApiClient(httpClient)
-    override val keys: IKeysApiClient = KeysApiClient(httpClient, json)
-    override val media: IMediaApiClient = MediaApiClient(httpClient)
-    override val devices: IDevicesApiClient = DevicesApiClient(httpClient)
-    override val push: IPushApiClient = PushApiClient(httpClient)
+    override val authentication = AuthenticationApiClient(httpClient)
+    override val discovery = DiscoveryApiClient(httpClient)
+    override val server = ServerApiClient(httpClient)
+    override val users = UsersApiClient(httpClient, eventContentSerializerMappings)
+    override val rooms = RoomsApiClient(httpClient, eventContentSerializerMappings)
+    override val sync = SyncApiClient(httpClient)
+    override val keys = KeysApiClient(httpClient, json)
+    override val media = MediaApiClient(httpClient)
+    override val devices = DevicesApiClient(httpClient)
+    override val push = PushApiClient(httpClient)
 }
