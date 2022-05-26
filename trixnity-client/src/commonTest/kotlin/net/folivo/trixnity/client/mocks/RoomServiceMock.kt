@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 class RoomServiceMock : IRoomService {
-    override suspend fun fetchMissingEvents(startEvent: TimelineEvent, limit: Long): Result<Unit> {
+    override suspend fun fetchMissingEvents(startEventId: EventId, roomId: RoomId, limit: Long): Result<Unit> {
         throw NotImplementedError()
     }
 
@@ -28,7 +28,8 @@ class RoomServiceMock : IRoomService {
         eventId: EventId,
         roomId: RoomId,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
     ): StateFlow<TimelineEvent?> {
         return returnGetTimelineEvent
     }
