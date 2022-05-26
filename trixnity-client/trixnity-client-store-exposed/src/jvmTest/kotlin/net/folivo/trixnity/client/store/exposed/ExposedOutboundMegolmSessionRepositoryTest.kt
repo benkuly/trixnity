@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -16,7 +16,7 @@ class ExposedOutboundMegolmSessionRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOutboundMegolmSession)
         }
-        cut = ExposedOutboundMegolmSessionRepository(createMatrixJson())
+        cut = ExposedOutboundMegolmSessionRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val key1 = RoomId("room1", "server")

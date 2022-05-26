@@ -2,13 +2,17 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
@@ -39,6 +43,21 @@ suspend inline fun <reified C : StateEventContent> IRoomService.getState(
 ): Event<C>? {
     return getState(roomId, stateKey, C::class)
 }
+
+/**
+ * This collects all rooms, so when one room changes, a new room set gets emitted.
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is debounced by default.
+ */
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration = 200.milliseconds): Flow<Set<Room>> =
+    debounce(debounceTimeout)
+        .flatMapLatest {
+            if (it.isEmpty()) flowOf(arrayOf())
+            else combine(it.values) { transform -> transform }
+        }
+        .mapLatest { it.filterNotNull().toSet() }
+
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by `maxSize`.

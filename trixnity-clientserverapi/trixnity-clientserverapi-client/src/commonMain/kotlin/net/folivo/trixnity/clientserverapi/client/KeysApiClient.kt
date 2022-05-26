@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.keys.*
 
 interface IKeysApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
+     * @see [SetKeys]
      */
     suspend fun setKeys(
         deviceKeys: SignedDeviceKeys? = null,
@@ -19,7 +19,7 @@ interface IKeysApiClient {
     ): Result<Map<KeyAlgorithm, Int>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>
+     * @see [GetKeys]
      */
     suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
@@ -29,7 +29,7 @@ interface IKeysApiClient {
     ): Result<GetKeys.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
+     * @see [ClaimKeys]
      */
     suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
@@ -38,7 +38,7 @@ interface IKeysApiClient {
     ): Result<ClaimKeys.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3keyschanges">matrix spec</a>
+     * @see [GetKeyChanges]
      */
     suspend fun getKeyChanges(
         from: String,
@@ -47,7 +47,7 @@ interface IKeysApiClient {
     ): Result<GetKeyChanges.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
+     * @see [SetCrossSigningKeys]
      */
     suspend fun setCrossSigningKeys(
         masterKey: SignedCrossSigningKeys?,
@@ -57,7 +57,7 @@ interface IKeysApiClient {
     ): Result<UIA<Unit>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keyssignaturesupload">matrix spec</a>
+     * @see [AddSignatures]
      */
     suspend fun addSignatures(
         signedDeviceKeys: Set<SignedDeviceKeys>,
@@ -66,7 +66,7 @@ interface IKeysApiClient {
     ): Result<AddSignatures.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see [GetRoomsKeyBackup]
      */
     suspend fun getRoomKeys(
         version: String,
@@ -74,7 +74,7 @@ interface IKeysApiClient {
     ): Result<RoomsKeyBackup>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see [GetRoomKeyBackup]
      */
     suspend fun getRoomKeys(
         version: String,
@@ -83,7 +83,7 @@ interface IKeysApiClient {
     ): Result<RoomKeyBackup>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see [GetRoomKeyBackupData]
      */
     suspend fun getRoomKeys(
         version: String,
@@ -93,7 +93,7 @@ interface IKeysApiClient {
     ): Result<RoomKeyBackupData>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see [SetRoomsKeyBackup]
      */
     suspend fun setRoomKeys(
         version: String,
@@ -102,7 +102,7 @@ interface IKeysApiClient {
     ): Result<SetRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see [SetRoomKeyBackup]
      */
     suspend fun setRoomKeys(
         version: String,
@@ -112,7 +112,7 @@ interface IKeysApiClient {
     ): Result<SetRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see [SetRoomKeyBackupData]
      */
     suspend fun setRoomKeys(
         version: String,
@@ -123,7 +123,7 @@ interface IKeysApiClient {
     ): Result<SetRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeys">matrix spec</a>
+     * @see [DeleteRoomsKeyBackup]
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -131,7 +131,7 @@ interface IKeysApiClient {
     ): Result<DeleteRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
+     * @see [DeleteRoomKeyBackup]
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -140,7 +140,7 @@ interface IKeysApiClient {
     ): Result<DeleteRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+     * @see [DeleteRoomKeyBackupData]
      */
     suspend fun deleteRoomKeys(
         version: String,
@@ -150,14 +150,14 @@ interface IKeysApiClient {
     ): Result<DeleteRoomKeysResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keysversion">matrix spec</a>
+     * @see [GetRoomKeyBackupVersion]
      */
     suspend fun getRoomKeysVersion(
         asUserId: UserId? = null
     ): Result<GetRoomKeysBackupVersionResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see [GetRoomKeyBackupVersionByVersion]
      */
     suspend fun getRoomKeysVersion(
         version: String,
@@ -165,8 +165,8 @@ interface IKeysApiClient {
     ): Result<GetRoomKeysBackupVersionResponse>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3room_keysversion">matrix spec</a>
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see [SetRoomKeyBackupVersion]
+     * @see [SetRoomKeyBackupVersionByVersion]
      */
     suspend fun setRoomKeysVersion(
         request: SetRoomKeyBackupVersionRequest,
@@ -174,7 +174,7 @@ interface IKeysApiClient {
     ): Result<String>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keysversionversion">matrix spec</a>
+     * @see [DeleteRoomKeyBackupVersion]
      */
     suspend fun deleteRoomKeysVersion(
         version: String,

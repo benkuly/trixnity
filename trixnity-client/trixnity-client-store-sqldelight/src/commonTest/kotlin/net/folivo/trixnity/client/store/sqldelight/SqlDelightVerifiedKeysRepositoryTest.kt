@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightKeyVerificationStateRepository
@@ -20,7 +20,7 @@ class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightKeyVerificationStateRepository(
             Database(driver).keysQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

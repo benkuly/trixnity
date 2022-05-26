@@ -10,11 +10,11 @@ import io.ktor.utils.io.charsets.Charsets.UTF_8
 import kotlinx.serialization.SerializationException
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 
 class MatrixApiServerTest {
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldRespondMatrixServerExceptionOnMatrixServerException() = testApplication {

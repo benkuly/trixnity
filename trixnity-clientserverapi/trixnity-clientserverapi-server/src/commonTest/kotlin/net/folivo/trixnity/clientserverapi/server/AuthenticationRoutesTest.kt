@@ -5,13 +5,11 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
-import io.mockative.*
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -22,24 +20,24 @@ import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-class AuthenticationRouteTest {
-    private val json = createMatrixJson()
+class AuthenticationRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<AuthenticationApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: AuthenticationApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
-                }
+            installMatrixAccessTokenAuth {
+                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
                 routing {
@@ -49,71 +47,27 @@ class AuthenticationRouteTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldGetWhoami() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::whoAmI)
-            .whenInvokedWith(any())
-            .then {
-                WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
-            }
+        everySuspending { handlerMock.whoAmI(isAny()) }
+            .returns(WhoAmI.Response(UserId("user", "server"), "ABCDEF", false))
         val response = client.get("/_matrix/client/v3/account/whoami") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"user_id":"@user:server","device_id":"ABCDEF","is_guest":false}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::whoAmI)
-            .with(any())
-            .wasInvoked()
-    }
-
-    @Test
-    fun shouldGetWellKnown() = testApplication {
-        initCut()
-        given(handlerMock).suspendFunction(handlerMock::getWellKnown)
-            .whenInvokedWith(any())
-            .then {
-                DiscoveryInformation(
-                    homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
-                    identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
-                )
-            }
-        val response = client.get("/.well-known/matrix/client")
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
-            this.body<String>() shouldBe """
-                    {
-                      "m.homeserver": {
-                        "base_url": "https://matrix.example.com"
-                      },
-                      "m.identity_server": {
-                        "base_url": "https://identity.example.com"
-                      }
-                    }
-                """.trimToFlatJson()
+        verifyWithSuspend {
+            handlerMock.whoAmI(isAny())
         }
-
-        verify(handlerMock).suspendFunction(handlerMock::getWellKnown)
-            .with(any())
-            .wasInvoked()
     }
 
     @Test
     fun shouldIsRegistrationTokenValid() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::isRegistrationTokenValid)
-            .whenInvokedWith(any())
-            .then {
-                IsRegistrationTokenValid.Response(true)
-            }
+        everySuspending { handlerMock.isRegistrationTokenValid(isAny()) }
+            .returns(IsRegistrationTokenValid.Response(true))
         val response = client.get("/_matrix/client/v1/register/m.login.registration_token/validity?token=token")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -125,17 +79,16 @@ class AuthenticationRouteTest {
                 """.trimToFlatJson()
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::isRegistrationTokenValid)
-            .with(matching {
-                it.endpoint.token shouldBe "token"
-                true
-            })
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.isRegistrationTokenValid(assert { it.endpoint.token shouldBe "token" })
+        }
     }
 
     @Test
     fun shouldIsUsernameAvailable() = testApplication {
         initCut()
+        everySuspending { handlerMock.isUsernameAvailable(isAny()) }
+            .returns(Unit)
         val response = client.get("/_matrix/client/v3/register/available?username=user")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -143,22 +96,21 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe "{}"
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::isUsernameAvailable)
-            .with(matching { it.endpoint.username == "user" })
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.isUsernameAvailable(assert { it.endpoint.username shouldBe "user" })
+        }
     }
 
     @Test
     fun shouldGetEmailRequestTokenForPassword() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForPassword)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getEmailRequestTokenForPassword(isAny()) }
+            .returns(
                 GetEmailRequestTokenForPassword.Response(
                     sessionId = "123abc",
                     submitUrl = "https://example.org/path/to/submitToken"
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/account/password/email/requestToken") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -184,8 +136,8 @@ class AuthenticationRouteTest {
             """.trimToFlatJson()
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForPassword)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getEmailRequestTokenForPassword(assert {
                 it.requestBody shouldBe GetEmailRequestTokenForPassword.Request(
                     clientSecret = "monkeys_are_GREAT",
                     email = "foo@example.com",
@@ -193,22 +145,20 @@ class AuthenticationRouteTest {
                     nextLink = "https://example.org/congratulations.html",
                     sendAttempt = 1
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetEmailRequestTokenForRegistration() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForRegistration)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getEmailRequestTokenForRegistration(isAny()) }
+            .returns(
                 GetEmailRequestTokenForRegistration.Response(
                     sessionId = "123abc",
                     submitUrl = "https://example.org/path/to/submitToken"
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/register/email/requestToken") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -234,8 +184,8 @@ class AuthenticationRouteTest {
             """.trimToFlatJson()
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::getEmailRequestTokenForRegistration)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getEmailRequestTokenForRegistration(assert {
                 it.requestBody shouldBe GetEmailRequestTokenForRegistration.Request(
                     clientSecret = "monkeys_are_GREAT",
                     email = "foo@example.com",
@@ -243,22 +193,20 @@ class AuthenticationRouteTest {
                     nextLink = "https://example.org/congratulations.html",
                     sendAttempt = 1
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetMsisdnRequestTokenForPassword() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForPassword)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getMsisdnRequestTokenForPassword(isAny()) }
+            .returns(
                 GetMsisdnRequestTokenForPassword.Response(
                     sessionId = "123abc",
                     submitUrl = "https://example.org/path/to/submitToken"
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/account/password/msisdn/requestToken") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -285,8 +233,8 @@ class AuthenticationRouteTest {
             """.trimToFlatJson()
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForPassword)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getMsisdnRequestTokenForPassword(assert {
                 it.requestBody shouldBe GetMsisdnRequestTokenForPassword.Request(
                     clientSecret = "monkeys_are_GREAT",
                     country = "GB",
@@ -295,22 +243,20 @@ class AuthenticationRouteTest {
                     phoneNumber = "07700900001",
                     sendAttempt = 1
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetMsisdnRequestTokenForRegistration() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForRegistration)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getMsisdnRequestTokenForRegistration(isAny()) }
+            .returns(
                 GetMsisdnRequestTokenForRegistration.Response(
                     sessionId = "123abc",
                     submitUrl = "https://example.org/path/to/submitToken"
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/register/msisdn/requestToken") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -337,8 +283,8 @@ class AuthenticationRouteTest {
             """.trimToFlatJson()
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::getMsisdnRequestTokenForRegistration)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getMsisdnRequestTokenForRegistration(assert {
                 it.requestBody shouldBe GetMsisdnRequestTokenForRegistration.Request(
                     clientSecret = "monkeys_are_GREAT",
                     country = "GB",
@@ -347,17 +293,15 @@ class AuthenticationRouteTest {
                     phoneNumber = "07700900001",
                     sendAttempt = 1
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldRegister() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::register)
-            .whenInvokedWith(any())
-            .then { ResponseWithUIA.Success(Register.Response(UserId("user", "server"))) }
+        everySuspending { handlerMock.register(isAny()) }
+            .returns(ResponseWithUIA.Success(Register.Response(UserId("user", "server"))))
         val response = client.post("/_matrix/client/v3/register?kind=user") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -378,8 +322,8 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe """{"user_id":"@user:server"}"""
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::register)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.register(assert {
                 it.endpoint.kind shouldBe AccountType.USER
                 it.requestBody.request shouldBe Register.Request(
                     username = "someUsername",
@@ -388,17 +332,15 @@ class AuthenticationRouteTest {
                     inhibitLogin = true,
                     initialDeviceDisplayName = "someInitialDeviceDisplayName"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetLoginTypes() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getLoginTypes)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getLoginTypes(isAny()) }
+            .returns(
                 GetLoginTypes.Response(
                     setOf(
                         LoginType.Unknown(
@@ -422,7 +364,7 @@ class AuthenticationRouteTest {
                         LoginType.Password,
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/login")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -449,17 +391,16 @@ class AuthenticationRouteTest {
                 }
                 """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getLoginTypes)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getLoginTypes(isAny())
+        }
     }
 
     @Test
     fun shouldLogin() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::login)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.login(isAny()) }
+            .returns(
                 Login.Response(
                     userId = UserId("@cheeky_monkey:matrix.org"),
                     accessToken = "abc123",
@@ -469,7 +410,7 @@ class AuthenticationRouteTest {
                         DiscoveryInformation.IdentityServerInformation("https://id.example.org")
                     )
                 )
-            }
+            )
         val response = client.post("/_matrix/client/v3/login") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -505,22 +446,24 @@ class AuthenticationRouteTest {
                 }
                 """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::login)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.login(assert {
                 it.requestBody shouldBe Login.Request(
                     type = LoginType.Password.name,
                     identifier = IdentifierType.User("cheeky_monkey"),
                     password = "ilovebananas",
                     initialDeviceDisplayName = "Jungle Phone"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldLogout() = testApplication {
         initCut()
+        everySuspending { handlerMock.logout(isAny()) }
+            .returns(Unit)
         val response = client.post("/_matrix/client/v3/logout") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -528,14 +471,16 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe "{}"
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::logout)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.logout(isAny())
+        }
     }
 
     @Test
     fun shouldLogoutAll() = testApplication {
         initCut()
+        everySuspending { handlerMock.logoutAll(isAny()) }
+            .returns(Unit)
         val response = client.post("/_matrix/client/v3/logout/all") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -543,17 +488,16 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe "{}"
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::logoutAll)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.logoutAll(isAny())
+        }
     }
 
     @Test
     fun shouldDeactivateAccount() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::deactivateAccount)
-            .whenInvokedWith(any())
-            .then { ResponseWithUIA.Success(DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)) }
+        everySuspending { handlerMock.deactivateAccount(isAny()) }
+            .returns(ResponseWithUIA.Success(DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)))
         val response = client.post("/_matrix/client/v3/account/deactivate") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -565,20 +509,18 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::deactivateAccount)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deactivateAccount(assert {
                 it.requestBody shouldBe RequestWithUIA(DeactivateAccount.Request("id.host"), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldChangePassword() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::changePassword)
-            .whenInvokedWith(any())
-            .then { ResponseWithUIA.Success(Unit) }
+        everySuspending { handlerMock.changePassword(isAny()) }
+            .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/account/password") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -590,20 +532,18 @@ class AuthenticationRouteTest {
             this.body<String>() shouldBe """{}"""
         }
 
-        verify(handlerMock).suspendFunction(handlerMock::changePassword)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.changePassword(assert {
                 it.requestBody shouldBe RequestWithUIA(ChangePassword.Request("newPassword", false), null)
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetThirdPartyIdentifiers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getThirdPartyIdentifiers)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getThirdPartyIdentifiers(isAny()) }
+            .returns(
                 GetThirdPartyIdentifiers.Response(
                     setOf(
                         ThirdPartyIdentifier(
@@ -614,7 +554,7 @@ class AuthenticationRouteTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/account/3pid") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -632,17 +572,17 @@ class AuthenticationRouteTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getThirdPartyIdentifiers)
-            .with(any())
-            .wasInvoked()
+
+        verifyWithSuspend {
+            handlerMock.getThirdPartyIdentifiers(isAny())
+        }
     }
 
     @Test
     fun shouldAddThirdPartyIdentifiers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::addThirdPartyIdentifiers)
-            .whenInvokedWith(any())
-            .then { ResponseWithUIA.Success(Unit) }
+        everySuspending { handlerMock.addThirdPartyIdentifiers(isAny()) }
+            .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/account/3pid/add") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -660,17 +600,19 @@ class AuthenticationRouteTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::addThirdPartyIdentifiers)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.addThirdPartyIdentifiers(assert {
                 it.requestBody.request shouldBe AddThirdPartyIdentifiers.Request("d0nt-T3ll", "abc123987")
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldBindThirdPartyIdentifiers() = testApplication {
         initCut()
+        everySuspending { handlerMock.bindThirdPartyIdentifiers(isAny()) }
+            .returns(Unit)
         val response = client.post("/_matrix/client/v3/account/3pid/bind") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -690,25 +632,24 @@ class AuthenticationRouteTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::bindThirdPartyIdentifiers)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.bindThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe BindThirdPartyIdentifiers.Request(
                     clientSecret = "d0nt-T3ll",
                     idAccessToken = "abc123_OpaqueString",
                     idServer = "example.org",
                     sessionId = "abc123987"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeleteThirdPartyIdentifiers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::deleteThirdPartyIdentifiers)
-            .whenInvokedWith(any())
-            .then { DeleteThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS) }
+        everySuspending { handlerMock.deleteThirdPartyIdentifiers(isAny()) }
+            .returns(DeleteThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS))
         val response = client.post("/_matrix/client/v3/account/3pid/delete") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -727,24 +668,23 @@ class AuthenticationRouteTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::deleteThirdPartyIdentifiers)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.deleteThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe DeleteThirdPartyIdentifiers.Request(
                     address = "example@example.org",
                     idServer = "example.org",
                     medium = Medium.EMAIL
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldUnbindThirdPartyIdentifiers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::unbindThirdPartyIdentifiers)
-            .whenInvokedWith(any())
-            .then { UnbindThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS) }
+        everySuspending { handlerMock.unbindThirdPartyIdentifiers(isAny()) }
+            .returns(UnbindThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS))
         val response = client.post("/_matrix/client/v3/account/3pid/unbind") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -763,30 +703,29 @@ class AuthenticationRouteTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
-        verify(handlerMock).suspendFunction(handlerMock::unbindThirdPartyIdentifiers)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.unbindThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe UnbindThirdPartyIdentifiers.Request(
                     address = "example@example.org",
                     idServer = "example.org",
                     medium = Medium.EMAIL
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetOIDCRequestToken() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getOIDCRequestToken)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getOIDCRequestToken(isAny()) }
+            .returns(
                 GetOIDCRequestToken.Response(
                     accessToken = "SomeT0kenHere",
                     expiresIn = 3600,
                     matrixServerName = "example.com",
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/user/%40user%3Aserver/openid/request_token") { bearerAuth("token") }
         assertSoftly(response) {
@@ -801,11 +740,11 @@ class AuthenticationRouteTest {
                }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getOIDCRequestToken)
-            .with(matching {
+
+        verifyWithSuspend {
+            handlerMock.getOIDCRequestToken(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
-                true
             })
-            .wasInvoked()
+        }
     }
 }

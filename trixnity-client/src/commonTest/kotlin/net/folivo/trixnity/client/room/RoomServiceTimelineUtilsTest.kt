@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.seconds
@@ -44,7 +44,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val contentMappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 

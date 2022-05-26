@@ -48,7 +48,7 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
@@ -64,7 +64,7 @@ class KeySecretServiceTest : ShouldSpec(body)
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")

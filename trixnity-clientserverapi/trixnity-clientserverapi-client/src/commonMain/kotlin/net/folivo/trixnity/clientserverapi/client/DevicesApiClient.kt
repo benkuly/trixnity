@@ -6,17 +6,17 @@ import net.folivo.trixnity.core.model.UserId
 
 interface IDevicesApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3devices">matrix spec</a>
+     * @see [GetDevices]
      */
     suspend fun getDevices(asUserId: UserId? = null): Result<List<Device>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see [GetDevice]
      */
     suspend fun getDevice(deviceId: String, asUserId: UserId? = null): Result<Device>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see [UpdateDevice]
      */
     suspend fun updateDevice(
         deviceId: String,
@@ -25,12 +25,12 @@ interface IDevicesApiClient {
     ): Result<Unit>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
+     * @see [DeleteDevices]
      */
     suspend fun deleteDevices(devices: List<String>, asUserId: UserId? = null): Result<UIA<Unit>>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3devicesdeviceid">matrix spec</a>
+     * @see [DeleteDevice]
      */
     suspend fun deleteDevice(deviceId: String, asUserId: UserId? = null): Result<UIA<Unit>>
 }

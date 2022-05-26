@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
@@ -41,7 +41,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     val olmSign = OlmSignServiceMock()
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val contentMappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
 

@@ -42,7 +42,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
@@ -59,7 +59,7 @@ private val body: ShouldSpec.() -> Unit = {
     val aliceDevice = "ALICEDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var olmSign: OlmSignServiceMock
     lateinit var backup: KeyBackupServiceMock

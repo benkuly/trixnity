@@ -40,7 +40,7 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -62,7 +62,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var olmSignMock: OlmSignServiceMock
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var cut: KeyBackupService
 

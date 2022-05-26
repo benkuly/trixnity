@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -15,34 +16,30 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class MessageEventSerializer(
-    private val messageEventContentSerializers: Set<EventContentSerializerMapping<out MessageEventContent>>,
+    private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
 ) : KSerializer<MessageEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomEventSerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventSerializer")
 
     override fun deserialize(decoder: Decoder): MessageEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        requireNotNull(type)
         val contentSerializer = messageEventContentSerializers.contentDeserializer(type, isRedacted)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                MessageEvent.serializer(
-                    if (redacts == null) contentSerializer
-                    else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-                ), jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                MessageEvent.serializer(UnknownMessageEventContentSerializer(type)), jsonObj
-            )
+        return decoder.json.tryDeserializeOrElse(
+            MessageEvent.serializer(
+                if (redacts == null) contentSerializer
+                else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
+            ), jsonObj
+        ) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            MessageEvent.serializer(UnknownMessageEventContentSerializer(type))
         }
     }
 
@@ -65,6 +62,6 @@ class MessageEventSerializer(
                 *addFields.toTypedArray()
             ), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

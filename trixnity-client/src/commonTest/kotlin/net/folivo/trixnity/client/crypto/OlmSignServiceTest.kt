@@ -31,13 +31,13 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.random.Random
 
 class OlmSignServiceTest : ShouldSpec({
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     lateinit var account: OlmAccount
     lateinit var aliceSigningAccount: OlmAccount
     lateinit var utility: OlmUtility

@@ -11,6 +11,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysclaim">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/keys/claim")
 @HttpMethod(POST)

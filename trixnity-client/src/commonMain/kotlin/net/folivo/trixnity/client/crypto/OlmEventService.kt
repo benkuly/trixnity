@@ -322,7 +322,7 @@ class OlmEventService internal constructor(
             ) {
                 store.room.get(roomId).first { it?.membersLoaded == true }
                 val members = store.roomState.members(roomId, JOIN, INVITE)
-                store.keys.waitForUpdateOutdatedKey(*members.toTypedArray())
+                store.keys.waitForUpdateOutdatedKey(members)
                 log.debug { "encrypt megolm event with new session" }
                 val newUserDevices =
                     members.mapNotNull { userId ->

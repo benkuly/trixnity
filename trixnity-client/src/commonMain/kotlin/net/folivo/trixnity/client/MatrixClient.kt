@@ -34,9 +34,9 @@ import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.time.Duration.Companion.milliseconds
@@ -217,7 +217,7 @@ class MatrixClient private constructor(
         ): Result<MatrixClient> = kotlin.runCatching {
             val config = MatrixClientConfiguration().apply(configuration)
             val eventContentSerializerMappings = createEventContentSerializerMappings(config.customMappings)
-            val json = createMatrixJson(eventContentSerializerMappings)
+            val json = createMatrixEventJson(eventContentSerializerMappings)
 
             val store = try {
                 storeFactory.createStore(eventContentSerializerMappings, json)
@@ -289,7 +289,7 @@ class MatrixClient private constructor(
                 }.apply {
                     log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
                 }.value
-                val json = createMatrixJson(eventContentSerializerMappings)
+                val json = createMatrixEventJson(eventContentSerializerMappings)
 
                 val store = try {
                     measureTimedValue {
@@ -417,7 +417,7 @@ class MatrixClient private constructor(
         startMatrixClient()
         api.sync.start(
             filter = store.account.filterId.value,
-            setPresence = PresenceEventContent.Presence.ONLINE,
+            setPresence = Presence.ONLINE,
             currentBatchToken = store.account.syncBatchToken,
             scope = scope,
         )
@@ -429,7 +429,7 @@ class MatrixClient private constructor(
         startMatrixClient()
         return api.sync.startOnce(
             filter = store.account.backgroundFilterId.value,
-            setPresence = PresenceEventContent.Presence.OFFLINE,
+            setPresence = Presence.OFFLINE,
             currentBatchToken = store.account.syncBatchToken,
             timeout = timeout,
             runOnce = runOnce

@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
@@ -32,11 +32,11 @@ class ExposedStoreFactoryTest : ShouldSpec({
 
         val store = cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
         )
         cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
         )
         val room = Room(RoomId("room", "server"))
         store.room.update(room.roomId) { room }
@@ -51,7 +51,7 @@ class ExposedStoreFactoryTest : ShouldSpec({
 
         cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
         )
         newSuspendedTransaction(Dispatchers.IO, database) {
             with(TransactionManager.current()) {
@@ -60,7 +60,7 @@ class ExposedStoreFactoryTest : ShouldSpec({
         }
         val store = cut.createStore(
             contentMappings = DefaultEventContentSerializerMappings,
-            json = createMatrixJson(),
+            json = createMatrixEventJson(),
         )
         val room = Room(RoomId("room", "server"))
         store.room.update(room.roomId) { room }

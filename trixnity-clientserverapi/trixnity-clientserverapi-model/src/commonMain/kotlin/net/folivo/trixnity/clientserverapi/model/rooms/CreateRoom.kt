@@ -13,6 +13,9 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/createRoom")
 @HttpMethod(POST)
@@ -26,7 +29,7 @@ data class CreateRoom(
         @SerialName("name") val name: String?,
         @SerialName("topic") val topic: String?,
         @SerialName("invite") val invite: Set<UserId>?,
-        @SerialName("invite_3pid") val invite3Pid: Set<Invite3Pid>?,
+        @SerialName("invite_3pid") val inviteThirdPid: Set<InviteThirdPid>?,
         @SerialName("room_version") val roomVersion: String?,
         @SerialName("creation_content") val creationContent: CreateEventContent?,
         @SerialName("initial_state") val initialState: List<@Contextual Event.InitialStateEvent<*>>?,
@@ -35,7 +38,7 @@ data class CreateRoom(
         @SerialName("power_level_content_override") val powerLevelContentOverride: PowerLevelsEventContent?,
     ) {
         @Serializable
-        data class Invite3Pid(
+        data class InviteThirdPid(
             @SerialName("id_server") val identityServer: String,
             @SerialName("id_access_token") val identityServerAccessToken: String,
             @SerialName("medium") val medium: String,

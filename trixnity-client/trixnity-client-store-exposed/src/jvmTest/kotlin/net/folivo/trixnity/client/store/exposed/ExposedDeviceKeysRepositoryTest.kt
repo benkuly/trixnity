@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -24,7 +24,7 @@ class ExposedDeviceKeysRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedDeviceKeys)
         }
-        cut = ExposedDeviceKeysRepository(createMatrixJson())
+        cut = ExposedDeviceKeysRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val alice = UserId("alice", "server")

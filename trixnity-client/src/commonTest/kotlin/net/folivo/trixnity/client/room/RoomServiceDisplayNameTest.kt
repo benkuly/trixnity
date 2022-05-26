@@ -29,7 +29,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
@@ -44,7 +44,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
     val user4 = UserId("user4", "server")
     val user5 = UserId("user5", "server")
 
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }

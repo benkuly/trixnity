@@ -5,13 +5,10 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.mockative.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import net.folivo.trixnity.api.server.matrixApiServer
@@ -26,25 +23,24 @@ import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
-import kotlin.test.AfterTest
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import org.kodein.mock.Mock
+import org.kodein.mock.tests.TestsWithMocks
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class PushRoutesTest {
-    private val json = createMatrixJson()
+class PushRoutesTest : TestsWithMocks() {
+    override fun setUpMocks() = injectMocks(mocker)
+
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
-    @OptIn(ConfigurationApi::class)
     @Mock
-    val handlerMock = configure(mock(classOf<PushApiHandler>())) { stubsUnitByDefault = true }
+    lateinit var handlerMock: PushApiHandler
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
-                }
+            installMatrixAccessTokenAuth {
+                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
                 routing {
@@ -54,18 +50,11 @@ class PushRoutesTest {
         }
     }
 
-    @AfterTest
-    fun afterTest() {
-        verify(handlerMock).hasNoUnmetExpectations()
-        verify(handlerMock).hasNoUnverifiedExpectations()
-    }
-
     @Test
     fun shouldGetPushers() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPushers)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getPushers(isAny()) }
+            .returns(
                 GetPushers.Response(
                     listOf(
                         GetPushers.Response.Pusher(
@@ -83,7 +72,7 @@ class PushRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response = client.get("/_matrix/client/v3/pushers") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -108,14 +97,16 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPushers)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getPushers(isAny())
+        }
     }
 
     @Test
     fun shouldSetPushers() = testApplication {
         initCut()
+        everySuspending { handlerMock.setPushers(isAny()) }
+            .returns(Unit)
         val response = client.post("/_matrix/client/v3/pushers/set") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -144,8 +135,8 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setPushers)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setPushers(assert {
                 it.requestBody shouldBe SetPushers.Request(
                     appDisplayName = "Mat Rix",
                     appId = "com.example.app.ios",
@@ -161,17 +152,15 @@ class PushRoutesTest {
                     profileTag = "xxyyzz",
                     pushkey = "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetNotifications() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getNotifications)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getNotifications(isAny()) }
+            .returns(
                 GetNotifications.Response(
                     nextToken = "abcdef",
                     notifications = listOf(
@@ -191,7 +180,7 @@ class PushRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/notifications?from=from&limit=24&only=only") { bearerAuth("token") }
         assertSoftly(response) {
@@ -215,9 +204,9 @@ class PushRoutesTest {
                           "msgtype":"m.text"
                         },
                         "event_id":"$143273582443PhrSn:example.org",
-                        "sender":"@example:example.org",
-                        "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                         "origin_server_ts":1432735824653,
+                        "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                        "sender":"@example:example.org",
                         "type":"m.room.message"
                       },
                       "profile_tag":"hcbvkzxhcvb",
@@ -229,22 +218,20 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getNotifications)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getNotifications(assert {
                 it.endpoint.from shouldBe "from"
                 it.endpoint.limit shouldBe 24
                 it.endpoint.only shouldBe "only"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetPushRules() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPushRules)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getPushRules(isAny()) }
+            .returns(
                 GetPushRules.Response(
                     global = mapOf(
                         PushRuleKind.CONTENT to listOf(
@@ -347,7 +334,7 @@ class PushRoutesTest {
                         )
                     )
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/pushrules/") { bearerAuth("token") }
         assertSoftly(response) {
@@ -549,17 +536,16 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPushRules)
-            .with(any())
-            .wasInvoked()
+        verifyWithSuspend {
+            handlerMock.getPushRules(isAny())
+        }
     }
 
     @Test
     fun shouldGetPushRule() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPushRule)
-            .whenInvokedWith(any())
-            .then {
+        everySuspending { handlerMock.getPushRule(isAny()) }
+            .returns(
                 PushRule(
                     actions = setOf(PushAction.DontNotify),
                     default = false,
@@ -567,7 +553,7 @@ class PushRoutesTest {
                     pattern = "cake*lie",
                     ruleId = "nocake"
                 )
-            }
+            )
         val response =
             client.get("/_matrix/client/v3/pushrules/scope/content/ruleId") { bearerAuth("token") }
         assertSoftly(response) {
@@ -585,19 +571,20 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPushRule)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getPushRule(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetPushRule() = testApplication {
         initCut()
+        everySuspending { handlerMock.setPushRule(isAny()) }
+            .returns(Unit)
         val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId?before=before&after=after") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -628,8 +615,8 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setPushRule)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setPushRule(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
@@ -640,14 +627,15 @@ class PushRoutesTest {
                     conditions = setOf(PushCondition.EventMatch("type", "m.room.member")),
                     pattern = "cake*lie"
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldDeletePushRule() = testApplication {
         initCut()
+        everySuspending { handlerMock.deletePushRule(isAny()) }
+            .returns(Unit)
         val response = client.delete("/_matrix/client/v3/pushrules/scope/content/ruleId") {
             bearerAuth("token")
         }
@@ -656,24 +644,20 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::deletePushRule)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.deletePushRule(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetPushRuleActions() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPushRuleActions)
-            .whenInvokedWith(any())
-            .then {
-                GetPushRuleActions.Response(setOf(PushAction.DontNotify))
-            }
+        everySuspending { handlerMock.getPushRuleActions(isAny()) }
+            .returns(GetPushRuleActions.Response(setOf(PushAction.DontNotify)))
         val response =
             client.get("/_matrix/client/v3/pushrules/scope/content/ruleId/actions") { bearerAuth("token") }
         assertSoftly(response) {
@@ -687,19 +671,20 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPushRuleActions)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getPushRuleActions(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetPushRuleActions() = testApplication {
         initCut()
+        everySuspending { handlerMock.setPushRuleActions(isAny()) }
+            .returns(Unit)
         val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId/actions") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -722,27 +707,23 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setPushRuleActions)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setPushRuleActions(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
                 it.requestBody shouldBe SetPushRuleActions.Request(
                     setOf(PushAction.Notify, PushAction.SetSoundTweak("default"))
                 )
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldGetPushRuleEnabled() = testApplication {
         initCut()
-        given(handlerMock).suspendFunction(handlerMock::getPushRuleEnabled)
-            .whenInvokedWith(any())
-            .then {
-                GetPushRuleEnabled.Response(false)
-            }
+        everySuspending { handlerMock.getPushRuleEnabled(isAny()) }
+            .returns(GetPushRuleEnabled.Response(false))
         val response =
             client.get("/_matrix/client/v3/pushrules/scope/content/ruleId/enabled") { bearerAuth("token") }
         assertSoftly(response) {
@@ -754,19 +735,20 @@ class PushRoutesTest {
                 }
             """.trimToFlatJson()
         }
-        verify(handlerMock).suspendFunction(handlerMock::getPushRuleEnabled)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.getPushRuleEnabled(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
-                true
             })
-            .wasInvoked()
+        }
     }
 
     @Test
     fun shouldSetPushRuleEnabled() = testApplication {
         initCut()
+        everySuspending { handlerMock.setPushRuleEnabled(isAny()) }
+            .returns(Unit)
         val response = client.put("/_matrix/client/v3/pushrules/scope/content/ruleId/enabled") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -783,14 +765,13 @@ class PushRoutesTest {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verify(handlerMock).suspendFunction(handlerMock::setPushRuleEnabled)
-            .with(matching {
+        verifyWithSuspend {
+            handlerMock.setPushRuleEnabled(assert {
                 it.endpoint.scope shouldBe "scope"
                 it.endpoint.kind shouldBe PushRuleKind.CONTENT
                 it.endpoint.ruleId shouldBe "ruleId"
                 it.requestBody shouldBe SetPushRuleEnabled.Request(false)
-                true
             })
-            .wasInvoked()
+        }
     }
 }

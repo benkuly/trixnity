@@ -14,6 +14,9 @@ import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+/**
+ * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysquery">matrix spec</a>
+ */
 @Serializable
 @Resource("/_matrix/client/v3/keys/query")
 @HttpMethod(POST)
@@ -28,7 +31,7 @@ data class GetKeys(
     @Serializable
     data class Request(
         @SerialName("device_keys")
-        val deviceKeys: Map<UserId, Set<String>>,
+        val keysFrom: Map<UserId, Set<String>>,
         @SerialName("token")
         val token: String?,
         @SerialName("timeout")

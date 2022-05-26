@@ -15,11 +15,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.HttpMethod
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,7 +27,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class MatrixApiClientTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -50,11 +50,10 @@ class MatrixApiClientTest {
     @Test
     fun itShouldDoNormalRequest() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
-                    assertEquals("matrix.host", request.url.host)
+                    assertEquals("localhost", request.url.host)
                     assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
                     assertEquals(Post, request.method)
                     assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
@@ -74,7 +73,6 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler {
                     respond(
@@ -103,7 +101,6 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler {
                     respond(

@@ -15,16 +15,16 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.api.server.matrixEndpoint
+import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 
 class MatrixAccessTokenAuthTest {
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
     private val mapping = createEventContentSerializerMappings()
 
     private fun ApplicationTestBuilder.testEndpoint(
@@ -37,10 +37,8 @@ class MatrixAccessTokenAuthTest {
             install(ContentNegotiation) {
                 json(json)
             }
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    this.authenticationFunction = authenticationFunction
-                }
+            installMatrixAccessTokenAuth {
+                this.authenticationFunction = authenticationFunction
             }
             routing {
                 authenticate {
@@ -100,11 +98,9 @@ class MatrixAccessTokenAuthTest {
             install(ContentNegotiation) {
                 json(json)
             }
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    this.authenticationFunction = {
-                        AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
-                    }
+            installMatrixAccessTokenAuth {
+                this.authenticationFunction = {
+                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
                 }
             }
             routing {
@@ -137,16 +133,17 @@ class MatrixAccessTokenAuthTest {
                 json(json)
             }
             install(Resources)
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    this.authenticationFunction = {
-                        AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
-                    }
+            installMatrixAccessTokenAuth {
+                this.authenticationFunction = {
+                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
                 }
             }
             routing {
                 authenticate {
-                    matrixEndpoint<GetResourceWithAuth, Unit, Unit>(json, mapping) { call.respond(HttpStatusCode.OK) }
+                    matrixEndpoint<GetResourceWithAuth, Unit, Unit>(
+                        json,
+                        mapping
+                    ) { it.call.respond(HttpStatusCode.OK) }
                 }
             }
         }
@@ -160,17 +157,15 @@ class MatrixAccessTokenAuthTest {
                 json(json)
             }
             install(Resources)
-            install(Authentication) {
-                matrixAccessTokenAuth {
-                    this.authenticationFunction = {
-                        AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
-                    }
+            installMatrixAccessTokenAuth {
+                this.authenticationFunction = {
+                    AccessTokenAuthenticationFunctionResult(null, null)
                 }
             }
             routing {
                 authenticate {
                     matrixEndpoint<GetResourceWithoutAuth, Unit, Unit>(json, mapping) {
-                        call.respond(HttpStatusCode.OK)
+                        it.call.respond(HttpStatusCode.OK)
                     }
                 }
             }

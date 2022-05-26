@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
@@ -34,6 +35,6 @@ class RoomEventSerializer(
             is MessageEvent -> encoder.json.encodeToJsonElement(messageEventSerializer, value)
             is StateEvent -> encoder.json.encodeToJsonElement(stateEventSerializer, value)
         }
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

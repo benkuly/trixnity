@@ -1,8 +1,10 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
+import com.soywiz.korio.async.async
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
@@ -596,6 +598,7 @@ class RoomService(
                                     ?: "UNKNOWN"
                             oldTimelineEvent.copy(
                                 event = StateEvent(
+                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.2/rooms/v9/#redactions
                                     RedactedStateEventContent(eventType),
                                     oldEvent.id,
                                     oldEvent.sender,
@@ -1061,29 +1064,29 @@ class RoomService(
                 }
             }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(FlowPreview::class)
     override fun getTimelineEventsFromNowOn(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
-        channelFlow {
-            val syncResponseFlow = MutableSharedFlow<Sync.Response>(0, syncResponseBufferSize)
-            val subscriber: AfterSyncResponseSubscriber = { syncResponseFlow.emit(it) }
-            invokeOnClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+        callbackFlow {
+            val subscriber: AfterSyncResponseSubscriber = { send(it) }
             api.sync.subscribeAfterSyncResponse(subscriber)
-            syncResponseFlow
-                .collect { syncResponse ->
-                    val timelineEvents =
-                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
-                    timelineEvents.map {
-                        async {
-                            getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
-                        }
-                    }.awaitAll()
-                        .mapNotNull { it.value }
-                        .forEach { send(it) }
-                }
+            awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+        }.flatMapConcat { syncResponse ->
+            coroutineScope {
+                val timelineEvents =
+                    syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                            syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                timelineEvents.map {
+                    async {
+                        getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
+                    }
+                }.asFlow()
+                    .map {
+                        it.await().value
+                    }.filterNotNull()
+            }
         }
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {

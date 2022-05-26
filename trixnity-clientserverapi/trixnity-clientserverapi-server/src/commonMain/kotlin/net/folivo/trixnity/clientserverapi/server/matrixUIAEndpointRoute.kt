@@ -21,11 +21,11 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 
 typealias MatrixUIAEndpointContext<ENDPOINT, REQUEST, RESPONSE> = MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>
 
-// TODO inject json when ktor 2.0.0 is released
+// TODO inject json and mappings with content receivers with kotlin > 1.7.0
 inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixUIAEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>.() -> ResponseWithUIA<RESPONSE>
+    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>) -> ResponseWithUIA<RESPONSE>
 ) {
     matrixEndpointResource<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>> { endpoint ->
         val requestSerializer: KSerializer<REQUEST>? = endpoint.plainRequestSerializerBuilder(mappings, json)
@@ -37,8 +37,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                 )
                 else -> call.receive()
             }
-        val responseBody: ResponseWithUIA<RESPONSE> =
-            MatrixEndpointContext(endpoint, requestBody, call).run { handler() }
+        val responseBody: ResponseWithUIA<RESPONSE> = handler(MatrixEndpointContext(endpoint, requestBody, call))
         val responseSerializer: KSerializer<RESPONSE>? = endpoint.plainResponseSerializerBuilder(mappings, json)
         when (responseBody) {
             is Success -> {

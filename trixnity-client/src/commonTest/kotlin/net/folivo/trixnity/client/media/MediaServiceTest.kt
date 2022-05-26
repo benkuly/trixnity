@@ -26,14 +26,14 @@ import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 
 class MediaServiceTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: MediaService

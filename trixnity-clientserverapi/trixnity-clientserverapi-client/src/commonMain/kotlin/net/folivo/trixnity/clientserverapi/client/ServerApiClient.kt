@@ -8,17 +8,17 @@ import net.folivo.trixnity.core.model.UserId
 
 interface IServerApiClient {
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientversions">matrix spec</a>
+     * @see [GetVersions]
      */
     suspend fun getVersions(): Result<GetVersions.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3capabilities">matrix spec</a>
+     * @see [GetCapabilities]
      */
     suspend fun getCapabilities(): Result<GetCapabilities.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3search">matrix spec</a>
+     * @see [Search]
      */
     suspend fun search(
         request: Search.Request,
@@ -27,7 +27,7 @@ interface IServerApiClient {
     ): Result<Search.Response>
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3adminwhoisuserid">matrix spec</a>
+     * @see [WhoIs]
      */
     suspend fun whoIs(
         userId: UserId,

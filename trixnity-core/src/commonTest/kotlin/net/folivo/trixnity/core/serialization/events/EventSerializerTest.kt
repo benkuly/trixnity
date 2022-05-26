@@ -18,13 +18,14 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadR
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.trimToFlatJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EventSerializerTest {
 
-    private val json = createMatrixJson()
+    private val json = createMatrixEventJson()
 
     @Test
     fun shouldSerializeStateEvent() {
@@ -43,14 +44,14 @@ class EventSerializerTest {
                 "alias":"#somewhere:example.org"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
             "state_key":"",
-            "type":"m.room.canonical_alias"
+            "type":"m.room.canonical_alias",
+            "unsigned":{"age":1234}
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
@@ -75,7 +76,7 @@ class EventSerializerTest {
             "state_key":"",
             "prev_content":null
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
@@ -118,13 +119,14 @@ class EventSerializerTest {
                 "msgtype":"m.text"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
-            "type":"m.room.message"
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{"age":1234}
+            
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -152,7 +154,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234},
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -204,7 +206,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234},
             "type":"m.dino"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -264,26 +266,26 @@ class EventSerializerTest {
                 "name":"test"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@sender:server",
-            "room_id":"!room:server",
             "origin_server_ts":1234,
-            "unsigned":{},
+            "room_id":"!room:server",
+            "sender":"@sender:server",
             "state_key":"",
-            "type":"m.room.name"
+            "type":"m.room.name",
+            "unsigned":{}
         },
         {
             "content":{
                 "membership":"invite"
             },
             "event_id":"$143273584443PhrSn",
-            "sender":"@sender:server",
-            "room_id":"!room:server",
             "origin_server_ts":1234,
-            "unsigned":{},
+            "room_id":"!room:server",
+            "sender":"@sender:server",
             "state_key":"@user:server",
-            "type":"m.room.member"
+            "type":"m.room.member",
+            "unsigned":{}
         }]
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result =
             json.encodeToString(
                 ListSerializer(
@@ -312,16 +314,16 @@ class EventSerializerTest {
                 "reason":"spam"
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
+             "redacts":"$123",
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.redaction",
             "unsigned":{
                 "age":1234
-            },
-            "type":"m.room.redaction",
-            "redacts":"$123"
+            }
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -357,7 +359,7 @@ class EventSerializerTest {
                 },
             "type":"m.room.message"
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
@@ -407,9 +409,10 @@ class EventSerializerTest {
         {
             "content":{},
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
             "unsigned":{
                 "age":1234,
                 "redacted_because":{
@@ -417,19 +420,18 @@ class EventSerializerTest {
                         "reason":"spam"
                     },
                     "event_id":"$143273582443PhrSn",
-                    "sender":"@example:example.org",
-                    "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                     "origin_server_ts":1432735824653,
+                    "redacts":"${'$'}143273582443PhrSn",
+                    "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+                    "sender":"@example:example.org",
+                    "type":"m.room.redaction",
                     "unsigned":{
                         "age":1234
-                    },
-                    "type":"m.room.redaction",
-                    "redacts":"$143273582443PhrSn"
                     }
-                },
-            "type":"m.room.message"
+                    }
+                }
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val result = json.encodeToString(
             MessageEventSerializer(DefaultEventContentSerializerMappings.message),
             content
@@ -489,7 +491,7 @@ class EventSerializerTest {
                 "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                 "type":"org.example.mynamespace.custom"
             }
-            """.trimIndent().lines().joinToString("") { it.trim() }
+            """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(RoomAccountDataEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, event)
@@ -564,14 +566,14 @@ class EventSerializerTest {
                 "unicorns":[]
             },
             "event_id":"$143273582443PhrSn",
-            "sender":"@example:example.org",
-            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "origin_server_ts":1432735824653,
-            "unsigned":{"age":1234},
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
             "state_key":"",
-            "type":"m.room.canonical_alias"
+            "type":"m.room.canonical_alias",
+            "unsigned":{"age":1234}
         }
-    """.trimIndent().lines().joinToString("") { it.trim() }
+    """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
@@ -740,7 +742,7 @@ class EventSerializerTest {
             },
             "type":"m.receipt"
         }
-        """.trimIndent().lines().joinToString("") { it.trim() }
+        """.trimToFlatJson()
         val serializer = json.serializersModule.getContextual(EphemeralEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, receipt)

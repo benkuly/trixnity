@@ -13,7 +13,7 @@ class CanonicalJsonTest {
     @Test
     fun test1() {
         val input = JsonObject(mapOf())
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = "{}"
         assertEquals(expected, output)
     }
@@ -26,7 +26,7 @@ class CanonicalJsonTest {
                 "two" to JsonPrimitive("Two")
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = """{"one":1,"two":"Two"}"""
         assertEquals(expected, output)
     }
@@ -39,7 +39,7 @@ class CanonicalJsonTest {
                 "a" to JsonPrimitive("1")
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = """{"a":"1","b":"2"}"""
         assertEquals(expected, output)
     }
@@ -51,7 +51,7 @@ class CanonicalJsonTest {
                 "auth" to JsonObject(
                     mapOf(
                         "success" to JsonPrimitive(true),
-                        "mxid" to JsonPrimitive(UserId("john.doe", "example.com").toString()),
+                        "mxid" to JsonPrimitive(UserId("john.doe", "example.com").full),
                         "profile" to JsonObject(
                             mapOf(
                                 "display_name" to JsonPrimitive("John Doe"),
@@ -77,7 +77,7 @@ class CanonicalJsonTest {
                 )
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected =
             """{"auth":{"mxid":"@john.doe:example.com","profile":{"display_name":"John Doe","three_pids":[{"address":"john.doe@example.org","medium":"email"},{"address":"123456789","medium":"msisdn"}]},"success":true}}"""
         assertEquals(expected, output)
@@ -90,7 +90,7 @@ class CanonicalJsonTest {
                 "a" to JsonPrimitive("日本語")
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = """{"a":"日本語"}"""
         assertEquals(expected, output)
     }
@@ -103,7 +103,7 @@ class CanonicalJsonTest {
                 "日" to JsonPrimitive(1)
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = """{"日":1,"本":2}"""
         assertEquals(expected, output)
     }
@@ -127,7 +127,7 @@ class CanonicalJsonTest {
                 "a" to JsonNull
             )
         )
-        val output = canonicalJson(input)
+        val output = canonicalJsonString(input)
         val expected = """{"a":null}"""
         assertEquals(expected, output)
     }

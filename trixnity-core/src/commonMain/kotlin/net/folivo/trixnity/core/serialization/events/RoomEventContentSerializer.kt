@@ -4,11 +4,13 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonEncoder
 import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 class RoomEventContentSerializer(
     private val type: String,
-    private val mappings: Set<EventContentSerializerMapping<out RoomEventContent>>
+    private val mappings: Set<SerializerMapping<out RoomEventContent>>
 ) : KSerializer<RoomEventContent> {
     override val descriptor = buildClassSerialDescriptor("RoomEventContentSerializer")
 
@@ -17,8 +19,9 @@ class RoomEventContentSerializer(
     }
 
     override fun serialize(encoder: Encoder, value: RoomEventContent) {
+        require(encoder is JsonEncoder)
         @Suppress("UNCHECKED_CAST")
         val serializer = mappings.contentSerializer(value).second as KSerializer<RoomEventContent>
-        encoder.encodeSerializableValue(serializer, value)
+        encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(serializer, value)))
     }
 }

@@ -35,7 +35,7 @@ sealed class AuthenticationRequest {
 
     @Serializable
     data class EmailIdentify(
-        @SerialName("threepid_creds") val threePidCredentials: ThreePidCredentials,
+        @SerialName("threepid_creds") val thirdPidCredentials: ThirdPidCredentials,
     ) : AuthenticationRequest() {
         @SerialName("type")
         override val type = AuthenticationType.EmailIdentity
@@ -43,7 +43,7 @@ sealed class AuthenticationRequest {
 
     @Serializable
     data class Msisdn(
-        @SerialName("threepid_creds") val threePidCredentials: ThreePidCredentials,
+        @SerialName("threepid_creds") val thirdPidCredentials: ThirdPidCredentials,
     ) : AuthenticationRequest() {
         @SerialName("type")
         override val type = AuthenticationType.Msisdn

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -13,31 +14,24 @@ import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.Event.InitialStateEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
+import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class InitialStateEventSerializer(
-    private val stateEventContentSerializers: Set<EventContentSerializerMapping<out StateEventContent>>,
+    private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
 ) : KSerializer<InitialStateEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("InitialStateEventSerializer")
 
     override fun deserialize(decoder: Decoder): InitialStateEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content
-        requireNotNull(type)
-        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
-        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isRedacted)
-        return try {
-            decoder.json.decodeFromJsonElement(
-                InitialStateEvent.serializer(contentSerializer),
-                jsonObj
-            )
-        } catch (error: Exception) {
-            log.warn(error) { "could not deserialize event of type $type" }
-            decoder.json.decodeFromJsonElement(
-                InitialStateEvent.serializer(UnknownStateEventContentSerializer(type)), jsonObj
-            )
+        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
+        val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
+        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isFullyRedacted)
+        return decoder.json.tryDeserializeOrElse(InitialStateEvent.serializer(contentSerializer), jsonObj) {
+            log.warn(it) { "could not deserialize event of type $type" }
+            InitialStateEvent.serializer(UnknownStateEventContentSerializer(type))
         }
     }
 
@@ -52,6 +46,6 @@ class InitialStateEventSerializer(
                 "type" to type
             ), value
         )
-        encoder.encodeJsonElement(jsonElement)
+        encoder.encodeJsonElement(canonicalJson(jsonElement))
     }
 }

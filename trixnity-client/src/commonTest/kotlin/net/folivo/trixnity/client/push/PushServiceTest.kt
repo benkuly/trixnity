@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
@@ -43,7 +43,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
-    val json = createMatrixJson()
+    val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig

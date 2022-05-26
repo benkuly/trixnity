@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightOutdatedDeviceKeysRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightOutdatedDeviceKeysRepository
@@ -17,7 +17,7 @@ class SqlDelightOutdatedDeviceKeysRepositoryTest : ShouldSpec({
         driver = createDriverWithSchema()
         cut = SqlDelightOutdatedDeviceKeysRepository(
             Database(driver).keysQueries,
-            createMatrixJson(),
+            createMatrixEventJson(),
             Dispatchers.Default
         )
     }

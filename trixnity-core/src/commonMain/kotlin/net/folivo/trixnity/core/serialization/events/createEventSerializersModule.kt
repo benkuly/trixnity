@@ -6,7 +6,6 @@ import kotlinx.serialization.modules.contextual
 fun createEventSerializersModule(
     mappings: EventContentSerializerMappings,
 ): SerializersModule {
-    val basicEventSerializer = BasicEventSerializer()
     val messageEventSerializer = MessageEventSerializer(mappings.message)
     val stateEventSerializer = StateEventSerializer(mappings.state)
     val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer)
@@ -20,7 +19,6 @@ fun createEventSerializersModule(
     val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData)
     val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData)
     val eventSerializer = EventSerializer(
-        basicEventSerializer,
         roomEventSerializer,
         strippedStateEventSerializer,
         initialStateEventSerializer,
@@ -30,7 +28,6 @@ fun createEventSerializersModule(
         roomAccountDataEventSerializer
     )
     return SerializersModule {
-        contextual(basicEventSerializer)
         contextual(eventSerializer)
         contextual(roomEventSerializer)
         contextual(messageEventSerializer)

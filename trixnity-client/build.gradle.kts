@@ -63,11 +63,7 @@ kotlin {
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("net.coobird:thumbnailator:${Versions.thumbnailator}")
-            }
-        }
+        val jvmMain by getting
         val jsMain by getting
 //        val nativeMain = create("nativeMain") {
 //            dependsOn(commonMain)

@@ -21,17 +21,4 @@ data class PresenceEventContent(
     val isCurrentlyActive: Boolean? = null,
     @SerialName("status_msg")
     val statusMessage: String? = null
-) : EphemeralEventContent {
-    // TODO support unknown
-    @Serializable
-    enum class Presence(val value: String) {
-        @SerialName("online")
-        ONLINE("online"),
-
-        @SerialName("offline")
-        OFFLINE("offline"),
-
-        @SerialName("unavailable")
-        UNAVAILABLE("unavailable")
-    }
-}
+) : EphemeralEventContent

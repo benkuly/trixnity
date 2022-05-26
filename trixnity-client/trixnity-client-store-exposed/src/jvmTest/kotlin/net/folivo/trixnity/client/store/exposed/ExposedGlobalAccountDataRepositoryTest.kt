@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
-import net.folivo.trixnity.core.serialization.createMatrixJson
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -22,7 +22,7 @@ class ExposedGlobalAccountDataRepositoryTest : ShouldSpec({
         newSuspendedTransaction {
             SchemaUtils.create(ExposedGlobalAccountData)
         }
-        cut = ExposedGlobalAccountDataRepository(createMatrixJson())
+        cut = ExposedGlobalAccountDataRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
         val key1 = "m.direct"
