@@ -103,7 +103,7 @@ interface IUsersApiClient {
     ): Result<Filters>
 
     /**
-     * @see [setFilter]
+     * @see [SetFilter]
      */
     suspend fun setFilter(
         userId: UserId,
@@ -112,7 +112,7 @@ interface IUsersApiClient {
     ): Result<String>
 
     /**
-     * @see [getAccountData]
+     * @see [GetAccountData]
      */
     suspend fun getAccountData(
         type: String,
@@ -122,7 +122,7 @@ interface IUsersApiClient {
     ): Result<GlobalAccountDataEventContent>
 
     /**
-     * @see [setAccountData]
+     * @see [SetAccountData]
      */
     suspend fun setAccountData(
         content: GlobalAccountDataEventContent,
@@ -258,7 +258,7 @@ class UsersApiClient(
 }
 
 /**
- * @see []
+ * @see [GetAccountData]
  */
 suspend inline fun <reified C : GlobalAccountDataEventContent> IUsersApiClient.getAccountData(
     userId: UserId,

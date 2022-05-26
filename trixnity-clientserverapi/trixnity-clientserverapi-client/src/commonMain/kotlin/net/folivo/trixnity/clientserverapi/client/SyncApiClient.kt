@@ -95,9 +95,6 @@ class SyncApiClient(
     private val httpClient: MatrixClientServerApiHttpClient,
 ) : EventEmitter(), ISyncApiClient {
 
-    /**
-     * @see []
-     */
     override suspend fun sync(
         filter: String?,
         since: String?,

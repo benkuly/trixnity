@@ -816,7 +816,7 @@ class RoomsApiClient(
 }
 
 /**
- * @see []
+ * @see [GetRoomAccountData]
  */
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.getAccountData(
     roomId: RoomId,
@@ -830,7 +830,7 @@ suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.get
 }
 
 /**
- * @see []
+ * @see [GetStateEvent]
  */
 suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent(
     roomId: RoomId,
