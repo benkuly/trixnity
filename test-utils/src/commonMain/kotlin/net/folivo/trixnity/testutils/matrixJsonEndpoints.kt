@@ -121,9 +121,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
             assertSoftly(request) {
                 if (skipUrlCheck.not()) url shouldBe expectedRequest.url
                 method shouldBe expectedRequest.method
-
             }
-            request.method shouldBe expectedRequest.method
 
             val requestString =
                 request.body.toByteArray().decodeToString().also { matrixEndpointLog.debug { "requestBody: $it" } }

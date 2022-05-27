@@ -786,7 +786,7 @@ class RoomsApiClient(
         limit: Long?,
         asUserId: UserId?
     ): Result<GetEventContext.Response> =
-        httpClient.request(GetEventContext(roomId.e(), eventId.e(), filter?.e(), limit, asUserId))
+        httpClient.request(GetEventContext(roomId.e(), eventId.e(), filter, limit, asUserId))
 
     override suspend fun reportEvent(
         roomId: RoomId,

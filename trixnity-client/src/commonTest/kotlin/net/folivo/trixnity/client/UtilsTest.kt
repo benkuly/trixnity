@@ -98,7 +98,6 @@ class UtilsTest : ShouldSpec({
                     RUNNING,
                     onError = { onErrorCalled.update { it + 1 } },
                     onCancel = { onCancelCalled.update { it + 1 } },
-                    scope = this,
                 ) {
                     when (blockCalled.updateAndGet { it + 1 }) {
                         1 -> throw RuntimeException("oh no")
@@ -127,7 +126,6 @@ class UtilsTest : ShouldSpec({
                     syncState.retryWhenSyncIs(
                         RUNNING,
                         scheduleBase = 10.milliseconds,
-                        scope = this,
                     ) {
                         when (blockCalled.updateAndGet { it + 1 }) {
                             1 -> throw MatrixServerException(

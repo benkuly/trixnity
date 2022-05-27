@@ -30,6 +30,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.client.SyncState.STARTED
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEventContext
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -63,7 +64,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class RoomServiceTest : ShouldSpec({
-    timeout = 30_000
+    timeout = 15_000
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
@@ -436,6 +437,45 @@ class RoomServiceTest : ShouldSpec({
             senderSigningKey = Key.Ed25519Key(null, "ed"), forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
         )
 
+        context("event not in database") {
+            should("fetch event from server") {
+                currentSyncState.value = RUNNING
+                val event = MessageEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("\$event1"),
+                    UserId("sender", "server"),
+                    room,
+                    1
+                )
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            eventId.e(),
+                            limit = 20,
+                            filter = RoomService.LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "start",
+                            end = "end",
+                            event = event
+                        )
+                    }
+                }
+                val timelineEventFlow = cut.getTimelineEvent(eventId, room, this)
+                timelineEventFlow.filterNotNull().first() shouldBe
+                        TimelineEvent(
+                            event = event,
+                            roomId = room,
+                            eventId = eventId,
+                            previousEventId = null,
+                            nextEventId = null,
+                            gap = TimelineEvent.Gap.GapBoth("start")
+                        )
+            }
+        }
         context("should just return event") {
             withData(
                 mapOf(

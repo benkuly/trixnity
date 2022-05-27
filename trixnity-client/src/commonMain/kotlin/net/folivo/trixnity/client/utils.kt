@@ -3,10 +3,8 @@ package net.folivo.trixnity.client
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.isActive
 import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.Store
@@ -169,12 +167,12 @@ suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
     scheduleLimit: Duration = 5.minutes,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
-    scope: CoroutineScope,
     block: suspend () -> T
-): T {
+): T = coroutineScope {
     val syncStates = listOf(syncState) + moreSyncStates
-    val condition = this.map { syncStates.contains(it) }.stateIn(scope)
-    return retryWhen(
+    val condition = MutableStateFlow(false)
+    val job = launch { this@retryWhenSyncIs.collectLatest { condition.value = syncStates.contains(it) } }
+    retryWhen(
         condition = condition,
         scheduleBase = scheduleBase,
         scheduleFactor = scheduleFactor,
@@ -182,5 +180,5 @@ suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
         onError = onError,
         onCancel = onCancel,
         block = block
-    )
+    ).also { job.cancelAndJoin() }
 }
