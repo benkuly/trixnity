@@ -35,8 +35,8 @@ kotlin {
         binaries.executable()
     }
 
-//    linuxX64()
-//    mingwX64()
+    linuxX64()
+    mingwX64()
 
     sourceSets {
         all {
@@ -65,15 +65,15 @@ kotlin {
         }
         val jvmMain by getting
         val jsMain by getting
-//        val nativeMain = create("nativeMain") {
-//            dependsOn(commonMain)
-//        }
-//        val linuxX64Main by getting {
-//            dependsOn(nativeMain)
-//        }
-//        val mingwX64Main by getting {
-//            dependsOn(nativeMain)
-//        }
+        val nativeMain = create("nativeMain") {
+            dependsOn(commonMain)
+        }
+        val linuxX64Main by getting {
+            dependsOn(nativeMain)
+        }
+        val mingwX64Main by getting {
+            dependsOn(nativeMain)
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -93,15 +93,15 @@ kotlin {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-//        val jsTest by getting
-//        val nativeTest = create("nativeTest") {
-//            dependsOn(commonTest)
-//        }
-//        val linuxX64Test by getting {
-//            dependsOn(nativeTest)
-//        }
-//        val mingwX64Test by getting {
-//            dependsOn(nativeTest)
-//        }
+        val jsTest by getting
+        val nativeTest = create("nativeTest") {
+            dependsOn(commonTest)
+        }
+        val linuxX64Test by getting {
+            dependsOn(nativeTest)
+        }
+        val mingwX64Test by getting {
+            dependsOn(nativeTest)
+        }
     }
 }
