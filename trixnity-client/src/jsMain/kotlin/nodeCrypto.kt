@@ -24,6 +24,11 @@ external fun createDecipheriv(
     iv: Int8Array
 ): Decipher
 
+external fun createHmac(
+    algorithm: String,
+    key: Int8Array
+): HMAC
+
 external interface Cipher {
     fun update(data: Int8Array): Int8Array
     fun final(): Int8Array
@@ -32,4 +37,9 @@ external interface Cipher {
 external interface Decipher {
     fun update(data: Int8Array): Int8Array
     fun final(): Int8Array
+}
+
+external interface HMAC {
+    fun update(data: Int8Array): Int8Array
+    fun digest(): Int8Array
 }
