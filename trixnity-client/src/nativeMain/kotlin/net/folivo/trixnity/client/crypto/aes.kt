@@ -13,4 +13,8 @@ internal actual suspend fun decryptAes256Ctr(
     encryptedContent: ByteArray,
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteArray = AES.decryptAesCtr(encryptedContent, key, initialisationVector, Padding.NoPadding)
+): ByteArray = try {
+    AES.decryptAesCtr(encryptedContent, key, initialisationVector, Padding.NoPadding)
+} catch (exception: Exception) {
+    throw DecryptionException.OtherException(exception)
+}
