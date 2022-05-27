@@ -1,9 +1,8 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest
+import org.jetbrains.kotlin.gradle.plugin.mpp.DefaultCInteropSettings
 import org.jetbrains.kotlin.konan.target.HostManager
-import org.jetbrains.kotlin.konan.target.KonanTarget.MINGW_X64
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("com.android.library")
@@ -17,9 +16,17 @@ val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("j
 val olmRootDir = buildDir.resolve("olm").resolve(Versions.olm)
 val olmTmpDir = buildDir.resolve("tmp")
 val olmZipDir = olmTmpDir.resolve("olm-${Versions.olm}.zip")
-val olmBuildDir = olmRootDir.resolve("build")
-val olmBuildCurrentPlatformDir = olmBuildDir.resolve(currentPlatform)
-val olmBuildWinAmd64Dir = olmBuildDir.resolve(windowsAmd64Platform)
+
+val olmBuildDirDynamic = olmRootDir.resolve("build-dynamic")
+val olmBuildDirStatic = olmRootDir.resolve("build-static")
+val olmBuildDynamicCurrentPlatformDir = olmBuildDirDynamic.resolve(currentPlatform)
+val olmBuildDynamicWinAmd64Dir = olmBuildDirDynamic.resolve(windowsAmd64Platform)
+
+val olmBuildStaticCurrentPlatformDir = olmBuildDirStatic.resolve("current")
+val olmBuildStaticWinAmd64Dir = olmBuildDirStatic.resolve(KonanTarget.MINGW_X64.name)
+val olmStaticBinaryCurrentPlatform = olmBuildStaticCurrentPlatformDir.resolve("libolm.a")
+val olmStaticBinaryWinAmd64 = olmBuildStaticCurrentPlatformDir.resolve("libolm.a")
+
 val olmIncludeDir = olmRootDir.resolve("include")
 val olmCMakeLists = olmRootDir.resolve("CMakeLists.txt")
 
@@ -75,8 +82,41 @@ kotlin {
         binaries.executable()
     }
 
-    linuxX64()
-    mingwX64()
+    fun DefaultCInteropSettings.olmSettings() {
+        packageName("org.matrix.olm")
+        includeDirs(olmIncludeDir)
+    }
+
+    linuxX64 {
+        compilations {
+            "main" {
+                cinterops {
+                    val libolm by creating {
+                        olmSettings()
+                        tasks.named(interopProcessingTaskName) {
+                            dependsOn(buildOlmStaticCurrentPlatform)
+                        }
+                    }
+                }
+                kotlinOptions.freeCompilerArgs = listOf("-include-binary", olmStaticBinaryCurrentPlatform.path)
+            }
+        }
+    }
+    mingwX64 {
+        compilations {
+            "main" {
+                cinterops {
+                    val libolm by creating {
+                        olmSettings()
+                        tasks.named(interopProcessingTaskName) {
+                            dependsOn(buildOlmStaticWindows)
+                        }
+                    }
+                }
+                kotlinOptions.freeCompilerArgs = listOf("-include-binary", olmStaticBinaryCurrentPlatform.path)
+            }
+        }
+    }
 
     sourceSets {
         all {
@@ -145,43 +185,6 @@ kotlin {
             dependsOn(nativeTest)
         }
     }
-    targets.withType<KotlinNativeTarget> {
-        compilations {
-            "main" {
-                cinterops {
-                    create("libolm") {
-                        tasks.named(interopProcessingTaskName) {
-                            dependsOn(buildOlm)
-                        }
-                        includeDirs(olmIncludeDir)
-                    }
-                }
-                binaries.all {
-                    when (konanTarget) {
-                        MINGW_X64 -> linkerOpts(
-                            "-L${olmBuildWinAmd64Dir}", "-lolm"
-                        )
-                        else -> linkerOpts(
-                            "-L${olmBuildCurrentPlatformDir}", "-lolm"
-                        )
-                    }
-                }
-                defaultSourceSet {
-                    kotlin.srcDir("src/nativeMain/kotlin")
-                    resources.srcDir("src/nativeMain/resources")
-                }
-                dependencies {
-                }
-            }
-        }
-    }
-}
-
-tasks.withType<KotlinNativeHostTest> {
-    environment("LD_LIBRARY_PATH", olmBuildCurrentPlatformDir)
-    if (HostManager.hostIsMingw) {
-        environment("Path", olmBuildWinAmd64Dir)
-    }
 }
 
 tasks.withType<ExternalNativeCleanTask> {
@@ -219,62 +222,122 @@ val extractOlm by tasks.registering(Copy::class) {
     dependsOn(downloadOlm)
 }
 
-val prepareBuildOlmWindows by tasks.registering(Exec::class) {
+val prepareBuildOlmDynamicWindows by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olmRootDir)
     commandLine(
-        "cmake", ".", "-B${olmBuildWinAmd64Dir.absolutePath}",
-        "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake", "-DOLM_TESTS=OFF"
+        "cmake", ".", "-B${olmBuildDynamicWinAmd64Dir.absolutePath}",
+        "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake",
+        "-DOLM_TESTS=OFF"
     )
     dependsOn(extractOlm)
     outputs.cacheIf { true }
     inputs.files(olmCMakeLists)
-    outputs.dir(olmBuildWinAmd64Dir)
+    outputs.dir(olmBuildDynamicWinAmd64Dir)
 }
 
-val buildOlmWindows by tasks.registering(Exec::class) {
+val buildOlmDynamicWindows by tasks.registering(Exec::class) {
     group = "olm"
-    workingDir(olmBuildWinAmd64Dir)
+    workingDir(olmBuildDynamicWinAmd64Dir)
     commandLine("cmake", "--build", ".")
-    dependsOn(prepareBuildOlmWindows)
+    dependsOn(prepareBuildOlmDynamicWindows)
     outputs.cacheIf { true }
     inputs.files(olmCMakeLists)
-    outputs.dir(olmBuildWinAmd64Dir)
+    outputs.dir(olmBuildDynamicWinAmd64Dir)
     doLast {
-        olmBuildWinAmd64Dir.resolve("libolm.dll").renameTo(olmBuildWinAmd64Dir.resolve("olm.dll"))
+        olmBuildDynamicWinAmd64Dir.resolve("libolm.dll").renameTo(olmBuildDynamicWinAmd64Dir.resolve("olm.dll"))
     }
 }
 
-val prepareBuildOlmCurrentPlatform by tasks.registering(Exec::class) {
+val prepareBuildOlmStaticWindows by tasks.registering(Exec::class) {
     group = "olm"
     workingDir(olmRootDir)
-    commandLine("cmake", ".", "-B${olmBuildCurrentPlatformDir.absolutePath}", "-DOLM_TESTS=OFF")
+    commandLine(
+        "cmake", ".", "-B${olmBuildStaticWinAmd64Dir.absolutePath}",
+        "-DBUILD_SHARED_LIBS=NO",
+        "-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake",
+        "-DOLM_TESTS=OFF"
+    )
+    dependsOn(extractOlm)
+    outputs.cacheIf { true }
+    inputs.files(olmCMakeLists)
+    outputs.dir(olmBuildStaticWinAmd64Dir)
+}
+
+val buildOlmStaticWindows by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olmBuildDynamicWinAmd64Dir)
+    commandLine("cmake", "--build", ".")
+    dependsOn(prepareBuildOlmStaticWindows)
+    outputs.cacheIf { true }
+    inputs.files(olmCMakeLists)
+    outputs.dir(olmBuildStaticWinAmd64Dir)
+}
+
+val prepareBuildOlmDynamicCurrentPlatform by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olmRootDir)
+    commandLine(
+        "cmake", ".", "-B${olmBuildDynamicCurrentPlatformDir.absolutePath}",
+        "-DOLM_TESTS=OFF"
+    )
     onlyIf { !HostManager.hostIsMingw }
     dependsOn(extractOlm)
     outputs.cacheIf { true }
     inputs.files(olmCMakeLists)
-    outputs.dir(olmBuildCurrentPlatformDir)
+    outputs.dir(olmBuildDynamicCurrentPlatformDir)
 }
 
-val buildOlmCurrentPlatform by tasks.registering(Exec::class) {
+val buildOlmDynamicCurrentPlatform by tasks.registering(Exec::class) {
     group = "olm"
-    workingDir(olmBuildCurrentPlatformDir)
+    workingDir(olmBuildDynamicCurrentPlatformDir)
     commandLine("cmake", "--build", ".")
     onlyIf { !HostManager.hostIsMingw }
-    dependsOn(prepareBuildOlmCurrentPlatform)
+    dependsOn(prepareBuildOlmDynamicCurrentPlatform)
     outputs.cacheIf { true }
     inputs.files(olmCMakeLists)
-    outputs.dir(olmBuildCurrentPlatformDir)
+    outputs.dir(olmBuildDynamicCurrentPlatformDir)
+}
+
+val prepareBuildOlmStaticCurrentPlatform by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olmRootDir)
+    commandLine(
+        "cmake", ".", "-B${olmBuildStaticCurrentPlatformDir.absolutePath}",
+        "-DBUILD_SHARED_LIBS=NO",
+        "-DOLM_TESTS=OFF"
+    )
+    onlyIf { !HostManager.hostIsMingw }
+    dependsOn(extractOlm)
+    outputs.cacheIf { true }
+    inputs.files(olmCMakeLists)
+    outputs.dir(olmBuildStaticCurrentPlatformDir)
+}
+
+val buildOlmStaticCurrentPlatform by tasks.registering(Exec::class) {
+    group = "olm"
+    workingDir(olmBuildStaticCurrentPlatformDir)
+    commandLine("cmake", "--build", ".")
+    onlyIf { !HostManager.hostIsMingw }
+    dependsOn(prepareBuildOlmStaticCurrentPlatform)
+    outputs.cacheIf { true }
+    inputs.files(olmCMakeLists)
+    outputs.dir(prepareBuildOlmStaticCurrentPlatform)
 }
 
 val buildOlm by tasks.registering {
-    dependsOn(buildOlmCurrentPlatform, buildOlmWindows)
+    dependsOn(
+        buildOlmDynamicCurrentPlatform,
+        buildOlmStaticCurrentPlatform,
+        buildOlmDynamicWindows,
+        buildOlmStaticWindows
+    )
     group = "olm"
 }
 
 val installOlmToResourcesCurrentPlatform by tasks.registering(Copy::class) {
     group = "olm"
-    from(olmBuildCurrentPlatformDir)
+    from(olmBuildDynamicCurrentPlatformDir)
     include("libolm.so", "olm.dll", "libolm.dylib")
     into(jvmProcessedResourcesDir.resolve(currentPlatform))
     onlyIf { !HostManager.hostIsMingw }
@@ -283,7 +346,7 @@ val installOlmToResourcesCurrentPlatform by tasks.registering(Copy::class) {
 
 val installOlmToResourcesWindows by tasks.registering(Copy::class) {
     group = "olm"
-    from(olmBuildWinAmd64Dir)
+    from(olmBuildDynamicWinAmd64Dir)
     include("olm.dll")
     into(jvmProcessedResourcesDir.resolve(windowsAmd64Platform))
     dependsOn(buildOlm)
