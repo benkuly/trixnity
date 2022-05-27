@@ -1,5 +1,6 @@
 package net.folivo.trixnity.serverserverapi.client
 
+import io.ktor.http.*
 import net.folivo.trixnity.api.client.MatrixApiClient
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.serverserverapi.model.discovery.*
@@ -8,27 +9,28 @@ interface IDiscoveryApiClient {
     /**
      * @see [GetWellKnown]
      */
-    suspend fun getWellKnown(): Result<GetWellKnown.Response>
+    suspend fun getWellKnown(baseUrl: Url): Result<GetWellKnown.Response>
 
     /**
      * @see [GetServerVersion]
      */
-    suspend fun getServerVersion(): Result<GetServerVersion.Response>
+    suspend fun getServerVersion(baseUrl: Url): Result<GetServerVersion.Response>
 
     /**
      * @see [GetServerKeys]
      */
-    suspend fun getServerKeys(): Result<Signed<ServerKeys, String>>
+    suspend fun getServerKeys(baseUrl: Url): Result<Signed<ServerKeys, String>>
 
     /**
      * @see [QueryServerKeys]
      */
-    suspend fun queryServerKeys(request: QueryServerKeys.Request): Result<QueryServerKeysResponse>
+    suspend fun queryServerKeys(baseUrl: Url, request: QueryServerKeys.Request): Result<QueryServerKeysResponse>
 
     /**
      * @see [QueryServerKeysByServer]
      */
     suspend fun queryKeysByServer(
+        baseUrl: Url,
         serverName: String,
         minimumValidUntil: Long? = null
     ): Result<QueryServerKeysResponse>
@@ -37,21 +39,26 @@ interface IDiscoveryApiClient {
 class DiscoveryApiClient(
     private val httpClient: MatrixApiClient
 ) : IDiscoveryApiClient {
-    override suspend fun getWellKnown(): Result<GetWellKnown.Response> =
-        httpClient.request(GetWellKnown)
+    override suspend fun getWellKnown(baseUrl: Url): Result<GetWellKnown.Response> =
+        httpClient.request(GetWellKnown) { mergeUrl(baseUrl) }
 
-    override suspend fun getServerVersion(): Result<GetServerVersion.Response> =
-        httpClient.request(GetServerVersion)
 
-    override suspend fun getServerKeys(): Result<Signed<ServerKeys, String>> =
-        httpClient.request(GetServerKeys)
+    override suspend fun getServerVersion(baseUrl: Url): Result<GetServerVersion.Response> =
+        httpClient.request(GetServerVersion) { mergeUrl(baseUrl) }
 
-    override suspend fun queryServerKeys(request: QueryServerKeys.Request): Result<QueryServerKeysResponse> =
-        httpClient.request(QueryServerKeys, request)
+    override suspend fun getServerKeys(baseUrl: Url): Result<Signed<ServerKeys, String>> =
+        httpClient.request(GetServerKeys) { mergeUrl(baseUrl) }
+
+    override suspend fun queryServerKeys(
+        baseUrl: Url,
+        request: QueryServerKeys.Request
+    ): Result<QueryServerKeysResponse> =
+        httpClient.request(QueryServerKeys, request) { mergeUrl(baseUrl) }
 
     override suspend fun queryKeysByServer(
+        baseUrl: Url,
         serverName: String,
         minimumValidUntil: Long?
     ): Result<QueryServerKeysResponse> =
-        httpClient.request(QueryServerKeysByServer(serverName, minimumValidUntil))
+        httpClient.request(QueryServerKeysByServer(serverName, minimumValidUntil)) { mergeUrl(baseUrl) }
 }
