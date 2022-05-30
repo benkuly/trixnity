@@ -29,7 +29,7 @@ data class GetEventContext(
     data class Response(
         @SerialName("start") val start: String? = null,
         @SerialName("end") val end: String? = null,
-        @SerialName("event") val event: @Contextual Event.RoomEvent<*>? = null,
+        @SerialName("event") val event: @Contextual Event.RoomEvent<*>,
         @SerialName("events_before") val eventsBefore: List<@Contextual Event.RoomEvent<*>>? = null,
         @SerialName("events_after") val eventsAfter: List<@Contextual Event.RoomEvent<*>>? = null,
         @SerialName("state") val state: List<@Contextual Event.StateEvent<*>>? = null
