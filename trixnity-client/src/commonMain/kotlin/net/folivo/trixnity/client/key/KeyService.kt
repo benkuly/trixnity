@@ -101,7 +101,7 @@ interface IKeyService {
         userId: UserId,
         deviceId: String,
         scope: CoroutineScope
-    ): StateFlow<DeviceTrustLevel>
+    ): Flow<DeviceTrustLevel>
 
     /**
      * @return the trust level of a device or null, if the timeline event is not a megolm encrypted event.
@@ -109,7 +109,7 @@ interface IKeyService {
     suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
         scope: CoroutineScope
-    ): StateFlow<DeviceTrustLevel>?
+    ): Flow<DeviceTrustLevel>?
 
     /**
      * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
@@ -117,12 +117,12 @@ interface IKeyService {
     suspend fun getTrustLevel(
         userId: UserId,
         scope: CoroutineScope
-    ): StateFlow<UserTrustLevel>
+    ): Flow<UserTrustLevel>
 
     suspend fun getDeviceKeys(
         userId: UserId,
         scope: CoroutineScope,
-    ): StateFlow<List<DeviceKeys>?>
+    ): Flow<List<DeviceKeys>?>
 
     suspend fun getDeviceKeys(
         userId: UserId,
@@ -131,7 +131,7 @@ interface IKeyService {
     suspend fun getCrossSigningKeys(
         userId: UserId,
         scope: CoroutineScope,
-    ): StateFlow<List<CrossSigningKeys>?>
+    ): Flow<List<CrossSigningKeys>?>
 
     suspend fun getCrossSigningKeys(
         userId: UserId,
@@ -183,7 +183,6 @@ class KeyService(
             scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
-            scope = this
         ) {
             store.keys.outdatedKeys.collect { userIds ->
                 if (userIds.isNotEmpty()) {
@@ -488,7 +487,7 @@ class KeyService(
         userId: UserId,
         deviceId: String,
         scope: CoroutineScope
-    ): StateFlow<DeviceTrustLevel> {
+    ): Flow<DeviceTrustLevel> {
         return store.keys.getDeviceKey(userId, deviceId, scope).map { deviceKeys ->
             when (val trustLevel = deviceKeys?.trustLevel) {
                 is Valid -> if (trustLevel.verified) DeviceTrustLevel.Verified else DeviceTrustLevel.NotVerified
@@ -498,13 +497,13 @@ class KeyService(
                 is Invalid -> DeviceTrustLevel.Invalid(trustLevel.reason)
                 is NotAllDeviceKeysCrossSigned, null -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
             }
-        }.stateIn(scope)
+        }
     }
 
     override suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
         scope: CoroutineScope
-    ): StateFlow<DeviceTrustLevel>? {
+    ): Flow<DeviceTrustLevel>? {
         val event = timelineEvent.event
         val content = event.content
         return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
@@ -518,7 +517,7 @@ class KeyService(
     override suspend fun getTrustLevel(
         userId: UserId,
         scope: CoroutineScope
-    ): StateFlow<UserTrustLevel> {
+    ): Flow<UserTrustLevel> {
         return store.keys.getCrossSigningKeys(userId, scope)
             .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(MasterKey) } }
             .map { crossSigningKeys ->
@@ -531,16 +530,16 @@ class KeyService(
                     NotCrossSigned -> UserTrustLevel.Invalid("could not determine trust level of cross signing key: $crossSigningKeys")
                     null -> UserTrustLevel.Unknown
                 }
-            }.stateIn(scope)
+            }
     }
 
     override suspend fun getDeviceKeys(
         userId: UserId,
         scope: CoroutineScope,
-    ): StateFlow<List<DeviceKeys>?> {
+    ): Flow<List<DeviceKeys>?> {
         return store.keys.getDeviceKeys(userId, scope).map {
             it?.values?.map { storedKeys -> storedKeys.value.signed }
-        }.stateIn(scope)
+        }
     }
 
     override suspend fun getDeviceKeys(
@@ -552,10 +551,10 @@ class KeyService(
     override suspend fun getCrossSigningKeys(
         userId: UserId,
         scope: CoroutineScope,
-    ): StateFlow<List<CrossSigningKeys>?> {
+    ): Flow<List<CrossSigningKeys>?> {
         return store.keys.getCrossSigningKeys(userId, scope).map {
             it?.map { storedKeys -> storedKeys.value.signed }
-        }.stateIn(scope)
+        }
     }
 
     override suspend fun getCrossSigningKeys(

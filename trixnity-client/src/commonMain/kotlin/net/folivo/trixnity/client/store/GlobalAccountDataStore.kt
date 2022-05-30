@@ -3,9 +3,8 @@ package net.folivo.trixnity.client.store
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
@@ -45,13 +44,12 @@ class GlobalAccountDataStore(
         eventContentClass: KClass<C>,
         key: String = "",
         scope: CoroutineScope
-    ): StateFlow<GlobalAccountDataEvent<C>?> {
+    ): Flow<GlobalAccountDataEvent<C>?> {
         val eventType = contentMappings.globalAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event $eventContentClass, because it is not supported. You need to register it first.")
         return globalAccountDataCache.getBySecondKey(eventType, key, scope)
             .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
-            .filterIsInstance<GlobalAccountDataEvent<C>?>()
-            .stateIn(scope)
+            .filterIsInstance()
     }
 
     suspend fun <C : GlobalAccountDataEventContent> get(

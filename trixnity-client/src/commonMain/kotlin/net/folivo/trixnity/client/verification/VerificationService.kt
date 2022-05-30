@@ -75,7 +75,7 @@ interface IVerificationService {
         value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
     }
 
-    suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<SelfVerificationMethods>
+    suspend fun getSelfVerificationMethods(scope: CoroutineScope): Flow<SelfVerificationMethods>
 
     suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
@@ -294,7 +294,7 @@ class VerificationService(
      * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): StateFlow<SelfVerificationMethods> {
+    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
@@ -356,7 +356,7 @@ class VerificationService(
             }
 
             return@combine SelfVerificationMethods.CrossSigningEnabled(recoveryKeyMethods + deviceVerificationMethod)
-        }.stateIn(scope)
+        }
     }
 
     private val getActiveUserVerificationMutex = Mutex()

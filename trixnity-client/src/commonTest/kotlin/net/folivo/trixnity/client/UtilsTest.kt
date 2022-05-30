@@ -37,7 +37,6 @@ class UtilsTest : ShouldSpec({
                     SyncState.INITIAL_SYNC,
                     onError = { onErrorCalled.update { it + 1 } },
                     onCancel = { onCancelCalled.update { it + 1 } },
-                    scope = this,
                 ) {
                     when (blockCalled.updateAndGet { it + 1 }) {
                         1 -> throw RuntimeException("oh no")
@@ -69,7 +68,6 @@ class UtilsTest : ShouldSpec({
                     syncState.retryInfiniteWhenSyncIs(
                         RUNNING,
                         scheduleBase = 10.milliseconds,
-                        scope = this,
                     ) {
                         when (blockCalled.updateAndGet { it + 1 }) {
                             1 -> throw MatrixServerException(

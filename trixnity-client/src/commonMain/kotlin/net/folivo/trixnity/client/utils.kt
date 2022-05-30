@@ -2,9 +2,13 @@ package net.folivo.trixnity.client
 
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
+import com.soywiz.korio.async.launch
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.Store
@@ -96,11 +100,11 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
     scheduleLimit: Duration = 5.minutes,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
-    scope: CoroutineScope,
     block: suspend () -> Unit
-) {
+) = coroutineScope {
     val syncStates = listOf(syncState) + moreSyncStates
-    val shouldRun = this.map { syncStates.contains(it) }.stateIn(scope)
+    val shouldRun = MutableStateFlow(false)
+    val job = launch { this@retryInfiniteWhenSyncIs.collectLatest { shouldRun.value = syncStates.contains(it) } }
     val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
         .or(Schedule.spaced(scheduleLimit))
         .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
@@ -121,6 +125,7 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
             if (error is CancellationException) throw error
         }
     }
+    job.cancel()
 }
 
 @OptIn(ExperimentalTime::class)
