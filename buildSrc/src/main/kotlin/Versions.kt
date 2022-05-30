@@ -11,7 +11,7 @@ object Versions {
     const val olm = "3.2.8" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.11.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.0.1" // https://github.com/ktorio/ktor/releases
-    const val korlibs = "3.0.0-Beta2" // https://github.com/korlibs/korge-next/releases
+    const val korlibs = "3.0.0-Beta3" // https://github.com/korlibs/korge-next/releases
     const val mocKmp = "1.6.1" // https://github.com/Kodein-Framework/MocKMP/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.3.0" // https://github.com/kotest/kotest/releases
