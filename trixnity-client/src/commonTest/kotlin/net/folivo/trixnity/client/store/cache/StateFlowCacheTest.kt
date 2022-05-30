@@ -305,7 +305,7 @@ class StateFlowCacheTest : ShouldSpec({
                     retrieveAndUpdateCache = { null },
                     persist = { }
                 )
-                delay(30)
+                delay(50)
                 var wasCalled = false
                 cut.writeWithCache(
                     key = "key",

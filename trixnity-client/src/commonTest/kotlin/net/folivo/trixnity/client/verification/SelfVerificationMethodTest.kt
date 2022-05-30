@@ -59,7 +59,7 @@ class SelfVerificationMethodTest : ShouldSpec({
     }
     context("${AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::class.simpleName}") {
         context(AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::verify.name) {
-            should("decode recovery key and decrypt missing keys with it") {
+            should("decode pbkdf2 recovery key and decrypt missing keys with it") {
                 val iv = Random.nextBytes(16)
                 val salt = Random.nextBytes(32)
                 val key = generatePbkdf2Sha512(
