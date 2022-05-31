@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.beNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -205,8 +206,10 @@ private val body: ShouldSpec.() -> Unit = {
                                     algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
                                     keys = Keys(
                                         keysOf(
-                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
-                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()
+                                                .shouldNotBeNull(),
+                                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()
+                                                .shouldNotBeNull()
                                         )
                                     )
                                 ), mapOf()
@@ -282,7 +285,10 @@ private val body: ShouldSpec.() -> Unit = {
                     decrypted shouldBe DecryptedOlmEvent(
                         eventContent,
                         bob,
-                        keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!.copy(keyId = null)),
+                        keysOf(
+                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>().shouldNotBeNull()
+                                .copy(keyId = null)
+                        ),
                         alice,
                         keysOf(Ed25519Key(null, aliceAccount.identityKeys.ed25519))
                     )
@@ -330,7 +336,7 @@ private val body: ShouldSpec.() -> Unit = {
                         bobSession.decrypt(OlmMessage(encryptedCipherText.body, OlmMessageType.INITIAL_PRE_KEY))
                     ) shouldBe decryptedOlmEvent
                 }
-                store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
+                store.olm.getOlmSessions(bobCurveKey).shouldNotBeNull() shouldHaveSize 1
             }
             should("throw exception when one time key is invalid") {
                 signService.returnVerify = VerifyResult.Invalid("dino")
@@ -379,7 +385,7 @@ private val body: ShouldSpec.() -> Unit = {
                             )
                         )
                     ) shouldBe decryptedOlmEvent
-                    store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
+                    store.olm.getOlmSessions(bobCurveKey).shouldNotBeNull() shouldHaveSize 1
                     store.olm.getOlmSessions(bobCurveKey)?.first() shouldNotBe storedOlmSession
                 }
             }
@@ -421,7 +427,7 @@ private val body: ShouldSpec.() -> Unit = {
                         senderKey = bobCurveKey
                     ), bob
                 ) shouldBe decryptedOlmEvent
-                store.olm.getOlmSessions(bobCurveKey)!! shouldHaveSize 1
+                store.olm.getOlmSessions(bobCurveKey).shouldNotBeNull() shouldHaveSize 1
 
                 // we check, that the one time key cannot be used twice
                 shouldThrow<OlmLibraryException> {
@@ -638,7 +644,7 @@ private val body: ShouldSpec.() -> Unit = {
                             senderKey = bobCurveKey
                         ), bob
                     ) shouldBe decryptedOlmEvent
-                    store.olm.getOlmSessions(bobCurveKey)!! shouldNotContain storedOlmSession1
+                    store.olm.getOlmSessions(bobCurveKey).shouldNotBeNull() shouldNotContain storedOlmSession1
                 }
             }
         }

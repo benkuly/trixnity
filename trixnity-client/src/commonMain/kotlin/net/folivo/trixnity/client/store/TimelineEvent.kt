@@ -37,24 +37,24 @@ data class TimelineEvent(
     @Serializable
     @JsonClassDiscriminator("position")
     sealed class Gap {
-        abstract val batch: String
+        abstract val batch: String?
 
         @Serializable
         @SerialName("before")
         data class GapBefore(
-            override val batch: String,
+            override val batch: String?,
         ) : Gap()
 
         @Serializable
         @SerialName("both")
         data class GapBoth(
-            override val batch: String,
+            override val batch: String?,
         ) : Gap()
 
         @Serializable
         @SerialName("after")
         data class GapAfter(
-            override val batch: String,
+            override val batch: String?,
         ) : Gap()
     }
 }

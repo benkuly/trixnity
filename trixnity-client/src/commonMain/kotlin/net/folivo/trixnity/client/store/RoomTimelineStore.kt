@@ -28,30 +28,24 @@ class RoomTimelineStore(
     suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
         roomTimelineCache.get(RoomTimelineKey(eventId, roomId), scope = scope)
 
-    suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
-        roomTimelineCache.get(
-            RoomTimelineKey(eventId, roomId),
-            withTransaction = withTransaction,
-        )
+    suspend fun get(eventId: EventId, roomId: RoomId): TimelineEvent? =
+        roomTimelineCache.get(RoomTimelineKey(eventId, roomId))
 
     suspend fun update(
         eventId: EventId,
         roomId: RoomId,
         persistIntoRepository: Boolean = true,
-        withTransaction: Boolean = true,
         updater: suspend (oldTimelineEvent: TimelineEvent?) -> TimelineEvent?
     ) = roomTimelineCache.update(
         RoomTimelineKey(eventId, roomId),
         persistIntoRepository,
-        withTransaction = withTransaction,
         updater = updater
     )
 
-    suspend fun addAll(events: List<TimelineEvent>, withTransaction: Boolean = true) {
+    suspend fun addAll(events: List<TimelineEvent>) {
         events.forEach { event ->
             roomTimelineCache.update(
                 RoomTimelineKey(event.eventId, event.roomId),
-                withTransaction = withTransaction
             ) { event }
         }
     }

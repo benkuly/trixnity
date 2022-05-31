@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.beNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -88,29 +89,29 @@ class RoomServiceTimelineTest : ShouldSpec({
                 should("add elements to timeline") {
                     store.room.update(room) { Room(roomId = room, lastEventId = null) }
                     cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "previous", true)
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapBefore("previous")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("previous")
+                        gap shouldBe GapAfter(null)
                     }
                 }
                 should("add one element to timeline") {
                     store.room.update(room) { Room(roomId = room, lastEventId = null) }
                     cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", true)
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId should beNull()
@@ -132,23 +133,23 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     )
                     cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", true)
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapAfter("oldPrevious")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap shouldBe GapBefore("previous")
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("previous")
+                        gap shouldBe GapAfter(null)
                     }
                 }
                 should("add one element to timeline") {
@@ -164,13 +165,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     )
                     cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", true)
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event3.id
                         gap shouldBe GapAfter("oldPrevious")
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event1.id
                         nextEventId should beNull()
@@ -193,23 +194,23 @@ class RoomServiceTimelineTest : ShouldSpec({
                     )
                 )
                 cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", false)
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId should beNull()
                     nextEventId shouldBe event2.id
                     gap should beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe event2
                     previousEventId shouldBe event1.id
                     nextEventId shouldBe event3.id
                     gap should beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe event2.id
                     nextEventId should beNull()
-                    gap shouldBe GapAfter("previous")
+                    gap shouldBe GapAfter(null)
                 }
             }
             should("add one element to timeline") {
@@ -225,17 +226,17 @@ class RoomServiceTimelineTest : ShouldSpec({
                     )
                 )
                 cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", false)
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId should beNull()
                     nextEventId shouldBe event3.id
                     gap should beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe event1.id
                     nextEventId should beNull()
-                    gap shouldBe GapAfter("previous")
+                    gap shouldBe GapAfter(null)
                 }
             }
         }
@@ -283,13 +284,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                     false
                 )
 
-                assertSoftly(store.roomTimeline.get(eventId1, room)!!) {
+                assertSoftly(store.roomTimeline.get(eventId1, room).shouldNotBeNull()) {
                     content shouldBe Result.success(TextMessageEventContent("Hello!"))
                 }
-                assertSoftly(store.roomTimeline.get(eventId2, room)!!) {
+                assertSoftly(store.roomTimeline.get(eventId2, room).shouldNotBeNull()) {
                     content shouldBe null
                 }
-                assertSoftly(store.roomTimeline.get(eventId3, room)!!) {
+                assertSoftly(store.roomTimeline.get(eventId3, room).shouldNotBeNull()) {
                     content shouldBe null
                 }
             }
@@ -316,16 +317,69 @@ class RoomServiceTimelineTest : ShouldSpec({
                         GetEventContext.Response(
                             start = "start",
                             end = "end",
-                            event = event3
+                            event = event3,
                         )
                     }
                 }
                 cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
-                    previousEventId shouldBe beNull()
-                    nextEventId should beNull()
-                    gap shouldBe GapBoth("start")
+                    previousEventId shouldBe null
+                    nextEventId shouldBe null
+                    gap shouldBe GapBoth("end")
+                }
+            }
+            should("save start event with previous and next event (no gap)") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "start",
+                            end = "end",
+                            event = event3,
+                            eventsBefore = listOf(event2),
+                            eventsAfter = listOf(event4)
+                        )
+                    }
+                }
+                val previousEvent = TimelineEvent(
+                    event = event2,
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = GapBoth("gap-previous")
+                )
+                val nextEvent = TimelineEvent(
+                    event = event4,
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = GapBoth("gap-next")
+                )
+                store.roomTimeline.addAll(listOf(previousEvent, nextEvent))
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
+                    event shouldBe event2
+                    previousEventId shouldBe null
+                    nextEventId shouldBe event3.id
+                    gap shouldBe GapBefore("gap-previous")
+                }
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
+                    event shouldBe event3
+                    previousEventId shouldBe event2.id
+                    nextEventId shouldBe event4.id
+                    gap shouldBe null
+                }
+                assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
+                    event shouldBe event4
+                    previousEventId shouldBe event3.id
+                    nextEventId shouldBe null
+                    gap shouldBe GapAfter("gap-next")
                 }
             }
             should("add events before") {
@@ -348,19 +402,19 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId should beNull()
                     nextEventId shouldBe event2.id
                     gap shouldBe GapBefore("start")
                 }
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe event2
                     previousEventId shouldBe event1.id
                     nextEventId shouldBe event3.id
                     gap should beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe event2.id
                     nextEventId should beNull()
@@ -387,19 +441,19 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId shouldBe event2.id
                     nextEventId shouldBe beNull()
                     gap shouldBe GapAfter("end")
                 }
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe event2
                     previousEventId shouldBe event3.id
                     nextEventId shouldBe event1.id
                     gap should beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe beNull()
                     nextEventId shouldBe event2.id
@@ -427,19 +481,19 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
                 cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId shouldBe beNull()
                     nextEventId shouldBe event3.id
                     gap shouldBe GapBefore("start")
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe event1.id
                     nextEventId shouldBe event2.id
                     gap shouldBe beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe event2
                     previousEventId shouldBe event3.id
                     nextEventId shouldBe beNull()
@@ -480,31 +534,31 @@ class RoomServiceTimelineTest : ShouldSpec({
                 )
                 store.roomTimeline.addAll(listOf(previousEvent, nextEvent))
                 cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                     event shouldBe event1
                     previousEventId shouldBe beNull()
                     nextEventId shouldBe event2.id
                     gap shouldBe beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe event2
                     previousEventId shouldBe event1.id
                     nextEventId shouldBe event3.id
                     gap shouldBe beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                     event shouldBe event3
                     previousEventId shouldBe event2.id
                     nextEventId shouldBe event4.id
                     gap shouldBe beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event4.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
                     event shouldBe event4
                     previousEventId shouldBe event3.id
                     nextEventId shouldBe event5.id
                     gap shouldBe beNull()
                 }
-                assertSoftly(store.roomTimeline.get(event5.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event5.id, room).shouldNotBeNull()) {
                     event shouldBe event5
                     previousEventId shouldBe event4.id
                     nextEventId shouldBe beNull()
@@ -513,6 +567,49 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
         }
         context("start event has previous gap") {
+            context("not an event with previous event") {
+                should("add elements to timeline") {
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                dir = BACKWARDS,
+                                limit = 20,
+                                filter = LAZY_LOAD_MEMBERS_FILTER
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event2),
+                                state = listOf()
+                            )
+                        }
+                    }
+                    val startEvent = TimelineEvent(
+                        event = event3,
+                        previousEventId = event2.id,
+                        nextEventId = null,
+                        gap = GapBefore("start")
+                    )
+                    store.roomTimeline.addAll(listOf(startEvent))
+                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
+                        event shouldBe event2
+                        previousEventId shouldBe beNull()
+                        nextEventId shouldBe event3.id
+                        gap shouldBe GapBefore("end")
+                    }
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
+                        event shouldBe event3
+                        previousEventId shouldBe event2.id
+                        nextEventId shouldBe beNull()
+                        gap should beNull()
+                    }
+                }
+            }
             context("no previous event") {
                 should("add elements to timeline") {
                     apiConfig.endpoints {
@@ -538,27 +635,27 @@ class RoomServiceTimelineTest : ShouldSpec({
                         event = event3,
                         previousEventId = null,
                         nextEventId = null,
-                        gap = GapBoth("start")
+                        gap = GapBefore("start")
                     )
                     store.roomTimeline.addAll(listOf(startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapBefore("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("start")
+                        gap shouldBe null
                     }
                 }
                 should("add one element to timeline") {
@@ -585,21 +682,21 @@ class RoomServiceTimelineTest : ShouldSpec({
                         event = event3,
                         previousEventId = null,
                         nextEventId = null,
-                        gap = GapBoth("start")
+                        gap = GapBefore("start")
                     )
                     store.roomTimeline.addAll(listOf(startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId should beNull()
                         nextEventId shouldBe event3.id
                         gap shouldBe GapBefore("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("start")
+                        gap shouldBe null
                     }
                 }
                 should("detect start of timeline") {
@@ -630,7 +727,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                     )
                     store.roomTimeline.addAll(listOf(startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe beNull()
                         nextEventId should beNull()
@@ -670,27 +767,27 @@ class RoomServiceTimelineTest : ShouldSpec({
                         event = event3,
                         previousEventId = event1.id,
                         nextEventId = null,
-                        gap = GapBoth("start")
+                        gap = GapBefore("start")
                     )
                     store.roomTimeline.addAll(listOf(previousEvent, startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapBefore("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("start")
+                        gap shouldBe null
                     }
                 }
                 should("ignore overlapping events") {
@@ -724,27 +821,27 @@ class RoomServiceTimelineTest : ShouldSpec({
                         event = event3,
                         previousEventId = event1.id,
                         nextEventId = null,
-                        gap = GapBoth("start")
+                        gap = GapBefore("start")
                     )
                     store.roomTimeline.addAll(listOf(previousEvent, startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapBefore("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("start")
+                        gap shouldBe null
                     }
                 }
             }
@@ -780,43 +877,73 @@ class RoomServiceTimelineTest : ShouldSpec({
                         event = event3,
                         previousEventId = event1.id,
                         nextEventId = null,
-                        gap = GapBoth("start")
+                        gap = GapBefore("start")
                     )
                     store.roomTimeline.addAll(listOf(previousEvent, startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event1.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event1.id, room).shouldNotBeNull()) {
                         event shouldBe event1
                         previousEventId should beNull()
                         nextEventId shouldBe event2.id
                         gap shouldBe GapBoth("next")
                     }
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap shouldBe GapBefore("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId should beNull()
-                        gap shouldBe GapAfter("start")
+                        gap shouldBe beNull()
                     }
                 }
             }
         }
         context("start event has next gap") {
-            context("not an event with next events, we can fetch") {
-                should("do nothing when no next event") {
+            context("not an event with next event") {
+                should("add elements to timeline") {
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(
+                            json, mappings,
+                            GetEvents(
+                                room.e(),
+                                "start",
+                                dir = FORWARDS,
+                                limit = 20,
+                                filter = LAZY_LOAD_MEMBERS_FILTER
+                            )
+                        ) {
+                            GetEvents.Response(
+                                start = "start",
+                                end = "end",
+                                chunk = listOf(event4),
+                                state = listOf()
+                            )
+                        }
+                    }
                     val startEvent = TimelineEvent(
                         event = event3,
-                        previousEventId = event1.id,
+                        previousEventId = event2.id,
                         nextEventId = null,
                         gap = GapAfter("start")
                     )
                     store.roomTimeline.addAll(listOf(startEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    store.roomTimeline.get(event3.id, room) shouldBe startEvent
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
+                        event shouldBe event3
+                        previousEventId shouldBe beNull()
+                        nextEventId shouldBe event4.id
+                        gap should beNull()
+                    }
+                    assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
+                        event shouldBe event4
+                        previousEventId shouldBe event3.id
+                        nextEventId shouldBe beNull()
+                        gap shouldBe GapAfter("end")
+                    }
                 }
             }
             context("gap filled") {
@@ -841,11 +968,11 @@ class RoomServiceTimelineTest : ShouldSpec({
                             )
                         }
                     }
-                    val nextEvent = TimelineEvent(
-                        event = event5,
+                    val previousEvent = TimelineEvent(
+                        event = event1,
                         previousEventId = null,
-                        nextEventId = null,
-                        gap = GapBoth("end")
+                        nextEventId = event2.id,
+                        gap = GapBefore("gap-before")
                     )
                     val startEvent = TimelineEvent(
                         event = event2,
@@ -853,27 +980,33 @@ class RoomServiceTimelineTest : ShouldSpec({
                         nextEventId = event5.id,
                         gap = GapAfter("start")
                     )
-                    store.roomTimeline.addAll(listOf(nextEvent, startEvent))
+                    val nextEvent = TimelineEvent(
+                        event = event5,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = GapAfter("end")
+                    )
+                    store.roomTimeline.addAll(listOf(previousEvent, startEvent, nextEvent))
                     cut.fetchMissingEvents(event2.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                         event shouldBe event2
                         previousEventId shouldBe event1.id
                         nextEventId shouldBe event3.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId shouldBe event4.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event4.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
                         event shouldBe event4
                         previousEventId shouldBe event3.id
                         nextEventId shouldBe event5.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event5.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event5.id, room).shouldNotBeNull()) {
                         event shouldBe event5
                         previousEventId shouldBe event4.id
                         nextEventId should beNull()
@@ -901,11 +1034,11 @@ class RoomServiceTimelineTest : ShouldSpec({
                             )
                         }
                     }
-                    val nextEvent = TimelineEvent(
-                        event = event5,
+                    val previousEvent = TimelineEvent(
+                        event = event2,
                         previousEventId = null,
-                        nextEventId = null,
-                        gap = GapBoth("end")
+                        nextEventId = event3.id,
+                        gap = GapBefore("gap-before")
                     )
                     val startEvent = TimelineEvent(
                         event = event3,
@@ -913,21 +1046,27 @@ class RoomServiceTimelineTest : ShouldSpec({
                         nextEventId = event5.id,
                         gap = GapAfter("start")
                     )
-                    store.roomTimeline.addAll(listOf(nextEvent, startEvent))
+                    val nextEvent = TimelineEvent(
+                        event = event5,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = GapBoth("end")
+                    )
+                    store.roomTimeline.addAll(listOf(previousEvent, startEvent, nextEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId shouldBe event4.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event4.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
                         event shouldBe event4
                         previousEventId shouldBe event3.id
                         nextEventId shouldBe event5.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event5.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event5.id, room).shouldNotBeNull()) {
                         event shouldBe event5
                         previousEventId shouldBe event4.id
                         nextEventId should beNull()
@@ -957,11 +1096,11 @@ class RoomServiceTimelineTest : ShouldSpec({
                             )
                         }
                     }
-                    val nextEvent = TimelineEvent(
-                        event = event5,
+                    val previousEvent = TimelineEvent(
+                        event = event2,
                         previousEventId = null,
-                        nextEventId = null,
-                        gap = GapBoth("next")
+                        nextEventId = event3.id,
+                        gap = GapBefore("gap-before")
                     )
                     val startEvent = TimelineEvent(
                         event = event3,
@@ -969,21 +1108,27 @@ class RoomServiceTimelineTest : ShouldSpec({
                         nextEventId = event5.id,
                         gap = GapAfter("start")
                     )
-                    store.roomTimeline.addAll(listOf(nextEvent, startEvent))
+                    val nextEvent = TimelineEvent(
+                        event = event5,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = GapBoth("next")
+                    )
+                    store.roomTimeline.addAll(listOf(previousEvent, startEvent, nextEvent))
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    assertSoftly(store.roomTimeline.get(event3.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event3.id, room).shouldNotBeNull()) {
                         event shouldBe event3
                         previousEventId shouldBe event2.id
                         nextEventId shouldBe event4.id
                         gap should beNull()
                     }
-                    assertSoftly(store.roomTimeline.get(event4.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event4.id, room).shouldNotBeNull()) {
                         event shouldBe event4
                         previousEventId shouldBe event3.id
                         nextEventId shouldBe event5.id
                         gap shouldBe GapAfter("end")
                     }
-                    assertSoftly(store.roomTimeline.get(event5.id, room)!!) {
+                    assertSoftly(store.roomTimeline.get(event5.id, room).shouldNotBeNull()) {
                         event shouldBe event5
                         previousEventId shouldBe event4.id
                         nextEventId should beNull()

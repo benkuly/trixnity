@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.*
 import io.kotest.matchers.nulls.beNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
@@ -112,7 +113,7 @@ class OlmServiceTest : ShouldSpec({
                 setKeys[0].oneTimeKeys?.size shouldBe 26
                 setKeys[1].oneTimeKeys?.size shouldBe 26
 
-                setKeys[0].oneTimeKeys!! shouldNotContainAnyOf setKeys[1].oneTimeKeys!!
+                setKeys[0].oneTimeKeys.shouldNotBeNull() shouldNotContainAnyOf setKeys[1].oneTimeKeys.shouldNotBeNull()
             }
         }
         context("server has 50 one time keys") {
@@ -146,8 +147,10 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
-                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
+                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()
+                                                    .shouldNotBeNull(),
+                                                bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()
+                                                    .shouldNotBeNull()
                                             )
                                         )
                                     ), mapOf()
@@ -165,8 +168,10 @@ class OlmServiceTest : ShouldSpec({
                                         algorithms = setOf(Olm, Megolm),
                                         keys = Keys(
                                             keysOf(
-                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()!!,
-                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!
+                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()
+                                                    .shouldNotBeNull(),
+                                                cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()
+                                                    .shouldNotBeNull()
                                             )
                                         )
                                     ), mapOf()
@@ -217,23 +222,28 @@ class OlmServiceTest : ShouldSpec({
                             DecryptedOlmEvent(
                                 eventContent,
                                 bob,
-                                keysOf(bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!),
+                                keysOf(
+                                    bobOlmService.getSelfSignedDeviceKeys().signed.get<Ed25519Key>().shouldNotBeNull()
+                                ),
                                 alice,
-                                keysOf(cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>()!!)
+                                keysOf(
+                                    cutWithAccount.getSelfSignedDeviceKeys().signed.get<Ed25519Key>().shouldNotBeNull()
+                                )
                             )
                         )
                     )
 
                     assertSoftly(
                         store.olm.getInboundMegolmSession(
-                            bobOlmService.getSelfSignedDeviceKeys().signed.get()!!,
+                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>().shouldNotBeNull(),
                             outboundSession.sessionId,
                             RoomId("room", "server")
-                        )!!
+                        ).shouldNotBeNull()
                     ) {
                         roomId shouldBe RoomId("room", "server")
                         sessionId shouldBe outboundSession.sessionId
-                        senderKey shouldBe bobOlmService.getSelfSignedDeviceKeys().signed.get()!!
+                        senderKey shouldBe bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>()
+                            .shouldNotBeNull()
                     }
                 }
             }

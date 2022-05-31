@@ -142,7 +142,7 @@ class MediaServiceTest : ShouldSpec({
         should("save and return local cache uri from thumbnail") {
             val result = cut.prepareUploadThumbnail(miniPng, PNG)
             result?.first shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
-            assertSoftly(result!!.second) {
+            assertSoftly(result.shouldNotBeNull().second) {
                 width shouldBe 600
                 height shouldBe 600
                 size.shouldNotBeNull() shouldBeGreaterThan 1000
@@ -172,7 +172,7 @@ class MediaServiceTest : ShouldSpec({
     context(MediaService::prepareUploadEncryptedThumbnail.name) {
         should("encrypt, save, and return local cache uri from thumbnail") {
             val result = cut.prepareUploadEncryptedThumbnail(miniPng, PNG)
-            assertSoftly(result!!.first) {
+            assertSoftly(result.shouldNotBeNull().first) {
                 url shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
                 key.key shouldNot beEmpty()

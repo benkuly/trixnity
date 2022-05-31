@@ -9,6 +9,7 @@ import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
@@ -246,7 +247,7 @@ class RoomServiceTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe MessageEvent(
                         RedactedMessageEventContent("m.room.message"),
                         event2.id,
@@ -307,7 +308,7 @@ class RoomServiceTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(store.roomTimeline.get(event2.id, room)!!) {
+                assertSoftly(store.roomTimeline.get(event2.id, room).shouldNotBeNull()) {
                     event shouldBe StateEvent(
                         RedactedStateEventContent("m.room.name"),
                         event2.id,
