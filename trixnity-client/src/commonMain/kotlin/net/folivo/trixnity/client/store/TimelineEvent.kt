@@ -1,7 +1,8 @@
 package net.folivo.trixnity.client.store
 
-import kotlinx.serialization.*
-import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
@@ -33,28 +34,25 @@ data class TimelineEvent(
     @Transient
     val isFirst: Boolean = previousEventId == null && gap == null
 
-    @OptIn(ExperimentalSerializationApi::class)
     @Serializable
-    @JsonClassDiscriminator("position")
-    sealed class Gap {
-        abstract val batch: String?
+    data class Gap(
+        val batchBefore: String?,
+        val batchAfter: String?,
+    ) {
+        companion object {
+            fun before(batchBefore: String) = Gap(batchBefore, null)
+            fun after(batchAfter: String) = Gap(null, batchAfter)
+            fun both(batchBefore: String, batchAfter: String) = Gap(batchBefore, batchAfter)
+        }
 
-        @Serializable
-        @SerialName("before")
-        data class GapBefore(
-            override val batch: String?,
-        ) : Gap()
+        val hasGapBefore: Boolean
+            get() = batchBefore != null
+        val hasGapAfter: Boolean
+            get() = batchAfter != null
+        val hasGapBoth: Boolean
+            get() = batchBefore != null && batchAfter != null
 
-        @Serializable
-        @SerialName("both")
-        data class GapBoth(
-            override val batch: String?,
-        ) : Gap()
-
-        @Serializable
-        @SerialName("after")
-        data class GapAfter(
-            override val batch: String?,
-        ) : Gap()
+        fun removeGapBefore() = if (hasGapAfter) copy(batchBefore = null) else null
+        fun removeGapAfter() = if (hasGapBefore) copy(batchAfter = null) else null
     }
 }

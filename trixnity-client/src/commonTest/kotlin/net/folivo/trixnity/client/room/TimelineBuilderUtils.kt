@@ -1,60 +1,70 @@
 package net.folivo.trixnity.client.room
 
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
+import net.folivo.trixnity.client.store.TimelineEvent.Gap
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
-fun timeline(roomId: RoomId = RoomId("room", "server"), block: TimelineBuilder.() -> Unit) =
-    TimelineBuilder(roomId).apply(block).timeline
+fun plainEvent(
+    i: Long = 24,
+    roomId: RoomId = RoomId("room", "server")
+): Event.MessageEvent<RoomMessageEventContent.TextMessageEventContent> {
+    return Event.MessageEvent(
+        RoomMessageEventContent.TextMessageEventContent("message $i"),
+        EventId("\$event$i"),
+        UserId("sender", "server"),
+        roomId,
+        i
+    )
+}
 
-class TimelineBuilder(private val roomId: RoomId) {
+fun timeline(block: TimelineBuilder.() -> Unit) =
+    TimelineBuilder().apply(block).timeline
+
+class TimelineBuilder {
     val timeline = mutableListOf<TimelineEvent>()
     fun fragment(block: TimelineFragmentBuilder.() -> Unit) {
-        timeline += TimelineFragmentBuilder(roomId).apply(block).timeline
+        timeline += TimelineFragmentBuilder().apply(block).timeline
     }
 }
 
-class TimelineFragmentBuilder(private val roomId: RoomId) {
+class TimelineFragmentBuilder {
     val timeline = mutableListOf<TimelineEvent>()
     private var currentGap: String? = null
-    fun event(i: Long) {
-        val eventId = EventId("\$event$i")
+    operator fun Event.RoomEvent<*>.unaryPlus() {
         val previousTimelineEvent = timeline.removeLastOrNull()
         if (previousTimelineEvent != null)
             timeline += previousTimelineEvent.copy(
-                nextEventId = eventId
+                nextEventId = this.id
             )
         timeline += TimelineEvent(
-            event = Event.MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message $i"),
-                eventId,
-                UserId("sender", "server"),
-                roomId,
-                i
-            ),
+            event = this,
             previousEventId = timeline.lastOrNull()?.eventId,
             nextEventId = null,
-            gap = currentGap?.let { GapBefore(it) }
+            gap = currentGap?.let { Gap(it, null) }
         )
         currentGap = null
     }
 
-    fun gap(batch: String) {
+
+    fun gap(batch: String, changeGapOfPreviousEvent: Boolean = true) {
         currentGap = batch
-        val previousTimelineEvent = timeline.removeLastOrNull()
-        if (previousTimelineEvent != null) {
-            timeline += previousTimelineEvent.copy(
-                gap = when (previousTimelineEvent.gap) {
-                    is GapBefore -> GapBoth(batch)
-                    is GapAfter -> previousTimelineEvent.gap
-                    is GapBoth -> previousTimelineEvent.gap
-                    null -> GapAfter(batch)
-                }
-            )
+        if (changeGapOfPreviousEvent) {
+            val previousTimelineEvent = timeline.removeLastOrNull()
+            if (previousTimelineEvent != null) {
+                val gap = previousTimelineEvent.gap
+                timeline += previousTimelineEvent.copy(
+                    gap = when {
+                        gap == null -> Gap.after(batch)
+                        gap.hasGapBoth || gap.hasGapAfter -> previousTimelineEvent.gap
+                        gap.hasGapBefore -> Gap.both(requireNotNull(gap.batchBefore), batch)
+                        else -> Gap.after(batch)
+                    }
+                )
+            }
         }
     }
 }

@@ -473,7 +473,7 @@ class RoomServiceTest : ShouldSpec({
                             eventId = eventId,
                             previousEventId = null,
                             nextEventId = null,
-                            gap = TimelineEvent.Gap.GapBoth("start")
+                            gap = TimelineEvent.Gap.both("start", "end")
                         )
             }
         }

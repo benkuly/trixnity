@@ -99,7 +99,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         eventId = event1.id,
         previousEventId = null,
         nextEventId = event2.id,
-        gap = TimelineEvent.Gap.GapBefore("1")
+        gap = TimelineEvent.Gap.before("1")
     )
     val timelineEvent2 = TimelineEvent(
         event = event2,
@@ -115,7 +115,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         eventId = event3.id,
         previousEventId = event2.id,
         nextEventId = null,
-        gap = TimelineEvent.Gap.GapAfter("3")
+        gap = TimelineEvent.Gap.after("3")
     )
     context(RoomService::getTimelineEvents.name) {
         context("all requested events in store") {
@@ -147,7 +147,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 eventId = event0.id,
                 previousEventId = null,
                 nextEventId = event1.id,
-                gap = TimelineEvent.Gap.GapBefore("0")
+                gap = TimelineEvent.Gap.before("0")
             )
             beforeTest {
                 store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
