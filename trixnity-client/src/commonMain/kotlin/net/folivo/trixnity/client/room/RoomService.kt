@@ -653,6 +653,16 @@ class RoomService(
             log.debug { "add events to timeline at end of $roomId" }
             val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
+            suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
+                timelineEvents.map {
+                    if (it.event.isEncrypted) {
+                        it.event.unsigned?.transactionId?.let { transactionId ->
+                            store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
+                                it.copy(content = Result.success(roomOutboxMessage.content))
+                            }
+                        } ?: it
+                    } else it
+                }
             addEventsToTimeline(
                 startEvent = TimelineEvent(
                     event = newEvents.first(),
@@ -733,7 +743,6 @@ class RoomService(
                         nextEventId = null,
                         gap = null
                     )
-                    store.roomTimeline.addAll(listOf(startEvent))
                 } else {
                     startEvent = initialStartEvent
                     val startGap = startEvent.gap
@@ -752,16 +761,16 @@ class RoomService(
                             limit = limit,
                             filter = LAZY_LOAD_MEMBERS_FILTER
                         ).getOrThrow()
-                        previousToken = response.end?.takeIf { it != response.start }
+                        previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                         previousEvent = possiblyPreviousEvent
                             ?: response.chunk
-                                ?.firstNotNullOfOrNull { store.roomTimeline.get(it.id, it.roomId) }
-                                ?.takeIf { it.gap?.hasGapAfter == true }
-                        previousEventChunk = response.chunk?.filterDuplicateEvents()
-                        previousFilledGap = response.end == destinationBatch && previousEvent != null
-                                || response.chunk?.any { it.id == previousEvent?.eventId } == true
+                                ?.map { store.roomTimeline.get(it.id, it.roomId) }
+                                ?.find { it?.gap?.hasGapAfter == true }
+                        previousEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
+                        previousHasGap = response.end != destinationBatch
+                                && response.chunk?.none { it.id == previousEvent?.eventId } == true
                     } else {
-                        previousToken = startGapBatchBefore
+                        previousToken = null
                         previousEvent = possiblyPreviousEvent
                         previousEventChunk = null
                         previousFilledGap = false
@@ -779,7 +788,7 @@ class RoomService(
                             limit = limit,
                             filter = LAZY_LOAD_MEMBERS_FILTER
                         ).getOrThrow()
-                        nextToken = response.end?.takeIf { it != response.start }
+                        nextToken = response.end
                         nextEvent = possiblyNextEvent
                             ?: response.chunk
                                 ?.firstNotNullOfOrNull { store.roomTimeline.get(it.id, it.roomId) }
