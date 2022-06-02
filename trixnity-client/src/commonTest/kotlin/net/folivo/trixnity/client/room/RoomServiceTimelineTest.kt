@@ -168,6 +168,34 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("add one element to timeline that already exists") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                store.roomTimeline.addAll(
+                    timeline {
+                        fragment {
+                            +event1
+                            gap("oldPrevious")
+                        }
+                    }
+                )
+                cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", "next", false)
+                storeTimeline(event1) shouldContainExactly timeline {
+                    fragment {
+                        +event1
+                        gap("oldPrevious")
+                    }
+                }
+            }
+            should("filter duplicate events") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                cut.addEventsToTimelineAtEnd(room, listOf(event1, event1), "previous", "next", false)
+                storeTimeline(event1) shouldContainExactly timeline {
+                    fragment {
+                        +event1
+                        gap("next")
+                    }
+                }
+            }
         }
         context("with gap") {
             context("without previous events") {
@@ -558,8 +586,8 @@ class RoomServiceTimelineTest : ShouldSpec({
                             start = "before-1",
                             end = "after-5",
                             event = event3,
-                            eventsBefore = listOf(event1,event2), // server reordered events
-                            eventsAfter = listOf(event5,event4), // server reordered events
+                            eventsBefore = listOf(event1, event2), // server reordered events
+                            eventsAfter = listOf(event5, event4), // server reordered events
                         )
                     }
                 }
@@ -1199,7 +1227,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
-            should("should handle events in different order"){
+            should("should handle events in different order") {
                 store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
                     matrixJsonEndpoint(

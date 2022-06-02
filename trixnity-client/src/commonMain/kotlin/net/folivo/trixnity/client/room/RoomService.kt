@@ -216,17 +216,19 @@ class RoomService(
             store.room.update(roomId) { it?.copy(membership = JOIN) ?: Room(roomId = roomId, membership = JOIN) }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
             room.value.timeline?.also {
-                addEventsToTimelineAtEnd(
-                    roomId = roomId,
-                    newEvents = it.events,
-                    previousBatch = it.previousBatch,
-                    nextBatch = syncResponse.nextBatch,
-                    hasGapBefore = it.limited ?: false
-                )
-                it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                it.events?.forEach { event ->
-                    syncOutboxMessage(event)
-                    setLastRelevantEvent(event)
+                getRoomTimelineMutex(room.key).withLock {
+                    addEventsToTimelineAtEnd(
+                        roomId = roomId,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                    it.events?.forEach { event ->
+                        syncOutboxMessage(event)
+                        setLastRelevantEvent(event)
+                    }
                 }
             }
             room.value.summary?.also { roomSummary ->
@@ -236,16 +238,18 @@ class RoomService(
         syncResponse.room?.leave?.entries?.forEach { room ->
             store.room.update(room.key) { it?.copy(membership = LEAVE) ?: Room(room.key, membership = LEAVE) }
             room.value.timeline?.also {
-                addEventsToTimelineAtEnd(
-                    roomId = room.key,
-                    newEvents = it.events,
-                    previousBatch = it.previousBatch,
-                    nextBatch = syncResponse.nextBatch,
-                    hasGapBefore = it.limited ?: false
-                )
-                it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                it.events?.forEach { event ->
-                    setLastRelevantEvent(event)
+                getRoomTimelineMutex(room.key).withLock {
+                    addEventsToTimelineAtEnd(
+                        roomId = room.key,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                    it.events?.forEach { event ->
+                        setLastRelevantEvent(event)
+                    }
                 }
             }
         }
@@ -647,7 +651,7 @@ class RoomService(
         previousBatch: String?,
         nextBatch: String,
         hasGapBefore: Boolean
-    ) = getRoomTimelineMutex(roomId).withLock {
+    ) {
         val events = newEvents?.filterDuplicateAndExistingEvents()
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
@@ -665,7 +669,7 @@ class RoomService(
                 }
             addEventsToTimeline(
                 startEvent = TimelineEvent(
-                    event = newEvents.first(),
+                    event = events.first(),
                     previousEventId = null,
                     nextEventId = null,
                     gap = null
@@ -678,7 +682,7 @@ class RoomService(
                 nextToken = nextBatch,
                 nextHasGap = true,
                 nextEvent = null,
-                nextEventChunk = newEvents.drop(1),
+                nextEventChunk = events.drop(1),
                 modifyTimelineEventsBeforeSave = ::useDecryptedOutboxMessagesForOwnTimelineEvents
             )
         }
@@ -824,9 +828,9 @@ class RoomService(
     ) {
         log.trace {
             "addEventsToTimeline with parameters:\n" +
-                    "startEvent=$startEvent\n" +
-                    "previousToken=$previousToken, previousHasGap=$previousHasGap, previousEvent=$previousEvent, previousEventChunk=$previousEventChunk\n" +
-                    "nextToken=$nextToken, nextHasGap=$nextHasGap, nextEvent=$nextEvent, nextEventChunk=$nextEventChunk"
+                    "startEvent=${startEvent.eventId}\n" +
+                    "previousToken=$previousToken, previousHasGap=$previousHasGap, previousEvent=${previousEvent?.eventId}, previousEventChunk=${previousEventChunk?.map { it.id }}\n" +
+                    "nextToken=$nextToken, nextHasGap=$nextHasGap, nextEvent=${nextEvent?.eventId}, nextEventChunk=${nextEventChunk?.map { it.id }}"
         }
 
         if (previousEvent != null)
