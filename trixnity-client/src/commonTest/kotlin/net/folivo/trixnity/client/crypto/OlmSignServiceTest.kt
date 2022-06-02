@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
@@ -213,7 +214,7 @@ class OlmSignServiceTest : ShouldSpec({
             )
             val result = cut.sign(event)
             result.signed shouldBe event
-            assertSoftly(result.signatures!!.entries.first()) {
+            assertSoftly(result.signatures.shouldNotBeNull().entries.first()) {
                 key shouldBe ownUserId
                 value.keys shouldHaveSize 1
                 assertSoftly(value.keys.first()) {

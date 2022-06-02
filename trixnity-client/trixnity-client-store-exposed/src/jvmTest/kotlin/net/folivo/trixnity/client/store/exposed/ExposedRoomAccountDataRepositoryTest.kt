@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -40,7 +41,7 @@ class ExposedRoomAccountDataRepositoryTest : ShouldSpec({
                 ""
             )
         )
-        val accountDataEvent3 = mapOf("" to accountDataEvent2[""]!!.copy(roomId = roomId1))
+        val accountDataEvent3 = mapOf("" to accountDataEvent2[""].shouldNotBeNull().copy(roomId = roomId1))
 
         newSuspendedTransaction {
             cut.save(key1, accountDataEvent1)

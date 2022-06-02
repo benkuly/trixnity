@@ -83,17 +83,11 @@ suspend inline fun RoomTimelineStore.getNext(
 ): StateFlow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId, scope) }
 
-suspend inline fun RoomTimelineStore.getNext(
-    event: TimelineEvent,
-    withTransaction: Boolean = true
-): TimelineEvent? =
-    event.nextEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
+suspend inline fun RoomTimelineStore.getNext(event: TimelineEvent): TimelineEvent? =
+    event.nextEventId?.let { get(it, event.roomId) }
 
-suspend inline fun RoomTimelineStore.getPrevious(
-    event: TimelineEvent,
-    withTransaction: Boolean = true
-): TimelineEvent? =
-    event.previousEventId?.let { get(it, event.roomId, withTransaction = withTransaction) }
+suspend inline fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
+    event.previousEventId?.let { get(it, event.roomId) }
 
 suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId) != null

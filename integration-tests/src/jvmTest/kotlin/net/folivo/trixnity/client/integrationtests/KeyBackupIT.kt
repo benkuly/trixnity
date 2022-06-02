@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
@@ -146,10 +147,10 @@ class KeyBackupIT {
                     .toFlowList(MutableStateFlow(2))
                     .map { it.map { it.value?.eventId } }
                     .first { it.size == 2 }
-                events[0]!!.let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
-                events[1]!!.let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()

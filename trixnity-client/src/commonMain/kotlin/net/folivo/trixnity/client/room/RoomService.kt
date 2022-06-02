@@ -64,6 +64,7 @@ interface IRoomService {
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = INFINITE,
+        fetchNeighborLimit: Long = 20,
     ): StateFlow<TimelineEvent?>
 
     suspend fun getLastTimelineEvent(
@@ -104,7 +105,7 @@ interface IRoomService {
      * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
      * ```kotlin
      * launch {
-     *   matrixClient.room.getLastTimelineEvents(roomId, this).collectLatest { timelineEventsFlow ->
+     *   matrixClient.room.getLastTimelineEvents(roomId).collectLatest { timelineEventsFlow ->
      *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
      *   }
      * }
@@ -215,16 +216,19 @@ class RoomService(
             store.room.update(roomId) { it?.copy(membership = JOIN) ?: Room(roomId = roomId, membership = JOIN) }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
             room.value.timeline?.also {
-                addEventsToTimelineAtEnd(
-                    roomId = roomId,
-                    newEvents = it.events,
-                    previousBatch = it.previousBatch,
-                    hasGapBefore = it.limited ?: false
-                )
-                it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                it.events?.forEach { event ->
-                    syncOutboxMessage(event)
-                    setLastRelevantEvent(event)
+                getRoomTimelineMutex(room.key).withLock {
+                    addEventsToTimelineAtEnd(
+                        roomId = roomId,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                    it.events?.forEach { event ->
+                        syncOutboxMessage(event)
+                        setLastRelevantEvent(event)
+                    }
                 }
             }
             room.value.summary?.also { roomSummary ->
@@ -234,15 +238,18 @@ class RoomService(
         syncResponse.room?.leave?.entries?.forEach { room ->
             store.room.update(room.key) { it?.copy(membership = LEAVE) ?: Room(room.key, membership = LEAVE) }
             room.value.timeline?.also {
-                addEventsToTimelineAtEnd(
-                    roomId = room.key,
-                    newEvents = it.events,
-                    previousBatch = it.previousBatch,
-                    hasGapBefore = it.limited ?: false
-                )
-                it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                it.events?.forEach { event ->
-                    setLastRelevantEvent(event)
+                getRoomTimelineMutex(room.key).withLock {
+                    addEventsToTimelineAtEnd(
+                        roomId = room.key,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                    it.events?.forEach { event ->
+                        setLastRelevantEvent(event)
+                    }
                 }
             }
         }
@@ -629,51 +636,248 @@ class RoomService(
         }
     }
 
+    private val timelineMutex = MutableStateFlow<Map<RoomId, Mutex>>(emptyMap())
+    private fun getRoomTimelineMutex(roomId: RoomId): Mutex =
+        requireNotNull(timelineMutex.updateAndGet { if (it.containsKey(roomId)) it else it + (roomId to Mutex()) }[roomId])
+
     // You may think: wtf are you doing here? This prevents loops, when the server has the wonderful idea to send you
     // the same event in two different or in the same sync response(s). And that really happens 🤯.
-    private suspend fun List<RoomEvent<*>>.filterDuplicateEvents() =
-        this.distinctBy { it.id }.filter { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) == null }
+    private suspend fun List<RoomEvent<*>>.filterDuplicateAndExistingEvents() =
+        this.distinctBy { it.id }.filter { store.roomTimeline.get(it.id, it.roomId) == null }
 
     internal suspend fun addEventsToTimelineAtEnd(
         roomId: RoomId,
         newEvents: List<RoomEvent<*>>?,
         previousBatch: String?,
+        nextBatch: String,
         hasGapBefore: Boolean
-    ) = store.transaction {
-        val events = newEvents?.filterDuplicateEvents()
+    ) {
+        val events = newEvents?.filterDuplicateAndExistingEvents()
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
             val room = store.room.get(roomId).value
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
-            val previousEventId =
-                room.lastEventId?.also {
-                    store.roomTimeline.update(it, roomId, withTransaction = false) { oldEvent ->
-                        val nextEventIdForPreviousEvent = events[0].id
-                        if (hasGapBefore)
-                            oldEvent?.copy(nextEventId = nextEventIdForPreviousEvent)
-                        else {
-                            val gap = oldEvent?.gap
-                            oldEvent?.copy(
-                                nextEventId = nextEventIdForPreviousEvent,
-                                gap = if (gap is GapBoth) GapBefore(gap.batch) else null
-                            )
-                        }
+            suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
+                timelineEvents.map {
+                    if (it.event.isEncrypted) {
+                        it.event.unsigned?.transactionId?.let { transactionId ->
+                            store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
+                                it.copy(content = Result.success(roomOutboxMessage.content))
+                            }
+                        } ?: it
+                    } else it
+                }
+            addEventsToTimeline(
+                startEvent = TimelineEvent(
+                    event = events.first(),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null
+                ),
+                roomId = roomId,
+                previousToken = previousBatch,
+                previousHasGap = hasGapBefore,
+                previousEvent = room.lastEventId?.let { store.roomTimeline.get(it, roomId) },
+                previousEventChunk = null,
+                nextToken = nextBatch,
+                nextHasGap = true,
+                nextEvent = null,
+                nextEventChunk = events.drop(1),
+                modifyTimelineEventsBeforeSave = ::useDecryptedOutboxMessagesForOwnTimelineEvents
+            )
+        }
+    }
+
+    override suspend fun fetchMissingEvents(
+        startEventId: EventId,
+        roomId: RoomId,
+        limit: Long
+    ): Result<Unit> = coroutineScope {
+        getRoomTimelineMutex(roomId).withLock {
+            kotlin.runCatching {
+                val isLastEventId = store.room.get(roomId).value?.lastEventId == startEventId
+
+                val initialStartEvent = store.roomTimeline.get(startEventId, roomId)
+                val startEvent: TimelineEvent
+                val previousToken: String?
+                val previousHasGap: Boolean
+                val previousEvent: TimelineEvent?
+                val previousEventChunk: List<RoomEvent<*>>?
+                val nextToken: String?
+                val nextHasGap: Boolean
+                val nextEvent: TimelineEvent?
+                val nextEventChunk: List<RoomEvent<*>>?
+
+                if (initialStartEvent == null) {
+                    log.debug { "fetch missing event from $startEventId" }
+                    val context = api.rooms.getEventContext(
+                        roomId = roomId,
+                        eventId = startEventId,
+                        filter = LAZY_LOAD_MEMBERS_FILTER,
+                        limit = if (isLastEventId) 0 else limit
+                    ).getOrThrow()
+
+                    previousToken = context.start
+                    previousEvent = context.eventsBefore
+                        ?.map { store.roomTimeline.get(it.id, it.roomId) }
+                        ?.find { it?.gap?.hasGapAfter == true }
+                    previousEventChunk = context.eventsBefore?.filterDuplicateAndExistingEvents()
+                    previousHasGap = previousEvent == null
+
+                    nextToken = context.end
+                    nextEvent = context.eventsAfter
+                        ?.map { store.roomTimeline.get(it.id, it.roomId) }
+                        ?.find { it?.gap?.hasGapBefore == true }
+                    nextEventChunk = context.eventsAfter?.filterDuplicateAndExistingEvents()
+                    nextHasGap = nextEvent == null
+
+                    startEvent = TimelineEvent(
+                        event = context.event,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null
+                    )
+                } else {
+                    startEvent = initialStartEvent
+                    val startGap = startEvent.gap
+                    val startGapBatchBefore = startGap?.batchBefore
+                    val startGapBatchAfter = startGap?.batchAfter
+
+                    val possiblyPreviousEvent = store.roomTimeline.getPrevious(startEvent)
+                    if (startGapBatchBefore != null) {
+                        log.debug { "fetch missing events before $startEventId" }
+                        val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
+                        val response = api.rooms.getEvents(
+                            roomId = roomId,
+                            from = startGapBatchBefore,
+                            to = destinationBatch,
+                            dir = BACKWARDS,
+                            limit = limit,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        ).getOrThrow()
+                        previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
+                        previousEvent = possiblyPreviousEvent
+                            ?: response.chunk
+                                ?.map { store.roomTimeline.get(it.id, it.roomId) }
+                                ?.find { it?.gap?.hasGapAfter == true }
+                        previousEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
+                        previousHasGap = response.end != destinationBatch
+                                && response.chunk?.none { it.id == previousEvent?.eventId } == true
+                    } else {
+                        previousToken = null
+                        previousEvent = possiblyPreviousEvent
+                        previousEventChunk = null
+                        previousHasGap = false
+                    }
+
+                    val possiblyNextEvent = store.roomTimeline.getNext(startEvent)
+                    if (startGapBatchAfter != null && !isLastEventId) {
+                        log.debug { "fetch missing events after $startEventId" }
+                        val destinationBatch = possiblyNextEvent?.gap?.batchBefore
+                        val response = api.rooms.getEvents(
+                            roomId = roomId,
+                            from = startGapBatchAfter,
+                            to = destinationBatch,
+                            dir = FORWARDS,
+                            limit = limit,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        ).getOrThrow()
+                        nextToken = response.end
+                        nextEvent = possiblyNextEvent
+                            ?: response.chunk
+                                ?.map { store.roomTimeline.get(it.id, it.roomId) }
+                                ?.find { it?.gap?.hasGapBefore == true }
+                        nextEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
+                        nextHasGap = response.end != destinationBatch
+                                && response.chunk?.none { it.id == nextEvent?.eventId } == true
+                    } else {
+                        nextToken = startGapBatchAfter
+                        nextEvent = possiblyNextEvent
+                        nextEventChunk = null
+                        nextHasGap = isLastEventId
                     }
                 }
-            val timelineEvents = events.mapIndexed { index, event ->
+                addEventsToTimeline(
+                    startEvent = startEvent,
+                    roomId = roomId,
+                    previousToken = previousToken,
+                    previousHasGap = previousHasGap,
+                    previousEvent = previousEvent,
+                    previousEventChunk = previousEventChunk,
+                    nextToken = nextToken,
+                    nextHasGap = nextHasGap,
+                    nextEvent = nextEvent,
+                    nextEventChunk = nextEventChunk,
+                )
+            }
+        }
+    }
+
+    private suspend fun addEventsToTimeline(
+        startEvent: TimelineEvent,
+        roomId: RoomId,
+        previousToken: String?,
+        previousHasGap: Boolean,
+        previousEvent: TimelineEvent?,
+        previousEventChunk: List<RoomEvent<*>>?,
+        nextToken: String?,
+        nextHasGap: Boolean,
+        nextEvent: TimelineEvent?,
+        nextEventChunk: List<RoomEvent<*>>?,
+        modifyTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
+    ) {
+        log.trace {
+            "addEventsToTimeline with parameters:\n" +
+                    "startEvent=${startEvent.eventId}\n" +
+                    "previousToken=$previousToken, previousHasGap=$previousHasGap, previousEvent=${previousEvent?.eventId}, previousEventChunk=${previousEventChunk?.map { it.id }}\n" +
+                    "nextToken=$nextToken, nextHasGap=$nextHasGap, nextEvent=${nextEvent?.eventId}, nextEventChunk=${nextEventChunk?.map { it.id }}"
+        }
+
+        if (previousEvent != null)
+            store.roomTimeline.update(previousEvent.eventId, roomId) { oldPreviousEvent ->
+                val oldGap = oldPreviousEvent?.gap
+                oldPreviousEvent?.copy(
+                    nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
+                    gap = if (previousHasGap) oldGap else oldGap?.removeGapAfter(),
+                )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+            }
+        if (nextEvent != null)
+            store.roomTimeline.update(nextEvent.eventId, roomId) { oldNextEvent ->
+                val oldGap = oldNextEvent?.gap
+                oldNextEvent?.copy(
+                    previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
+                    gap = if (nextHasGap) oldGap else oldGap?.removeGapBefore()
+                )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+            }
+        store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
+            val hasGapBefore = previousEventChunk.isNullOrEmpty() && previousHasGap
+            val hasGapAfter = nextEventChunk.isNullOrEmpty() && nextHasGap
+            (oldStartEvent ?: startEvent).copy(
+                previousEventId = previousEventChunk?.firstOrNull()?.id ?: previousEvent?.eventId,
+                nextEventId = nextEventChunk?.firstOrNull()?.id ?: nextEvent?.eventId,
+                gap = when {
+                    hasGapBefore && hasGapAfter && previousToken != null && nextToken != null
+                    -> GapBoth(previousToken, nextToken)
+                    hasGapBefore && previousToken != null -> GapBefore(previousToken)
+                    hasGapAfter && nextToken != null -> GapAfter(nextToken)
+                    else -> null
+                }
+            ).let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+        }
+
+        if (!previousEventChunk.isNullOrEmpty()) {
+            log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
+            val timelineEvents = previousEventChunk.mapIndexed { index, event ->
                 when (index) {
-                    events.lastIndex -> {
-                        requireNotNull(previousBatch)
+                    previousEventChunk.lastIndex -> {
                         TimelineEvent(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = if (index == 0) previousEventId
-                            else events.getOrNull(index - 1)?.id,
-                            nextEventId = null,
-                            gap = if (index == 0 && hasGapBefore)
-                                GapBoth(previousBatch)
-                            else GapAfter(previousBatch),
+                            previousEventId = previousEvent?.eventId,
+                            nextEventId = if (index == 0) startEvent.eventId
+                            else previousEventChunk.getOrNull(index - 1)?.id,
+                            gap = if (previousHasGap) previousToken?.let { GapBefore(it) } else null
                         )
                     }
                     0 -> {
@@ -681,11 +885,9 @@ class RoomService(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = previousEventId,
-                            nextEventId = events.getOrNull(1)?.id,
-                            gap = if (hasGapBefore && previousBatch != null)
-                                GapBefore(previousBatch)
-                            else null
+                            previousEventId = previousEventChunk.getOrNull(1)?.id,
+                            nextEventId = startEvent.eventId,
+                            gap = null
                         )
                     }
                     else -> {
@@ -693,316 +895,55 @@ class RoomService(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = events.getOrNull(index - 1)?.id,
-                            nextEventId = events.getOrNull(index + 1)?.id,
+                            previousEventId = previousEventChunk.getOrNull(index + 1)?.id,
+                            nextEventId = previousEventChunk.getOrNull(index - 1)?.id,
                             gap = null
                         )
                     }
                 }
             }
-            val replaceOwnMessagesWithOutboxContent = timelineEvents.map {
-                if (it.event.isEncrypted) {
-                    it.event.unsigned?.transactionId?.let { transactionId ->
-                        store.roomOutboxMessage.get(transactionId)?.let { roomOutboxMessage ->
-                            it.copy(content = Result.success(roomOutboxMessage.content))
-                        }
-                    } ?: it
-                } else it
-            }
-            store.roomTimeline.addAll(replaceOwnMessagesWithOutboxContent, withTransaction = false)
+            store.roomTimeline.addAll(timelineEvents)
         }
-    }
 
-    private val fetchMissingEventsMutex = MutableStateFlow<Map<RoomId, Mutex>>(emptyMap())
-    override suspend fun fetchMissingEvents(
-        startEventId: EventId,
-        roomId: RoomId,
-        limit: Long
-    ): Result<Unit> = coroutineScope {
-        fetchMissingEventsMutex
-            .updateAndGet { if (it.containsKey(roomId)) it else it + (roomId to Mutex()) }[roomId]
-            ?.withLock {
-                kotlin.runCatching {
-                    store.transaction {
-                        val initialStartEvent = store.roomTimeline.get(startEventId, roomId, withTransaction = false)
-                        val startEvent: TimelineEvent
-                        val previousToken: String?
-                        val previousFilledGap: Boolean
-                        val previousEvent: TimelineEvent?
-                        val previousEventChunk: List<RoomEvent<*>>?
-                        val nextToken: String?
-                        val nextFilledGap: Boolean
-                        val nextEvent: TimelineEvent?
-                        val nextEventChunk: List<RoomEvent<*>>?
-
-                        if (initialStartEvent == null) {
-                            log.debug { "fetch missing event from $startEventId" }
-                            val context = api.rooms.getEventContext(
-                                roomId = roomId,
-                                eventId = startEventId,
-                                filter = LAZY_LOAD_MEMBERS_FILTER,
-                                limit = limit
-                            ).getOrThrow()
-                            previousToken = context.start
-                            previousEvent = context.eventsBefore
-                                ?.firstNotNullOfOrNull {
-                                    store.roomTimeline.get(
-                                        it.id,
-                                        it.roomId,
-                                        withTransaction = false
-                                    )
-                                }
-                            previousEventChunk = context.eventsBefore?.filterDuplicateEvents()
-                            previousFilledGap = previousEvent != null
-
-                            nextToken = context.end
-                            nextEvent = context.eventsAfter
-                                ?.firstNotNullOfOrNull {
-                                    store.roomTimeline.get(
-                                        it.id,
-                                        it.roomId,
-                                        withTransaction = false
-                                    )
-                                }
-                            nextEventChunk = context.eventsAfter?.filterDuplicateEvents()
-                            nextFilledGap = nextEvent != null
-
-                            log.debug { "save start event of $roomId with $startEventId" }
-                            startEvent = TimelineEvent(
-                                event = context.event,
-                                previousEventId = null,
-                                nextEventId = null,
-                                gap = when {
-                                    previousEventChunk.isNullOrEmpty() && nextEventChunk.isNullOrEmpty() -> {
-                                        (previousToken ?: nextToken)?.let { GapBoth(it) }
-                                    }
-                                    previousEventChunk.isNullOrEmpty() && previousToken != null -> GapBefore(
-                                        previousToken
-                                    )
-                                    nextEventChunk.isNullOrEmpty() && nextToken != null -> GapAfter(nextToken)
-                                    else -> null
-                                }
-                            )
-                            store.roomTimeline.update(
-                                startEvent.eventId,
-                                roomId,
-                                withTransaction = false
-                            ) { startEvent }
-                        } else {
-                            startEvent = initialStartEvent
-                            val startGap = startEvent.gap
-                            previousEvent = store.roomTimeline.getPrevious(startEvent, withTransaction = false)
-
-                            if (startGap is GapBefore || startGap is GapBoth) {
-                                log.debug { "fetch missing events before $startEventId" }
-                                val destinationBatch = previousEvent?.gap?.batch
-                                val response = api.rooms.getEvents(
-                                    roomId = roomId,
-                                    from = startGap.batch,
-                                    to = destinationBatch,
-                                    dir = BACKWARDS,
-                                    limit = limit,
-                                    filter = LAZY_LOAD_MEMBERS_FILTER
-                                ).getOrThrow()
-                                previousToken = response.end?.takeIf { it != response.start }
-                                previousEventChunk = response.chunk?.filterDuplicateEvents()
-                                previousFilledGap = response.end == destinationBatch
-                                        || response.chunk?.any { it.id == previousEvent?.eventId } == true
-                            } else {
-                                previousToken = null
-                                previousEventChunk = null
-                                previousFilledGap = false
-                            }
-                            nextEvent = store.roomTimeline.getNext(startEvent, withTransaction = false)
-
-                            if (nextEvent != null && (startGap is GapAfter || startGap is GapBoth)) {
-                                log.debug { "fetch missing events after $startEventId" }
-                                val destinationBatch = nextEvent.gap?.batch
-                                val response = api.rooms.getEvents(
-                                    roomId = roomId,
-                                    from = startGap.batch,
-                                    to = destinationBatch,
-                                    dir = FORWARDS,
-                                    limit = limit,
-                                    filter = LAZY_LOAD_MEMBERS_FILTER
-                                ).getOrThrow()
-                                nextToken = response.end?.takeIf { it != response.start }
-                                nextEventChunk = response.chunk?.filterDuplicateEvents()
-                                nextFilledGap = response.end == destinationBatch
-                                        || response.chunk?.any { it.id == nextEvent.eventId } == true
-                            } else {
-                                nextToken = null
-                                nextEventChunk = null
-                                nextFilledGap = false
-                            }
-                        }
-                        log.trace {
-                            "addEvents with parameters:\n" +
-                                    "startEvent=$startEvent\n" +
-                                    "previousToken=$previousToken, previousFilledGap=$previousFilledGap, previousEvent=$previousEvent, previousEventChunk=$previousEventChunk\n" +
-                                    "nextToken=$nextToken, nextFilledGap=$nextFilledGap, nextEvent=$nextEvent, nextEventChunk=$nextEventChunk"
-                        }
-
-                        if (!previousEventChunk.isNullOrEmpty()) {
-                            log.debug { "add events to timeline of $roomId before $startEventId" }
-                            store.roomTimeline.update(
-                                startEvent.eventId,
-                                roomId,
-                                withTransaction = false
-                            ) { oldStartEvent ->
-                                val oldGap = oldStartEvent?.gap
-                                oldStartEvent?.copy(
-                                    previousEventId = previousEventChunk.first().id,
-                                    gap = when (oldGap) {
-                                        is GapAfter -> oldGap
-                                        is GapBoth -> GapAfter(oldGap.batch)
-                                        else -> null
-                                    }
-                                )
-                            }
-                            if (previousEvent != null)
-                                store.roomTimeline.update(
-                                    previousEvent.eventId,
-                                    roomId,
-                                    withTransaction = false
-                                ) { oldPreviousEvent ->
-                                    val oldGap = oldPreviousEvent?.gap
-                                    oldPreviousEvent?.copy(
-                                        nextEventId = previousEventChunk.last().id,
-                                        gap = when {
-                                            previousFilledGap && oldGap is GapBoth -> GapBefore(oldGap.batch)
-                                            oldGap is GapBoth -> oldGap
-                                            else -> null
-                                        },
-                                    )
-                                }
-                            val timelineEvents = previousEventChunk.mapIndexed { index, event ->
-                                when (index) {
-                                    previousEventChunk.lastIndex -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = previousEvent?.eventId,
-                                            nextEventId = if (index == 0) startEvent.eventId
-                                            else previousEventChunk.getOrNull(index - 1)?.id,
-                                            gap = if (previousFilledGap) null else previousToken?.let { GapBefore(it) }
-                                        )
-                                    }
-                                    0 -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = previousEventChunk.getOrNull(1)?.id,
-                                            nextEventId = startEvent.eventId,
-                                            gap = null
-                                        )
-                                    }
-                                    else -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = previousEventChunk.getOrNull(index + 1)?.id,
-                                            nextEventId = previousEventChunk.getOrNull(index - 1)?.id,
-                                            gap = null
-                                        )
-                                    }
-                                }
-                            }
-                            store.roomTimeline.addAll(timelineEvents, withTransaction = false)
-                        } else if (previousToken == null) {
-                            log.debug { "reached the start of visible timeline of $roomId" }
-                            store.roomTimeline.update(
-                                startEvent.eventId,
-                                roomId,
-                                withTransaction = false
-                            ) { oldStartEvent ->
-                                val oldGap = oldStartEvent?.gap
-                                oldStartEvent?.copy(
-                                    gap = when (oldGap) {
-                                        is GapAfter -> oldGap
-                                        is GapBoth -> GapAfter(oldGap.batch)
-                                        else -> null
-                                    }
-                                )
-                            }
-                        }
-
-                        if (!nextEventChunk.isNullOrEmpty()) {
-                            log.debug { "add events to timeline of $roomId before $startEventId" }
-                            store.roomTimeline.update(
-                                startEvent.eventId,
-                                roomId,
-                                withTransaction = false
-                            ) { oldStartEvent ->
-                                val oldGap = oldStartEvent?.gap
-                                oldStartEvent?.copy(
-                                    nextEventId = nextEventChunk.first().id,
-                                    gap = when (oldGap) {
-                                        is GapBefore -> oldGap
-                                        is GapBoth -> GapBefore(oldGap.batch)
-                                        else -> null
-                                    }
-                                )
-                            }
-                            if (nextEvent != null)
-                                store.roomTimeline.update(
-                                    nextEvent.eventId,
-                                    roomId,
-                                    withTransaction = false
-                                ) { oldNextEvent ->
-                                    val oldGap = oldNextEvent?.gap
-                                    oldNextEvent?.copy(
-                                        previousEventId = nextEventChunk.last().id,
-                                        gap = when {
-                                            nextFilledGap && oldGap is GapBoth -> GapAfter(oldGap.batch)
-                                            oldGap is GapBoth -> oldGap
-                                            else -> null
-                                        }
-                                    )
-                                }
-                            val timelineEvents = nextEventChunk.mapIndexed { index, event ->
-                                when (index) {
-                                    nextEventChunk.lastIndex -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = if (index == 0) startEvent.eventId
-                                            else nextEventChunk.getOrNull(index - 1)?.id,
-                                            nextEventId = nextEvent?.eventId,
-                                            gap = if (nextFilledGap) null else nextToken?.let { GapAfter(it) },
-                                        )
-                                    }
-                                    0 -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = startEvent.eventId,
-                                            nextEventId = nextEventChunk.getOrNull(1)?.id,
-                                            gap = null
-                                        )
-                                    }
-                                    else -> {
-                                        TimelineEvent(
-                                            event = event,
-                                            roomId = roomId,
-                                            eventId = event.id,
-                                            previousEventId = nextEventChunk.getOrNull(index - 1)?.id,
-                                            nextEventId = nextEventChunk.getOrNull(index + 1)?.id,
-                                            gap = null
-                                        )
-                                    }
-                                }
-                            }
-                            store.roomTimeline.addAll(timelineEvents, withTransaction = false)
-                        }
+        if (!nextEventChunk.isNullOrEmpty()) {
+            log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
+            val timelineEvents = nextEventChunk.mapIndexed { index, event ->
+                when (index) {
+                    nextEventChunk.lastIndex -> {
+                        TimelineEvent(
+                            event = event,
+                            roomId = roomId,
+                            eventId = event.id,
+                            previousEventId = if (index == 0) startEvent.eventId
+                            else nextEventChunk.getOrNull(index - 1)?.id,
+                            nextEventId = nextEvent?.eventId,
+                            gap = if (nextHasGap) nextToken?.let { GapAfter(it) } else null,
+                        )
+                    }
+                    0 -> {
+                        TimelineEvent(
+                            event = event,
+                            roomId = roomId,
+                            eventId = event.id,
+                            previousEventId = startEvent.eventId,
+                            nextEventId = nextEventChunk.getOrNull(1)?.id,
+                            gap = null
+                        )
+                    }
+                    else -> {
+                        TimelineEvent(
+                            event = event,
+                            roomId = roomId,
+                            eventId = event.id,
+                            previousEventId = nextEventChunk.getOrNull(index - 1)?.id,
+                            nextEventId = nextEventChunk.getOrNull(index + 1)?.id,
+                            gap = null
+                        )
                     }
                 }
-            } ?: Result.failure(IllegalStateException("mutex was null"))
+            }
+            store.roomTimeline.addAll(modifyTimelineEventsBeforeSave(timelineEvents))
+        }
     }
 
     private fun TimelineEvent.canBeDecrypted(): Boolean =
@@ -1020,6 +961,7 @@ class RoomService(
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
+        fetchNeighborLimit: Long,
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             coroutineScope.launch {
@@ -1029,7 +971,7 @@ class RoomService(
                         RUNNING,
                         onError = { log.error(it) { "could not fetch missing event $eventId" } },
                     ) {
-                        fetchMissingEvents(eventId, roomId).getOrThrow()
+                        fetchMissingEvents(eventId, roomId, fetchNeighborLimit).getOrThrow()
                     }
                     store.roomTimeline.get(eventId, roomId)
                 }
@@ -1134,13 +1076,15 @@ class RoomService(
                 currentTimelineEventFlow = currentTimelineEventFlow
                     .filterNotNull()
                     .map { currentTimelineEvent ->
-                        if (currentTimelineEvent.gap is GapBoth
-                            || direction == FORWARDS && currentTimelineEvent.gap is GapAfter
-                            || direction == BACKWARDS && currentTimelineEvent.gap is GapBefore
+                        val gap = currentTimelineEvent.gap
+                        if (gap != null && (gap.hasGapBoth
+                                    || direction == FORWARDS && gap.hasGapAfter
+                                    || direction == BACKWARDS && gap.hasGapBefore)
                         ) currentSyncState.retryWhenSyncIs(
                             RUNNING,
                             onError = { log.error(it) { "could not fetch missing events" } },
                         ) {
+                            log.debug { "fetch missing events before/after ${currentTimelineEvent.eventId}" }
                             fetchMissingEvents(currentTimelineEvent.eventId, currentTimelineEvent.roomId).getOrThrow()
                         }
                         when (direction) {

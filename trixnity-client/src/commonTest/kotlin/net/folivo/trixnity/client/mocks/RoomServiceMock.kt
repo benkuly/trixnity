@@ -30,6 +30,7 @@ class RoomServiceMock : IRoomService {
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
+        fetchNeighborLimit: Long,
     ): StateFlow<TimelineEvent?> {
         return returnGetTimelineEvent
     }

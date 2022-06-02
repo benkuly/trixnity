@@ -132,9 +132,10 @@ class PushService(
             }
         }
         val rule = allRules.find { pushRule ->
+            val pattern = pushRule.pattern
             pushRule.enabled
                     && pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) }
-                    && if (pushRule.pattern != null) bodyContainsPattern(event, pushRule.pattern!!) else true
+                    && if (pattern != null) bodyContainsPattern(event, pattern) else true
         }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
