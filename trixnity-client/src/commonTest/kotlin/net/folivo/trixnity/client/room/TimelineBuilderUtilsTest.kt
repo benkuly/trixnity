@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import kotlin.test.Test
 
 class TimelineBuilderUtilsTest {
@@ -53,19 +54,19 @@ class TimelineBuilderUtilsTest {
                 event = event2,
                 previousEventId = event1.id,
                 nextEventId = null,
-                gap = TimelineEvent.Gap.after("2after")
+                gap = GapAfter("2after")
             ),
             TimelineEvent(
                 event = event3,
                 previousEventId = null,
                 nextEventId = event4.id,
-                gap = TimelineEvent.Gap.both("3both1", "3both2")
+                gap = GapBoth("3both1", "3both2")
             ),
             TimelineEvent(
                 event = event4,
                 previousEventId = event3.id,
                 nextEventId = event5.id,
-                gap = TimelineEvent.Gap.before("4before")
+                gap = GapBefore("4before")
             ),
             TimelineEvent(
                 event = event5,
@@ -77,13 +78,13 @@ class TimelineBuilderUtilsTest {
                 event = event6,
                 previousEventId = null,
                 nextEventId = event7.id,
-                gap = TimelineEvent.Gap.after("6to7")
+                gap = GapAfter("6to7")
             ),
             TimelineEvent(
                 event = event7,
                 previousEventId = event6.id,
                 nextEventId = null,
-                gap = TimelineEvent.Gap.before("6to7")
+                gap = GapBefore("6to7")
             ),
         )
     }

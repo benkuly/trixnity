@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.store
 
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.*
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonNames
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
@@ -34,15 +34,40 @@ data class TimelineEvent(
     @Transient
     val isFirst: Boolean = previousEventId == null && gap == null
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Serializable
-    data class Gap(
-        val batchBefore: String?,
-        val batchAfter: String?,
-    ) {
-        companion object {
-            fun before(batchBefore: String) = Gap(batchBefore, null)
-            fun after(batchAfter: String) = Gap(null, batchAfter)
-            fun both(batchBefore: String, batchAfter: String) = Gap(batchBefore, batchAfter)
+    @JsonClassDiscriminator("position")
+    sealed class Gap {
+        abstract val batchBefore: String?
+        abstract val batchAfter: String?
+
+        @Serializable
+        @SerialName("before")
+        data class GapBefore(
+            @JsonNames("batch")
+            override val batchBefore: String,
+        ) : Gap() {
+            @Transient
+            override val batchAfter: String? = null
+        }
+
+        @Serializable
+        @SerialName("both")
+        data class GapBoth(
+            @JsonNames("batch")
+            override val batchBefore: String,
+            @JsonNames("batch")
+            override val batchAfter: String,
+        ) : Gap()
+
+        @Serializable
+        @SerialName("after")
+        data class GapAfter(
+            @JsonNames("batch")
+            override val batchAfter: String,
+        ) : Gap() {
+            @Transient
+            override val batchBefore: String? = null
         }
 
         val hasGapBefore: Boolean
@@ -52,7 +77,7 @@ data class TimelineEvent(
         val hasGapBoth: Boolean
             get() = batchBefore != null && batchAfter != null
 
-        fun removeGapBefore() = if (hasGapAfter) copy(batchBefore = null) else null
-        fun removeGapAfter() = if (hasGapBefore) copy(batchAfter = null) else null
+        fun removeGapBefore() = batchAfter?.let { GapAfter(it) }
+        fun removeGapAfter() = batchBefore?.let { GapBefore(it) }
     }
 }

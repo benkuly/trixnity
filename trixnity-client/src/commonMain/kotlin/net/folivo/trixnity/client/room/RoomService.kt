@@ -18,7 +18,6 @@ import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.outbox.DefaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.TimelineEvent.Gap
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
 import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
@@ -65,6 +64,7 @@ interface IRoomService {
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = INFINITE,
+        fetchNeighborLimit: Long = 20,
     ): StateFlow<TimelineEvent?>
 
     suspend fun getLastTimelineEvent(
@@ -691,6 +691,8 @@ class RoomService(
     ): Result<Unit> = coroutineScope {
         getRoomTimelineMutex(roomId).withLock {
             kotlin.runCatching {
+                val isLastEventId = store.room.get(roomId).value?.lastEventId == startEventId
+
                 val initialStartEvent = store.roomTimeline.get(startEventId, roomId)
                 val startEvent: TimelineEvent
                 val previousToken: String?
@@ -708,8 +710,9 @@ class RoomService(
                         roomId = roomId,
                         eventId = startEventId,
                         filter = LAZY_LOAD_MEMBERS_FILTER,
-                        limit = limit
+                        limit = if (isLastEventId) 0 else limit
                     ).getOrThrow()
+
                     previousToken = context.start
                     previousEvent = context.eventsBefore
                         ?.firstNotNullOfOrNull { store.roomTimeline.get(it.id, it.roomId) }
@@ -761,11 +764,11 @@ class RoomService(
                         previousToken = startGapBatchBefore
                         previousEvent = possiblyPreviousEvent
                         previousEventChunk = null
-                        previousFilledGap = true
+                        previousFilledGap = false
                     }
 
                     val possiblyNextEvent = store.roomTimeline.getNext(startEvent)
-                    if (startGapBatchAfter != null) {
+                    if (startGapBatchAfter != null && !isLastEventId) {
                         log.debug { "fetch missing events after $startEventId" }
                         val destinationBatch = possiblyNextEvent?.gap?.batchBefore
                         val response = api.rooms.getEvents(
@@ -788,7 +791,7 @@ class RoomService(
                         nextToken = startGapBatchAfter
                         nextEvent = possiblyNextEvent
                         nextEventChunk = null
-                        nextFilledGap = true
+                        nextFilledGap = false
                     }
                 }
                 addEventsToTimeline(
@@ -821,7 +824,7 @@ class RoomService(
         modifyTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
         log.trace {
-            "addEvents with parameters:\n" +
+            "addEventsToTimeline with parameters:\n" +
                     "startEvent=$startEvent\n" +
                     "previousToken=$previousToken, previousFilledGap=$previousFilledGap, previousEvent=$previousEvent, previousEventChunk=$previousEventChunk\n" +
                     "nextToken=$nextToken, nextFilledGap=$nextFilledGap, nextEvent=$nextEvent, nextEventChunk=$nextEventChunk"
@@ -832,10 +835,7 @@ class RoomService(
                 val oldGap = oldPreviousEvent?.gap
                 oldPreviousEvent?.copy(
                     nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
-                    gap = when (previousFilledGap) {
-                        true -> oldGap?.removeGapAfter()
-                        false -> oldGap?.copy(batchAfter = oldGap.batchAfter ?: previousToken)
-                    },
+                    gap = if (previousFilledGap) oldGap?.removeGapAfter() else oldGap,
                 )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
             }
         if (nextEvent != null)
@@ -843,10 +843,7 @@ class RoomService(
                 val oldGap = oldNextEvent?.gap
                 oldNextEvent?.copy(
                     previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
-                    gap = when (nextFilledGap) {
-                        true -> oldGap?.removeGapBefore()
-                        false -> oldGap?.copy(batchBefore = oldGap.batchBefore ?: nextToken)
-                    }
+                    gap = if (nextFilledGap) oldGap?.removeGapBefore() else oldGap
                 )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
             }
         store.roomTimeline.update(startEvent.eventId, roomId) { oldStartEvent ->
@@ -857,9 +854,9 @@ class RoomService(
                 nextEventId = nextEventChunk?.firstOrNull()?.id ?: nextEvent?.eventId,
                 gap = when {
                     hasGapBefore && hasGapAfter && previousToken != null && nextToken != null
-                    -> Gap.both(previousToken, nextToken)
-                    hasGapBefore && previousToken != null -> Gap.before(previousToken)
-                    hasGapAfter && nextToken != null -> Gap.after(nextToken)
+                    -> GapBoth(previousToken, nextToken)
+                    hasGapBefore && previousToken != null -> GapBefore(previousToken)
+                    hasGapAfter && nextToken != null -> GapAfter(nextToken)
                     else -> null
                 }
             ).let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
@@ -877,7 +874,7 @@ class RoomService(
                             previousEventId = previousEvent?.eventId,
                             nextEventId = if (index == 0) startEvent.eventId
                             else previousEventChunk.getOrNull(index - 1)?.id,
-                            gap = if (previousFilledGap) null else previousToken?.let { Gap.before(it) }
+                            gap = if (previousFilledGap) null else previousToken?.let { GapBefore(it) }
                         )
                     }
                     0 -> {
@@ -917,7 +914,7 @@ class RoomService(
                             previousEventId = if (index == 0) startEvent.eventId
                             else nextEventChunk.getOrNull(index - 1)?.id,
                             nextEventId = nextEvent?.eventId,
-                            gap = if (nextFilledGap) null else nextToken?.let { Gap.after(it) },
+                            gap = if (nextFilledGap) null else nextToken?.let { GapAfter(it) },
                         )
                     }
                     0 -> {
@@ -961,6 +958,7 @@ class RoomService(
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
+        fetchNeighborLimit: Long,
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             coroutineScope.launch {
@@ -970,7 +968,7 @@ class RoomService(
                         RUNNING,
                         onError = { log.error(it) { "could not fetch missing event $eventId" } },
                     ) {
-                        fetchMissingEvents(eventId, roomId).getOrThrow()
+                        fetchMissingEvents(eventId, roomId, fetchNeighborLimit).getOrThrow()
                     }
                     store.roomTimeline.get(eventId, roomId)
                 }

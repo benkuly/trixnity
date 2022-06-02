@@ -33,6 +33,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -105,6 +106,69 @@ class RoomServiceTimelineTest : ShouldSpec({
                 }
             }
         }
+        context("without gap") {
+            should("add elements to timeline") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                store.roomTimeline.addAll(
+                    timeline {
+                        fragment {
+                            +event1
+                            gap("oldPrevious")
+                        }
+                    }
+                )
+                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false)
+                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                    fragment {
+                        +event1
+                        +event2
+                        +event3
+                        gap("next")
+                    }
+                }
+            }
+            should("add elements to gappy timeline") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                store.roomTimeline.addAll(
+                    timeline {
+                        fragment {
+                            gap("before")
+                            +event1
+                            gap("oldPrevious")
+                        }
+                    }
+                )
+                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false)
+                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                    fragment {
+                        gap("before")
+                        +event1
+                        +event2
+                        +event3
+                        gap("next")
+                    }
+                }
+            }
+            should("add one element to timeline") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                store.roomTimeline.addAll(
+                    timeline {
+                        fragment {
+                            +event1
+                            gap("oldPrevious")
+                        }
+                    }
+                )
+                cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", false)
+                storeTimeline(event1, event3) shouldContainExactly timeline {
+                    fragment {
+                        +event1
+                        +event3
+                        gap("next")
+                    }
+                }
+            }
+        }
         context("with gap") {
             context("without previous events") {
                 should("add elements to timeline") {
@@ -127,7 +191,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         fragment {
                             gap("previous")
                             +event1
-                            gap("next") // results in GapBoth("next") so "previous" is not used
+                            gap("next")
                         }
                     }
                 }
@@ -163,26 +227,6 @@ class RoomServiceTimelineTest : ShouldSpec({
                         timeline {
                             fragment {
                                 +event1
-                            }
-                        }
-                    )
-                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true)
-                    storeTimeline(event1, event2, event3) shouldContainExactly timeline {
-                        fragment {
-                            +event1
-                            gap("previous", false)
-                            +event2
-                            +event3
-                            gap("next")
-                        }
-                    }
-                }
-                should("add elements to timeline with existing gap") {
-                    store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
-                    store.roomTimeline.addAll(
-                        timeline {
-                            fragment {
-                                +event1
                                 gap("oldPrevious")
                             }
                         }
@@ -199,12 +243,37 @@ class RoomServiceTimelineTest : ShouldSpec({
                         }
                     }
                 }
+                should("add elements to timeline with existing gap") {
+                    store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                    store.roomTimeline.addAll(
+                        timeline {
+                            fragment {
+                                gap("before")
+                                +event1
+                                gap("oldPrevious")
+                            }
+                        }
+                    )
+                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true)
+                    storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                        fragment {
+                            gap("before")
+                            +event1
+                            gap("oldPrevious")
+                            gap("previous")
+                            +event2
+                            +event3
+                            gap("next")
+                        }
+                    }
+                }
                 should("add one element to timeline") {
                     store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
                     store.roomTimeline.addAll(
                         timeline {
                             fragment {
                                 +event1
+                                gap("oldPrevious")
                             }
                         }
                     )
@@ -212,51 +281,11 @@ class RoomServiceTimelineTest : ShouldSpec({
                     storeTimeline(event1, event3) shouldContainExactly timeline {
                         fragment {
                             +event1
-                            gap("previous", false)
+                            gap("oldPrevious")
+                            gap("previous")
                             +event3
                             gap("next")
                         }
-                    }
-                }
-            }
-        }
-        context("without gap") {
-            should("add elements to timeline") {
-                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
-                store.roomTimeline.addAll(
-                    timeline {
-                        fragment {
-                            +event1
-                            gap("oldPrevious")
-                        }
-                    }
-                )
-                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false)
-                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
-                    fragment {
-                        +event1
-                        +event2
-                        +event3
-                        gap("next")
-                    }
-                }
-            }
-            should("add one element to timeline") {
-                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
-                store.roomTimeline.addAll(
-                    timeline {
-                        fragment {
-                            +event1
-                            gap("oldPrevious")
-                        }
-                    }
-                )
-                cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", false)
-                storeTimeline(event1, event3) shouldContainExactly timeline {
-                    fragment {
-                        +event1
-                        +event3
-                        gap("next")
                     }
                 }
             }
@@ -352,49 +381,6 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
-            should("save start event with previous and next event (no gap)") {
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(
-                        json, mappings,
-                        GetEventContext(
-                            room.e(),
-                            event3.id.e(),
-                            limit = 20,
-                            filter = LAZY_LOAD_MEMBERS_FILTER
-                        )
-                    ) {
-                        GetEventContext.Response(
-                            start = "start",
-                            end = "end",
-                            event = event3,
-                            eventsBefore = listOf(event2),
-                            eventsAfter = listOf(event4)
-                        )
-                    }
-                }
-                store.roomTimeline.addAll(timeline {
-                    fragment {
-                        gap("gap-previous")
-                        +event2
-                        gap("gap-previous")
-                    }
-                    fragment {
-                        gap("gap-next")
-                        +event4
-                        gap("gap-next")
-                    }
-                })
-                cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                storeTimeline(event2, event3, event4) shouldContainExactly timeline {
-                    fragment {
-                        gap("gap-previous")
-                        +event2
-                        +event3
-                        +event4
-                        gap("gap-next")
-                    }
-                }
-            }
             should("add events before") {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
@@ -486,7 +472,121 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
-            should("fill gaps (find existing timeline)") {
+            should("only fetch start event, when last event of room") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event3.id, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "start",
+                            end = "end",
+                            event = event3,
+                        )
+                    }
+                }
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event3) shouldContainExactly timeline {
+                    fragment {
+                        gap("start")
+                        +event3
+                        gap("end")
+                    }
+                }
+            }
+            should("merge existing fragments") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "end-2",
+                            end = "start-4",
+                            event = event3,
+                            eventsBefore = listOf(event2),
+                            eventsAfter = listOf(event4)
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        +event1
+                        +event2
+                        gap("end-2")
+                    }
+                    fragment {
+                        gap("start-4")
+                        +event4
+                        +event5
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                    fragment {
+                        +event1
+                        +event2
+                        +event3
+                        +event4
+                        +event5
+                    }
+                }
+            }
+            should("merge existing fragments and keep other gaps") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "end-2",
+                            end = "start-4",
+                            event = event3,
+                            eventsBefore = listOf(event2),
+                            eventsAfter = listOf(event4)
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("start-2")
+                        +event2
+                        gap("end-2")
+                    }
+                    fragment {
+                        gap("start-4")
+                        +event4
+                        gap("end-4")
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event2, event3, event4) shouldContainExactly timeline {
+                    fragment {
+                        gap("start-2")
+                        +event2
+                        +event3
+                        +event4
+                        gap("end-4")
+                    }
+                }
+            }
+            should("fill gaps within timeline fragment") {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
                         json, mappings,
@@ -509,10 +609,8 @@ class RoomServiceTimelineTest : ShouldSpec({
                 store.roomTimeline.addAll(timeline {
                     fragment {
                         +event1
-                        gap("gap-previous")
-                    }
-                    fragment {
-                        gap("gap-next")
+                        gap("end-1")
+                        gap("start-5")
                         +event5
                     }
                 })
@@ -527,46 +625,52 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
-        }
-        context("start event has previous gap") {
-            context("not an event with previous event") {
-                should("add elements to timeline") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                dir = BACKWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event2),
-                                state = listOf()
-                            )
-                        }
+            should("fill gaps within timeline fragment and keep other gaps") {
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "start",
+                            end = "end",
+                            event = event3,
+                            eventsBefore = listOf(event2, event1),
+                            eventsAfter = listOf(event4, event5)
+                        )
                     }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("start")
-                            +event3
-                        }
-                    })
-                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event2, event3) shouldContainExactly timeline {
-                        fragment {
-                            gap("end")
-                            +event2
-                            +event3
-                        }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("start-1")
+                        +event1
+                        gap("end-1")
+                        gap("start-5")
+                        +event5
+                        gap("end-5")
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                    fragment {
+                        gap("start-1")
+                        +event1
+                        +event2
+                        +event3
+                        +event4
+                        +event5
+                        gap("end-5")
                     }
                 }
             }
-            context("no previous event") {
+        }
+        context("start event does exist in store") {
+            context("start event has previous gap") {
                 should("add elements to timeline") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
@@ -638,7 +742,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         }
                     }
                 }
-                should("detect start of timeline") {
+                should("detect start of timeline when start and end are the same") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
                             json, mappings,
@@ -675,16 +779,13 @@ class RoomServiceTimelineTest : ShouldSpec({
                         }
                     }
                 }
-            }
-            context("gap filled") {
-                should("add element to timeline") {
+                should("detect start of timeline when end is null") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
                                 room.e(),
                                 "start",
-                                "end",
                                 dir = BACKWARDS,
                                 limit = 20,
                                 filter = LAZY_LOAD_MEMBERS_FILTER
@@ -692,119 +793,157 @@ class RoomServiceTimelineTest : ShouldSpec({
                         ) {
                             GetEvents.Response(
                                 start = "start",
-                                end = "end",
-                                chunk = listOf(event2),
+                                end = null,
+                                chunk = listOf(),
                                 state = listOf()
                             )
                         }
                     }
                     store.roomTimeline.addAll(timeline {
                         fragment {
-                            gap("end-1")
-                            +event1
-                            gap("end")
                             gap("start")
                             +event3
+                            +event4
+                            gap("after")
                         }
                     })
                     cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                    storeTimeline(event3, event4) shouldContainExactly timeline {
                         fragment {
-                            gap("end-1")
-                            +event1
-                            +event2
                             +event3
+                            +event4
+                            gap("after")
                         }
                     }
                 }
-                should("ignore overlapping events") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                "end",
-                                dir = BACKWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event2, event1.copy(originTimestamp = 24)),
-                                state = listOf()
-                            )
+                context("gap filled") {
+                    should("add element to timeline") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start-3",
+                                    "end-1",
+                                    dir = BACKWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start-3",
+                                    end = "end-1",
+                                    chunk = listOf(event2),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                gap("end-1")
+                                gap("start-3")
+                                +event3
+                            }
+                        })
+                        cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                        storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                +event2
+                                +event3
+                            }
                         }
                     }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("end-1")
-                            +event1
-                            gap("end")
-                            gap("start")
-                            +event3
+                    should("ignore overlapping events") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start-3",
+                                    "end-1",
+                                    dir = BACKWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start",
+                                    end = "end",
+                                    chunk = listOf(event2, event1.copy(originTimestamp = 24)),
+                                    state = listOf()
+                                )
+                            }
                         }
-                    })
-                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event1, event2, event3) shouldContainExactly timeline {
-                        fragment {
-                            gap("end-1")
-                            +event1
-                            +event2
-                            +event3
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                gap("end-1")
+                                gap("start-3")
+                                +event3
+                            }
+                        })
+                        cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                        storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                +event2
+                                +event3
+                            }
+                        }
+                    }
+                }
+                context("gap not filled") {
+                    should("add element to timeline") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start-3",
+                                    "end-1",
+                                    dir = BACKWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start-3",
+                                    end = "start-2",
+                                    chunk = listOf(event2),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                gap("end-1")
+                                gap("start-3")
+                                +event3
+                            }
+                        })
+                        cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                        storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                gap("end-1")
+                                gap("start-2")
+                                +event2
+                                +event3
+                            }
                         }
                     }
                 }
             }
-            context("gap not filled") {
-                should("add element to timeline") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                "next",
-                                dir = BACKWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event2),
-                                state = listOf()
-                            )
-                        }
-                    }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("next-1")
-                            +event1
-                            gap("next")
-                            gap("start")
-                            +event3
-                        }
-                    })
-                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event1, event2, event3) shouldContainExactly timeline {
-                        fragment {
-                            gap("next-1")
-                            +event1
-                            gap("next")
-                            gap("end")
-                            +event2
-                            +event3
-                        }
-                    }
-                }
-            }
-        }
-        context("start event has next gap") {
-            context("not an event with next event") {
+            context("start event has next gap") {
                 should("add elements to timeline") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
@@ -840,141 +979,180 @@ class RoomServiceTimelineTest : ShouldSpec({
                         }
                     }
                 }
-            }
-            context("gap filled") {
-                should("add elements to timeline") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                "end",
-                                dir = FORWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event3, event4),
-                                state = listOf()
-                            )
+                context("gap filled") {
+                    should("add elements to timeline") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start",
+                                    "end",
+                                    dir = FORWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start",
+                                    end = "end",
+                                    chunk = listOf(event3, event4),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                gap("start")
+                                gap("end")
+                                +event5
+                            }
+                        })
+                        cut.fetchMissingEvents(event2.id, room).getOrThrow()
+                        storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                +event3
+                                +event4
+                                +event5
+                            }
                         }
                     }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event1
-                            +event2
-                            gap("start")
-                            gap("end")
-                            +event5
+                    should("ignore overlapping events") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start",
+                                    "end",
+                                    dir = FORWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start",
+                                    end = "end",
+                                    chunk = listOf(event4, event5.copy(originTimestamp = 24)),
+                                    state = listOf()
+                                )
+                            }
                         }
-                    })
-                    cut.fetchMissingEvents(event2.id, room).getOrThrow()
-                    storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event1
-                            +event2
-                            +event3
-                            +event4
-                            +event5
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                +event3
+                                gap("start")
+                                gap("end")
+                                +event5
+                            }
+                        })
+                        cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                        storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                +event3
+                                +event4
+                                +event5
+                            }
                         }
                     }
                 }
-                should("ignore overlapping events") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                "end",
-                                dir = FORWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event4, event5.copy(originTimestamp = 24)),
-                                state = listOf()
-                            )
+                context("gap not filled") {
+                    should("add element to timeline") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start",
+                                    "next",
+                                    dir = FORWARDS,
+                                    limit = 20,
+                                    filter = LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start",
+                                    end = "end",
+                                    chunk = listOf(event4),
+                                    state = listOf()
+                                )
+                            }
                         }
-                    }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event1
-                            +event2
-                            +event3
-                            gap("start")
-                            gap("end")
-                            +event5
-                        }
-                    })
-                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event1
-                            +event2
-                            +event3
-                            +event4
-                            +event5
+                        store.roomTimeline.addAll(timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event2
+                                +event3
+                                gap("start")
+                                gap("next")
+                                +event5
+                                gap("next-1")
+                            }
+                        })
+                        cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                        storeTimeline(event2, event3, event4, event5) shouldContainExactly timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event2
+                                +event3
+                                +event4
+                                gap("end")
+                                gap("next")
+                                +event5
+                                gap("next-1")
+                            }
                         }
                     }
                 }
             }
-            context("gap not filled") {
-                should("add element to timeline") {
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(
-                            json, mappings,
-                            GetEvents(
-                                room.e(),
-                                "start",
-                                "next",
-                                dir = FORWARDS,
-                                limit = 20,
-                                filter = LAZY_LOAD_MEMBERS_FILTER
-                            )
-                        ) {
-                            GetEvents.Response(
-                                start = "start",
-                                end = "end",
-                                chunk = listOf(event4),
-                                state = listOf()
-                            )
-                        }
+            should("only fetch event before, when last event of room") {
+                store.room.update(room) { Room(roomId = room, lastEventId = event3.id, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "start",
+                            dir = BACKWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "start",
+                            end = "end",
+                            chunk = listOf(event2, event1),
+                            state = listOf()
+                        )
                     }
-                    store.roomTimeline.addAll(timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event2
-                            +event3
-                            gap("start")
-                            gap("next")
-                            +event5
-                            gap("next-1")
-                        }
-                    })
-                    cut.fetchMissingEvents(event3.id, room).getOrThrow()
-                    storeTimeline(event2, event3, event4, event5) shouldContainExactly timeline {
-                        fragment {
-                            gap("gap-before")
-                            +event2
-                            +event3
-                            +event4
-                            gap("end")
-                            gap("next")
-                            +event5
-                            gap("next-1")
-                        }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("start")
+                        +event3
+                        gap("next")
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                    fragment {
+                        gap("end")
+                        +event1
+                        +event2
+                        +event3
+                        gap("next")
                     }
                 }
             }
