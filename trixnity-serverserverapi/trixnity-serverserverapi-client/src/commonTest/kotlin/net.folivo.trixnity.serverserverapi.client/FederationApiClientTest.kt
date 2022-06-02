@@ -131,6 +131,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.sendTransaction(
+            Url(""),
             "someTransactionId",
             SendTransaction.Request(
                 edus = listOf(
@@ -180,7 +181,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.getEventAuthChain(RoomId("!room:server"), EventId("$1event"))
+        matrixRestClient.federation.getEventAuthChain(Url(""), RoomId("!room:server"), EventId("$1event"))
             .getOrThrow() shouldBe GetEventAuthChain.Response(
             listOf(pdu)
         )
@@ -213,7 +214,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.backfillRoom(RoomId("!room:server"), listOf(EventId("$1event")), 10)
+        matrixRestClient.federation.backfillRoom(Url(""), RoomId("!room:server"), listOf(EventId("$1event")), 10)
             .getOrThrow() shouldBe PduTransaction(
             origin = "matrix.org",
             originTimestamp = 1234567890,
@@ -260,6 +261,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getMissingEvents(
+            Url(""),
             RoomId("!room:server"),
             GetMissingEvents.Request(
                 earliestEvents = listOf(EventId("$1missing_event:example.org")),
@@ -298,7 +300,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.getEvent(EventId("$1event"))
+        matrixRestClient.federation.getEvent(Url(""), EventId("$1event"))
             .getOrThrow() shouldBe PduTransaction(
             origin = "matrix.org",
             originTimestamp = 1234567890,
@@ -329,7 +331,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.getState(RoomId("!room:server"), EventId("$1event"))
+        matrixRestClient.federation.getState(Url(""), RoomId("!room:server"), EventId("$1event"))
             .getOrThrow() shouldBe GetState.Response(
             authChain = listOf(pdu),
             pdus = listOf(pdu)
@@ -362,7 +364,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.getStateIds(RoomId("!room:server"), EventId("$1event"))
+        matrixRestClient.federation.getStateIds(Url(""), RoomId("!room:server"), EventId("$1event"))
             .getOrThrow() shouldBe GetStateIds.Response(
             authChainIds = listOf(EventId("$1event")),
             pduIds = listOf(EventId("$2event"))
@@ -411,7 +413,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.makeJoin(RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
+        matrixRestClient.federation.makeJoin(Url(""), RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
             .getOrThrow() shouldBe MakeJoin.Response(
             eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
                 authEvents = listOf(),
@@ -509,6 +511,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.sendJoin(
+            Url(""),
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
@@ -617,7 +620,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.makeKnock(RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
+        matrixRestClient.federation.makeKnock(Url(""), RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
             .getOrThrow() shouldBe MakeKnock.Response(
             eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
                 authEvents = listOf(),
@@ -703,6 +706,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.sendKnock(
+            Url(""),
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
@@ -835,6 +839,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.invite(
+            Url(""),
             RoomId("!room:server"),
             EventId("$1event"),
             Invite.Request(
@@ -947,7 +952,7 @@ class FederationApiClientTest {
                     )
                 }
             })
-        matrixRestClient.federation.makeLeave(RoomId("!room:server"), UserId("@alice:example.com"))
+        matrixRestClient.federation.makeLeave(Url(""), RoomId("!room:server"), UserId("@alice:example.com"))
             .getOrThrow() shouldBe MakeLeave.Response(
             eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
                 authEvents = listOf(),
@@ -1012,6 +1017,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.sendLeave(
+            Url(""),
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
@@ -1088,6 +1094,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.onBindThirdPid(
+            Url(""),
             OnBindThirdPid.Request(
                 address = "alice@example.com",
                 invites = listOf(
@@ -1163,6 +1170,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.exchangeThirdPartyInvite(
+            Url(""),
             RoomId("!room:server"),
             Signed(
                 PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
@@ -1241,6 +1249,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getPublicRooms(
+            Url(""),
             limit = 5,
             includeAllNetworks = false,
             since = "since",
@@ -1317,6 +1326,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getPublicRoomsWithFilter(
+            Url(""),
             GetPublicRoomsWithFilter.Request(
                 filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
                 includeAllNetworks = false,
@@ -1428,6 +1438,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getHierarchy(
+            Url(""),
             RoomId("room", "server"), true
         ).getOrThrow() shouldBe GetHierarchy.Response(
             rooms = listOf(
@@ -1509,6 +1520,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.queryDirectory(
+            Url(""),
             RoomAliasId("#alias:server")
         ).getOrThrow() shouldBe QueryDirectory.Response(
             roomId = RoomId("!roomid1234:example.org"),
@@ -1547,6 +1559,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.queryProfile(
+            Url(""),
             UserId("@user:server"), QueryProfile.Field.DISPLAYNNAME
         ).getOrThrow() shouldBe QueryProfile.Response(
             displayname = "John Doe",
@@ -1580,7 +1593,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getOIDCUserInfo(
-            "token"
+            Url(""), "token"
         ).getOrThrow() shouldBe GetOIDCUserInfo.Response(
             sub = UserId("@alice:example.com")
         )
@@ -1660,7 +1673,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getDevices(
-            UserId("@alice:example.com")
+            Url(""), UserId("@alice:example.com")
         ).getOrThrow() shouldBe GetDevices.Response(
             devices = setOf(
                 GetDevices.Response.UserDevice(
@@ -1770,6 +1783,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.claimKeys(
+            Url(""),
             ClaimKeys.Request(
                 oneTimeKeys = mapOf(UserId("@alice:example.com") to mapOf("JLAFKJWSCS" to KeyAlgorithm.SignedCurve25519)),
             )
@@ -1877,6 +1891,7 @@ class FederationApiClientTest {
                 }
             })
         matrixRestClient.federation.getKeys(
+            Url(""),
             GetKeys.Request(
                 keysFrom = mapOf(UserId("alice", "example.com") to setOf()),
             )

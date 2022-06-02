@@ -26,7 +26,7 @@ class DiscoveryApiClientTest {
             getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/.well-known/matrix/server", request.url.fullPath)
+                    assertEquals("/.well-known/matrix/server", request.url.encodedPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -39,7 +39,7 @@ class DiscoveryApiClientTest {
                     )
                 }
             })
-        matrixRestClient.discovery.getWellKnown()
+        matrixRestClient.discovery.getWellKnown(Url(""))
             .getOrThrow() shouldBe GetWellKnown.Response("delegated.example.com:1234")
     }
 
@@ -68,7 +68,7 @@ class DiscoveryApiClientTest {
                     )
                 }
             })
-        matrixRestClient.discovery.getServerVersion()
+        matrixRestClient.discovery.getServerVersion(Url(""))
             .getOrThrow() shouldBe GetServerVersion.Response(
             GetServerVersion.Response.Server(
                 name = "My_Homeserver_Implementation",
@@ -116,7 +116,7 @@ class DiscoveryApiClientTest {
                     )
                 }
             })
-        matrixRestClient.discovery.getServerKeys()
+        matrixRestClient.discovery.getServerKeys(Url(""))
             .getOrThrow() shouldBe Signed(
             ServerKeys(
                 serverName = "example.org",
@@ -198,6 +198,7 @@ class DiscoveryApiClientTest {
                 }
             })
         matrixRestClient.discovery.queryServerKeys(
+            Url(""),
             QueryServerKeys.Request(buildJsonObject {
                 put("example.org", buildJsonObject {
                     put("ed25519:abc123", buildJsonObject {
@@ -279,7 +280,7 @@ class DiscoveryApiClientTest {
                     )
                 }
             })
-        matrixRestClient.discovery.queryKeysByServer("example.org", 1234567890)
+        matrixRestClient.discovery.queryKeysByServer(Url(""), "example.org", 1234567890)
             .getOrThrow() shouldBe QueryServerKeysResponse(
             setOf(
                 Signed(
