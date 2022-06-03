@@ -1,5 +1,6 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.presetName
@@ -30,6 +31,7 @@ data class OlmJNATarget(
 
 data class OlmNativeTarget(
     val target: KonanTarget,
+    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> Unit,
     val onlyIf: () -> Boolean,
     val additionalParams: List<String> = listOf()
 ) {
@@ -57,30 +59,36 @@ val olmJNATargets = listOf(
 val olmNativeTargets = listOf(
     OlmNativeTarget(
         target = KonanTarget.LINUX_X64,
+        createTarget = { linuxX64() },
         onlyIf = { HostManager.hostIsLinux }
     ),
     OlmNativeTarget(
         target = KonanTarget.MACOS_ARM64,
+        createTarget = { macosArm64() },
         onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=arm64")
     ),
     OlmNativeTarget(
         target = KonanTarget.MACOS_X64,
+        createTarget = { macosX64() },
         onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     ),
     OlmNativeTarget(
         target = KonanTarget.IOS_ARM64,
+        createTarget = { iosArm64() },
         onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=OS64")
     ),
     OlmNativeTarget(
         target = KonanTarget.IOS_X64,
+        createTarget = { iosX64() },
         onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=SIMULATOR64")
     ),
     OlmNativeTarget(
         target = KonanTarget.MINGW_X64,
+        createTarget = { mingwX64() },
         onlyIf = { HostManager.hostIsMingw || HostManager.hostIsLinux },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
     ),
@@ -137,26 +145,24 @@ kotlin {
         nodejs()
         binaries.executable()
     }
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
-    ios()
 
     olmNativeTargets.forEach {
-        targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
-            compilations {
-                "main" {
-                    cinterops {
-                        val libolm by creating {
-                            packageName("org.matrix.olm")
-                            includeDirs(olmIncludeDir)
-                            tasks.named(interopProcessingTaskName) {
-                                dependsOn(olmNativeTargetsTasks)
+        if (it.onlyIf()) {
+            it.createTarget(this@kotlin)
+            targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
+                compilations {
+                    "main" {
+                        cinterops {
+                            val libolm by creating {
+                                packageName("org.matrix.olm")
+                                includeDirs(olmIncludeDir)
+                                tasks.named(interopProcessingTaskName) {
+                                    dependsOn(olmNativeTargetsTasks)
+                                }
                             }
                         }
+                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", it.libPath.absolutePath)
                     }
-                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", it.libPath.absolutePath)
                 }
             }
         }
@@ -193,6 +199,14 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
+            }
+        }
+        val nativeMain by creating {
+            dependsOn(olmLibraryMain)
+        }
+        olmNativeTargets.forEach {
+            if (it.onlyIf()) {
+                sourceSets.getByName(it.target.presetName + "Main").dependsOn(nativeMain)
             }
         }
         val commonTest by getting {
