@@ -131,6 +131,9 @@ kotlin {
     mingwX64()
     macosX64()
     macosArm64()
+    ios()
+    watchos()
+    tvos()
 
     olmNativeTargets.forEach {
         targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {

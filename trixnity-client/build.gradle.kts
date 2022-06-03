@@ -34,11 +34,14 @@ kotlin {
         }
         binaries.executable()
     }
-
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
+// TODO enable as soon as https://github.com/korlibs/korge-next/issues/705 is fixed
+//    linuxX64()
+//    mingwX64()
+//    macosX64()
+//    macosArm64()
+//    ios()
+//    watchos()
+//    tvos()
 
     sourceSets {
         all {

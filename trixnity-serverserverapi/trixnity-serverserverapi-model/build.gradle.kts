@@ -29,6 +29,9 @@ kotlin {
     mingwX64()
     macosX64()
     macosArm64()
+    ios()
+    watchos()
+    tvos()
 
     sourceSets {
         all {
