@@ -164,8 +164,6 @@ class MatrixEndpointRouteTest {
                 override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
 
                 override fun deserialize(decoder: Decoder): Response {
-                    require(decoder is JsonDecoder)
-                    decoder.decodeJsonElement()
                     throw NotImplementedError()
                 }
 
@@ -173,7 +171,6 @@ class MatrixEndpointRouteTest {
                     require(encoder is JsonEncoder)
                     encoder.encodeJsonElement(JsonObject(mapOf("custom" to JsonPrimitive(true))))
                 }
-
             }
         }
     }

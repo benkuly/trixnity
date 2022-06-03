@@ -251,7 +251,7 @@ val downloadOlm by tasks.registering(de.undercouch.gradle.tasks.download.Downloa
 val downloadIOSCmakeToolchain by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
     group = "olm"
     src("https://raw.githubusercontent.com/leetal/ios-cmake/master/ios.toolchain.cmake")
-    dest(olmRootDir)
+    dest(olmRootDir.resolve("ios.toolchain.cmake"))
     overwrite(false)
 }
 
