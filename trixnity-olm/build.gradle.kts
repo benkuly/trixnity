@@ -70,6 +70,16 @@ val olmNativeTargets = listOf(
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     ),
     OlmNativeTarget(
+        target = KonanTarget.IOS_ARM64,
+        onlyIf = { HostManager.hostIsMac },
+        additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=OS64")
+    ),
+    OlmNativeTarget(
+        target = KonanTarget.IOS_X64,
+        onlyIf = { HostManager.hostIsMac },
+        additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=SIMULATOR64")
+    ),
+    OlmNativeTarget(
         target = KonanTarget.MINGW_X64,
         onlyIf = { HostManager.hostIsMingw || HostManager.hostIsLinux },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
@@ -132,8 +142,6 @@ kotlin {
     macosX64()
     macosArm64()
     ios()
-    watchos()
-    tvos()
 
     olmNativeTargets.forEach {
         targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
@@ -226,6 +234,13 @@ val downloadOlm by tasks.registering(de.undercouch.gradle.tasks.download.Downloa
     overwrite(false)
 }
 
+val downloadIOSCmakeToolchain by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    group = "olm"
+    src("https://raw.githubusercontent.com/leetal/ios-cmake/master/ios.toolchain.cmake")
+    dest(olmRootDir)
+    overwrite(false)
+}
+
 val extractOlm by tasks.registering(Copy::class) {
     group = "olm"
     from(zipTree(olmZipDir)) {
@@ -280,7 +295,7 @@ val olmNativeTargetsTasks = olmNativeTargets.flatMap {
                 "-DBUILD_SHARED_LIBS=NO",
                 *it.additionalParams.toTypedArray()
             )
-            dependsOn(extractOlm)
+            dependsOn(extractOlm, downloadIOSCmakeToolchain)
             outputs.cacheIf { true }
             inputs.files(olmCMakeLists)
             outputs.dir(it.libDir)
