@@ -107,15 +107,4 @@ abstract class Store(
         // at the moment only roomTimeline is used with transactions
         roomTimeline.resetCache()
     }
-
-    suspend fun <T : Any> transaction(block: suspend () -> T): T {
-        return rtm.transaction {
-            try {
-                block()
-            } catch (error: Throwable) {
-                resetCache()
-                throw error
-            }
-        }
-    }
 }

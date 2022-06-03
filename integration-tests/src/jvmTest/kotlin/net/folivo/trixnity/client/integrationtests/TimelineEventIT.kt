@@ -94,7 +94,7 @@ class TimelineEventIT {
 
     @Test
     fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
-        withTimeout(60_000) {
+        withTimeout(30_000) {
             val room = client1.api.rooms.createRoom(
                 invite = setOf(client2.userId),
                 initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))

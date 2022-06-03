@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.sqldelight
 import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.JsonObject
@@ -57,7 +58,7 @@ class SqlDelightGlobalAccountDataRepositoryTest : ShouldSpec({
             )
         )
         val accountDataEvent1Copy = mapOf(
-            "" to accountDataEvent1[""]!!.copy(
+            "" to accountDataEvent1[""].shouldNotBeNull().copy(
                 content = DirectEventContent(
                     mapOf(
                         UserId(
