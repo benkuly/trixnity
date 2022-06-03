@@ -14,10 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -147,6 +144,8 @@ class MatrixEndpointRouteTest {
                 override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
 
                 override fun deserialize(decoder: Decoder): Request {
+                    require(decoder is JsonDecoder)
+                    decoder.decodeJsonElement()
                     return Request(false)
                 }
 
@@ -165,6 +164,8 @@ class MatrixEndpointRouteTest {
                 override val descriptor = buildClassSerialDescriptor("customResponseSerializer")
 
                 override fun deserialize(decoder: Decoder): Response {
+                    require(decoder is JsonDecoder)
+                    decoder.decodeJsonElement()
                     throw NotImplementedError()
                 }
 
