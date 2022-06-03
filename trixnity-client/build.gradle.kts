@@ -37,6 +37,8 @@ kotlin {
 
     linuxX64()
     mingwX64()
+    macosX64()
+    macosArm64()
 
     sourceSets {
         all {
@@ -63,17 +65,6 @@ kotlin {
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
-        val jvmMain by getting
-        val jsMain by getting
-        val nativeMain = create("nativeMain") {
-            dependsOn(commonMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val mingwX64Main by getting {
-            dependsOn(nativeMain)
-        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -92,16 +83,6 @@ kotlin {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
-        }
-        val jsTest by getting
-        val nativeTest = create("nativeTest") {
-            dependsOn(commonTest)
-        }
-        val linuxX64Test by getting {
-            dependsOn(nativeTest)
-        }
-        val mingwX64Test by getting {
-            dependsOn(nativeTest)
         }
     }
 }

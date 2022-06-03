@@ -133,7 +133,6 @@ kotlin {
     macosArm64()
 
     olmNativeTargets.forEach {
-        println(targets.asMap)
         targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
             compilations {
                 "main" {
@@ -180,15 +179,6 @@ kotlin {
                 api("net.java.dev.jna:jna:${Versions.jna}@aar")
             }
         }
-        val nativeMain by creating {
-            dependsOn(olmLibraryMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val mingwX64Main by getting {
-            dependsOn(nativeMain)
-        }
         val jsMain by getting {
             dependencies {
                 implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
@@ -201,22 +191,11 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val jvmTest by getting
         val androidTest by getting {
             kotlin.srcDirs("src/jvmTest/kotlin")
             dependencies {
                 implementation("androidx.test:runner:${Versions.androidxTestRunner}")
             }
-        }
-        val jsTest by getting
-        val nativeTest by creating {
-            dependsOn(commonTest)
-        }
-        val linuxX64Test by getting {
-            dependsOn(nativeTest)
-        }
-        val mingwX64Test by getting {
-            dependsOn(nativeTest)
         }
     }
 }

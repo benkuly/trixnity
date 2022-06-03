@@ -30,6 +30,8 @@ kotlin {
 
     linuxX64()
     mingwX64()
+    macosX64()
+    macosArm64()
 
     sourceSets {
         all {
@@ -47,30 +49,10 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val mingwX64Main by getting {
-            dependsOn(nativeMain)
-        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
-        }
-        val jvmTest by getting
-        val jsTest by getting
-        val nativeTest by creating {
-            dependsOn(commonTest)
-        }
-        val linuxX64Test by getting {
-            dependsOn(nativeTest)
-        }
-        val mingwX64Test by getting {
-            dependsOn(nativeTest)
         }
     }
 }
