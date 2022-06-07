@@ -264,67 +264,69 @@ val extractOlm by tasks.registering(Copy::class) {
         }
     }
     into(olmRootDir)
+    outputs.cacheIf { true }
+    inputs.files(olmZipDir)
     dependsOn(downloadOlm)
 }
 
-val olmJNATargetsTasks = olmJNATargets.flatMap {
-    if (it.onlyIf()) {
-        val prepareTask = tasks.register<Exec>("prepareBuildOlmJNA${it.name}") {
-            group = "olm"
-            workingDir(olmRootDir)
-            commandLine(
-                "cmake", ".", "-B${it.libDir.absolutePath}",
-                "-DOLM_TESTS=OFF",
-                *it.additionalParams.toTypedArray()
-            )
-            dependsOn(extractOlm)
-            outputs.cacheIf { true }
-            inputs.files(olmCMakeLists)
-            outputs.dir(it.libDir)
+val olmJNATargetsTasks = olmJNATargets.flatMap { target ->
+    val prepareTask = tasks.register<Exec>("prepareBuildOlmJNA${target.name}") {
+        group = "olm"
+        workingDir(olmRootDir)
+        commandLine(
+            "cmake", ".", "-B${target.libDir.absolutePath}",
+            "-DOLM_TESTS=OFF",
+            *target.additionalParams.toTypedArray()
+        )
+        dependsOn(extractOlm)
+        onlyIf { target.onlyIf() }
+        outputs.cacheIf { true }
+        inputs.files(olmCMakeLists)
+        outputs.dir(target.libDir)
+    }
+    val buildTask = tasks.register<Exec>("buildOlmJNA${target.name}") {
+        group = "olm"
+        workingDir(target.libDir)
+        commandLine("cmake", "--build", ".")
+        dependsOn(prepareTask)
+        onlyIf { target.onlyIf() }
+        outputs.cacheIf { true }
+        inputs.files(olmCMakeLists)
+        outputs.dir(target.libDir)
+        doLast {// FIXME
+            target.libDir.resolve("libolm.dll").renameTo(target.libDir.resolve("olm.dll"))
         }
-        val buildTask = tasks.register<Exec>("buildOlmJNA${it.name}") {
-            group = "olm"
-            workingDir(it.libDir)
-            commandLine("cmake", "--build", ".")
-            dependsOn(prepareTask)
-            outputs.cacheIf { true }
-            inputs.files(olmCMakeLists)
-            outputs.dir(it.libDir)
-            doLast {// FIXME
-                it.libDir.resolve("libolm.dll").renameTo(it.libDir.resolve("olm.dll"))
-            }
-        }
-        listOf(prepareTask, buildTask)
-    } else listOf()
+    }
+    listOf(prepareTask, buildTask)
 }
 
-val olmNativeTargetsTasks = olmNativeTargets.flatMap {
-    if (it.onlyIf()) {
-        val prepareTask = tasks.register<Exec>("prepareBuildOlmNative${it.target.presetName}") {
-            group = "olm"
-            workingDir(olmRootDir)
-            commandLine(
-                "cmake", ".", "-B${it.libDir.absolutePath}",
-                "-DOLM_TESTS=OFF",
-                "-DBUILD_SHARED_LIBS=NO",
-                *it.additionalParams.toTypedArray()
-            )
-            dependsOn(extractOlm, downloadIOSCmakeToolchain)
-            outputs.cacheIf { true }
-            inputs.files(olmCMakeLists)
-            outputs.dir(it.libDir)
-        }
-        val buildTask = tasks.register<Exec>("buildOlmNative${it.target.presetName}") {
-            group = "olm"
-            workingDir(it.libDir)
-            commandLine("cmake", "--build", ".")
-            dependsOn(prepareTask)
-            outputs.cacheIf { true }
-            inputs.files(olmCMakeLists)
-            outputs.dir(it.libDir)
-        }
-        listOf(prepareTask, buildTask)
-    } else listOf()
+val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
+    val prepareTask = tasks.register<Exec>("prepareBuildOlmNative${target.target.presetName}") {
+        group = "olm"
+        workingDir(olmRootDir)
+        commandLine(
+            "cmake", ".", "-B${target.libDir.absolutePath}",
+            "-DOLM_TESTS=OFF",
+            "-DBUILD_SHARED_LIBS=NO",
+            *target.additionalParams.toTypedArray()
+        )
+        dependsOn(extractOlm, downloadIOSCmakeToolchain)
+        onlyIf { target.onlyIf() }
+        outputs.cacheIf { true }
+        inputs.files(olmCMakeLists)
+        outputs.dir(target.libDir)
+    }
+    val buildTask = tasks.register<Exec>("buildOlmNative${target.target.presetName}") {
+        group = "olm"
+        workingDir(target.libDir)
+        commandLine("cmake", "--build", ".")
+        dependsOn(prepareTask)
+        onlyIf { target.onlyIf() }
+        outputs.cacheIf { true }
+        inputs.files(olmCMakeLists)
+        outputs.dir(target.libDir)
+    }
+    listOf(prepareTask, buildTask)
 }
 
 val buildOlm by tasks.registering {

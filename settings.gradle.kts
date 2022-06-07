@@ -20,3 +20,10 @@ include("integration-tests")
 include("examples")
 include("examples:clientserverapi-client-ping")
 include("examples:client-ping")
+
+buildCache {
+    local {
+        directory = File(rootDir, ".gradle").resolve("build-cache")
+        removeUnusedEntriesAfterDays = 30
+    }
+}
