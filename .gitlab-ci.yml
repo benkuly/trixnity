@@ -11,7 +11,6 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
   BUILD_MAC_IMAGE_NAME: macos-12-xcode-13
-  IS_RELEASE_TAG: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
 .build-cache: &build-cache
   - key: global-tixnity-cache
@@ -28,6 +27,14 @@ variables:
   name: reports
   when: always
   paths: [ "**/build/reports" ]
+
+.if-merge-request: &if-merge-request
+  - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+    when: never
+  - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+
+.if-release: &if-release
+  - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
 build-trixnity-build-linux-image:
   stage: prepare-build
@@ -49,8 +56,8 @@ build-trixnity-build-linux-image:
 #   cache:
 #     - *build-cache
 #   artifacts: *artifact-reports
-#   only:
-#     - merge_requests
+#   rules:
+#     - *if-merge-request
 #   script:
 #     - ./gradlew buildOlm
 #     - ./gradlew build --stacktrace
@@ -66,8 +73,8 @@ build-linux:
     - *build-cache
   variables: *docker-variables
   artifacts: *artifact-reports
-  only:
-    - merge_requests
+  rules:
+    - *if-merge-request
   script:
     - ./gradlew buildOlm
     - ./gradlew build --stacktrace
@@ -77,7 +84,7 @@ create-nexus-staging-repo:
   tags: [ "trixnity-linux-internal" ]
   image: ubuntu:latest
   rules:
-    - if: $IS_RELEASE_TAG
+    - *if-release
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
@@ -104,7 +111,7 @@ create-nexus-staging-repo:
 #   dependencies:
 #     - create-nexus-staging-repo
 #   rules:
-#     - if: $IS_RELEASE_TAG
+#    - *if-release
 #   script:
 #     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
 #     - ./gradlew buildOlm
@@ -124,7 +131,7 @@ publish-linux:
     - create-nexus-staging-repo
 #     - publish-mac
   rules:
-    - if: $IS_RELEASE_TAG
+    - *if-release
   script:
     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
