@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
@@ -60,7 +61,7 @@ suspend fun timelineExample() = coroutineScope {
                 timelineEvents.reversed().forEach { timelineEvent ->
                     val event = timelineEvent.value?.event
                     val content = timelineEvent.value?.content?.getOrNull()
-                    val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, this).value?.name }
+                    val sender = event?.sender?.let { matrixClient.user.getById(it, roomId)?.name }
                     when (content) {
                         is RoomMessageEventContent -> println("${sender}: ${content.body}")
                         null -> println("${sender}: not yet decrypted")
