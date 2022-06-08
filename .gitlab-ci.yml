@@ -1,7 +1,9 @@
 stages:
   - prepare-build
   - build
-  - publish
+  - prepare-publish
+  - publish-mac
+  - publish-linux
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
@@ -9,7 +11,7 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
   BUILD_MAC_IMAGE_NAME: macos-12-xcode-13
-  IS_RELEASE_TAG: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/
+  IS_RELEASE_TAG: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
 .build-cache: &build-cache
   - key: global-tixnity-cache
@@ -71,7 +73,7 @@ build-linux:
     - ./gradlew build --stacktrace
 
 create-nexus-staging-repo:
-  stage: publish
+  stage: prepare-publish
   tags: [ "trixnity-linux-internal" ]
   image: ubuntu:latest
   rules:
@@ -79,6 +81,7 @@ create-nexus-staging-repo:
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
+    - apt-get update && apt-get install -y curl
     - >
         jsonOutput=$(
           curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
@@ -91,7 +94,7 @@ create-nexus-staging-repo:
     - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
 # publish-mac:
-#   stage: publish
+#   stage: publish-mac
 #   tags: [ "shared-macos-amd64" ]
 #   image: $BUILD_MAC_IMAGE_NAME
 #   cache:
@@ -108,7 +111,7 @@ create-nexus-staging-repo:
 #     - ./gradlew publish --stacktrace
 
 publish-linux:
-  stage: publish
+  stage: publish-linux
   tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
