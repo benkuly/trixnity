@@ -12,7 +12,6 @@ buildscript {
 plugins {
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin") version Versions.gradleNexusPublishPlugin
     id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
@@ -49,6 +48,17 @@ subprojects {
         apply(plugin = "signing")
 
         publishing {
+            repositories {
+                maven {
+                    name = "OSSRH"
+                    val repositoryId = System.getenv("OSSRH_REPOSITORY_ID")
+                    url = uri("https://oss.sonatype.org/service/local/staging/deployByRepositoryId/$repositoryId")
+                    credentials {
+                        username = System.getenv("OSSRH_USERNAME")
+                        password = System.getenv("OSSRH_PASSWORD")
+                    }
+                }
+            }
             publications.configureEach {
                 if (this is MavenPublication) {
                     pom {
@@ -82,15 +92,6 @@ subprojects {
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
             sign(publishing.publications)
-        }
-    }
-}
-
-nexusPublishing {
-    repositories {
-        sonatype {
-            username.set(System.getenv("OSSRH_USERNAME"))
-            password.set(System.getenv("OSSRH_PASSWORD"))
         }
     }
 }

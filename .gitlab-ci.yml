@@ -8,12 +8,14 @@ variables:
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
+  BUILD_MAC_IMAGE_NAME: macos-12-xcode-13
+  IS_RELEASE_TAG: "$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/"
 
 .build-cache: &build-cache
-  key: global-tixnity-cache
-  paths:
-    - .gradle
-    - .konan
+  - key: global-tixnity-cache
+    paths:
+    - $GRADLE_USER_HOME
+    - $KONAN_DATA_DIR
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
@@ -25,9 +27,9 @@ variables:
   when: always
   paths: [ "**/build/reports" ]
 
-
 build-trixnity-build-linux-image:
   stage: prepare-build
+  tags: [ "trixnity-linux-internal" ]
   image: docker:20
   services:
     - name: docker:20-dind
@@ -38,13 +40,28 @@ build-trixnity-build-linux-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push $BUILD_LINUX_IMAGE_NAME
 
+build-mac:
+  stage: build
+  tags: [ "shared-macos-amd64" ]
+  image: $BUILD_MAC_IMAGE_NAME
+  cache:
+    - *build-cache
+  artifacts: *artifact-reports
+  only:
+    - merge_requests
+  script:
+    - ./gradlew buildOlm
+    - ./gradlew build --stacktrace
+
 build-linux:
   stage: build
+  tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
       command: [ "--tls=false" ]
-  cache: *build-cache
+  cache:
+    - *build-cache
   variables: *docker-variables
   artifacts: *artifact-reports
   only:
@@ -53,33 +70,58 @@ build-linux:
     - ./gradlew buildOlm
     - ./gradlew build --stacktrace
 
-#build-windows:
-#  stage: build
-#  tags: [ "windows" ]
-#  rules: *rules
-#  script:
-#    - ./gradlew.bat build
-
-#build-mac:
-#  stage: build
-#  tags: [ "shared-macos-amd64" ]
-#  image: macos-11-xcode-12
-#  rules: *rules
-#  script:
-#    - ./gradlew.bat build
-
-publish:
+create-nexus-staging-repo:
   stage: publish
+  tags: [ "trixnity-linux-internal" ]
+  image: ubuntu:latest
+  rules:
+    - if: $IS_RELEASE_TAG
+  artifacts:
+    paths: [ "./OSSRH_REPOSITORY_ID" ]
+  script:
+    - jsonOutput=$(
+        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD" \
+          --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start \
+          --header 'Accept: application/json' \
+          --header 'Content-Type: application/json' \
+          --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
+      )
+    - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
+    - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
+
+publish-mac:
+  stage: publish
+  tags: [ "shared-macos-amd64" ]
+  image: $BUILD_MAC_IMAGE_NAME
+  cache:
+    - *build-cache
+  artifacts:
+    paths: [ "./trixnity-olm/build/processedResources" ]
+  dependencies:
+    - create-nexus-staging-repo
+  rules:
+    - if: $IS_RELEASE_TAG
+  script:
+    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - ./gradlew buildOlm
+    - ./gradlew publish --stacktrace
+
+publish-linux:
+  stage: publish
+  tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
       command: [ "--tls=false" ]
-  cache: *build-cache
+  cache:
+    - *build-cache
   variables: *docker-variables
-  artifacts: *artifact-reports
+  dependencies:
+    - create-nexus-staging-repo
+    - publish-mac
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+    - if: $IS_RELEASE_TAG
   script:
+    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
-    - ./gradlew build --stacktrace
-    - ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository --stacktrace
+    - ./gradlew publish --stacktrace
