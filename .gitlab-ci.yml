@@ -9,7 +9,7 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
   BUILD_MAC_IMAGE_NAME: macos-12-xcode-13
-  IS_RELEASE_TAG: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+  IS_RELEASE_TAG: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/
 
 .build-cache: &build-cache
   - key: global-tixnity-cache
@@ -80,13 +80,13 @@ create-nexus-staging-repo:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
     - >
-      jsonOutput=$(
-        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
-          --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
-          --header 'Accept: application/json'
-          --header 'Content-Type: application/json'
-          --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
-      )
+        jsonOutput=$(
+          curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
+            --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
+            --header 'Accept: application/json'
+            --header 'Content-Type: application/json'
+            --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
+        )
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
     - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
