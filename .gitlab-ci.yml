@@ -79,11 +79,12 @@ create-nexus-staging-repo:
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
-    - jsonOutput=$(
-        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD" \
-          --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start \
-          --header 'Accept: application/json' \
-          --header 'Content-Type: application/json' \
+    - |
+      jsonOutput=$(
+        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
+          --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
+          --header 'Accept: application/json'
+          --header 'Content-Type: application/json'
           --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
       )
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
