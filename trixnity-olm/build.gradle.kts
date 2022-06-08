@@ -1,7 +1,7 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
-import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.presetName
 
@@ -23,7 +23,7 @@ val olmNativeLibPath = olmRootDir.resolve("build-native")
 
 data class OlmJNATarget(
     val name: String,
-    val onlyIf: () -> Boolean,
+    val compilationAllowed: Boolean,
     val additionalParams: List<String> = listOf()
 ) {
     val libDir = olmJNALibPath.resolve(name)
@@ -32,26 +32,26 @@ data class OlmJNATarget(
 data class OlmNativeTarget(
     val target: KonanTarget,
     val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> Unit,
-    val onlyIf: () -> Boolean,
     val additionalParams: List<String> = listOf()
 ) {
     val libDir = olmNativeLibPath.resolve(target.name)
     val libPath = libDir.resolve("libolm.a")
+    val compilationAllowed = target.isCompilationAllowed()
 }
 
 val olmJNATargets = listOf(
     OlmJNATarget(
         name = "linux-x86-64",
-        onlyIf = { HostManager.hostIsLinux }
+        compilationAllowed = Family.LINUX.isCompilationAllowed()
     ),
     OlmJNATarget(
         name = "darwin",
-        onlyIf = { HostManager.hostIsMac },
+        compilationAllowed = Family.OSX.isCompilationAllowed(),
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
     ),
     OlmJNATarget(
         name = "win32-x86-64",
-        onlyIf = { HostManager.hostIsMingw || HostManager.hostIsLinux },
+        compilationAllowed = Family.MINGW.isCompilationAllowed(),
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
     )
 )
@@ -60,36 +60,30 @@ val olmNativeTargets = listOf(
     OlmNativeTarget(
         target = KonanTarget.LINUX_X64,
         createTarget = { linuxX64() },
-        onlyIf = { HostManager.hostIsLinux }
     ),
     OlmNativeTarget(
         target = KonanTarget.MACOS_ARM64,
         createTarget = { macosArm64() },
-        onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=arm64")
     ),
     OlmNativeTarget(
         target = KonanTarget.MACOS_X64,
         createTarget = { macosX64() },
-        onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     ),
     OlmNativeTarget(
         target = KonanTarget.IOS_ARM64,
         createTarget = { iosArm64() },
-        onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=OS64")
     ),
     OlmNativeTarget(
         target = KonanTarget.IOS_X64,
         createTarget = { iosX64() },
-        onlyIf = { HostManager.hostIsMac },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=SIMULATOR64")
     ),
     OlmNativeTarget(
         target = KonanTarget.MINGW_X64,
         createTarget = { mingwX64() },
-        onlyIf = { HostManager.hostIsMingw || HostManager.hostIsLinux },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
     ),
 )
@@ -147,7 +141,7 @@ kotlin {
     }
 
     olmNativeTargets.forEach {
-        if (it.onlyIf()) {
+        if (it.compilationAllowed) {
             it.createTarget(this@kotlin)
             targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
                 compilations {
@@ -205,9 +199,7 @@ kotlin {
             dependsOn(olmLibraryMain)
         }
         olmNativeTargets.forEach {
-            if (it.onlyIf()) {
-                sourceSets.getByName(it.target.presetName + "Main").dependsOn(nativeMain)
-            }
+            if (it.compilationAllowed) sourceSets.getByName(it.target.presetName + "Main").dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {
@@ -279,7 +271,7 @@ val olmJNATargetsTasks = olmJNATargets.flatMap { target ->
             *target.additionalParams.toTypedArray()
         )
         dependsOn(extractOlm)
-        onlyIf { target.onlyIf() }
+        onlyIf { target.compilationAllowed }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)
@@ -289,7 +281,7 @@ val olmJNATargetsTasks = olmJNATargets.flatMap { target ->
         workingDir(target.libDir)
         commandLine("cmake", "--build", ".")
         dependsOn(prepareTask)
-        onlyIf { target.onlyIf() }
+        onlyIf { target.compilationAllowed }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)
@@ -311,7 +303,7 @@ val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
             *target.additionalParams.toTypedArray()
         )
         dependsOn(extractOlm, downloadIOSCmakeToolchain)
-        onlyIf { target.onlyIf() }
+        onlyIf { target.compilationAllowed }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)
@@ -321,7 +313,7 @@ val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
         workingDir(target.libDir)
         commandLine("cmake", "--build", ".")
         dependsOn(prepareTask)
-        onlyIf { target.onlyIf() }
+        onlyIf { target.compilationAllowed }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)

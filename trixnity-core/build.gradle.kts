@@ -34,6 +34,8 @@ kotlin {
     macosArm64()
     ios()
 
+    targets.disableCompilationsOnCI()
+
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")

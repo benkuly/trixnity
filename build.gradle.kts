@@ -5,7 +5,6 @@ buildscript {
         maven("https://www.jetbrains.com/intellij-repository/releases")
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:${Versions.androidGradle}")
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
     }
 }
@@ -15,10 +14,6 @@ plugins {
     signing
     id("io.github.gradle-nexus.publish-plugin") version Versions.gradleNexusPublishPlugin
     id("org.jetbrains.dokka") version Versions.dokka
-    kotlin("multiplatform") version Versions.kotlin apply false
-    kotlin("jvm") version Versions.kotlin apply false
-    kotlin("js") version Versions.kotlin apply false
-    kotlin("plugin.serialization") version Versions.kotlin apply false
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
     id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
@@ -26,7 +21,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "2.1.1"
+    version = "2.1.2"
 
     repositories {
         mavenCentral()
@@ -36,6 +31,7 @@ allprojects {
 
     apply(plugin = "org.jetbrains.dokka")
 
+    org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMultiplatformPlugin
     dependencies {
         dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
     }
@@ -80,7 +76,7 @@ subprojects {
             }
         }
         signing {
-            isRequired = isRelease
+            isRequired = isCI
             useInMemoryPgpKeys(
                 System.getenv("OSSRH_PGP_KEY"),
                 System.getenv("OSSRH_PGP_PASSWORD")
