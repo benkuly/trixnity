@@ -94,7 +94,8 @@ interface IRoomService {
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
     suspend fun getTimelineEvents(
-        startFrom: StateFlow<TimelineEvent?>,
+        startFrom: EventId,
+        roomId: RoomId,
         direction: Direction = BACKWARDS,
         decryptionTimeout: Duration = INFINITE
     ): Flow<StateFlow<TimelineEvent?>>
@@ -113,7 +114,10 @@ interface IRoomService {
      * The manual approach needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
-    suspend fun getLastTimelineEvents(roomId: RoomId): Flow<Flow<StateFlow<TimelineEvent?>>?>
+    suspend fun getLastTimelineEvents(
+        roomId: RoomId,
+        decryptionTimeout: Duration = INFINITE
+    ): Flow<Flow<StateFlow<TimelineEvent?>>?>
 
     /**
      * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
@@ -1065,12 +1069,14 @@ class RoomService(
      * @param scope The [CoroutineScope] is used to determine, how long the [TimelineEvent]s should be hold in cache.
      */
     override suspend fun getTimelineEvents(
-        startFrom: StateFlow<TimelineEvent?>,
+        startFrom: EventId,
+        roomId: RoomId,
         direction: Direction,
         decryptionTimeout: Duration
     ): Flow<StateFlow<TimelineEvent?>> =
         channelFlow {
-            var currentTimelineEventFlow: StateFlow<TimelineEvent?> = startFrom
+            var currentTimelineEventFlow: StateFlow<TimelineEvent?> =
+                getTimelineEvent(startFrom, roomId, this, decryptionTimeout)
             send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
@@ -1100,13 +1106,16 @@ class RoomService(
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getLastTimelineEvents(roomId: RoomId): Flow<Flow<StateFlow<TimelineEvent?>>?> =
-        getLastTimelineEvent(roomId)
+    override suspend fun getLastTimelineEvents(
+        roomId: RoomId,
+        decryptionTimeout: Duration
+    ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+        store.room.get(roomId)
+            .mapLatest { it?.lastEventId }
             .distinctUntilChanged()
-            .mapLatest { currentTimelineEventFlow ->
-                currentTimelineEventFlow?.let {
-                    getTimelineEvents(it)
-                }
+            .mapLatest {
+                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout)
+                else null
             }
 
     @OptIn(FlowPreview::class)

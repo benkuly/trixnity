@@ -1297,6 +1297,70 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("should handle gap filling without new events") {
+                store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "before-3",
+                            "after-2",
+                            dir = BACKWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "before-3",
+                            end = "after-2",
+                            chunk = listOf(),
+                            state = listOf()
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "after-3",
+                            "before-4",
+                            dir = FORWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "after-3",
+                            end = "before-4",
+                            chunk = listOf(),
+                            state = listOf()
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        gap("after-2")
+                        gap("before-3")
+                        +event3
+                        gap("after-3")
+                        gap("before-4")
+                        +event4
+                        gap("after-4")
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room).getOrThrow()
+                storeTimeline(event2, event3, event4) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        +event3
+                        +event4
+                        gap("after-4")
+                    }
+                }
+            }
         }
     }
 })

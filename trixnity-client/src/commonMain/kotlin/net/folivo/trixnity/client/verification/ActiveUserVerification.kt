@@ -82,7 +82,7 @@ class ActiveUserVerification(
 
     override suspend fun lifecycle(scope: CoroutineScope) {
         val timelineJob = scope.launch {
-            room.getTimelineEvents(room.getTimelineEvent(requestEventId, roomId, this), FORWARDS)
+            room.getTimelineEvents(requestEventId, roomId, FORWARDS)
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
                         val contentResult = it.content
