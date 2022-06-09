@@ -1075,24 +1075,32 @@ class RoomService(
         decryptionTimeout: Duration
     ): Flow<StateFlow<TimelineEvent?>> =
         channelFlow {
+            fun TimelineEvent.Gap?.hasGap() =
+                this != null && (this.hasGapBoth
+                        || direction == FORWARDS && this.hasGapAfter
+                        || direction == BACKWARDS && this.hasGapBefore)
+
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> =
                 getTimelineEvent(startFrom, roomId, this, decryptionTimeout)
             send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
                     .filterNotNull()
-                    .map { currentTimelineEvent ->
+                    .onEach { currentTimelineEvent ->
                         val gap = currentTimelineEvent.gap
-                        if (gap != null && (gap.hasGapBoth
-                                    || direction == FORWARDS && gap.hasGapAfter
-                                    || direction == BACKWARDS && gap.hasGapBefore)
-                        ) currentSyncState.retryWhenSyncIs(
+                        if (gap.hasGap()) currentSyncState.retryWhenSyncIs(
                             RUNNING,
                             onError = { log.error(it) { "could not fetch missing events" } },
                         ) {
                             log.debug { "fetch missing events before/after ${currentTimelineEvent.eventId}" }
+                            val content = currentTimelineEvent.content?.getOrNull()
+                            println(currentTimelineEvent)
+                            println(content)
                             fetchMissingEvents(currentTimelineEvent.eventId, currentTimelineEvent.roomId).getOrThrow()
                         }
+                    }
+                    .filter { it.gap.hasGap().not() }
+                    .map { currentTimelineEvent ->
                         when (direction) {
                             BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
                             FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)

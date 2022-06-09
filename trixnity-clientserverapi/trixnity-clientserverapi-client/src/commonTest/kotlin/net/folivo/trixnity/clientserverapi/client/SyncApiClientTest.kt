@@ -37,7 +37,6 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest {
@@ -1019,7 +1018,6 @@ class SyncApiClientTest {
         matrixRestClient.sync.stop()
     }
 
-    @OptIn(ExperimentalTime::class)
     @Test
     fun shouldAllowOnlyOneSyncAtATime() = runTest(dispatchTimeoutMs = 4_000) {
         val response = Response(
