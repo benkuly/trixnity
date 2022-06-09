@@ -2,7 +2,7 @@
 
 # Trixnity - Multiplatform Matrix SDK
 
-Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin. 
+Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin.
 You can write clients, bots and appservices with
 it. This SDK supports JVM (also Android), JS and Native as targets for most modules.
 [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
@@ -80,7 +80,7 @@ Select from the modules above, which dependency you need and add it to you proje
 val trixnityVersion = "x.x.x" // get version from https://gitlab.com/benkuly/trixnity/-/releases
 
 fun trixnity(module: String, version: String = trixnityVersion) =
-	"net.folivo:trixnity-$module:$version"
+    "net.folivo:trixnity-$module:$version"
 
 // for example:
 implementation(trixnity("client"))
@@ -316,9 +316,9 @@ sdk.dir=/path/to/android/sdk
 
 Linux:
 
-- cmake `3.23.1` (e.g. by running `sudo ./cmake-3.23.1-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
+- cmake `3.23.2` (e.g. by running `sudo ./cmake-3.23.2-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
   from
-  https://cmake.org/files/v3.23/cmake-3.23.1-linux-x86_64.sh).
+  https://cmake.org/files/v3.23/cmake-3.23.2-linux-x86_64.sh).
 - libncurses5
 - ninja-build
 - mingw-w64
