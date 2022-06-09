@@ -1,9 +1,8 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -22,13 +21,13 @@ class RoomUserStore(
         roomUserCache.reset()
     }
 
-    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> =
-        roomUserCache.get(roomId, scope = scope).map { it?.values?.toSet() }.stateIn(scope)
+    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): Flow<Set<RoomUser>?> =
+        roomUserCache.get(roomId, scope = scope).map { it?.values?.toSet() }
 
     suspend fun getAll(roomId: RoomId): Set<RoomUser>? =
         roomUserCache.get(roomId)?.values?.toSet()
 
-    suspend fun get(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> =
+    suspend fun get(userId: UserId, roomId: RoomId, scope: CoroutineScope): Flow<RoomUser?> =
         roomUserCache.getBySecondKey(roomId, userId, scope)
 
     suspend fun get(userId: UserId, roomId: RoomId): RoomUser? = roomUserCache.getBySecondKey(roomId, userId)

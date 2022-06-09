@@ -8,16 +8,6 @@ import kotlin.random.Random
 class AesHmacSha2Test : ShouldSpec({
     timeout = 30_000
 
-    context(::hmacSha256.name) {
-        should("create mac") {
-            hmacSha256(
-                "this is a key".encodeToByteArray(),
-                "this should be maced".encodeToByteArray()
-            ) shouldBe "f5ab5a64c568f2393ed7a1c5bc84ae82d2ecb847b968bab2057fb99190e52d75".chunked(2)
-                .map { it.toInt(16).toByte() }
-                .toByteArray()
-        }
-    }
     context(::deriveKeys.name) {
         should("generate keys") {
             assertSoftly(deriveKeys("this is a key".encodeToByteArray(), "")) {

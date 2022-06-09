@@ -269,26 +269,27 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         context("megolm session on server") {
-            val sessionKey = freeAfter(OlmOutboundGroupSession.create()) { os ->
-                os.encrypt("bla")
-                freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.export(1) }
-            }
-            val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-            val encryptedRoomKeyBackupV1SessionData = freeAfter(OlmPkEncryption.create(keyBackupPublicKey)) {
-                val e = it.encrypt(
-                    json.encodeToString(
-                        RoomKeyBackupV1SessionData(
-                            senderKey, listOf(), mapOf(KeyAlgorithm.Ed25519.name to "edKey"), sessionKey
+            lateinit var encryptedRoomKeyBackupV1SessionData: EncryptedRoomKeyBackupV1SessionData
+            beforeTest {
+                val sessionKey = freeAfter(OlmOutboundGroupSession.create()) { os ->
+                    os.encrypt("bla")
+                    freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.export(1) }
+                }
+                val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
+                encryptedRoomKeyBackupV1SessionData = freeAfter(OlmPkEncryption.create(keyBackupPublicKey)) {
+                    val e = it.encrypt(
+                        json.encodeToString(
+                            RoomKeyBackupV1SessionData(
+                                senderKey, listOf(), mapOf(KeyAlgorithm.Ed25519.name to "edKey"), sessionKey
+                            )
                         )
                     )
-                )
-                EncryptedRoomKeyBackupV1SessionData(
-                    ciphertext = e.cipherText,
-                    mac = e.mac,
-                    ephemeral = e.ephemeralKey
-                )
-            }
-            beforeTest {
+                    EncryptedRoomKeyBackupV1SessionData(
+                        ciphertext = e.cipherText,
+                        mac = e.mac,
+                        ephemeral = e.ephemeralKey
+                    )
+                }
                 setVersion(keyBackupPrivateKey, keyBackupPublicKey, version)
             }
             context("without error") {

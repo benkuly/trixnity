@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.crypto
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
@@ -88,7 +87,7 @@ internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: Stri
 }
 
 internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String, scope: CoroutineScope) =
-    this.getDeviceKeys(userId, scope).map { it?.get(deviceId) }.stateIn(scope)
+    this.getDeviceKeys(userId, scope).map { it?.get(deviceId) }
 
 internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,

@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
@@ -24,7 +24,7 @@ class RoomOutboxMessageStore(
         roomOutboxMessageCache.reset()
     }
 
-    @OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val allRoomOutboxMessages =
         roomOutboxMessageCache.cache
             .flatMapLatest {

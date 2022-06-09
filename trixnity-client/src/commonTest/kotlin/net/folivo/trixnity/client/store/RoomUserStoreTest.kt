@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.EventId
@@ -71,7 +72,7 @@ class RoomUserStoreTest : ShouldSpec({
                 )
             )
 
-            cut.getAll(roomId, scope).value shouldContainExactly listOf(aliceUser, bobUser)
+            cut.getAll(roomId, scope).first() shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
         }

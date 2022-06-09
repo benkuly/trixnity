@@ -30,11 +30,11 @@ interface IUserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     fun loadMembers(roomId: RoomId)
 
-    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?>
+    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): Flow<Set<RoomUser>?>
 
     suspend fun getAll(roomId: RoomId): Set<RoomUser>?
 
-    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?>
+    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): Flow<RoomUser?>
 
     suspend fun getById(userId: UserId, roomId: RoomId): RoomUser?
 
@@ -42,7 +42,7 @@ interface IUserService {
         eventContentClass: KClass<C>,
         key: String = "",
         scope: CoroutineScope
-    ): StateFlow<C?>
+    ): Flow<C?>
 
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
@@ -203,7 +203,7 @@ class UserService(
         }
     }
 
-    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {
+    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): Flow<Set<RoomUser>?> {
         return store.roomUser.getAll(roomId, scope)
     }
 
@@ -211,7 +211,7 @@ class UserService(
         return store.roomUser.getAll(roomId)
     }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
+    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): Flow<RoomUser?> {
         return store.roomUser.get(userId, roomId, scope)
     }
 
@@ -223,10 +223,9 @@ class UserService(
         eventContentClass: KClass<C>,
         key: String,
         scope: CoroutineScope
-    ): StateFlow<C?> {
+    ): Flow<C?> {
         return store.globalAccountData.get(eventContentClass, key, scope)
             .map { it?.content }
-            .stateIn(scope)
     }
 
     override suspend fun <C : GlobalAccountDataEventContent> getAccountData(

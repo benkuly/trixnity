@@ -107,11 +107,28 @@ class OlmInboundGroupSessionTest {
     }
 
     @Test
+    fun pickleWithEmptyKey() = runTest {
+        freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
+            session.pickle("") shouldNot beBlank()
+        }
+    }
+
+    @Test
     fun unpickle() = runTest {
         val pickle = freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
             session.pickle("someKey") to session.sessionId
         }
         freeAfter(OlmInboundGroupSession.unpickle("someKey", pickle.first)) { session ->
+            session.sessionId shouldBe pickle.second
+        }
+    }
+
+    @Test
+    fun unpickleWithEmptyKey() = runTest {
+        val pickle = freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
+            session.pickle("") to session.sessionId
+        }
+        freeAfter(OlmInboundGroupSession.unpickle("", pickle.first)) { session ->
             session.sessionId shouldBe pickle.second
         }
     }

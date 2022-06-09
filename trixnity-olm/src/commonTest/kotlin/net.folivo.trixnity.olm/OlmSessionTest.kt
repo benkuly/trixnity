@@ -129,7 +129,19 @@ class OlmSessionTest {
     }
 
     @Test
-    fun unpickleAccount() = runTest {
+    fun pickleWithEmptyKey() = runTest {
+        freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
+            val bobIdentityKey = bobAccount.identityKeys.curve25519
+            bobAccount.generateOneTimeKeys(1)
+            val bobOneTimeKey = bobAccount.oneTimeKeys.curve25519.values.first()
+            freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
+                aliceSession.pickle("") shouldNot beBlank()
+            }
+        }
+    }
+
+    @Test
+    fun unpickle() = runTest {
         freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
             bobAccount.generateOneTimeKeys(1)
@@ -141,6 +153,24 @@ class OlmSessionTest {
                     aliceSession.pickle("someKey")
                 }
             freeAfter(OlmSession.unpickle("someKey", pickle)) { aliceSession ->
+                aliceSession.sessionId shouldBe sessionId
+            }
+        }
+    }
+
+    @Test
+    fun unpickleWithEmptyKey() = runTest {
+        freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
+            val bobIdentityKey = bobAccount.identityKeys.curve25519
+            bobAccount.generateOneTimeKeys(1)
+            val bobOneTimeKey = bobAccount.oneTimeKeys.curve25519.values.first()
+            var sessionId: String? = null
+            val pickle =
+                freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
+                    sessionId = aliceSession.sessionId
+                    aliceSession.pickle("")
+                }
+            freeAfter(OlmSession.unpickle("", pickle)) { aliceSession ->
                 aliceSession.sessionId shouldBe sessionId
             }
         }

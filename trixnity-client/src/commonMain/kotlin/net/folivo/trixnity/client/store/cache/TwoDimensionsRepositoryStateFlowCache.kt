@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
@@ -59,10 +58,9 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         key: K1,
         withTransaction: Boolean = true,
         scope: CoroutineScope
-    ): StateFlow<Map<K2, V>?> =
+    ): Flow<Map<K2, V>?> =
         cache.get(key, withTransaction, isContainedInCache = { it?.fullyLoadedFromRepository == true }, scope)
             .map { it?.value }
-            .stateIn(scope)
 
     suspend fun update(
         key: K1,
@@ -137,8 +135,8 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         firstKey: K1,
         secondKey: K2,
         scope: CoroutineScope
-    ): StateFlow<V?> {
-        return getBySecondKeyAsFlow(firstKey, secondKey, scope).stateIn(scope)
+    ): Flow<V?> {
+        return getBySecondKeyAsFlow(firstKey, secondKey, scope)
     }
 
     suspend fun getBySecondKey(

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import com.soywiz.krypto.HMAC
 import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
@@ -8,11 +7,9 @@ import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import kotlin.experimental.and
 
-internal fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray = HMAC.hmacSHA256(key, data).bytes
-
 internal class DerivedKeys(val aesKey: ByteArray, val hmacKey: ByteArray)
 
-internal fun deriveKeys(key: ByteArray, name: String): DerivedKeys {
+internal suspend fun deriveKeys(key: ByteArray, name: String): DerivedKeys {
     val zerosalt = ByteArray(32)
     val hashedKey = hmacSha256(zerosalt, key)
     val aesKey = hmacSha256(hashedKey, name.encodeToByteArray() + ByteArray(1) { 0x01 })

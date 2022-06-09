@@ -35,7 +35,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
     crossinline handler: suspend (REQUEST) -> RESPONSE
 ) {
     addHandler { request ->
-        matrixEndpointLog.debug { "handle request $request on expected endpoint $endpoint" }
+        matrixEndpointLog.info { "handle request $request on expected endpoint $endpoint" }
         try {
             val resources = Resources(Resources.Configuration().apply { serializersModule = json.serializersModule })
             val expectedRequest = HttpRequestBuilder().apply {

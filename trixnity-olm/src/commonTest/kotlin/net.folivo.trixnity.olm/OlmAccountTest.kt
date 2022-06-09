@@ -183,7 +183,14 @@ class OlmAccountTest {
     }
 
     @Test
-    fun unpickleAccount() = runTest {
+    fun pickleWithEmptyKey() = runTest {
+        freeAfter(OlmAccount.create()) { account ->
+            account.pickle("") shouldNot beBlank()
+        }
+    }
+
+    @Test
+    fun unpickle() = runTest {
         var keys: OlmIdentityKeys? = null
         val pickle = freeAfter(OlmAccount.create()) { account ->
             keys = account.identityKeys
@@ -191,6 +198,19 @@ class OlmAccountTest {
         }
         pickle shouldNot beBlank()
         freeAfter(OlmAccount.unpickle("someKey", pickle)) { account ->
+            account.identityKeys shouldBe keys
+        }
+    }
+
+    @Test
+    fun unpickleWithEmptyKey() = runTest {
+        var keys: OlmIdentityKeys? = null
+        val pickle = freeAfter(OlmAccount.create()) { account ->
+            keys = account.identityKeys
+            account.pickle("")
+        }
+        pickle shouldNot beBlank()
+        freeAfter(OlmAccount.unpickle("", pickle)) { account ->
             account.identityKeys shouldBe keys
         }
     }
