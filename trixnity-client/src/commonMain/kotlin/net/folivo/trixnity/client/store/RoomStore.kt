@@ -37,6 +37,6 @@ class RoomStore(
         null
     )
 
-    suspend fun update(roomId: RoomId, updater: suspend (oldRoom: Room?) -> Room?) =
-        roomCache.update(roomId, updater = updater)
+    suspend fun update(roomId: RoomId, withTransaction: Boolean = true, updater: suspend (oldRoom: Room?) -> Room?) =
+        roomCache.update(roomId, withTransaction = withTransaction, updater = updater)
 }

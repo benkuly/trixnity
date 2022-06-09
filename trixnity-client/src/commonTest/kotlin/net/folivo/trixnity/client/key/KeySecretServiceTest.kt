@@ -86,7 +86,7 @@ private val body: ShouldSpec.() -> Unit = {
         store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeySecretService(alice, aliceDevice, store, olmEvent, keyBackup, api, currentSyncState)
+        cut = KeySecretService(alice, aliceDevice, store, olmEvent, keyBackup, api, currentSyncState,scope)
     }
 
     afterTest {

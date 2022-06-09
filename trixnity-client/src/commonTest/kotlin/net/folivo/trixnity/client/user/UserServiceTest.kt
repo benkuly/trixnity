@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -41,7 +40,7 @@ class UserServiceTest : ShouldSpec({
     val bob = UserId("bob", "server")
     val roomId = simpleRoom.roomId
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
@@ -53,25 +52,23 @@ class UserServiceTest : ShouldSpec({
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         currentSyncState.value = SyncState.RUNNING
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
-        cut = UserService(store, api, currentSyncState)
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope).apply { init() }
+        cut = UserService(store, api, currentSyncState, scope)
     }
 
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
-    context(UserService::handleLoadMembersQueue.name) {
+    context(UserService::loadMembers.name) {
         should("do nothing when members already loaded") {
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            val job = launch { cut.handleLoadMembersQueue() }
             continually(500.milliseconds) {
                 store.room.get(roomId).value shouldBe storedRoom
             }
-            job.cancel()
         }
         should("load members") {
             apiConfig.endpoints {
@@ -101,12 +98,10 @@ class UserServiceTest : ShouldSpec({
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.keys.outdatedKeys.value.shouldBeEmpty()
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            job.cancel()
         }
         should("add outdated keys when room is encrypted") {
             apiConfig.endpoints {
@@ -144,12 +139,10 @@ class UserServiceTest : ShouldSpec({
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.keys.outdatedKeys.value shouldBe setOf(bob)
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            job.cancel()
         }
         should("skip members, that are already stored") {
             store.roomState.update(
@@ -189,12 +182,10 @@ class UserServiceTest : ShouldSpec({
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             store.room.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
-            val job = launch { cut.handleLoadMembersQueue() }
             store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             store.keys.outdatedKeys.value.shouldBeEmpty()
             store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
             store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
-            job.cancel()
         }
     }
     context(UserService::setRoomUser.name) {

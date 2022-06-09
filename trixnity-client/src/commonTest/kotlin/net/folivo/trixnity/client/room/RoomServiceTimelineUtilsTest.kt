@@ -42,6 +42,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     lateinit var scope: CoroutineScope
+    lateinit var localTestScope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
@@ -53,6 +54,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
+        localTestScope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(storeScope).apply { init() }
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
@@ -66,12 +68,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             UserServiceMock(),
             MediaServiceMock(),
             currentSyncState,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration(),
+            scope,
         )
     }
 
     afterTest {
         storeScope.cancel()
+        localTestScope.cancel()
         scope.cancel()
     }
 
@@ -215,7 +219,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             should("transform to list") {
                 val size = MutableStateFlow(2)
                 val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
-                scope.launch {
+                localTestScope.launch {
                     cut.getTimelineEvents(event3.id, room)
                         .toFlowList(size)
                         .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
@@ -259,7 +263,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val beforeInclusive = MutableStateFlow(2)
                 val afterInclusive = MutableStateFlow(2)
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
-                scope.launch {
+                localTestScope.launch {
                     cut.getTimelineEvents(event2.id, room, beforeInclusive, afterInclusive)
                         .collect { result.value = it.mapNotNull { it.value } }
                 }
@@ -301,12 +305,12 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent2,
                 timelineEvent1
             )
-            scope.coroutineContext.job.children.count() shouldBe 0
+            localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
         should("cancel old timeline event flow") {
             store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
             val collectedEvents = MutableStateFlow<List<TimelineEvent?>?>(null)
-            val job = scope.launch {
+            val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .filterNotNull()
                     .collectLatest { timelineEventFlow ->
@@ -327,14 +331,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent2,
             )
             job.cancelAndJoin()
-            scope.coroutineContext.job.children.count() shouldBe 0
+            localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
         should("transform to list") {
             val size = MutableStateFlow(2)
             val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
 
             store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
-            val job = scope.launch {
+            val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .toFlowList(size)
                     .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
@@ -359,7 +363,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             )
 
             job.cancelAndJoin()
-            scope.coroutineContext.job.children.count() shouldBe 0
+            localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
     }
     context(RoomService::getTimelineEventsFromNowOn.name) {

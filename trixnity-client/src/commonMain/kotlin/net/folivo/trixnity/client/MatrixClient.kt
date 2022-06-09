@@ -89,6 +89,7 @@ class MatrixClient private constructor(
             json = json,
             olmAccount = olmAccount,
             olmUtility = olmUtility,
+            scope = scope,
         )
         olm = _olm
         media = MediaService(
@@ -99,6 +100,7 @@ class MatrixClient private constructor(
             api = api,
             store = store,
             currentSyncState = syncState,
+            scope = scope,
         )
         user = _user
         _keyBackup = KeyBackupService(
@@ -109,6 +111,7 @@ class MatrixClient private constructor(
             api = api,
             olmSign = olm.sign,
             currentSyncState = syncState,
+            scope = scope,
         )
         _keySecret = KeySecretService(
             ownUserId = userId,
@@ -118,6 +121,7 @@ class MatrixClient private constructor(
             olmEvents = olm.event,
             keyBackup = _keyBackup,
             currentSyncState = syncState,
+            scope = scope,
         )
         _key = KeyService(
             ownUserId = userId,
@@ -127,7 +131,8 @@ class MatrixClient private constructor(
             olmSign = olm.sign,
             currentSyncState = syncState,
             backup = _keyBackup,
-            secret = _keySecret
+            secret = _keySecret,
+            scope = scope,
         )
         key = _key
         _room = RoomService(
@@ -140,6 +145,7 @@ class MatrixClient private constructor(
             media = media,
             currentSyncState = syncState,
             config = config,
+            scope = scope,
         )
         room = _room
         _verification = VerificationService(
@@ -152,6 +158,7 @@ class MatrixClient private constructor(
             userService = user,
             keyService = _key,
             currentSyncState = syncState,
+            scope = scope,
         )
         verification = _verification
         push = PushService(
@@ -160,7 +167,6 @@ class MatrixClient private constructor(
             store = store,
             json = json,
         )
-
     }
 
     companion object {
@@ -445,35 +451,23 @@ class MatrixClient private constructor(
                     stopSync(true)
                 }
             }
-            val everythingStarted = MutableStateFlow(false)
             scope.launch(handler) {
-                _key.start(this)
-                _keyBackup.start(this)
-                _keySecret.start(this)
-                _olm.start(this)
-                _room.start(this)
-                _user.start(this)
-                _verification.start(this)
-                launch {
-                    loginState.debounce(100.milliseconds).collect {
-                        log.info { "login state: $it" }
-                        when (it) {
-                            LOGGED_OUT_SOFT -> {
-                                log.info { "stop sync" }
-                                stopSync(true)
-                            }
-                            LOGGED_OUT -> {
-                                log.info { "stop sync and delete all" }
-                                stopSync(true)
-                                store.deleteAll()
-                            }
-                            else -> {}
+                loginState.debounce(100.milliseconds).collect {
+                    log.info { "login state: $it" }
+                    when (it) {
+                        LOGGED_OUT_SOFT -> {
+                            log.info { "stop sync" }
+                            stopSync(true)
                         }
+                        LOGGED_OUT -> {
+                            log.info { "stop sync and delete all" }
+                            stopSync(true)
+                            store.deleteAll()
+                        }
+                        else -> {}
                     }
                 }
-                everythingStarted.value = true
             }
-            everythingStarted.first { it } // we wait until everything has started
 
             val filterId = store.account.filterId.value
             if (filterId == null) {

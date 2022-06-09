@@ -11,7 +11,9 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
@@ -79,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
         store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyBackupService("", ownUserId, ownDeviceId, store, api, olmSignMock, currentSyncState)
+        cut = KeyBackupService("", ownUserId, ownDeviceId, store, api, olmSignMock, currentSyncState, scope)
     }
     afterTest {
         scope.cancel()
@@ -111,12 +113,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyVersion
             }
         }
-        scope.launch {
-            cut.setAndSignNewKeyBackupVersion()
-        }.also {
-            cut.version.first { newVersion -> newVersion == keyVersion }
-            it.cancel()
-        }
+        cut.version.first { newVersion -> newVersion == keyVersion }
     }
 
     context(KeyBackupService::setAndSignNewKeyBackupVersion.name) {
@@ -146,9 +143,6 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-            val job = launch {
-                cut.setAndSignNewKeyBackupVersion()
-            }
             cut.version.value shouldBe null
             store.keys.secrets.value = mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -164,7 +158,6 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.version.first { it == null } shouldBe null
-            job.cancel()
         }
         context("key backup can be trusted") {
             should("just set version when already signed") {
@@ -174,9 +167,6 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-                val job = launch {
-                    cut.setAndSignNewKeyBackupVersion()
-                }
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         Event.GlobalAccountDataEvent(
@@ -185,7 +175,6 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
                 cut.version.first { it != null } shouldBe keyVersion
-                job.cancel()
             }
             should("set version and sign when not signed by own device") {
                 var setRoomKeyBackupVersionCalled = false
@@ -208,9 +197,6 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s24"))))
-                val job = launch {
-                    cut.setAndSignNewKeyBackupVersion()
-                }
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         Event.GlobalAccountDataEvent(
@@ -220,7 +206,6 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.version.first { it != null } shouldBe keyVersion
                 setRoomKeyBackupVersionCalled shouldBe true
-                job.cancel()
             }
         }
         context("key backup cannot be trusted") {
@@ -247,9 +232,6 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-                val job = launch {
-                    cut.setAndSignNewKeyBackupVersion()
-                }
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         Event.GlobalAccountDataEvent(
@@ -267,19 +249,17 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 cut.version.first { it == null } shouldBe null
 
-                job.cancel()
                 setRoomKeyBackupVersionCalled shouldBe true
                 store.keys.secrets.value.shouldBeEmpty()
             }
         }
     }
-    context(KeyBackupService::handleLoadMegolmSessionQueue.name) {
+    context(KeyBackupService::loadMegolmSession.name) {
         val roomId = RoomId("room", "server")
         val sessionId = "sessionId"
         val version = "1"
         val senderKey = Curve25519Key(null, "senderKey")
         beforeTest {
-            scope.launch(start = CoroutineStart.UNDISPATCHED) { cut.handleLoadMegolmSessionQueue() }
             currentSyncState.value = RUNNING
         }
         should("do nothing when version is null") {
@@ -441,6 +421,16 @@ private val body: ShouldSpec.() -> Unit = {
                     it.version shouldBe null
                     SetRoomKeyBackupVersion.Response("1")
                 }
+                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersionByVersion("1")) {
+                    GetRoomKeysBackupVersionResponse.V1(
+                        authData = RoomKeyBackupV1AuthData(
+                            publicKey = Curve25519Key(null, "keyBackupPublicKey"),
+                        ),
+                        count = 1,
+                        etag = "etag",
+                        version = "1"
+                    )
+                }
                 matrixJsonEndpoint(
                     json, mappings,
                     SetGlobalAccountData(ownUserId.e(), "m.megolm_backup.v1")
@@ -502,10 +492,8 @@ private val body: ShouldSpec.() -> Unit = {
             forwardingCurve25519KeyChain = listOf(Curve25519Key(null, "curve2")),
             pickled = pickle2
         )
-        lateinit var job: Job
         beforeTest {
             currentSyncState.value = RUNNING
-            job = scope.launch(start = CoroutineStart.LAZY) { cut.uploadRoomKeyBackup() }
             session1.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
             session2.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
         }
@@ -517,7 +505,6 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("1")
                 }
             }
-            job.start()
             continually(2.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
                 store.olm.notBackedUpInboundMegolmSessions.value.size shouldBe 2
@@ -545,7 +532,6 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("2")
                 }
             }
-            job.start()
             continually(2.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
             }
@@ -573,8 +559,6 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeysResponse(2, "etag")
                 }
             }
-
-            job.start()
 
             store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
             setRoomKeyBackupDataCalled shouldBe true
@@ -611,8 +595,6 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeysResponse(2, "etag")
                 }
             }
-
-            job.start()
 
             store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
             setRoomKeyBackupDataCalled shouldBe true

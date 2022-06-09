@@ -93,12 +93,13 @@ class VerificationService(
     private val keyService: IKeyService,
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
     private val currentSyncState: StateFlow<SyncState>,
+    scope: CoroutineScope,
 ) : IVerificationService {
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
     override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
 
-    internal suspend fun start(scope: CoroutineScope) {
+    init {
         api.sync.subscribe(::handleDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {

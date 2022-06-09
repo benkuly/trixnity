@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 class RoomServiceMock : IRoomService {
-    override suspend fun fetchMissingEvents(startEventId: EventId, roomId: RoomId, limit: Long): Result<Unit> {
+    override suspend fun fetchMissingEvents(startEventId: EventId, roomId: RoomId, limit: Long) {
         throw NotImplementedError()
     }
 
