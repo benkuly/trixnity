@@ -1,7 +1,6 @@
 import org.gradle.api.JavaVersion
 
 object Versions {
-    const val kotlin = "1.6.21" // https://github.com/JetBrains/kotlin/releases
     val kotlinJvmTarget = JavaVersion.VERSION_11
     const val kotlinxCoroutines = "1.6.1" // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val kotlinxSerialization = "1.3.3" // https://github.com/Kotlin/kotlinx.serialization/releases
@@ -11,12 +10,11 @@ object Versions {
     const val olm = "3.2.8" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val jna = "5.11.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.0.1" // https://github.com/ktorio/ktor/releases
-    const val korlibs = "2.7.0" // https://github.com/korlibs/korge-next/releases
+    const val korlibs = "3.0.0-Beta3" // https://github.com/korlibs/korge-next/releases
     const val mocKmp = "1.6.1" // https://github.com/Kodein-Framework/MocKMP/releases
     const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.3.0" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.1" // https://github.com/testcontainers/testcontainers-java/releases
-    const val androidGradle = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
     const val gradleNexusPublishPlugin = "1.1.0" // https://github.com/gradle-nexus/publish-plugin/releases
     const val arrow = "1.1.2" // https://github.com/arrow-kt/arrow/releases
@@ -31,5 +29,5 @@ object Versions {
     const val androidMinSdk = 26
     const val androidBuildTools = "32.0.0"
     const val androidNdk = "23.1.7779620"
-    const val cmake = "3.23.1" // also update this in README.md
+    const val cmake = "3.23.2" // also update this in README.md
 }

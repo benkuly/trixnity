@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.RoomId
@@ -19,7 +20,7 @@ import net.folivo.trixnity.core.model.keys.Key
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
     scope: CoroutineScope
-): StateFlow<Map<String, Event<C>?>?> = get(roomId, C::class, scope)
+): Flow<Map<String, Event<C>?>?> = get(roomId, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
@@ -29,7 +30,7 @@ suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
-): StateFlow<Event<C>?> = getByStateKey(roomId, stateKey, C::class, scope)
+): Flow<Event<C>?> = getByStateKey(roomId, stateKey, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
@@ -40,12 +41,12 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStor
     roomId: RoomId,
     key: String = "",
     scope: CoroutineScope
-): StateFlow<RoomAccountDataEvent<C>?> = get(roomId, C::class, key, scope)
+): Flow<RoomAccountDataEvent<C>?> = get(roomId, C::class, key, scope)
 
 suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
     key: String = "",
     scope: CoroutineScope
-): StateFlow<GlobalAccountDataEvent<C>?> = get(C::class, key, scope)
+): Flow<GlobalAccountDataEvent<C>?> = get(C::class, key, scope)
 
 suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
     key: String = ""

@@ -171,7 +171,6 @@ class MatrixEndpointRouteTest {
                     require(encoder is JsonEncoder)
                     encoder.encodeJsonElement(JsonObject(mapOf("custom" to JsonPrimitive(true))))
                 }
-
             }
         }
     }

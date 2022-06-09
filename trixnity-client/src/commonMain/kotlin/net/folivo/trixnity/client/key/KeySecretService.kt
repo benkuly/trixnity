@@ -249,7 +249,6 @@ class KeySecretService(
         currentSyncState.retryInfiniteWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
-            scope = this
         ) {
             store.keys.getDeviceKey(ownUserId, ownDeviceId, this).collect { deviceKeys ->
                 if (deviceKeys?.trustLevel == CrossSigned(true)) {

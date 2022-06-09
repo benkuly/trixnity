@@ -8,6 +8,12 @@ import org.matrix.olm.*
 @OptIn(ExperimentalUnsignedTypes::class)
 actual object OlmLibrary {
 
+    private fun ByteArray.refToOrNull() =
+        if (isEmpty()) null else refTo(0)
+
+    private fun UByteArray.refToOrNull() =
+        if (isEmpty()) null else refTo(0)
+
     actual fun error(): ULong = olm_error()
 
     actual fun inbound_group_session(): OlmInboundGroupSessionPointer =
@@ -28,8 +34,8 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_pickle_inbound_group_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun unpickle_inbound_group_session(
@@ -38,27 +44,27 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_unpickle_inbound_group_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun init_inbound_group_session(
         session: OlmInboundGroupSessionPointer,
         key: ByteArray,
     ): ULong =
-        olm_init_inbound_group_session(session.ptr, key.asUByteArray().refTo(0), key.usize())
+        olm_init_inbound_group_session(session.ptr, key.asUByteArray().refToOrNull(), key.usize())
 
     actual fun import_inbound_group_session(
         session: OlmInboundGroupSessionPointer,
         key: ByteArray,
     ): ULong =
-        olm_import_inbound_group_session(session.ptr, key.asUByteArray().refTo(0), key.usize())
+        olm_import_inbound_group_session(session.ptr, key.asUByteArray().refToOrNull(), key.usize())
 
     actual fun group_decrypt_max_plaintext_length(
         session: OlmInboundGroupSessionPointer,
         message: ByteArray,
     ): ULong =
-        olm_group_decrypt_max_plaintext_length(session.ptr, message.asUByteArray().refTo(0), message.usize())
+        olm_group_decrypt_max_plaintext_length(session.ptr, message.asUByteArray().refToOrNull(), message.usize())
 
     actual fun group_decrypt(
         session: OlmInboundGroupSessionPointer,
@@ -69,8 +75,8 @@ actual object OlmLibrary {
         val messageIndexPtr = alloc<UIntVar>()
         olm_group_decrypt(
             session.ptr,
-            message.asUByteArray().refTo(0), message.usize(),
-            plainText.asUByteArray().refTo(0), plainText.usize(),
+            message.asUByteArray().refToOrNull(), message.usize(),
+            plainText.asUByteArray().refToOrNull(), plainText.usize(),
             messageIndexPtr.ptr
         ).also { messageIndex.value = messageIndexPtr.value }
     }
@@ -81,7 +87,7 @@ actual object OlmLibrary {
     actual fun inbound_group_session_id(
         session: OlmInboundGroupSessionPointer,
         sessionId: ByteArray,
-    ): ULong = olm_inbound_group_session_id(session.ptr, sessionId.asUByteArray().refTo(0), sessionId.usize())
+    ): ULong = olm_inbound_group_session_id(session.ptr, sessionId.asUByteArray().refToOrNull(), sessionId.usize())
 
     actual fun inbound_group_session_first_known_index(session: OlmInboundGroupSessionPointer): UInt =
         olm_inbound_group_session_first_known_index(session.ptr)
@@ -98,7 +104,7 @@ actual object OlmLibrary {
         messageIndex: UInt
     ): ULong = olm_export_inbound_group_session(
         session.ptr,
-        key.asUByteArray().refTo(0), key.usize(),
+        key.asUByteArray().refToOrNull(), key.usize(),
         messageIndex.convert()
     )
 
@@ -120,8 +126,8 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_pickle_outbound_group_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun unpickle_outbound_group_session(
@@ -130,8 +136,8 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_unpickle_outbound_group_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun init_outbound_group_session_random_length(session: OlmOutboundGroupSessionPointer): ULong =
@@ -142,7 +148,7 @@ actual object OlmLibrary {
         random: ByteArray?,
     ): ULong = olm_init_outbound_group_session(
         session.ptr,
-        random?.asUByteArray()?.refTo(0), random?.usize() ?: 0u
+        random?.asUByteArray()?.refToOrNull(), random?.usize() ?: 0u
     )
 
     actual fun group_encrypt_message_length(
@@ -156,8 +162,8 @@ actual object OlmLibrary {
         message: ByteArray,
     ): ULong = olm_group_encrypt(
         session.ptr,
-        plainText.asUByteArray().refTo(0), plainText.usize(),
-        message.asUByteArray().refTo(0), message.usize()
+        plainText.asUByteArray().refToOrNull(), plainText.usize(),
+        message.asUByteArray().refToOrNull(), message.usize()
     )
 
     actual fun outbound_group_session_id_length(session: OlmOutboundGroupSessionPointer): ULong =
@@ -166,7 +172,7 @@ actual object OlmLibrary {
     actual fun outbound_group_session_id(
         session: OlmOutboundGroupSessionPointer,
         sessionId: ByteArray,
-    ): ULong = olm_outbound_group_session_id(session.ptr, sessionId.asUByteArray().refTo(0), sessionId.usize())
+    ): ULong = olm_outbound_group_session_id(session.ptr, sessionId.asUByteArray().refToOrNull(), sessionId.usize())
 
     actual fun outbound_group_session_message_index(session: OlmOutboundGroupSessionPointer): UInt =
         olm_outbound_group_session_message_index(session.ptr)
@@ -177,7 +183,7 @@ actual object OlmLibrary {
     actual fun outbound_group_session_key(
         session: OlmOutboundGroupSessionPointer,
         key: ByteArray,
-    ): ULong = olm_outbound_group_session_key(session.ptr, key.asUByteArray().refTo(0), key.usize())
+    ): ULong = olm_outbound_group_session_key(session.ptr, key.asUByteArray().refToOrNull(), key.usize())
 
     actual fun get_library_version(
         major: MutableWrapper<UInt>,
@@ -208,14 +214,14 @@ actual object OlmLibrary {
         key: ByteArray,
         pickled: ByteArray,
     ): ULong =
-        olm_pickle_account(account.ptr, key.refTo(0), key.usize(), pickled.refTo(0), pickled.usize())
+        olm_pickle_account(account.ptr, key.refToOrNull(), key.usize(), pickled.refToOrNull(), pickled.usize())
 
     actual fun unpickle_account(
         account: OlmAccountPointer,
         key: ByteArray,
         pickled: ByteArray,
     ): ULong =
-        olm_unpickle_account(account.ptr, key.refTo(0), key.usize(), pickled.refTo(0), pickled.usize())
+        olm_unpickle_account(account.ptr, key.refToOrNull(), key.usize(), pickled.refToOrNull(), pickled.usize())
 
     actual fun create_account_random_length(account: OlmAccountPointer): ULong =
         olm_create_account_random_length(account.ptr)
@@ -223,7 +229,7 @@ actual object OlmLibrary {
     actual fun create_account(
         account: OlmAccountPointer,
         random: ByteArray?,
-    ): ULong = olm_create_account(account.ptr, random?.refTo(0), random?.usize() ?: 0u)
+    ): ULong = olm_create_account(account.ptr, random?.refToOrNull(), random?.usize() ?: 0u)
 
     actual fun account_identity_keys_length(account: OlmAccountPointer): ULong =
         olm_account_identity_keys_length(account.ptr)
@@ -231,7 +237,7 @@ actual object OlmLibrary {
     actual fun account_identity_keys(
         account: OlmAccountPointer,
         identityKeys: ByteArray,
-    ): ULong = olm_account_identity_keys(account.ptr, identityKeys.refTo(0), identityKeys.usize())
+    ): ULong = olm_account_identity_keys(account.ptr, identityKeys.refToOrNull(), identityKeys.usize())
 
     actual fun account_signature_length(account: OlmAccountPointer): ULong =
         olm_account_signature_length(account.ptr)
@@ -242,8 +248,8 @@ actual object OlmLibrary {
         signature: ByteArray,
     ): ULong = olm_account_sign(
         account.ptr,
-        message.refTo(0), message.usize(),
-        signature.refTo(0), signature.usize()
+        message.refToOrNull(), message.usize(),
+        signature.refToOrNull(), signature.usize()
     )
 
     actual fun account_one_time_keys_length(account: OlmAccountPointer): ULong =
@@ -253,7 +259,7 @@ actual object OlmLibrary {
         account: OlmAccountPointer,
         oneTimeKeys: ByteArray,
     ): ULong =
-        olm_account_one_time_keys(account.ptr, oneTimeKeys.refTo(0), oneTimeKeys.usize())
+        olm_account_one_time_keys(account.ptr, oneTimeKeys.refToOrNull(), oneTimeKeys.usize())
 
     actual fun account_mark_keys_as_published(account: OlmAccountPointer): ULong =
         olm_account_mark_keys_as_published(account.ptr)
@@ -273,7 +279,7 @@ actual object OlmLibrary {
     ): ULong = olm_account_generate_one_time_keys(
         account.ptr,
         numberOfKeys,
-        random?.refTo(0), random?.usize() ?: 0u
+        random?.refToOrNull(), random?.usize() ?: 0u
     )
 
     actual fun account_generate_fallback_key_random_length(
@@ -283,7 +289,7 @@ actual object OlmLibrary {
     actual fun account_generate_fallback_key(
         account: OlmAccountPointer,
         random: ByteArray?,
-    ): ULong = olm_account_generate_fallback_key(account.ptr, random?.refTo(0), random?.usize() ?: 0u)
+    ): ULong = olm_account_generate_fallback_key(account.ptr, random?.refToOrNull(), random?.usize() ?: 0u)
 
     actual fun account_forget_old_fallback_key(account: OlmAccountPointer) =
         olm_account_forget_old_fallback_key(account.ptr)
@@ -295,7 +301,7 @@ actual object OlmLibrary {
     actual fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
-    ): ULong = olm_account_fallback_key(account.ptr, fallbackKey.refTo(0), fallbackKey.usize())
+    ): ULong = olm_account_fallback_key(account.ptr, fallbackKey.refToOrNull(), fallbackKey.usize())
 
     actual fun session(): OlmSessionPointer =
         OlmSessionPointer(genericInit(::olm_session, olm_session_size()))
@@ -313,8 +319,8 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_pickle_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun unpickle_session(
@@ -323,8 +329,8 @@ actual object OlmLibrary {
         pickled: ByteArray,
     ): ULong = olm_unpickle_session(
         session.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize()
     )
 
     actual fun create_outbound_session_random_length(session: OlmSessionPointer): ULong =
@@ -338,9 +344,9 @@ actual object OlmLibrary {
         random: ByteArray?,
     ): ULong = olm_create_outbound_session(
         session.ptr, account.ptr,
-        theirIdentityKey.refTo(0), theirIdentityKey.usize(),
-        theirOneTimeKey.refTo(0), theirOneTimeKey.usize(),
-        random?.refTo(0), random?.usize() ?: 0u
+        theirIdentityKey.refToOrNull(), theirIdentityKey.usize(),
+        theirOneTimeKey.refToOrNull(), theirOneTimeKey.usize(),
+        random?.refToOrNull(), random?.usize() ?: 0u
     )
 
     actual fun create_inbound_session(
@@ -350,7 +356,7 @@ actual object OlmLibrary {
     ): ULong = olm_create_inbound_session(
         session.ptr,
         account.ptr,
-        oneTimeKeyMessage.refTo(0), oneTimeKeyMessage.usize()
+        oneTimeKeyMessage.refToOrNull(), oneTimeKeyMessage.usize()
     )
 
     actual fun create_inbound_session_from(
@@ -361,8 +367,8 @@ actual object OlmLibrary {
     ): ULong = olm_create_inbound_session_from(
         session.ptr,
         account.ptr,
-        theirIdentityKey.refTo(0), theirIdentityKey.usize(),
-        oneTimeKeyMessage.refTo(0), oneTimeKeyMessage.usize()
+        theirIdentityKey.refToOrNull(), theirIdentityKey.usize(),
+        oneTimeKeyMessage.refToOrNull(), oneTimeKeyMessage.usize()
     )
 
     actual fun session_id_length(session: OlmSessionPointer): ULong = olm_session_id_length(session.ptr)
@@ -370,7 +376,7 @@ actual object OlmLibrary {
     actual fun session_id(
         session: OlmSessionPointer,
         id: ByteArray,
-    ): ULong = olm_session_id(session.ptr, id.refTo(0), id.usize())
+    ): ULong = olm_session_id(session.ptr, id.refToOrNull(), id.usize())
 
     actual fun session_has_received_message(session: OlmSessionPointer): Int =
         olm_session_has_received_message(session.ptr)
@@ -378,12 +384,12 @@ actual object OlmLibrary {
     actual fun session_describe(
         session: OlmSessionPointer,
         description: ByteArray,
-    ) = olm_session_describe(session.ptr, description.refTo(0), description.usize())
+    ) = olm_session_describe(session.ptr, description.refToOrNull(), description.usize())
 
     actual fun matches_inbound_session(
         session: OlmSessionPointer,
         oneTimeKeyMessage: ByteArray,
-    ): ULong = olm_matches_inbound_session(session.ptr, oneTimeKeyMessage.refTo(0), oneTimeKeyMessage.usize())
+    ): ULong = olm_matches_inbound_session(session.ptr, oneTimeKeyMessage.refToOrNull(), oneTimeKeyMessage.usize())
 
     actual fun matches_inbound_session_from(
         session: OlmSessionPointer,
@@ -391,8 +397,8 @@ actual object OlmLibrary {
         oneTimeKeyMessage: ByteArray,
     ): ULong = olm_matches_inbound_session_from(
         session.ptr,
-        theirIdentityKey.refTo(0), theirIdentityKey.usize(),
-        oneTimeKeyMessage.refTo(0), oneTimeKeyMessage.usize()
+        theirIdentityKey.refToOrNull(), theirIdentityKey.usize(),
+        oneTimeKeyMessage.refToOrNull(), oneTimeKeyMessage.usize()
     )
 
     actual fun remove_one_time_keys(account: OlmAccountPointer, session: OlmSessionPointer): ULong =
@@ -412,16 +418,16 @@ actual object OlmLibrary {
         message: ByteArray,
     ): ULong = olm_encrypt(
         session.ptr,
-        plainText.refTo(0), plainText.usize(),
-        random?.refTo(0), random?.usize() ?: 0u,
-        message.refTo(0), message.usize()
+        plainText.refToOrNull(), plainText.usize(),
+        random?.refToOrNull(), random?.usize() ?: 0u,
+        message.refToOrNull(), message.usize()
     )
 
     actual fun decrypt_max_plaintext_length(
         session: OlmSessionPointer,
         messageType: ULong,
         message: ByteArray,
-    ): ULong = olm_decrypt_max_plaintext_length(session.ptr, messageType, message.refTo(0), message.usize())
+    ): ULong = olm_decrypt_max_plaintext_length(session.ptr, messageType, message.refToOrNull(), message.usize())
 
     actual fun decrypt(
         session: OlmSessionPointer,
@@ -431,8 +437,8 @@ actual object OlmLibrary {
     ): ULong = olm_decrypt(
         session.ptr,
         messageType,
-        message.refTo(0), message.usize(),
-        plainText.refTo(0), plainText.usize()
+        message.refToOrNull(), message.usize(),
+        plainText.refToOrNull(), plainText.usize()
     )
 
     actual fun utility(): OlmUtilityPointer = OlmUtilityPointer(genericInit(::olm_utility, olm_utility_size()))
@@ -448,7 +454,7 @@ actual object OlmLibrary {
         utility: OlmUtilityPointer,
         input: ByteArray,
         output: ByteArray,
-    ): ULong = olm_sha256(utility.ptr, input.refTo(0), input.usize(), output.refTo(0), output.usize())
+    ): ULong = olm_sha256(utility.ptr, input.refToOrNull(), input.usize(), output.refToOrNull(), output.usize())
 
     actual fun ed25519_verify(
         utility: OlmUtilityPointer,
@@ -457,9 +463,9 @@ actual object OlmLibrary {
         signature: ByteArray,
     ): ULong = olm_ed25519_verify(
         utility.ptr,
-        key.refTo(0), key.usize(),
-        message.refTo(0), message.usize(),
-        signature.refTo(0), signature.usize()
+        key.refToOrNull(), key.usize(),
+        message.refToOrNull(), message.usize(),
+        signature.refToOrNull(), signature.usize()
     )
 
     actual fun sas(): OlmSASPointer = OlmSASPointer(genericInit(::olm_sas, olm_sas_size()))
@@ -471,17 +477,17 @@ actual object OlmLibrary {
     actual fun create_sas_random_length(sas: OlmSASPointer): ULong = olm_create_sas_random_length(sas.ptr)
 
     actual fun create_sas(sas: OlmSASPointer, random: ByteArray?): ULong =
-        olm_create_sas(sas.ptr, random?.refTo(0), random?.usize() ?: 0u)
+        olm_create_sas(sas.ptr, random?.refToOrNull(), random?.usize() ?: 0u)
 
     actual fun sas_pubkey_length(sas: OlmSASPointer): ULong = olm_sas_pubkey_length(sas.ptr)
 
     actual fun sas_get_pubkey(sas: OlmSASPointer, pubkey: ByteArray): ULong =
-        olm_sas_get_pubkey(sas.ptr, pubkey.refTo(0), pubkey.usize())
+        olm_sas_get_pubkey(sas.ptr, pubkey.refToOrNull(), pubkey.usize())
 
     actual fun sas_set_their_key(
         sas: OlmSASPointer,
         theirKey: ByteArray
-    ): ULong = olm_sas_set_their_key(sas.ptr, theirKey.refTo(0), theirKey.usize())
+    ): ULong = olm_sas_set_their_key(sas.ptr, theirKey.refToOrNull(), theirKey.usize())
 
     actual fun sas_is_their_key_set(sas: OlmSASPointer): Int = olm_sas_is_their_key_set(sas.ptr)
 
@@ -490,7 +496,7 @@ actual object OlmLibrary {
         info: ByteArray,
         output: ByteArray
     ): ULong =
-        olm_sas_generate_bytes(sas.ptr, info.refTo(0), info.usize(), output.refTo(0), output.usize())
+        olm_sas_generate_bytes(sas.ptr, info.refToOrNull(), info.usize(), output.refToOrNull(), output.usize())
 
     actual fun sas_mac_length(sas: OlmSASPointer): ULong = olm_sas_mac_length(sas.ptr)
 
@@ -501,9 +507,9 @@ actual object OlmLibrary {
         mac: ByteArray
     ): ULong = olm_sas_calculate_mac(
         sas.ptr,
-        input.refTo(0), input.usize(),
-        info.refTo(0), info.usize(),
-        mac.refTo(0), mac.usize()
+        input.refToOrNull(), input.usize(),
+        info.refToOrNull(), info.usize(),
+        mac.refToOrNull(), mac.usize()
     )
 
     actual fun sas_calculate_mac_ULong_kdf(
@@ -513,9 +519,9 @@ actual object OlmLibrary {
         mac: ByteArray
     ): ULong = olm_sas_calculate_mac(
         sas.ptr,
-        input.refTo(0), input.usize(),
-        info.refTo(0), info.usize(),
-        mac.refTo(0), mac.usize()
+        input.refToOrNull(), input.usize(),
+        info.refToOrNull(), info.usize(),
+        mac.refToOrNull(), mac.usize()
     )
 
     actual fun pk_encryption(): OlmPkEncryptionPointer =
@@ -529,7 +535,7 @@ actual object OlmLibrary {
     actual fun pk_encryption_set_recipient_key(
         encryption: OlmPkEncryptionPointer,
         publicKey: ByteArray
-    ): ULong = olm_pk_encryption_set_recipient_key(encryption.ptr, publicKey.refTo(0), publicKey.usize())
+    ): ULong = olm_pk_encryption_set_recipient_key(encryption.ptr, publicKey.refToOrNull(), publicKey.usize())
 
     actual fun pk_ciphertext_length(
         encryption: OlmPkEncryptionPointer,
@@ -552,11 +558,11 @@ actual object OlmLibrary {
         random: ByteArray?
     ): ULong = olm_pk_encrypt(
         encryption.ptr,
-        plainText.refTo(0), plainText.usize(),
-        cipherText.refTo(0), cipherText.usize(),
-        mac.refTo(0), mac.usize(),
-        ephemeralKey.refTo(0), ephemeralKey.usize(),
-        random?.refTo(0), random?.usize() ?: 0u
+        plainText.refToOrNull(), plainText.usize(),
+        cipherText.refToOrNull(), cipherText.usize(),
+        mac.refToOrNull(), mac.usize(),
+        ephemeralKey.refToOrNull(), ephemeralKey.usize(),
+        random?.refToOrNull(), random?.usize() ?: 0u
     )
 
     actual fun pk_decryption(): OlmPkDecryptionPointer =
@@ -575,7 +581,13 @@ actual object OlmLibrary {
         pubkey: ByteArray,
         privkey: ByteArray
     ): ULong =
-        olm_pk_key_from_private(decryption.ptr, pubkey.refTo(0), pubkey.usize(), privkey.refTo(0), privkey.usize())
+        olm_pk_key_from_private(
+            decryption.ptr,
+            pubkey.refToOrNull(),
+            pubkey.usize(),
+            privkey.refToOrNull(),
+            privkey.usize()
+        )
 
     actual fun pickle_pk_decryption_length(decryption: OlmPkDecryptionPointer): ULong =
         olm_pickle_pk_decryption_length(decryption.ptr)
@@ -584,7 +596,8 @@ actual object OlmLibrary {
         decryption: OlmPkDecryptionPointer,
         key: ByteArray,
         pickled: ByteArray
-    ): ULong = olm_pickle_pk_decryption(decryption.ptr, key.refTo(0), key.usize(), pickled.refTo(0), pickled.usize())
+    ): ULong =
+        olm_pickle_pk_decryption(decryption.ptr, key.refToOrNull(), key.usize(), pickled.refToOrNull(), pickled.usize())
 
     actual fun unpickle_pk_decryption(
         decryption: OlmPkDecryptionPointer,
@@ -593,9 +606,9 @@ actual object OlmLibrary {
         pubkey: ByteArray
     ): ULong = olm_unpickle_pk_decryption(
         decryption.ptr,
-        key.refTo(0), key.usize(),
-        pickled.refTo(0), pickled.usize(),
-        pubkey.refTo(0), pubkey.usize()
+        key.refToOrNull(), key.usize(),
+        pickled.refToOrNull(), pickled.usize(),
+        pubkey.refToOrNull(), pubkey.usize()
     )
 
     actual fun pk_max_plaintext_length(
@@ -611,16 +624,16 @@ actual object OlmLibrary {
         plainText: ByteArray
     ): ULong = olm_pk_decrypt(
         decryption.ptr,
-        ephemeralKey.refTo(0), ephemeralKey.usize(),
-        mac.refTo(0), mac.usize(),
-        cipherText.refTo(0), cipherText.usize(),
-        plainText.refTo(0), plainText.usize(),
+        ephemeralKey.refToOrNull(), ephemeralKey.usize(),
+        mac.refToOrNull(), mac.usize(),
+        cipherText.refToOrNull(), cipherText.usize(),
+        plainText.refToOrNull(), plainText.usize(),
     )
 
     actual fun pk_get_private_key(
         decryption: OlmPkDecryptionPointer,
         privateKey: ByteArray
-    ): ULong = olm_pk_get_private_key(decryption.ptr, privateKey.refTo(0), privateKey.usize())
+    ): ULong = olm_pk_get_private_key(decryption.ptr, privateKey.refToOrNull(), privateKey.usize())
 
     actual fun pk_signing(): OlmPkSigningPointer =
         OlmPkSigningPointer(genericInit(::olm_pk_signing, olm_pk_signing_size()))
@@ -634,7 +647,8 @@ actual object OlmLibrary {
         sign: OlmPkSigningPointer,
         pubkey: ByteArray,
         seed: ByteArray
-    ): ULong = olm_pk_signing_key_from_seed(sign.ptr, pubkey.refTo(0), pubkey.usize(), seed.refTo(0), seed.usize())
+    ): ULong =
+        olm_pk_signing_key_from_seed(sign.ptr, pubkey.refToOrNull(), pubkey.usize(), seed.refToOrNull(), seed.usize())
 
     actual fun pk_signing_seed_length(): ULong = olm_pk_signing_seed_length()
 
@@ -648,8 +662,8 @@ actual object OlmLibrary {
         signature: ByteArray
     ): ULong = olm_pk_sign(
         sign.ptr,
-        message.asUByteArray().refTo(0), message.usize(),
-        signature.asUByteArray().refTo(0), signature.usize()
+        message.asUByteArray().refToOrNull(), message.usize(),
+        signature.asUByteArray().refToOrNull(), signature.usize()
     )
 
 }

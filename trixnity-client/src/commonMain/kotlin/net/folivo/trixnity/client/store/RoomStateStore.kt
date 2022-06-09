@@ -3,7 +3,10 @@ package net.folivo.trixnity.client.store
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
@@ -58,7 +61,7 @@ class RoomStateStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Map<String, Event<C>?>?> {
+    ): Flow<Map<String, Event<C>?>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType), scope = scope)
             .mapLatest { value ->
@@ -68,7 +71,7 @@ class RoomStateStore(
                         it.value as Event<C>
                     } else null
                 }
-            }.stateIn(scope)
+            }
     }
 
     suspend fun <C : StateEventContent> get(
@@ -91,12 +94,11 @@ class RoomStateStore(
         stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Event<C>?> {
+    ): Flow<Event<C>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, scope)
             .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
-            .filterIsInstance<Event<C>?>()
-            .stateIn(scope)
+            .filterIsInstance()
     }
 
     suspend fun <C : StateEventContent> getByStateKey(

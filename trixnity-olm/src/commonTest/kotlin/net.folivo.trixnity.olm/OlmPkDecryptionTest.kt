@@ -42,6 +42,13 @@ class OlmPkDecryptionTest {
     }
 
     @Test
+    fun pickleWithEmptyKey() = runTest {
+        freeAfter(OlmPkDecryption.create()) { pkDecryption ->
+            pkDecryption.pickle("") shouldNot beBlank()
+        }
+    }
+
+    @Test
     fun unpickle() = runTest {
         val pickle = freeAfter(OlmPkDecryption.create("W69V7atpH+HldmtexIZSEg51sNITai/Yut3pOw1pON4")) { pkDecryption ->
             pkDecryption.pickle("someKey")
@@ -51,4 +58,13 @@ class OlmPkDecryptionTest {
         }
     }
 
+    @Test
+    fun unpickleWithEmptyKey() = runTest {
+        val pickle = freeAfter(OlmPkDecryption.create("W69V7atpH+HldmtexIZSEg51sNITai/Yut3pOw1pON4")) { pkDecryption ->
+            pkDecryption.pickle("")
+        }
+        freeAfter(OlmPkDecryption.unpickle("", pickle)) { pkDecryption ->
+            pkDecryption.privateKey shouldBe "W69V7atpH+HldmtexIZSEg51sNITai/Yut3pOw1pON4"
+        }
+    }
 }

@@ -30,6 +30,11 @@ kotlin {
 
     linuxX64()
     mingwX64()
+    macosX64()
+    macosArm64()
+    ios()
+
+    targets.disableCompilationsOnCI()
 
     sourceSets {
         all {
@@ -49,15 +54,6 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val mingwX64Main by getting {
-            dependsOn(nativeMain)
-        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -67,16 +63,6 @@ kotlin {
             dependencies {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
-        }
-        val jsTest by getting
-        val nativeTest by creating {
-            dependsOn(commonTest)
-        }
-        val linuxX64Test by getting {
-            dependsOn(nativeTest)
-        }
-        val mingwX64Test by getting {
-            dependsOn(nativeTest)
         }
     }
 }

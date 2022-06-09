@@ -92,7 +92,6 @@ class KeyBackupService(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
-            scope = this
         ) {
             store.keys.secrets.mapNotNull { it[M_MEGOLM_BACKUP_V1] }
                 .distinctUntilChanged()
@@ -168,10 +167,14 @@ class KeyBackupService(
                 val runningKey = Pair(roomId, sessionId)
                 if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
                     launch {
-                        retryWhen(
+                        val condition = MutableStateFlow(false)
+                        val job = launch {
                             combine(version, currentSyncState) { currentVersion, currentSyncState ->
                                 currentVersion != null && currentSyncState == SyncState.RUNNING
-                            }.stateIn(this),
+                            }.collect { condition.value = it }
+                        }
+                        retryWhen(
+                            condition,
                             scheduleBase = 1.seconds,
                             scheduleLimit = 6.hours,
                             onError = { log.warn(it) { "failed load megolm session from key backup" } },
@@ -222,6 +225,7 @@ class KeyBackupService(
                                 }
                             }
                         }
+                        job.cancel()
                         log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
                         currentlyLoadingMegolmSessions.update { it - Pair(roomId, sessionId) }
                     }
@@ -273,7 +277,6 @@ class KeyBackupService(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
-            scope = this
         ) {
             store.olm.notBackedUpInboundMegolmSessions.debounce(1.seconds).onEach { notBackedUpInboundMegolmSessions ->
                 val version = version.value

@@ -145,7 +145,7 @@ interface IRoomService {
         eventContentClass: KClass<C>,
         key: String = "",
         scope: CoroutineScope
-    ): StateFlow<C?>
+    ): Flow<C?>
 
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
@@ -160,7 +160,7 @@ interface IRoomService {
         stateKey: String = "",
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Event<C>?>
+    ): Flow<Event<C>?>
 
     suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
@@ -1179,12 +1179,11 @@ class RoomService(
         }
     }
 
-    internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) = coroutineScope {
+    internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) {
         currentSyncState.retryInfiniteWhenSyncIs(
             RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
-            scope = this
         ) {
             log.debug { "start sending outbox messages" }
             outboxMessages.scan(listOf<RoomOutboxMessage<*>>()) { old, new ->
@@ -1234,10 +1233,9 @@ class RoomService(
         eventContentClass: KClass<C>,
         key: String,
         scope: CoroutineScope
-    ): StateFlow<C?> {
+    ): Flow<C?> {
         return store.roomAccountData.get(roomId, eventContentClass, key, scope)
             .map { it?.content }
-            .stateIn(scope)
     }
 
     override suspend fun <C : RoomAccountDataEventContent> getAccountData(
@@ -1255,7 +1253,7 @@ class RoomService(
         stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Event<C>?> {
+    ): Flow<Event<C>?> {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 

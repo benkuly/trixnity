@@ -9,10 +9,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
@@ -53,7 +50,7 @@ import kotlin.random.Random
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+    timeout = 10_000
 
     val alice = UserId("alice", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -275,11 +272,13 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("bootstrap") {
-                val result = async { cut.bootstrapCrossSigning() }
-                store.keys.outdatedKeys.first { it.contains(alice) }
-                store.keys.outdatedKeys.value = setOf()
+                launch {
+                    store.keys.outdatedKeys.first { it.contains(alice) }
+                    store.keys.outdatedKeys.value = setOf()
+                }
+                val result = cut.bootstrapCrossSigning()
 
-                assertSoftly(result.await()) {
+                assertSoftly(result) {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))
                 }
@@ -301,11 +300,12 @@ private val body: ShouldSpec.() -> Unit = {
                 setCrossSigningKeysCalled shouldBe true
             }
             should("bootstrap from passphrase") {
-                val result = async { cut.bootstrapCrossSigningFromPassphrase("super secret. not.") }
-                store.keys.outdatedKeys.first { it.contains(alice) }
-                store.keys.outdatedKeys.value = setOf()
-
-                assertSoftly(result.await()) {
+                launch {
+                    store.keys.outdatedKeys.first { it.contains(alice) }
+                    store.keys.outdatedKeys.value = setOf()
+                }
+                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.")
+                assertSoftly(result) {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))
                 }
