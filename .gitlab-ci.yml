@@ -100,8 +100,8 @@ create-nexus-staging-repo:
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
     - >
         if [ -z "$OSSRH_REPOSITORY_ID" ]; then
-        echo "Error while creating the staging repository. Response: $jsonOutput"
-        exit 1
+        echo "Error while creating the staging repository. Response: $jsonOutput";
+        exit 1;
         fi
     - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
