@@ -103,7 +103,7 @@ create-nexus-staging-repo:
         echo "Error while creating the staging repository. Response: $jsonOutput";
         exit 1;
         fi
-    - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
+    - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
 # publish-mac:
 #   stage: publish-mac
@@ -138,6 +138,5 @@ publish-linux:
     - *if-release
   script:
     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - echo $OSSRH_REPOSITORY_ID
     - ./gradlew buildOlm
     - ./gradlew publish --stacktrace
