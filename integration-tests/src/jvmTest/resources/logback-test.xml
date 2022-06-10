@@ -12,7 +12,7 @@
 
     <logger name="net.folivo.trixnity" level="DEBUG"/>
     <!--    <logger name="net.folivo.trixnity.client.key" level="TRACE"/>-->
-    <!--    <logger name="net.folivo.trixnity.client.room" level="TRACE"/>-->
+    <logger name="net.folivo.trixnity.client.room.RoomService" level="TRACE"/>
     <logger name="org.testcontainers" level="INFO"/>
     <logger name="com.github.dockerjava" level="WARN"/>
 </configuration>

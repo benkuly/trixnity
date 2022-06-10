@@ -641,7 +641,10 @@ class RoomService(
     private val timelineMutex = MutableStateFlow<Map<RoomId, Mutex>>(emptyMap())
     private suspend fun <T : Any> withRoomTimelineMutexAndTransaction(roomId: RoomId, block: suspend () -> T): T =
         requireNotNull(timelineMutex.updateAndGet { if (it.containsKey(roomId)) it else it + (roomId to Mutex()) }[roomId])
-            .withLock { store.transaction { block() } }
+            .withLock {
+                log.trace { "lock $roomId" }
+                store.transaction { block() }.also { log.trace { "unlock $roomId" } }
+            }
 
     // You may think: wtf are you doing here? This prevents loops, when the server has the wonderful idea to send you
     // the same event in two different or in the same sync response(s). And that really happens 🤯.

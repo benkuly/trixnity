@@ -96,6 +96,19 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("add elements to timeline with gap") {
+                store.room.update(room) { Room(roomId = room, lastEventId = null) }
+                cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "prev", "next", true)
+                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                    fragment {
+                        gap("prev")
+                        +event1
+                        +event2
+                        +event3
+                        gap("next")
+                    }
+                }
+            }
             should("add one element to timeline") {
                 store.room.update(room) { Room(roomId = room, lastEventId = null) }
                 cut.addEventsToTimelineAtEnd(room, listOf(event1), null, "next", false)
