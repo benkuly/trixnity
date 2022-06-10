@@ -252,33 +252,34 @@ class TimelineEventIT {
 
             client2.stopSync(true)
 
-            (0..49).forEach {
+            (0..99).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
             val lastEvent = client1.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "49"
+                content is RoomMessageEventContent && content.body == "99"
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(lastEvent, room)
-                .toFlowList(MutableStateFlow(50), MutableStateFlow(50))
+                .toFlowList(MutableStateFlow(100), MutableStateFlow(100))
                 .first()
                 .mapNotNull { it.value?.removeUnsigned() }
 
-            expectedTimeline shouldHaveSize 50
+            expectedTimeline shouldHaveSize 100
 
-            val middleEvent = expectedTimeline[25].eventId
+            val middleEvent = expectedTimeline[50].eventId
 
             client2.startSync().getOrThrow()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "49"
+                content is RoomMessageEventContent && content.body == "99"
             }
-            scope2.launch {
-                client2.room.fetchMissingEvents(middleEvent, room, 25)
+            val job=scope2.launch {
+                client2.room.fetchMissingEvents(middleEvent, room, 100)
             }
             store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
             scope2.cancel()
+            job.join()
 
             val newStore2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
                 .createStore(createEventContentSerializerMappings(), createMatrixEventJson())
