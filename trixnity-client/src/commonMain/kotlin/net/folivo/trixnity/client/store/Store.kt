@@ -110,7 +110,8 @@ abstract class Store(
             try {
                 block()
             } catch (error: Throwable) {
-                scope.cancel(CancellationException("transaction failed", error))
+                if (error !is CancellationException)
+                    scope.cancel(CancellationException("transaction failed", error))
                 throw error
             }
         }
