@@ -706,7 +706,7 @@ class RoomService(
         }.await()
     }
 
-    internal suspend fun internalFetchMissingEvents(
+    private suspend fun internalFetchMissingEvents(
         startEventId: EventId,
         roomId: RoomId,
         limit: Long = 20

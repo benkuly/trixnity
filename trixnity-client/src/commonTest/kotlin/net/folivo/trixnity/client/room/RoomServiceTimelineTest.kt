@@ -5,10 +5,9 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -42,13 +41,14 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
 class RoomServiceTimelineTest : ShouldSpec({
+    timeout = 10_000
     val room = RoomId("room", "server")
     lateinit var store: Store
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
-    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomService
 
@@ -376,7 +376,7 @@ class RoomServiceTimelineTest : ShouldSpec({
             }
         }
     }
-    context(RoomService::internalFetchMissingEvents.name) {
+    context(RoomService::fetchMissingEvents.name) {
         val event1 = plainEvent(1)
         val event2 = plainEvent(2)
         val event3 = plainEvent(3)
@@ -401,7 +401,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     }
                 }
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event3) shouldContainExactly timeline {
                     fragment {
                         gap("start")
@@ -429,7 +429,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     }
                 }
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         gap("start")
@@ -459,7 +459,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     }
                 }
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         gap("start")
@@ -490,7 +490,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     }
                 }
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event2, event3, event4) shouldContainExactly timeline {
                     fragment {
                         gap("start")
@@ -520,7 +520,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     }
                 }
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event3) shouldContainExactly timeline {
                     fragment {
                         gap("start")
@@ -561,7 +561,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         +event5
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -604,7 +604,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         +event5
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -647,7 +647,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         gap("end-4")
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event2, event3, event4) shouldContainExactly timeline {
                     fragment {
                         gap("start-2")
@@ -686,7 +686,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         +event5
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -727,7 +727,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         gap("end-5")
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         gap("start-1")
@@ -769,7 +769,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             +event3
                         }
                     })
-                    cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                    cut.fetchMissingEvents(event3.id, room)
                     storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                         fragment {
                             gap("end")
@@ -805,7 +805,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             +event3
                         }
                     })
-                    cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                    cut.fetchMissingEvents(event3.id, room)
                     storeTimeline(event2, event3) shouldContainExactly timeline {
                         fragment {
                             gap("end")
@@ -842,7 +842,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             gap("after")
                         }
                     })
-                    cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                    cut.fetchMissingEvents(event3.id, room)
                     storeTimeline(event3, event4) shouldContainExactly timeline {
                         fragment {
                             +event3
@@ -879,7 +879,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             gap("after")
                         }
                     })
-                    cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                    cut.fetchMissingEvents(event3.id, room)
                     storeTimeline(event3, event4) shouldContainExactly timeline {
                         fragment {
                             +event3
@@ -919,7 +919,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 +event3
                             }
                         })
-                        cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event3.id, room)
                         storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                             fragment {
                                 gap("start-1")
@@ -959,7 +959,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 +event3
                             }
                         })
-                        cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event3.id, room)
                         storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                             fragment {
                                 gap("start-1")
@@ -1001,7 +1001,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 +event3
                             }
                         })
-                        cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event3.id, room)
                         storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                             fragment {
                                 gap("start-1")
@@ -1042,7 +1042,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                             gap("start")
                         }
                     })
-                    cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                    cut.fetchMissingEvents(event3.id, room)
                     storeTimeline(event3, event4) shouldContainExactly timeline {
                         fragment {
                             +event3
@@ -1083,7 +1083,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 +event5
                             }
                         })
-                        cut.internalFetchMissingEvents(event2.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event2.id, room)
                         storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                             fragment {
                                 gap("gap-before")
@@ -1127,7 +1127,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 +event5
                             }
                         })
-                        cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event3.id, room)
                         storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                             fragment {
                                 gap("gap-before")
@@ -1173,7 +1173,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                                 gap("next-1")
                             }
                         })
-                        cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                        cut.fetchMissingEvents(event3.id, room)
                         storeTimeline(event2, event3, event4, event5) shouldContainExactly timeline {
                             fragment {
                                 gap("gap-before")
@@ -1217,7 +1217,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         gap("next")
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         gap("end")
@@ -1285,7 +1285,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         gap("after-5")
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
                         gap("before-1")
@@ -1351,7 +1351,7 @@ class RoomServiceTimelineTest : ShouldSpec({
                         gap("after-4")
                     }
                 })
-                cut.internalFetchMissingEvents(event3.id, room).getOrThrow()
+                cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event2, event3, event4) shouldContainExactly timeline {
                     fragment {
                         gap("before-2")
@@ -1360,6 +1360,72 @@ class RoomServiceTimelineTest : ShouldSpec({
                         +event4
                         gap("after-4")
                     }
+                }
+            }
+        }
+        should("not allow parallel insertion of events in the same room") {
+            val firstEndpointCalled = MutableStateFlow(false)
+            val resumeFirstEndpointCall = MutableStateFlow(false)
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json, mappings,
+                    GetEvents(
+                        room.e(),
+                        "before-3",
+                        dir = BACKWARDS,
+                        limit = 20,
+                        filter = LAZY_LOAD_MEMBERS_FILTER
+                    )
+                ) {
+                    firstEndpointCalled.value = true
+                    resumeFirstEndpointCall.first { it }
+                    GetEvents.Response(
+                        start = "before-3",
+                        end = "before-2",
+                        chunk = listOf(event2),
+                        state = listOf()
+                    )
+                }
+                matrixJsonEndpoint(
+                    json, mappings,
+                    GetEvents(
+                        room.e(),
+                        "before-3",
+                        dir = BACKWARDS,
+                        limit = 20,
+                        filter = LAZY_LOAD_MEMBERS_FILTER
+                    )
+                ) {
+                    GetEvents.Response(
+                        start = "before-3",
+                        end = "before-1",
+                        chunk = listOf(event2, event1),
+                        state = listOf()
+                    )
+                }
+            }
+            store.roomTimeline.addAll(timeline {
+                fragment {
+                    gap("before-3")
+                    +event3
+                }
+            })
+            launch {
+                cut.fetchMissingEvents(event3.id, room)
+            }
+            firstEndpointCalled.first { it }
+            val otherJob = launch(start = CoroutineStart.UNDISPATCHED) {
+                cut.fetchMissingEvents(event3.id, room)
+            }
+            otherJob.isActive shouldBe true
+            resumeFirstEndpointCall.value = true
+            otherJob.join()
+
+            storeTimeline(event2, event3) shouldContainExactly timeline {
+                fragment {
+                    gap("before-2")
+                    +event2
+                    +event3
                 }
             }
         }
