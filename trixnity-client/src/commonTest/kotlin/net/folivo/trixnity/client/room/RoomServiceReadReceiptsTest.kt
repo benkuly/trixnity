@@ -55,7 +55,8 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
             UserServiceMock(),
             MediaServiceMock(),
             currentSyncState,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration(),
+            scope,
         )
     }
 

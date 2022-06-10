@@ -6,7 +6,9 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -60,14 +62,15 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration =
         .mapLatest { it.filterNotNull().toSet() }
 
 suspend fun IRoomService.getTimelineEvents(
-    startFrom: StateFlow<TimelineEvent?>,
+    startFrom: EventId,
+    roomId: RoomId,
     beforeInclusive: StateFlow<Int>,
     afterInclusive: StateFlow<Int>,
     decryptionTimeout: Duration = Duration.INFINITE,
 ): Flow<List<StateFlow<TimelineEvent?>>> {
     return combine(
-        getTimelineEvents(startFrom, GetEvents.Direction.BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
-        getTimelineEvents(startFrom, GetEvents.Direction.FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
+        getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
+        getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
             .map { it.drop(1).reversed() },
     ) { beforeElements, afterElements ->
         afterElements + beforeElements

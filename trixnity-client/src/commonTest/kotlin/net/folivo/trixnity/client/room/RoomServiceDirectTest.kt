@@ -39,7 +39,7 @@ class RoomServiceDirectTest : ShouldSpec({
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
@@ -49,8 +49,8 @@ class RoomServiceDirectTest : ShouldSpec({
     lateinit var cut: RoomService
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = RoomService(
@@ -62,12 +62,13 @@ class RoomServiceDirectTest : ShouldSpec({
             UserServiceMock(),
             MediaServiceMock(),
             currentSyncState,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration(),
+            scope,
         )
     }
 
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
     context(RoomService::setDirectRooms.name) {

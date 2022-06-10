@@ -1,13 +1,15 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 abstract class Store(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     contentMappings: EventContentSerializerMappings,
     private val rtm: RepositoryTransactionManager,
     accountRepository: AccountRepository,
@@ -103,8 +105,15 @@ abstract class Store(
         }
     }
 
-    private fun resetCache() {
-        // at the moment only roomTimeline is used with transactions
-        roomTimeline.resetCache()
+    suspend fun <T : Any> transaction(block: suspend () -> T): T {
+        return rtm.transaction {
+            try {
+                block()
+            } catch (error: Throwable) {
+                if (error !is CancellationException)
+                    scope.cancel(CancellationException("transaction failed", error))
+                throw error
+            }
+        }
     }
 }

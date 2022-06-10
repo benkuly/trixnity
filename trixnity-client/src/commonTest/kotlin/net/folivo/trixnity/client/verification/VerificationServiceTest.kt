@@ -73,7 +73,7 @@ private val body: ShouldSpec.() -> Unit = {
     val roomId = RoomId("room", "server")
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var api: MatrixClientServerApiClient
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     lateinit var store: Store
     lateinit var olmEventService: OlmEventServiceMock
     val keyService = KeyServiceMock()
@@ -86,8 +86,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var cut: VerificationService
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope)
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope)
         decryptedOlmEventFlow = MutableSharedFlow()
         room = RoomServiceMock()
         olmEventService = OlmEventServiceMock(decryptedOlmEventFlow)
@@ -103,21 +103,15 @@ private val body: ShouldSpec.() -> Unit = {
             roomService = room,
             userService = UserServiceMock(),
             keyService = keyService,
-            currentSyncState = currentSyncState
+            currentSyncState = currentSyncState,
+            scope = scope,
         )
     }
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
-    context(VerificationService::start.name) {
-        lateinit var eventHandlingCoroutineScope: CoroutineScope
-        beforeTest {
-            eventHandlingCoroutineScope = CoroutineScope(Dispatchers.Default)
-        }
-        afterTest {
-            eventHandlingCoroutineScope.cancel()
-        }
+    context("init") {
         context("handleVerificationRequestEvents") {
             should("ignore request, that is timed out") {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
@@ -129,7 +123,6 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                cut.start(eventHandlingCoroutineScope)
                 api.sync.startOnce().getOrThrow()
 
                 val activeDeviceVerifications = cut.activeDeviceVerification.value
@@ -150,7 +143,6 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                cut.start(eventHandlingCoroutineScope)
                 api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
@@ -184,8 +176,6 @@ private val body: ShouldSpec.() -> Unit = {
                     matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
                     }
                 }
-                cut.start(eventHandlingCoroutineScope)
-
                 api.sync.startOnce().getOrThrow()
 
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
@@ -202,7 +192,6 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
             should("ignore request, that is timed out") {
-                cut.start(eventHandlingCoroutineScope)
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
                     IOlmService.DecryptedOlmEventContainer(
@@ -213,7 +202,6 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.activeDeviceVerification.value shouldBe null
             }
             should("add device verification") {
-                cut.start(eventHandlingCoroutineScope)
                 val request = VerificationRequestEventContent(
                     bobDeviceId,
                     setOf(Sas),
@@ -235,8 +223,6 @@ private val body: ShouldSpec.() -> Unit = {
                     matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
                     }
                 }
-
-                cut.start(eventHandlingCoroutineScope)
 
                 val request1 = VerificationRequestEventContent(
                     bobDeviceId,
@@ -303,7 +289,6 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                cut.start(eventHandlingCoroutineScope)
                 api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
@@ -315,7 +300,6 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.activeDeviceVerification.first { it == null } shouldBe null
             }
             should("start all lifecycles of user verifications") {
-                cut.start(eventHandlingCoroutineScope)
                 val nextEventId = EventId("$1nextEventId")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(

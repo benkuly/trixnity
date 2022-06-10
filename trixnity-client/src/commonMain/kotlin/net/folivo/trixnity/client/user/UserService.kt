@@ -1,14 +1,13 @@
 package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
+import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.isTracked
@@ -55,19 +54,18 @@ class UserService(
     private val store: Store,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
+    private val scope: CoroutineScope,
 ) : IUserService {
     private val reloadOwnProfile = MutableStateFlow(false)
-    private val loadMembersQueue = MutableStateFlow<Set<RoomId>>(setOf())
+    private val currentlyLoadingMembers = MutableStateFlow<Set<RoomId>>(setOf())
     private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())
     override val userPresence = _userPresence.asStateFlow()
 
-    internal suspend fun start(scope: CoroutineScope) {
+    init {
         api.sync.subscribe(::setGlobalAccountData)
         api.sync.subscribe(::setRoomUser)
         api.sync.subscribe(::setPresence)
         api.sync.subscribeAfterSyncResponse { reloadProfile() }
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { handleLoadMembersQueue() }
     }
 
     internal fun setPresence(presenceEvent: Event<PresenceEventContent>) {
@@ -169,15 +167,13 @@ class UserService(
         }
     }
 
-    override fun loadMembers(roomId: RoomId) = loadMembersQueue.update { it + roomId }
-
-    internal suspend fun handleLoadMembersQueue() {
-        currentSyncState.retryInfiniteWhenSyncIs(
-            SyncState.RUNNING,
-            onError = { log.warn(it) { "failed loading members" } },
-        ) {
-            loadMembersQueue.collect { roomIds ->
-                roomIds.forEach { roomId ->
+    override fun loadMembers(roomId: RoomId) {
+        if (currentlyLoadingMembers.getAndUpdate { it + roomId }.contains(roomId).not()) {
+            scope.launch {
+                currentSyncState.retryWhenSyncIs(
+                    SyncState.RUNNING,
+                    onError = { log.warn(it) { "failed loading members" } },
+                ) {
                     if (store.room.get(roomId).value?.membersLoaded != true) {
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
@@ -195,8 +191,8 @@ class UserService(
                         }
                         store.room.update(roomId) { it?.copy(membersLoaded = true) }
                     }
-                    loadMembersQueue.update { it - roomId }
                 }
+                currentlyLoadingMembers.update { it - roomId }
             }
         }
     }

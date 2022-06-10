@@ -69,7 +69,7 @@ class RoomServiceTest : ShouldSpec({
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var users: UserServiceMock
     lateinit var olmEventService: OlmEventServiceMock
@@ -82,8 +82,8 @@ class RoomServiceTest : ShouldSpec({
     lateinit var cut: RoomService
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope).apply { init() }
         users = UserServiceMock()
         olmEventService = OlmEventServiceMock()
         keyBackup = KeyBackupServiceMock()
@@ -92,12 +92,13 @@ class RoomServiceTest : ShouldSpec({
         apiConfig = newApiConfig
         cut = RoomService(
             alice, store, api, olmEventService, keyBackup, users, media, currentSyncState,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration(),
+            scope,
         )
     }
 
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
     fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
@@ -521,9 +522,9 @@ class RoomServiceTest : ShouldSpec({
                 }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
                 store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
-                val result = cut.getTimelineEvent(eventId, room, this).take(2).toList()
-                result[0] shouldBe encryptedTimelineEvent
-                assertSoftly(result[1]) {
+                val result = cut.getTimelineEvent(eventId, room, this)
+                    .first { it?.content?.getOrNull() != null }
+                assertSoftly(result) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
                     content?.getOrNull() shouldBe expectedDecryptedEvent.content
@@ -548,9 +549,9 @@ class RoomServiceTest : ShouldSpec({
                 olmEventService.returnDecryptMegolm.add { throw DecryptionException.ValidationFailed }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
                 store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
-                val result = cut.getTimelineEvent(eventId, room, this).take(2).toList()
-                result[0] shouldBe encryptedTimelineEvent
-                assertSoftly(result[1]) {
+                val result = cut.getTimelineEvent(eventId, room, this)
+                    .first { it?.content?.isFailure == true }
+                assertSoftly(result) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
                     content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed

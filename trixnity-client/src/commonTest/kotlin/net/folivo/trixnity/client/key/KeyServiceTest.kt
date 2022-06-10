@@ -16,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.client.crypto.getCrossSigningKey
@@ -82,7 +81,8 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState,
             KeySecretServiceMock(),
             KeyBackupServiceMock(),
-            trust
+            trust,
+            scope,
         )
         trust.returnCalculateCrossSigningKeysTrustLevel = CrossSigned(false)
         trust.returnCalculateDeviceKeysTrustLevel = CrossSigned(false)
@@ -130,9 +130,6 @@ private val body: ShouldSpec.() -> Unit = {
         )
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
-            scope.launch {
-                cut.handleOutdatedKeys()
-            }
         }
         should("do nothing when no keys outdated") {
             var getKeysCalled = false

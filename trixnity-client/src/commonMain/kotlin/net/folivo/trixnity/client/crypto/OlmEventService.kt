@@ -77,7 +77,7 @@ class OlmEventService internal constructor(
     private val signService: IOlmSignService,
 ) : IOlmEventService {
 
-    internal suspend fun start() {
+    init {
         api.sync.subscribe(::handleOlmEncryptedToDeviceEvents)
     }
 

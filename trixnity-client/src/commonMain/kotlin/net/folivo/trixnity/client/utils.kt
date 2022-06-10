@@ -2,13 +2,12 @@ package net.folivo.trixnity.client
 
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
-import com.soywiz.korio.async.launch
 import io.ktor.http.*
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.Store
@@ -103,8 +102,7 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
     block: suspend () -> Unit
 ) = coroutineScope {
     val syncStates = listOf(syncState) + moreSyncStates
-    val shouldRun = MutableStateFlow(false)
-    val job = launch { this@retryInfiniteWhenSyncIs.collectLatest { shouldRun.value = syncStates.contains(it) } }
+    val shouldRun = map { syncStates.contains(it) }.stateIn(this)
     val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
         .or(Schedule.spaced(scheduleLimit))
         .and(Schedule.doWhile { shouldRun.value }) // just stop, when we are not connected anymore
@@ -125,28 +123,29 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
             if (error is CancellationException) throw error
         }
     }
-    job.cancel()
 }
 
 @OptIn(ExperimentalTime::class)
 suspend fun <T> retryWhen(
-    condition: StateFlow<Boolean>,
+    condition: Flow<Boolean>,
     scheduleBase: Duration = 100.milliseconds,
     scheduleFactor: Double = 2.0,
     scheduleLimit: Duration = 5.minutes,
     onError: suspend (error: Throwable) -> Unit = {},
     onCancel: suspend () -> Unit = {},
     block: suspend () -> T
-): T {
+): T = coroutineScope {
+    val conditionState = MutableStateFlow(false)
+    val job = launch { condition.collectLatest { conditionState.value = it } }
     val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
         .or(Schedule.spaced(scheduleLimit))
-        .and(Schedule.doWhile { condition.value }) // just stop, when it is false
+        .and(Schedule.doWhile { conditionState.value }) // just stop, when it is false
         .logInput {
             if (it is CancellationException) onCancel()
             else onError(it)
         }
 
-    return flow {
+    flow {
         while (true) {
             condition.first { it } // just wait, until it is true again
             try {
@@ -161,7 +160,7 @@ suspend fun <T> retryWhen(
                 if (error is CancellationException) throw error
             }
         }
-    }.first()
+    }.first().also { job.cancel() }
 }
 
 suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
@@ -175,15 +174,13 @@ suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
     block: suspend () -> T
 ): T = coroutineScope {
     val syncStates = listOf(syncState) + moreSyncStates
-    val condition = MutableStateFlow(false)
-    val job = launch { this@retryWhenSyncIs.collectLatest { condition.value = syncStates.contains(it) } }
     retryWhen(
-        condition = condition,
+        condition = map { syncStates.contains(it) },
         scheduleBase = scheduleBase,
         scheduleFactor = scheduleFactor,
         scheduleLimit = scheduleLimit,
         onError = onError,
         onCancel = onCancel,
         block = block
-    ).also { job.cancelAndJoin() }
+    )
 }

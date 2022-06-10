@@ -52,6 +52,7 @@ class OlmService(
     json: Json,
     private val olmAccount: OlmAccount,
     olmUtility: OlmUtility,
+    scope: CoroutineScope,
 ) : IOlmService {
 
     override suspend fun getSelfSignedDeviceKeys() = sign.sign(
@@ -87,13 +88,12 @@ class OlmService(
         signService = sign,
     )
 
-    internal suspend fun start(scope: CoroutineScope) {
+    init {
         api.sync.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         api.sync.subscribe(::handleMemberEvents)
         api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) { event.decryptedOlmEvents.collect(::handleOlmEncryptedRoomKeyEventContent) }
-        event.start()
     }
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {

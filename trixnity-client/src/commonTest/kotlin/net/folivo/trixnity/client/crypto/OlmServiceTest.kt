@@ -58,7 +58,7 @@ class OlmServiceTest : ShouldSpec({
     val bobKeys = StoredDeviceKeys(Signed(DeviceKeys(bob, bobDevice, setOf(), keysOf()), mapOf()), Valid(false))
 
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
@@ -77,16 +77,16 @@ class OlmServiceTest : ShouldSpec({
     beforeEach {
         olmAccount = OlmAccount.create()
         olmUtility = OlmUtility.create()
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope)
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope)
         store.init()
-        cut = OlmService("", alice, aliceDevice, store, api, json, olmAccount, olmUtility)
+        cut = OlmService("", alice, aliceDevice, store, api, json, olmAccount, olmUtility, scope)
     }
 
     afterEach {
         olmAccount.free()
         olmUtility.free()
-        storeScope.cancel()
+        scope.cancel()
     }
 
     context(OlmService::handleDeviceOneTimeKeysCount.name) {
@@ -127,16 +127,26 @@ class OlmServiceTest : ShouldSpec({
     context(OlmService::handleOlmEncryptedRoomKeyEventContent.name) {
         context("when ${RoomKeyEventContent::class.simpleName}") {
             should("store inbound megolm session") {
-                val bobStore = InMemoryStore(storeScope).apply { init() }
+                val bobStore = InMemoryStore(scope).apply { init() }
                 val bobOlmService =
-                    OlmService("", bob, bobDevice, bobStore, api, json, OlmAccount.create(), OlmUtility.create())
+                    OlmService("", bob, bobDevice, bobStore, api, json, OlmAccount.create(), OlmUtility.create(), scope)
                 freeAfter(
                     OlmAccount.create()
                 ) { aliceAccount ->
                     aliceAccount.generateOneTimeKeys(1)
                     store.olm.storeAccount(aliceAccount, "")
                     val cutWithAccount =
-                        OlmService("", alice, aliceDevice, store, api, json, OlmAccount.create(), OlmUtility.create())
+                        OlmService(
+                            "",
+                            alice,
+                            aliceDevice,
+                            store,
+                            api,
+                            json,
+                            OlmAccount.create(),
+                            OlmUtility.create(),
+                            scope
+                        )
                     store.keys.updateDeviceKeys(bob) {
                         mapOf(
                             bobDevice to StoredDeviceKeys(

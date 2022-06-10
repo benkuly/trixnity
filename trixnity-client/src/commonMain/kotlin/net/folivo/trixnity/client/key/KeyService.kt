@@ -153,10 +153,11 @@ class KeyService(
     private val currentSyncState: StateFlow<SyncState>,
     override val secret: IKeySecretService,
     override val backup: IKeyBackupService,
-    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olmSign, api)
+    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olmSign, api),
+    scope: CoroutineScope,
 ) : IKeyService {
 
-    internal suspend fun start(scope: CoroutineScope) {
+    init {
         api.sync.subscribeDeviceLists(::handleDeviceLists)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
@@ -177,49 +178,58 @@ class KeyService(
         }
     }
 
-    internal suspend fun handleOutdatedKeys() = coroutineScope {
+    internal suspend fun handleOutdatedKeys() {
         currentSyncState.retryInfiniteWhenSyncIs(
             STARTED, INITIAL_SYNC, RUNNING,
             scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
         ) {
-            store.keys.outdatedKeys.collect { userIds ->
-                if (userIds.isNotEmpty()) {
-                    log.debug { "try update outdated keys of $userIds" }
-                    val keysResponse = api.keys.getKeys(
-                        deviceKeys = userIds.associateWith { emptySet() },
-                        token = store.account.syncBatchToken.value
-                    ).getOrThrow()
+            coroutineScope {
+                store.keys.outdatedKeys.collect { userIds ->
+                    if (userIds.isNotEmpty()) {
+                        log.debug { "try update outdated keys of $userIds" }
+                        val keysResponse = api.keys.getKeys(
+                            deviceKeys = userIds.associateWith { emptySet() },
+                            token = store.account.syncBatchToken.value
+                        ).getOrThrow()
 
-                    keysResponse.masterKeys?.forEach { (userId, masterKey) ->
-                        handleOutdatedCrossSigningKey(userId, masterKey, MasterKey, masterKey.getSelfSigningKey(), true)
-                    }
-                    keysResponse.selfSigningKeys?.forEach { (userId, selfSigningKey) ->
-                        handleOutdatedCrossSigningKey(
-                            userId, selfSigningKey, SelfSigningKey,
-                            store.keys.getCrossSigningKey(userId, MasterKey)?.value?.signed?.get()
-                        )
-                    }
-                    keysResponse.userSigningKeys?.forEach { (userId, userSigningKey) ->
-                        handleOutdatedCrossSigningKey(
-                            userId, userSigningKey, UserSigningKey,
-                            store.keys.getCrossSigningKey(userId, MasterKey)?.value?.signed?.get()
-                        )
-                    }
-                    val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { store.room.encryptedJoinedRooms() }
-                    keysResponse.deviceKeys?.forEach { (userId, devices) ->
-                        handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
-                    }
-                    joinedEncryptedRooms.cancel()
+                        keysResponse.masterKeys?.forEach { (userId, masterKey) ->
+                            handleOutdatedCrossSigningKey(
+                                userId,
+                                masterKey,
+                                MasterKey,
+                                masterKey.getSelfSigningKey(),
+                                true
+                            )
+                        }
+                        keysResponse.selfSigningKeys?.forEach { (userId, selfSigningKey) ->
+                            handleOutdatedCrossSigningKey(
+                                userId, selfSigningKey, SelfSigningKey,
+                                store.keys.getCrossSigningKey(userId, MasterKey)?.value?.signed?.get()
+                            )
+                        }
+                        keysResponse.userSigningKeys?.forEach { (userId, userSigningKey) ->
+                            handleOutdatedCrossSigningKey(
+                                userId, userSigningKey, UserSigningKey,
+                                store.keys.getCrossSigningKey(userId, MasterKey)?.value?.signed?.get()
+                            )
+                        }
+                        val joinedEncryptedRooms =
+                            async(start = CoroutineStart.LAZY) { store.room.encryptedJoinedRooms() }
+                        keysResponse.deviceKeys?.forEach { (userId, devices) ->
+                            handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
+                        }
+                        joinedEncryptedRooms.cancel()
 
-                    // indicate, that we fetched the keys of the user
-                    userIds.forEach { userId ->
-                        store.keys.updateCrossSigningKeys(userId) { it ?: setOf() }
-                        store.keys.updateDeviceKeys(userId) { it ?: mapOf() }
-                    }
+                        // indicate, that we fetched the keys of the user
+                        userIds.forEach { userId ->
+                            store.keys.updateCrossSigningKeys(userId) { it ?: setOf() }
+                            store.keys.updateDeviceKeys(userId) { it ?: mapOf() }
+                        }
 
-                    store.keys.outdatedKeys.update { it - userIds }
+                        store.keys.outdatedKeys.update { it - userIds }
+                    }
                 }
             }
         }

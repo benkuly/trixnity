@@ -20,10 +20,6 @@ class ExposedStoreFactory(
     private val scope: CoroutineScope,
 ) : StoreFactory {
 
-    companion object {
-        const val currentVersion: Long = 1L
-    }
-
     override suspend fun createStore(
         contentMappings: EventContentSerializerMappings,
         json: Json,

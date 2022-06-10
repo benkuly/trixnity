@@ -76,7 +76,7 @@ private val body: ShouldSpec.() -> Unit = {
     val relatesTo = RelatesTo.Reference(EventId("$1fancyEvent"))
 
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
 
     val signService = OlmSignServiceMock()
     lateinit var api: MatrixClientServerApiClient
@@ -106,8 +106,8 @@ private val body: ShouldSpec.() -> Unit = {
         bobCurveKey = Curve25519Key(bobDeviceId, bobAccount.identityKeys.curve25519)
         bobEdKey = Ed25519Key(bobDeviceId, bobAccount.identityKeys.ed25519)
 
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope).apply { init() }
         store.keys.updateDeviceKeys(bob) {
             mapOf(
                 bobDeviceId to StoredDeviceKeys(
@@ -142,7 +142,8 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     afterEach {
-        storeScope.cancel()
+        scope.cancel()
+        scope.cancel()
         aliceAccount.free()
         bobAccount.free()
     }
@@ -179,9 +180,9 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("emit decrypted events") {
             freeAfter(OlmUtility.create()) { olmUtility ->
-                val bobStore = InMemoryStore(storeScope).apply { init() }
+                val bobStore = InMemoryStore(scope).apply { init() }
                 val bobOlmService =
-                    OlmService("", bob, bobDeviceId, bobStore, api, json, bobAccount, olmUtility)
+                    OlmService("", bob, bobDeviceId, bobStore, api, json, bobAccount, olmUtility, scope)
                 store.olm.storeAccount(aliceAccount, "")
                 val aliceSignService = OlmSignService(alice, aliceDeviceId, json, store, aliceAccount, olmUtility)
                 val cutWithAccount = OlmEventService(

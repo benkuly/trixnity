@@ -84,6 +84,7 @@ private val body: ShouldSpec.() -> Unit = {
             KeySecretServiceMock(),
             backup,
             trust,
+            scope,
         )
         olmSign.returnVerify = VerifyResult.Valid
     }

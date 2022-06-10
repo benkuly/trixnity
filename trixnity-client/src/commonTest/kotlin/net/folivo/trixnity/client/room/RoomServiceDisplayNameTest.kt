@@ -34,7 +34,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 class RoomServiceDisplayNameTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var scope: CoroutineScope
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: RoomService
@@ -46,8 +46,8 @@ class RoomServiceDisplayNameTest : ShouldSpec({
 
     val json = createMatrixEventJson()
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        store = InMemoryStore(scope).apply { init() }
         cut = RoomService(
             UserId("alice", "server"),
             store,
@@ -57,12 +57,13 @@ class RoomServiceDisplayNameTest : ShouldSpec({
             UserServiceMock(),
             MediaServiceMock(),
             currentSyncState,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration(),
+            scope,
         )
     }
 
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
     fun memberEvent(

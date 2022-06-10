@@ -55,8 +55,9 @@ class KeySecretService(
     private val keyBackup: IKeyBackupService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
+    scope: CoroutineScope,
 ) : IKeySecretService {
-    internal suspend fun start(scope: CoroutineScope) {
+    init {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleEncryptedIncomingKeyRequests) }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { olmEvents.decryptedOlmEvents.collect(::handleOutgoingKeyRequestAnswer) }
@@ -245,14 +246,16 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun requestSecretKeysWhenCrossSigned() = coroutineScope {
+    internal suspend fun requestSecretKeysWhenCrossSigned() {
         currentSyncState.retryInfiniteWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
         ) {
-            store.keys.getDeviceKey(ownUserId, ownDeviceId, this).collect { deviceKeys ->
-                if (deviceKeys?.trustLevel == CrossSigned(true)) {
-                    requestSecretKeys()
+            coroutineScope {
+                store.keys.getDeviceKey(ownUserId, ownDeviceId, this).collect { deviceKeys ->
+                    if (deviceKeys?.trustLevel == CrossSigned(true)) {
+                        requestSecretKeys()
+                    }
                 }
             }
         }
