@@ -137,6 +137,6 @@ publish-linux:
   rules:
     - *if-release
   script:
-    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
     - ./gradlew publish --stacktrace
