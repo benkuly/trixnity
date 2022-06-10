@@ -292,8 +292,7 @@ class TimelineEventIT {
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
-                )
-                    .debounce(1.seconds)
+                ).debounce(2.seconds)
                     .first { list ->
                         list.any { it.value?.previousEventId == null && it.value?.gap == null } &&
                                 list.any { it.value?.nextEventId == null }
