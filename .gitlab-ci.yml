@@ -88,7 +88,7 @@ create-nexus-staging-repo:
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
-    - apt-get update && apt-get install -y curl
+    - apt-get update && apt-get install -y curl jq
     - >
         jsonOutput=$(
         curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
