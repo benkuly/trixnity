@@ -1375,6 +1375,68 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("should handle gap filling without new events and same tokens") {
+                store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "after-2",
+                            "after-2",
+                            dir = BACKWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "after-2",
+                            end = "after-2",
+                            chunk = listOf(),
+                            state = listOf()
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "before-4",
+                            "before-4",
+                            dir = FORWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "before-4",
+                            end = "before-4",
+                            chunk = listOf(),
+                            state = listOf()
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        gap("after-2")
+                        +event3
+                        gap("before-4")
+                        +event4
+                        gap("after-4")
+                    }
+                })
+                cut.fetchMissingEvents(event3.id, room)
+                storeTimeline(event2, event3, event4) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        +event3
+                        +event4
+                        gap("after-4")
+                    }
+                }
+            }
         }
         should("not allow parallel insertion of events in the same room") {
             val firstEndpointCalled = MutableStateFlow(false)
