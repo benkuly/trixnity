@@ -131,13 +131,13 @@ publish-linux:
       command: [ "--tls=false" ]
   cache:
     - *build-cache
-  variables: *docker-variables
   dependencies:
     - create-nexus-staging-repo
 #     - publish-mac
   rules:
     - *if-release
   script:
+    - cat ./OSSRH_REPOSITORY_ID
     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
     - ./gradlew publish --stacktrace
