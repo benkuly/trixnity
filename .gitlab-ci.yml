@@ -91,11 +91,11 @@ create-nexus-staging-repo:
     - apt-get update && apt-get install -y curl
     - >
         jsonOutput=$(
-          curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
-            --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
-            --header 'Accept: application/json'
-            --header 'Content-Type: application/json'
-            --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
+        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
+        --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
+        --header 'Accept: application/json'
+        --header 'Content-Type: application/json'
+        --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
         )
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
     - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
