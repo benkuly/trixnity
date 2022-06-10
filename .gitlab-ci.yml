@@ -90,8 +90,8 @@ create-nexus-staging-repo:
   script:
     - apt-get update && apt-get install -y curl jq
     - >
-        jsonOutput=$(
-        curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
+        jsonOutput=$(curl -s
+        --request POST -u "$OSSRH_USERNAME:$OSSRH_PASSWORD"
         --url https://oss.sonatype.org/service/local/staging/profiles/65b35e28422b2/start
         --header 'Accept: application/json'
         --header 'Content-Type: application/json'
