@@ -40,7 +40,6 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class TimelineEventIT {
@@ -214,7 +213,6 @@ class TimelineEventIT {
         }
     }
 
-    @OptIn(FlowPreview::class)
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
@@ -235,8 +233,12 @@ class TimelineEventIT {
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                .debounce(1.seconds)
-                .first { list -> list.any { it.value?.previousEventId == null && it.value?.gap == null } }
+                .first { list -> list.any { it.value?.previousEventId == null } }
+                .also { list ->
+                    val last = list.last().value.shouldNotBeNull()
+                    client1.room.fetchMissingEvents(last.eventId, last.roomId)
+                    list.last().first { it?.gap == null }
+                }
                 .mapNotNull { it.value?.removeUnsigned() }
 
             client2.startSync().getOrThrow()
@@ -247,8 +249,7 @@ class TimelineEventIT {
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(expectedTimeline.last().eventId, room, direction = FORWARDS)
                     .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                    .debounce(1.seconds)
-                    .first { list -> list.any { it.value?.previousEventId == null } }
+                    .first { list -> list.any { it.value?.nextEventId == null } }
                     .mapNotNull { it.value?.removeUnsigned() }
 
             // drop because the first event may have a gap due to the FORWARDS direction
@@ -256,7 +257,6 @@ class TimelineEventIT {
         }
     }
 
-    @OptIn(FlowPreview::class)
     @Test
     fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
         withTimeout(30_000) {
@@ -277,8 +277,12 @@ class TimelineEventIT {
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                .debounce(1.seconds)
-                .first { list -> list.any { it.value?.previousEventId == null && it.value?.gap == null } }
+                .first { list -> list.any { it.value?.previousEventId == null } }
+                .also { list ->
+                    val last = list.last().value.shouldNotBeNull()
+                    client1.room.fetchMissingEvents(last.eventId, last.roomId)
+                    list.last().first { it?.gap == null }
+                }
                 .mapNotNull { it.value?.removeUnsigned() }
 
             client2.startSync().getOrThrow()
@@ -292,12 +296,22 @@ class TimelineEventIT {
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
-                ).debounce(2.seconds)
-                    .first { list ->
-                        list.any { it.value?.previousEventId == null && it.value?.gap == null } &&
-                                list.any { it.value?.nextEventId == null }
+                ).onEach { list ->
+                    println("#################### ${list.size}")
+                    list.forEachIndexed { index, event ->
+                        println("-")
+                        println(expectedTimeline.getOrNull(index))
+                        println(event.value)
                     }
-                    .mapNotNull { it.value?.removeUnsigned() }
+                }.first { list ->
+                    list.size > 31
+                            && list.any { it.value?.previousEventId == null }
+                            && list.any { it.value?.nextEventId == null }
+                }.also { list ->
+                    val last = list.last().value.shouldNotBeNull()
+                    client2.room.fetchMissingEvents(last.eventId, last.roomId)
+                    list.last().first { it?.gap == null }
+                }.mapNotNull { it.value?.removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
