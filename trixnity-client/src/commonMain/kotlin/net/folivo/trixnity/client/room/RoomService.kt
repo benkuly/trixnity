@@ -776,10 +776,11 @@ class RoomService(
                         filter = LAZY_LOAD_MEMBERS_FILTER
                     ).getOrThrow()
                     previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
-                    previousEvent = possiblyPreviousEvent
+                    previousEvent = possiblyPreviousEvent?.also { log.trace { "previousEvent known" } }
                         ?: response.chunk
                             ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
                             ?.find { it?.gap?.hasGapAfter == true }
+                            ?.also { log.trace { "previousEvent found in chunk" } }
                     previousEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
                     previousHasGap = response.end != destinationBatch
                             && response.chunk?.none { it.id == previousEvent?.eventId } == true
@@ -803,10 +804,11 @@ class RoomService(
                         filter = LAZY_LOAD_MEMBERS_FILTER
                     ).getOrThrow()
                     nextToken = response.end
-                    nextEvent = possiblyNextEvent
+                    nextEvent = possiblyNextEvent?.also { log.trace { "nextEvent known" } }
                         ?: response.chunk
                             ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
                             ?.find { it?.gap?.hasGapBefore == true }
+                            ?.also { log.trace { "nextEvent found in chunk" } }
                     nextEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
                     nextHasGap = response.end != destinationBatch
                             && response.chunk?.none { it.id == nextEvent?.eventId } == true

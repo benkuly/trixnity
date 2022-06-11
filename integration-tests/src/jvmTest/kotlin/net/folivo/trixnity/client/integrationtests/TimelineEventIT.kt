@@ -257,6 +257,7 @@ class TimelineEventIT {
         }
     }
 
+    @OptIn(FlowPreview::class)
     @Test
     fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
         withTimeout(30_000) {
@@ -290,18 +291,18 @@ class TimelineEventIT {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
+            println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(
                     expectedTimeline.last().eventId,
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
-                ).onEach { list ->
+                ).debounce(1000).onEach { list ->
                     println("#################### ${list.size}")
-                    list.forEachIndexed { index, event ->
-                        println("-")
-                        println(expectedTimeline.getOrNull(index))
-                        println(event.value)
+                    list.forEachIndexed { index, event -> // FIXME
+                        println("+" + expectedTimeline.getOrNull(index))
+                        println("-" + event.value)
                     }
                 }.first { list ->
                     list.size > 31

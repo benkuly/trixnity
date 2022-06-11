@@ -1311,6 +1311,77 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("should detect loop due to event found in chunk") {
+                store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "before-2",
+                            dir = BACKWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "before-2",
+                            end = "after-1",
+                            chunk = listOf(event4, event1),
+                            state = listOf()
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEvents(
+                            room.e(),
+                            "after-4",
+                            dir = FORWARDS,
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEvents.Response(
+                            start = "after-4",
+                            end = "before-5",
+                            chunk = listOf(event2, event5),
+                            state = listOf()
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
+                    fragment {
+                        gap("before-1")
+                        +event1
+                        gap("after-1")
+                    }
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        +event3
+                        +event4
+                        gap("after-4")
+                    }
+                    fragment {
+                        gap("before-5")
+                        +event5
+                        gap("after-5")
+                    }
+                })
+                cut.fetchMissingEvents(event2.id, room)
+                cut.fetchMissingEvents(event4.id, room)
+                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-1")
+                        +event1
+                        +event2
+                        +event3
+                        +event4
+                        +event5
+                        gap("after-5")
+                    }
+                }
+            }
             should("should handle gap filling without new events") {
                 store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
