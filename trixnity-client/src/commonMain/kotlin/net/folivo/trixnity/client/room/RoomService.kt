@@ -135,6 +135,24 @@ interface IRoomService {
         syncResponseBufferSize: Int = 10,
     ): Flow<TimelineEvent>
 
+    /**
+     * Returns all timeline events around a starting event. This also triggers decryption for each timeline event.
+     *
+     * The size of the returned list can be expanded in 2 directions: before and after the start element.
+     *
+     * @param startFrom the start event id
+     * @param beforeInclusive how many events to possibly get before the start event (including the start event)
+     * @param afterInclusive how many events to possibly get after the start event (including the start event)
+     *
+     */
+    suspend fun getTimelineEventsAround(
+        startFrom: EventId,
+        roomId: RoomId,
+        beforeInclusive: StateFlow<Int>,
+        afterInclusive: StateFlow<Int>,
+        decryptionTimeout: Duration = INFINITE,
+    ): Flow<List<StateFlow<TimelineEvent?>>>
+
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
 
     suspend fun abortSendMessage(transactionId: String)
@@ -1147,6 +1165,22 @@ class RoomService(
                     }.filterNotNull()
             }
         }
+
+    override suspend fun getTimelineEventsAround(
+        startFrom: EventId,
+        roomId: RoomId,
+        beforeInclusive: StateFlow<Int>,
+        afterInclusive: StateFlow<Int>,
+        decryptionTimeout: Duration,
+    ): Flow<List<StateFlow<TimelineEvent?>>> {
+        return combine(
+            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
+            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
+                .map { it.drop(1).reversed() },
+        ) { beforeElements, afterElements ->
+            afterElements + beforeElements
+        }
+    }
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
