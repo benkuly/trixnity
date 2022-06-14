@@ -442,12 +442,9 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(VerificationService::getSelfVerificationMethods.name) {
-        lateinit var scope: CoroutineScope
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
-            scope = CoroutineScope(Dispatchers.Default)
         }
-        afterTest { scope.cancel() }
         should("return ${SelfVerificationMethods.PreconditionsNotMet}, when device keys not fetched yet") {
             store.keys.updateCrossSigningKeys(aliceUserId) {
                 setOf()

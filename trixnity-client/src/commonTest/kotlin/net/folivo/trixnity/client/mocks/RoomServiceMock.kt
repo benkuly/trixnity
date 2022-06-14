@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 class RoomServiceMock : IRoomService {
-    override suspend fun fetchMissingEvents(startEventId: EventId, roomId: RoomId, limit: Long) {
+    override suspend fun fillTimelineGaps(startEventId: EventId, roomId: RoomId, limit: Long) {
         throw NotImplementedError()
     }
 
@@ -30,7 +30,7 @@ class RoomServiceMock : IRoomService {
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        fetchNeighborLimit: Long,
+        limitPerFetch:Long,
     ): StateFlow<TimelineEvent?> {
         return returnGetTimelineEvent
     }
@@ -63,7 +63,8 @@ class RoomServiceMock : IRoomService {
         startFrom: EventId,
         roomId: RoomId,
         direction: GetEvents.Direction,
-        decryptionTimeout: Duration
+        decryptionTimeout: Duration,
+        limitPerFetch:Long,
     ): Flow<StateFlow<TimelineEvent?>> {
         return returnGetTimelineEvents
     }
@@ -71,6 +72,7 @@ class RoomServiceMock : IRoomService {
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
+        limitPerFetch:Long,
     ): Flow<Flow<StateFlow<TimelineEvent?>>?> {
         throw NotImplementedError()
     }

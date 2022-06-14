@@ -295,7 +295,7 @@ class TimelineEventIT {
                             && list.any { it.value?.nextEventId == null }
                 }.also { list ->
                     val last = list.last().value.shouldNotBeNull()
-                    client2.room.fetchMissingEvents(last.eventId, last.roomId)
+                    client2.room.fillTimelineGaps(last.eventId, last.roomId)
                     list.last().first { it?.gap == null }
                 }.mapNotNull { it.value?.removeUnsigned() }
 
@@ -312,7 +312,7 @@ class TimelineEventIT {
         .also { list ->
             println("prevNull: " + list.first { it.value?.previousEventId == null }.value)
             val last = list.last().value.shouldNotBeNull()
-            client1.room.fetchMissingEvents(last.eventId, last.roomId)
+            client1.room.fillTimelineGaps(last.eventId, last.roomId)
             list.last().first { it?.gap == null }
         }
         .mapNotNull { it.value?.removeUnsigned() }
@@ -322,7 +322,7 @@ class TimelineEventIT {
 
     @Test
     fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
-        withTimeout(30_000) {
+        withTimeout(60_000) {
             val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.rooms.joinRoom(room).getOrThrow()
@@ -353,7 +353,7 @@ class TimelineEventIT {
                 content is RoomMessageEventContent && content.body == "99"
             }
             val job = scope2.launch {
-                client2.room.fetchMissingEvents(middleEvent, room, 100)
+                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 100).collect()
             }
             store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
             scope2.cancel()

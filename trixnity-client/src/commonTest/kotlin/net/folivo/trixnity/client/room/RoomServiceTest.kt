@@ -628,7 +628,6 @@ class RoomServiceTest : ShouldSpec({
                 gap = null
             )
             store.roomTimeline.addAll(listOf(event2Timeline))
-            val scope = CoroutineScope(Dispatchers.Default)
             val result = async {
                 cut.getLastTimelineEvent(room).take(3).toList()
             }
@@ -642,7 +641,6 @@ class RoomServiceTest : ShouldSpec({
             result.await()[1] shouldNotBe null
             result.await()[1]?.value shouldBe null
             result.await()[2]?.value shouldBe event2Timeline
-            scope.cancel()
         }
     }
     context(RoomService::sendMessage.name) {
