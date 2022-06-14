@@ -276,14 +276,14 @@ class TimelineEventIT {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
-            println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ${expectedTimeline[18].eventId.full}")
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(
                     expectedTimeline[18].eventId,
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
-                ).debounce(1000).onEach { list ->
+                ).debounce(100).onEach { list ->
                     println("#################### ${list.size}")
                     list.forEachIndexed { index, event -> // FIXME
                         println("+" + expectedTimeline.getOrNull(index))

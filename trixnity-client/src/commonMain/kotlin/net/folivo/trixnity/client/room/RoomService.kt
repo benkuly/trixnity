@@ -47,6 +47,7 @@ import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -77,18 +78,6 @@ interface IRoomService {
         decryptionTimeout: Duration = INFINITE,
     ): Flow<StateFlow<TimelineEvent?>?>
 
-    suspend fun getPreviousTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE,
-    ): StateFlow<TimelineEvent?>?
-
-    suspend fun getNextTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE,
-    ): StateFlow<TimelineEvent?>?
-
     /**
      * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
      * at the end of the timeline.
@@ -103,6 +92,7 @@ interface IRoomService {
         roomId: RoomId,
         direction: Direction = BACKWARDS,
         decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
     ): Flow<StateFlow<TimelineEvent?>>
 
@@ -123,6 +113,7 @@ interface IRoomService {
     suspend fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
     ): Flow<Flow<StateFlow<TimelineEvent?>>?>
 
@@ -987,7 +978,14 @@ class RoomService(
                     val lastEventId = store.room.get(roomId).value?.lastEventId
                     if (lastEventId != null) {
                         log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
-                        getTimelineEvents(lastEventId, roomId, BACKWARDS, Duration.ZERO, limitPerFetch) // FIXME test
+                        getTimelineEvents(
+                            lastEventId,
+                            roomId,
+                            BACKWARDS,
+                            ZERO,
+                            fetchTimeout,
+                            limitPerFetch
+                        ) // FIXME test
                             .map { it.value }
                             .first { it?.eventId == eventId }
                     } else null
@@ -1061,27 +1059,12 @@ class RoomService(
         }.distinctUntilChanged()
     }
 
-    override suspend fun getPreviousTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<TimelineEvent?>? {
-        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
-    }
-
-    override suspend fun getNextTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<TimelineEvent?>? {
-        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
-    }
-
     override suspend fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: Direction,
         decryptionTimeout: Duration,
+        fetchTimeout: Duration,
         limitPerFetch: Long,
     ): Flow<StateFlow<TimelineEvent?>> =
         channelFlow {
@@ -1091,7 +1074,7 @@ class RoomService(
                         || direction == BACKWARDS && this.hasGapBefore)
 
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> =
-                getTimelineEvent(startFrom, roomId, this, decryptionTimeout)
+                getTimelineEvent(startFrom, roomId, this, decryptionTimeout, fetchTimeout, limitPerFetch)
             send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
@@ -1105,9 +1088,10 @@ class RoomService(
                     }
                     .filter { it.gap.hasGap().not() }
                     .map { currentTimelineEvent ->
+                        println("$direction ${startFrom.full}: ${currentTimelineEvent.eventId.full}")
                         when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
-                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
+                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
                         }
                     }
                     .filterNotNull()
@@ -1121,13 +1105,14 @@ class RoomService(
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
+        fetchTimeout: Duration,
         limitPerFetch: Long,
     ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
         store.room.get(roomId)
             .mapLatest { it?.lastEventId }
             .distinctUntilChanged()
             .mapLatest {
-                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout, limitPerFetch)
+                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
                 else null
             }
 
