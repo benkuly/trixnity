@@ -188,20 +188,24 @@ class RoomServiceTimelineTest : ShouldSpec({
                     timeline {
                         fragment {
                             +event1
+                            +event2
+                            +event3
                             gap("oldPrevious")
                         }
                     }
                 )
-                cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", "next", false)
-                storeTimeline(event1) shouldContainExactly timeline {
+                cut.addEventsToTimelineAtEnd(room, listOf(event2), "previous", "next", false)
+                storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         +event1
+                        +event2
+                        +event3
                         gap("oldPrevious")
                     }
                 }
             }
             should("filter duplicate events") {
-                store.room.update(room) { Room(roomId = room, lastEventId = event1.id) }
+                store.room.update(room) { Room(roomId = room, lastEventId = null) }
                 cut.addEventsToTimelineAtEnd(room, listOf(event1, event1), "previous", "next", false)
                 storeTimeline(event1) shouldContainExactly timeline {
                     fragment {
@@ -554,11 +558,41 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     ) {
                         GetEventContext.Response(
-                            start = "end-2",
-                            end = "start-4",
+                            start = "after-2",
+                            end = "after-4",
                             event = event3,
                             eventsBefore = listOf(event2),
                             eventsAfter = listOf(event4)
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event2.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-2",
+                            end = "after-2",
+                            event = event2,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event4.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-4",
+                            end = "after-4",
+                            event = event4,
                         )
                     }
                 }
@@ -566,10 +600,10 @@ class RoomServiceTimelineTest : ShouldSpec({
                     fragment {
                         +event1
                         +event2
-                        gap("end-2")
+                        gap("after-2")
                     }
                     fragment {
-                        gap("start-4")
+                        gap("before-4")
                         +event4
                         +event5
                     }
@@ -597,11 +631,41 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     ) {
                         GetEventContext.Response(
-                            start = "before-1",
-                            end = "after-5",
+                            start = "before-2",
+                            end = "after-4",
                             event = event3,
                             eventsBefore = listOf(event1, event2), // server reordered events
                             eventsAfter = listOf(event5, event4), // server reordered events
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event2.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "other-before-2", // because it's position has been changed
+                            end = "other-after-2",
+                            event = event2,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event4.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "other-before-4", // because it's position has been changed
+                            end = "other-after-4",
+                            event = event4,
                         )
                     }
                 }
@@ -618,13 +682,15 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 })
                 cut.fetchMissingEvents(event3.id, room)
-                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                storeTimeline(event2, event1, event3, event5, event4) shouldContainExactly timeline {
                     fragment {
-                        +event1
+                        gap("before-2")
                         +event2
+                        +event1
                         +event3
-                        +event4
                         +event5
+                        +event4
+                        gap("after-4")
                     }
                 }
             }
@@ -640,34 +706,64 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     ) {
                         GetEventContext.Response(
-                            start = "end-2",
-                            end = "start-4",
+                            start = "after-2",
+                            end = "before-4",
                             event = event3,
                             eventsBefore = listOf(event2),
                             eventsAfter = listOf(event4)
                         )
                     }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event2.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-2",
+                            end = "after-2",
+                            event = event2,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event4.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-4",
+                            end = "after-4",
+                            event = event4,
+                        )
+                    }
                 }
                 store.roomTimeline.addAll(timeline {
                     fragment {
-                        gap("start-2")
+                        gap("before-2")
                         +event2
-                        gap("end-2")
+                        gap("after-2")
                     }
                     fragment {
-                        gap("start-4")
+                        gap("before-4")
                         +event4
-                        gap("end-4")
+                        gap("after-4")
                     }
                 })
                 cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event2, event3, event4) shouldContainExactly timeline {
                     fragment {
-                        gap("start-2")
+                        gap("before-2")
                         +event2
                         +event3
                         +event4
-                        gap("end-4")
+                        gap("after-4")
                     }
                 }
             }
@@ -683,19 +779,49 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     ) {
                         GetEventContext.Response(
-                            start = "start",
-                            end = "end",
+                            start = "before-1",
+                            end = "after-5",
                             event = event3,
                             eventsBefore = listOf(event2, event1),
                             eventsAfter = listOf(event4, event5)
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event1.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-1",
+                            end = "after-1",
+                            event = event1,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event5.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-5",
+                            end = "after-5",
+                            event = event5,
                         )
                     }
                 }
                 store.roomTimeline.addAll(timeline {
                     fragment {
                         +event1
-                        gap("end-1")
-                        gap("start-5")
+                        gap("after-1")
+                        gap("before-5")
                         +event5
                     }
                 })
@@ -722,34 +848,64 @@ class RoomServiceTimelineTest : ShouldSpec({
                         )
                     ) {
                         GetEventContext.Response(
-                            start = "start",
-                            end = "end",
+                            start = "before-1",
+                            end = "after-5",
                             event = event3,
                             eventsBefore = listOf(event2, event1),
                             eventsAfter = listOf(event4, event5)
                         )
                     }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event1.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-1",
+                            end = "after-1",
+                            event = event1,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event5.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-5",
+                            end = "after-5",
+                            event = event5,
+                        )
+                    }
                 }
                 store.roomTimeline.addAll(timeline {
                     fragment {
-                        gap("start-1")
+                        gap("before-1")
                         +event1
-                        gap("end-1")
-                        gap("start-5")
+                        gap("after-1")
+                        gap("before-5")
                         +event5
-                        gap("end-5")
+                        gap("after-5")
                     }
                 })
                 cut.fetchMissingEvents(event3.id, room)
                 storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
                     fragment {
-                        gap("start-1")
+                        gap("before-1")
                         +event1
                         +event2
                         +event3
                         +event4
                         +event5
-                        gap("end-5")
+                        gap("after-5")
                     }
                 }
             }
@@ -1241,6 +1397,38 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 }
             }
+            should("should ignore start event in chunks") {
+                store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event3.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-2",
+                            end = "after-4",
+                            event = event3,
+                            eventsBefore = listOf(event3, event2),
+                            eventsAfter = listOf(event4, event4)
+                        )
+                    }
+                }
+                cut.fetchMissingEvents(event3.id, room)
+                storeTimeline(event2, event3, event4) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-2")
+                        +event2
+                        +event3
+                        +event4
+                        gap("after-4")
+                    }
+                }
+            }
             should("should handle events in different order") {
                 store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
@@ -1256,9 +1444,24 @@ class RoomServiceTimelineTest : ShouldSpec({
                     ) {
                         GetEvents.Response(
                             start = "before-3",
-                            end = "before-1",
+                            end = "before-2",
                             chunk = listOf(event1, event2),
                             state = listOf()
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event2.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "other-before-2",
+                            end = "other-after-2",
+                            event = event2,
                         )
                     }
                     matrixJsonEndpoint(
@@ -1273,9 +1476,24 @@ class RoomServiceTimelineTest : ShouldSpec({
                     ) {
                         GetEvents.Response(
                             start = "after-3",
-                            end = "after-5",
+                            end = "after-4",
                             chunk = listOf(event5, event4),
                             state = listOf()
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event4.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "other-before-4",
+                            end = "other-after-4",
+                            event = event4,
                         )
                     }
                 }
@@ -1299,15 +1517,15 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 })
                 cut.fetchMissingEvents(event3.id, room)
-                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                storeTimeline(event2, event1, event3, event5, event4) shouldContainExactly timeline {
                     fragment {
-                        gap("before-1")
-                        +event1
+                        gap("before-2")
                         +event2
+                        +event1
                         +event3
-                        +event4
                         +event5
-                        gap("after-5")
+                        +event4
+                        gap("after-4")
                     }
                 }
             }
@@ -1326,26 +1544,39 @@ class RoomServiceTimelineTest : ShouldSpec({
                     ) {
                         GetEvents.Response(
                             start = "before-2",
-                            end = "after-1",
+                            end = "before-1",
                             chunk = listOf(event4, event1),
                             state = listOf()
                         )
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        GetEvents(
+                        GetEventContext(
                             room.e(),
-                            "after-4",
-                            dir = FORWARDS,
-                            limit = 20,
+                            event4.id.e(),
+                            limit = 0,
                             filter = LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
-                        GetEvents.Response(
-                            start = "after-4",
-                            end = "before-5",
-                            chunk = listOf(event2, event5),
-                            state = listOf()
+                        GetEventContext.Response(
+                            start = "other-before-4",
+                            end = "other-after-4",
+                            event = event4,
+                        )
+                    }
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event1.id.e(),
+                            limit = 0,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-1",
+                            end = "after-1",
+                            event = event1,
                         )
                     }
                 }
@@ -1369,14 +1600,63 @@ class RoomServiceTimelineTest : ShouldSpec({
                     }
                 })
                 cut.fetchMissingEvents(event2.id, room)
-                cut.fetchMissingEvents(event4.id, room)
-                storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                storeTimeline(event1, event4, event2, event3, event5) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-1")
+                        +event1
+                        +event4
+                        +event2
+                        +event3
+                        gap("after-4")
+                    }
+                    fragment {
+                        gap("before-5")
+                        +event5
+                        gap("after-5")
+                    }
+                }
+            }
+            should("should move events within timeline") {
+                store.room.update(room) { Room(roomId = room, membership = Membership.JOIN) }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(
+                        json, mappings,
+                        GetEventContext(
+                            room.e(),
+                            event4.id.e(),
+                            limit = 20,
+                            filter = LAZY_LOAD_MEMBERS_FILTER
+                        )
+                    ) {
+                        GetEventContext.Response(
+                            start = "before-4",
+                            end = "after-5",
+                            event = event4,
+                            eventsAfter = listOf(event2, event5),
+                        )
+                    }
+                }
+                store.roomTimeline.addAll(timeline {
                     fragment {
                         gap("before-1")
                         +event1
                         +event2
                         +event3
+                        gap("after-3")
+                    }
+                })
+                cut.fetchMissingEvents(event4.id, room)
+                storeTimeline(event1, event3, event4, event2, event5) shouldContainExactly timeline {
+                    fragment {
+                        gap("before-1")
+                        +event1
+                        +event3
+                        gap("after-3")
+                    }
+                    fragment {
+                        gap("before-4")
                         +event4
+                        +event2
                         +event5
                         gap("after-5")
                     }

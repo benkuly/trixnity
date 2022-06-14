@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -231,15 +232,7 @@ class TimelineEventIT {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }?.value?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
-                .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                .first { list -> list.any { it.value?.previousEventId == null } }
-                .also { list ->
-                    val last = list.last().value.shouldNotBeNull()
-                    client1.room.fetchMissingEvents(last.eventId, last.roomId)
-                    list.last().first { it?.gap == null }
-                }
-                .mapNotNull { it.value?.removeUnsigned() }
+            val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
             client2.startSync().getOrThrow()
             client2.room.getLastTimelineEvent(room).first {
@@ -276,15 +269,7 @@ class TimelineEventIT {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }?.value?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
-                .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                .first { list -> list.any { it.value?.previousEventId == null } }
-                .also { list ->
-                    val last = list.last().value.shouldNotBeNull()
-                    client1.room.fetchMissingEvents(last.eventId, last.roomId)
-                    list.last().first { it?.gap == null }
-                }
-                .mapNotNull { it.value?.removeUnsigned() }
+            val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
             client2.startSync().getOrThrow()
             client2.room.getLastTimelineEvent(room).first {
@@ -294,7 +279,7 @@ class TimelineEventIT {
             println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(
-                    expectedTimeline.last().eventId,
+                    expectedTimeline[18].eventId,
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
@@ -302,7 +287,7 @@ class TimelineEventIT {
                     println("#################### ${list.size}")
                     list.forEachIndexed { index, event -> // FIXME
                         println("+" + expectedTimeline.getOrNull(index))
-                        println("-" + event.value)
+                        println("-" + event.value?.removeUnsigned())
                     }
                 }.first { list ->
                     list.size > 31
@@ -317,6 +302,23 @@ class TimelineEventIT {
             timelineFromGappySync shouldBe expectedTimeline
         }
     }
+
+    private suspend fun MatrixClient.getExpectedTimelineToBeginning(
+        startFrom: EventId,
+        roomId: RoomId
+    ) = room.getTimelineEvents(startFrom, roomId)
+        .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
+        .first { list -> list.any { it.value?.previousEventId == null } }
+        .also { list ->
+            println("prevNull: " + list.first { it.value?.previousEventId == null }.value)
+            val last = list.last().value.shouldNotBeNull()
+            client1.room.fetchMissingEvents(last.eventId, last.roomId)
+            list.last().first { it?.gap == null }
+        }
+        .mapNotNull { it.value?.removeUnsigned() }
+        .onEach {
+            println(it) // FIXME
+        }
 
     @Test
     fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
