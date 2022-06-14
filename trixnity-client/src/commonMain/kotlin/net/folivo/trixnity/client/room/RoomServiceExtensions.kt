@@ -6,9 +6,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
-import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -16,6 +13,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.minutes
 
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
@@ -83,22 +81,6 @@ suspend fun RoomService.getNextTimelineEvent(
 ): StateFlow<TimelineEvent?>? {
     return event.nextEventId?.let {
         getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
-    }
-}
-
-suspend fun IRoomService.getTimelineEvents(
-    startFrom: EventId,
-    roomId: RoomId,
-    beforeInclusive: StateFlow<Int>,
-    afterInclusive: StateFlow<Int>,
-    decryptionTimeout: Duration = Duration.INFINITE,
-): Flow<List<StateFlow<TimelineEvent?>>> {
-    return combine(
-        getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
-        getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
-            .map { it.drop(1).reversed() },
-    ) { beforeElements, afterElements ->
-        afterElements + beforeElements
     }
 }
 

@@ -88,17 +88,22 @@ create-nexus-staging-repo:
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
-    - apt-get update && apt-get install -y curl
+    - apt-get update && apt-get install -y curl jq
     - >
-        jsonOutput=$(
-          curl -s --request POST -u "$OSSRH_USERNAME:$INPUT_PASSWORD"
-            --url https://oss.sonatype.org/service/local/staging/profiles/net.folivo/start
-            --header 'Accept: application/json'
-            --header 'Content-Type: application/json'
-            --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
+        jsonOutput=$(curl -s
+        --request POST -u "$OSSRH_USERNAME:$OSSRH_PASSWORD"
+        --url https://oss.sonatype.org/service/local/staging/profiles/65b35e28422b2/start
+        --header 'Accept: application/json'
+        --header 'Content-Type: application/json'
+        --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
         )
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
-    - echo $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
+    - >
+        if [ -z "$OSSRH_REPOSITORY_ID" ]; then
+        echo "Error while creating the staging repository. Response: $jsonOutput";
+        exit 1;
+        fi
+    - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
 # publish-mac:
 #   stage: publish-mac
@@ -126,13 +131,12 @@ publish-linux:
       command: [ "--tls=false" ]
   cache:
     - *build-cache
-  variables: *docker-variables
   dependencies:
     - create-nexus-staging-repo
 #     - publish-mac
   rules:
     - *if-release
   script:
-    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
     - ./gradlew publish --stacktrace

@@ -71,6 +71,16 @@ class RoomServiceMock : IRoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
+    override suspend fun getTimelineEventsAround(
+        startFrom: EventId,
+        roomId: RoomId,
+        beforeInclusive: StateFlow<Int>,
+        afterInclusive: StateFlow<Int>,
+        decryptionTimeout: Duration
+    ): Flow<List<StateFlow<TimelineEvent?>>> {
+        throw NotImplementedError()
+    }
+
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         throw NotImplementedError()
     }

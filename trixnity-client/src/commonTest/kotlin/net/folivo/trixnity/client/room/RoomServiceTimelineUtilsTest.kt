@@ -264,7 +264,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val afterInclusive = MutableStateFlow(2)
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
                 localTestScope.launch {
-                    cut.getTimelineEvents(event2.id, room, beforeInclusive, afterInclusive)
+                    cut.getTimelineEventsAround(event2.id, room, beforeInclusive, afterInclusive)
                         .collect { result.value = it.mapNotNull { it.value } }
                 }
 
