@@ -149,6 +149,8 @@ interface IRoomService {
         beforeInclusive: StateFlow<Int>,
         afterInclusive: StateFlow<Int>,
         decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): Flow<List<StateFlow<TimelineEvent?>>>
 
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
@@ -1165,10 +1167,14 @@ class RoomService(
         beforeInclusive: StateFlow<Int>,
         afterInclusive: StateFlow<Int>,
         decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
     ): Flow<List<StateFlow<TimelineEvent?>>> {
         return combine(
-            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
-            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
+            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
+                .toFlowList(beforeInclusive),
+            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
+                .toFlowList(afterInclusive)
                 .map { it.drop(1).reversed() },
         ) { beforeElements, afterElements ->
             afterElements + beforeElements
