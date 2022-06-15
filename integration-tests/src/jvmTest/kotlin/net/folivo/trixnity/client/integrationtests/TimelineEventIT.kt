@@ -319,30 +319,30 @@ class TimelineEventIT {
 
             client2.stopSync(true)
 
-            (0..99).forEach {
+            (0..199).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
             val lastEvent = client1.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "99"
+                content is RoomMessageEventContent && content.body == "199"
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(lastEvent, room)
-                .toFlowList(MutableStateFlow(100), MutableStateFlow(100))
+                .toFlowList(MutableStateFlow(200), MutableStateFlow(200))
                 .first()
                 .mapNotNull { it.value?.removeUnsigned() }
 
-            expectedTimeline shouldHaveSize 100
+            expectedTimeline shouldHaveSize 200
 
-            val middleEvent = expectedTimeline[50].eventId
+            val middleEvent = expectedTimeline[150].eventId
 
             client2.startSync().getOrThrow()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "99"
+                content is RoomMessageEventContent && content.body == "199"
             }
             val job = scope2.launch {
-                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 100).collect()
+                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 200).collect()
             }
             store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
             scope2.cancel()
