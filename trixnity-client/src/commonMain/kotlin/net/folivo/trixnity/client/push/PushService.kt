@@ -94,7 +94,7 @@ class PushService(
                 )
             }.filterNotNull()
             .collect { send(it) }
-    }
+    }.buffer(0)
 
     private fun extractDecryptedEvent(timelineEvent: TimelineEvent): Event<*>? {
         val originalEvent = timelineEvent.event

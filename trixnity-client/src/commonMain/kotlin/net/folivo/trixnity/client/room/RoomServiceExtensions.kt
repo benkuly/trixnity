@@ -13,8 +13,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.minutes
 
 suspend inline fun <reified C : RoomAccountDataEventContent> IRoomService.getAccountData(
     roomId: RoomId,
@@ -59,30 +57,6 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration =
             else combine(it.values) { transform -> transform }
         }
         .mapLatest { it.filterNotNull().toSet() }
-
-suspend fun RoomService.getPreviousTimelineEvent(
-    event: TimelineEvent,
-    coroutineScope: CoroutineScope,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
-): StateFlow<TimelineEvent?>? {
-    return event.previousEventId?.let {
-        getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
-    }
-}
-
-suspend fun RoomService.getNextTimelineEvent(
-    event: TimelineEvent,
-    coroutineScope: CoroutineScope,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
-): StateFlow<TimelineEvent?>? {
-    return event.nextEventId?.let {
-        getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
-    }
-}
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by `maxSize`.

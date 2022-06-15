@@ -285,7 +285,7 @@ val olmJNATargetsTasks = olmJNATargets.flatMap { target ->
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)
-        doLast {// FIXME
+        doLast {
             target.libDir.resolve("libolm.dll").renameTo(target.libDir.resolve("olm.dll"))
         }
     }

@@ -10,7 +10,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.room.getTimelineEvents
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.Store
@@ -276,28 +275,22 @@ class TimelineEventIT {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
-            println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ${expectedTimeline[18].eventId.full}")
             val timelineFromGappySync =
-                client2.room.getTimelineEvents(
+                client2.room.getTimelineEventsAround(
                     expectedTimeline[18].eventId,
                     room,
                     MutableStateFlow(100),
                     MutableStateFlow(100)
-                ).debounce(100).onEach { list ->
-                    println("#################### ${list.size}")
-                    list.forEachIndexed { index, event -> // FIXME
-                        println("+" + expectedTimeline.getOrNull(index))
-                        println("-" + event.value?.removeUnsigned())
-                    }
-                }.first { list ->
-                    list.size > 31
-                            && list.any { it.value?.previousEventId == null }
-                            && list.any { it.value?.nextEventId == null }
-                }.also { list ->
-                    val last = list.last().value.shouldNotBeNull()
-                    client2.room.fillTimelineGaps(last.eventId, last.roomId)
-                    list.last().first { it?.gap == null }
-                }.mapNotNull { it.value?.removeUnsigned() }
+                ).debounce(100)
+                    .first { list ->
+                        list.size > 31
+                                && list.mapNotNull { it.value }.any { it.previousEventId == null }
+                                && list.mapNotNull { it.value }.any { it.nextEventId == null }
+                    }.also { list ->
+                        val last = list.last().value.shouldNotBeNull()
+                        while (list.last().value?.gap != null)
+                            client2.room.fillTimelineGaps(last.eventId, last.roomId)
+                    }.mapNotNull { it.value?.removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -308,17 +301,13 @@ class TimelineEventIT {
         roomId: RoomId
     ) = room.getTimelineEvents(startFrom, roomId)
         .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-        .first { list -> list.any { it.value?.previousEventId == null } }
+        .first { list -> list.mapNotNull { it.value }.any { it.previousEventId == null } }
         .also { list ->
-            println("prevNull: " + list.first { it.value?.previousEventId == null }.value)
             val last = list.last().value.shouldNotBeNull()
-            client1.room.fillTimelineGaps(last.eventId, last.roomId)
-            list.last().first { it?.gap == null }
+            while (list.last().value?.gap != null)
+                client1.room.fillTimelineGaps(last.eventId, last.roomId)
         }
         .mapNotNull { it.value?.removeUnsigned() }
-        .onEach {
-            println(it) // FIXME
-        }
 
     @Test
     fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {

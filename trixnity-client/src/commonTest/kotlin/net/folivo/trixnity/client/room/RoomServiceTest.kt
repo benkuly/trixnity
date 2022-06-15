@@ -31,7 +31,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.client.SyncState.STARTED
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEventContext
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -440,11 +440,13 @@ class RoomServiceTest : ShouldSpec({
         )
 
         context("event not in database") {
-            should("fetch event from server") {
+            should("try fetch event from server") {
+                val lastEventId = EventId("\$eventWorld")
+                store.room.update(room) { simpleRoom.copy(lastEventId = lastEventId) }
                 currentSyncState.value = RUNNING
                 val event = MessageEvent(
-                    TextMessageEventContent("hi"),
-                    EventId("\$event1"),
+                    TextMessageEventContent("hello"),
+                    eventId,
                     UserId("sender", "server"),
                     room,
                     1
@@ -452,20 +454,40 @@ class RoomServiceTest : ShouldSpec({
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
                         json, mappings,
-                        GetEventContext(
+                        GetEvents(
                             room.e(),
-                            eventId.e(),
+                            "start",
+                            dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
                             filter = RoomService.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
-                        GetEventContext.Response(
+                        GetEvents.Response(
                             start = "start",
                             end = "end",
-                            event = event
+                            chunk = listOf(event),
+                            state = listOf()
                         )
                     }
                 }
+                store.roomTimeline.addAll(
+                    listOf(
+                        TimelineEvent(
+                            event = MessageEvent(
+                                TextMessageEventContent("world"),
+                                lastEventId,
+                                UserId("sender", "server"),
+                                room,
+                                0
+                            ),
+                            roomId = room,
+                            eventId = lastEventId,
+                            previousEventId = null,
+                            nextEventId = null,
+                            gap = TimelineEvent.Gap.GapBefore("start")
+                        )
+                    )
+                )
                 val timelineEventFlow = cut.getTimelineEvent(eventId, room, this)
                 timelineEventFlow.filterNotNull().first() shouldBe
                         TimelineEvent(
@@ -473,8 +495,8 @@ class RoomServiceTest : ShouldSpec({
                             roomId = room,
                             eventId = eventId,
                             previousEventId = null,
-                            nextEventId = null,
-                            gap = TimelineEvent.Gap.GapBoth("start", "end")
+                            nextEventId = lastEventId,
+                            gap = TimelineEvent.Gap.GapBefore("end")
                         )
             }
         }

@@ -168,7 +168,7 @@ class SyncApiClient(
                         val isInitialSync = currentBatchToken.value == null
                         if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
 
-                        while (currentCoroutineContext().isActive && _currentSyncState.value != STOPPING) {
+                        while (isActive && _currentSyncState.value != STOPPING) {
                             try {
                                 syncAndResponse(
                                     currentBatchToken = currentBatchToken,

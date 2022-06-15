@@ -35,6 +35,26 @@ class RoomServiceMock : IRoomService {
         return returnGetTimelineEvent
     }
 
+    override suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long
+    ): StateFlow<TimelineEvent?>? {
+        throw NotImplementedError()
+    }
+
+    override suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long
+    ): StateFlow<TimelineEvent?>? {
+        throw NotImplementedError()
+    }
+
     override suspend fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
@@ -74,9 +94,11 @@ class RoomServiceMock : IRoomService {
     override suspend fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
-        beforeInclusive: StateFlow<Int>,
-        afterInclusive: StateFlow<Int>,
-        decryptionTimeout: Duration
+        maxSizeBefore: StateFlow<Int>,
+        maxSizeAfter: StateFlow<Int>,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long
     ): Flow<List<StateFlow<TimelineEvent?>>> {
         throw NotImplementedError()
     }
