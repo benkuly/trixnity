@@ -62,6 +62,17 @@ class OlmInboundGroupSessionTest {
     }
 
     @Test
+    fun decrypt_exceptionOnUnknownMessageKey() = runTest {
+        freeAfter(OlmOutboundGroupSession.create()) { aliceOutboundSession ->
+            val encryptedMessage = aliceOutboundSession.encrypt("Hello from Alice!")
+            freeAfter(OlmInboundGroupSession.create(aliceOutboundSession.sessionKey)) { bobInboundSession ->
+                shouldThrow<OlmLibraryException> { bobInboundSession.decrypt(encryptedMessage) }
+                    .message shouldBe "UNKNOWN_MESSAGE_INDEX"
+            }
+        }
+    }
+
+    @Test
     fun decrypt_withInvalidBase64() = runTest {
         val sessionKey =
             "AgAAAAycZE6AekIctJWYxd2AWLOY15YmxZODm/WkgbpWkyycp6ytSp/R+wo84jRrzBNWmv6ySLTZ9R0EDOk9VI2eZyQ6Efdwyo1mAvrWvTkZl9yALPdkOIVHywyG65f1SNiLrnsln3hgsT1vUrISGyKtsljoUgQpr3JDPEhD0ilAi63QBjhnGCW252b+7nF+43rb6O6lwm93LaVwe2341Gdp6EkhTUvetALezEqDOtKN00wVqAbq0RQAnUJIowxHbMswg+FyoR1K1oCjnVEoF23O9xlAn5g1XtuBZP3moJlR2lwsBA"
