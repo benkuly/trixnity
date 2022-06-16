@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.matchers.collections.shouldHaveAtMostSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -18,9 +17,10 @@ import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -40,7 +40,6 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class TimelineEventIT {
@@ -164,7 +163,7 @@ class TimelineEventIT {
     }
 
     @Test
-    fun shouldHandleGappySyncs(): Unit = runBlocking {
+    fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
             val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
@@ -214,36 +213,8 @@ class TimelineEventIT {
         }
     }
 
-    @OptIn(FlowPreview::class)
     @Test
-    fun shouldReachStartOfTimeline(): Unit = runBlocking {
-        withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client1.room.sendMessage(room) { text("hi") }
-
-            val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "hi"
-            }?.value?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
-                .toFlowList(MutableStateFlow(30))
-                .debounce(1.seconds)
-                .first { timeline -> timeline.mapNotNull { it.value }.any { it.event.content is CreateEventContent } }
-                .mapNotNull { it.value?.removeUnsigned() }
-
-            expectedTimeline shouldHaveAtMostSize 20
-
-            expectedTimeline.last().apply {
-                event.content.shouldBeInstanceOf<CreateEventContent>()
-                nextEventId shouldNotBe null
-                previousEventId shouldBe null
-                gap shouldBe null
-            }
-        }
-    }
-
-    @Test
-    fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
+    fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
             val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
@@ -252,30 +223,126 @@ class TimelineEventIT {
 
             client2.stopSync(true)
 
-            (0..99).forEach {
+            (0..29).forEach {
+                client1.room.sendMessage(room) { text(it.toString()) }
+                delay(50) // give it time to sync back
+            }
+            val startFrom = client1.room.getLastTimelineEvent(room).first {
+                val content = it?.value?.content?.getOrNull()
+                content is RoomMessageEventContent && content.body == "29"
+            }?.value?.eventId.shouldNotBeNull()
+            val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
+
+            client2.startSync().getOrThrow()
+            client2.room.getLastTimelineEvent(room).first {
+                val content = it?.value?.content?.getOrNull()
+                content is RoomMessageEventContent && content.body == "29"
+            }
+            val timelineFromGappySync =
+                client2.room.getTimelineEvents(expectedTimeline.last().eventId, room, direction = FORWARDS)
+                    .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
+                    .first { list -> list.any { it.value?.nextEventId == null } }
+                    .mapNotNull { it.value?.removeUnsigned() }
+
+            // drop because the first event may have a gap due to the FORWARDS direction
+            timelineFromGappySync.reversed().dropLast(1) shouldBe expectedTimeline.dropLast(1)
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    @Test
+    fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
+        withTimeout(30_000) {
+            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.room.getById(room).first { it?.membership == JOIN }
+
+            client2.stopSync(true)
+
+            (0..29).forEach {
+                client1.room.sendMessage(room) { text(it.toString()) }
+                delay(50) // give it time to sync back
+            }
+            val startFrom = client1.room.getLastTimelineEvent(room).first {
+                val content = it?.value?.content?.getOrNull()
+                content is RoomMessageEventContent && content.body == "29"
+            }?.value?.eventId.shouldNotBeNull()
+            val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
+
+            client2.startSync().getOrThrow()
+            client2.room.getLastTimelineEvent(room).first {
+                val content = it?.value?.content?.getOrNull()
+                content is RoomMessageEventContent && content.body == "29"
+            }
+            val timelineFromGappySync =
+                client2.room.getTimelineEventsAround(
+                    expectedTimeline[18].eventId,
+                    room,
+                    MutableStateFlow(100),
+                    MutableStateFlow(100)
+                ).debounce(100)
+                    .first { list ->
+                        list.size > 31
+                                && list.mapNotNull { it.value }.any { it.previousEventId == null }
+                                && list.mapNotNull { it.value }.any { it.nextEventId == null }
+                    }.also { list ->
+                        val last = list.last().value.shouldNotBeNull()
+                        while (list.last().value?.gap != null)
+                            client2.room.fillTimelineGaps(last.eventId, last.roomId)
+                    }.mapNotNull { it.value?.removeUnsigned() }
+
+            timelineFromGappySync shouldBe expectedTimeline
+        }
+    }
+
+    private suspend fun MatrixClient.getExpectedTimelineToBeginning(
+        startFrom: EventId,
+        roomId: RoomId
+    ) = room.getTimelineEvents(startFrom, roomId)
+        .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
+        .first { list -> list.mapNotNull { it.value }.any { it.previousEventId == null } }
+        .also { list ->
+            val last = list.last().value.shouldNotBeNull()
+            while (list.last().value?.gap != null)
+                client1.room.fillTimelineGaps(last.eventId, last.roomId)
+        }
+        .mapNotNull { it.value?.removeUnsigned() }
+
+    @Test
+    fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
+        withTimeout(60_000) {
+            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.room.getById(room).first { it?.membership == JOIN }
+
+            client2.stopSync(true)
+
+            (0..199).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
             val lastEvent = client1.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "99"
+                content is RoomMessageEventContent && content.body == "199"
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(lastEvent, room)
-                .toFlowList(MutableStateFlow(100), MutableStateFlow(100))
+                .toFlowList(MutableStateFlow(200), MutableStateFlow(200))
                 .first()
                 .mapNotNull { it.value?.removeUnsigned() }
 
-            expectedTimeline shouldHaveSize 100
+            expectedTimeline shouldHaveSize 200
 
-            val middleEvent = expectedTimeline[50].eventId
+            val middleEvent = expectedTimeline[150].eventId
 
             client2.startSync().getOrThrow()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "99"
+                content is RoomMessageEventContent && content.body == "199"
             }
-            val job=scope2.launch {
-                client2.room.fetchMissingEvents(middleEvent, room, 100)
+            val job = scope2.launch {
+                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 200).collect()
             }
             store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
             scope2.cancel()

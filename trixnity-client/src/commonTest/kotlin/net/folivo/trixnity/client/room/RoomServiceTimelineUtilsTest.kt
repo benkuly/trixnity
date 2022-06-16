@@ -237,12 +237,13 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
         }
         context("get timeline events around") {
-            val event3 = encryptedEvent(3)
+            val newEvent3 = encryptedEvent(3)
             val event4 = encryptedEvent(4)
-            val timelineEvent3 = TimelineEvent(
-                event = event3,
+            val newTimelineEvent1 = timelineEvent1.copy(gap = null)
+            val newTimelineEvent3 = TimelineEvent(
+                event = newEvent3,
                 roomId = room,
-                eventId = event3.id,
+                eventId = newEvent3.id,
                 previousEventId = event2.id,
                 nextEventId = event4.id,
                 gap = null
@@ -251,42 +252,49 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 event = event4,
                 roomId = room,
                 eventId = event4.id,
-                previousEventId = event3.id,
+                previousEventId = newEvent3.id,
                 nextEventId = null,
-                gap = TimelineEvent.Gap.GapAfter("4")
+                gap = null
             )
             beforeTest {
-                store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3, timelineEvent4))
+                store.roomTimeline.addAll(
+                    listOf(
+                        newTimelineEvent1,
+                        timelineEvent2,
+                        newTimelineEvent3,
+                        timelineEvent4
+                    )
+                )
             }
 
             should("get the event '2', it's predecessor and successor") {
-                val beforeInclusive = MutableStateFlow(2)
-                val afterInclusive = MutableStateFlow(2)
+                val beforeMaxSize = MutableStateFlow(1)
+                val afterMaxSize = MutableStateFlow(1)
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
                 localTestScope.launch {
-                    cut.getTimelineEventsAround(event2.id, room, beforeInclusive, afterInclusive)
+                    cut.getTimelineEventsAround(event2.id, room, beforeMaxSize, afterMaxSize)
                         .collect { result.value = it.mapNotNull { it.value } }
                 }
 
                 result.first { it?.size == 3 } shouldBe listOf(
-                    timelineEvent3,
+                    newTimelineEvent3,
                     timelineEvent2,
-                    timelineEvent1,
+                    newTimelineEvent1,
                 )
 
-                beforeInclusive.value = 3
+                beforeMaxSize.value = 2
                 result.first { it?.size == 3 } shouldBe listOf(
-                    timelineEvent3,
+                    newTimelineEvent3,
                     timelineEvent2,
-                    timelineEvent1,
+                    newTimelineEvent1,
                 )
 
-                afterInclusive.value = 3
+                afterMaxSize.value = 2
                 result.first { it?.size == 4 } shouldBe listOf(
                     timelineEvent4,
-                    timelineEvent3,
+                    newTimelineEvent3,
                     timelineEvent2,
-                    timelineEvent1,
+                    newTimelineEvent1,
                 )
             }
         }

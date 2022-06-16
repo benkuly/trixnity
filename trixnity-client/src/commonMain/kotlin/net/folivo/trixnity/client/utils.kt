@@ -111,7 +111,7 @@ suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(
             else onError(it)
         }
 
-    while (currentCoroutineContext().isActive) {
+    while (isActive) {
         shouldRun.first { it } // just wait, until we are connected again
         try {
             schedule.retry {
@@ -146,7 +146,7 @@ suspend fun <T> retryWhen(
         }
 
     flow {
-        while (true) {
+        while (currentCoroutineContext().isActive) {
             condition.first { it } // just wait, until it is true again
             try {
                 emit(

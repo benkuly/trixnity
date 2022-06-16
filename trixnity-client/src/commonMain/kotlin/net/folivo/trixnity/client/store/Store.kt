@@ -5,8 +5,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+
+private val log = KotlinLogging.logger {}
 
 abstract class Store(
     private val scope: CoroutineScope,
@@ -110,6 +113,7 @@ abstract class Store(
             try {
                 block()
             } catch (error: Throwable) {
+                log.warn { "transaction has been cancelled -> rollback" }
                 if (error !is CancellationException)
                     scope.cancel(CancellationException("transaction failed", error))
                 throw error

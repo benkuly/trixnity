@@ -47,42 +47,52 @@ import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
+import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
 interface IRoomService {
-    suspend fun fetchMissingEvents(
+    suspend fun fillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
         limit: Long = 20
     )
 
+    /**
+     * Returns the [TimelineEvent] and starts decryption with the given [CoroutineScope]. If it is not found locally, it is tried
+     * to find it by filling the sync-gaps.
+     */
     suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
-        fetchTimeout: Duration = INFINITE,
-        fetchNeighborLimit: Long = 20,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): StateFlow<TimelineEvent?>
-
-    suspend fun getLastTimelineEvent(
-        roomId: RoomId,
-        decryptionTimeout: Duration = INFINITE
-    ): Flow<StateFlow<TimelineEvent?>?>
 
     suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): StateFlow<TimelineEvent?>?
 
     suspend fun getNextTimelineEvent(
         event: TimelineEvent,
         coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): StateFlow<TimelineEvent?>?
+
+    suspend fun getLastTimelineEvent(
+        roomId: RoomId,
+        decryptionTimeout: Duration = INFINITE,
+    ): Flow<StateFlow<TimelineEvent?>?>
 
     /**
      * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
@@ -97,7 +107,9 @@ interface IRoomService {
         startFrom: EventId,
         roomId: RoomId,
         direction: Direction = BACKWARDS,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): Flow<StateFlow<TimelineEvent?>>
 
     /**
@@ -116,7 +128,9 @@ interface IRoomService {
      */
     suspend fun getLastTimelineEvents(
         roomId: RoomId,
-        decryptionTimeout: Duration = INFINITE
+        decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): Flow<Flow<StateFlow<TimelineEvent?>>?>
 
     /**
@@ -141,16 +155,18 @@ interface IRoomService {
      * The size of the returned list can be expanded in 2 directions: before and after the start element.
      *
      * @param startFrom the start event id
-     * @param beforeInclusive how many events to possibly get before the start event (including the start event)
-     * @param afterInclusive how many events to possibly get after the start event (including the start event)
+     * @param maxSizeBefore how many events to possibly get before the start event
+     * @param maxSizeAfter how many events to possibly get after the start event
      *
      */
     suspend fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
-        beforeInclusive: StateFlow<Int>,
-        afterInclusive: StateFlow<Int>,
+        maxSizeBefore: StateFlow<Int>,
+        maxSizeAfter: StateFlow<Int>,
         decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
     ): Flow<List<StateFlow<TimelineEvent?>>>
 
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
@@ -659,12 +675,10 @@ class RoomService(
     private val timelineMutex = MutableStateFlow<Map<RoomId, Mutex>>(emptyMap())
     private suspend fun <T : Any> withRoomTimelineMutexAndTransaction(roomId: RoomId, block: suspend () -> T): T =
         requireNotNull(timelineMutex.updateAndGet { if (it.containsKey(roomId)) it else it + (roomId to Mutex()) }[roomId])
-            .withLock { store.transaction { block() } }
-
-    // You may think: wtf are you doing here? This prevents loops, when the server has the wonderful idea to send you
-    // the same event in two different or in the same sync response(s). And that really happens 🤯.
-    private suspend fun List<RoomEvent<*>>.filterDuplicateAndExistingEvents() =
-        this.distinctBy { it.id }.filter { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) == null }
+            .withLock {
+                log.trace { "lock $roomId" }
+                store.transaction { block() }.also { log.trace { "unlock $roomId" } }
+            }
 
     internal suspend fun addEventsToTimelineAtEnd(
         roomId: RoomId,
@@ -673,7 +687,7 @@ class RoomService(
         nextBatch: String,
         hasGapBefore: Boolean
     ) {
-        val events = newEvents?.filterDuplicateAndExistingEvents()
+        val events = newEvents?.filterDuplicateEvents()
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
             val room = store.room.get(roomId).value
@@ -698,7 +712,7 @@ class RoomService(
                 roomId = roomId,
                 previousToken = previousBatch,
                 previousHasGap = hasGapBefore,
-                previousEvent = room.lastEventId?.let { store.roomTimeline.get(it, roomId, withTransaction = false) },
+                previousEvent = room.lastEventId,
                 previousEventChunk = null,
                 nextToken = nextBatch,
                 nextHasGap = true,
@@ -709,7 +723,7 @@ class RoomService(
         }
     }
 
-    override suspend fun fetchMissingEvents(
+    override suspend fun fillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
         limit: Long
@@ -719,12 +733,12 @@ class RoomService(
                 RUNNING,
                 onError = { log.error(it) { "could not fetch missing event $startEventId" } },
             ) {
-                internalFetchMissingEvents(startEventId, roomId, limit).getOrThrow()
+                internalFillTimelineGaps(startEventId, roomId, limit).getOrThrow()
             }
         }.await()
     }
 
-    private suspend fun internalFetchMissingEvents(
+    private suspend fun internalFillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
         limit: Long = 20
@@ -732,143 +746,140 @@ class RoomService(
         kotlin.runCatching {
             val isLastEventId = store.room.get(roomId).value?.lastEventId == startEventId
 
-            val initialStartEvent = store.roomTimeline.get(startEventId, roomId, withTransaction = false)
-            val startEvent: TimelineEvent
+            val startEvent = store.roomTimeline.get(startEventId, roomId, withTransaction = false) ?: return@runCatching
             val previousToken: String?
             val previousHasGap: Boolean
-            val previousEvent: TimelineEvent?
+            val previousEvent: EventId?
             val previousEventChunk: List<RoomEvent<*>>?
             val nextToken: String?
             val nextHasGap: Boolean
-            val nextEvent: TimelineEvent?
+            val nextEvent: EventId?
             val nextEventChunk: List<RoomEvent<*>>?
 
-            if (initialStartEvent == null) {
-                log.debug { "fetch missing event from $startEventId" }
-                val context = api.rooms.getEventContext(
+            var insertNewEvents = false
+
+            val startGap = startEvent.gap
+            val startGapBatchBefore = startGap?.batchBefore
+            val startGapBatchAfter = startGap?.batchAfter
+
+            val possiblyPreviousEvent = store.roomTimeline.getPrevious(startEvent)
+            if (startGapBatchBefore != null) {
+                insertNewEvents = true
+                log.debug { "fetch missing events before $startEventId" }
+                val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
+                val response = api.rooms.getEvents(
                     roomId = roomId,
-                    eventId = startEventId,
-                    filter = LAZY_LOAD_MEMBERS_FILTER,
-                    limit = if (isLastEventId) 0 else limit
+                    from = startGapBatchBefore,
+                    to = destinationBatch,
+                    dir = BACKWARDS,
+                    limit = limit,
+                    filter = LAZY_LOAD_MEMBERS_FILTER
                 ).getOrThrow()
-
-                previousToken = context.start
-                previousEvent = context.eventsBefore
-                    ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
-                    ?.find { it?.gap?.hasGapAfter == true }
-                previousEventChunk = context.eventsBefore?.filterDuplicateAndExistingEvents()
-                previousHasGap = previousEvent == null
-
-                nextToken = context.end
-                nextEvent = context.eventsAfter
-                    ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
-                    ?.find { it?.gap?.hasGapBefore == true }
-                nextEventChunk = context.eventsAfter?.filterDuplicateAndExistingEvents()
-                nextHasGap = nextEvent == null
-
-                startEvent = TimelineEvent(
-                    event = context.event,
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null
-                )
+                previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
+                previousEvent = possiblyPreviousEvent?.eventId ?: response.chunk?.findPreviousEvent()?.eventId
+                previousEventChunk = response.chunk?.filterDuplicateEvents()
+                previousHasGap = response.end != destinationBatch
+                        && response.chunk?.none { it.id == previousEvent } == true
             } else {
-                startEvent = initialStartEvent
-                val startGap = startEvent.gap
-                val startGapBatchBefore = startGap?.batchBefore
-                val startGapBatchAfter = startGap?.batchAfter
-
-                val possiblyPreviousEvent = store.roomTimeline.getPrevious(startEvent)
-                if (startGapBatchBefore != null) {
-                    log.debug { "fetch missing events before $startEventId" }
-                    val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
-                    val response = api.rooms.getEvents(
-                        roomId = roomId,
-                        from = startGapBatchBefore,
-                        to = destinationBatch,
-                        dir = BACKWARDS,
-                        limit = limit,
-                        filter = LAZY_LOAD_MEMBERS_FILTER
-                    ).getOrThrow()
-                    previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
-                    previousEvent = possiblyPreviousEvent
-                        ?: response.chunk
-                            ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
-                            ?.find { it?.gap?.hasGapAfter == true }
-                    previousEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
-                    previousHasGap = response.end != destinationBatch
-                            && response.chunk?.none { it.id == previousEvent?.eventId } == true
-                } else {
-                    previousToken = null
-                    previousEvent = possiblyPreviousEvent
-                    previousEventChunk = null
-                    previousHasGap = false
-                }
-
-                val possiblyNextEvent = store.roomTimeline.getNext(startEvent)
-                if (startGapBatchAfter != null && !isLastEventId) {
-                    log.debug { "fetch missing events after $startEventId" }
-                    val destinationBatch = possiblyNextEvent?.gap?.batchBefore
-                    val response = api.rooms.getEvents(
-                        roomId = roomId,
-                        from = startGapBatchAfter,
-                        to = destinationBatch,
-                        dir = FORWARDS,
-                        limit = limit,
-                        filter = LAZY_LOAD_MEMBERS_FILTER
-                    ).getOrThrow()
-                    nextToken = response.end
-                    nextEvent = possiblyNextEvent
-                        ?: response.chunk
-                            ?.map { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
-                            ?.find { it?.gap?.hasGapBefore == true }
-                    nextEventChunk = response.chunk?.filterDuplicateAndExistingEvents()
-                    nextHasGap = response.end != destinationBatch
-                            && response.chunk?.none { it.id == nextEvent?.eventId } == true
-                } else {
-                    nextToken = startGapBatchAfter
-                    nextEvent = possiblyNextEvent
-                    nextEventChunk = null
-                    nextHasGap = isLastEventId
-                }
+                previousToken = null
+                previousEvent = possiblyPreviousEvent?.eventId
+                previousEventChunk = null
+                previousHasGap = false
             }
-            addEventsToTimeline(
-                startEvent = startEvent,
-                roomId = roomId,
-                previousToken = previousToken,
-                previousHasGap = previousHasGap,
-                previousEvent = previousEvent,
-                previousEventChunk = previousEventChunk,
-                nextToken = nextToken,
-                nextHasGap = nextHasGap,
-                nextEvent = nextEvent,
-                nextEventChunk = nextEventChunk,
-            )
+
+            val possiblyNextEvent = store.roomTimeline.getNext(startEvent)
+            if (startGapBatchAfter != null && !isLastEventId) {
+                insertNewEvents = true
+                log.debug { "fetch missing events after $startEventId" }
+                val destinationBatch = possiblyNextEvent?.gap?.batchBefore
+                val response = api.rooms.getEvents(
+                    roomId = roomId,
+                    from = startGapBatchAfter,
+                    to = destinationBatch,
+                    dir = FORWARDS,
+                    limit = limit,
+                    filter = LAZY_LOAD_MEMBERS_FILTER
+                ).getOrThrow()
+                nextToken = response.end
+                nextEvent = possiblyNextEvent?.eventId ?: response.chunk?.findNextEvent()?.eventId
+                nextEventChunk = response.chunk?.filterDuplicateEvents()
+                nextHasGap = response.end != destinationBatch
+                        && response.chunk?.none { it.id == nextEvent } == true
+            } else {
+                nextToken = startGapBatchAfter
+                nextEvent = possiblyNextEvent?.eventId
+                nextEventChunk = null
+                nextHasGap = isLastEventId
+            }
+
+            if (insertNewEvents)
+                addEventsToTimeline(
+                    startEvent = startEvent,
+                    roomId = roomId,
+                    previousToken = previousToken,
+                    previousHasGap = previousHasGap,
+                    previousEvent = previousEvent,
+                    previousEventChunk = previousEventChunk,
+                    nextToken = nextToken,
+                    nextHasGap = nextHasGap,
+                    nextEvent = nextEvent,
+                    nextEventChunk = nextEventChunk,
+                )
         }
     }
+
+    private suspend fun List<RoomEvent<*>>.findPreviousEvent() =
+        asFlow()
+            .mapNotNull { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
+            .firstOrNull { it.gap?.hasGapAfter == true }
+            ?.also { log.trace { "previousEvent ${it.eventId} found in chunk" } }
+
+    private suspend fun List<RoomEvent<*>>.findNextEvent() =
+        asFlow()
+            .mapNotNull { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) }
+            .firstOrNull { it.gap?.hasGapBefore == true }
+            ?.also { log.trace { "nextEvent ${it.eventId} found in chunk" } }
+
+    private suspend fun List<RoomEvent<*>>.filterDuplicateEvents() =
+        distinctBy { it.id }
+            .filter { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) == null }
+
+    private fun TimelineEvent.Gap?.addGapBefore(batch: String) =
+        when {
+            this == null -> GapBefore(batch)
+            batchBefore != null -> null
+            else -> batchAfter?.let { GapBoth(batch, it) } ?: GapBefore(batch)
+        }
+
+    private fun TimelineEvent.Gap?.addGapAfter(batch: String) =
+        when {
+            this == null -> GapAfter(batch)
+            batchAfter != null -> null
+            else -> batchBefore?.let { GapBoth(it, batch) } ?: GapAfter(batch)
+        }
 
     private suspend fun addEventsToTimeline(
         startEvent: TimelineEvent,
         roomId: RoomId,
         previousToken: String?,
         previousHasGap: Boolean,
-        previousEvent: TimelineEvent?,
+        previousEvent: EventId?,
         previousEventChunk: List<RoomEvent<*>>?,
         nextToken: String?,
         nextHasGap: Boolean,
-        nextEvent: TimelineEvent?,
+        nextEvent: EventId?,
         nextEventChunk: List<RoomEvent<*>>?,
         modifyTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
         log.trace {
             "addEventsToTimeline with parameters:\n" +
-                    "startEvent=${startEvent.eventId}\n" +
-                    "previousToken=$previousToken, previousHasGap=$previousHasGap, previousEvent=${previousEvent?.eventId}, previousEventChunk=${previousEventChunk?.map { it.id }}\n" +
-                    "nextToken=$nextToken, nextHasGap=$nextHasGap, nextEvent=${nextEvent?.eventId}, nextEventChunk=${nextEventChunk?.map { it.id }}"
+                    "startEvent=${startEvent.eventId.full}\n" +
+                    "previousToken=$previousToken, previousHasGap=$previousHasGap, previousEvent=${previousEvent?.full}, previousEventChunk=${previousEventChunk?.map { it.id.full }}\n" +
+                    "nextToken=$nextToken, nextHasGap=$nextHasGap, nextEvent=${nextEvent?.full}, nextEventChunk=${nextEventChunk?.map { it.id.full }}"
         }
 
         if (previousEvent != null)
-            store.roomTimeline.update(previousEvent.eventId, roomId, withTransaction = false) { oldPreviousEvent ->
+            store.roomTimeline.update(previousEvent, roomId, withTransaction = false) { oldPreviousEvent ->
                 val oldGap = oldPreviousEvent?.gap
                 oldPreviousEvent?.copy(
                     nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
@@ -876,7 +887,7 @@ class RoomService(
                 )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
             }
         if (nextEvent != null)
-            store.roomTimeline.update(nextEvent.eventId, roomId, withTransaction = false) { oldNextEvent ->
+            store.roomTimeline.update(nextEvent, roomId, withTransaction = false) { oldNextEvent ->
                 val oldGap = oldNextEvent?.gap
                 oldNextEvent?.copy(
                     previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
@@ -887,8 +898,8 @@ class RoomService(
             val hasGapBefore = previousEventChunk.isNullOrEmpty() && previousHasGap
             val hasGapAfter = nextEventChunk.isNullOrEmpty() && nextHasGap
             (oldStartEvent ?: startEvent).copy(
-                previousEventId = previousEventChunk?.firstOrNull()?.id ?: previousEvent?.eventId,
-                nextEventId = nextEventChunk?.firstOrNull()?.id ?: nextEvent?.eventId,
+                previousEventId = previousEventChunk?.firstOrNull()?.id ?: previousEvent,
+                nextEventId = nextEventChunk?.firstOrNull()?.id ?: nextEvent,
                 gap = when {
                     hasGapBefore && hasGapAfter && previousToken != null && nextToken != null
                     -> GapBoth(previousToken, nextToken)
@@ -908,7 +919,7 @@ class RoomService(
                             event = event,
                             roomId = roomId,
                             eventId = event.id,
-                            previousEventId = previousEvent?.eventId,
+                            previousEventId = previousEvent,
                             nextEventId = if (index == 0) startEvent.eventId
                             else previousEventChunk.getOrNull(index - 1)?.id,
                             gap = if (previousHasGap) previousToken?.let { GapBefore(it) } else null
@@ -950,7 +961,7 @@ class RoomService(
                             eventId = event.id,
                             previousEventId = if (index == 0) startEvent.eventId
                             else nextEventChunk.getOrNull(index - 1)?.id,
-                            nextEventId = nextEvent?.eventId,
+                            nextEventId = nextEvent,
                             gap = if (nextHasGap) nextToken?.let { GapAfter(it) } else null,
                         )
                     }
@@ -995,14 +1006,24 @@ class RoomService(
         coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        fetchNeighborLimit: Long,
+        limitPerFetch: Long,
     ): StateFlow<TimelineEvent?> {
         return store.roomTimeline.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
             coroutineScope.launch {
                 val timelineEvent = timelineEventFlow.value ?: withTimeoutOrNull(fetchTimeout) {
-                    log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it." }
-                    fetchMissingEvents(eventId, roomId, fetchNeighborLimit)
-                    store.roomTimeline.get(eventId, roomId)
+                    val lastEventId = store.room.get(roomId).value?.lastEventId
+                    if (lastEventId != null) {
+                        log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
+                        getTimelineEvents(
+                            startFrom = lastEventId,
+                            roomId = roomId,
+                            direction = BACKWARDS,
+                            decryptionTimeout = ZERO,
+                            fetchTimeout = fetchTimeout,
+                            limitPerFetch = limitPerFetch
+                        ).map { it.value }.first { it?.eventId == eventId }
+                            .also { log.trace { "found TimelineEvent $eventId" } }
+                    } else null
                 }
                 val content = timelineEvent?.event?.content
                 if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
@@ -1059,6 +1080,30 @@ class RoomService(
         }
     }
 
+    override suspend fun getPreviousTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
+    ): StateFlow<TimelineEvent?>? {
+        return event.previousEventId?.let {
+            getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
+        }
+    }
+
+    override suspend fun getNextTimelineEvent(
+        event: TimelineEvent,
+        coroutineScope: CoroutineScope,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
+    ): StateFlow<TimelineEvent?>? {
+        return event.nextEventId?.let {
+            getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getLastTimelineEvent(
         roomId: RoomId,
@@ -1073,27 +1118,13 @@ class RoomService(
         }.distinctUntilChanged()
     }
 
-    override suspend fun getPreviousTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<TimelineEvent?>? {
-        return event.previousEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
-    }
-
-    override suspend fun getNextTimelineEvent(
-        event: TimelineEvent,
-        coroutineScope: CoroutineScope,
-        decryptionTimeout: Duration
-    ): StateFlow<TimelineEvent?>? {
-        return event.nextEventId?.let { getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout) }
-    }
-
     override suspend fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: Direction,
-        decryptionTimeout: Duration
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
     ): Flow<StateFlow<TimelineEvent?>> =
         channelFlow {
             fun TimelineEvent.Gap?.hasGap() =
@@ -1102,7 +1133,7 @@ class RoomService(
                         || direction == BACKWARDS && this.hasGapBefore)
 
             var currentTimelineEventFlow: StateFlow<TimelineEvent?> =
-                getTimelineEvent(startFrom, roomId, this, decryptionTimeout)
+                getTimelineEvent(startFrom, roomId, this, decryptionTimeout, fetchTimeout, limitPerFetch)
             send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
@@ -1111,33 +1142,35 @@ class RoomService(
                         val gap = currentTimelineEvent.gap
                         if (gap.hasGap()) {
                             log.debug { "found $gap at ${currentTimelineEvent.eventId}" }
-                            fetchMissingEvents(currentTimelineEvent.eventId, currentTimelineEvent.roomId)
+                            fillTimelineGaps(currentTimelineEvent.eventId, currentTimelineEvent.roomId, limitPerFetch)
                         }
                     }
                     .filter { it.gap.hasGap().not() }
-                    .map { currentTimelineEvent ->
+                    .mapNotNull { currentTimelineEvent ->
                         when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
-                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout)
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
+                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
                         }
                     }
-                    .filterNotNull()
                     .first()
                 send(currentTimelineEventFlow)
-            } while (direction != BACKWARDS || currentTimelineEventFlow.value?.isFirst == false)
+            } while (isActive && (direction != BACKWARDS || currentTimelineEventFlow.value.let { it == null || it.isFirst.not() }))
+            log.info { "reached start of timeline $roomId" }
             close()
-        }
+        }.buffer(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,
-        decryptionTimeout: Duration
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
     ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
         store.room.get(roomId)
             .mapLatest { it?.lastEventId }
             .distinctUntilChanged()
             .mapLatest {
-                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout)
+                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
                 else null
             }
 
@@ -1169,18 +1202,26 @@ class RoomService(
     override suspend fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
-        beforeInclusive: StateFlow<Int>,
-        afterInclusive: StateFlow<Int>,
+        maxSizeBefore: StateFlow<Int>,
+        maxSizeAfter: StateFlow<Int>,
         decryptionTimeout: Duration,
-    ): Flow<List<StateFlow<TimelineEvent?>>> {
-        return combine(
-            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout).toFlowList(beforeInclusive),
-            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout).toFlowList(afterInclusive)
-                .map { it.drop(1).reversed() },
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
+    ): Flow<List<StateFlow<TimelineEvent?>>> = channelFlow {
+        val startEvent = getTimelineEvent(startFrom, roomId, this, decryptionTimeout, fetchTimeout, limitPerFetch)
+        startEvent.filterNotNull().first()
+        combine(
+            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
+                .drop(1)
+                .toFlowList(maxSizeBefore),
+            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
+                .drop(1)
+                .toFlowList(maxSizeAfter)
+                .map { it.reversed() },
         ) { beforeElements, afterElements ->
-            afterElements + beforeElements
-        }
-    }
+            afterElements + startEvent + beforeElements
+        }.collectLatest { send(it) }
+    }.buffer(0)
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm
