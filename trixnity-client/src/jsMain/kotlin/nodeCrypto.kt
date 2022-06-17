@@ -29,6 +29,10 @@ external fun createHmac(
     key: Int8Array
 ): HMAC
 
+external fun createHash(
+    algorithm: String
+): Hash
+
 external interface Cipher {
     fun update(data: Int8Array): Int8Array
     fun final(): Int8Array
@@ -42,4 +46,9 @@ external interface Decipher {
 external interface HMAC {
     fun update(data: Int8Array): Int8Array
     fun digest(): Int8Array
+}
+
+external interface Hash {
+    fun update(data: Int8Array)
+    fun digest(encoding: String): String
 }

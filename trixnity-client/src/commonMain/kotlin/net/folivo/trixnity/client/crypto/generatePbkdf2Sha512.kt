@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 internal expect suspend fun generatePbkdf2Sha512(
     password: String,

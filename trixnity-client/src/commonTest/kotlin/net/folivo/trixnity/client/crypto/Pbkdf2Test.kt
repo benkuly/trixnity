@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 import com.soywiz.krypto.encoding.hex
 import io.kotest.core.spec.style.ShouldSpec

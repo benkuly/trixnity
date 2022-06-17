@@ -1,9 +1,7 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
-import net.folivo.trixnity.client.crypto.decryptAes256Ctr
-import net.folivo.trixnity.client.crypto.encryptAes256Ctr
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
 import kotlin.experimental.and
 

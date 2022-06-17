@@ -68,6 +68,12 @@ kotlin {
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
+//        val nativeMain by creating {
+//            dependsOn(commonMain)
+//        }
+//        setOf("linuxX64Main"/*, "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain"*/).forEach {
+//            getByName(it).dependsOn(nativeMain)
+//        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

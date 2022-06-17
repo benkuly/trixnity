@@ -12,6 +12,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.decryptAes256Ctr
 import net.folivo.trixnity.client.crypto.encryptAes256Ctr
+import net.folivo.trixnity.client.crypto.sha256
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -21,10 +22,8 @@ import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
-import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
-import net.folivo.trixnity.olm.freeAfter
 
 private val log = KotlinLogging.logger {}
 
@@ -96,9 +95,8 @@ class MediaService(
         progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         val media = getMedia(encryptedFile.url, progress).getOrThrow()
-        val hash = freeAfter(OlmUtility.create()) {
-            it.sha256(media)
-        }
+        val hash = sha256(media)
+
         val originalHash = encryptedFile.hashes["sha256"]
         if (originalHash == null || hash != originalHash) {
             log.debug { "could not validate due to different hashes. Our hash: $hash, their hash: $originalHash" }
@@ -161,9 +159,8 @@ class MediaService(
         val initialisationVector = nonce + ByteArray(8)
         val encrypted = encryptAes256Ctr(content = content, key = key, initialisationVector = initialisationVector)
         val cacheUri = prepareUploadMedia(encrypted, ContentType.Application.OctetStream)
-        val hash = freeAfter(OlmUtility.create()) {
-            it.sha256(encrypted)
-        }
+        val hash = sha256(encrypted)
+
         return EncryptedFile(
             url = cacheUri,
             key = EncryptedFile.JWK(
