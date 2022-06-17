@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

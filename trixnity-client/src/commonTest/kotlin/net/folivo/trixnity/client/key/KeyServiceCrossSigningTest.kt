@@ -18,6 +18,7 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.crypto.VerifyResult
+import net.folivo.trixnity.client.crypto.createAesHmacSha2MacFromKey
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeySecretServiceMock

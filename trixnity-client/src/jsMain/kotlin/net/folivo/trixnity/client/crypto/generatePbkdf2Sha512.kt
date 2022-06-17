@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 import com.soywiz.korio.util.toByteArray
 import com.soywiz.korio.util.toInt8Array

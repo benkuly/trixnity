@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
 import kotlinx.serialization.json.encodeToJsonElement
+import net.folivo.trixnity.client.crypto.encryptAesHmacSha2
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson

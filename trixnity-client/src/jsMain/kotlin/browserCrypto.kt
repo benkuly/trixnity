@@ -30,6 +30,7 @@ external interface SubtleCrypto {
     fun decrypt(algorithm: Json, key: CryptoKey, data: ArrayBuffer): Promise<ArrayBuffer>
     fun sign(algorithm: String, key: CryptoKey, data: ArrayBuffer): Promise<ArrayBuffer>
     fun sign(algorithm: Json, key: CryptoKey, data: ArrayBuffer): Promise<ArrayBuffer>
+    fun digest(algorithm: String, data: ArrayBuffer): Promise<ArrayBuffer>
 }
 
 external interface CryptoKey {

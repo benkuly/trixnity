@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.key
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
+import net.folivo.trixnity.client.crypto.generatePbkdf2Sha512
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import kotlin.random.Random
 

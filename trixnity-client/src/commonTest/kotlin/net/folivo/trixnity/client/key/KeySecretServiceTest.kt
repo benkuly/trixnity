@@ -21,6 +21,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
+import net.folivo.trixnity.client.crypto.encryptAesHmacSha2
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmEventServiceMock
@@ -86,7 +87,7 @@ private val body: ShouldSpec.() -> Unit = {
         store = InMemoryStore(scope).apply { init() }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeySecretService(alice, aliceDevice, store, olmEvent, keyBackup, api, currentSyncState,scope)
+        cut = KeySecretService(alice, aliceDevice, store, olmEvent, keyBackup, api, currentSyncState, scope)
     }
 
     afterTest {

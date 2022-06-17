@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec

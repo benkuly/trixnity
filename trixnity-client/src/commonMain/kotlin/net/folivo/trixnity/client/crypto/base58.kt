@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.key
+package net.folivo.trixnity.client.crypto
 
 /*
  * This file is based on an implementation from https://github.com/bitcoinj/bitcoinj/
