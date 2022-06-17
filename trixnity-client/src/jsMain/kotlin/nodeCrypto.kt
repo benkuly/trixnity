@@ -50,5 +50,5 @@ external interface HMAC {
 
 external interface Hash {
     fun update(data: Int8Array)
-    fun digest(encoding: String): String
+    fun digest(): Int8Array
 }
