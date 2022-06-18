@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.Event
 @HttpMethod(GET)
 data class GetEvents(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("from") val from: String,
+    @SerialName("from") val from: String? = null,
     @SerialName("to") val to: String? = null,
     @SerialName("dir") val dir: Direction,
     @SerialName("limit") val limit: Long? = null,
