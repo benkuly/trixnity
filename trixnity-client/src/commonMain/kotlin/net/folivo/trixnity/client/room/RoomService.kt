@@ -1028,13 +1028,12 @@ class RoomService(
                 val content = timelineEvent?.event?.content
                 if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                     withTimeoutOrNull(decryptionTimeout) {
-                        val session =
-                            store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this)
+                        val session = store.olm.getInboundMegolmSession(content.sessionId, roomId, this)
                         val firstKnownIndex = session.value?.firstKnownIndex
                         if (session.value == null) {
-                            keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                            keyBackup.loadMegolmSession(roomId, content.sessionId)
                             log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                            store.olm.waitForInboundMegolmSession(roomId, content.sessionId, content.senderKey, this)
+                            store.olm.waitForInboundMegolmSession(roomId, content.sessionId, this)
                         }
                         log.trace { "try to decrypt event $eventId in $roomId" }
                         @Suppress("UNCHECKED_CAST")
@@ -1048,12 +1047,11 @@ class RoomService(
                                     "UNKNOWN_MESSAGE_INDEX"
                                 ) == true
                             ) {
-                                keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                                keyBackup.loadMegolmSession(roomId, content.sessionId)
                                 log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
                                 store.olm.waitForInboundMegolmSession(
                                     roomId,
                                     content.sessionId,
-                                    content.senderKey,
                                     this,
                                     firstKnownIndexLessThen = firstKnownIndex
                                 )

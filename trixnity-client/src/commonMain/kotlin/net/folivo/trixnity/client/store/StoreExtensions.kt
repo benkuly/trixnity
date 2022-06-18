@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.model.keys.Key
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
@@ -96,11 +95,10 @@ suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
 suspend inline fun OlmStore.waitForInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,
-    senderKey: Key.Curve25519Key,
     scope: CoroutineScope,
     firstKnownIndexLessThen: Long? = null
 ) {
-    getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+    getInboundMegolmSession(sessionId, roomId, scope)
         .first { it != null && (firstKnownIndexLessThen == null || it.firstKnownIndex < firstKnownIndexLessThen) }
 }
 

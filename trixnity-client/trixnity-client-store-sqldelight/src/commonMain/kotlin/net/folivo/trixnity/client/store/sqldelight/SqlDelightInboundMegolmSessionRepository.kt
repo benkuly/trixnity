@@ -18,7 +18,7 @@ class SqlDelightInboundMegolmSessionRepository(
 ) : InboundMegolmSessionRepository {
     override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? =
         withContext(context) {
-            db.getInboundMegolmSession(key.senderKey.value, key.sessionId, key.roomId.full)
+            db.getInboundMegolmSession(key.sessionId, key.roomId.full)
                 .executeAsOneOrNull()
                 ?.mapToStoredInboundMegolmSession()
         }
@@ -44,7 +44,7 @@ class SqlDelightInboundMegolmSessionRepository(
         value: StoredInboundMegolmSession
     ) = withContext(context) {
         db.saveInboundMegolmSession(
-            sender_key = key.senderKey.value,
+            sender_key = value.senderKey.value,
             session_id = key.sessionId,
             room_id = key.roomId.full,
             first_known_index = value.firstKnownIndex,
@@ -57,7 +57,7 @@ class SqlDelightInboundMegolmSessionRepository(
     }
 
     override suspend fun delete(key: InboundMegolmSessionRepositoryKey) = withContext(context) {
-        db.deleteInboundMegolmSession(key.senderKey.value, key.sessionId, key.roomId.full)
+        db.deleteInboundMegolmSession(key.sessionId, key.roomId.full)
     }
 
     override suspend fun deleteAll() = withContext(context) {
