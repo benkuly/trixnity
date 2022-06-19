@@ -26,6 +26,7 @@ data class Register(
         @SerialName("device_id") val deviceId: String?,
         @SerialName("initial_device_display_name") val initialDeviceDisplayName: String?,
         @SerialName("inhibit_login") val inhibitLogin: Boolean?,
+        @SerialName("refresh_token") val refreshToken: Boolean? = null,
         @SerialName("type") val type: String? = null
     )
 
@@ -33,6 +34,8 @@ data class Register(
     data class Response(
         @SerialName("user_id") val userId: UserId,
         @SerialName("device_id") val deviceId: String? = null,
-        @SerialName("access_token") val accessToken: String? = null
+        @SerialName("access_token") val accessToken: String? = null,
+        @SerialName("expires_in_ms") val accessTokenExpiresInMs: Long? = null,
+        @SerialName("refresh_token") val refreshToken: String? = null,
     )
 }

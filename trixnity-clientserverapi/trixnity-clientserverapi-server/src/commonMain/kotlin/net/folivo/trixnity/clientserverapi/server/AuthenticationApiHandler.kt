@@ -106,4 +106,9 @@ interface AuthenticationApiHandler {
      * @see [GetOIDCRequestToken]
      */
     suspend fun getOIDCRequestToken(context: MatrixEndpointContext<GetOIDCRequestToken, Unit, GetOIDCRequestToken.Response>): GetOIDCRequestToken.Response
+
+    /**
+     * @see [Refresh]
+     */
+    suspend fun refresh(context: MatrixEndpointContext<Refresh, Refresh.Request, Refresh.Response>): Refresh.Response
 }

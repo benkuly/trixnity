@@ -25,6 +25,8 @@ object Login : MatrixEndpoint<Login.Request, Login.Response> {
         val identifier: IdentifierType,
         @SerialName("password")
         val password: String? = null,
+        @SerialName("refresh_token")
+        val refreshToken: Boolean? = null,
         @SerialName("token")
         val token: String? = null,
         @SerialName("device_id")
@@ -39,6 +41,10 @@ object Login : MatrixEndpoint<Login.Request, Login.Response> {
         val userId: UserId,
         @SerialName("access_token")
         val accessToken: String,
+        @SerialName("expires_in_ms")
+        val accessTokenExpiresInMs: Long? = null,
+        @SerialName("refresh_token")
+        val refreshToken: String? = null,
         @SerialName("device_id")
         val deviceId: String,
         @SerialName("well_known")
