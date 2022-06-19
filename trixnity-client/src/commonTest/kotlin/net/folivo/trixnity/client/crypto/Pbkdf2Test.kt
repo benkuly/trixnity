@@ -8,11 +8,11 @@ class Pbkdf2Test : ShouldSpec({
     timeout = 10_000
 
     should(::generatePbkdf2Sha512.name) {
-        val password = "password"
+        val password = "super secret. not"
         val salt = ByteArray(12) { (it + 1).toByte() }
-        val iterationCount = 4096
+        val iterationCount = 500000
         val keyLength = 256
         generatePbkdf2Sha512(password, salt, iterationCount, keyLength).hex shouldBe
-                "77fec6ca97e3c15022b1c51a37cf05739e6a3c90b8c85518427ac5be6f8fa06d"
+                "7094d5836ad28e6609c9f41dea292bde0b5ad4d6ffad52b1375aeeda691786a6"
     }
 })

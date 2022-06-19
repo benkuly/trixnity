@@ -8,4 +8,4 @@ internal actual suspend fun generatePbkdf2Sha512(
     iterationCount: Int,
     keyBitLength: Int
 ): ByteArray =
-    PBKDF2.pbkdf2WithHmacSHA512(password.encodeToByteArray(), salt, iterationCount, keyBitLength)
+    PBKDF2.pbkdf2WithHmacSHA512(password.encodeToByteArray(), salt, iterationCount, keyBitLength).bytes

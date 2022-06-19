@@ -34,12 +34,12 @@ kotlin {
         }
         binaries.executable()
     }
-// TODO enable as soon as https://github.com/korlibs/korge-next/issues/705 is fixed
-//    linuxX64()
-//    mingwX64()
-//    macosX64()
-//    macosArm64()
-//    ios()
+
+    linuxX64()
+    mingwX64()
+    macosX64()
+    macosArm64()
+    ios()
 
     targets.disableCompilationsOnCI()
 
@@ -68,12 +68,12 @@ kotlin {
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
             }
         }
-//        val nativeMain by creating {
-//            dependsOn(commonMain)
-//        }
-//        setOf("linuxX64Main"/*, "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain"*/).forEach {
-//            getByName(it).dependsOn(nativeMain)
-//        }
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+        setOf("linuxX64Main", "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain").forEach {
+            getByName(it).dependsOn(nativeMain)
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
