@@ -81,7 +81,7 @@ interface IKeyService {
         secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
             val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
                 salt = SecureRandom.nextBytes(32).encodeBase64(),
-                iterations = 500_000,
+                iterations = 120_000,
                 bits = 32 * 8
             )
             val iv = SecureRandom.nextBytes(16)

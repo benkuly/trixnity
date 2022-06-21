@@ -10,9 +10,9 @@ class Pbkdf2Test : ShouldSpec({
     should(::generatePbkdf2Sha512.name) {
         val password = "super secret. not"
         val salt = ByteArray(12) { (it + 1).toByte() }
-        val iterationCount = 500000
+        val iterationCount = 10_000
         val keyLength = 256
         generatePbkdf2Sha512(password, salt, iterationCount, keyLength).hex shouldBe
-                "7094d5836ad28e6609c9f41dea292bde0b5ad4d6ffad52b1375aeeda691786a6"
+                "456e181b5be566aa7afc51e208024a4c8401c5dbbc7d6b4e9ad1c7a21329fb75"
     }
 })

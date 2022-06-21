@@ -65,7 +65,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val key = generatePbkdf2Sha512(
                     password = "password",
                     salt = salt,
-                    iterationCount = 300_000,
+                    iterationCount = 10_000,  // just a test, not secure
                     keyBitLength = 32 * 8
                 )
                 val mac = encryptAesHmacSha2(
@@ -77,7 +77,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val info = SecretKeyEventContent.AesHmacSha2Key(
                     passphrase = Pbkdf2(
                         salt = salt.encodeBase64(),
-                        iterations = 300_000,
+                        iterations = 10_000,
                         bits = 32 * 8
                     ),
                     iv = iv.encodeBase64(),
