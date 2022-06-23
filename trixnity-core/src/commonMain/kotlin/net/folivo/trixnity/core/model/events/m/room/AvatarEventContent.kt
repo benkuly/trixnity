@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class AvatarEventContent(
     @SerialName("url")
-    val url: String,
+    val url: String? = null,
     @SerialName("info")
     val info: ImageInfo? = null
 ) : StateEventContent
