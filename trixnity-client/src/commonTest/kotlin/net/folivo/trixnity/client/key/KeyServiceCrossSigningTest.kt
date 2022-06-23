@@ -31,7 +31,7 @@ import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -111,7 +111,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("fail when master key does not match") {
-            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            store.globalAccountData.update(ClientEvent.GlobalAccountDataEvent(encryptedMasterSigningKey))
             val publicKey = Random.nextBytes(32).encodeUnpaddedBase64()
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
@@ -130,7 +130,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("be success, when master key matches") {
-            store.globalAccountData.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            store.globalAccountData.update(ClientEvent.GlobalAccountDataEvent(encryptedMasterSigningKey))
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
                     StoredCrossSigningKeys(

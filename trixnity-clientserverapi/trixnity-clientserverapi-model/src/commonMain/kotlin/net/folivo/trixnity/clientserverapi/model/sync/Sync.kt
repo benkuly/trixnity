@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -59,7 +59,7 @@ data class Sync(
             ) {
                 @Serializable
                 data class InviteState(
-                    @SerialName("events") val events: List<@Contextual Event.StrippedStateEvent<*>>? = null
+                    @SerialName("events") val events: List<@Contextual ClientEvent.StrippedStateEvent<*>>? = null
                 )
             }
 
@@ -81,7 +81,7 @@ data class Sync(
 
                 @Serializable
                 data class Ephemeral(
-                    @SerialName("events") val events: List<@Contextual Event.EphemeralEvent<*>>? = null
+                    @SerialName("events") val events: List<@Contextual ClientEvent.EphemeralEvent<*>>? = null
                 )
 
                 @Serializable
@@ -97,7 +97,7 @@ data class Sync(
             ) {
                 @Serializable
                 data class InviteState(
-                    @SerialName("events") val events: List<@Contextual Event.StrippedStateEvent<*>>? = null
+                    @SerialName("events") val events: List<@Contextual ClientEvent.StrippedStateEvent<*>>? = null
                 )
             }
 
@@ -110,30 +110,30 @@ data class Sync(
 
             @Serializable
             data class State(
-                @SerialName("events") val events: List<@Contextual Event.StateEvent<*>>? = null
+                @SerialName("events") val events: List<@Contextual ClientEvent.StateEvent<*>>? = null
             )
 
             @Serializable
             data class Timeline(
-                @SerialName("events") val events: List<@Contextual Event.RoomEvent<*>>? = null,
+                @SerialName("events") val events: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
                 @SerialName("limited") val limited: Boolean? = null,
                 @SerialName("prev_batch") val previousBatch: String? = null
             )
 
             @Serializable
             data class RoomAccountData(
-                @SerialName("events") val events: List<@Contextual Event.RoomAccountDataEvent<*>>? = null
+                @SerialName("events") val events: List<@Contextual ClientEvent.RoomAccountDataEvent<*>>? = null
             )
         }
 
         @Serializable
         data class Presence(
-            @SerialName("events") val events: List<@Contextual Event.EphemeralEvent<PresenceEventContent>>? = null
+            @SerialName("events") val events: List<@Contextual ClientEvent.EphemeralEvent<PresenceEventContent>>? = null
         )
 
         @Serializable
         data class GlobalAccountData(
-            @SerialName("events") val events: List<@Contextual Event.GlobalAccountDataEvent<*>>? = null
+            @SerialName("events") val events: List<@Contextual ClientEvent.GlobalAccountDataEvent<*>>? = null
         )
 
         @Serializable
@@ -144,7 +144,7 @@ data class Sync(
 
         @Serializable
         data class ToDevice(
-            @SerialName("events") val events: List<@Contextual Event.ToDeviceEvent<*>>? = null
+            @SerialName("events") val events: List<@Contextual ClientEvent.ToDeviceEvent<*>>? = null
         )
     }
 }

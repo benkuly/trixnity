@@ -10,7 +10,7 @@ import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction.*
 import net.folivo.trixnity.core.model.push.PushCondition.*
@@ -188,7 +188,7 @@ class PushApiClientTest {
                 notifications = listOf(
                     GetNotifications.Response.Notification(
                         actions = setOf(Notify, SetSoundTweak("default")),
-                        event = Event.MessageEvent(
+                        event = ClientEvent.MessageEvent(
                             content = RoomMessageEventContent.TextMessageEventContent("body"),
                             id = EventId("\$143273582443PhrSn:example.org"),
                             originTimestamp = 1432735824653,

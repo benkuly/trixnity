@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
@@ -149,7 +149,7 @@ class RoomServiceMock : IRoomService {
         stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): StateFlow<Event<C>?> {
+    ): StateFlow<ClientEvent<C>?> {
         throw NotImplementedError()
     }
 
@@ -157,7 +157,7 @@ class RoomServiceMock : IRoomService {
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>
-    ): Event<C>? {
+    ): ClientEvent<C>? {
         throw NotImplementedError()
     }
 }

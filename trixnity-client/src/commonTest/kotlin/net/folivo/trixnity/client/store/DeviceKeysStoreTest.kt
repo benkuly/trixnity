@@ -11,7 +11,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
@@ -65,7 +65,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             secretsRepository.save(
                 1, mapOf(
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                        ClientEvent.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                     )
                 )
             )
@@ -87,7 +87,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             cut.outdatedKeys.value shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
             cut.secrets.value shouldBe mapOf(
                 AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                    ClientEvent.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                 )
             )
             cut.allSecretKeyRequests.first { it.isNotEmpty() }
@@ -99,7 +99,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             cut.outdatedKeys.value = setOf(UserId("alice", "server"), UserId("bob", "server"))
             cut.secrets.value = mapOf(
                 AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                    ClientEvent.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                 )
             )
 
@@ -107,7 +107,7 @@ class DeviceKeysStoreTest : ShouldSpec({
                 outdatedKeysRepository.get(1) shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
                 secretsRepository.get(1) shouldBe mapOf(
                     AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                        ClientEvent.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                     )
                 )
             }

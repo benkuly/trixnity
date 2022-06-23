@@ -9,8 +9,8 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import mu.KotlinLogging
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 
 private val log = KotlinLogging.logger {}
 
@@ -22,10 +22,10 @@ class EventSerializer(
     private val toDeviceEventSerializer: KSerializer<ToDeviceEvent<*>>,
     private val globalAccountDataEventSerializer: KSerializer<GlobalAccountDataEvent<*>>,
     private val roomAccountDataEventSerializer: KSerializer<RoomAccountDataEvent<*>>,
-) : KSerializer<Event<*>> {
+) : KSerializer<ClientEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EventSerializer")
 
-    override fun deserialize(decoder: Decoder): Event<*> {
+    override fun deserialize(decoder: Decoder): ClientEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val hasStateKey = "state_key" in jsonObj
@@ -46,7 +46,7 @@ class EventSerializer(
         }
     }
 
-    override fun serialize(encoder: Encoder, value: Event<*>) {
+    override fun serialize(encoder: Encoder, value: ClientEvent<*>) {
         require(encoder is JsonEncoder)
         val jsonElement = when (value) {
             is RoomEvent -> encoder.json.encodeToJsonElement(roomEventSerializer, value)

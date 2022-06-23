@@ -4,7 +4,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightGlobalAccountDataRepository(

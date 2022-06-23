@@ -13,7 +13,7 @@ import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCa
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
@@ -40,7 +40,7 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun update(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
+    suspend fun update(event: ClientEvent<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
@@ -61,14 +61,14 @@ class RoomStateStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): Flow<Map<String, Event<C>?>?> {
+    ): Flow<Map<String, ClientEvent<C>?>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType), scope = scope)
             .mapLatest { value ->
                 value?.mapValues {
                     if (it.value.content.instanceOf(eventContentClass)) {
                         @Suppress("UNCHECKED_CAST")
-                        it.value as Event<C>
+                        it.value as ClientEvent<C>
                     } else null
                 }
             }
@@ -77,13 +77,13 @@ class RoomStateStore(
     suspend fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>
-    ): Map<String, Event<C>?>? {
+    ): Map<String, ClientEvent<C>?>? {
         val eventType = findType(eventContentClass)
         return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType))
             ?.mapValues {
                 if (it.value.content.instanceOf(eventContentClass)) {
                     @Suppress("UNCHECKED_CAST")
-                    it.value as Event<C>
+                    it.value as ClientEvent<C>
                 } else null
             }
     }
@@ -94,7 +94,7 @@ class RoomStateStore(
         stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): Flow<Event<C>?> {
+    ): Flow<ClientEvent<C>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, scope)
             .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
@@ -105,12 +105,12 @@ class RoomStateStore(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-    ): Event<C>? {
+    ): ClientEvent<C>? {
         val eventType = findType(eventContentClass)
         val value = roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
         return if (value?.content?.instanceOf(eventContentClass) == true) {
             @Suppress("UNCHECKED_CAST")
-            value as Event<C>?
+            value as ClientEvent<C>?
         } else null
     }
 }

@@ -17,7 +17,7 @@ import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
@@ -36,7 +36,7 @@ private val log = KotlinLogging.logger { }
 
 interface IPushService {
     data class Notification(
-        val event: Event<*>
+        val event: ClientEvent<*>
     )
 
     suspend fun getNotifications(
@@ -96,14 +96,14 @@ class PushService(
             .collect { send(it) }
     }.buffer(0)
 
-    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): Event<*>? {
+    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): ClientEvent<*>? {
         val originalEvent = timelineEvent.event
         val content = timelineEvent.content?.getOrNull()
         return when {
             timelineEvent.isEncrypted.not() -> originalEvent
             content == null -> null
-            originalEvent is Event.MessageEvent && content is MessageEventContent ->
-                Event.MessageEvent(
+            originalEvent is ClientEvent.MessageEvent && content is MessageEventContent ->
+                ClientEvent.MessageEvent(
                     content = content,
                     id = originalEvent.id,
                     sender = originalEvent.sender,
@@ -111,19 +111,19 @@ class PushService(
                     originTimestamp = originalEvent.originTimestamp,
                     unsigned = originalEvent.unsigned
                 )
-            originalEvent is Event.StateEvent && content is StateEventContent -> originalEvent
+            originalEvent is ClientEvent.StateEvent && content is StateEventContent -> originalEvent
             else -> null
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun evaluatePushRules(
-        event: Event<*>,
+        event: ClientEvent<*>,
         allRules: List<PushRule>,
     ): Notification? {
         val eventJson = lazy {
             try {
-                json.serializersModule.getContextual(Event::class)?.let {
+                json.serializersModule.getContextual(ClientEvent::class)?.let {
                     json.encodeToJsonElement(it, event) // TODO could be optimized
                 }?.jsonObject
             } catch (exception: Exception) {
@@ -147,7 +147,7 @@ class PushService(
     }
 
     private suspend fun matchPushCondition(
-        event: Event<*>,
+        event: ClientEvent<*>,
         eventJson: Lazy<JsonObject?>,
         pushCondition: PushCondition
     ): Boolean {
@@ -194,7 +194,7 @@ class PushService(
         }
     }
 
-    private fun bodyContainsPattern(event: Event<*>, pattern: String): Boolean {
+    private fun bodyContainsPattern(event: ClientEvent<*>, pattern: String): Boolean {
         val content = event.content
         return if (content is TextMessageEventContent) {
             pattern.globToRegExp().containsMatchIn(content.body)
@@ -202,7 +202,7 @@ class PushService(
     }
 
     private fun getEventValue(
-        event: Event<*>,
+        event: ClientEvent<*>,
         initialEventJson: Lazy<JsonObject?>,
         pushCondition: PushCondition.EventMatch
     ): String? {

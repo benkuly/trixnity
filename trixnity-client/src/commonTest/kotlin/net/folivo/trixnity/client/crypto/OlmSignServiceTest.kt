@@ -23,7 +23,7 @@ import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_S
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
@@ -114,7 +114,7 @@ class OlmSignServiceTest : ShouldSpec({
             store.keys.secrets.value =
                 mapOf(
                     M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                        ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
                         Random.nextBytes(32).encodeBase64()
                     )
                 )
@@ -152,7 +152,7 @@ class OlmSignServiceTest : ShouldSpec({
         should("return signatures from user signing key") {
             store.keys.secrets.value = mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                    ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
                     Random.nextBytes(32).encodeBase64()
                 )
             )
@@ -204,7 +204,7 @@ class OlmSignServiceTest : ShouldSpec({
     }
     context("sign") {
         should("return signed object") {
-            val event = Event.StateEvent(
+            val event = ClientEvent.StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -226,7 +226,7 @@ class OlmSignServiceTest : ShouldSpec({
             }
         }
         should("ignore unsigned field") {
-            val event1 = Event.StateEvent(
+            val event1 = ClientEvent.StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -234,7 +234,7 @@ class OlmSignServiceTest : ShouldSpec({
                 originTimestamp = 24,
                 stateKey = ""
             )
-            val event2 = Event.StateEvent(
+            val event2 = ClientEvent.StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -261,7 +261,7 @@ class OlmSignServiceTest : ShouldSpec({
     context("verify") {
         should("return valid") {
             val signedObject = aliceSigningAccountSignService.sign(
-                Event.StateEvent(
+                ClientEvent.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
                     UserId("their", "server"),
@@ -278,7 +278,7 @@ class OlmSignServiceTest : ShouldSpec({
         }
         should("return MissingSignature, when no key found") {
             val signedObject = aliceSigningAccountSignService.sign(
-                Event.StateEvent(
+                ClientEvent.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
                     UserId("their", "server"),
@@ -292,7 +292,7 @@ class OlmSignServiceTest : ShouldSpec({
         }
         should("return MissingSignature when no signature found for sigining keys") {
             val signedObject = aliceSigningAccountSignService.sign(
-                Event.StateEvent(
+                ClientEvent.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
                     UserId("their", "server"),
@@ -319,7 +319,7 @@ class OlmSignServiceTest : ShouldSpec({
         }
         should("return invalid") {
             val signedObject = Signed(
-                Event.StateEvent(
+                ClientEvent.StateEvent(
                     NameEventContent("room name"),
                     EventId("\$eventId"),
                     UserId("their", "server"),

@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
@@ -83,8 +83,8 @@ class ActiveDeviceVerification(
         }
     }
 
-    private suspend fun handleVerificationStepEvents(event: Event<VerificationStep>) {
-        if (event is Event.ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
+    private suspend fun handleVerificationStepEvents(event: ClientEvent<VerificationStep>) {
+        if (event is ClientEvent.ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
     }
 
     private suspend fun handleOlmDecryptedVerificationRequestEvents(

@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import mu.KotlinLogging
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}

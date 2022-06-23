@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -103,7 +103,7 @@ private val body: ShouldSpec.() -> Unit = {
         )
         store.keys.secrets.value = mapOf(
             M_MEGOLM_BACKUP_V1 to StoredSecret(
-                Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                ClientEvent.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                 keyBackupPrivateKey
             )
         )
@@ -146,14 +146,14 @@ private val body: ShouldSpec.() -> Unit = {
             cut.version.value shouldBe null
             store.keys.secrets.value = mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    ClientEvent.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                     validKeyBackupPrivateKey
                 )
             )
             cut.version.first { it != null } shouldBe keyVersion
             store.keys.secrets.value = mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
+                    ClientEvent.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
                     validKeyBackupPrivateKey
                 )
             )
@@ -169,7 +169,7 @@ private val body: ShouldSpec.() -> Unit = {
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        ClientEvent.GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
                         ), validKeyBackupPrivateKey
                     )
@@ -199,7 +199,7 @@ private val body: ShouldSpec.() -> Unit = {
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s24"))))
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        ClientEvent.GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
                         ), validKeyBackupPrivateKey
                     )
@@ -234,7 +234,7 @@ private val body: ShouldSpec.() -> Unit = {
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        ClientEvent.GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
                         ), validKeyBackupPrivateKey
                     )
@@ -242,7 +242,7 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.version.first { it != null } shouldBe keyVersion
                 store.keys.secrets.value = mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        ClientEvent.GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
                         ), "invalidPri"
                     )

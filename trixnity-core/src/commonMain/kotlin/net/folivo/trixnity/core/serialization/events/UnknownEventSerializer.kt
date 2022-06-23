@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.EmptyEventContent
-import net.folivo.trixnity.core.model.events.Event.UnknownEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.UnknownEvent
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 object UnknownEventSerializer : KSerializer<UnknownEvent> {

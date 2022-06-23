@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.AllowedSecretType
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -30,11 +30,11 @@ class SqlDelightSecretsRepositoryTest : ShouldSpec({
     }
     should("save, get and delete") {
         val secret1 = AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-            Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf("a" to JsonObject(mapOf())))),
+            ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf("a" to JsonObject(mapOf())))),
             "priv1"
         )
         val secret2 = AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-            Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("b" to JsonObject(mapOf())))),
+            ClientEvent.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("b" to JsonObject(mapOf())))),
             "priv2"
         )
 

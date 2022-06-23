@@ -9,7 +9,7 @@ import net.folivo.trixnity.clientserverapi.client.getStateEvent
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
@@ -26,7 +26,7 @@ suspend fun example() = coroutineScope {
     val startTime = Clock.System.now()
 
     matrixRestClient.sync.subscribe<TextMessageEventContent> { event ->
-        require(event is Event.MessageEvent)
+        require(event is ClientEvent.MessageEvent)
         if (event.roomId == roomId) {
             if (Instant.fromEpochMilliseconds(event.originTimestamp) > startTime) {
                 val body = event.content.body

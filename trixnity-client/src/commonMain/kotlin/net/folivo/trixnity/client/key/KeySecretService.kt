@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.store.AllowedSecretType.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
@@ -75,12 +75,12 @@ class KeySecretService(
     internal fun handleEncryptedIncomingKeyRequests(event: IOlmService.DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
-            handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
+            handleIncomingKeyRequests(ClientEvent.ToDeviceEvent(content, event.decrypted.sender))
         }
     }
 
-    internal fun handleIncomingKeyRequests(event: Event<SecretKeyRequestEventContent>) {
-        if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
+    internal fun handleIncomingKeyRequests(event: ClientEvent<SecretKeyRequestEventContent>) {
+        if (event is ClientEvent.ToDeviceEvent && event.sender == ownUserId) {
             val content = event.content
             when (content.action) {
                 KeyRequestAction.REQUEST -> incomingSecretKeyRequests.update { it + content }
@@ -261,7 +261,7 @@ class KeySecretService(
         }
     }
 
-    internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
+    internal suspend fun handleChangedSecrets(event: ClientEvent<out SecretEventContent>) {
         val secretType =
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }
                 ?.let { AllowedSecretType.ofId(it.type) }

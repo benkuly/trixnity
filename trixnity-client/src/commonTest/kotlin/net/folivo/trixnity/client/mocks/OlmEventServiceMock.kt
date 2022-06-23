@@ -44,7 +44,7 @@ class OlmEventServiceMock(
     }
 
     val returnDecryptMegolm = mutableListOf<() -> DecryptedMegolmEvent<*>>()
-    override suspend fun decryptMegolm(encryptedEvent: Event.MessageEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
+    override suspend fun decryptMegolm(encryptedEvent: ClientEvent.MessageEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
         val returner =
             if (returnDecryptMegolm.size > 1) returnDecryptMegolm.removeFirst()
             else returnDecryptMegolm.first()

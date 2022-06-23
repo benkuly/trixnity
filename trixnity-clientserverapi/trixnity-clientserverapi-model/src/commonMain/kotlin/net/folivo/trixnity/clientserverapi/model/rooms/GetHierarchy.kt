@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
 
@@ -37,7 +37,7 @@ data class GetHierarchy(
         data class PublicRoomsChunk(
             @SerialName("avatar_url") val avatarUrl: String? = null,
             @SerialName("canonical_alias") val canonicalAlias: RoomAliasId? = null,
-            @SerialName("children_state") val childrenState: Set<@Contextual Event.StrippedStateEvent<*>>,
+            @SerialName("children_state") val childrenState: Set<@Contextual ClientEvent.StrippedStateEvent<*>>,
             @SerialName("guest_can_join") val guestCanJoin: Boolean,
             @SerialName("join_rule") val joinRule: JoinRulesEventContent.JoinRule = JoinRulesEventContent.JoinRule.Public,
             @SerialName("name") val name: String? = null,

@@ -7,8 +7,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -33,7 +33,7 @@ interface IRoomsApiClient {
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
-    ): Result<Event<*>>
+    ): Result<ClientEvent<*>>
 
     /**
      * @see [GetStateEvent]
@@ -125,7 +125,7 @@ interface IRoomsApiClient {
         inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>? = null,
         roomVersion: String? = null,
         creationContent: CreateEventContent? = null,
-        initialState: List<Event.InitialStateEvent<*>>? = null,
+        initialState: List<ClientEvent.InitialStateEvent<*>>? = null,
         preset: CreateRoom.Request.Preset? = null,
         isDirect: Boolean? = null,
         powerLevelContentOverride: PowerLevelsEventContent? = null,
@@ -441,7 +441,7 @@ class RoomsApiClient(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId?
-    ): Result<Event<*>> =
+    ): Result<ClientEvent<*>> =
         httpClient.request(GetEvent(roomId.e(), eventId.e(), asUserId))
 
     override suspend fun getStateEvent(
@@ -531,7 +531,7 @@ class RoomsApiClient(
         inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>?,
         roomVersion: String?,
         creationContent: CreateEventContent?,
-        initialState: List<Event.InitialStateEvent<*>>?,
+        initialState: List<ClientEvent.InitialStateEvent<*>>?,
         preset: CreateRoom.Request.Preset?,
         isDirect: Boolean?,
         powerLevelContentOverride: PowerLevelsEventContent?,

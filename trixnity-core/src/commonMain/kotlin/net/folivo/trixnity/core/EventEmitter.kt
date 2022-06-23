@@ -5,11 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.EventContent
 import kotlin.reflect.KClass
 
-typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
+typealias EventSubscriber<T> = suspend (ClientEvent<T>) -> Unit
 
 private val log = KotlinLogging.logger { }
 
@@ -24,7 +24,7 @@ abstract class EventEmitter : IEventEmitter {
     private val eventSubscribers =
         MutableStateFlow<Map<KClass<out EventContent>, Set<EventSubscriber<out EventContent>>>>(mapOf())
 
-    protected suspend fun emitEvent(event: Event<*>) = coroutineScope {
+    protected suspend fun emitEvent(event: ClientEvent<*>) = coroutineScope {
         eventSubscribers.value
             .filterKeys {
                 it.isInstance(event.content)

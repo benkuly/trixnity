@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
@@ -39,7 +39,7 @@ data class GetEvents(
     data class Response(
         @SerialName("start") val start: String,
         @SerialName("end") val end: String? = null,
-        @SerialName("chunk") val chunk: List<@Contextual Event.RoomEvent<*>>? = null,
-        @SerialName("state") val state: List<@Contextual Event.StateEvent<*>>? = null
+        @SerialName("chunk") val chunk: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
+        @SerialName("state") val state: List<@Contextual ClientEvent.StateEvent<*>>? = null
     )
 }

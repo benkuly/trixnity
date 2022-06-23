@@ -35,8 +35,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -168,7 +168,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     context(OlmEventService::handleOlmEncryptedToDeviceEvents.name) {
         context("exceptions") {
-            val event = Event.ToDeviceEvent(
+            val event = ClientEvent.ToDeviceEvent(
                 OlmEncryptedEventContent(
                     mapOf(), Curve25519Key(null, "")
                 ),
@@ -266,7 +266,7 @@ private val body: ShouldSpec.() -> Unit = {
                     outboundSession.sessionKey,
                     EncryptionAlgorithm.Megolm
                 )
-                val encryptedEvent = Event.ToDeviceEvent(
+                val encryptedEvent = ClientEvent.ToDeviceEvent(
                     bobOlmService.event.encryptOlm(
                         eventContent,
                         alice,

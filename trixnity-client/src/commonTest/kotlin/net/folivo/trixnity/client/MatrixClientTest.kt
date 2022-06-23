@@ -22,7 +22,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -42,7 +42,7 @@ class MatrixClientTest : ShouldSpec({
 
     val serverResponse = Sync.Response(
         nextBatch = "nextBatch",
-        accountData = Sync.Response.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
+        accountData = Sync.Response.GlobalAccountData(listOf(ClientEvent.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
         deviceLists = Sync.Response.DeviceLists(emptySet(), emptySet()),
         deviceOneTimeKeysCount = emptyMap(),
         presence = Sync.Response.Presence(emptyList()),
@@ -173,7 +173,7 @@ class MatrixClientTest : ShouldSpec({
                                                                 roomId to Sync.Response.Rooms.JoinedRoom(
                                                                     timeline = Sync.Response.Rooms.Timeline(
                                                                         events = listOf(
-                                                                            Event.StateEvent(
+                                                                            ClientEvent.StateEvent(
                                                                                 MemberEventContent(membership = JOIN),
                                                                                 sender = userId,
                                                                                 id = EventId("event1"),
@@ -207,7 +207,7 @@ class MatrixClientTest : ShouldSpec({
                                                                 roomId to Sync.Response.Rooms.JoinedRoom(
                                                                     timeline = Sync.Response.Rooms.Timeline(
                                                                         events = listOf(
-                                                                            Event.StateEvent(
+                                                                            ClientEvent.StateEvent(
                                                                                 MemberEventContent(
                                                                                     membership = JOIN,
                                                                                     displayName = "bob", // display name in the room != global display name

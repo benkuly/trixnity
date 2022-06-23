@@ -19,9 +19,9 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
@@ -797,7 +797,7 @@ class SyncApiClientTest {
             deviceOneTimeKeysCount = emptyMap(),
             presence = Response.Presence(
                 listOf(
-                    Event.EphemeralEvent(
+                    ClientEvent.EphemeralEvent(
                         PresenceEventContent(Presence.ONLINE),
                         sender = UserId("dino", "server")
                     )
@@ -808,7 +808,7 @@ class SyncApiClientTest {
                     RoomId("room1", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                ClientEvent.MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event1"),
                                     UserId("user", "server"),
@@ -819,7 +819,7 @@ class SyncApiClientTest {
                         ),
                         state = Response.Rooms.State(
                             listOf(
-                                Event.StateEvent(
+                                ClientEvent.StateEvent(
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event2"),
                                     UserId("user", "server"),
@@ -832,11 +832,11 @@ class SyncApiClientTest {
                         ephemeral = Response.Rooms.JoinedRoom.Ephemeral(emptyList()), //TODO
                         accountData = Response.Rooms.RoomAccountData(
                             listOf(
-                                Event.RoomAccountDataEvent(
+                                ClientEvent.RoomAccountDataEvent(
                                     FullyReadEventContent(EventId("event1")),
                                     RoomId("room1", "server")
                                 ),
-                                Event.RoomAccountDataEvent(
+                                ClientEvent.RoomAccountDataEvent(
                                     UnknownRoomAccountDataEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
                                         "org.example.mynamespace"
@@ -851,7 +851,7 @@ class SyncApiClientTest {
                     RoomId("room2", "Server") to Response.Rooms.LeftRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                ClientEvent.MessageEvent(
                                     RoomMessageEventContent.NoticeMessageEventContent("hi"),
                                     EventId("event4"),
                                     UserId("user", "server"),
@@ -862,7 +862,7 @@ class SyncApiClientTest {
                         ),
                         state = Response.Rooms.State(
                             listOf(
-                                Event.StateEvent(
+                                ClientEvent.StateEvent(
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event5"),
                                     UserId("user", "server"),
@@ -878,7 +878,7 @@ class SyncApiClientTest {
                     RoomId("room3", "Server") to Response.Rooms.InvitedRoom(
                         Response.Rooms.InvitedRoom.InviteState(
                             listOf(
-                                Event.StrippedStateEvent(
+                                ClientEvent.StrippedStateEvent(
                                     MemberEventContent(membership = Membership.INVITE),
                                     null,
                                     UserId("user", "server"),
@@ -970,7 +970,7 @@ class SyncApiClientTest {
                     RoomId("room", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                ClientEvent.MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
@@ -1031,7 +1031,7 @@ class SyncApiClientTest {
                     RoomId("room", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                ClientEvent.MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),

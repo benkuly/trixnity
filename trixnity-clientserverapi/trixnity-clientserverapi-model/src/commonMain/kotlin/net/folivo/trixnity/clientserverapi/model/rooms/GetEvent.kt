@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 /**
@@ -25,12 +25,12 @@ data class GetEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("eventId") val evenId: EventId,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, Event<*>> {
+) : MatrixEndpoint<Unit, ClientEvent<*>> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
         json: Json
-    ): KSerializer<Event<*>> {
-        return requireNotNull(json.serializersModule.getContextual(Event::class))
+    ): KSerializer<ClientEvent<*>> {
+        return requireNotNull(json.serializersModule.getContextual(ClientEvent::class))
     }
 }
