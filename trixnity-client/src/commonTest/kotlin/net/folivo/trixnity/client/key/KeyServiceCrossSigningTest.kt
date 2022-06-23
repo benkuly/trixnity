@@ -55,7 +55,7 @@ import kotlin.random.Random
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 10_000
+    timeout = 30_000
 
     val alice = UserId("alice", "server")
     val aliceDevice = "ALICEDEVICE"

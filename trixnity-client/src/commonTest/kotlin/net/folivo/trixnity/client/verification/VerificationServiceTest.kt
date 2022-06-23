@@ -64,7 +64,7 @@ class VerificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
 
-    timeout = 15_000
+    timeout = 35_000
     val aliceUserId = UserId("alice", "server")
     val aliceDeviceId = "AAAAAA"
     val bobUserId = UserId("bob", "server")
