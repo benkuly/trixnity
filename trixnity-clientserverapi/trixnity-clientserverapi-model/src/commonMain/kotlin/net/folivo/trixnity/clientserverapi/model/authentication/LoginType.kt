@@ -28,7 +28,7 @@ sealed class LoginType {
     @Serializable
     object AppService : LoginType() {
         @SerialName("type")
-        override val name = "m.login.appservice"
+        override val name = "m.login.application_service"
     }
 
     data class Unknown(
@@ -44,9 +44,9 @@ object LoginTypeSerializer : KSerializer<LoginType> {
         val type = jsonObj["type"]?.jsonPrimitive?.content
         requireNotNull(type)
         return when (type) {
-            "m.login.password" -> decoder.json.decodeFromJsonElement<LoginType.Password>(jsonObj)
-            "m.login.token" -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
-            "m.login.appservice" -> decoder.json.decodeFromJsonElement<LoginType.AppService>(jsonObj)
+            LoginType.Password.name -> decoder.json.decodeFromJsonElement<LoginType.Password>(jsonObj)
+            LoginType.Token.name -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
+            LoginType.AppService.name -> decoder.json.decodeFromJsonElement<LoginType.AppService>(jsonObj)
             else -> LoginType.Unknown(type, jsonObj)
         }
     }
