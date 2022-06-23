@@ -46,6 +46,10 @@ data class JoinRulesEventContent(
             override val name = "restricted"
         }
 
+        object KnockRestricted : JoinRule() {
+            override val name = "knock_restricted"
+        }
+
         data class Unknown(override val name: String) : JoinRule()
     }
 
@@ -79,6 +83,7 @@ object JoinRuleSerializer : KSerializer<JoinRule> {
             JoinRule.Invite.name -> JoinRule.Invite
             JoinRule.Private.name -> JoinRule.Private
             JoinRule.Restricted.name -> JoinRule.Restricted
+            JoinRule.KnockRestricted.name -> JoinRule.KnockRestricted
             else -> JoinRule.Unknown(name)
         }
     }
