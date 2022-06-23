@@ -60,6 +60,7 @@ class RoomServiceDisplayNameTest : ShouldSpec({
             MatrixClientConfiguration(),
             scope,
         )
+        store.room.update(roomId) { simpleRoom.copy(roomId = roomId) }
     }
 
     afterTest {
@@ -114,138 +115,164 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         )
     }
 
-    context(RoomService::setRoomDisplayName.name) {
-        beforeTest {
-            store.room.update(roomId) { simpleRoom.copy(roomId = roomId) }
+    suspend fun ShouldSpecContainerScope.testWithoutNameFromNameEvent() {
+        context("existent CanonicalAliasEvent") {
+            should("set room name") {
+                listOf(
+                    canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
+                    memberEvent(3, user1, "User1-Display", JOIN),
+                    memberEvent(4, user2, "User2-Display", INVITE),
+                    memberEvent(5, user3, "User3-Display", BAN),
+                    memberEvent(6, user4, "User4-Display", LEAVE)
+                ).forEach { store.roomState.update(it) }
+                val roomSummary = RoomSummary(
+                    heroes = listOf(user1, user2),
+                    joinedMemberCount = 1,
+                    invitedMemberCount = 1,
+                )
+                cut.setRoomDisplayName(roomId, roomSummary)
+                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                    explicitName = "#somewhere:localhost",
+                    summary = roomSummary
+                )
+            }
         }
-        suspend fun ShouldSpecContainerScope.testWithoutNameFromNameEvent() {
-            context("with an existent Canonical Alias Event") {
-                should("set room name to the alias field value") {
+        context("non-existent CanonicalAliasEvent") {
+            context("joined plus invited greater 1") {
+                beforeTest {
                     listOf(
-                        canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
                         memberEvent(3, user1, "User1-Display", JOIN),
                         memberEvent(4, user2, "User2-Display", INVITE),
-                        memberEvent(5, user3, "User3-Display", BAN),
-                        memberEvent(6, user4, "User4-Display", LEAVE)
+                        memberEvent(7, user5, "User5-Display", BAN)
                     ).forEach { store.roomState.update(it) }
-                    val roomSummary = RoomSummary(
-                        heroes = listOf(user1, user2),
-                        joinedMemberCount = 1,
-                        invitedMemberCount = 1,
-                    )
-                    cut.setRoomDisplayName(roomId, roomSummary)
-                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                        explicitName = "#somewhere:localhost",
-                        summary = roomSummary
-                    )
                 }
-            }
-            context("with a non-existent Canonical Alias Event") {
-                context("joined members plus invited members greater 1") {
+                context("heroes greater equals joined plus invited minus 1") {
                     beforeTest {
                         listOf(
-                            memberEvent(3, user1, "User1-Display", JOIN),
-                            memberEvent(4, user2, "User2-Display", INVITE),
-                            memberEvent(7, user5, "User5-Display", BAN)
-                        ).forEach { store.roomState.update(it) }
-                    }
-                    context("heroes greater equals joined members plus invited members minus 1") {
-                        beforeTest {
-                            listOf(
-                                memberEvent(5, user3, "User3-Display", LEAVE),
-                                memberEvent(6, user4, "User4-Display", LEAVE),
-                            ).forEach { store.roomState.update(it) }
-                        }
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 1,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1, user2),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 1,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                    }
-                    context("heroes less joined members plus invited members minus 1") {
-                        beforeTest {
-                            listOf(
-                                memberEvent(5, user3, "User3-Display", JOIN),
-                                memberEvent(6, user4, "User4-Display", INVITE),
-                            ).forEach { store.roomState.update(it) }
-                        }
-                        context("heroes equals 0") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(),
-                                    joinedMemberCount = 2,
-                                    invitedMemberCount = 2,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    otherUsersCount = 3,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1),
-                                    joinedMemberCount = 2,
-                                    invitedMemberCount = 2,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    otherUsersCount = 2,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1, user2),
-                                    joinedMemberCount = 2,
-                                    invitedMemberCount = 2,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    otherUsersCount = 1,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                    }
-                }
-                context("joined members plus invited members equals 1") {
-                    beforeTest {
-                        listOf(
-                            memberEvent(3, user1, "User1-Display", JOIN),
-                            memberEvent(4, user2, "User2-Display", BAN),
                             memberEvent(5, user3, "User3-Display", LEAVE),
+                            memberEvent(6, user4, "User4-Display", LEAVE),
                         ).forEach { store.roomState.update(it) }
                     }
-                    context("heroes equals 0") {
-                        should("set room name to empty") {
+                    context("heroes is 1") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 1,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                    context("heroes is 2") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1, user2),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 1,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                }
+                context("heroes less joined plus invited minus 1") {
+                    beforeTest {
+                        listOf(
+                            memberEvent(5, user3, "User3-Display", JOIN),
+                            memberEvent(6, user4, "User4-Display", INVITE),
+                        ).forEach { store.roomState.update(it) }
+                    }
+                    context("heroes is 0") {
+                        should("set room name") {
                             val roomSummary = RoomSummary(
                                 heroes = listOf(),
+                                joinedMemberCount = 2,
+                                invitedMemberCount = 2,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                otherUsersCount = 3,
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                    context("heroes is 1") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1),
+                                joinedMemberCount = 2,
+                                invitedMemberCount = 2,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                otherUsersCount = 2,
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                    context("heroes is 2") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1, user2),
+                                joinedMemberCount = 2,
+                                invitedMemberCount = 2,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                otherUsersCount = 1,
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                }
+            }
+            context("joined plus invited is 1") {
+                beforeTest {
+                    listOf(
+                        memberEvent(3, user1, "User1-Display", JOIN),
+                        memberEvent(4, user2, "User2-Display", BAN),
+                        memberEvent(5, user3, "User3-Display", LEAVE),
+                    ).forEach { store.roomState.update(it) }
+                }
+                context("heroes is 0") {
+                    should("set room name") {
+                        val roomSummary = RoomSummary(
+                            heroes = listOf(),
+                            joinedMemberCount = 1,
+                            invitedMemberCount = 0,
+                        )
+                        cut.setRoomDisplayName(roomId, roomSummary)
+                        store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                            isEmpty = true,
+                            summary = roomSummary
+                        )
+                    }
+                }
+                context("heroes greater equals left plus banned minus 1") {
+                    context("heroes is 1") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user2),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                otherUsersCount = 1,
+                                summary = roomSummary
+                            )
+                        }
+                    }
+                    context("heroes is 2") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user2, user3),
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 0,
                             )
@@ -256,87 +283,72 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                             )
                         }
                     }
-                    context("heroes greate then left member plus banned member minus 1") {
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user2),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    otherUsersCount = 1,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user2, user3),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    summary = roomSummary
-                                )
-                            }
+                }
+                context("heroes less left plus banned minus 1") {
+                    beforeTest {
+                        listOf(
+                            memberEvent(6, user4, "User4-Display", LEAVE),
+                            memberEvent(7, user5, "User5-Display", LEAVE),
+                        ).forEach { store.roomState.update(it) }
+                    }
+                    context("heroes is 1") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user2),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                otherUsersCount = 3,
+                                summary = roomSummary
+                            )
                         }
                     }
-                    context("heroes less left member plus banned member minus 1") {
-                        beforeTest {
-                            listOf(
-                                memberEvent(6, user4, "User4-Display", LEAVE),
-                                memberEvent(7, user5, "User5-Display", LEAVE),
-                            ).forEach { store.roomState.update(it) }
-                        }
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user2),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    otherUsersCount = 3,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user2, user3),
-                                    joinedMemberCount = 1,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    otherUsersCount = 2,
-                                    summary = roomSummary
-                                )
-                            }
+                    context("heroes is 2") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user2, user3),
+                                joinedMemberCount = 1,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                otherUsersCount = 2,
+                                summary = roomSummary
+                            )
                         }
                     }
                 }
-                context("joined members plus invited members equals 0") {
-                    beforeTest {
-                        listOf(
-                            memberEvent(3, user1, "User1-Display", LEAVE),
-                            memberEvent(4, user2, "User2-Display", BAN),
-                        ).forEach { store.roomState.update(it) }
+            }
+            context("joined plus invited is 0") {
+                beforeTest {
+                    listOf(
+                        memberEvent(3, user1, "User1-Display", LEAVE),
+                        memberEvent(4, user2, "User2-Display", BAN),
+                    ).forEach { store.roomState.update(it) }
+                }
+                context("heroes is 0") {
+                    should("set room name to empty") {
+                        val roomSummary = RoomSummary(
+                            heroes = listOf(),
+                            joinedMemberCount = 0,
+                            invitedMemberCount = 0,
+                        )
+                        cut.setRoomDisplayName(roomId, roomSummary)
+                        store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                            isEmpty = true,
+                            summary = roomSummary
+                        )
                     }
-                    context("heroes equals 0") {
-                        should("set room name to empty") {
+                }
+                context("heroes greater equals left plus banned minus 1") {
+                    context("heroes is 1") {
+                        should("set room name") {
                             val roomSummary = RoomSummary(
-                                heroes = listOf(),
+                                heroes = listOf(user1),
                                 joinedMemberCount = 0,
                                 invitedMemberCount = 0,
                             )
@@ -347,115 +359,99 @@ class RoomServiceDisplayNameTest : ShouldSpec({
                             )
                         }
                     }
-                    context("heroes greater equals left member plus banned member minus 1") {
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1),
-                                    joinedMemberCount = 0,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                store.roomState.update(
-                                    memberEvent(5, user3, "User3-Display", LEAVE),
-                                )
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1, user2),
-                                    joinedMemberCount = 0,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    summary = roomSummary
-                                )
-                            }
-                        }
-                    }
-                    context("heroes less left member plus banned member minus 1") {
-                        beforeTest {
-                            listOf(
+                    context("heroes is 2") {
+                        should("set room name") {
+                            store.roomState.update(
                                 memberEvent(5, user3, "User3-Display", LEAVE),
-                                memberEvent(6, user4, "User4-Display", LEAVE),
-                                memberEvent(7, user5, "User5-Display", LEAVE),
-                            ).forEach { store.roomState.update(it) }
+                            )
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1, user2),
+                                joinedMemberCount = 0,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                summary = roomSummary
+                            )
                         }
-                        context("heroes equals 1") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1),
-                                    joinedMemberCount = 0,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    otherUsersCount = 3,
-                                    summary = roomSummary
-                                )
-                            }
+                    }
+                }
+                context("heroes less left plus banned minus 1") {
+                    beforeTest {
+                        listOf(
+                            memberEvent(5, user3, "User3-Display", LEAVE),
+                            memberEvent(6, user4, "User4-Display", LEAVE),
+                            memberEvent(7, user5, "User5-Display", LEAVE),
+                        ).forEach { store.roomState.update(it) }
+                    }
+                    context("heroes is 1") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1),
+                                joinedMemberCount = 0,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                otherUsersCount = 3,
+                                summary = roomSummary
+                            )
                         }
-                        context("heroes equals 2") {
-                            should("set room name") {
-                                val roomSummary = RoomSummary(
-                                    heroes = listOf(user1, user2),
-                                    joinedMemberCount = 0,
-                                    invitedMemberCount = 0,
-                                )
-                                cut.setRoomDisplayName(roomId, roomSummary)
-                                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                                    isEmpty = true,
-                                    otherUsersCount = 2,
-                                    summary = roomSummary
-                                )
-                            }
+                    }
+                    context("heroes is 2") {
+                        should("set room name") {
+                            val roomSummary = RoomSummary(
+                                heroes = listOf(user1, user2),
+                                joinedMemberCount = 0,
+                                invitedMemberCount = 0,
+                            )
+                            cut.setRoomDisplayName(roomId, roomSummary)
+                            store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                                isEmpty = true,
+                                otherUsersCount = 2,
+                                summary = roomSummary
+                            )
                         }
                     }
                 }
             }
         }
-        context("existent room name state event") {
-            context("with a non-empty name field") {
-                beforeTest {
-                    store.roomState.update(nameEvent(1, user1, "The room name"))
-                }
-                should("set room name to the name field value") {
-                    listOf(
-                        canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
-                        memberEvent(3, user1, "User1-Display", JOIN),
-                        memberEvent(4, user2, "User2-Display", INVITE),
-                        memberEvent(5, user3, "User3-Display", BAN),
-                        memberEvent(6, user4, "User4-Display", LEAVE)
-                    ).forEach { store.roomState.update(it) }
-                    val roomSummary = RoomSummary(
-                        heroes = listOf(user1, user2),
-                        joinedMemberCount = 1,
-                        invitedMemberCount = 2,
-                    )
-                    cut.setRoomDisplayName(roomId, roomSummary)
-                    store.room.get(roomId).value?.name shouldBe RoomDisplayName(
-                        explicitName = "The room name",
-                        summary = roomSummary
-                    )
-                }
+    }
+    context("existent NameEvent") {
+        context("with a non-empty name field") {
+            beforeTest {
+                store.roomState.update(nameEvent(1, user1, "The room name"))
             }
-            context("with an empty name field") {
-                beforeTest {
-                    store.roomState.update(nameEvent(1, user1, ""))
-                }
-                testWithoutNameFromNameEvent()
+            should("set room name") {
+                listOf(
+                    canonicalAliasEvent(2, user2, RoomAliasId("somewhere", "localhost")),
+                    memberEvent(3, user1, "User1-Display", JOIN),
+                    memberEvent(4, user2, "User2-Display", INVITE),
+                    memberEvent(5, user3, "User3-Display", BAN),
+                    memberEvent(6, user4, "User4-Display", LEAVE)
+                ).forEach { store.roomState.update(it) }
+                val roomSummary = RoomSummary(
+                    heroes = listOf(user1, user2),
+                    joinedMemberCount = 1,
+                    invitedMemberCount = 2,
+                )
+                cut.setRoomDisplayName(roomId, roomSummary)
+                store.room.get(roomId).value?.name shouldBe RoomDisplayName(
+                    explicitName = "The room name",
+                    summary = roomSummary
+                )
             }
         }
-        context("non-existent room name state event") {
+        context("empty NameEvent") {
+            beforeTest {
+                store.roomState.update(nameEvent(1, user1, ""))
+            }
             testWithoutNameFromNameEvent()
         }
+    }
+    context("non-existent NameEvent") {
+        testWithoutNameFromNameEvent()
     }
 })
