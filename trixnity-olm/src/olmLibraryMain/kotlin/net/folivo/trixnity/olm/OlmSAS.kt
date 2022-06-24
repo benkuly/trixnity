@@ -5,6 +5,7 @@ import net.folivo.trixnity.olm.OlmLibrary.create_sas
 import net.folivo.trixnity.olm.OlmLibrary.create_sas_random_length
 import net.folivo.trixnity.olm.OlmLibrary.sas
 import net.folivo.trixnity.olm.OlmLibrary.sas_calculate_mac
+import net.folivo.trixnity.olm.OlmLibrary.sas_calculate_mac_fixed_base64
 import net.folivo.trixnity.olm.OlmLibrary.sas_generate_bytes
 import net.folivo.trixnity.olm.OlmLibrary.sas_get_pubkey
 import net.folivo.trixnity.olm.OlmLibrary.sas_last_error
@@ -54,6 +55,12 @@ actual class OlmSAS private constructor() : WantsToBeFree {
     actual fun calculateMac(input: String, info: String): String {
         val mac = ByteArray(sas_mac_length(ptr).toInt())
         checkResult { sas_calculate_mac(ptr, input.encodeToByteArray(), info.encodeToByteArray(), mac) }
+        return mac.decodeToString()
+    }
+
+    actual fun calculateMacFixedBase64(input: String, info: String): String {
+        val mac = ByteArray(sas_mac_length(ptr).toInt())
+        checkResult { sas_calculate_mac_fixed_base64(ptr, input.encodeToByteArray(), info.encodeToByteArray(), mac) }
         return mac.decodeToString()
     }
 

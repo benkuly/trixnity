@@ -512,6 +512,18 @@ actual object OlmLibrary {
         mac.refToOrNull(), mac.usize()
     )
 
+    actual fun sas_calculate_mac_fixed_base64(
+        sas: OlmSASPointer,
+        input: ByteArray,
+        info: ByteArray,
+        mac: ByteArray
+    ): ULong = olm_sas_calculate_mac_fixed_base64(
+        sas.ptr,
+        input.refToOrNull(), input.usize(),
+        info.refToOrNull(), info.usize(),
+        mac.refToOrNull(), mac.usize()
+    )
+
     actual fun sas_calculate_mac_ULong_kdf(
         sas: OlmSASPointer,
         input: ByteArray,

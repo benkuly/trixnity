@@ -104,6 +104,7 @@ external class SAS {
     fun set_their_key(their_key: String)
     fun generate_bytes(info: String, length: Number): Uint8Array
     fun calculate_mac(input: String, info: String): String
+    fun calculate_mac_fixed_base64(input: String, info: String): String
 }
 
 external class Message {
