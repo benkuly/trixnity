@@ -19,7 +19,7 @@ sealed class RelatesTo {
         val eventId: EventId,
     ) : RelatesTo() {
         companion object {
-            const val type = "m.reference"
+            val type = RelationType.Reference
         }
     }
 
@@ -35,7 +35,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
         return when (jsonObject["rel_type"]?.jsonPrimitive?.content) {
-            RelatesTo.Reference.type -> try {
+            RelatesTo.Reference.type.name -> try {
                 decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
             } catch (e: Exception) {
                 RelatesTo.Unknown(jsonObject)
@@ -53,7 +53,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             is RelatesTo.Unknown -> value.raw to null
         }
         encoder.encodeJsonElement(JsonObject(buildMap {
-            if (type != null) put("rel_type", JsonPrimitive(type))
+            if (type != null) put("rel_type", JsonPrimitive(type.name))
             putAll(jsonObject.jsonObject)
         }))
     }

@@ -40,6 +40,21 @@ interface RoomsApiHandler {
     suspend fun getEvents(context: MatrixEndpointContext<GetEvents, Unit, GetEvents.Response>): GetEvents.Response
 
     /**
+     * @see [GetRelations]
+     */
+    suspend fun getRelations(context: MatrixEndpointContext<GetRelations, Unit, GetRelationsResponse>): GetRelationsResponse
+
+    /**
+     * @see [GetRelationsByRelationType]
+     */
+    suspend fun getRelationsByRelationType(context: MatrixEndpointContext<GetRelationsByRelationType, Unit, GetRelationsResponse>): GetRelationsResponse
+
+    /**
+     * @see [GetRelationsByRelationTypeAndEventType]
+     */
+    suspend fun getRelationsByRelationTypeAndEventType(context: MatrixEndpointContext<GetRelationsByRelationTypeAndEventType, Unit, GetRelationsResponse>): GetRelationsResponse
+
+    /**
      * @see [SendStateEvent]
      */
     suspend fun sendStateEvent(context: MatrixEndpointContext<SendStateEvent, StateEventContent, SendEventResponse>): SendEventResponse

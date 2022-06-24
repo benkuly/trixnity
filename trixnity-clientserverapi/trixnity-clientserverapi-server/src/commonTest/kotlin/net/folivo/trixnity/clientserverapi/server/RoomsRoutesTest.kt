@@ -17,10 +17,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
-import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -381,6 +378,183 @@ class RoomsRoutesTest : TestsWithMocks() {
                 it.endpoint.filter shouldBe null
                 it.endpoint.dir shouldBe GetEvents.Direction.FORWARDS
                 it.endpoint.limit shouldBe 10
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetRelations() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getRelations(isAny()) }
+            .returns(
+                GetRelationsResponse(
+                    start = "start",
+                    end = "end",
+                    chunk = listOf(
+                        Event.MessageEvent(
+                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            EventId("$2event"),
+                            UserId("user", "server"),
+                            RoomId("room", "server"),
+                            1234L
+                        )
+                    )
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event?from=from&limit=10") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "prev_batch": "start",
+                  "next_batch": "end",
+                  "chunk": [
+                    {
+                      "content": {
+                        "body":"hi",
+                        "msgtype":"m.text"
+                      },
+                      "event_id": "${'$'}2event",
+                      "origin_server_ts": 1234,
+                      "room_id": "!room:server",
+                      "sender": "@user:server",
+                      "type": "m.room.message"
+                    }
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getRelations(assert {
+                it.endpoint shouldBe GetRelations(
+                    roomId = RoomId("room", "server"),
+                    eventId = EventId("$1event"),
+                    from = "from",
+                    limit = 10
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetRelationsByRelationType() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getRelationsByRelationType(isAny()) }
+            .returns(
+                GetRelationsResponse(
+                    start = "start",
+                    end = "end",
+                    chunk = listOf(
+                        Event.MessageEvent(
+                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            EventId("$2event"),
+                            UserId("user", "server"),
+                            RoomId("room", "server"),
+                            1234L
+                        )
+                    )
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference?from=from&limit=10") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "prev_batch": "start",
+                  "next_batch": "end",
+                  "chunk": [
+                    {
+                      "content": {
+                        "body":"hi",
+                        "msgtype":"m.text"
+                      },
+                      "event_id": "${'$'}2event",
+                      "origin_server_ts": 1234,
+                      "room_id": "!room:server",
+                      "sender": "@user:server",
+                      "type": "m.room.message"
+                    }
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getRelationsByRelationType(assert {
+                it.endpoint shouldBe GetRelationsByRelationType(
+                    roomId = RoomId("room", "server"),
+                    eventId = EventId("$1event"),
+                    relationType = RelationType.Reference,
+                    from = "from",
+                    limit = 10
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetRelationsByRelationTypeAndEventType() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getRelationsByRelationTypeAndEventType(isAny()) }
+            .returns(
+                GetRelationsResponse(
+                    start = "start",
+                    end = "end",
+                    chunk = listOf(
+                        Event.MessageEvent(
+                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            EventId("$2event"),
+                            UserId("user", "server"),
+                            RoomId("room", "server"),
+                            1234L
+                        )
+                    )
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference/m.room.message?from=from&limit=10") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "prev_batch": "start",
+                  "next_batch": "end",
+                  "chunk": [
+                    {
+                      "content": {
+                        "body":"hi",
+                        "msgtype":"m.text"
+                      },
+                      "event_id": "${'$'}2event",
+                      "origin_server_ts": 1234,
+                      "room_id": "!room:server",
+                      "sender": "@user:server",
+                      "type": "m.room.message"
+                    }
+                  ]
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getRelationsByRelationTypeAndEventType(assert {
+                it.endpoint shouldBe GetRelationsByRelationTypeAndEventType(
+                    roomId = RoomId("room", "server"),
+                    eventId = EventId("$1event"),
+                    relationType = RelationType.Reference,
+                    eventType = "m.room.message",
+                    from = "from",
+                    limit = 10
+                )
             })
         }
     }
