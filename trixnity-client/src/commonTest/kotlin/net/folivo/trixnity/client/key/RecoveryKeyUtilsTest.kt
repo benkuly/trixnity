@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import kotlin.random.Random
 
 class RecoveryKeyUtilsTest : ShouldSpec({
-    timeout = 30_000
+    timeout = 60_000
 
     val curve25519Key = listOf(
         0x77, 0x07, 0x6D, 0x0A, 0x73, 0x18, 0xA5, 0x7D,
@@ -59,12 +59,12 @@ class RecoveryKeyUtilsTest : ShouldSpec({
             val key = generatePbkdf2Sha512(
                 password = "super secret passphrase",
                 salt = salt,
-                iterationCount = 300_000,
+                iterationCount = 10_000, // just a test, not secure
                 keyBitLength = 32 * 8
             )
             recoveryKeyFromPassphrase(
                 "super secret passphrase",
-                Pbkdf2(salt = salt.encodeBase64(), iterations = 300_000, bits = 32 * 8)
+                Pbkdf2(salt = salt.encodeBase64(), iterations = 10_000, bits = 32 * 8)
             ).getOrThrow() shouldBe key
         }
     }

@@ -31,7 +31,6 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.fail
 
 class MatrixClientTest : ShouldSpec({
@@ -151,6 +150,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.backgroundFilterId.value = "backgroundFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            delay(50) // wait for init
 
             val cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
@@ -264,8 +264,7 @@ class MatrixClientTest : ShouldSpec({
                     }
                 },
                 scope = scope,
-            ).getOrThrow()
-            assertNotNull(cut)
+            ).getOrThrow().shouldNotBeNull()
 
             cut.displayName.first { it != null } shouldBe "bob"
             cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
@@ -333,6 +332,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            delay(50) // wait for init
         }
         should("delete All when $LOGGED_OUT_SOFT") {
             var logoutCalled = false

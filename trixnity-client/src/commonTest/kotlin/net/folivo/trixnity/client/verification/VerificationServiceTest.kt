@@ -64,7 +64,7 @@ class VerificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
 
-    timeout = 15_000
+    timeout = 35_000
     val aliceUserId = UserId("alice", "server")
     val aliceDeviceId = "AAAAAA"
     val bobUserId = UserId("bob", "server")
@@ -586,7 +586,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("add ${AesHmacSha2RecoveryKey::class.simpleName}") {
             val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
                 name = "default key",
-                passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 300_000),
+                passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 10_000),
             )
             store.globalAccountData.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
             store.globalAccountData.update(GlobalAccountDataEvent(defaultKey, "KEY"))

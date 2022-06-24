@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import com.soywiz.krypto.SecureRandom
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -9,9 +10,12 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.util.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.client.e
@@ -51,7 +55,7 @@ import kotlin.random.Random
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 10_000
+    timeout = 30_000
 
     val alice = UserId("alice", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -306,7 +310,20 @@ private val body: ShouldSpec.() -> Unit = {
                     store.keys.outdatedKeys.first { it.contains(alice) }
                     store.keys.outdatedKeys.value = setOf()
                 }
-                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.")
+                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.") {
+                    val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
+                        salt = SecureRandom.nextBytes(32).encodeBase64(),
+                        iterations = 10_000,  // just a test, not secure
+                        bits = 32 * 8
+                    )
+                    val iv = SecureRandom.nextBytes(16)
+                    val key = recoveryKeyFromPassphrase("super secret. not.", passphraseInfo).getOrThrow()
+                    key to AesHmacSha2Key(
+                        passphrase = passphraseInfo,
+                        iv = iv.encodeBase64(),
+                        mac = createAesHmacSha2MacFromKey(key = key, iv = iv)
+                    )
+                }
                 assertSoftly(result) {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))
