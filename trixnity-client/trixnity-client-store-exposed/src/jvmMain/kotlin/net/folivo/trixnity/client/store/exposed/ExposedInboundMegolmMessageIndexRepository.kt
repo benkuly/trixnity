@@ -7,11 +7,10 @@ import net.folivo.trixnity.core.model.EventId
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message_index") {
-    val senderKey = varchar("sender_key", length = 255)
     val sessionId = varchar("session_id", length = 250)
     val roomId = varchar("room_id", length = 255)
     val messageIndex = long("message_index")
-    override val primaryKey = PrimaryKey(senderKey, sessionId, roomId, messageIndex)
+    override val primaryKey = PrimaryKey(sessionId, roomId, messageIndex)
     val eventId = text("event_id")
     val origin_timestamp = long("origin_timestamp")
 }
@@ -19,13 +18,12 @@ internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message
 internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository {
     override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? {
         return ExposedInboundMegolmMessageIndex.select {
-            ExposedInboundMegolmMessageIndex.senderKey.eq(key.senderKey.value) and
-                    ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
+            ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
                     ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
                     ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
         }.firstOrNull()?.let {
             StoredInboundMegolmMessageIndex(
-                key.senderKey, key.sessionId, key.roomId, key.messageIndex,
+                key.sessionId, key.roomId, key.messageIndex,
                 EventId(it[ExposedInboundMegolmMessageIndex.eventId]),
                 it[ExposedInboundMegolmMessageIndex.origin_timestamp]
             )
@@ -37,7 +35,6 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
         value: StoredInboundMegolmMessageIndex
     ) {
         ExposedInboundMegolmMessageIndex.replace {
-            it[senderKey] = value.senderKey.value
             it[sessionId] = value.sessionId
             it[roomId] = value.roomId.full
             it[messageIndex] = value.messageIndex
@@ -48,8 +45,7 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
 
     override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey) {
         ExposedInboundMegolmMessageIndex.deleteWhere {
-            ExposedInboundMegolmMessageIndex.senderKey.eq(key.senderKey.value) and
-                    ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
+            ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
                     ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
                     ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
         }

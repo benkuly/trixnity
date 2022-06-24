@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1backfillroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#get_matrixfederationv1backfillroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/backfill/{roomId}")

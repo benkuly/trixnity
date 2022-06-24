@@ -5,12 +5,12 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroomavatar">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomavatar">matrix spec</a>
  */
 @Serializable
 data class AvatarEventContent(
     @SerialName("url")
-    val url: String,
+    val url: String? = null,
     @SerialName("info")
     val info: ImageInfo? = null
 ) : StateEventContent

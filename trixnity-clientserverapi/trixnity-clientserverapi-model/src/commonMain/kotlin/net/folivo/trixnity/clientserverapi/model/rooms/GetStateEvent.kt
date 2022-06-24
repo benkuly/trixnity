@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.StateEventContentSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/state/{type}/{stateKey?}")

@@ -12,14 +12,14 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3roomsroomidmessages">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/messages")
 @HttpMethod(GET)
 data class GetEvents(
     @SerialName("roomId") val roomId: RoomId,
-    @SerialName("from") val from: String,
+    @SerialName("from") val from: String? = null,
     @SerialName("to") val to: String? = null,
     @SerialName("dir") val dir: Direction,
     @SerialName("limit") val limit: Long? = null,

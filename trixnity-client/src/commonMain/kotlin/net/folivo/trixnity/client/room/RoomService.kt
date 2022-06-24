@@ -570,9 +570,9 @@ class RoomService(
         avatarEvent.getRoomId()?.let { roomId ->
             val avatarUrl = avatarEvent.content.url
             val room = store.room.get(roomId).value
-            if (room?.isDirect?.not() == true || avatarUrl.isNotEmpty()) {
-                store.room.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl.ifEmpty { null }) }
-            } else if (avatarUrl.isEmpty()) {
+            if (room?.isDirect?.not() == true || avatarUrl.isNullOrEmpty().not()) {
+                store.room.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
+            } else if (avatarUrl.isNullOrEmpty()) {
                 store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.let { mappings ->
                     mappings.entries.forEach { (userId, rooms) ->
                         rooms
@@ -652,7 +652,7 @@ class RoomService(
                                     ?: "UNKNOWN"
                             oldTimelineEvent.copy(
                                 event = StateEvent(
-                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.2/rooms/v9/#redactions
+                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.3/rooms/v9/#redactions
                                     RedactedStateEventContent(eventType),
                                     oldEvent.id,
                                     oldEvent.sender,
@@ -1028,13 +1028,12 @@ class RoomService(
                 val content = timelineEvent?.event?.content
                 if (timelineEvent?.canBeDecrypted() == true && content is MegolmEncryptedEventContent) {
                     withTimeoutOrNull(decryptionTimeout) {
-                        val session =
-                            store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, roomId, this)
+                        val session = store.olm.getInboundMegolmSession(content.sessionId, roomId, this)
                         val firstKnownIndex = session.value?.firstKnownIndex
                         if (session.value == null) {
-                            keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                            keyBackup.loadMegolmSession(roomId, content.sessionId)
                             log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                            store.olm.waitForInboundMegolmSession(roomId, content.sessionId, content.senderKey, this)
+                            store.olm.waitForInboundMegolmSession(roomId, content.sessionId, this)
                         }
                         log.trace { "try to decrypt event $eventId in $roomId" }
                         @Suppress("UNCHECKED_CAST")
@@ -1048,12 +1047,11 @@ class RoomService(
                                     "UNKNOWN_MESSAGE_INDEX"
                                 ) == true
                             ) {
-                                keyBackup.loadMegolmSession(roomId, content.sessionId, content.senderKey)
+                                keyBackup.loadMegolmSession(roomId, content.sessionId)
                                 log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
                                 store.olm.waitForInboundMegolmSession(
                                     roomId,
                                     content.sessionId,
-                                    content.senderKey,
                                     this,
                                     firstKnownIndexLessThen = firstKnownIndex
                                 )

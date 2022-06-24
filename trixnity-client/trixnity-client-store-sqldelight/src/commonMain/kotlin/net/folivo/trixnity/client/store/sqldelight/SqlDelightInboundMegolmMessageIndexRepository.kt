@@ -14,11 +14,11 @@ class SqlDelightInboundMegolmMessageIndexRepository(
     override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? =
         withContext(context) {
             db.getInboundMegolmSessionIndex(
-                key.senderKey.value, key.sessionId, key.roomId.full, key.messageIndex
+                key.sessionId, key.roomId.full, key.messageIndex
             ).executeAsOneOrNull()
                 ?.let {
                     StoredInboundMegolmMessageIndex(
-                        key.senderKey, key.sessionId, key.roomId, key.messageIndex,
+                        key.sessionId, key.roomId, key.messageIndex,
                         EventId(it.event_id),
                         it.origin_timestamp
                     )
@@ -30,7 +30,7 @@ class SqlDelightInboundMegolmMessageIndexRepository(
         value: StoredInboundMegolmMessageIndex
     ) = withContext(context) {
         db.saveInboundMegolmSessionIndex(
-            value.senderKey.value, value.sessionId, value.roomId.full, value.messageIndex,
+            value.sessionId, value.roomId.full, value.messageIndex,
             value.eventId.full,
             value.originTimestamp
         )
@@ -38,7 +38,7 @@ class SqlDelightInboundMegolmMessageIndexRepository(
 
     override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey) = withContext(context) {
         db.deleteInboundMegolmSessionIndex(
-            key.senderKey.value, key.sessionId, key.roomId.full, key.messageIndex
+            key.sessionId, key.roomId.full, key.messageIndex
         )
     }
 

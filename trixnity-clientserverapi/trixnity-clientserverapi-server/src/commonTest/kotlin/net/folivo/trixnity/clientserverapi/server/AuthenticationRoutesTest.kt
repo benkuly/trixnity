@@ -747,4 +747,46 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             })
         }
     }
+
+    @Test
+    fun shouldRefresh() = testApplication {
+        initCut()
+        everySuspending { handlerMock.refresh(isAny()) }
+            .returns(
+                Refresh.Response(
+                    accessToken = "a_new_token",
+                    accessTokenExpiresInMs = 60_000,
+                    refreshToken = "another_new_token"
+                )
+            )
+        val response = client.post("/_matrix/client/v3/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "refresh_token":"some_token"
+                    }
+                """.trim()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "access_token":"a_new_token",
+                  "expires_in_ms":60000,
+                  "refresh_token":"another_new_token"
+                }
+                """.trimToFlatJson()
+        }
+
+        verifyWithSuspend {
+            handlerMock.refresh(assert {
+                it.requestBody shouldBe Refresh.Request(
+                    refreshToken = "some_token"
+                )
+            })
+        }
+    }
 }

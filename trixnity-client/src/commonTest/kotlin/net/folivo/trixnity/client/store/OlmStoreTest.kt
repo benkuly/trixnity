@@ -50,7 +50,6 @@ class OlmStoreTest : ShouldSpec({
         should("start job, which saves changes to database and fills notBackedUp inbound megolm sessions") {
             inboundMegolmSessionRepository.save(
                 InboundMegolmSessionRepositoryKey(
-                    senderKey = Key.Curve25519Key(null, "senderCurve1"),
                     sessionId = "session1",
                     roomId = RoomId("room", "server"),
                 ), StoredInboundMegolmSession(
@@ -67,7 +66,6 @@ class OlmStoreTest : ShouldSpec({
             )
             inboundMegolmSessionRepository.save(
                 InboundMegolmSessionRepositoryKey(
-                    senderKey = Key.Curve25519Key(null, "senderCurve2"),
                     sessionId = "session2",
                     roomId = RoomId("room", "server"),
                 ), StoredInboundMegolmSession(
@@ -106,9 +104,9 @@ class OlmStoreTest : ShouldSpec({
             pickled = "pickle"
         )
         should("add and remove to ${OlmStore::notBackedUpInboundMegolmSessions.name}") {
-            cut.updateInboundMegolmSession(session.senderKey, session.sessionId, session.roomId) { session }
+            cut.updateInboundMegolmSession(session.sessionId, session.roomId) { session }
             cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
-            cut.updateInboundMegolmSession(session.senderKey, session.sessionId, session.roomId) {
+            cut.updateInboundMegolmSession(session.sessionId, session.roomId) {
                 session.copy(hasBeenBackedUp = true)
             }
             cut.notBackedUpInboundMegolmSessions.value.values.shouldBeEmpty()

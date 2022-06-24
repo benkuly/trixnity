@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.EphemeralDataUnit
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#put_matrixfederationv1sendtxnid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#put_matrixfederationv1sendtxnid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/send/{txnId}")

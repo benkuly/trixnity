@@ -12,7 +12,7 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#conditions-1">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#conditions-1">matrix spec</a>
  */
 @Serializable(with = PushConditionSerializer::class)
 sealed class PushCondition {

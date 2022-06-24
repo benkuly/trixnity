@@ -29,18 +29,19 @@ class MatrixSignatureAuthPlugin(
                     is TextContent -> if (body.contentType == ContentType.Application.Json) body.text else null
                     else -> return@intercept
                 }
+            val destination = "${context.host}:${context.port}"
             val signature = sign(
                 requestAuthenticationBody(
                     content = content,
                     method = context.method.value,
                     uri = context.url.encodedPath,
                     origin = hostname,
-                    destination = "${context.host}:${context.port}",
+                    destination = destination,
                 )
             )
             context.header(
                 HttpHeaders.Authorization,
-                """X-Matrix origin="$hostname",key="${signature.algorithm.name}:${signature.keyId}",sig="${signature.value}""""
+                """X-Matrix origin="$hostname",destination="$destination",key="${signature.algorithm.name}:${signature.keyId}",sig="${signature.value}""""
             )
         }
     }

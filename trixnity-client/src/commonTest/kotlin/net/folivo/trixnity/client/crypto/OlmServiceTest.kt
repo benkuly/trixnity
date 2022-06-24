@@ -245,7 +245,6 @@ class OlmServiceTest : ShouldSpec({
 
                     assertSoftly(
                         store.olm.getInboundMegolmSession(
-                            bobOlmService.getSelfSignedDeviceKeys().signed.get<Curve25519Key>().shouldNotBeNull(),
                             outboundSession.sessionId,
                             RoomId("room", "server")
                         ).shouldNotBeNull()

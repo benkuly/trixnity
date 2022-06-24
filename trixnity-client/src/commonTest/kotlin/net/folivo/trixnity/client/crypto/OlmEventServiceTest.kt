@@ -764,9 +764,9 @@ private val body: ShouldSpec.() -> Unit = {
 
                 freeAfter(OlmOutboundGroupSession.unpickle("", storedOutboundSession.pickled)) { outboundSession ->
                     assertSoftly(result) {
-                        senderKey shouldBe aliceCurveKey
-                        deviceId shouldBe aliceDeviceId
-                        sessionId shouldBe outboundSession.sessionId
+                        this.senderKey shouldBe aliceCurveKey
+                        this.deviceId shouldBe aliceDeviceId
+                        this.sessionId shouldBe outboundSession.sessionId
                         this.relatesTo shouldBe relatesTo
                     }
 
@@ -789,7 +789,6 @@ private val body: ShouldSpec.() -> Unit = {
 
                     val storedInboundSession =
                         store.olm.getInboundMegolmSession(
-                            aliceCurveKey,
                             outboundSession.sessionId,
                             room,
                             this
@@ -961,9 +960,9 @@ private val body: ShouldSpec.() -> Unit = {
                         1234
                     )
                 ) shouldBe decryptedMegolmEvent.copy(content = decryptedMegolmEvent.content.copy(relatesTo = relatesTo))
-                store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
+                store.olm.updateInboundMegolmMessageIndex(session.sessionId, room, 0) {
                     it shouldBe StoredInboundMegolmMessageIndex(
-                        bobCurveKey, session.sessionId, room, 0, EventId("\$event"), 1234
+                        session.sessionId, room, 0, EventId("\$event"), 1234
                     )
                     it
                 }
@@ -1038,9 +1037,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                     val ciphertext =
                         session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
-                    store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
+                    store.olm.updateInboundMegolmMessageIndex(session.sessionId, room, 0) {
                         StoredInboundMegolmMessageIndex(
-                            bobCurveKey, session.sessionId, room, 0, EventId("\$otherEvent"), 1234
+                            session.sessionId, room, 0, EventId("\$otherEvent"), 1234
                         )
                     }
                     shouldThrow<DecryptionException> {
@@ -1059,41 +1058,11 @@ private val body: ShouldSpec.() -> Unit = {
                             )
                         )
                     }
-                    store.olm.updateInboundMegolmMessageIndex(bobCurveKey, session.sessionId, room, 0) {
+                    store.olm.updateInboundMegolmMessageIndex(session.sessionId, room, 0) {
                         StoredInboundMegolmMessageIndex(
-                            bobCurveKey, session.sessionId, room, 0, EventId("\$event"), 4321
+                            session.sessionId, room, 0, EventId("\$event"), 4321
                         )
                     }
-                    shouldThrow<DecryptionException> {
-                        cut.decryptMegolm(
-                            MessageEvent(
-                                MegolmEncryptedEventContent(
-                                    ciphertext,
-                                    bobCurveKey,
-                                    bobDeviceId,
-                                    session.sessionId
-                                ),
-                                EventId("\$event"),
-                                bob,
-                                room,
-                                1234
-                            )
-                        )
-                    }
-                }
-            }
-            should("handle manipulated senderKey in event content") {
-                freeAfter(OlmOutboundGroupSession.create()) { session ->
-                    store.olm.storeTrustedInboundMegolmSession(
-                        roomId = room,
-                        senderKey = Curve25519Key(null, "cedrics curve key"),
-                        senderSigningKey = Ed25519Key(null, "cedric ed key"),
-                        sessionId = session.sessionId,
-                        sessionKey = session.sessionKey,
-                        pickleKey = ""
-                    )
-                    val ciphertext =
-                        session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
                     shouldThrow<DecryptionException> {
                         cut.decryptMegolm(
                             MessageEvent(

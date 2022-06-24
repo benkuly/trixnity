@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.MessageEventContentSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/send/{type}/{txnId}")
@@ -24,7 +24,8 @@ data class SendMessageEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("type") val type: String,
     @SerialName("txnId") val txnId: String,
-    @SerialName("user_id") val asUserId: UserId? = null
+    @SerialName("user_id") val asUserId: UserId? = null,
+    @SerialName("ts") val ts: Long? = null,
 ) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,

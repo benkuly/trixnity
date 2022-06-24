@@ -22,8 +22,8 @@ class ExposedInboundMegolmSessionRepositoryTest : ShouldSpec({
     }
     should("save, get and delete") {
         val roomId = RoomId("room", "server")
-        val inboundSessionKey1 = InboundMegolmSessionRepositoryKey(Curve25519Key(null, "curve1"), "session1", roomId)
-        val inboundSessionKey2 = InboundMegolmSessionRepositoryKey(Curve25519Key(null, "curve2"), "session2", roomId)
+        val inboundSessionKey1 = InboundMegolmSessionRepositoryKey("session1", roomId)
+        val inboundSessionKey2 = InboundMegolmSessionRepositoryKey("session2", roomId)
         val inboundSession1 =
             StoredInboundMegolmSession(
                 senderKey = Curve25519Key(null, "curve1"),

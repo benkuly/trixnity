@@ -1,8 +1,8 @@
 package net.folivo.trixnity.core.serialization.m.room.encrypted
 
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
@@ -39,8 +39,8 @@ class EncryptedEventContentSerializerTest {
             "device_id":"<sender_device_id>",
             "session_id":"<outbound_group_session_id>",
             "m.relates_to":{
-                "event_id":"$1234",
-                "rel_type":"m.reference"
+                "rel_type":"m.reference",
+                "event_id":"$1234"
             },
             "algorithm":"m.megolm.v1.aes-sha2"
           }
@@ -97,8 +97,8 @@ class EncryptedEventContentSerializerTest {
                 },
                 "sender_key":"<sender_curve25519_key>",
                 "m.relates_to":{
-                    "event_id":"$1234",
-                    "rel_type":"m.reference"
+                    "rel_type":"m.reference",
+                    "event_id":"$1234"
                 },
                 "algorithm":"m.olm.v1.curve25519-aes-sha2"
             }
@@ -119,8 +119,8 @@ class EncryptedEventContentSerializerTest {
               }
             },
             "m.relates_to":{
-                "event_id":"$1234",
-                "rel_type":"m.reference"
+                "rel_type":"m.reference",
+                "event_id":"$1234"
             }
           }
         """.trimIndent()
@@ -141,17 +141,7 @@ class EncryptedEventContentSerializerTest {
         val input = """
           {
             "algorithm": "super_duper_algo",
-            "sender_key": "<sender_curve25519_key>",
-            "ciphertext": {
-              "<device_curve25519_key>": {
-                "type": 0,
-                "body": "<encrypted_payload_base_64>"
-              }
-            },
-            "m.relates_to":{
-                "event_id":"$1234",
-                "rel_type":"m.reference"
-            }
+            "ciphertext": "peng"
           }
         """.trimIndent()
         val result = json.decodeFromString<EncryptedEventContent>(input)
@@ -159,18 +149,10 @@ class EncryptedEventContentSerializerTest {
         assertEquals(
             UnknownEncryptedEventContent(
                 algorithm = Unknown("super_duper_algo"),
-                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
-                ciphertext = JsonObject(
-                    mapOf(
-                        "<device_curve25519_key>" to JsonObject(
-                            mapOf(
-                                "type" to JsonPrimitive(INITIAL_PRE_KEY.value),
-                                "body" to JsonPrimitive("<encrypted_payload_base_64>"),
-                            )
-                        )
-                    )
-                ),
-                relatesTo = RelatesTo.Reference(EventId("$1234"))
+                raw = buildJsonObject {
+                    put("algorithm", JsonPrimitive("super_duper_algo"))
+                    put("ciphertext", JsonPrimitive("peng"))
+                }
             ), result
         )
     }

@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#actions">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#actions">matrix spec</a>
  */
 @Serializable(with = PushActionSerializer::class)
 sealed class PushAction {

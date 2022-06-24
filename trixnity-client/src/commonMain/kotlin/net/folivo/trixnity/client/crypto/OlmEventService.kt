@@ -416,9 +416,8 @@ class OlmEventService internal constructor(
         val roomId = encryptedEvent.roomId
         val encryptedContent = encryptedEvent.content
         val sessionId = encryptedContent.sessionId
-        val senderKey = encryptedContent.senderKey
 
-        val storedSession = store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
+        val storedSession = store.olm.getInboundMegolmSession(sessionId, roomId)
             ?: throw DecryptionException.SenderDidNotSendMegolmKeysToUs
 
         val decryptionResult = try {
@@ -434,13 +433,13 @@ class OlmEventService internal constructor(
         val decryptedEvent =
             json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult.message, encryptedContent.relatesTo))
         val index = decryptionResult.index
-        store.olm.updateInboundMegolmMessageIndex(senderKey, sessionId, roomId, index) { storedIndex ->
+        store.olm.updateInboundMegolmMessageIndex(sessionId, roomId, index) { storedIndex ->
             if (encryptedEvent.roomId != decryptedEvent.roomId
                 || storedIndex?.let { it.eventId != encryptedEvent.id || it.originTimestamp != encryptedEvent.originTimestamp } == true
             ) throw DecryptionException.ValidationFailed
 
             storedIndex ?: StoredInboundMegolmMessageIndex(
-                senderKey, sessionId, roomId, index, encryptedEvent.id, encryptedEvent.originTimestamp
+                sessionId, roomId, index, encryptedEvent.id, encryptedEvent.originTimestamp
             )
         }
 

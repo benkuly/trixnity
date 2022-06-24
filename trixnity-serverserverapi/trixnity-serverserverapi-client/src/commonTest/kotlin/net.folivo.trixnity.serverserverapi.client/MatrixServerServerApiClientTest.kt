@@ -55,7 +55,7 @@ class MatrixServerServerApiClientTest {
             getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",key="ed25519:ABC",sig="signature""""
+                    request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""
                     request.body.toByteArray().decodeToString() shouldBe """{"key":"value"}"""
                     endpointCalled = true
                     respond("{}")
@@ -83,7 +83,7 @@ class MatrixServerServerApiClientTest {
             getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",key="ed25519:ABC",sig="signature""""
+                    request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""
                     endpointCalled = true
                     respond("{}")
                 }

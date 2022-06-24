@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/rooms/">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/rooms/">matrix spec</a>
  */
 sealed interface PersistentDataUnit<C : EventContent> {
     val content: C
@@ -31,7 +31,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
         val depth: ULong
         val id: EventId
         val hashes: EventHash
-        val origin: String
         val originTimestamp: Long
         val prevEvents: @Serializable(with = EventHashPairListSerializer::class) List<@Contextual EventHashPair>
         val roomId: RoomId
@@ -45,7 +44,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
             @SerialName("depth") override val depth: ULong,
             @SerialName("event_id") override val id: EventId,
             @SerialName("hashes") override val hashes: EventHash,
-            @SerialName("origin") override val origin: String,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
             @SerialName("prev_events") override val prevEvents: @Serializable(with = EventHashPairListSerializer::class) List<@Contextual EventHashPair>,
             @SerialName("room_id") override val roomId: RoomId,
@@ -60,7 +58,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
             @SerialName("depth") override val depth: ULong,
             @SerialName("event_id") override val id: EventId,
             @SerialName("hashes") override val hashes: EventHash,
-            @SerialName("origin") override val origin: String,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
             @SerialName("prev_events") override val prevEvents: @Serializable(with = EventHashPairListSerializer::class) List<@Contextual EventHashPair>,
             @SerialName("room_id") override val roomId: RoomId,
@@ -107,7 +104,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
         val authEvents: List<EventId>
         val depth: ULong
         val hashes: EventHash
-        val origin: String
         val originTimestamp: Long
         val prevEvents: List<EventId>
         val roomId: RoomId
@@ -120,7 +116,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
             @SerialName("content") override val content: C,
             @SerialName("depth") override val depth: ULong,
             @SerialName("hashes") override val hashes: EventHash,
-            @SerialName("origin") override val origin: String,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
             @SerialName("prev_events") override val prevEvents: List<EventId>,
             @SerialName("room_id") override val roomId: RoomId,
@@ -134,7 +129,6 @@ sealed interface PersistentDataUnit<C : EventContent> {
             @SerialName("content") override val content: C,
             @SerialName("depth") override val depth: ULong,
             @SerialName("hashes") override val hashes: EventHash,
-            @SerialName("origin") override val origin: String,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
             @SerialName("prev_events") override val prevEvents: List<EventId>,
             @SerialName("room_id") override val roomId: RoomId,

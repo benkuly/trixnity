@@ -42,7 +42,7 @@ class OlmStore(
         storeScope.launch(start = UNDISPATCHED) {
             _notBackedUpInboundMegolmSessions.value =
                 rtm.transaction { inboundMegolmSessionRepository.getByNotBackedUp() }
-                    .associateBy { InboundMegolmSessionRepositoryKey(it.senderKey, it.sessionId, it.roomId) }
+                    .associateBy { InboundMegolmSessionRepositoryKey(it.sessionId, it.roomId) }
         }
     }
 
@@ -76,30 +76,27 @@ class OlmStore(
     private val inboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, inboundMegolmSessionRepository, rtm)
 
     suspend fun getInboundMegolmSession(
-        senderKey: Curve25519Key,
         sessionId: String,
         roomId: RoomId,
         scope: CoroutineScope
     ): StateFlow<StoredInboundMegolmSession?> =
-        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId), scope = scope)
+        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(sessionId, roomId), scope = scope)
 
     suspend fun getInboundMegolmSession(
-        senderKey: Curve25519Key,
         sessionId: String,
         roomId: RoomId,
     ): StoredInboundMegolmSession? =
-        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId))
+        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(sessionId, roomId))
 
     suspend fun updateInboundMegolmSession(
-        senderKey: Curve25519Key,
         sessionId: String,
         roomId: RoomId,
         updater: suspend (oldInboundMegolmSession: StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
     ) = inboundMegolmSessionCache.update(
-        InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId),
+        InboundMegolmSessionRepositoryKey(sessionId, roomId),
         updater = updater,
         onPersist = { newValue ->
-            val key = InboundMegolmSessionRepositoryKey(senderKey, sessionId, roomId)
+            val key = InboundMegolmSessionRepositoryKey(sessionId, roomId)
             _notBackedUpInboundMegolmSessions.update {
                 if (newValue == null || newValue.hasBeenBackedUp) it - key
                 else it + (key to newValue)
@@ -111,13 +108,12 @@ class OlmStore(
         RepositoryStateFlowCache(storeScope, inboundMegolmMessageIndexRepository, rtm)
 
     suspend fun updateInboundMegolmMessageIndex(
-        senderKey: Curve25519Key,
         sessionId: String,
         roomId: RoomId,
         messageIndex: Long,
         updater: suspend (oldMegolmSessionIndex: StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
     ) = inboundMegolmSessionIndexCache.update(
-        InboundMegolmMessageIndexRepositoryKey(senderKey, sessionId, roomId, messageIndex), updater = updater
+        InboundMegolmMessageIndexRepositoryKey(sessionId, roomId, messageIndex), updater = updater
     )
 
     private val outboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, outboundMegolmSessionRepository, rtm)
