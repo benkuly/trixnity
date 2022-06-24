@@ -20,4 +20,6 @@ actual class OlmSAS private constructor() : WantsToBeFree {
         rethrow { ptr.generate_bytes(info, numberOfBytes) }.unsafeCast<ByteArray>()
 
     actual fun calculateMac(input: String, info: String): String = rethrow { ptr.calculate_mac(input, info) }
+    actual fun calculateMacFixedBase64(input: String, info: String) =
+        rethrow { ptr.calculate_mac_fixed_base64(input, info) }
 }
