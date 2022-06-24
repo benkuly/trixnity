@@ -2,10 +2,7 @@ package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -107,7 +104,19 @@ class EventSerializerTest {
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
-            UnsignedMessageEventData(1234),
+            UnsignedMessageEventData(
+                1234, aggregations = Aggregations(
+                    setOf(
+                        Aggregation.UnknownAggregation(
+                            "org.example.possible_annotations", buildJsonArray {
+                                add(buildJsonObject {
+                                    put("key", JsonPrimitive("👍"))
+                                    put("count", JsonPrimitive(3))
+                                })
+                            })
+                    )
+                )
+            ),
         )
         val expectedResult = """
         {
@@ -124,8 +133,17 @@ class EventSerializerTest {
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "sender":"@example:example.org",
             "type":"m.room.message",
-            "unsigned":{"age":1234}
-            
+            "unsigned":{
+                "age":1234,
+                "m.relations": {
+                  "org.example.possible_annotations": [
+                    {
+                      "count": 3,
+                      "key": "👍"
+                    }
+                  ]
+                }
+            }
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
@@ -133,6 +151,68 @@ class EventSerializerTest {
             content
         )
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldDeserializeMessageEvent() {
+        val input = """
+        {
+            "content":{
+                "body":"hello",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.reference"
+                },
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{
+                "age":1234,
+                "m.relations": {
+                  "org.example.possible_annotations": [
+                    {
+                      "key": "👍",
+                      "count": 3
+                    }
+                  ]
+                }
+            }
+        }
+    """.trimIndent()
+
+        val result = json.decodeFromString(
+            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            input
+        )
+        assertEquals(
+            MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent(
+                    "hello",
+                    relatesTo = RelatesTo.Reference(EventId("$1234"))
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(
+                    1234, aggregations = Aggregations(
+                        setOf(
+                            Aggregation.UnknownAggregation(
+                                "org.example.possible_annotations", buildJsonArray {
+                                    add(buildJsonObject {
+                                        put("key", JsonPrimitive("👍"))
+                                        put("count", JsonPrimitive(3))
+                                    })
+                                })
+                        )
+                    )
+                ),
+            ), result
+        )
     }
 
     @Test
