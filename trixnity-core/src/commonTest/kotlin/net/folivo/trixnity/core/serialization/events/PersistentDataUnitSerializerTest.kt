@@ -40,7 +40,6 @@ class PersistentDataUnitSerializerTest {
         depth = 12u,
         id = EventId("${'$'}a4ecee13e2accdadf56c1025:example.com"),
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(
             PersistentDataUnitV1.EventHashPair(
@@ -70,7 +69,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [
                 "${'$'}af232176:example.org",
@@ -105,7 +103,6 @@ class PersistentDataUnitSerializerTest {
         content = MemberEventContent(membership = Membership.JOIN),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(EventId("${'$'}base64encodedeventid"), EventId("${'$'}adifferenteventid")),
         roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
@@ -127,7 +124,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [
                 "${'$'}base64encodedeventid",
@@ -166,7 +162,6 @@ class PersistentDataUnitSerializerTest {
         depth = 12u,
         id = EventId("${'$'}a4ecee13e2accdadf56c1025:example.com"),
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(
             PersistentDataUnitV1.EventHashPair(
@@ -196,7 +191,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [
                 "${'$'}af232176:example.org",
@@ -230,7 +224,6 @@ class PersistentDataUnitSerializerTest {
         content = RoomMessageEventContent.TextMessageEventContent("hi"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(EventId("${'$'}base64encodedeventid"), EventId("${'$'}adifferenteventid")),
         roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
@@ -252,7 +245,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [
                 "${'$'}base64encodedeventid",
@@ -292,7 +284,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
@@ -308,7 +299,6 @@ class PersistentDataUnitSerializerTest {
             content = UnknownMessageEventContent(buildJsonObject { put("dino", JsonPrimitive("unicorn")) }, "o"),
             depth = 12u,
             hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-            origin = "example.com",
             originTimestamp = 1404838188000,
             prevEvents = listOf(),
             roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
@@ -327,7 +317,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [],
               "redacts": "${'$'}1event",
@@ -345,7 +334,6 @@ class PersistentDataUnitSerializerTest {
         content = RedactionEventContent("spam", EventId("$1event")),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(),
         roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
@@ -373,7 +361,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
@@ -390,7 +377,6 @@ class PersistentDataUnitSerializerTest {
         content = RedactedMessageEventContent("m.room.message"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(),
         roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),
@@ -418,7 +404,6 @@ class PersistentDataUnitSerializerTest {
               "hashes": {
                 "sha256": "thishashcoversallfieldsincasethisisredacted"
               },
-              "origin": "example.com",
               "origin_server_ts": 1404838188000,
               "prev_events": [],
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
@@ -436,7 +421,6 @@ class PersistentDataUnitSerializerTest {
         content = RedactedStateEventContent("m.room.avatar"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
-        origin = "example.com",
         originTimestamp = 1404838188000,
         prevEvents = listOf(),
         roomId = RoomId("!UcYsUzyxTGDxLBEvLy:example.org"),

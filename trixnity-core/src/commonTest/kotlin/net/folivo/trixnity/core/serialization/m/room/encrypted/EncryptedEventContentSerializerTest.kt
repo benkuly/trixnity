@@ -39,8 +39,8 @@ class EncryptedEventContentSerializerTest {
             "device_id":"<sender_device_id>",
             "session_id":"<outbound_group_session_id>",
             "m.relates_to":{
-                "event_id":"$1234",
-                "rel_type":"m.reference"
+                "rel_type":"m.reference",
+                "event_id":"$1234"
             },
             "algorithm":"m.megolm.v1.aes-sha2"
           }
@@ -97,8 +97,8 @@ class EncryptedEventContentSerializerTest {
                 },
                 "sender_key":"<sender_curve25519_key>",
                 "m.relates_to":{
-                    "event_id":"$1234",
-                    "rel_type":"m.reference"
+                    "rel_type":"m.reference",
+                    "event_id":"$1234"
                 },
                 "algorithm":"m.olm.v1.curve25519-aes-sha2"
             }
@@ -119,8 +119,8 @@ class EncryptedEventContentSerializerTest {
               }
             },
             "m.relates_to":{
-                "event_id":"$1234",
-                "rel_type":"m.reference"
+                "rel_type":"m.reference",
+                "event_id":"$1234"
             }
           }
         """.trimIndent()

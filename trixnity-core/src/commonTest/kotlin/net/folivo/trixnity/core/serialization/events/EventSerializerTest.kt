@@ -5,6 +5,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -135,7 +136,49 @@ class EventSerializerTest {
     }
 
     @Test
-    fun shouldDeserializeMessageEvent() {
+    fun shouldDeserializeMessageEventWithMalformedRelatesTo() {
+        val input = """
+        {
+            "content":{
+                "msgtype":"m.text",
+                "body":"hello",
+                "m.relates_to":{
+                    "event_id":24,
+                    "rel_type":"m.reference"
+                }
+            },
+            "event_id":"$143273582443PhrSn",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{"age":1234},
+            "type":"m.room.message"
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+            ), input
+        )
+        assertEquals(
+            MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent(
+                    body = "hello", relatesTo = RelatesTo.Unknown(buildJsonObject {
+                        put("event_id", JsonPrimitive(24))
+                        put("rel_type", JsonPrimitive("m.reference"))
+                    })
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(1234)
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldDeserializeMalformedUnknownMessageEvent() {
         val input = """
         {
             "content":{
