@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
@@ -33,14 +33,14 @@ suspend inline fun <reified C : StateEventContent> IRoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
-): Flow<ClientEvent<C>?> {
+): Flow<Event<C>?> {
     return getState(roomId, stateKey, C::class, scope)
 }
 
 suspend inline fun <reified C : StateEventContent> IRoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
-): ClientEvent<C>? {
+): Event<C>? {
     return getState(roomId, stateKey, C::class)
 }
 

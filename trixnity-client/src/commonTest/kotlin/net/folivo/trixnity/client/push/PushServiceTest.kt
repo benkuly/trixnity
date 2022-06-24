@@ -17,9 +17,9 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.Joined
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -175,7 +175,7 @@ private val body: ShouldSpec.() -> Unit = {
                 roomId,
                 user1,
                 user1DisplayName,
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("JOIN"),
                     user1,
@@ -218,7 +218,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            val invitation = ClientEvent.StrippedStateEvent(
+            val invitation = Event.StrippedStateEvent(
                 content = MemberEventContent(
                     membership = Membership.INVITE,
                     displayName = user1DisplayName,
@@ -349,7 +349,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("notify when met") {
                     store.roomState.update(
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(50),
                                 users = mapOf(otherUser to 50, user1 to 30)
@@ -365,7 +365,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("not notify when not met") {
                     store.roomState.update(
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(100),
                                 users = mapOf(otherUser to 50, user1 to 30)

@@ -26,8 +26,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent

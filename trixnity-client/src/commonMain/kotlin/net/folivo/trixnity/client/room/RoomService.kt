@@ -32,7 +32,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -198,13 +198,13 @@ interface IRoomService {
         stateKey: String = "",
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): Flow<ClientEvent<C>?>
+    ): Flow<Event<C>?>
 
     suspend fun <C : StateEventContent> getState(
         roomId: RoomId,
         stateKey: String = "",
         eventContentClass: KClass<C>,
-    ): ClientEvent<C>?
+    ): Event<C>?
 }
 
 class RoomService(
@@ -297,20 +297,20 @@ class RoomService(
         }
     }
 
-    internal suspend fun setRoomAccountData(accountDataEvent: ClientEvent<RoomAccountDataEventContent>) {
+    internal suspend fun setRoomAccountData(accountDataEvent: Event<RoomAccountDataEventContent>) {
         if (accountDataEvent is RoomAccountDataEvent) {
             store.roomAccountData.update(accountDataEvent)
         }
     }
 
-    internal fun setRoomDisplayNameFromNameEvent(event: ClientEvent<NameEventContent>) {
+    internal fun setRoomDisplayNameFromNameEvent(event: Event<NameEventContent>) {
         val roomId = event.getRoomId()
         if (roomId != null) setRoomDisplayNamesQueue.update {
             if (it.containsKey(roomId)) it else it + (roomId to null)
         }
     }
 
-    internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: ClientEvent<CanonicalAliasEventContent>) {
+    internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: Event<CanonicalAliasEventContent>) {
         val roomId = event.getRoomId()
         if (roomId != null) setRoomDisplayNamesQueue.update {
             if (it.containsKey(roomId)) it else it + (roomId to null)
@@ -409,7 +409,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setLastEventId(event: ClientEvent<*>) {
+    internal suspend fun setLastEventId(event: Event<*>) {
         if (event is RoomEvent) {
             store.room.update(event.roomId, withTransaction = false) { oldRoom ->
                 oldRoom?.copy(lastEventId = event.id)
@@ -426,7 +426,7 @@ class RoomService(
             }
     }
 
-    internal suspend fun setEncryptionAlgorithm(event: ClientEvent<EncryptionEventContent>) {
+    internal suspend fun setEncryptionAlgorithm(event: Event<EncryptionEventContent>) {
         if (event is StateEvent) {
             store.room.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(
@@ -440,7 +440,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setOwnMembership(event: ClientEvent<MemberEventContent>) {
+    internal suspend fun setOwnMembership(event: Event<MemberEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null && stateKey == ownUserId.full) {
@@ -457,7 +457,7 @@ class RoomService(
 
     private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
 
-    internal suspend fun setDirectRooms(event: ClientEvent<MemberEventContent>) {
+    internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         val sender = event.getSender()
@@ -519,7 +519,7 @@ class RoomService(
     // because DirectEventContent could be set before any rooms are in store
     private val directEventContent = MutableStateFlow<DirectEventContent?>(null)
 
-    internal fun setDirectEventContent(directEvent: ClientEvent<DirectEventContent>) {
+    internal fun setDirectEventContent(directEvent: Event<DirectEventContent>) {
         directEventContent.value = directEvent.content
     }
 
@@ -555,7 +555,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: ClientEvent<MemberEventContent>) {
+    internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
         memberEvent.getRoomId()?.let { roomId ->
             val room = store.room.get(roomId).value
             if (room?.isDirect == true && ownUserId.full != memberEvent.getStateKey()) {
@@ -566,7 +566,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: ClientEvent<AvatarEventContent>) {
+    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: Event<AvatarEventContent>) {
         avatarEvent.getRoomId()?.let { roomId ->
             val avatarUrl = avatarEvent.content.url
             val room = store.room.get(roomId).value
@@ -602,7 +602,7 @@ class RoomService(
         }
     }
 
-    internal suspend fun setReadReceipts(receiptEvent: ClientEvent<ReceiptEventContent>) {
+    internal suspend fun setReadReceipts(receiptEvent: Event<ReceiptEventContent>) {
         receiptEvent.getRoomId()?.let { roomId ->
             receiptEvent.content.events.forEach { (eventId, receipts) ->
                 receipts
@@ -619,7 +619,7 @@ class RoomService(
     }
 
 
-    internal suspend fun redactTimelineEvent(redactionEvent: ClientEvent<RedactionEventContent>) {
+    internal suspend fun redactTimelineEvent(redactionEvent: Event<RedactionEventContent>) {
         if (redactionEvent is MessageEvent) {
             val roomId = redactionEvent.roomId
             log.debug { "redact event with id ${redactionEvent.content.redacts} in room $roomId" }
@@ -1245,7 +1245,7 @@ class RoomService(
         store.roomOutboxMessage.update(transactionId) { it?.copy(retryCount = 0) }
     }
 
-    internal suspend fun syncOutboxMessage(event: ClientEvent<*>) {
+    internal suspend fun syncOutboxMessage(event: Event<*>) {
         if (event is MessageEvent)
             if (event.sender == ownUserId) {
                 event.unsigned?.transactionId?.also {
@@ -1340,7 +1340,7 @@ class RoomService(
         stateKey: String,
         eventContentClass: KClass<C>,
         scope: CoroutineScope
-    ): Flow<ClientEvent<C>?> {
+    ): Flow<Event<C>?> {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass, scope)
     }
 
@@ -1348,7 +1348,7 @@ class RoomService(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-    ): ClientEvent<C>? {
+    ): Event<C>? {
         return store.roomState.getByStateKey(roomId, stateKey, eventContentClass)
     }
 }

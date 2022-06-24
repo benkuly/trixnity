@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
+import net.folivo.trixnity.core.model.events.Event.EphemeralEvent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 

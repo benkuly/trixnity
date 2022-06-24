@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.push.IPushService
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.InitialStateEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -85,7 +85,7 @@ class PushIT {
 
             withClue("first notification") {
                 notifications.first { it.size == 1 }.getOrNull(0).shouldNotBeNull()
-                    .event.shouldBeInstanceOf<ClientEvent.StrippedStateEvent<*>>()
+                    .event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
                     .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
             }
 

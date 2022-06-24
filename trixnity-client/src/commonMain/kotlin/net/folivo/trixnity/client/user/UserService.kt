@@ -16,7 +16,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -68,7 +68,7 @@ class UserService(
         api.sync.subscribeAfterSyncResponse { reloadProfile() }
     }
 
-    internal fun setPresence(presenceEvent: ClientEvent<PresenceEventContent>) {
+    internal fun setPresence(presenceEvent: Event<PresenceEventContent>) {
         presenceEvent.getSender()?.let { sender ->
             _userPresence.update { oldValue -> oldValue + (sender to presenceEvent.content) }
         }
@@ -105,7 +105,7 @@ class UserService(
         return usersWithSameDisplayName.isNotEmpty()
     }
 
-    internal suspend fun setRoomUser(event: ClientEvent<MemberEventContent>, skipWhenAlreadyPresent: Boolean = false) {
+    internal suspend fun setRoomUser(event: Event<MemberEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
@@ -197,8 +197,8 @@ class UserService(
         }
     }
 
-    internal suspend fun setGlobalAccountData(accountDataEvent: ClientEvent<GlobalAccountDataEventContent>) {
-        if (accountDataEvent is ClientEvent.GlobalAccountDataEvent) {
+    internal suspend fun setGlobalAccountData(accountDataEvent: Event<GlobalAccountDataEventContent>) {
+        if (accountDataEvent is Event.GlobalAccountDataEvent) {
             store.globalAccountData.update(accountDataEvent)
         }
     }

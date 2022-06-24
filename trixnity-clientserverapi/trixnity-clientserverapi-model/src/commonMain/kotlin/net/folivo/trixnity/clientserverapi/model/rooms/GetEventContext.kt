@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidcontexteventid">matrix spec</a>
@@ -29,9 +29,9 @@ data class GetEventContext(
     data class Response(
         @SerialName("start") val start: String? = null,
         @SerialName("end") val end: String? = null,
-        @SerialName("event") val event: @Contextual ClientEvent.RoomEvent<*>,
-        @SerialName("events_before") val eventsBefore: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
-        @SerialName("events_after") val eventsAfter: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
-        @SerialName("state") val state: List<@Contextual ClientEvent.StateEvent<*>>? = null
+        @SerialName("event") val event: @Contextual Event.RoomEvent<*>,
+        @SerialName("events_before") val eventsBefore: List<@Contextual Event.RoomEvent<*>>? = null,
+        @SerialName("events_after") val eventsAfter: List<@Contextual Event.RoomEvent<*>>? = null,
+        @SerialName("state") val state: List<@Contextual Event.StateEvent<*>>? = null
     )
 }

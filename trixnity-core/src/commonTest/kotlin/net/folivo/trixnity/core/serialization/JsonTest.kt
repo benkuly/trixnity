@@ -7,8 +7,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
@@ -43,7 +43,7 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
@@ -90,7 +90,7 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
@@ -123,7 +123,7 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
@@ -209,7 +209,7 @@ class JsonTest {
             }
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, content)
         if (result is UnknownEvent) {
@@ -252,7 +252,7 @@ class JsonTest {
                 }
         ]
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(ListSerializer(serializer), content)
         val result1 = result[0]

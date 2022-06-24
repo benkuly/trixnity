@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3search">matrix spec</a>
@@ -85,7 +85,7 @@ data class Search(
                 @SerialName("highlights") val highlights: Set<String>? = null,
                 @SerialName("next_batch") val nextBatch: String? = null,
                 @SerialName("results") val results: List<Results>? = null,
-                @SerialName("state") val state: Map<RoomId, Set<@Contextual ClientEvent.StateEvent<*>>>? = null,
+                @SerialName("state") val state: Map<RoomId, Set<@Contextual Event.StateEvent<*>>>? = null,
             ) {
                 @Serializable
                 data class GroupValue(
@@ -98,13 +98,13 @@ data class Search(
                 data class Results(
                     @SerialName("context") val context: EventContext? = null,
                     @SerialName("rank") val rank: Double? = null,
-                    @SerialName("result") val result: @Contextual ClientEvent.RoomEvent<*>? = null
+                    @SerialName("result") val result: @Contextual Event.RoomEvent<*>? = null
                 ) {
                     @Serializable
                     data class EventContext(
                         @SerialName("end") val end: String? = null,
-                        @SerialName("events_after") val eventsAfter: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
-                        @SerialName("events_before") val eventsBefore: List<@Contextual ClientEvent.RoomEvent<*>>? = null,
+                        @SerialName("events_after") val eventsAfter: List<@Contextual Event.RoomEvent<*>>? = null,
+                        @SerialName("events_before") val eventsBefore: List<@Contextual Event.RoomEvent<*>>? = null,
                         @SerialName("profile_info") val profileInfo: Map<UserId, UserProfile>? = null,
                         @SerialName("start") val start: String? = null
                     ) {

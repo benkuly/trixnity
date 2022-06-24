@@ -12,19 +12,19 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 /**
  * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#types-of-room-events">matrix spec</a>
  */
-sealed interface ClientEvent<C : EventContent> {
+sealed interface Event<C : EventContent> {
     val content: C
 
     data class UnknownEvent(
         override val content: EmptyEventContent,
         val type: String,
         val raw: JsonObject
-    ) : ClientEvent<EmptyEventContent>
+    ) : Event<EmptyEventContent>
 
     /**
      * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#room-event-fields">matrix spec</a>
      */
-    sealed interface RoomEvent<C : RoomEventContent> : ClientEvent<C> {
+    sealed interface RoomEvent<C : RoomEventContent> : Event<C> {
         val id: EventId
         val sender: UserId
         val roomId: RoomId
@@ -65,19 +65,19 @@ sealed interface ClientEvent<C : EventContent> {
         @SerialName("origin_server_ts") val originTimestamp: Long? = null,
         @SerialName("unsigned") val unsigned: UnsignedStateEventData<C>? = null,
         @SerialName("state_key") val stateKey: String,
-    ) : ClientEvent<C>
+    ) : Event<C>
 
     @Serializable
     data class InitialStateEvent<C : StateEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("state_key") val stateKey: String
-    ) : ClientEvent<C>
+    ) : Event<C>
 
     @Serializable
     data class ToDeviceEvent<C : ToDeviceEventContent>(
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId
-    ) : ClientEvent<C>
+    ) : Event<C>
 
     // TODO could be split into GlobalEphemeralEvent and RoomEphemeralEvent
     @Serializable
@@ -85,7 +85,7 @@ sealed interface ClientEvent<C : EventContent> {
         @SerialName("content") override val content: C,
         @SerialName("sender") val sender: UserId? = null,
         @SerialName("room_id") val roomId: RoomId? = null
-    ) : ClientEvent<C>
+    ) : Event<C>
 
     @Serializable
     data class RoomAccountDataEvent<C : RoomAccountDataEventContent>(
@@ -93,12 +93,12 @@ sealed interface ClientEvent<C : EventContent> {
         @SerialName("room_id") val roomId: RoomId,
         // This does not actually exist. We use it to circumvent inconsistent spec.
         @SerialName("key") val key: String = ""
-    ) : ClientEvent<C>
+    ) : Event<C>
 
     @Serializable
     data class GlobalAccountDataEvent<C : GlobalAccountDataEventContent>(
         @SerialName("content") override val content: C,
         // This does not actually exist. We use it to circumvent inconsistent spec.
         @SerialName("key") val key: String = ""
-    ) : ClientEvent<C>
+    ) : Event<C>
 }

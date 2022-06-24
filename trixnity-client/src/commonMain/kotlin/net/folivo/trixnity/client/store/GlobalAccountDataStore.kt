@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings

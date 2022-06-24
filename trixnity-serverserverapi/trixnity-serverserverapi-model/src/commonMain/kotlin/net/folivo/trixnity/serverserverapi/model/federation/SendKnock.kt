@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
@@ -39,6 +39,6 @@ data class SendKnock(
     @Serializable
     data class Response(
         @SerialName("knock_room_state")
-        val knockRoomState: List<@Contextual ClientEvent.StrippedStateEvent<*>>,
+        val knockRoomState: List<@Contextual Event.StrippedStateEvent<*>>,
     )
 }

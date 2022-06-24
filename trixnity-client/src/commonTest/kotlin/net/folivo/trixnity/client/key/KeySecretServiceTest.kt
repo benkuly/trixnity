@@ -35,8 +35,8 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
@@ -94,7 +94,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    val encryptedEvent = ClientEvent.ToDeviceEvent(
+    val encryptedEvent = Event.ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")

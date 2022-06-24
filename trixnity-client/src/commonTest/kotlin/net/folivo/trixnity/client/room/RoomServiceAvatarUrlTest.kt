@@ -19,7 +19,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -66,7 +66,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         should("set the avatar URL to a member's avatar URL") {
             store.room.update(room) { Room(room, avatarUrl = null) }
             store.roomState.update(
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
@@ -92,7 +92,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         should("when the avatar URL is explicitly set use it instead of member's avatar URL") {
             store.room.update(room) { Room(room, avatarUrl = "mxc://localhost/123456") }
             store.roomState.update(
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
@@ -102,7 +102,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                 )
             )
             store.roomState.update(
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     AvatarEventContent("mxc://localhost/123456"),
                     EventId("1"),
                     bob,
@@ -129,7 +129,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     context(RoomService::setAvatarUrlForMemberUpdates.name) {
         should("update the room's avatar URL when the room is a direct room") {
             store.room.update(room) { Room(room, isDirect = true) }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
                     membership = Membership.JOIN,
@@ -148,7 +148,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
 
         should("do nothing when the room is not a direct room") {
             store.room.update(room) { Room(room, isDirect = false) }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
                     membership = Membership.JOIN,
@@ -167,7 +167,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
 
         should("use the membership event of other user and not own (which is the invitation we might have sent)") {
             store.room.update(room) { Room(room, isDirect = true) }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 // invitation
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/abcdef",
@@ -189,7 +189,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
     context(RoomService::setAvatarUrlForAvatarEvents.name) {
         should("set the avatar URL for normal rooms") {
             store.room.update(room) { Room(room, avatarUrl = "mxc://localhost/abcdef") }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 AvatarEventContent("mxc://localhost/123456"),
                 EventId("1"),
                 bob,
@@ -205,7 +205,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
 
         should("set an empty avatar URL for normal rooms") {
             store.room.update(room) { Room(room, avatarUrl = "mxc://localhost/abcdef") }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 AvatarEventContent(""),
                 EventId("1"),
                 bob,
@@ -221,7 +221,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
 
         should("set the avatar URL for direct rooms") {
             store.room.update(room) { Room(room, isDirect = true) }
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 AvatarEventContent("mxc://localhost/123456"),
                 EventId("1"),
                 bob,
@@ -238,12 +238,12 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
         should("set the avatar URL to a member of a direct room when the new avatar URL is empty") {
             store.room.update(room) { Room(room, isDirect = true, avatarUrl = "mxc://localhost/abcdef") }
             store.globalAccountData.update(
-                ClientEvent.GlobalAccountDataEvent(
+                Event.GlobalAccountDataEvent(
                     DirectEventContent(mappings = mapOf(bob to setOf(room, RoomId("room2", "localhost"))))
                 )
             )
             store.roomState.update(
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     MemberEventContent(
                         avatarUrl = "mxc://localhost/123456",
                         membership = Membership.JOIN
@@ -255,7 +255,7 @@ class RoomServiceAvatarUrlTest : ShouldSpec({
                     stateKey = bob.full
                 )
             )
-            val event = ClientEvent.StateEvent(
+            val event = Event.StateEvent(
                 AvatarEventContent(""),
                 EventId("1"),
                 bob,

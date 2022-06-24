@@ -21,7 +21,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
@@ -84,8 +84,8 @@ class OlmEventService internal constructor(
     private val _decryptedOlmEvents = MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>()
     override val decryptedOlmEvents = _decryptedOlmEvents.asSharedFlow()
 
-    internal suspend fun handleOlmEncryptedToDeviceEvents(event: ClientEvent<OlmEncryptedEventContent>) {
-        if (event is ClientEvent.ToDeviceEvent) {
+    internal suspend fun handleOlmEncryptedToDeviceEvents(event: Event<OlmEncryptedEventContent>) {
+        if (event is Event.ToDeviceEvent) {
             try {
                 val decryptedEvent = decryptOlm(event.content, event.sender)
                 _decryptedOlmEvents.emit(IOlmService.DecryptedOlmEventContainer(event, decryptedEvent))

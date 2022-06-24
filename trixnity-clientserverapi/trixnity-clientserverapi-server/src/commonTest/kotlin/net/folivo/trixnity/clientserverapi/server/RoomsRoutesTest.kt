@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -61,7 +61,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getEvent(isAny()) }
             .returns(
-                ClientEvent.StateEvent(
+                Event.StateEvent(
                     id = EventId("event"),
                     roomId = RoomId("room", "server"),
                     unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
@@ -129,7 +129,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getState(isAny()) }
             .returns(
                 listOf(
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         id = EventId("event1"),
                         roomId = RoomId("room", "server"),
                         unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
@@ -138,7 +138,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                         content = NameEventContent("a"),
                         stateKey = ""
                     ),
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         id = EventId("event2"),
                         roomId = RoomId("room", "server"),
                         unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
@@ -197,7 +197,7 @@ class RoomsRoutesTest : TestsWithMocks() {
             .returns(
                 GetMembers.Response(
                     setOf(
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             id = EventId("event1"),
                             roomId = RoomId("room", "server"),
                             unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
@@ -206,7 +206,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                             stateKey = UserId("user1", "server").full,
                             content = MemberEventContent(membership = Membership.INVITE)
                         ),
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             id = EventId("event2"),
                             roomId = RoomId("room", "server"),
                             unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
@@ -315,7 +315,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     start = "start",
                     end = "end",
                     chunk = listOf(
-                        ClientEvent.MessageEvent(
+                        Event.MessageEvent(
                             RoomMessageEventContent.TextMessageEventContent("hi"),
                             EventId("event"),
                             UserId("user", "server"),
@@ -324,7 +324,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                         )
                     ),
                     state = listOf(
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             MemberEventContent(membership = Membership.JOIN),
                             EventId("event"),
                             UserId("user", "server"),
@@ -1410,7 +1410,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 GetEventContext.Response(
                     start = "t27-54_2_0_2",
                     end = "t29-57_2_0_2",
-                    event = ClientEvent.MessageEvent(
+                    event = Event.MessageEvent(
                         content = RoomMessageEventContent.ImageMessageEventContent(
                             body = "filename.jpg",
                             info = ImageInfo(
@@ -1435,7 +1435,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                         )
                     ),
                     eventsBefore = listOf(
-                        ClientEvent.MessageEvent(
+                        Event.MessageEvent(
                             content = RoomMessageEventContent.FileMessageEventContent(
                                 body = "something-important.doc",
                                 fileName = "something-important.doc",
@@ -1460,7 +1460,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                         )
                     ),
                     eventsAfter = listOf(
-                        ClientEvent.MessageEvent(
+                        Event.MessageEvent(
                             content = RoomMessageEventContent.TextMessageEventContent(
                                 body = "This is an example text message",
                                 format = "org.matrix.custom.html",
@@ -1479,7 +1479,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                         )
                     ),
                     state = listOf(
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             content = CreateEventContent(
                                 creator = UserId("@example:example.org"), federate = true, roomVersion = "1",
                                 predecessor = CreateEventContent.PreviousRoom(
@@ -1500,7 +1500,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                             ),
                             stateKey = ""
                         ),
-                        ClientEvent.StateEvent(
+                        Event.StateEvent(
                             content = MemberEventContent(
                                 avatarUrl = "mxc://example.org/SEsfnsuifSDFSSEF",
                                 displayName = "Alice Margatroid",
@@ -1709,7 +1709,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                             avatarUrl = "mxc://example.org/abcdef",
                             canonicalAlias = RoomAliasId("#general:example.org"),
                             childrenState = setOf(
-                                ClientEvent.StrippedStateEvent(
+                                Event.StrippedStateEvent(
                                     ChildEventContent(via = setOf("example.org")),
                                     originTimestamp = 1629413349153,
                                     sender = UserId("@alice:example.org"),

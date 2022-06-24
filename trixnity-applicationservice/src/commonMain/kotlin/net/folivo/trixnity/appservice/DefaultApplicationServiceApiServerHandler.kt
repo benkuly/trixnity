@@ -6,7 +6,7 @@ import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExisting
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 
 class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceEventTxnService: ApplicationServiceEventTxnService,
@@ -14,7 +14,7 @@ class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceRoomService: ApplicationServiceRoomService,
 ) : ApplicationServiceApiServerHandler, EventEmitter() {
 
-    override suspend fun addTransaction(txnId: String, events: List<ClientEvent<*>>) {
+    override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
         when (applicationServiceEventTxnService.eventTnxProcessingState(txnId)) {
             ApplicationServiceEventTxnService.EventTnxProcessingState.NOT_PROCESSED -> {
                 events.forEach { emitEvent(it) }

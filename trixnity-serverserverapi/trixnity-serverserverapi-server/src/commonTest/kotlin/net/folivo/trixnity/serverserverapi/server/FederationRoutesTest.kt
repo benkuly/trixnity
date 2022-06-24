@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
@@ -665,12 +665,12 @@ class FederationRoutesTest : TestsWithMocks() {
             .returns(
                 SendKnock.Response(
                     listOf(
-                        ClientEvent.StrippedStateEvent(
+                        Event.StrippedStateEvent(
                             content = NameEventContent("Example Room"),
                             sender = UserId("@bob:example.org"),
                             stateKey = ""
                         ),
-                        ClientEvent.StrippedStateEvent(
+                        Event.StrippedStateEvent(
                             content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Knock),
                             sender = UserId("@bob:example.org"),
                             stateKey = ""
@@ -903,12 +903,12 @@ class FederationRoutesTest : TestsWithMocks() {
                         )
                     ),
                     inviteRoomState = listOf(
-                        ClientEvent.StrippedStateEvent(
+                        Event.StrippedStateEvent(
                             content = NameEventContent("Example Room"),
                             sender = UserId("@bob:example.org"),
                             stateKey = ""
                         ),
-                        ClientEvent.StrippedStateEvent(
+                        Event.StrippedStateEvent(
                             content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Invite),
                             sender = UserId("@bob:example.org"),
                             stateKey = ""
@@ -1345,7 +1345,7 @@ class FederationRoutesTest : TestsWithMocks() {
                             avatarUrl = "mxc://example.org/abcdef2",
                             canonicalAlias = RoomAliasId("#general:example.org"),
                             childrenState = setOf(
-                                ClientEvent.StrippedStateEvent(
+                                Event.StrippedStateEvent(
                                     ChildEventContent(via = setOf("remote.example.org")),
                                     originTimestamp = 1629422222222,
                                     sender = UserId("@alice:example.org"),
@@ -1368,7 +1368,7 @@ class FederationRoutesTest : TestsWithMocks() {
                         avatarUrl = "mxc://example.org/abcdef",
                         canonicalAlias = RoomAliasId("#general:example.org"),
                         childrenState = setOf(
-                            ClientEvent.StrippedStateEvent(
+                            Event.StrippedStateEvent(
                                 ChildEventContent(via = setOf("remote.example.org")),
                                 originTimestamp = 1629413349153,
                                 sender = UserId("@alice:example.org"),

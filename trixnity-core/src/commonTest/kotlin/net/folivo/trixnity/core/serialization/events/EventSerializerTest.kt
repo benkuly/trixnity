@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
@@ -560,7 +560,7 @@ class EventSerializerTest {
             "prev_content":null
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(
@@ -617,7 +617,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234}
         }
     """.trimToFlatJson()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
         assertEquals(expectedResult, result)
@@ -650,7 +650,7 @@ class EventSerializerTest {
            "room_id": "!aNgXnqwYApWloKSPKD:imbitbu.de"
         }
         """.trimIndent()
-        val serializer = json.serializersModule.getContextual(ClientEvent::class)
+        val serializer = json.serializersModule.getContextual(Event::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(

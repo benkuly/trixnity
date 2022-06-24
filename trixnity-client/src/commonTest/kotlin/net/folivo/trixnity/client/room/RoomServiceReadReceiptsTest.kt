@@ -22,7 +22,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
@@ -70,7 +70,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
         should("do nothing when the user in the receipt could not be found") {
             val existingRoomUser = roomUser(room, alice)
             store.roomUser.update(alice, room) { existingRoomUser }
-            val event = ClientEvent.EphemeralEvent(
+            val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         EventId("eventId") to setOf(
@@ -92,7 +92,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
         should("do nothing on unknown receipt events") {
             val existingRoomUser = roomUser(room, alice)
             store.roomUser.update(alice, room) { existingRoomUser }
-            val event = ClientEvent.EphemeralEvent(
+            val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         EventId("eventId") to setOf(
@@ -114,7 +114,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
             val eventId = EventId("eventId")
             val existingRoomUser = roomUser(room, alice)
             store.roomUser.update(alice, room) { existingRoomUser }
-            val event = ClientEvent.EphemeralEvent(
+            val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         eventId to setOf(
@@ -138,7 +138,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
             val existingRoomUser = roomUser(room, alice, lastReadMessage = existingEventId)
             store.roomUser.update(alice, room) { existingRoomUser }
             val eventId = EventId("eventId")
-            val event = ClientEvent.EphemeralEvent(
+            val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         eventId to setOf(
@@ -160,7 +160,7 @@ class RoomServiceReadReceiptsTest : ShouldSpec({
             val eventId = EventId("eventId")
             val existingRoomUser = roomUser(room, alice)
             store.roomUser.update(alice, room) { existingRoomUser }
-            val event = ClientEvent.EphemeralEvent(
+            val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         eventId to setOf(
@@ -194,7 +194,7 @@ fun roomUser(roomId: RoomId, userId: UserId, lastReadMessage: EventId? = null): 
         roomId,
         userId,
         userId.full,
-        event = ClientEvent.StateEvent(
+        event = Event.StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("event"),
             UserId("user", "server"),

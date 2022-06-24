@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -71,8 +71,8 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         userId: UserId,
         displayName: String,
         membership: Membership
-    ): ClientEvent.StateEvent<MemberEventContent> {
-        return ClientEvent.StateEvent(
+    ): Event.StateEvent<MemberEventContent> {
+        return Event.StateEvent(
             MemberEventContent(
                 displayName = displayName,
                 membership = membership
@@ -89,8 +89,8 @@ class RoomServiceDisplayNameTest : ShouldSpec({
         i: Long,
         userId: UserId,
         name: String
-    ): ClientEvent.StateEvent<NameEventContent> {
-        return ClientEvent.StateEvent(
+    ): Event.StateEvent<NameEventContent> {
+        return Event.StateEvent(
             NameEventContent(name),
             EventId("\$event$i"),
             userId,
@@ -103,8 +103,8 @@ class RoomServiceDisplayNameTest : ShouldSpec({
     fun canonicalAliasEvent(
         i: Long,
         userId: UserId, roomAliasId: RoomAliasId
-    ): ClientEvent.StateEvent<CanonicalAliasEventContent> {
-        return ClientEvent.StateEvent(
+    ): Event.StateEvent<CanonicalAliasEventContent> {
+        return Event.StateEvent(
             CanonicalAliasEventContent(roomAliasId),
             EventId("\$event$i"),
             userId,

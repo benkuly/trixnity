@@ -11,8 +11,8 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -36,7 +36,7 @@ interface IOlmService {
     val event: IOlmEventService
 
     data class DecryptedOlmEventContainer(
-        val encrypted: ClientEvent<OlmEncryptedEventContent>,
+        val encrypted: Event<OlmEncryptedEventContent>,
         val decrypted: DecryptedOlmEvent<*>
     )
 
@@ -128,7 +128,7 @@ class OlmService(
         }
     }
 
-    internal suspend fun handleMemberEvents(event: ClientEvent<MemberEventContent>) {
+    internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
         if (event is StateEvent && store.room.get(event.roomId).value?.encryptionAlgorithm == Megolm) {
             log.debug { "handle membership change in an encrypted room" }
             when (event.content.membership) {
@@ -150,7 +150,7 @@ class OlmService(
         }
     }
 
-    internal suspend fun handleEncryptionEvents(event: ClientEvent<EncryptionEventContent>) {
+    internal suspend fun handleEncryptionEvents(event: Event<EncryptionEventContent>) {
         if (event is StateEvent) {
             val outdatedKeys = store.roomState.members(event.roomId, JOIN, INVITE).filterNot {
                 store.keys.isTracked(it)

@@ -17,8 +17,8 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -28,7 +28,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
-fun ClientEvent<*>?.getStateKey(): String? {
+fun Event<*>?.getStateKey(): String? {
     return when (this) {
         is StateEvent -> this.stateKey
         is StrippedStateEvent -> this.stateKey
@@ -36,21 +36,21 @@ fun ClientEvent<*>?.getStateKey(): String? {
     }
 }
 
-fun ClientEvent<*>?.getEventId(): EventId? {
+fun Event<*>?.getEventId(): EventId? {
     return when (this) {
         is RoomEvent -> this.id
         else -> null
     }
 }
 
-fun ClientEvent<*>?.getOriginTimestamp(): Long? {
+fun Event<*>?.getOriginTimestamp(): Long? {
     return when (this) {
         is RoomEvent -> this.originTimestamp
         else -> null
     }
 }
 
-fun ClientEvent<*>?.getRoomId(): RoomId? {
+fun Event<*>?.getRoomId(): RoomId? {
     return when (this) {
         is RoomEvent -> this.roomId
         is StrippedStateEvent -> this.roomId
@@ -60,7 +60,7 @@ fun ClientEvent<*>?.getRoomId(): RoomId? {
     }
 }
 
-fun ClientEvent<*>?.getSender(): UserId? {
+fun Event<*>?.getSender(): UserId? {
     return when (this) {
         is RoomEvent -> this.sender
         is StrippedStateEvent -> this.sender

@@ -40,8 +40,8 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -687,7 +687,7 @@ class RoomServiceTest : ShouldSpec({
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
-            val event: ClientEvent<MessageEventContent> = MessageEvent(
+            val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
                 UserId("other", "server"),
@@ -704,7 +704,7 @@ class RoomServiceTest : ShouldSpec({
             val roomOutboxMessage =
                 RoomOutboxMessage("transaction", room, TextMessageEventContent("hi"), Clock.System.now())
             store.roomOutboxMessage.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
-            val event: ClientEvent<MessageEventContent> = MessageEvent(
+            val event: Event<MessageEventContent> = MessageEvent(
                 TextMessageEventContent("hi"),
                 EventId("\$event"),
                 alice,

@@ -32,7 +32,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
@@ -456,7 +456,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 listOf(
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event1"),
                         alice,
@@ -464,7 +464,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event2"),
                         alice,
@@ -472,7 +472,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event3"),
                         alice,
@@ -480,7 +480,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
-                    ClientEvent.StateEvent(
+                    Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event4"),
                         cedric,

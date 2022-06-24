@@ -4,7 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedRoomAccountData : Table("room_account_data") {
@@ -17,10 +17,10 @@ internal object ExposedRoomAccountData : Table("room_account_data") {
 
 internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAccountDataRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(ClientEvent.RoomAccountDataEvent::class)
+    private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, ClientEvent.RoomAccountDataEvent<*>> {
+    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> {
         return ExposedRoomAccountData.select {
             ExposedRoomAccountData.roomId.eq(key.roomId.full) and
                     ExposedRoomAccountData.type.eq(key.type)
@@ -29,7 +29,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         }
     }
 
-    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Map<String, ClientEvent.RoomAccountDataEvent<*>>) {
+    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Map<String, Event.RoomAccountDataEvent<*>>) {
         ExposedRoomAccountData.batchReplace(value.entries) { (secondKey, event) ->
             this[ExposedRoomAccountData.roomId] = key.roomId.full
             this[ExposedRoomAccountData.type] = key.type
@@ -48,7 +48,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     override suspend fun getBySecondKey(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
-    ): ClientEvent.RoomAccountDataEvent<*>? {
+    ): Event.RoomAccountDataEvent<*>? {
         return ExposedRoomAccountData.select {
             ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
                     ExposedRoomAccountData.type.eq(firstKey.type) and
@@ -61,7 +61,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     override suspend fun saveBySecondKey(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String,
-        value: ClientEvent.RoomAccountDataEvent<*>
+        value: Event.RoomAccountDataEvent<*>
     ) {
         ExposedRoomAccountData.replace {
             it[this.roomId] = firstKey.roomId.full

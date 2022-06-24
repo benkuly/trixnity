@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
@@ -29,7 +29,7 @@ data class Invite(
         @SerialName("event")
         val event: Signed<@Contextual PersistentStateDataUnit<MemberEventContent>, String>,
         @SerialName("invite_room_state")
-        val inviteRoomState: List<@Contextual ClientEvent.StrippedStateEvent<*>>? = null,
+        val inviteRoomState: List<@Contextual Event.StrippedStateEvent<*>>? = null,
         @SerialName("room_version")
         val roomVersion: String,
     )

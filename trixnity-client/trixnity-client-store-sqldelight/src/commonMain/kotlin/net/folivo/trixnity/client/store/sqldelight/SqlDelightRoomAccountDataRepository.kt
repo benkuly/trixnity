@@ -5,7 +5,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightRoomAccountDataRepository(

@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 /**
@@ -27,6 +27,6 @@ data class GetMembers(
 ) : MatrixEndpoint<Unit, GetMembers.Response> {
     @Serializable
     data class Response(
-        @SerialName("chunk") val chunk: Set<@Contextual ClientEvent.StateEvent<*>>
+        @SerialName("chunk") val chunk: Set<@Contextual Event.StateEvent<*>>
     )
 }

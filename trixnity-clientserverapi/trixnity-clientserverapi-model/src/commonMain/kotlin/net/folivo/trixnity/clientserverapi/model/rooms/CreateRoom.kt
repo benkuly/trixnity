@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
@@ -32,7 +32,7 @@ data class CreateRoom(
         @SerialName("invite_3pid") val inviteThirdPid: Set<InviteThirdPid>?,
         @SerialName("room_version") val roomVersion: String?,
         @SerialName("creation_content") val creationContent: CreateEventContent?,
-        @SerialName("initial_state") val initialState: List<@Contextual ClientEvent.InitialStateEvent<*>>?,
+        @SerialName("initial_state") val initialState: List<@Contextual Event.InitialStateEvent<*>>?,
         @SerialName("preset") val preset: Preset?,
         @SerialName("is_direct") val isDirect: Boolean?,
         @SerialName("power_level_content_override") val powerLevelContentOverride: PowerLevelsEventContent?,

@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -19,22 +19,22 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
     scope: CoroutineScope
-): Flow<Map<String, ClientEvent<C>?>?> = get(roomId, C::class, scope)
+): Flow<Map<String, Event<C>?>?> = get(roomId, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Map<String, ClientEvent<C>?>? = get(roomId, C::class)
+): Map<String, Event<C>?>? = get(roomId, C::class)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
     scope: CoroutineScope
-): Flow<ClientEvent<C>?> = getByStateKey(roomId, stateKey, C::class, scope)
+): Flow<Event<C>?> = getByStateKey(roomId, stateKey, C::class, scope)
 
 suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = ""
-): ClientEvent<C>? = getByStateKey(roomId, stateKey, C::class)
+): Event<C>? = getByStateKey(roomId, stateKey, C::class)
 
 suspend inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,

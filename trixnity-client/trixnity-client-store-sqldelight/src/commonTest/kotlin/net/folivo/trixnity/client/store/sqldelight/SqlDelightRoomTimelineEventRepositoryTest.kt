@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSch
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
@@ -33,7 +33,7 @@ class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
         val key1 = RoomTimelineKey(EventId("\$event1"), RoomId("room1", "server"))
         val key2 = RoomTimelineKey(EventId("\$event2"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
-            ClientEvent.MessageEvent(
+            Event.MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
@@ -47,7 +47,7 @@ class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
             gap = TimelineEvent.Gap.GapBefore("batch")
         )
         val event2 = TimelineEvent(
-            ClientEvent.MessageEvent(
+            Event.MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),

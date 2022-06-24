@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 
 /**
  * @see <a href="https://spec.matrix.org/v1.2/application-service-api/#put_matrixappv1transactionstxnid">matrix spec</a>
@@ -21,6 +21,6 @@ data class AddTransaction(
     @Serializable
     data class Request(
         @SerialName("events")
-        val events: List<@Contextual ClientEvent<*>>
+        val events: List<@Contextual Event<*>>
     )
 }

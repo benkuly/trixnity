@@ -27,8 +27,8 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -74,7 +74,7 @@ class RoomServiceTimelineTest : ShouldSpec({
         scope.cancel()
     }
 
-    suspend fun storeTimeline(vararg events: ClientEvent.RoomEvent<*>) = events.map {
+    suspend fun storeTimeline(vararg events: Event.RoomEvent<*>) = events.map {
         store.roomTimeline.get(it.id, it.roomId)
     }
 

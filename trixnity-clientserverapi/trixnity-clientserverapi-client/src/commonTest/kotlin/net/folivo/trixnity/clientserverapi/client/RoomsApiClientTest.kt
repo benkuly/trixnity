@@ -15,8 +15,8 @@ import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.ClientEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StateEvent
+import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.TagEventContent
@@ -104,7 +104,7 @@ class RoomsApiClientTest {
                 }
             },
         )
-        val result: ClientEvent<*> = matrixRestClient.rooms.getEvent(
+        val result: Event<*> = matrixRestClient.rooms.getEvent(
             RoomId("room", "server"),
             EventId("\$event")
         ).getOrThrow()
@@ -1758,7 +1758,7 @@ class RoomsApiClientTest {
                     avatarUrl = "mxc://example.org/abcdef",
                     canonicalAlias = RoomAliasId("#general:example.org"),
                     childrenState = setOf(
-                        ClientEvent.StrippedStateEvent(
+                        Event.StrippedStateEvent(
                             ChildEventContent(via = setOf("example.org")),
                             originTimestamp = 1629413349153,
                             sender = UserId("@alice:example.org"),

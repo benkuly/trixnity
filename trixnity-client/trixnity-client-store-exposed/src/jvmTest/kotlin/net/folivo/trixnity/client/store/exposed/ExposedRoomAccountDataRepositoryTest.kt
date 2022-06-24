@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson

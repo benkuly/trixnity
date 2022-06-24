@@ -20,7 +20,7 @@ import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -442,11 +442,11 @@ class KeyService(
                     store.keys.secrets.update {
                         mapOf(
                             M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                                ClientEvent.GlobalAccountDataEvent(encryptedSelfSigningKey),
+                                Event.GlobalAccountDataEvent(encryptedSelfSigningKey),
                                 selfSigningPrivateKey
                             ),
                             M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                                ClientEvent.GlobalAccountDataEvent(encryptedUserSigningKey),
+                                Event.GlobalAccountDataEvent(encryptedUserSigningKey),
                                 userSigningPrivateKey
                             ),
                         )
@@ -517,7 +517,7 @@ class KeyService(
     ): Flow<DeviceTrustLevel>? {
         val event = timelineEvent.event
         val content = event.content
-        return if (event is ClientEvent.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
+        return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
             combine(
                 store.olm.getInboundMegolmSession(content.sessionId, event.roomId, scope),
                 store.keys.getDeviceKeys(event.sender, scope)

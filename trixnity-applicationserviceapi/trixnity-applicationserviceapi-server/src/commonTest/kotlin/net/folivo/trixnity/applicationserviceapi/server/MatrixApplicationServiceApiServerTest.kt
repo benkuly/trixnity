@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import kotlin.test.Test
@@ -30,13 +30,13 @@ private fun Application.matrixApplicationServiceApiServerTestApplication(
 }
 
 class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandler {
-    var addTransaction: Pair<String, List<ClientEvent<*>>>? = null
+    var addTransaction: Pair<String, List<Event<*>>>? = null
     var hasUser: Boolean = false
     var requestedUser: UserId? = null
     var hasRoom: Boolean = false
     var requestedRoom: RoomAliasId? = null
 
-    override suspend fun addTransaction(txnId: String, events: List<ClientEvent<*>>) {
+    override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
         addTransaction = txnId to events
     }
 
