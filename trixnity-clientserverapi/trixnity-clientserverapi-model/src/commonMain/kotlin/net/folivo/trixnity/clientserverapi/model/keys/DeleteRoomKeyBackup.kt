@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#delete_matrixclientv3room_keyskeysroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/room_keys/keys/{roomId}")

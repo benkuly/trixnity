@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3keysdevice_signingupload">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/keys/device_signing/upload")

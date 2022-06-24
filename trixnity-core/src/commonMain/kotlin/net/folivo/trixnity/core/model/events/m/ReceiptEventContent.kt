@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.EphemeralEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 
 /**
- * @see <a href="https://spec.matrix.org/v1.1/client-server-api/#receipts">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#receipts">matrix spec</a>
  */
 @Serializable(with = ReadEventsSerializer::class)
 data class ReceiptEventContent(
@@ -56,7 +56,7 @@ object ReadEventsSerializer : KSerializer<ReceiptEventContent> {
         require(encoder is JsonEncoder)
         val json = JsonObject(value.events.entries.associate { (eventId, receipts) ->
             eventId.full to JsonObject(receipts.associate { receipt ->
-                when(receipt) {
+                when (receipt) {
                     is Receipt.ReadReceipt -> "m.read" to encoder.json.encodeToJsonElement(receipt.read)
                     is Receipt.Unknown -> receipt.type to receipt.raw
                 }

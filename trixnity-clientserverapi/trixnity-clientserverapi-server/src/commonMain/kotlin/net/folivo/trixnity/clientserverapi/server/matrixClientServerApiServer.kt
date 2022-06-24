@@ -36,7 +36,7 @@ fun Application.matrixClientServerApiServer(
         installMatrixAccessTokenAuth {
             this.authenticationFunction = accessTokenAuthenticationFunction
         }
-        // see also https://spec.matrix.org/v1.2/client-server-api/#web-browser-clients
+        // see also https://spec.matrix.org/v1.3/client-server-api/#web-browser-clients
         install(CORS) {
             anyHost()
             allowMethod(Get)

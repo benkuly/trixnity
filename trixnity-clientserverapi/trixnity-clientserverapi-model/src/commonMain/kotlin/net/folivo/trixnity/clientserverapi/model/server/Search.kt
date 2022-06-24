@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#post_matrixclientv3search">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3search">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/search")

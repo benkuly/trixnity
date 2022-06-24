@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#getwell-knownmatrixserver">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#getwell-knownmatrixserver">matrix spec</a>
  */
 @Serializable
 @Resource("/.well-known/matrix/server")

@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mignored_user_list">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mignored_user_list">matrix spec</a>
  */
 @Serializable
 data class IgnoredUserListEventContent(

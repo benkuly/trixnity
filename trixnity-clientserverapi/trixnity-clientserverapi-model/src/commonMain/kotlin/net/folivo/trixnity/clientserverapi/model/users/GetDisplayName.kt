@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3profileuseriddisplayname">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3profileuseriddisplayname">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/profile/{userId}/displayname")

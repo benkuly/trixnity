@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.GlobalAccountDataEventContentSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3useruseridaccount_datatype">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/user/{userId}/account_data/{type}")

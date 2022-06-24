@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#key-storage">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#key-storage">matrix spec</a>
  */
 @Serializable(with = SecretKeyEventContentSerializer::class)
 sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
