@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import kotlin.random.Random
 
 class RecoveryKeyUtilsTest : ShouldSpec({
-    timeout = 30_000
+    timeout = 60_000
 
     val curve25519Key = listOf(
         0x77, 0x07, 0x6D, 0x0A, 0x73, 0x18, 0xA5, 0x7D,

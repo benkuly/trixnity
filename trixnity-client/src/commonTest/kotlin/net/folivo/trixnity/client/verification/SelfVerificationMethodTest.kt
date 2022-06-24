@@ -16,7 +16,7 @@ import kotlin.random.Random
 import kotlin.test.assertNotNull
 
 class SelfVerificationMethodTest : ShouldSpec({
-    timeout = 30_000
+    timeout = 60_000
 
     lateinit var keyService: KeyServiceMock
 
