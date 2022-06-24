@@ -24,7 +24,8 @@ data class SendStateEvent(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("type") val type: String,
     @SerialName("stateKey") val stateKey: String = "",
-    @SerialName("user_id") val asUserId: UserId? = null
+    @SerialName("user_id") val asUserId: UserId? = null,
+    @SerialName("ts") val ts: Long? = null,
 ) : MatrixEndpoint<StateEventContent, SendEventResponse> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
