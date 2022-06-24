@@ -2,7 +2,7 @@ import org.gradle.api.JavaVersion
 
 object Versions {
     val kotlinJvmTarget = JavaVersion.VERSION_11
-    const val kotlinxCoroutines = "1.6.1" // https://github.com/Kotlin/kotlinx.coroutines/releases
+    const val kotlinxCoroutines = "1.6.3" // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val kotlinxSerialization = "1.3.3" // https://github.com/Kotlin/kotlinx.serialization/releases
     const val kotlinxDatetime = "0.3.2" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val kotlinxKover = "0.5.1" // https://github.com/Kotlin/kotlinx-kover/releases
@@ -11,16 +11,15 @@ object Versions {
     const val jna = "5.11.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.0.1" // https://github.com/ktorio/ktor/releases
     const val korlibs = "3.0.0-Beta5" // https://github.com/korlibs/korge-next/releases
-    const val mocKmp = "1.6.1" // https://github.com/Kodein-Framework/MocKMP/releases
-    const val uuid = "0.4.0" // https://github.com/benasher44/uuid/releases
+    const val mocKmp = "1.7.0" // https://github.com/Kodein-Framework/MocKMP/releases
+    const val uuid = "0.4.1" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.3.0" // https://github.com/kotest/kotest/releases
-    const val testContainers = "1.17.1" // https://github.com/testcontainers/testcontainers-java/releases
+    const val testContainers = "1.17.2" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
-    const val gradleNexusPublishPlugin = "1.1.0" // https://github.com/gradle-nexus/publish-plugin/releases
     const val arrow = "1.1.2" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.38.2" // https://github.com/JetBrains/Exposed/releases
-    const val h2 = "2.1.212" // https://github.com/h2database/h2database/releases
+    const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
     const val kotlinLogging = "2.1.23" // https://github.com/MicroUtils/kotlin-logging/releases
     const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
 
