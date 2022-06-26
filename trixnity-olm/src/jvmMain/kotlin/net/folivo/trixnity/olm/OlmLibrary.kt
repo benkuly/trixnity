@@ -112,6 +112,7 @@ import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_pk_signing_size
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_remove_one_time_keys
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas_calculate_mac
+import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas_calculate_mac_fixed_base64
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas_calculate_mac_long_kdf
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas_generate_bytes
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_sas_get_pubkey
@@ -695,6 +696,27 @@ actual object OlmLibrary {
         info.withNativeRead { infoPtr, infoSize ->
             mac.withNativeWrite { macPtr, macSize ->
                 olm_sas_calculate_mac(sas, inputPtr, inputSize, infoPtr, infoSize, macPtr, macSize).toULong()
+            }
+        }
+    }
+
+    actual fun sas_calculate_mac_fixed_base64(
+        sas: OlmSASPointer,
+        input: ByteArray,
+        info: ByteArray,
+        mac: ByteArray
+    ): ULong = input.withNativeRead { inputPtr, inputSize ->
+        info.withNativeRead { infoPtr, infoSize ->
+            mac.withNativeWrite { macPtr, macSize ->
+                olm_sas_calculate_mac_fixed_base64(
+                    sas,
+                    inputPtr,
+                    inputSize,
+                    infoPtr,
+                    infoSize,
+                    macPtr,
+                    macSize
+                ).toULong()
             }
         }
     }

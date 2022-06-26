@@ -370,6 +370,13 @@ expect object OlmLibrary {
         mac: ByteArray,
     ): ULong
 
+    fun sas_calculate_mac_fixed_base64(
+        sas: OlmSASPointer,
+        input: ByteArray,
+        info: ByteArray,
+        mac: ByteArray,
+    ): ULong
+
     fun sas_calculate_mac_ULong_kdf(
         sas: OlmSASPointer,
         input: ByteArray,

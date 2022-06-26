@@ -7,11 +7,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -81,6 +78,45 @@ interface IRoomsApiClient {
         filter: String? = null,
         asUserId: UserId? = null
     ): Result<GetEvents.Response>
+
+    /**
+     * @see [GetRelations]
+     */
+    suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        from: String,
+        to: String? = null,
+        limit: Long? = null,
+        asUserId: UserId? = null
+    ): Result<GetRelationsResponse>
+
+    /**
+     * @see [GetRelationsByRelationType]
+     */
+    suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        relationType: RelationType,
+        from: String,
+        to: String? = null,
+        limit: Long? = null,
+        asUserId: UserId? = null
+    ): Result<GetRelationsResponse>
+
+    /**
+     * @see [GetRelationsByRelationTypeAndEventType]
+     */
+    suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        relationType: RelationType,
+        eventType: String,
+        from: String,
+        to: String? = null,
+        limit: Long? = null,
+        asUserId: UserId? = null
+    ): Result<GetRelationsResponse>
 
     /**
      * @see [SendStateEvent]
@@ -490,6 +526,50 @@ class RoomsApiClient(
     ): Result<GetEvents.Response> =
         httpClient.request(GetEvents(roomId.e(), from, to, dir, limit, filter, asUserId))
 
+    override suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        from: String,
+        to: String?,
+        limit: Long?,
+        asUserId: UserId?
+    ): Result<GetRelationsResponse> =
+        httpClient.request(GetRelations(roomId.e(), eventId.e(), from, to, limit, asUserId))
+
+    override suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        relationType: RelationType,
+        from: String,
+        to: String?,
+        limit: Long?,
+        asUserId: UserId?
+    ): Result<GetRelationsResponse> =
+        httpClient.request(GetRelationsByRelationType(roomId.e(), eventId.e(), relationType, from, to, limit, asUserId))
+
+    override suspend fun getRelations(
+        roomId: RoomId,
+        eventId: EventId,
+        relationType: RelationType,
+        eventType: String,
+        from: String,
+        to: String?,
+        limit: Long?,
+        asUserId: UserId?
+    ): Result<GetRelationsResponse> =
+        httpClient.request(
+            GetRelationsByRelationTypeAndEventType(
+                roomId.e(),
+                eventId.e(),
+                relationType,
+                eventType,
+                from,
+                to,
+                limit,
+                asUserId
+            )
+        )
+
     override suspend fun sendStateEvent(
         roomId: RoomId,
         eventContent: StateEventContent,
@@ -840,4 +920,20 @@ suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent
     val type = contentMappings.state.fromClass(C::class).type
     @Suppress("UNCHECKED_CAST")
     return getStateEvent(type, roomId, stateKey, asUserId) as Result<C>
+}
+
+/**
+ * @see [GetRelationsByRelationTypeAndEventType]
+ */
+suspend inline fun <reified C : MessageEventContent> IRoomsApiClient.getRelations(
+    roomId: RoomId,
+    eventId: EventId,
+    relationType: RelationType,
+    from: String,
+    to: String? = null,
+    limit: Long? = null,
+    asUserId: UserId? = null
+): Result<GetRelationsResponse> {
+    val eventType = contentMappings.message.fromClass(C::class).type
+    return getRelations(roomId, eventId, relationType, eventType, from, to, limit, asUserId)
 }

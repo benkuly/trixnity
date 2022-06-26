@@ -684,4 +684,40 @@ class AuthenticationApiClientTest {
             matrixServerName = "example.com",
         )
     }
+
+    @Test
+    fun shouldRefresh() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/refresh", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe """
+                            {
+                              "refresh_token":"some_token"
+                            }
+                        """.trimToFlatJson()
+                    respond(
+                        """
+                            {
+                              "access_token":"a_new_token",
+                              "expires_in_ms":60000,
+                              "refresh_token":"another_new_token"
+                            }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.authentication.refresh("some_token").getOrThrow()
+        assertEquals(
+            Refresh.Response(
+                accessToken = "a_new_token",
+                accessTokenExpiresInMs = 60_000,
+                refreshToken = "another_new_token"
+            ), result
+        )
+    }
 }

@@ -510,6 +510,7 @@ class KeyService(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
         scope: CoroutineScope
@@ -517,10 +518,20 @@ class KeyService(
         val event = timelineEvent.event
         val content = event.content
         return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
-            val megolmKeyIsTrusted =
-                store.olm.getInboundMegolmSession(content.senderKey, content.sessionId, event.roomId)?.isTrusted == true
-            return if (megolmKeyIsTrusted) getTrustLevel(event.sender, content.deviceId, scope)
-            else MutableStateFlow(DeviceTrustLevel.NotVerified)
+            combine(
+                store.olm.getInboundMegolmSession(content.sessionId, event.roomId, scope),
+                store.keys.getDeviceKeys(event.sender, scope)
+            ) { megolmSession, deviceKeys ->
+                if (megolmSession == null || deviceKeys == null || megolmSession.isTrusted.not())
+                    flowOf(DeviceTrustLevel.NotVerified)
+                else {
+                    val deviceId =
+                        deviceKeys.values.find { it.value.signed.keys.keys.contains(megolmSession.senderKey) }
+                            ?.value?.signed?.deviceId
+                    if (deviceId != null) getTrustLevel(event.sender, deviceId, scope)
+                    else flowOf(DeviceTrustLevel.NotVerified)
+                }
+            }.flatMapLatest { it }
         } else null
     }
 

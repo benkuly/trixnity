@@ -319,6 +319,176 @@ class RoomsApiClientTest {
     }
 
     @Test
+    fun shouldGetRelations() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event?from=from&limit=10",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "content": {
+                                    "body":"hi",
+                                    "msgtype":"m.text"
+                                  },
+                                  "event_id": "$2event",
+                                  "origin_server_ts": 1234,
+                                  "room_id": "!room:server",
+                                  "sender": "@user:server",
+                                  "type": "m.room.message"
+                                }
+                              ],
+                              "next_batch": "end",
+                              "prev_batch": "start"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getRelations(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("$1event"),
+            from = "from",
+            limit = 10
+        ).getOrThrow() shouldBe GetRelationsResponse(
+            start = "start",
+            end = "end",
+            chunk = listOf(
+                MessageEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("$2event"),
+                    UserId("user", "server"),
+                    RoomId("room", "server"),
+                    1234L
+                )
+            )
+        )
+    }
+
+    @Test
+    fun shouldGetRelationsByRelationType() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference?from=from&limit=10",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "content": {
+                                    "body":"hi",
+                                    "msgtype":"m.text"
+                                  },
+                                  "event_id": "$2event",
+                                  "origin_server_ts": 1234,
+                                  "room_id": "!room:server",
+                                  "sender": "@user:server",
+                                  "type": "m.room.message"
+                                }
+                              ],
+                              "next_batch": "end",
+                              "prev_batch": "start"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getRelations(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("$1event"),
+            relationType = RelationType.Reference,
+            from = "from",
+            limit = 10
+        ).getOrThrow() shouldBe GetRelationsResponse(
+            start = "start",
+            end = "end",
+            chunk = listOf(
+                MessageEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("$2event"),
+                    UserId("user", "server"),
+                    RoomId("room", "server"),
+                    1234L
+                )
+            )
+        )
+    }
+
+    @Test
+    fun shouldGetRelationsByRelationTypeAndEventType() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference/m.room.message?from=from&limit=10",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "content": {
+                                    "body":"hi",
+                                    "msgtype":"m.text"
+                                  },
+                                  "event_id": "$2event",
+                                  "origin_server_ts": 1234,
+                                  "room_id": "!room:server",
+                                  "sender": "@user:server",
+                                  "type": "m.room.message"
+                                }
+                              ],
+                              "next_batch": "end",
+                              "prev_batch": "start"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getRelations<RoomMessageEventContent>(
+            roomId = RoomId("room", "server"),
+            eventId = EventId("$1event"),
+            relationType = RelationType.Reference,
+            from = "from",
+            limit = 10
+        ).getOrThrow() shouldBe GetRelationsResponse(
+            start = "start",
+            end = "end",
+            chunk = listOf(
+                MessageEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("$2event"),
+                    UserId("user", "server"),
+                    RoomId("room", "server"),
+                    1234L
+                )
+            )
+        )
+    }
+
+    @Test
     fun shouldSendStateEvent() = runTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClient(

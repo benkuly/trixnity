@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/server-server-api/#get_matrixfederationv1queryprofile">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#get_matrixfederationv1queryprofile">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/query/profile")

@@ -53,7 +53,6 @@ interface IKeyBackupService {
     fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
-        senderKey: Key.Curve25519Key,
     )
 
     suspend fun keyBackupCanBeTrusted(keyBackupVersion: GetRoomKeysBackupVersionResponse, privateKey: String): Boolean
@@ -157,7 +156,6 @@ class KeyBackupService(
     override fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
-        senderKey: Key.Curve25519Key,
     ) {
         val runningKey = Pair(roomId, sessionId)
         if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
@@ -190,7 +188,6 @@ class KeyBackupService(
                             )
                         }
                         val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
-                        require(data.senderKey.value == senderKey.value) { "sender key did not match" }
                         val (firstKnownIndex, pickledSession) =
                             freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
                                 it.firstKnownIndex to it.pickle(olmPickleKey)
@@ -200,7 +197,7 @@ class KeyBackupService(
                             data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
                                 ?: throw IllegalArgumentException("sender claimed key should not be empty")
                         )
-                        store.olm.updateInboundMegolmSession(data.senderKey, sessionId, roomId) {
+                        store.olm.updateInboundMegolmSession(sessionId, roomId) {
                             if (it != null && it.firstKnownIndex <= firstKnownIndex) it
                             else StoredInboundMegolmSession(
                                 senderKey = data.senderKey,
@@ -313,7 +310,7 @@ class KeyBackupService(
                         }
                     }.getOrThrow()
                     notBackedUpInboundMegolmSessions.values.forEach {
-                        store.olm.updateInboundMegolmSession(it.senderKey, it.sessionId, it.roomId) { session ->
+                        store.olm.updateInboundMegolmSession(it.sessionId, it.roomId) { session ->
                             session?.copy(hasBeenBackedUp = true)
                         }
                     }

@@ -42,7 +42,7 @@ class MatrixSignatureAuthTest {
             install(ContentNegotiation) {
                 json(json)
             }
-            installMatrixSignatureAuth(hostname = "own.hs.host") {
+            installMatrixSignatureAuth(hostname = "fallback.own.hs.host") {
                 this.authenticationFunction = authenticationFunction
             }
             routing {
@@ -64,6 +64,26 @@ class MatrixSignatureAuthTest {
         client.post("/test") {
             setBody("{}")
             contentType(ContentType.Application.Json)
+            header(
+                HttpHeaders.Authorization,
+                """X-Matrix origin=other.hs.host,destination=own.hs.host,key="ed25519:key1",sig="sig""""
+            )
+        }.status shouldBe HttpStatusCode.OK
+    }
+
+    @Test
+    fun shouldAllowFallbackDestination() = testApplication {
+        testEndpoint {
+            it shouldBe SignedRequestAuthenticationBody(
+                signed = """{"content":{},"destination":"fallback.own.hs.host","method":"POST","origin":"other.hs.host","uri":"/test"}""",
+                signature = Key.Ed25519Key("key1", "sig"),
+                origin = "other.hs.host",
+            )
+            SignatureAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
+        }
+        client.post("/test") {
+            setBody("{}")
+            contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
         }.status shouldBe HttpStatusCode.OK
     }
@@ -79,7 +99,10 @@ class MatrixSignatureAuthTest {
             SignatureAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
         }
         client.get("/test") {
-            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+            header(
+                HttpHeaders.Authorization,
+                """X-Matrix origin=other.hs.host,destination=own.hs.host,key="ed25519:key1",sig="sig""""
+            )
         }.status shouldBe HttpStatusCode.OK
     }
 
@@ -102,7 +125,10 @@ class MatrixSignatureAuthTest {
         val result = client.post("/test") {
             contentType(ContentType.Application.Json)
             setBody("{}")
-            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+            header(
+                HttpHeaders.Authorization,
+                """X-Matrix origin=other.hs.host,destination=own.hs.host,key="ed25519:key1",sig="sig""""
+            )
         }
         result.status shouldBe HttpStatusCode.Unauthorized
         result.body<String>() shouldBe """{"errcode":"M_UNAUTHORIZED","error":"wrong signature"}"""
@@ -116,7 +142,10 @@ class MatrixSignatureAuthTest {
         val result = client.post("/test") {
             contentType(ContentType.Application.Json)
             setBody("{}")
-            header(HttpHeaders.Authorization, """X-Matrix origin=other.hs.host,key="ed25519:key1",sig="sig"""")
+            header(
+                HttpHeaders.Authorization,
+                """X-Matrix origin=other.hs.host,destination=own.hs.host,key="ed25519:key1",sig="sig""""
+            )
         }
         result.status shouldBe HttpStatusCode.Unauthorized
         result.body<String>() shouldBe """{"errcode":"M_UNAUTHORIZED","error":"wrong signature"}"""

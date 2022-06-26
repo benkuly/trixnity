@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.AllowC
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.JoinRule
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroomjoin_rules">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomjoin_rules">matrix spec</a>
  */
 @Serializable
 data class JoinRulesEventContent(
@@ -44,6 +44,10 @@ data class JoinRulesEventContent(
 
         object Restricted : JoinRule() {
             override val name = "restricted"
+        }
+
+        object KnockRestricted : JoinRule() {
+            override val name = "knock_restricted"
         }
 
         data class Unknown(override val name: String) : JoinRule()
@@ -79,6 +83,7 @@ object JoinRuleSerializer : KSerializer<JoinRule> {
             JoinRule.Invite.name -> JoinRule.Invite
             JoinRule.Private.name -> JoinRule.Private
             JoinRule.Restricted.name -> JoinRule.Restricted
+            JoinRule.KnockRestricted.name -> JoinRule.KnockRestricted
             else -> JoinRule.Unknown(name)
         }
     }

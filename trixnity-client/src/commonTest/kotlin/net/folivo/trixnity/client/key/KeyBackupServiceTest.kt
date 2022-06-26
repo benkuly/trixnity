@@ -263,9 +263,9 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = RUNNING
         }
         should("do nothing when version is null") {
-            cut.loadMegolmSession(roomId, sessionId, senderKey)
+            cut.loadMegolmSession(roomId, sessionId)
             continually(500.milliseconds) {
-                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId) shouldBe null
+                store.olm.getInboundMegolmSession(sessionId, roomId) shouldBe null
             }
         }
         context("megolm session on server") {
@@ -312,11 +312,11 @@ private val body: ShouldSpec.() -> Unit = {
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
-                    store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { currentSession }
+                    store.olm.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
-                    cut.loadMegolmSession(roomId, sessionId, senderKey)
+                    cut.loadMegolmSession(roomId, sessionId)
                     assertSoftly(
-                        store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                        store.olm.getInboundMegolmSession(sessionId, roomId, scope)
                             .first { it?.firstKnownIndex == 1L }
                     ) {
                         assertNotNull(this)
@@ -341,11 +341,11 @@ private val body: ShouldSpec.() -> Unit = {
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
-                    store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { currentSession }
+                    store.olm.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
-                    cut.loadMegolmSession(roomId, sessionId, senderKey)
+                    cut.loadMegolmSession(roomId, sessionId)
                     continually(300.milliseconds) {
-                        store.olm.getInboundMegolmSession(senderKey, sessionId, roomId) shouldBe currentSession
+                        store.olm.getInboundMegolmSession(sessionId, roomId) shouldBe currentSession
                     }
                 }
             }
@@ -364,10 +364,10 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("fetch one megolm session only once at a time") {
                     repeat(20) {
-                        cut.loadMegolmSession(roomId, sessionId, senderKey)
+                        cut.loadMegolmSession(roomId, sessionId)
                     }
                     allLoadMegolmSessionsCalled.value = true
-                    store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope).first { it != null }
+                    store.olm.getInboundMegolmSession(sessionId, roomId, scope).first { it != null }
                     getRoomKeyBackupDataCalled shouldBe true
                 }
             }
@@ -388,8 +388,8 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 should("retry fetch megolm session") {
-                    cut.loadMegolmSession(roomId, sessionId, senderKey)
-                    assertSoftly(store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                    cut.loadMegolmSession(roomId, sessionId)
+                    assertSoftly(store.olm.getInboundMegolmSession(sessionId, roomId, scope)
                         .first { it != null }) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
@@ -495,8 +495,8 @@ private val body: ShouldSpec.() -> Unit = {
         )
         beforeTest {
             currentSyncState.value = RUNNING
-            session1.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
-            session2.run { store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this } }
+            session1.run { store.olm.updateInboundMegolmSession(sessionId, roomId) { this } }
+            session2.run { store.olm.updateInboundMegolmSession(sessionId, roomId) { this } }
         }
         should("do nothing when version is null") {
             var setRoomKeyBackupVersionCalled = false
@@ -510,19 +510,19 @@ private val body: ShouldSpec.() -> Unit = {
                 setRoomKeyBackupVersionCalled shouldBe false
                 store.olm.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
-                    store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
+                    store.olm.getInboundMegolmSession(sessionId, roomId)
                 }?.hasBeenBackedUp shouldBe false
                 session2.run {
-                    store.olm.getInboundMegolmSession(senderKey, sessionId, roomId)
+                    store.olm.getInboundMegolmSession(sessionId, roomId)
                 }?.hasBeenBackedUp shouldBe false
             }
         }
         should("do nothing when not backed up is empty") {
             session1.run {
-                store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
+                store.olm.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
             session2.run {
-                store.olm.updateInboundMegolmSession(senderKey, sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
+                store.olm.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
             val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
@@ -564,11 +564,11 @@ private val body: ShouldSpec.() -> Unit = {
             store.olm.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
             setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                store.olm.getInboundMegolmSession(sessionId, roomId, scope)
                     .first { it?.hasBeenBackedUp == true }
             }?.hasBeenBackedUp shouldBe true
             session2.run {
-                store.olm.getInboundMegolmSession(senderKey, sessionId, roomId, scope)
+                store.olm.getInboundMegolmSession(sessionId, roomId, scope)
                     .first { it?.hasBeenBackedUp == true }
             }
         }

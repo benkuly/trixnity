@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#push-rules">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#push-rules">matrix spec</a>
  */
 @Serializable
 data class PushRule(

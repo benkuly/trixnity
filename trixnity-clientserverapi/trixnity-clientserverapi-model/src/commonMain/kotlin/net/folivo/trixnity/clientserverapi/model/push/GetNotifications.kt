@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.push.PushAction
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3notifications">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3notifications">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/notifications")

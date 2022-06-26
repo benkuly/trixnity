@@ -19,7 +19,7 @@ import net.folivo.trixnity.serverserverapi.model.requestAuthenticationBody
 class MatrixSignatureAuth internal constructor(
     private val config: Config,
 ) : AuthenticationProvider(config) {
-    class Config internal constructor(name: String? = null, val hostname: String) :
+    class Config internal constructor(name: String? = null, val fallbackDestination: String) :
         AuthenticationProvider.Config(name) {
         internal var authenticationFunction: SignatureAuthenticationFunction = {
             throw NotImplementedError("MatrixSignatureAuth validate function is not specified.")
@@ -28,7 +28,7 @@ class MatrixSignatureAuth internal constructor(
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
         val call = context.call
-        val credentials = call.request.getSignature(config.hostname)
+        val credentials = call.request.getSignature(config.fallbackDestination)
         val authResult = credentials?.let { config.authenticationFunction(it) }
         val principal = authResult?.principal
 
@@ -75,12 +75,13 @@ data class SignatureAuthenticationFunctionResult(val principal: Principal?, val 
 
 typealias SignatureAuthenticationFunction = suspend (SignedRequestAuthenticationBody) -> SignatureAuthenticationFunctionResult
 
-private suspend fun ApplicationRequest.getSignature(hostname: String): SignedRequestAuthenticationBody? {
+private suspend fun ApplicationRequest.getSignature(fallbackDestination: String): SignedRequestAuthenticationBody? {
     return when (val authHeader = parseAuthorizationHeader()) {
         is HttpAuthHeader.Parameterized -> {
             if (!authHeader.authScheme.equals("X-Matrix", ignoreCase = true)) null
             else {
                 val origin = authHeader.parameter("origin") ?: return null
+                val destination = authHeader.parameter("destination") ?: fallbackDestination
                 val (keyAlgorithm, keyId) = authHeader.parameter("key")?.let {
                     KeyAlgorithm.of(it.substringBefore(":")) to it.substringAfter(":")
                 } ?: return null
@@ -93,7 +94,7 @@ private suspend fun ApplicationRequest.getSignature(hostname: String): SignedReq
                 SignedRequestAuthenticationBody(
                     signed = requestAuthenticationBody(
                         content = call.receiveOrNull<ByteReadChannel>()?.toByteArray()?.decodeToString(),
-                        destination = hostname,
+                        destination = destination,
                         method = httpMethod.value,
                         origin = origin,
                         uri = uri

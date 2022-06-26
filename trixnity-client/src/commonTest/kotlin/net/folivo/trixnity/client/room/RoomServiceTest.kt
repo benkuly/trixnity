@@ -525,7 +525,7 @@ class RoomServiceTest : ShouldSpec({
                 val result = cut.getTimelineEvent(eventId, room, this)
                 delay(20)
                 store.roomTimeline.addAll(listOf(timelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
+                store.olm.updateInboundMegolmSession(session, room) { storedSession }
                 delay(20)
                 result.value shouldBe timelineEvent
             }
@@ -536,14 +536,14 @@ class RoomServiceTest : ShouldSpec({
                 olmEventService.returnDecryptMegolm.add { expectedDecryptedEvent }
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
+                        "SENDER" to StoredDeviceKeys(
                             Signed(DeviceKeys(alice, "", setOf(), keysOf()), null),
                             Valid(true)
                         )
                     )
                 }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
+                store.olm.updateInboundMegolmSession(session, room) { storedSession }
                 val result = cut.getTimelineEvent(eventId, room, this)
                     .first { it?.content?.getOrNull() != null }
                 assertSoftly(result) {
@@ -555,7 +555,7 @@ class RoomServiceTest : ShouldSpec({
             should("timeout when decryption takes too long") {
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
+                        "SENDER" to StoredDeviceKeys(
                             Signed(DeviceKeys(alice, "", setOf(), keysOf()), null),
                             Valid(true)
                         )
@@ -570,7 +570,7 @@ class RoomServiceTest : ShouldSpec({
             should("handle error") {
                 olmEventService.returnDecryptMegolm.add { throw DecryptionException.ValidationFailed }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
+                store.olm.updateInboundMegolmSession(session, room) { storedSession }
                 val result = cut.getTimelineEvent(eventId, room, this)
                     .first { it?.content?.isFailure == true }
                 assertSoftly(result) {
@@ -584,7 +584,7 @@ class RoomServiceTest : ShouldSpec({
                 olmEventService.returnDecryptMegolm.add { expectedDecryptedEvent }
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
+                        "SENDER" to StoredDeviceKeys(
                             Signed(DeviceKeys(alice, "", setOf(), keysOf()), null),
                             Valid(true)
                         )
@@ -594,14 +594,14 @@ class RoomServiceTest : ShouldSpec({
 
                 val result = cut.getTimelineEvent(eventId, room, this)
                 delay(20)
-                store.olm.updateInboundMegolmSession(senderKey, session, room) { storedSession }
+                store.olm.updateInboundMegolmSession(session, room) { storedSession }
                 delay(20)
                 assertSoftly(result.value) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
                     content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
-                keyBackup.loadMegolmSessionCalled.value.first() shouldBe Triple(room, session, senderKey)
+                keyBackup.loadMegolmSessionCalled.value.first() shouldBe Pair(room, session)
             }
             should("wait for olm session and ask key backup for it when existing session does not known the index") {
                 val expectedDecryptedEvent = DecryptedMegolmEvent(TextMessageEventContent("decrypted"), room)
@@ -609,20 +609,20 @@ class RoomServiceTest : ShouldSpec({
                 olmEventService.returnDecryptMegolm.add { expectedDecryptedEvent }
                 store.keys.updateDeviceKeys(encryptedTimelineEvent.event.sender) {
                     mapOf(
-                        encryptedEventContent.deviceId to StoredDeviceKeys(
+                        "SENDER" to StoredDeviceKeys(
                             Signed(DeviceKeys(alice, "", setOf(), keysOf()), null),
                             Valid(true)
                         )
                     )
                 }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
-                store.olm.updateInboundMegolmSession(senderKey, session, room) {
+                store.olm.updateInboundMegolmSession(session, room) {
                     storedSession.copy(firstKnownIndex = 4)
                 }
                 val result = cut.getTimelineEvent(eventId, room, this)
 
                 delay(50)
-                store.olm.updateInboundMegolmSession(senderKey, session, room) {
+                store.olm.updateInboundMegolmSession(session, room) {
                     storedSession.copy(firstKnownIndex = 3)
                 }
                 val resultValue = result.filterNotNull().first { it.content?.getOrNull() != null }
@@ -631,7 +631,7 @@ class RoomServiceTest : ShouldSpec({
                     this.content?.getOrNull() shouldBe expectedDecryptedEvent.content
                 }
                 keyBackup.loadMegolmSessionCalled.value.size shouldBe 1
-                keyBackup.loadMegolmSessionCalled.value.first() shouldBe Triple(room, session, senderKey)
+                keyBackup.loadMegolmSessionCalled.value.first() shouldBe Pair(room, session)
             }
         }
     }

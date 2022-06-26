@@ -486,6 +486,16 @@ object OlmLibraryWrapper : Library {
         mac_length: NativeSize
     ): NativeSize
 
+    external fun olm_sas_calculate_mac_fixed_base64(
+        sas: OlmSASPointer?,
+        input: Pointer?,
+        input_length: NativeSize,
+        info: Pointer?,
+        info_length: NativeSize,
+        mac: Pointer?,
+        mac_length: NativeSize
+    ): NativeSize
+
     external fun olm_sas_calculate_mac_long_kdf(
         sas: OlmSASPointer?,
         input: Pointer?,

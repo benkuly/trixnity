@@ -14,7 +14,8 @@ sealed interface UnsignedRoomEventData {
         @SerialName("age") override val age: Long? = null,
         // TODO redacted_because does not have a room_id -> custom deserializer needed
         @SerialName("redacted_because") @Contextual override val redactedBecause: Event<*>? = null,
-        @SerialName("transaction_id") override val transactionId: String? = null
+        @SerialName("transaction_id") override val transactionId: String? = null,
+        @SerialName("m.relations") val aggregations: Aggregations? = null,
     ) : UnsignedRoomEventData
 
     @Serializable
@@ -23,6 +24,7 @@ sealed interface UnsignedRoomEventData {
         // TODO redacted_because does not have a room_id -> custom deserializer needed
         @SerialName("redacted_because") @Contextual override val redactedBecause: Event<*>? = null,
         @SerialName("transaction_id") override val transactionId: String? = null,
-        @SerialName("prev_content") val previousContent: C? = null
+        @SerialName("prev_content") val previousContent: C? = null,
+        @SerialName("m.relations") val aggregations: Aggregations? = null,
     ) : UnsignedRoomEventData
 }

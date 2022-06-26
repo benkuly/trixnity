@@ -48,12 +48,12 @@ CREATE TABLE sql_inbound_megolm_session(
   sender_signing_key TEXT NOT NULL,
   forwarding_curve25519_key_chain TEXT NOT NULL,
   pickled_session TEXT NOT NULL,
-  PRIMARY KEY(sender_key, session_id, room_id)
+  PRIMARY KEY(session_id, room_id)
 );
 
 getInboundMegolmSession:
 SELECT * FROM sql_inbound_megolm_session
-WHERE sender_key = ? AND session_id = ? AND room_id = ?;
+WHERE session_id = ? AND room_id = ?;
 
 getNotBackedUpInboundMegolmSessions:
 SELECT * FROM sql_inbound_megolm_session
@@ -65,32 +65,31 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteInboundMegolmSession:
 DELETE FROM sql_inbound_megolm_session
-WHERE sender_key = ? AND session_id = ? AND room_id = ?;
+WHERE session_id = ? AND room_id = ?;
 
 deleteAllInboundMegolmSessions:
 DELETE FROM sql_inbound_megolm_session;
 
 CREATE TABLE sql_inbound_megolm_session_index(
-  sender_key TEXT NOT NULL,
   session_id TEXT NOT NULL,
   room_id TEXT NOT NULL,
   message_index INTEGER NOT NULL,
   event_id TEXT NOT NULL,
   origin_timestamp INTEGER NOT NULL,
-  PRIMARY KEY(sender_key, session_id, room_id, message_index)
+  PRIMARY KEY(session_id, room_id, message_index)
 );
 
 getInboundMegolmSessionIndex:
 SELECT * FROM sql_inbound_megolm_session_index
-WHERE sender_key = ? AND session_id = ? AND room_id = ? AND message_index = ?;
+WHERE session_id = ? AND room_id = ? AND message_index = ?;
 
 saveInboundMegolmSessionIndex:
 INSERT OR REPLACE INTO sql_inbound_megolm_session_index
-VALUES (?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?);
 
 deleteInboundMegolmSessionIndex:
 DELETE FROM sql_inbound_megolm_session_index
-WHERE sender_key = ? AND session_id = ? AND room_id = ? AND message_index = ?;
+WHERE session_id = ? AND room_id = ? AND message_index = ?;
 
 deleteAllInboundMegolmSessionIndex:
 DELETE FROM sql_inbound_megolm_session_index;

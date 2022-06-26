@@ -117,7 +117,7 @@ internal suspend fun OlmStore.storeTrustedInboundMegolmSession(
     sessionKey: String,
     pickleKey: String
 ) {
-    updateInboundMegolmSession(senderKey, sessionId, roomId) { oldStoredSession ->
+    updateInboundMegolmSession(sessionId, roomId) { oldStoredSession ->
         oldStoredSession
             ?: freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
                 StoredInboundMegolmSession(

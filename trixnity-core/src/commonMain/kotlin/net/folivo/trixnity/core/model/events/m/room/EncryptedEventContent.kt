@@ -19,25 +19,24 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 /**
- * @see <a href="https://spec.matrix.org/v1.2/client-server-api/#mroomencrypted">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
 sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
-    abstract val senderKey: Curve25519Key
-    abstract val deviceId: String?
-    abstract val sessionId: String?
     abstract val algorithm: EncryptionAlgorithm
 
     @Serializable
     data class MegolmEncryptedEventContent(
         @SerialName("ciphertext")
         val ciphertext: String,
+        @Deprecated("see MSC3700")
         @SerialName("sender_key")
-        override val senderKey: Curve25519Key,
+        val senderKey: Curve25519Key? = null,
+        @Deprecated("see MSC3700")
         @SerialName("device_id")
-        override val deviceId: String,
+        val deviceId: String? = null,
         @SerialName("session_id")
-        override val sessionId: String,
+        val sessionId: String,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null,
     ) : EncryptedEventContent() {
@@ -50,11 +49,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         @SerialName("ciphertext")
         val ciphertext: Map<String, CiphertextInfo>,
         @SerialName("sender_key")
-        override val senderKey: Curve25519Key,
-        @SerialName("device_id")
-        override val deviceId: String? = null,
-        @SerialName("session_id")
-        override val sessionId: String? = null,
+        val senderKey: Curve25519Key,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null
     ) : EncryptedEventContent() {
@@ -85,21 +80,12 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         }
     }
 
-    @Serializable
     data class UnknownEncryptedEventContent(
-        @SerialName("ciphertext")
-        val ciphertext: JsonElement? = null,
-        @SerialName("sender_key")
-        override val senderKey: Curve25519Key,
-        @SerialName("device_id")
-        override val deviceId: String? = null,
-        @SerialName("session_id")
-        override val sessionId: String? = null,
-        @SerialName("m.relates_to")
-        override val relatesTo: RelatesTo? = null,
-        @SerialName("algorithm")
         override val algorithm: Unknown,
-    ) : EncryptedEventContent()
+        val raw: JsonObject
+    ) : EncryptedEventContent() {
+        override val relatesTo: RelatesTo? = null
+    }
 }
 
 object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
@@ -109,12 +95,12 @@ object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
     override fun deserialize(decoder: Decoder): EncryptedEventContent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
+        return when (val algorithm = decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
             jsonObj["algorithm"] ?: JsonPrimitive("unknown")
         )) {
             Olm -> decoder.json.decodeFromJsonElement<OlmEncryptedEventContent>(jsonObj)
             Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedEventContent>(jsonObj)
-            else -> decoder.json.decodeFromJsonElement<UnknownEncryptedEventContent>(jsonObj)
+            is Unknown -> UnknownEncryptedEventContent(algorithm, jsonObj)
         }
     }
 
@@ -123,7 +109,7 @@ object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
         val jsonElement = when (value) {
             is OlmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
             is MegolmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
-            is UnknownEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
+            is UnknownEncryptedEventContent -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
     }

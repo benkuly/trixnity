@@ -26,8 +26,7 @@ internal object ExposedInboundMegolmSession : Table("inbound_megolm_session") {
 internal class ExposedInboundMegolmSessionRepository(private val json: Json) : InboundMegolmSessionRepository {
     override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? {
         return ExposedInboundMegolmSession.select {
-            ExposedInboundMegolmSession.senderKey.eq(key.senderKey.value) and
-                    ExposedInboundMegolmSession.sessionId.eq(key.sessionId) and
+            ExposedInboundMegolmSession.sessionId.eq(key.sessionId) and
                     ExposedInboundMegolmSession.roomId.eq(key.roomId.full)
         }.firstOrNull()?.mapToStoredInboundMegolmSession()
     }
@@ -66,8 +65,7 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
 
     override suspend fun delete(key: InboundMegolmSessionRepositoryKey) {
         ExposedInboundMegolmSession.deleteWhere {
-            ExposedInboundMegolmSession.senderKey.eq(key.senderKey.value) and
-                    ExposedInboundMegolmSession.sessionId.eq(key.sessionId) and
+            ExposedInboundMegolmSession.sessionId.eq(key.sessionId) and
                     ExposedInboundMegolmSession.roomId.eq(key.roomId.full)
         }
     }
