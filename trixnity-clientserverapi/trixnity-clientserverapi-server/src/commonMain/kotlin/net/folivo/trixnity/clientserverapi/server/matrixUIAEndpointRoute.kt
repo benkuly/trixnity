@@ -19,9 +19,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-typealias MatrixUIAEndpointContext<ENDPOINT, REQUEST, RESPONSE> = MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>
-
-// TODO inject json and mappings with content receivers with kotlin > 1.7.0
+// TODO inject json and mappings with context receivers with kotlin > 1.7.0
 inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixUIAEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
@@ -31,9 +29,9 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
         val requestSerializer: KSerializer<REQUEST>? = endpoint.plainRequestSerializerBuilder(mappings, json)
         val requestBody: RequestWithUIA<REQUEST> =
             when {
-                requestSerializer != null -> json.decodeFromString(
+                requestSerializer != null -> json.decodeFromJsonElement(
                     RequestWithUIASerializer(requestSerializer),
-                    call.receiveText()
+                    call.receive()
                 )
                 else -> call.receive()
             }

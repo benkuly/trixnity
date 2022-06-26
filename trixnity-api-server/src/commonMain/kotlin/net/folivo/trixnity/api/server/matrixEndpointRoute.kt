@@ -26,7 +26,7 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
 
 val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointConfig")
 
-// TODO inject json and mappings with content receivers with kotlin > 1.7.0
+// TODO inject json and mappings with context receivers with kotlin > 1.7.0
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
@@ -37,7 +37,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
         val requestBody: REQUEST =
             when {
                 REQUEST::class == Unit::class -> Unit as REQUEST
-                requestSerializer != null -> json.decodeFromString(requestSerializer, call.receiveText())
+                requestSerializer != null -> json.decodeFromJsonElement(requestSerializer, call.receive())
                 else -> call.receive()
             }
         val responseBody: RESPONSE = handler(MatrixEndpointContext(endpoint, requestBody, call))

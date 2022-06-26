@@ -8,6 +8,8 @@ import io.ktor.server.auth.AuthenticationFailedCause.*
 import io.ktor.server.plugins.doublereceive.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import io.ktor.util.*
+import io.ktor.utils.io.*
 import net.folivo.trixnity.api.server.withoutAuthAttributeKey
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.keys.Key
@@ -91,7 +93,7 @@ private suspend fun ApplicationRequest.getSignature(fallbackDestination: String)
                     }
                 SignedRequestAuthenticationBody(
                     signed = requestAuthenticationBody(
-                        content = call.receiveOrNull(),
+                        content = call.receiveOrNull<ByteReadChannel>()?.toByteArray()?.decodeToString(),
                         destination = destination,
                         method = httpMethod.value,
                         origin = origin,

@@ -467,7 +467,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getRelations<RoomMessageEventContent>(
+        matrixRestClient.rooms.getRelationsByType<RoomMessageEventContent>(
             roomId = RoomId("room", "server"),
             eventId = EventId("$1event"),
             relationType = RelationType.Reference,
