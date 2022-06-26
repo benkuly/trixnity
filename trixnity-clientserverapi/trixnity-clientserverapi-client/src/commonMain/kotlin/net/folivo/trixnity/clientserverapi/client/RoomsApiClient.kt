@@ -925,7 +925,7 @@ suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent
 /**
  * @see [GetRelationsByRelationTypeAndEventType]
  */
-suspend inline fun <reified C : MessageEventContent> IRoomsApiClient.getRelations(
+suspend inline fun <reified C : MessageEventContent> IRoomsApiClient.getRelationsByType(
     roomId: RoomId,
     eventId: EventId,
     relationType: RelationType,
