@@ -479,7 +479,7 @@ class RoomsRoutesTest : TestsWithMocks() {
     }
 
     @Test
-    fun shouldSendMessageEventEventIfUnknown() = testApplication {
+    fun shouldSendMessageEventIfUnknown() = testApplication {
         initCut()
         everySuspending { handlerMock.sendMessageEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
