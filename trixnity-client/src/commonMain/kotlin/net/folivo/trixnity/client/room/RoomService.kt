@@ -631,9 +631,10 @@ class RoomService(
                                 api.eventContentSerializerMappings.message
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
+                            val newContent = RedactedMessageEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = MessageEvent(
-                                    RedactedMessageEventContent(eventType),
+                                    newContent,
                                     oldEvent.id,
                                     oldEvent.sender,
                                     oldEvent.roomId,
@@ -642,7 +643,7 @@ class RoomService(
                                         redactedBecause = redactionEvent
                                     )
                                 ),
-                                content = null,
+                                content = Result.success(newContent),
                             )
                         }
                         is StateEvent -> {
@@ -650,10 +651,11 @@ class RoomService(
                                 api.eventContentSerializerMappings.state
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
+                            val newContent = RedactedStateEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = StateEvent(
                                     // TODO should keep some fields and change state: https://spec.matrix.org/v1.3/rooms/v9/#redactions
-                                    RedactedStateEventContent(eventType),
+                                    newContent,
                                     oldEvent.id,
                                     oldEvent.sender,
                                     oldEvent.roomId,
@@ -663,7 +665,7 @@ class RoomService(
                                     ),
                                     oldEvent.stateKey,
                                 ),
-                                content = null,
+                                content = Result.success(newContent),
                             )
                         }
                     }
@@ -718,7 +720,7 @@ class RoomService(
                 nextHasGap = true,
                 nextEvent = null,
                 nextEventChunk = events.drop(1),
-                modifyTimelineEventsBeforeSave = ::useDecryptedOutboxMessagesForOwnTimelineEvents
+                processTimelineEventsBeforeSave = ::useDecryptedOutboxMessagesForOwnTimelineEvents
             )
         }
     }
@@ -824,6 +826,18 @@ class RoomService(
                     nextHasGap = nextHasGap,
                     nextEvent = nextEvent,
                     nextEventChunk = nextEventChunk,
+                    processTimelineEventsBeforeSave = { list ->
+                        println(list)
+                        list.forEach {
+                            val event = it.event
+                            val content = event.content
+                            if (content is RedactionEventContent) {
+                                @Suppress("UNCHECKED_CAST")
+                                redactTimelineEvent(event as Event<RedactionEventContent>)
+                            }
+                        }
+                        list
+                    },
                 )
         }
     }
@@ -844,20 +858,6 @@ class RoomService(
         distinctBy { it.id }
             .filter { store.roomTimeline.get(it.id, it.roomId, withTransaction = false) == null }
 
-    private fun TimelineEvent.Gap?.addGapBefore(batch: String) =
-        when {
-            this == null -> GapBefore(batch)
-            batchBefore != null -> null
-            else -> batchAfter?.let { GapBoth(batch, it) } ?: GapBefore(batch)
-        }
-
-    private fun TimelineEvent.Gap?.addGapAfter(batch: String) =
-        when {
-            this == null -> GapAfter(batch)
-            batchAfter != null -> null
-            else -> batchBefore?.let { GapBoth(it, batch) } ?: GapAfter(batch)
-        }
-
     private suspend fun addEventsToTimeline(
         startEvent: TimelineEvent,
         roomId: RoomId,
@@ -869,7 +869,7 @@ class RoomService(
         nextHasGap: Boolean,
         nextEvent: EventId?,
         nextEventChunk: List<RoomEvent<*>>?,
-        modifyTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
+        processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
         log.trace {
             "addEventsToTimeline with parameters:\n" +
@@ -884,7 +884,7 @@ class RoomService(
                 oldPreviousEvent?.copy(
                     nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
                     gap = if (previousHasGap) oldGap else oldGap?.removeGapAfter(),
-                )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+                )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
             }
         if (nextEvent != null)
             store.roomTimeline.update(nextEvent, roomId, withTransaction = false) { oldNextEvent ->
@@ -892,7 +892,7 @@ class RoomService(
                 oldNextEvent?.copy(
                     previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
                     gap = if (nextHasGap) oldGap else oldGap?.removeGapBefore()
-                )?.let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+                )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
             }
         store.roomTimeline.update(startEvent.eventId, roomId, withTransaction = false) { oldStartEvent ->
             val hasGapBefore = previousEventChunk.isNullOrEmpty() && previousHasGap
@@ -907,7 +907,7 @@ class RoomService(
                     hasGapAfter && nextToken != null -> GapAfter(nextToken)
                     else -> null
                 }
-            ).let { modifyTimelineEventsBeforeSave(listOf(it)).first() }
+            ).let { processTimelineEventsBeforeSave(listOf(it)).first() }
         }
 
         if (!previousEventChunk.isNullOrEmpty()) {
@@ -947,7 +947,7 @@ class RoomService(
                     }
                 }
             }
-            store.roomTimeline.addAll(timelineEvents, withTransaction = false)
+            store.roomTimeline.addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
         }
 
         if (!nextEventChunk.isNullOrEmpty()) {
@@ -987,7 +987,7 @@ class RoomService(
                     }
                 }
             }
-            store.roomTimeline.addAll(modifyTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
+            store.roomTimeline.addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
         }
     }
 
