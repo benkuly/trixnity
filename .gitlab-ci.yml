@@ -1,6 +1,13 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+
 stages:
   - prepare-build
   - build
+  - publish-snapshot-mac
+  - publish-snapshot-linux
   - prepare-publish
   - publish-mac
   - publish-linux
@@ -35,6 +42,11 @@ variables:
 
 .if-release: &if-release
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+
+.if-master: &if-master
+  - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+    when: never
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build-trixnity-build-linux-image:
   stage: prepare-build
@@ -79,6 +91,38 @@ build-linux:
     - ./gradlew buildOlm
     - ./gradlew build --stacktrace
 
+# publish-snapshot-mac:
+#   stage: publish-snapshot-mac
+#   tags: [ "shared-macos-amd64" ]
+#   image: $BUILD_MAC_IMAGE_NAME
+#   cache:
+#     - *build-cache
+#   artifacts:
+#     paths: [ "./trixnity-olm/build/processedResources" ]
+#   rules:
+#    - *if-master
+#   script:
+#     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+#     - ./gradlew buildOlm
+#     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+
+publish-snapshot-linux:
+  stage: publish-snapshot-linux
+  tags: [ "trixnity-linux-internal" ]
+  image: $BUILD_LINUX_IMAGE_NAME
+  services:
+    - name: docker:20-dind
+      command: [ "--tls=false" ]
+  cache:
+    - *build-cache
+  dependencies:
+#     - publish-mac
+  rules:
+    - *if-master
+  script:
+    - ./gradlew buildOlm
+    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+
 create-nexus-staging-repo:
   stage: prepare-publish
   tags: [ "trixnity-linux-internal" ]
@@ -120,7 +164,7 @@ create-nexus-staging-repo:
 #   script:
 #     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
 #     - ./gradlew buildOlm
-#     - ./gradlew publish --stacktrace
+#     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
 
 publish-linux:
   stage: publish-linux
@@ -139,4 +183,4 @@ publish-linux:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
-    - ./gradlew publish --stacktrace
+    - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
