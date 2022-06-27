@@ -292,6 +292,11 @@ described [here](#use-matrix-client-server-api).
 This project uses [kotlin-logging](https://github.com/MicroUtils/kotlin-logging). On JVM this needs a logging backend.
 You can use for example `implementation("ch.qos.logback:logback-classic:<version>")`.
 
+## Snapshot builds
+
+Snapshot are published on each commit to main. Add `https://oss.sonatype.org/content/repositories/snapshots` to your
+maven repositoreis.
+
 ## Build this project
 
 ### Build Olm
