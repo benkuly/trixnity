@@ -22,7 +22,7 @@ value class UserId(val full: String) {
     val localpart: String
         get() = full.trimStart(sigilCharacter).substringBefore(':')
     val domain: String
-        get() = full.trimStart(sigilCharacter).substringBefore(':')
+        get() = full.trimStart(sigilCharacter).substringAfter(':')
 }
 
 object UserIdSerializer : KSerializer<UserId> {
