@@ -140,25 +140,27 @@ kotlin {
         binaries.executable()
     }
 
-    olmNativeTargets.forEach {
-        if (it.compilationAllowed) {
-            it.createTarget(this@kotlin)
-            targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(it.target.presetName) {
-                compilations {
-                    "main" {
-                        cinterops {
-                            val libolm by creating {
-                                packageName("org.matrix.olm")
-                                includeDirs(olmIncludeDir)
-                                tasks.named(interopProcessingTaskName) {
-                                    dependsOn(olmNativeTargetsTasks)
-                                }
+    olmNativeTargets.forEach { target ->
+        target.createTarget(this@kotlin)
+        targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(target.target.presetName) {
+            compilations {
+                "main" {
+                    cinterops {
+                        val libolm by creating {
+                            packageName("org.matrix.olm")
+                            includeDirs(olmIncludeDir)
+                            tasks.named(interopProcessingTaskName) {
+                                dependsOn(olmNativeTargetsTasks)
                             }
                         }
-                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", it.libPath.absolutePath)
                     }
+                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                 }
             }
+            if (target.compilationAllowed.not())
+                compilations.configureEach {
+                    compileKotlinTask.enabled = false
+                }
         }
     }
 

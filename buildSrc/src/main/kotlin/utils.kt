@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 val isCI = System.getenv("CI") != null
+val isRelease = System.getenv("CI_COMMIT_TAG")?.matches("/^v\\d+.\\d+.\\d+.*/".toRegex()) ?: false
 
 enum class CIHostType {
     LINUX, MAC
