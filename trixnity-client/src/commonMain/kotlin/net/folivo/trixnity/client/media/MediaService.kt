@@ -9,10 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.decryptAes256Ctr
-import net.folivo.trixnity.client.crypto.encryptAes256Ctr
-import net.folivo.trixnity.client.crypto.sha256
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -22,8 +18,7 @@ import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
-import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
-import net.folivo.trixnity.olm.encodeUnpaddedBase64
+import net.folivo.trixnity.crypto.*
 
 private val log = KotlinLogging.logger {}
 

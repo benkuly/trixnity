@@ -11,7 +11,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.IMediaService
@@ -43,6 +42,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.DecryptionException
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration

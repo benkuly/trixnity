@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("io.kotest.multiplatform")
 }
 
 kotlin {
@@ -21,6 +22,8 @@ kotlin {
             testTask {
                 useKarma {
                     useFirefoxHeadless()
+                    useConfigDirectory(rootDir.resolve("karma.config.d"))
+                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
                 }
             }
         }
@@ -42,18 +45,33 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
+                implementation(project(":trixnity-core"))
+                api(project(":trixnity-olm")) // FIXME implementation?
+
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
+        val nativeMain by creating {
+            dependsOn(commonMain)
+        }
+        setOf("linuxX64Main", "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain").forEach {
+            getByName(it).dependsOn(nativeMain)
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.kotest:kotest-common:${Versions.kotest}")
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
         val jvmTest by getting {
             dependencies {
+                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }

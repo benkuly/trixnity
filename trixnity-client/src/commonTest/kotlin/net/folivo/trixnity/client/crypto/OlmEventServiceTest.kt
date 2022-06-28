@@ -53,6 +53,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.DecryptionException
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -334,7 +335,12 @@ private val body: ShouldSpec.() -> Unit = {
                 ) { bobSession ->
                     json.decodeFromString(
                         decryptedOlmEventSerializer,
-                        bobSession.decrypt(OlmMessage(encryptedCipherText.body, OlmMessageType.INITIAL_PRE_KEY))
+                        bobSession.decrypt(
+                            OlmMessage(
+                                encryptedCipherText.body,
+                                CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+                            )
+                        )
                     ) shouldBe decryptedOlmEvent
                 }
                 store.olm.getOlmSessions(bobCurveKey).shouldNotBeNull() shouldHaveSize 1

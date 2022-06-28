@@ -36,6 +36,7 @@ import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.DecryptionException
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY

@@ -1,5 +1,7 @@
 package net.folivo.trixnity.client.crypto
 
+import net.folivo.trixnity.crypto.DecryptionException
+
 sealed class SessionException(message: String) : Exception(message) {
     object SenderDidNotEncryptForThisDeviceException :
         SessionException("the sender did not encrypt the message for this device")
