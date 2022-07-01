@@ -11,8 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.OlmService
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
@@ -37,6 +35,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.IOlmMachine
+import net.folivo.trixnity.crypto.olm.OlmMachine
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.time.Duration.Companion.milliseconds
@@ -63,8 +63,8 @@ class MatrixClient private constructor(
 ) {
     val displayName: StateFlow<String?> = store.account.displayName.asStateFlow()
     val avatarUrl: StateFlow<String?> = store.account.avatarUrl.asStateFlow()
-    private val _olm: OlmService
-    val olm: IOlmService
+    private val _olm: OlmMachine
+    val olm: IOlmMachine
     private val _room: RoomService
     val room: IRoomService
     private val _user: UserService
@@ -80,7 +80,7 @@ class MatrixClient private constructor(
     val syncState = api.sync.currentSyncState
 
     init {
-        _olm = OlmService(
+        _olm = OlmMachine(
             olmPickleKey = olmPickleKey,
             ownUserId = userId,
             ownDeviceId = deviceId,
@@ -109,7 +109,7 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olmSign = olm.sign,
+            signService = olm.sign,
             currentSyncState = syncState,
             scope = scope,
         )
@@ -128,7 +128,7 @@ class MatrixClient private constructor(
             ownDeviceId = deviceId,
             store = store,
             api = api,
-            olmSign = olm.sign,
+            signService = olm.sign,
             currentSyncState = syncState,
             backup = _keyBackup,
             secret = _keySecret,

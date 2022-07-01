@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.OlmEventServiceMock
@@ -31,6 +30,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.IOlmMachine
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -53,7 +53,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     lateinit var cut: ActiveDeviceVerification
 
-    lateinit var encryptedStepFlow: MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>
+    lateinit var encryptedStepFlow: MutableSharedFlow<IOlmMachine.DecryptedOlmEventContainer>
 
     beforeTest {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -100,7 +100,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
         encryptedStepFlow.emit(
-            IOlmService.DecryptedOlmEventContainer(
+            IOlmMachine.DecryptedOlmEventContainer(
                 ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bob),
                 DecryptedOlmEvent(cancelEvent, bob, keysOf(), alice, keysOf())
             )

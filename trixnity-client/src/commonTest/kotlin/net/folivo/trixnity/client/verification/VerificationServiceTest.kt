@@ -12,8 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.OlmEventServiceMock
@@ -54,6 +53,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.IOlmMachine
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -81,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-    lateinit var decryptedOlmEventFlow: MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>
+    lateinit var decryptedOlmEventFlow: MutableSharedFlow<IOlmMachine.DecryptedOlmEventContainer>
 
     lateinit var cut: VerificationService
 
@@ -194,7 +194,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("ignore request, that is timed out") {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                    IOlmMachine.DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
@@ -209,7 +209,7 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction1"
                 )
                 decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                    IOlmMachine.DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
@@ -237,13 +237,13 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction2"
                 )
                 decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                    IOlmMachine.DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                    IOlmMachine.DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
                     )

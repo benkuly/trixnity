@@ -5,8 +5,6 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmEventService
-import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -17,6 +15,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.crypto.olm.IOlmEventService
+import net.folivo.trixnity.crypto.olm.IOlmMachine
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
@@ -88,7 +88,7 @@ class ActiveDeviceVerification(
     }
 
     private suspend fun handleOlmDecryptedVerificationRequestEvents(
-        event: IOlmService.DecryptedOlmEventContainer,
+        event: IOlmMachine.DecryptedOlmEventContainer,
     ) {
         val content = event.decrypted.content
         if (content is VerificationStep) handleVerificationStepEvent(content, event.decrypted.sender)

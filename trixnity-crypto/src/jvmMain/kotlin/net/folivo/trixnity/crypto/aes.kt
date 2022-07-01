@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto
 
+import net.folivo.trixnity.crypto.olm.DecryptionException
 import java.security.Key
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec

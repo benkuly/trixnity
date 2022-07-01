@@ -1,16 +1,16 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.OlmStore
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.freeAfter
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(user: UserId) = waitForUpdateOutdatedKey(setOf(user))
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(users: Set<UserId> = setOf()) {
@@ -107,32 +107,6 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
 
 internal fun OlmStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
     account.update { olmAccount.pickle(pickleKey) }
-}
-
-internal suspend fun OlmStore.storeTrustedInboundMegolmSession(
-    roomId: RoomId,
-    sessionId: String,
-    senderKey: Key.Curve25519Key,
-    senderSigningKey: Key.Ed25519Key,
-    sessionKey: String,
-    pickleKey: String
-) {
-    updateInboundMegolmSession(sessionId, roomId) { oldStoredSession ->
-        oldStoredSession
-            ?: freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
-                StoredInboundMegolmSession(
-                    senderKey = senderKey,
-                    sessionId = sessionId,
-                    roomId = roomId,
-                    firstKnownIndex = session.firstKnownIndex,
-                    hasBeenBackedUp = false,
-                    isTrusted = true,
-                    senderSigningKey = senderSigningKey,
-                    forwardingCurve25519KeyChain = emptyList(),
-                    pickled = session.pickle(pickleKey)
-                )
-            }
-    }
 }
 
 internal inline fun <reified T : Key> DeviceKeys.get(): T? {

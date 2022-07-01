@@ -1,5 +1,8 @@
 package net.folivo.trixnity.crypto
 
+
+class AesDecryptionException(reason: Exception) : Exception(reason)
+
 expect suspend fun encryptAes256Ctr(
     content: ByteArray,
     key: ByteArray,

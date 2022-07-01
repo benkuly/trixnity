@@ -5,6 +5,7 @@ import com.soywiz.krypto.encoding.unhex
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.random.Random
 
 class AesTest : ShouldSpec({

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.crypto.sign
 
 sealed interface VerifyResult {
     object Valid : VerifyResult

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.until.fixed
 import io.kotest.assertions.until.until

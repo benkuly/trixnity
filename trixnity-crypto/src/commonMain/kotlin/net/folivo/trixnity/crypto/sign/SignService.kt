@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.crypto.sign
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -6,13 +6,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
-import net.folivo.trixnity.client.store.AllowedSecretType
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
-import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
-import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.UserSigningKey
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -25,13 +19,7 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 
-interface IOlmSignService {
-    sealed interface SignWith {
-        object DeviceKey : SignWith
-        data class AllowedSecrets(val allowedSecretType: AllowedSecretType) : SignWith
-        data class Custom(val privateKey: String, val publicKey: String) : SignWith
-    }
-
+interface ISignService {
     suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = SignWith.DeviceKey): Signatures<UserId>
 
     suspend fun <T> signatures(
@@ -46,7 +34,7 @@ interface IOlmSignService {
         signWith: SignWith = SignWith.DeviceKey
     ): Signed<T, UserId>
 
-    suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String = "key"): Key.SignedCurve25519Key
+    suspend fun signCurve25519Key(key: Curve25519Key, signatureJsonKey: String = "key"): Key.SignedCurve25519Key
 
     suspend fun <T> verify(
         signedObject: Signed<T, UserId>,
@@ -55,54 +43,55 @@ interface IOlmSignService {
     ): VerifyResult
 }
 
-class OlmSignService internal constructor(
+class SignService internal constructor(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val json: Json,
-    private val store: Store,
-    private val account: OlmAccount,
-    private val olmUtility: OlmUtility,
-) : IOlmSignService {
+    private val store: SignServiceStore,
+    private val olmPickleKey: String,
+) : ISignService {
 
-    override suspend fun signatures(jsonObject: JsonObject, signWith: IOlmSignService.SignWith): Signatures<UserId> {
+    override suspend fun signatures(jsonObject: JsonObject, signWith: SignWith): Signatures<UserId> {
         val stringToSign = canonicalFilteredJson(jsonObject)
         return when (signWith) {
-            IOlmSignService.SignWith.DeviceKey -> {
-                mapOf(
-                    ownUserId to keysOf(
-                        Ed25519Key(
-                            keyId = ownDeviceId,
-                            value = account.sign(stringToSign)
+            SignWith.DeviceKey -> {
+                freeAfter(OlmAccount.unpickle(olmPickleKey, requireNotNull(store.getOlmAccount()))) { olmAccount ->
+                    mapOf(
+                        ownUserId to keysOf(
+                            Ed25519Key(
+                                keyId = ownDeviceId,
+                                value = olmAccount.sign(stringToSign)
+                            )
                         )
                     )
-                )
+                }
             }
-            is IOlmSignService.SignWith.AllowedSecrets -> {
-                val privateKey = store.keys.secrets.value[signWith.allowedSecretType]?.decryptedPrivateKey
-                requireNotNull(privateKey) { "could not find private key of ${signWith.allowedSecretType}" }
-                val publicKey =
-                    store.keys.getCrossSigningKey(
-                        ownUserId,
-                        when (signWith.allowedSecretType) {
-                            M_CROSS_SIGNING_SELF_SIGNING -> SelfSigningKey
-                            M_CROSS_SIGNING_USER_SIGNING -> UserSigningKey
-                            AllowedSecretType.M_MEGOLM_BACKUP_V1 ->
-                                throw IllegalArgumentException("cannot sign with ${signWith.allowedSecretType}")
-                        }
-                    )?.value?.signed?.get<Ed25519Key>()?.keyId
-                requireNotNull(publicKey) { "could not find public key of ${signWith.allowedSecretType}" }
-                mapOf(
-                    ownUserId to keysOf(
-                        Ed25519Key(
-                            keyId = publicKey,
-                            value = freeAfter(OlmPkSigning.create(privateKey)) {
-                                it.sign(stringToSign)
-                            }
-                        )
-                    )
-                )
-            }
-            is IOlmSignService.SignWith.Custom -> {
+//            is SignWith.Secret -> { // FIXME move to caller
+//                val privateKey = store.keys.secrets.value[signWith.allowedSecretType]?.decryptedPrivateKey
+//                requireNotNull(privateKey) { "could not find private key of ${signWith.allowedSecretType}" }
+//                val publicKey =
+//                    store.keys.getCrossSigningKey(
+//                        ownUserId,
+//                        when (signWith.allowedSecretType) {
+//                            SecretType.M_CROSS_SIGNING_SELF_SIGNING -> SelfSigningKey
+//                            SecretType.M_CROSS_SIGNING_USER_SIGNING -> UserSigningKey
+//                            SecretType.M_MEGOLM_BACKUP_V1 ->
+//                                throw IllegalArgumentException("cannot sign with ${signWith.allowedSecretType}")
+//                        }
+//                    )?.value?.signed?.get<Ed25519Key>()?.keyId
+//                requireNotNull(publicKey) { "could not find public key of ${signWith.allowedSecretType}" }
+//                mapOf(
+//                    ownUserId to keysOf(
+//                        Ed25519Key(
+//                            keyId = publicKey,
+//                            value = freeAfter(OlmPkSigning.create(privateKey)) {
+//                                it.sign(stringToSign)
+//                            }
+//                        )
+//                    )
+//                )
+//            }
+            is SignWith.PrivateKey -> {
                 mapOf(
                     ownUserId to keysOf(
                         Ed25519Key(
@@ -120,7 +109,7 @@ class OlmSignService internal constructor(
     override suspend fun <T> signatures(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: IOlmSignService.SignWith
+        signWith: SignWith
     ): Signatures<UserId> {
         val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
         require(jsonObject is JsonObject)
@@ -130,17 +119,17 @@ class OlmSignService internal constructor(
     override suspend fun <T> sign(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: IOlmSignService.SignWith
+        signWith: SignWith
     ): Signed<T, UserId> {
         return Signed(unsignedObject, signatures(unsignedObject, serializer, signWith))
     }
 
 
-    override suspend fun signCurve25519Key(key: Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
+    override suspend fun signCurve25519Key(key: Curve25519Key, signatureJsonKey: String): Key.SignedCurve25519Key {
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
-            signatures = signatures(JsonObject(mapOf(jsonKey to JsonPrimitive(key.value))))
+            signatures = signatures(JsonObject(mapOf(signatureJsonKey to JsonPrimitive(key.value))))
         )
     }
 
@@ -173,11 +162,13 @@ class OlmSignService internal constructor(
                         val signatureKey = signedObject.signatures?.get(userId)?.find { it.keyId == signingKey.keyId }
                             ?: return VerifyResult.MissingSignature("no signature found for signing key $signingKey")
                         try {
-                            olmUtility.verifyEd25519(
-                                signingKey.value,
-                                signedJson,
-                                signatureKey.value
-                            )
+                            freeAfter(OlmUtility.create()) { olmUtility ->
+                                olmUtility.verifyEd25519(
+                                    signingKey.value,
+                                    signedJson,
+                                    signatureKey.value
+                                )
+                            }
                             VerifyResult.Valid
                         } catch (exception: Exception) {
                             VerifyResult.Invalid("error ${exception.message} of public key $signingKey with signature $signatureKey")
@@ -197,19 +188,19 @@ class OlmSignService internal constructor(
         canonicalJsonString(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 }
 
-suspend inline fun <reified T> IOlmSignService.sign(
+suspend inline fun <reified T> ISignService.sign(
     unsignedObject: T,
-    signWith: IOlmSignService.SignWith = IOlmSignService.SignWith.DeviceKey
+    signWith: SignWith = SignWith.DeviceKey
 ): Signed<T, UserId> =
     sign(unsignedObject, serializer(), signWith)
 
-suspend inline fun <reified T> IOlmSignService.signatures(
+suspend inline fun <reified T> ISignService.signatures(
     unsignedObject: T,
-    signWith: IOlmSignService.SignWith = IOlmSignService.SignWith.DeviceKey
+    signWith: SignWith = SignWith.DeviceKey
 ): Signatures<UserId> =
     signatures(unsignedObject, serializer(), signWith)
 
-suspend inline fun <reified T> IOlmSignService.verify(
+suspend inline fun <reified T> ISignService.verify(
     signedObject: Signed<T, UserId>,
     checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
 ): VerifyResult =

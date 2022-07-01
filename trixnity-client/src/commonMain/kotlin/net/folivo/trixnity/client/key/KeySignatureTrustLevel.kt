@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.client.key
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName

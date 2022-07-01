@@ -19,6 +19,7 @@ import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.C
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.crypto.*
+import net.folivo.trixnity.crypto.olm.DecryptionException
 
 private val log = KotlinLogging.logger {}
 

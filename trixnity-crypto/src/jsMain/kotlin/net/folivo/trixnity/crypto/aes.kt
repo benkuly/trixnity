@@ -4,6 +4,7 @@ import createCipheriv
 import crypto
 import io.ktor.util.*
 import kotlinx.coroutines.await
+import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.js.json
 
 actual suspend fun encryptAes256Ctr(

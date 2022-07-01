@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key

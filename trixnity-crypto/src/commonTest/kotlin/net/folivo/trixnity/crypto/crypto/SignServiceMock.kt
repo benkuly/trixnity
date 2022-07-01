@@ -1,18 +1,19 @@
-package net.folivo.trixnity.client.mocks
+package net.folivo.trixnity.crypto.crypto
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
-import net.folivo.trixnity.client.crypto.IOlmSignService
-import net.folivo.trixnity.client.crypto.VerifyResult
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signatures
 import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignWith
+import net.folivo.trixnity.crypto.sign.VerifyResult
 
-class OlmSignServiceMock : IOlmSignService {
+class SignServiceMock : ISignService {
     override suspend fun signatures(
         jsonObject: JsonObject,
-        signWith: IOlmSignService.SignWith
+        signWith: SignWith
     ): Signatures<UserId> {
         throw NotImplementedError()
     }
@@ -21,7 +22,7 @@ class OlmSignServiceMock : IOlmSignService {
     override suspend fun <T> signatures(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: IOlmSignService.SignWith
+        signWith: SignWith
     ): Signatures<UserId> {
         return returnSignatures[0].also { if (returnSignatures.size > 1) returnSignatures = returnSignatures - it }
     }
@@ -29,13 +30,14 @@ class OlmSignServiceMock : IOlmSignService {
     override suspend fun <T> sign(
         unsignedObject: T,
         serializer: KSerializer<T>,
-        signWith: IOlmSignService.SignWith
+        signWith: SignWith
     ): Signed<T, UserId> {
         return Signed(unsignedObject, null)
     }
 
-    override suspend fun signCurve25519Key(key: Key.Curve25519Key, jsonKey: String): Key.SignedCurve25519Key {
-        throw NotImplementedError()
+    var signCurve25519Key: Key.SignedCurve25519Key? = null
+    override suspend fun signCurve25519Key(key: Key.Curve25519Key, signatureJsonKey: String): Key.SignedCurve25519Key {
+        return Key.SignedCurve25519Key(key.keyId, key.value, mapOf())
     }
 
     var returnVerify: VerifyResult? = null

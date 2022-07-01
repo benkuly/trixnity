@@ -8,9 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmEventService
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.IRoomService
@@ -34,6 +32,8 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.olm.IOlmEventService
+import net.folivo.trixnity.crypto.olm.IOlmMachine
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
@@ -158,7 +158,7 @@ class VerificationService(
         }
     }
 
-    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: IOlmService.DecryptedOlmEventContainer) {
+    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: IOlmMachine.DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
             is VerificationRequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {

@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
+    id("org.kodein.mock.mockmp")
 }
 
 kotlin {
@@ -47,10 +48,12 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-core"))
                 api(project(":trixnity-olm")) // FIXME implementation?
+                implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
 
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }

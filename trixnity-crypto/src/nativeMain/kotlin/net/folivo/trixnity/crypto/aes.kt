@@ -2,6 +2,7 @@ package net.folivo.trixnity.crypto
 
 import com.soywiz.krypto.AES
 import com.soywiz.krypto.Padding
+import net.folivo.trixnity.crypto.olm.DecryptionException
 
 actual suspend fun encryptAes256Ctr(
     content: ByteArray,

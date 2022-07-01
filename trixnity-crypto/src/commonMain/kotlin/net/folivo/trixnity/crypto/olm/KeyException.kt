@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.crypto
+package net.folivo.trixnity.crypto.olm
 
 import net.folivo.trixnity.core.model.UserId
 

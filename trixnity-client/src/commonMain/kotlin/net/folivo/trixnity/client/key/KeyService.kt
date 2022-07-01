@@ -5,13 +5,9 @@ import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.*
-import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
@@ -25,7 +21,9 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventConten
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
@@ -34,6 +32,10 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.sign.*
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.freeAfter
@@ -148,19 +150,53 @@ class KeyService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val store: Store,
-    private val olmSign: IOlmSignService,
+    private val signService: ISignService,
     private val api: MatrixClientServerApiClient,
     private val currentSyncState: StateFlow<SyncState>,
     override val secret: IKeySecretService,
     override val backup: IKeyBackupService,
-    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, olmSign, api),
+    override val trust: IKeyTrustService = KeyTrustService(ownUserId, store, signService, api),
     scope: CoroutineScope,
 ) : IKeyService {
 
     init {
         api.sync.subscribeDeviceLists(::handleDeviceLists)
+        api.sync.subscribe(::handleMemberEvents)
+        api.sync.subscribe(::handleEncryptionEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
+    }
+
+    internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
+        if (event is Event.StateEvent && store.room.get(event.roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+            log.debug { "handle membership change in an encrypted room" }
+            val userId = UserId(event.stateKey)
+            when (event.content.membership) {
+                Membership.LEAVE, Membership.BAN -> {
+                    if (store.room.encryptedJoinedRooms().find { roomId ->
+                            store.roomState.getByStateKey<MemberEventContent>(roomId, event.stateKey)
+                                ?.content?.membership.let { it == JOIN || it == INVITE }
+                        } == null)
+                        store.keys.updateDeviceKeys(userId) { null }
+                }
+                JOIN, INVITE -> {
+                    if (event.unsigned?.previousContent?.membership != event.content.membership
+                        && store.keys.getDeviceKeys(userId) == null
+                    ) store.keys.outdatedKeys.update { it + userId }
+                }
+                else -> {
+                }
+            }
+        }
+    }
+
+    internal suspend fun handleEncryptionEvents(event: Event<EncryptionEventContent>) {
+        if (event is Event.StateEvent) {
+            val outdatedKeys = store.roomState.members(event.roomId, JOIN, INVITE).filterNot {
+                store.keys.isTracked(it)
+            }
+            store.keys.outdatedKeys.update { it + outdatedKeys }
+        }
     }
 
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?) {
@@ -243,7 +279,7 @@ class KeyService(
         signingOptional: Boolean = false
     ) {
         val signatureVerification =
-            olmSign.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
+            signService.verify(crossSigningKey, mapOf(userId to setOfNotNull(signingKeyForVerification)))
         if (signatureVerification == VerifyResult.Valid
             || signingOptional && signatureVerification is VerifyResult.MissingSignature
         ) {
@@ -272,7 +308,7 @@ class KeyService(
         val oldDevices = store.keys.getDeviceKeys(userId)
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
-                olmSign.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
+                signService.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
             (userId == deviceKeys.signed.userId && deviceId == deviceKeys.signed.deviceId
                     && signatureVerification == VerifyResult.Valid)
                 .also {
@@ -381,13 +417,13 @@ class KeyService(
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val masterSigningKey = olmSign.sign(
+                    val masterSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(MasterKey),
                             keys = keysOf(Ed25519Key(masterSigningPublicKey, masterSigningPublicKey))
                         ),
-                        signWith = SignWith.Custom(
+                        signWith = SignWith.PrivateKey(
                             privateKey = masterSigningPrivateKey,
                             publicKey = masterSigningPublicKey
                         )
@@ -397,13 +433,13 @@ class KeyService(
                     )
                     val (selfSigningPrivateKey, selfSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val selfSigningKey = olmSign.sign(
+                    val selfSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(SelfSigningKey),
                             keys = keysOf(Ed25519Key(selfSigningPublicKey, selfSigningPublicKey))
                         ),
-                        signWith = SignWith.Custom(
+                        signWith = SignWith.PrivateKey(
                             privateKey = masterSigningPrivateKey,
                             publicKey = masterSigningPublicKey
                         )
@@ -412,20 +448,20 @@ class KeyService(
                         encryptSecret(
                             recoveryKey,
                             keyId,
-                            M_CROSS_SIGNING_SELF_SIGNING.id,
+                            SecretType.M_CROSS_SIGNING_SELF_SIGNING.id,
                             selfSigningPrivateKey,
                             api.json
                         )
                     )
                     val (userSigningPrivateKey, userSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val userSigningKey = olmSign.sign(
+                    val userSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = ownUserId,
                             usage = setOf(UserSigningKey),
                             keys = keysOf(Ed25519Key(userSigningPublicKey, userSigningPublicKey))
                         ),
-                        signWith = SignWith.Custom(
+                        signWith = SignWith.PrivateKey(
                             privateKey = masterSigningPrivateKey,
                             publicKey = masterSigningPublicKey
                         )
@@ -434,18 +470,18 @@ class KeyService(
                         encryptSecret(
                             recoveryKey,
                             keyId,
-                            M_CROSS_SIGNING_USER_SIGNING.id,
+                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
                             userSigningPrivateKey,
                             api.json
                         )
                     )
                     store.keys.secrets.update {
                         mapOf(
-                            M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                            SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
                                 Event.GlobalAccountDataEvent(encryptedSelfSigningKey),
                                 selfSigningPrivateKey
                             ),
-                            M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                            SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                                 Event.GlobalAccountDataEvent(encryptedUserSigningKey),
                                 userSigningPrivateKey
                             ),

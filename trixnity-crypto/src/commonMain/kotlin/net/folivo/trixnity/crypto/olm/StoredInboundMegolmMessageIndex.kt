@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.store
+package net.folivo.trixnity.crypto.olm
 
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.EventId
