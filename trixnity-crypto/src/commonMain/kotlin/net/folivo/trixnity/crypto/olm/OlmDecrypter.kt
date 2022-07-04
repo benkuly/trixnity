@@ -15,7 +15,7 @@ data class DecryptedOlmEventContainer(
 
 typealias DecryptedOlmEventSubscriber = suspend (DecryptedOlmEventContainer) -> Unit
 
-class OlmDecrypter( // FIXME test
+class OlmDecrypter(
     private val olmEventService: IOlmEventService,
     private vararg val subscribers: DecryptedOlmEventSubscriber
 ) : EventSubscriber<OlmEncryptedEventContent> {
