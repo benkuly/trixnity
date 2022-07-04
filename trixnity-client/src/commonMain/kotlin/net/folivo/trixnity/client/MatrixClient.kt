@@ -40,9 +40,6 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmUtility
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
-import kotlin.time.measureTimedValue
 
 private val log = KotlinLogging.logger {}
 
@@ -281,7 +278,6 @@ class MatrixClient private constructor(
             val loginType: LoginType = LoginType.Password,
         )
 
-        @OptIn(ExperimentalTime::class)
         suspend fun fromStore(
             storeFactory: StoreFactory,
             onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
@@ -289,71 +285,52 @@ class MatrixClient private constructor(
             configuration: MatrixClientConfiguration.() -> Unit = {}
         ): Result<MatrixClient?> = kotlin.runCatching {
             val config = MatrixClientConfiguration().apply(configuration)
-            measureTimedValue {
-                val eventContentSerializerMappings = measureTimedValue {
-                    createEventContentSerializerMappings(config.customMappings)
-                }.apply {
-                    log.debug { "createMatrixClientServerApiClientEventContentSerializerMappings() took ${duration.inWholeMilliseconds}ms" }
-                }.value
-                val json = createMatrixEventJson(eventContentSerializerMappings)
+            val eventContentSerializerMappings = createEventContentSerializerMappings(config.customMappings)
+            val json = createMatrixEventJson(eventContentSerializerMappings)
 
-                val store = try {
-                    measureTimedValue {
-                        storeFactory.createStore(
-                            eventContentSerializerMappings,
-                            json
-                        )
-                    }.apply {
-                        log.debug { "createStore() took ${duration.inWholeMilliseconds}ms" }
-                    }.value
-                } catch (exc: Exception) {
-                    throw MatrixClientStoreException(exc)
+            val store = try {
+                storeFactory.createStore(eventContentSerializerMappings, json)
+            } catch (exc: Exception) {
+                throw MatrixClientStoreException(exc)
+            }
+            store.init()
+
+            val baseUrl = store.account.baseUrl.value
+            val userId = store.account.userId.value
+            val deviceId = store.account.deviceId.value
+            val olmPickleKey = store.account.olmPickleKey.value
+
+            if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
+                val api = MatrixClientServerApiClient(
+                    baseUrl = baseUrl,
+                    httpClientFactory = config.httpClientFactory,
+                    onLogout = { onLogout(it, store) },
+                    json = json,
+                    eventContentSerializerMappings = eventContentSerializerMappings,
+                )
+                val accessToken = store.account.accessToken.value ?: onSoftLogin?.let {
+                    val (identifier, passwordOrToken, loginType) = onSoftLogin()
+                    api.authentication.login(identifier, passwordOrToken, loginType, deviceId)
+                        .getOrThrow().accessToken
+                        .also { store.account.accessToken.value = it }
                 }
-                measureTime { store.init() }.apply { log.debug { "store.init() took ${inWholeMilliseconds}ms" } }
-
-                val baseUrl = store.account.baseUrl.value
-                val userId = store.account.userId.value
-                val deviceId = store.account.deviceId.value
-                val olmPickleKey = store.account.olmPickleKey.value
-
-                if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null) {
-                    val api = MatrixClientServerApiClient(
-                        baseUrl = baseUrl,
-                        httpClientFactory = config.httpClientFactory,
-                        onLogout = { onLogout(it, store) },
+                if (accessToken != null) {
+                    api.accessToken.value = accessToken
+                    MatrixClient(
+                        olmPickleKey = olmPickleKey,
+                        userId = userId,
+                        deviceId = deviceId,
+                        api = api,
+                        store = store,
                         json = json,
-                        eventContentSerializerMappings = eventContentSerializerMappings,
+                        config = config,
+                        olmAccount = store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
+                            ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) },
+                        olmUtility = OlmUtility.create(),
+                        scope = scope,
                     )
-                    val accessToken = store.account.accessToken.value ?: onSoftLogin?.let {
-                        val (identifier, passwordOrToken, loginType) = onSoftLogin()
-                        api.authentication.login(identifier, passwordOrToken, loginType, deviceId)
-                            .getOrThrow().accessToken
-                            .also { store.account.accessToken.value = it }
-                    }
-                    if (accessToken != null) {
-                        api.accessToken.value = accessToken
-                        measureTimedValue {
-                            MatrixClient(
-                                olmPickleKey = olmPickleKey,
-                                userId = userId,
-                                deviceId = deviceId,
-                                api = api,
-                                store = store,
-                                json = json,
-                                config = config,
-                                olmAccount = store.olm.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
-                                    ?: OlmAccount.create().also { store.olm.account.value = it.pickle(olmPickleKey) },
-                                olmUtility = OlmUtility.create(),
-                                scope = scope,
-                            )
-                        }.apply {
-                            log.debug { "init MatrixClient took ${duration.inWholeMilliseconds}ms" }
-                        }.value
-                    } else null
                 } else null
-            }.apply {
-                log.debug { "fromStore() took ${duration.inWholeMilliseconds}ms" }
-            }.value
+            } else null
         }
 
         private fun onLogout(
