@@ -86,6 +86,12 @@ class PushService(
             room.getTimelineEventsFromNowOn(decryptionTimeout, syncResponseBufferSize)
                 .map { extractDecryptedEvent(it) }
                 .filterNotNull()
+                .filter {
+                    when (it) {
+                        is Event.RoomEvent -> it.sender != store.account.userId.value
+                        else -> true
+                    }
+                }
         merge(inviteEvents, timelineEvents)
             .map {
                 evaluatePushRules(
@@ -137,6 +143,7 @@ class PushService(
                     && pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) }
                     && if (pattern != null) bodyContainsPattern(event, pattern) else true
         }
+        println(" $rule")
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {

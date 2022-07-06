@@ -151,12 +151,15 @@ private val body: ShouldSpec.() -> Unit = {
     )
 
     fun messageEventWithContent(
-        roomId: RoomId, content: MessageEventContent, decryptedContent: MessageEventContent = content
+        roomId: RoomId,
+        content: MessageEventContent,
+        decryptedContent: MessageEventContent = content,
+        sender: UserId = otherUser
     ) = TimelineEvent(
         event = MessageEvent(
             content = content,
             id = EventId("\$event-${content.hashCode()}"),
-            sender = otherUser,
+            sender = sender,
             roomId = roomId,
             originTimestamp = 0L,
         ),
@@ -279,6 +282,21 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.getNotifications(0.seconds).take(100).toList() shouldBe timelineEvents.map {
                     Notification(it.event)
                 }
+            }
+            should("not notify on own messages") {
+                val timelineEvents = (0..9).map {
+                    messageEventWithContent(
+                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                            body = "Hello User1 🦊! ($it)"
+                        ),
+                        sender = if (it == 0 || it == 9) user1 else otherUser
+                    )
+                }
+                room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
+                cut.getNotifications(0.seconds).take(8).toList() shouldBe
+                        timelineEvents.drop(1).dropLast(1).map {
+                            Notification(it.event)
+                        }
             }
         }
         context("new decrypted timeline events") {
