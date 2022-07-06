@@ -8,8 +8,10 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
+import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
@@ -42,9 +44,9 @@ import kotlin.test.Test
 @Testcontainers
 class CrossSigningIT {
 
-    private lateinit var client1: MatrixClient
-    private lateinit var client2: MatrixClient
-    private lateinit var client3: MatrixClient
+    private lateinit var client1: IMatrixClient
+    private lateinit var client2: IMatrixClient
+    private lateinit var client3: IMatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var scope3: CoroutineScope
@@ -257,7 +259,7 @@ class CrossSigningIT {
                 client3Verification.state.first { it is ActiveVerificationState.Done }
             }
 
-            suspend fun KeyService.checkEverythingVerified() {
+            suspend fun IKeyService.checkEverythingVerified() {
                 this.getTrustLevel(client1.userId, scope1).first { it == CrossSigned(true) }
                 this.getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
                 this.getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == Verified }

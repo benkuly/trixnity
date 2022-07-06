@@ -47,6 +47,8 @@ class ActiveVerificationTest : ShouldSpec({
         KeyTrustServiceMock(),
         createMatrixEventJson(),
     ) {
+        override fun theirDeviceId(): String? = theirDeviceId
+
         override suspend fun lifecycle(scope: CoroutineScope) {
             lifecycleCalled++
         }

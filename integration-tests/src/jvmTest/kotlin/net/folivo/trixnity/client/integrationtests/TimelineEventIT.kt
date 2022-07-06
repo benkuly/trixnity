@@ -9,6 +9,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
@@ -45,8 +46,8 @@ import kotlin.test.Ignore
 @Testcontainers
 class TimelineEventIT {
 
-    private lateinit var client1: MatrixClient
-    private lateinit var client2: MatrixClient
+    private lateinit var client1: IMatrixClient
+    private lateinit var client2: IMatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
@@ -297,7 +298,7 @@ class TimelineEventIT {
         }
     }
 
-    private suspend fun MatrixClient.getExpectedTimelineToBeginning(
+    private suspend fun IMatrixClient.getExpectedTimelineToBeginning(
         startFrom: EventId,
         roomId: RoomId
     ) = room.getTimelineEvents(startFrom, roomId)

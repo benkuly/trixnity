@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.IMatrixClient.LoginState.*
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.InMemoryStoreFactory
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -276,7 +276,7 @@ class MatrixClientTest : ShouldSpec({
         }
     }
     context(MatrixClient::loginState.name) {
-        lateinit var cut: MatrixClient
+        lateinit var cut: IMatrixClient
         lateinit var inMemoryStore: InMemoryStore
         beforeTest {
             inMemoryStore = InMemoryStore(scope).apply { init() }
