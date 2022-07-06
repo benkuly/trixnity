@@ -259,7 +259,7 @@ class RoomServiceTest : ShouldSpec({
                             redactedBecause = redactionEvent
                         )
                     )
-                    content shouldBe null
+                    content shouldBe Result.success(RedactedMessageEventContent("m.room.message"))
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -321,7 +321,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         ""
                     )
-                    content shouldBe null
+                    content shouldBe Result.success(RedactedStateEventContent("m.room.name"))
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id

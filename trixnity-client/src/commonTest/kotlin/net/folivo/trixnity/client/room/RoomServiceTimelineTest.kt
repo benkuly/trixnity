@@ -29,9 +29,11 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -1061,6 +1063,57 @@ class RoomServiceTimelineTest : ShouldSpec({
                         +event4
                         gap("after-4")
                     }
+                }
+            }
+        }
+        should("process redactions from gaps") {
+            val redactionEvent = MessageEvent(
+                RedactionEventContent(redacts = EventId("\$event3")),
+                EventId("\$event2"),
+                UserId("sender", "server"),
+                RoomId("room", "server"),
+                2
+            )
+            val redactedEvent = MessageEvent(
+                RedactedMessageEventContent("m.room.message"),
+                EventId("\$event3"),
+                UserId("sender", "server"),
+                RoomId("room", "server"),
+                3,
+                UnsignedRoomEventData.UnsignedMessageEventData(redactedBecause = redactionEvent),
+            )
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    json, mappings,
+                    GetEvents(
+                        room.e(),
+                        "start",
+                        dir = BACKWARDS,
+                        limit = 20,
+                        filter = LAZY_LOAD_MEMBERS_FILTER
+                    )
+                ) {
+                    GetEvents.Response(
+                        start = "start",
+                        end = "end",
+                        chunk = listOf(redactionEvent, event1),
+                        state = listOf()
+                    )
+                }
+            }
+            store.roomTimeline.addAll(timeline {
+                fragment {
+                    gap("start")
+                    +event3
+                }
+            })
+            cut.fillTimelineGaps(event3.id, room)
+            storeTimeline(event1, redactionEvent, redactedEvent) shouldContainExactly timeline {
+                fragment {
+                    gap("end")
+                    +event1
+                    +redactionEvent
+                    +redactedEvent
                 }
             }
         }
