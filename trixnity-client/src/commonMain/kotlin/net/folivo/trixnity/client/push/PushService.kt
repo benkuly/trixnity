@@ -143,7 +143,6 @@ class PushService(
                     && pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) }
                     && if (pattern != null) bodyContainsPattern(event, pattern) else true
         }
-        println(" $rule")
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
