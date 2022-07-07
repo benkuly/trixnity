@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto.olm
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.DeviceKeys
@@ -7,49 +8,41 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 
-data class UpdateResult<N, R>(
-    val newValue: N,
-    val resultValue: R
-)
-
-typealias ResultUpdater<N, R> = suspend (N) -> UpdateResult<N, R>
-
-interface OlmMachineStore {
+interface OlmServiceStore {
     suspend fun getCurve25519Key(userId: UserId, deviceId: String): Curve25519Key?
     suspend fun getEd25519Key(userId: UserId, deviceId: String): Ed25519Key?
 
     suspend fun findDeviceKeys(userId: UserId, senderKey: Curve25519Key): DeviceKeys?
 
-    suspend fun <T> updateOlmSessions(
+    suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
-        resultUpdater: ResultUpdater<Set<StoredOlmSession>?, T>
-    ): T
+        updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
+    )
 
-    suspend fun <T> updateOutboundMegolmSession(
+    suspend fun updateOutboundMegolmSession(
         roomId: RoomId,
-        resultUpdater: ResultUpdater<StoredOutboundMegolmSession?, T>
-    ): T
+        updater: suspend (StoredOutboundMegolmSession?) -> StoredOutboundMegolmSession?
+    )
 
-    suspend fun <T> updateInboundMegolmSession(
+    suspend fun updateInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
-        resultUpdater: ResultUpdater<StoredInboundMegolmSession?, T>
-    ): T
+        updater: suspend (StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
+    )
 
     suspend fun getInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
     ): StoredInboundMegolmSession?
 
-    suspend fun <T> updateInboundMegolmMessageIndex(
+    suspend fun updateInboundMegolmMessageIndex(
         sessionId: String,
         roomId: RoomId,
         messageIndex: Long,
-        resultUpdater: ResultUpdater<StoredInboundMegolmMessageIndex?, T>
-    ): T
+        updater: suspend (StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
+    )
 
-    suspend fun <T> updateOlmAccount(resultUpdater: ResultUpdater<String?, T>): T
-    suspend fun getOlmAccount(): String?
+    val olmAccount: MutableStateFlow<String?>
 
     suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>>?
 

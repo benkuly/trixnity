@@ -1043,9 +1043,8 @@ class RoomService(
                         val exception = decryptEventAttempt.exceptionOrNull()
                         val decryptedEvent =
                             if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                                || exception is DecryptionException.SessionException && exception.cause.message?.contains(
-                                    "UNKNOWN_MESSAGE_INDEX"
-                                ) == true
+                                || exception is DecryptionException.SessionException && exception.cause?.message
+                                    ?.contains("UNKNOWN_MESSAGE_INDEX") == true
                             ) {
                                 keyBackup.loadMegolmSession(roomId, content.sessionId)
                                 log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }

@@ -11,17 +11,21 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.key.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.OlmSignServiceMock
+import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
 import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
+import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -38,7 +42,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     lateinit var store: Store
 
-    val olmSign = OlmSignServiceMock()
+    val olmSign = SignServiceMock()
 
     val json = createMatrixEventJson()
     val contentMappings = createEventContentSerializerMappings()
@@ -435,6 +439,18 @@ private val body: ShouldSpec.() -> Unit = {
                 usage = setOf(MasterKey),
                 keys = keysOf(ownMasterEdKey)
             )
+            val selfSigningKey = CrossSigningKeys(
+                userId = alice,
+                usage = setOf(SelfSigningKey),
+                keys = keysOf(Ed25519Key("A-SSK", "A-SSK-value"))
+            )
+            store.keys.secrets.value = mapOf(
+                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                    Event.GlobalAccountDataEvent(
+                        SelfSigningKeyEventContent(mapOf())
+                    ), ""
+                )
+            )
             val otherCrossSigningKey = CrossSigningKeys(
                 userId = alice,
                 usage = setOf(UserSigningKey),
@@ -446,6 +462,7 @@ private val body: ShouldSpec.() -> Unit = {
             store.keys.updateCrossSigningKeys(alice) {
                 setOf(
                     StoredCrossSigningKeys(Signed(ownMasterKey, mapOf()), Valid(false)),
+                    StoredCrossSigningKeys(Signed(selfSigningKey, mapOf()), Valid(false)),
                     StoredCrossSigningKeys(Signed(otherCrossSigningKey, mapOf()), Valid(false))
                 )
             }
@@ -493,13 +510,30 @@ private val body: ShouldSpec.() -> Unit = {
                 usage = setOf(MasterKey),
                 keys = keysOf(othersMasterEdKey)
             )
+            val userSigningKey = CrossSigningKeys(
+                userId = alice,
+                usage = setOf(UserSigningKey),
+                keys = keysOf(Ed25519Key("A-USK", "A-USK-value"))
+            )
 
+            store.keys.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(Signed(userSigningKey, mapOf()), Valid(false)),
+                )
+            }
             store.keys.updateDeviceKeys(bob) {
                 mapOf("BBBBBB" to StoredDeviceKeys(Signed(othersDeviceKey, mapOf()), Valid(false)))
             }
             store.keys.updateCrossSigningKeys(bob) {
                 setOf(StoredCrossSigningKeys(Signed(othersMasterKey, mapOf()), Valid(false)))
             }
+            store.keys.secrets.value = mapOf(
+                SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                    Event.GlobalAccountDataEvent(
+                        UserSigningKeyEventContent(mapOf())
+                    ), ""
+                )
+            )
 
             cut.trustAndSignKeys(
                 keys = setOf(othersDeviceEdKey, othersMasterEdKey),
@@ -536,6 +570,23 @@ private val body: ShouldSpec.() -> Unit = {
             store.keys.updateDeviceKeys(alice) {
                 mapOf("AAAAAA" to StoredDeviceKeys(Signed(ownAccountsDeviceKey, mapOf()), Valid(false)))
             }
+            val selfSigningKey = CrossSigningKeys(
+                userId = alice,
+                usage = setOf(SelfSigningKey),
+                keys = keysOf(Ed25519Key("A-SSK", "A-SSK-value"))
+            )
+            store.keys.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(Signed(selfSigningKey, mapOf()), Valid(false)),
+                )
+            }
+            store.keys.secrets.value = mapOf(
+                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                    Event.GlobalAccountDataEvent(
+                        SelfSigningKeyEventContent(mapOf())
+                    ), ""
+                )
+            )
 
             shouldThrow<UploadSignaturesException> {
                 cut.trustAndSignKeys(

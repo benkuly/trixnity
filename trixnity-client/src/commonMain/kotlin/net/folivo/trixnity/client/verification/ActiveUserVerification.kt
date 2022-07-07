@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -80,8 +80,8 @@ class ActiveUserVerification(
         ) : VerificationStepSearchResult
     }
 
-    override suspend fun lifecycle(scope: CoroutineScope) {
-        val timelineJob = scope.launch {
+    override suspend fun lifecycle() = coroutineScope {
+        val timelineJob = launch {
             room.getTimelineEvents(requestEventId, roomId, FORWARDS)
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
@@ -115,16 +115,14 @@ class ActiveUserVerification(
                     }
                 }
         }
-        scope.launch {
-            // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
-            while (isVerificationRequestActive(timestamp, state.value)) {
-                delay(500)
-            }
-            timelineJob.cancel()
+        // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
+        while (isVerificationRequestActive(timestamp, state.value)) {
+            delay(500)
+        }
+        timelineJob.cancel()
 
-            if (isVerificationTimedOut(timestamp, state.value)) {
-                cancel(Code.Timeout, "verification timed out")
-            }
+        if (isVerificationTimedOut(timestamp, state.value)) {
+            cancel(Code.Timeout, "verification timed out")
         }
     }
 }

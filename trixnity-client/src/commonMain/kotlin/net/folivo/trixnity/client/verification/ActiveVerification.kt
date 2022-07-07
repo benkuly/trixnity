@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -51,11 +52,14 @@ abstract class ActiveVerification(
     val state = mutableState.asStateFlow()
 
     private val lifecycleStarted = MutableStateFlow(false)
-    protected abstract suspend fun lifecycle(scope: CoroutineScope)
+    protected abstract suspend fun lifecycle()
     internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
-        log.debug { "start lifecycle of verification" }
+        log.debug { "start lifecycle of verification ${transactionId ?: relatesTo}" }
         return if (!lifecycleAlreadyStarted()) {
-            lifecycle(scope)
+            scope.launch {
+                lifecycle()
+                log.debug { "stop lifecycle of verification ${transactionId ?: relatesTo}" }
+            }
             true
         } else false
     }
@@ -233,8 +237,8 @@ abstract class ActiveVerification(
         sendVerificationStepAndHandleIt(VerificationCancelEventContent(code, reason, relatesTo, transactionId))
     }
 
-    suspend fun cancel() {
+    suspend fun cancel(message: String = "user cancelled verification") {
         log.debug { "user cancelled verification" }
-        cancel(Code.User, "user cancelled verification")
+        cancel(Code.User, message)
     }
 }

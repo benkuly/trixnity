@@ -28,6 +28,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.olm.OlmAccount
+import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.assertEquals
@@ -61,6 +63,7 @@ class MatrixClientTest : ShouldSpec({
     context(MatrixClient::displayName.name) {
         should("get the display name and avatar URL from the profile API when initially logging in") {
             val inMemoryStore = InMemoryStore(scope)
+            inMemoryStore.olm.account.value = freeAfter(OlmAccount.create()) { it.pickle("") }
             MatrixClient.login(
                 baseUrl = Url("http://matrix.home"),
                 identifier = IdentifierType.User(userId.full),
@@ -141,6 +144,7 @@ class MatrixClientTest : ShouldSpec({
         should("use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates") {
             val inMemoryStore = InMemoryStore(scope).apply { init() }
             delay(50) // wait for init
+            inMemoryStore.olm.account.value = freeAfter(OlmAccount.create()) { it.pickle("") }
             inMemoryStore.account.olmPickleKey.value = ""
             inMemoryStore.account.accessToken.value = "abcdef"
             inMemoryStore.account.userId.value = userId
@@ -289,6 +293,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            inMemoryStore.olm.account.value = freeAfter(OlmAccount.create()) { it.pickle("") }
             delay(50) // wait for init
             cut = MatrixClient.fromStore(
                 storeFactory = InMemoryStoreFactory(inMemoryStore),
@@ -332,6 +337,7 @@ class MatrixClientTest : ShouldSpec({
             inMemoryStore.account.filterId.value = "someFilter"
             inMemoryStore.account.displayName.value = "bob"
             inMemoryStore.account.avatarUrl.value = "mxc://localhost/123456"
+            inMemoryStore.olm.account.value = freeAfter(OlmAccount.create()) { it.pickle("") }
             delay(50) // wait for init
         }
         should("delete All when $LOGGED_OUT_SOFT") {

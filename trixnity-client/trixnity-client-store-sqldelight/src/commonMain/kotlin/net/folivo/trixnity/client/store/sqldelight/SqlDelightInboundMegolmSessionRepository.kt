@@ -4,11 +4,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightInboundMegolmSessionRepository(

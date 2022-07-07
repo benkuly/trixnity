@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
 
-interface OlmMachineRequestHandler {
+interface OlmServiceRequestHandler {
     suspend fun setOneTimeKeys(
         oneTimeKeys: Keys? = null,
     ): Result<Unit>

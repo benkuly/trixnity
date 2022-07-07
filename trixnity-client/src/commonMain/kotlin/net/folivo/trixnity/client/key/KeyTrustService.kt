@@ -238,8 +238,7 @@ class KeyTrustService(
                 when (type) {
                     M_CROSS_SIGNING_SELF_SIGNING -> CrossSigningKeysUsage.SelfSigningKey
                     M_CROSS_SIGNING_USER_SIGNING -> CrossSigningKeysUsage.UserSigningKey
-                    SecretType.M_MEGOLM_BACKUP_V1 ->
-                        throw IllegalArgumentException("cannot sign with $type")
+                    else -> throw IllegalArgumentException("cannot sign with $type")
                 }
             )?.value?.signed?.get<Ed25519Key>()?.keyId
         requireNotNull(publicKey) { "could not find public key of $type" }
@@ -251,9 +250,7 @@ class KeyTrustService(
         val signedDeviceKeys = keys.mapNotNull { key ->
             val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed
             if (deviceKey != null) {
-                store.keys.saveKeyVerificationState(
-                    key, KeyVerificationState.Verified(key.value)
-                )
+                store.keys.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
                 updateTrustLevelOfKey(userId, key)
                 try {
                     if (userId == ownUserId && deviceKey.get<Ed25519Key>() == key) {

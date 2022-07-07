@@ -27,12 +27,13 @@ class SignServiceMock : ISignService {
         return returnSignatures[0].also { if (returnSignatures.size > 1) returnSignatures = returnSignatures - it }
     }
 
+    val sign = mutableListOf<Signatures<UserId>>()
     override suspend fun <T> sign(
         unsignedObject: T,
         serializer: KSerializer<T>,
         signWith: SignWith
     ): Signed<T, UserId> {
-        return Signed(unsignedObject, null)
+        return Signed(unsignedObject, sign.removeFirstOrNull())
     }
 
     override suspend fun signCurve25519Key(key: Key.Curve25519Key, signatureJsonKey: String): Key.SignedCurve25519Key {

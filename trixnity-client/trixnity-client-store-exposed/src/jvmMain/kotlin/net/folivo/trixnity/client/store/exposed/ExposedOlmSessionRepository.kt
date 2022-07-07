@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.store.exposed
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.StoredOlmSession
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedOlmSession : Table("olm_session") {

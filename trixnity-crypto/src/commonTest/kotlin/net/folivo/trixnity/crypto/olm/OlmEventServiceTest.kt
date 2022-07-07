@@ -34,8 +34,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.crypto.crypto.OlmMachineStoreMock
-import net.folivo.trixnity.crypto.crypto.SignServiceMock
+import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
@@ -44,7 +43,7 @@ import org.kodein.mock.UsesMocks
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
-@UsesMocks(OlmMachineRequestHandler::class)
+@UsesMocks(OlmServiceRequestHandler::class)
 class OlmEventServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
@@ -62,8 +61,8 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var scope: CoroutineScope
 
-    lateinit var mockStore: OlmMachineStoreMock
-    val mockRequestHandler = MockOlmMachineRequestHandler(mocker)
+    lateinit var mockStore: OlmServiceStoreMock
+    val mockRequestHandler = MockOlmServiceRequestHandler(mocker)
     val mockSignService = SignServiceMock()
 
     lateinit var cut: OlmEventService
@@ -106,7 +105,7 @@ private val body: ShouldSpec.() -> Unit = {
 
         scope = CoroutineScope(Dispatchers.Default)
 
-        mockStore = OlmMachineStoreMock()
+        mockStore = OlmServiceStoreMock()
         mockStore.ed25519Keys[bob to bobDeviceId] = bobEdKey
         mockStore.curve25519Keys[bob to bobDeviceId] = bobCurveKey
         mockStore.deviceKeys[bob to bobCurveKey] = DeviceKeys(
@@ -115,7 +114,7 @@ private val body: ShouldSpec.() -> Unit = {
             algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
             keys = Keys(keysOf(bobCurveKey, bobEdKey))
         )
-        mockStore.olmAccount = aliceAccount.pickle("")
+        mockStore.olmAccount.value = aliceAccount.pickle("")
         mockStore.members[room] = mapOf(alice to setOf(aliceDeviceId), bob to setOf(bobDeviceId))
 
         mockSignService.returnVerify = VerifyResult.Valid
@@ -160,7 +159,7 @@ private val body: ShouldSpec.() -> Unit = {
         return oneTimeKeys.curve25519.values.first()
             .also {
                 markKeysAsPublished()
-                if (store) mockStore.olmAccount = this.pickle("")
+                if (store) mockStore.olmAccount.value = this.pickle("")
             }
     }
 
@@ -288,7 +287,7 @@ private val body: ShouldSpec.() -> Unit = {
         // we check, that the one time key cannot be used twice
         shouldThrow<OlmLibraryException> {
             OlmSession.createInboundFrom(
-                OlmAccount.unpickle("", mockStore.olmAccount.shouldNotBeNull()),
+                OlmAccount.unpickle("", mockStore.olmAccount.value.shouldNotBeNull()),
                 bobCurveKey.value,
                 encryptedMessage.cipherText
             )

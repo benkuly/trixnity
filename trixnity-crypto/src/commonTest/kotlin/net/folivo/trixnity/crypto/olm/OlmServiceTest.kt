@@ -1,4 +1,4 @@
-package net.folivo.trixnity.crypto.crypto
+package net.folivo.trixnity.crypto.olm
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
@@ -20,19 +20,19 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.crypto.olm.*
+import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import org.kodein.mock.Mocker
 import org.kodein.mock.UsesMocks
 
-@UsesMocks(OlmMachineRequestHandler::class)
-class OlmMachineTest : ShouldSpec({
+@UsesMocks(OlmServiceRequestHandler::class)
+class OlmServiceTest : ShouldSpec({
     timeout = 30_000
 
     val mocker = Mocker()
 
-    lateinit var cut: OlmMachine
+    lateinit var cut: OlmService
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
@@ -40,8 +40,8 @@ class OlmMachineTest : ShouldSpec({
     val bobDevice = "BOBDEVICE"
     val roomId = RoomId("room", "server")
 
-    lateinit var mockStore: OlmMachineStoreMock
-    val mockRequestHandler = MockOlmMachineRequestHandler(mocker)
+    lateinit var mockStore: OlmServiceStoreMock
+    val mockRequestHandler = MockOlmServiceRequestHandler(mocker)
     val json = createMatrixEventJson()
     val contentMappings = createEventContentSerializerMappings()
 
@@ -53,9 +53,9 @@ class OlmMachineTest : ShouldSpec({
 
     beforeEach {
         olmAccount = OlmAccount.create()
-        mockStore = OlmMachineStoreMock()
+        mockStore = OlmServiceStoreMock()
 
-        mockStore.olmAccount = olmAccount.pickle("")
+        mockStore.olmAccount.value = olmAccount.pickle("")
 
         eventEmitter = object : EventEmitter() {
             suspend fun testEmitEvent(event: Event<*>) {
@@ -72,9 +72,11 @@ class OlmMachineTest : ShouldSpec({
             }
         }
 
-        cut = OlmMachine.create(
+        cut = OlmService(
             alice,
             aliceDevice,
+            Key.Ed25519Key(null, ""),
+            Key.Curve25519Key(null, ""),
             eventEmitter,
             oneTimeKeysCountEmitter,
             mockRequestHandler,

@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.store.exposed
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") {

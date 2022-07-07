@@ -6,9 +6,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
-import net.folivo.trixnity.crypto.olm.OlmMachineRequestHandler
+import net.folivo.trixnity.crypto.olm.OlmServiceRequestHandler
 
-class ClientOlmMachineRequestHandler(private val api: MatrixClientServerApiClient) : OlmMachineRequestHandler {
+class ClientOlmServiceRequestHandler(private val api: MatrixClientServerApiClient) : OlmServiceRequestHandler {
     override suspend fun setOneTimeKeys(oneTimeKeys: Keys?): Result<Unit> =
         api.keys.setKeys(oneTimeKeys = oneTimeKeys).map { }
 

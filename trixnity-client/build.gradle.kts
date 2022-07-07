@@ -50,7 +50,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
-                implementation(project(":trixnity-crypto"))
+                api(project(":trixnity-crypto"))
 
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
 

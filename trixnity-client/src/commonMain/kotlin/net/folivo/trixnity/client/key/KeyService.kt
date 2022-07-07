@@ -35,6 +35,10 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.key.decryptSecret
+import net.folivo.trixnity.crypto.key.encodeRecoveryKey
+import net.folivo.trixnity.crypto.key.encryptSecret
+import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
 import net.folivo.trixnity.crypto.sign.*
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
@@ -87,7 +91,7 @@ interface IKeyService {
                 bits = 32 * 8
             )
             val iv = SecureRandom.nextBytes(16)
-            val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo).getOrThrow()
+            val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
             key to AesHmacSha2Key(
                 passphrase = passphraseInfo,
                 iv = iv.encodeBase64(),
@@ -379,7 +383,9 @@ class KeyService(
         val encryptedMasterKey = store.globalAccountData.get<MasterKeyEventContent>()?.content
             ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
         val decryptedPublicKey =
-            decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey, api.json)
+            kotlin.runCatching {
+                decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey, api.json)
+            }.getOrNull()
                 ?.let { privateKey ->
                     freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
                 }

@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.sign.ISignService
 import net.folivo.trixnity.crypto.sign.SignWith

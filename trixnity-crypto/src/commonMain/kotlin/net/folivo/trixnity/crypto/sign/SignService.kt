@@ -43,7 +43,7 @@ interface ISignService {
     ): VerifyResult
 }
 
-class SignService internal constructor(
+class SignService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val json: Json,
@@ -66,31 +66,6 @@ class SignService internal constructor(
                     )
                 }
             }
-//            is SignWith.Secret -> { // FIXME move to caller
-//                val privateKey = store.keys.secrets.value[signWith.allowedSecretType]?.decryptedPrivateKey
-//                requireNotNull(privateKey) { "could not find private key of ${signWith.allowedSecretType}" }
-//                val publicKey =
-//                    store.keys.getCrossSigningKey(
-//                        ownUserId,
-//                        when (signWith.allowedSecretType) {
-//                            SecretType.M_CROSS_SIGNING_SELF_SIGNING -> SelfSigningKey
-//                            SecretType.M_CROSS_SIGNING_USER_SIGNING -> UserSigningKey
-//                            SecretType.M_MEGOLM_BACKUP_V1 ->
-//                                throw IllegalArgumentException("cannot sign with ${signWith.allowedSecretType}")
-//                        }
-//                    )?.value?.signed?.get<Ed25519Key>()?.keyId
-//                requireNotNull(publicKey) { "could not find public key of ${signWith.allowedSecretType}" }
-//                mapOf(
-//                    ownUserId to keysOf(
-//                        Ed25519Key(
-//                            keyId = publicKey,
-//                            value = freeAfter(OlmPkSigning.create(privateKey)) {
-//                                it.sign(stringToSign)
-//                            }
-//                        )
-//                    )
-//                )
-//            }
             is SignWith.PrivateKey -> {
                 mapOf(
                     ownUserId to keysOf(

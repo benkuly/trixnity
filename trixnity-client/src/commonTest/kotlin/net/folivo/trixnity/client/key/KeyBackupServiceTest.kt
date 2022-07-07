@@ -21,9 +21,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.OlmSignServiceMock
+import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.keys.*
@@ -42,6 +41,8 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoo
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -62,7 +63,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     lateinit var apiConfig: PortableMockEngineConfig
 
-    lateinit var olmSignMock: OlmSignServiceMock
+    lateinit var olmSignMock: SignServiceMock
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var cut: KeyBackupService
@@ -72,7 +73,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     beforeTest {
-        olmSignMock = OlmSignServiceMock()
+        olmSignMock = SignServiceMock()
         val (newValidKeyBackupPrivateKey, newValidKeyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
         validKeyBackupPrivateKey = newValidKeyBackupPrivateKey
         validKeyBackupPublicKey = newValidKeyBackupPublicKey

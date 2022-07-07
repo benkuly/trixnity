@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto.olm
 
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
@@ -26,64 +27,28 @@ import net.folivo.trixnity.olm.freeAfter
 
 private val log = KotlinLogging.logger {}
 
-interface IOlmMachine {
+interface IOlmService {
     val event: IOlmEventService
-    suspend fun start()
+    val decrypter: IOlmDecrypter
 
-    suspend fun stop()
+    fun start()
+    fun stop()
     suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
 }
 
-class OlmMachine private constructor(
+class OlmService(
     private val ownUserId: UserId,
     private val ownDeviceId: String,
     private val ownEd25519Key: Ed25519Key,
     private val ownCurve25519Key: Curve25519Key,
     private val eventEmitter: EventEmitter,
     private val oneTimeKeysCountEmitter: OneTimeKeysCountEmitter,
-    private val requestHandler: OlmMachineRequestHandler,
+    private val requestHandler: OlmServiceRequestHandler,
     private val signService: ISignService,
-    private val store: OlmMachineStore,
-    private val olmPickleKey: String,
+    private val store: OlmServiceStore,
     json: Json,
-) : IOlmMachine {
-
-    companion object {
-        suspend fun create(
-            ownUserId: UserId,
-            ownDeviceId: String,
-            eventEmitter: EventEmitter,
-            oneTimeKeysCountEmitter: OneTimeKeysCountEmitter,
-            requestHandler: OlmMachineRequestHandler,
-            signService: ISignService,
-            store: OlmMachineStore,
-            json: Json,
-            olmPickleKey: String,
-        ): OlmMachine {
-            val (ownEd25519Key, ownCurve25519Key) = freeAfter(
-                OlmAccount.unpickle(
-                    olmPickleKey,
-                    requireNotNull(store.getOlmAccount()) { "olm account should never be null" })
-            ) {
-                Ed25519Key(ownDeviceId, it.identityKeys.ed25519) to
-                        Curve25519Key(ownDeviceId, it.identityKeys.curve25519)
-            }
-            return OlmMachine(
-                ownUserId = ownUserId,
-                ownDeviceId = ownDeviceId,
-                ownEd25519Key = ownEd25519Key,
-                ownCurve25519Key = ownCurve25519Key,
-                eventEmitter = eventEmitter,
-                oneTimeKeysCountEmitter = oneTimeKeysCountEmitter,
-                requestHandler = requestHandler,
-                signService = signService,
-                store = store,
-                json = json,
-                olmPickleKey = olmPickleKey,
-            )
-        }
-    }
-
+    private val olmPickleKey: String,
+) : IOlmService {
 
     override val event = OlmEventService(
         olmPickleKey = olmPickleKey,
@@ -97,18 +62,20 @@ class OlmMachine private constructor(
         signService = signService,
     )
 
-    private val olmDecrypter = OlmDecrypter(event, ::handleOlmEncryptedRoomKeyEventContent)
+    override val decrypter = OlmDecrypter(event)
 
-    override suspend fun start() {
+    override fun start() {
         oneTimeKeysCountEmitter.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         eventEmitter.subscribe(::handleMemberEvents)
-        eventEmitter.subscribe(olmDecrypter)
+        eventEmitter.subscribe(decrypter)
+        decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent)
     }
 
-    override suspend fun stop() {
+    override fun stop() {
         oneTimeKeysCountEmitter.unsubscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         eventEmitter.unsubscribe(::handleMemberEvents)
-        eventEmitter.unsubscribe(olmDecrypter)
+        eventEmitter.unsubscribe(decrypter)
+        decrypter.unsubscribe(::handleOlmEncryptedRoomKeyEventContent)
     }
 
     override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> = signService.sign(
@@ -122,7 +89,7 @@ class OlmMachine private constructor(
 
     internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
         if (count == null) return
-        store.updateOlmAccount { pickledOlmAccount ->
+        store.olmAccount.update { pickledOlmAccount ->
             freeAfter(
                 OlmAccount.unpickle(
                     olmPickleKey, requireNotNull(pickledOlmAccount) { "olm account should never be null" })
@@ -138,8 +105,8 @@ class OlmMachine private constructor(
                     log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
                     requestHandler.setOneTimeKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
                     olmAccount.markKeysAsPublished()
-                    UpdateResult(olmAccount.pickle(olmPickleKey), Unit)
-                } else UpdateResult(pickledOlmAccount, Unit)
+                    olmAccount.pickle(olmPickleKey)
+                } else pickledOlmAccount
             }
         }
     }
@@ -154,40 +121,38 @@ class OlmMachine private constructor(
                 return
             }
             store.updateInboundMegolmSession(content.sessionId, content.roomId) {
-                UpdateResult(
-                    it
-                        ?: try {
-                            freeAfter(
-                                OlmInboundGroupSession.create(content.sessionKey)
-                            ) { session ->
-                                StoredInboundMegolmSession(
-                                    senderKey = event.encrypted.content.senderKey,
-                                    sessionId = content.sessionId,
-                                    roomId = content.roomId,
-                                    firstKnownIndex = session.firstKnownIndex,
-                                    hasBeenBackedUp = false,
-                                    isTrusted = true,
-                                    senderSigningKey = senderSigningKey,
-                                    forwardingCurve25519KeyChain = emptyList(),
-                                    pickled = session.pickle(olmPickleKey)
-                                )
-                            }
-                        } catch (exception: OlmLibraryException) {
-                            log.debug { "ignore inbound megolm session due to: ${exception.message}" }
-                            null
-                        }, Unit
-                )
+                it
+                    ?: try {
+                        freeAfter(
+                            OlmInboundGroupSession.create(content.sessionKey)
+                        ) { session ->
+                            StoredInboundMegolmSession(
+                                senderKey = event.encrypted.content.senderKey,
+                                sessionId = content.sessionId,
+                                roomId = content.roomId,
+                                firstKnownIndex = session.firstKnownIndex,
+                                hasBeenBackedUp = false,
+                                isTrusted = true,
+                                senderSigningKey = senderSigningKey,
+                                forwardingCurve25519KeyChain = emptyList(),
+                                pickled = session.pickle(olmPickleKey)
+                            )
+                        }
+                    } catch (exception: OlmLibraryException) {
+                        log.debug { "ignore inbound megolm session due to: ${exception.message}" }
+                        null
+                    }
             }
 
         }
     }
 
-    internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) { // FIXME test
+    internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
         if (event is StateEvent && store.getRoomEncryptionAlgorithm(event.roomId) == Megolm) {
             log.debug { "remove outbound megolm session" }
             when (event.content.membership) {
                 Membership.LEAVE, Membership.BAN -> {
-                    store.updateOutboundMegolmSession(event.roomId) { UpdateResult(null, Unit) }
+                    store.updateOutboundMegolmSession(event.roomId) { null }
                 }
                 else -> {
                 }

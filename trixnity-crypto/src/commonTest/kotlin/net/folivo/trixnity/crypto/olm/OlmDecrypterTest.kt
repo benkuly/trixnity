@@ -58,6 +58,6 @@ class OlmDecrypterTest : ShouldSpec({
         )
         mocker.everySuspending { mockOlmEventService.decryptOlm(isAny(), isAny()) } returns decryptedEvent
         cut(event)
-        subscriberReceived shouldContainExactly listOf(decryptedEvent)
+        subscriberReceived shouldContainExactly listOf(DecryptedOlmEventContainer(event, decryptedEvent))
     }
 })

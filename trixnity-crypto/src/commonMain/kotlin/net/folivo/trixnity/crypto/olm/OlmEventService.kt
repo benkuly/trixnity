@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto.olm
 
+import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
@@ -61,11 +62,10 @@ class OlmEventService(
     private val ownEd25519Key: Ed25519Key,
     private val ownCurve25519Key: Curve25519Key,
     private val json: Json,
-    private val store: OlmMachineStore,
-    private val requests: OlmMachineRequestHandler,
+    private val store: OlmServiceStore,
+    private val requests: OlmServiceRequestHandler,
     private val signService: ISignService,
 ) : IOlmEventService {
-
 
     override suspend fun encryptOlm(
         content: EventContent,
@@ -78,7 +78,8 @@ class OlmEventService(
         val signingKey = store.getEd25519Key(receiverId, deviceId)
             ?: throw KeyException.KeyNotFoundException("could not find ed25519 key for $receiverId ($deviceId)")
 
-        val finalEncryptionResult = store.updateOlmSessions(identityKey) { storedOlmSessions ->
+        lateinit var finalEncryptionResult: OlmEncryptedEventContent
+        store.updateOlmSessions(identityKey) { storedOlmSessions ->
             val storedSession = storedOlmSessions?.minByOrNull { it.sessionId }
 
             val (encryptionResult, newStoredSession) = if (storedSession == null || forceNewSession) {
@@ -93,7 +94,7 @@ class OlmEventService(
                 val keyVerifyState = signService.verify(oneTimeKey, mapOf(receiverId to setOf(signingKey)))
                 if (keyVerifyState is VerifyResult.Invalid)
                     throw KeyException.KeyVerificationFailedException(keyVerifyState.reason)
-                val olmAccount = OlmAccount.unpickle(olmPickleKey, requireNotNull(store.getOlmAccount()))
+                val olmAccount = OlmAccount.unpickle(olmPickleKey, requireNotNull(store.olmAccount.value))
                 freeAfter(
                     olmAccount,
                     OlmSession.createOutbound(
@@ -126,7 +127,8 @@ class OlmEventService(
                     )
                 }
             }
-            UpdateResult(storedOlmSessions.addOrUpdateNewAndRemoveOldSessions(newStoredSession), encryptionResult)
+            finalEncryptionResult = encryptionResult
+            storedOlmSessions.addOrUpdateNewAndRemoveOldSessions(newStoredSession)
         }
         return finalEncryptionResult
     }
@@ -186,7 +188,8 @@ class OlmEventService(
         val senderSigningKey = senderDeviceKeys.keys.keys.filterIsInstance<Ed25519Key>().firstOrNull()
             ?: throw KeyException.KeyVerificationFailedException("we do not know any signing key of the sender")
 
-        val finalDecryptionResult = store.updateOlmSessions(senderIdentityKey) { storedSessions ->
+        lateinit var finalDecryptionResult: DecryptedOlmEvent<*>
+        store.updateOlmSessions(senderIdentityKey) { storedSessions ->
             val (decryptionResult, newStoredSession) = try {
                 storedSessions?.sortedByDescending { it.lastUsedAt }?.firstNotNullOfOrNull { storedSession ->
                     freeAfter(OlmSession.unpickle(olmPickleKey, storedSession.pickled)) { olmSession ->
@@ -218,7 +221,8 @@ class OlmEventService(
                 } ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
                     if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
                         log.debug { "decrypt olm event with new session for device with key $senderIdentityKey" }
-                        store.updateOlmAccount {
+                        lateinit var decryptedPair: Pair<String, StoredOlmSession>
+                        store.olmAccount.update {
                             val olmAccount = OlmAccount.unpickle(
                                 olmPickleKey, requireNotNull(it) { "pickled olm account was null" })
                             freeAfter(
@@ -227,17 +231,16 @@ class OlmEventService(
                             ) { _, olmSession ->
                                 val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
                                 olmAccount.removeOneTimeKeys(olmSession)
-                                UpdateResult(
-                                    olmAccount.pickle(olmPickleKey),
-                                    decrypted to StoredOlmSession(
-                                        sessionId = olmSession.sessionId,
-                                        senderKey = senderIdentityKey,
-                                        pickled = olmSession.pickle(olmPickleKey),
-                                        lastUsedAt = Clock.System.now()
-                                    )
+                                decryptedPair = decrypted to StoredOlmSession(
+                                    sessionId = olmSession.sessionId,
+                                    senderKey = senderIdentityKey,
+                                    pickled = olmSession.pickle(olmPickleKey),
+                                    lastUsedAt = Clock.System.now()
                                 )
+                                olmAccount.pickle(olmPickleKey)
                             }
                         }
+                        decryptedPair
                     } else throw DecryptionException.PreventToManySessions
                 } else {
                     throw DecryptionException.CouldNotDecrypt
@@ -276,8 +279,8 @@ class OlmEventService(
             if (decryptedEvent.senderKeys.filterIsInstance<Ed25519Key>()
                     .firstOrNull()?.value != senderSigningKey.value
             ) throw DecryptionException.ValidationFailed("senderKeys did not match")
-
-            UpdateResult(storedSessions.addOrUpdateNewAndRemoveOldSessions(newStoredSession), decryptedEvent)
+            finalDecryptionResult = decryptedEvent
+            storedSessions.addOrUpdateNewAndRemoveOldSessions(newStoredSession)
         }
 
         return finalDecryptionResult.also { log.trace { "decrypted event: $it" } }
@@ -291,7 +294,8 @@ class OlmEventService(
         val rotationPeriodMs = settings.rotationPeriodMs
         val rotationPeriodMsgs = settings.rotationPeriodMsgs
 
-        return store.updateOutboundMegolmSession(roomId) { storedSession ->
+        lateinit var finalEncryptionResult: MegolmEncryptedEventContent
+        store.updateOutboundMegolmSession(roomId) { storedSession ->
             val (encryptionResult, pickledSession) = if (
                 storedSession == null
                 || rotationPeriodMs != null && (storedSession
@@ -303,18 +307,16 @@ class OlmEventService(
                 freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                     freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                         store.updateInboundMegolmSession(inboundSession.sessionId, roomId) {
-                            UpdateResult(
-                                StoredInboundMegolmSession(
-                                    senderKey = ownCurve25519Key,
-                                    sessionId = inboundSession.sessionId,
-                                    roomId = roomId,
-                                    firstKnownIndex = inboundSession.firstKnownIndex,
-                                    hasBeenBackedUp = false,
-                                    isTrusted = true,
-                                    senderSigningKey = ownEd25519Key,
-                                    forwardingCurve25519KeyChain = listOf(),
-                                    pickled = inboundSession.pickle(olmPickleKey),
-                                ), Unit
+                            StoredInboundMegolmSession(
+                                senderKey = ownCurve25519Key,
+                                sessionId = inboundSession.sessionId,
+                                roomId = roomId,
+                                firstKnownIndex = inboundSession.firstKnownIndex,
+                                hasBeenBackedUp = false,
+                                isTrusted = true,
+                                senderSigningKey = ownEd25519Key,
+                                forwardingCurve25519KeyChain = listOf(),
+                                pickled = inboundSession.pickle(olmPickleKey),
                             )
                         }
                     }
@@ -328,18 +330,17 @@ class OlmEventService(
                             session.pickle(olmPickleKey)
                 }
             }
-            UpdateResult(
-                storedSession?.copy(
-                    encryptedMessageCount = storedSession.encryptedMessageCount + 1,
-                    pickled = pickledSession,
-                    newDevices = emptyMap()
-                ) ?: StoredOutboundMegolmSession(
-                    roomId = roomId,
-                    pickled = pickledSession,
-                ),
-                encryptionResult
+            finalEncryptionResult = encryptionResult
+            storedSession?.copy(
+                encryptedMessageCount = storedSession.encryptedMessageCount + 1,
+                pickled = pickledSession,
+                newDevices = emptyMap()
+            ) ?: StoredOutboundMegolmSession(
+                roomId = roomId,
+                pickled = pickledSession,
             )
         }
+        return finalEncryptionResult
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -419,10 +420,8 @@ class OlmEventService(
             if (storedIndex?.let { it.eventId != encryptedEvent.id || it.originTimestamp != encryptedEvent.originTimestamp } == true
             ) throw DecryptionException.ValidationFailed("message index did not match")
 
-            UpdateResult(
-                storedIndex ?: StoredInboundMegolmMessageIndex(
-                    sessionId, roomId, index, encryptedEvent.id, encryptedEvent.originTimestamp
-                ), Unit
+            storedIndex ?: StoredInboundMegolmMessageIndex(
+                sessionId, roomId, index, encryptedEvent.id, encryptedEvent.originTimestamp
             )
         }
 

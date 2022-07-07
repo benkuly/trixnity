@@ -1,4 +1,4 @@
-package net.folivo.trixnity.crypto.crypto
+package net.folivo.trixnity.crypto.mocks
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject

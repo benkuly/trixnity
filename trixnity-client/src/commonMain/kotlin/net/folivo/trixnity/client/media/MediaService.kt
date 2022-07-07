@@ -18,8 +18,12 @@ import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
-import net.folivo.trixnity.crypto.*
+import net.folivo.trixnity.crypto.decryptAes256Ctr
+import net.folivo.trixnity.crypto.encryptAes256Ctr
 import net.folivo.trixnity.crypto.olm.DecryptionException
+import net.folivo.trixnity.crypto.sha256
+import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.olm.encodeUnpaddedBase64
 
 private val log = KotlinLogging.logger {}
 
@@ -95,8 +99,7 @@ class MediaService(
 
         val originalHash = encryptedFile.hashes["sha256"]
         if (originalHash == null || hash != originalHash) {
-            log.debug { "could not validate due to different hashes. Our hash: $hash, their hash: $originalHash" }
-            throw DecryptionException.ValidationFailed
+            throw DecryptionException.ValidationFailed("could not validate due to different hashes. Our hash: $hash, their hash: $originalHash")
         }
         decryptAes256Ctr(
             encryptedContent = media,

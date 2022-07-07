@@ -1,12 +1,11 @@
 package net.folivo.trixnity.olm
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import kotlin.test.Test
 
-class UnpaddedBase64Test : ShouldSpec({
-    timeout = 2_000
-
-    should("encodeUnpaddedBase64") {
+class UnpaddedBase64Test {
+    @Test
+    fun encodeUnpaddedBase64() {
         "".encodeToByteArray().encodeUnpaddedBase64() shouldBe ""
         "f".encodeToByteArray().encodeUnpaddedBase64() shouldBe "Zg"
         "fo".encodeToByteArray().encodeUnpaddedBase64() shouldBe "Zm8"
@@ -16,7 +15,8 @@ class UnpaddedBase64Test : ShouldSpec({
         "foobar".encodeToByteArray().encodeUnpaddedBase64() shouldBe "Zm9vYmFy"
     }
 
-    should("decodeUnpaddedBase64") {
+    @Test
+    fun decodeUnpaddedBase64() {
         "".decodeUnpaddedBase64Bytes().decodeToString() shouldBe ""
         "Zg".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "f"
         "Zg==".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "f"
@@ -29,4 +29,4 @@ class UnpaddedBase64Test : ShouldSpec({
         "Zm9vYmE=".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "fooba"
         "Zm9vYmFy".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "foobar"
     }
-})
+}

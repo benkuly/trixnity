@@ -46,9 +46,9 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(project(":trixnity-core"))
-                api(project(":trixnity-olm")) // FIXME implementation?
-                implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
+                api(project(":trixnity-core"))
+                api(project(":trixnity-olm"))
+                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
 
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
 
