@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -30,7 +30,7 @@ class ActiveDeviceVerification(
     theirDeviceId: String? = null,
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
-    private val api: MatrixClientServerApiClient,
+    private val api: IMatrixClientServerApiClient,
     private val olmEvent: IOlmEventService,
     keyTrust: IKeyTrustService,
     store: Store,
@@ -49,6 +49,7 @@ class ActiveDeviceVerification(
     keyTrust,
     api.json,
 ) {
+    override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
