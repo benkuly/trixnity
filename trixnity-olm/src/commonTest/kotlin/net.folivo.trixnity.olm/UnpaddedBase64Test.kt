@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class UnpaddedBase64Test {
     @Test
-    fun shouldEncodeUnpaddedBase64() {
+    fun encodeUnpaddedBase64() {
         "".encodeToByteArray().encodeUnpaddedBase64() shouldBe ""
         "f".encodeToByteArray().encodeUnpaddedBase64() shouldBe "Zg"
         "fo".encodeToByteArray().encodeUnpaddedBase64() shouldBe "Zm8"
@@ -16,7 +16,7 @@ class UnpaddedBase64Test {
     }
 
     @Test
-    fun shouldDecodeUnpaddedBase64() {
+    fun decodeUnpaddedBase64() {
         "".decodeUnpaddedBase64Bytes().decodeToString() shouldBe ""
         "Zg".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "f"
         "Zg==".decodeUnpaddedBase64Bytes().decodeToString() shouldBe "f"

@@ -4,12 +4,12 @@ import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 
 class SqlDelightInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
     lateinit var cut: SqlDelightInboundMegolmMessageIndexRepository

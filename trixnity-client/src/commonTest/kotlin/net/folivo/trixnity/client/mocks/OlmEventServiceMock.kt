@@ -1,18 +1,13 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import net.folivo.trixnity.client.crypto.IOlmEventService
-import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import net.folivo.trixnity.crypto.olm.IOlmEventService
 
-class OlmEventServiceMock(
-    override val decryptedOlmEvents: SharedFlow<IOlmService.DecryptedOlmEventContainer> = MutableSharedFlow()
-) : IOlmEventService {
+class OlmEventServiceMock : IOlmEventService {
 
     lateinit var returnEncryptOlm: () -> EncryptedEventContent.OlmEncryptedEventContent
     var encryptOlmCalled: Triple<EventContent, UserId, String>? = null

@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository
 
-import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 interface InboundMegolmSessionRepository :
     MinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession> {

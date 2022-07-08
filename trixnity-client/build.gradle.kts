@@ -50,7 +50,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
-                implementation(project(":trixnity-olm"))
+                api(project(":trixnity-crypto"))
 
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
 
@@ -64,15 +64,9 @@ kotlin {
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        setOf("linuxX64Main", "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain").forEach {
-            getByName(it).dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {

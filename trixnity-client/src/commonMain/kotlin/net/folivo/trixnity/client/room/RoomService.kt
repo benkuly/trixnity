@@ -11,8 +11,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.media.IMediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -43,6 +41,8 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.olm.DecryptionException
+import net.folivo.trixnity.crypto.olm.IOlmEventService
 import net.folivo.trixnity.olm.OlmLibraryException
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -1042,9 +1042,8 @@ class RoomService(
                         val exception = decryptEventAttempt.exceptionOrNull()
                         val decryptedEvent =
                             if (exception is OlmLibraryException && exception.message?.contains("UNKNOWN_MESSAGE_INDEX") == true
-                                || exception is DecryptionException.SessionException && exception.cause.message?.contains(
-                                    "UNKNOWN_MESSAGE_INDEX"
-                                ) == true
+                                || exception is DecryptionException.SessionException && exception.cause?.message
+                                    ?.contains("UNKNOWN_MESSAGE_INDEX") == true
                             ) {
                                 keyBackup.loadMegolmSession(roomId, content.sessionId)
                                 log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }

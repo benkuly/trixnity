@@ -1,9 +1,11 @@
 package net.folivo.trixnity.client.verification
 
-import arrow.core.flatMap
-import net.folivo.trixnity.client.key.*
+import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
+import net.folivo.trixnity.crypto.key.checkRecoveryKey
+import net.folivo.trixnity.crypto.key.decodeRecoveryKey
+import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
 
 sealed interface SelfVerificationMethod {
     data class CrossSignedDeviceVerification(
@@ -24,12 +26,13 @@ sealed interface SelfVerificationMethod {
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key
     ) : SelfVerificationMethod {
-        suspend fun verify(recoverKey: String): Result<Unit> {
-            return decodeRecoveryKey(recoverKey)
-                .flatMap { checkRecoveryKey(it, info) }
+        suspend fun verify(recoverKey: String): Result<Unit> = runCatching {
+            val recoveryKey = decodeRecoveryKey(recoverKey)
+            checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keyService.secret.decryptMissingSecrets(it, keyId, info)
-                }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
+                    keyService.secret.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
+                }.getOrThrow()
         }
     }
 
@@ -38,14 +41,15 @@ sealed interface SelfVerificationMethod {
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key,
     ) : SelfVerificationMethod {
-        suspend fun verify(passphrase: String): Result<Unit> {
+        suspend fun verify(passphrase: String): Result<Unit> = kotlin.runCatching {
             val passphraseInfo = info.passphrase
-                ?: return Result.failure(IllegalArgumentException("missing passphrase"))
-            return recoveryKeyFromPassphrase(passphrase, passphraseInfo)
-                .flatMap { checkRecoveryKey(it, info) }
+                ?: throw IllegalArgumentException("missing passphrase")
+            val recoveryKey = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
+            checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keyService.secret.decryptMissingSecrets(it, keyId, info)
-                }.flatMap { keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(it, keyId, info) }
+                    keyService.secret.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
+                }.getOrThrow()
         }
     }
 }

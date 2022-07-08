@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 class InMemoryStore(storeCoroutineScope: CoroutineScope) : Store(
     scope = storeCoroutineScope,

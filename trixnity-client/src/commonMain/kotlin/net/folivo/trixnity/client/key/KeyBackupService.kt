@@ -9,14 +9,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmSignService
-import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith.Custom
-import net.folivo.trixnity.client.crypto.signatures
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen
-import net.folivo.trixnity.client.store.AllowedSecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -31,6 +26,12 @@ import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
+import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.key.encryptSecret
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
+import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignWith
+import net.folivo.trixnity.crypto.sign.signatures
 import net.folivo.trixnity.olm.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
@@ -43,12 +44,6 @@ interface IKeyBackupService {
      * Is null, when the backup algorithm is not supported or there is no existing backup.
      */
     val version: StateFlow<GetRoomKeysBackupVersionResponse.V1?>
-
-    data class LoadMegolmSession(
-        val roomId: RoomId,
-        val sessionId: String,
-        val senderKey: Key.Curve25519Key,
-    )
 
     fun loadMegolmSession(
         roomId: RoomId,
@@ -71,7 +66,7 @@ class KeyBackupService(
     private val ownDeviceId: String,
     private val store: Store,
     private val api: MatrixClientServerApiClient,
-    private val olmSign: IOlmSignService,
+    private val signService: ISignService,
     private val currentSyncState: StateFlow<SyncState>,
     private val scope: CoroutineScope,
 ) : IKeyBackupService {
@@ -95,7 +90,7 @@ class KeyBackupService(
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
         ) {
-            store.keys.secrets.mapNotNull { it[M_MEGOLM_BACKUP_V1] }
+            store.keys.secrets.mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
                 .distinctUntilChanged()
                 // TODO should use the version from secret, when MSC2474 is merged
                 .collectLatest { updateKeyBackupVersion(it.decryptedPrivateKey) }
@@ -107,7 +102,7 @@ class KeyBackupService(
         val currentVersion = api.keys.getRoomKeysVersion().getOrThrow().let { currentVersion ->
             if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
-                    olmSign.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
+                    signService.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
                 if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey)) {
                     if (deviceSignature != null &&
                         currentVersion.authData.signatures[ownUserId]?.none { it == deviceSignature } == true
@@ -142,7 +137,7 @@ class KeyBackupService(
                                 version = currentVersion.version
                             )
                         ).getOrThrow()
-                    store.keys.secrets.update { it - M_MEGOLM_BACKUP_V1 }
+                    store.keys.secrets.update { it - SecretType.M_MEGOLM_BACKUP_V1 }
                     null
                 }
             } else null
@@ -175,7 +170,7 @@ class KeyBackupService(
                         val encryptedSessionData =
                             api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                         require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
-                        val privateKey = store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
+                        val privateKey = store.keys.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                         val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                             it.decrypt(
                                 with(encryptedSessionData) {
@@ -305,7 +300,7 @@ class KeyBackupService(
                             val errorResponse = it.errorResponse
                             if (errorResponse is ErrorResponse.WrongRoomKeysVersion) {
                                 log.info { "key backup version is outdated" }
-                                updateKeyBackupVersion(store.keys.secrets.value[M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
+                                updateKeyBackupVersion(store.keys.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
                             }
                         }
                     }.getOrThrow()
@@ -331,10 +326,13 @@ class KeyBackupService(
                 authData = with(
                     RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
                 ) {
-                    val ownDeviceSignature = olmSign.signatures(this)[ownUserId]
+                    val ownDeviceSignature = signService.signatures(this)[ownUserId]
                         ?.firstOrNull()
                     val ownUsersSignature =
-                        olmSign.signatures(this, Custom(masterSigningPrivateKey, masterSigningPublicKey))[ownUserId]
+                        signService.signatures(
+                            this,
+                            SignWith.PrivateKey(masterSigningPrivateKey, masterSigningPublicKey)
+                        )[ownUserId]
                             ?.firstOrNull()
                     requireNotNull(ownUsersSignature)
                     requireNotNull(ownDeviceSignature)
@@ -344,10 +342,10 @@ class KeyBackupService(
             )
         ).flatMap {
             val encryptedBackupKey = MegolmBackupV1EventContent(
-                encryptSecret(key, keyId, M_MEGOLM_BACKUP_V1.id, keyBackupPrivateKey, api.json)
+                encryptSecret(key, keyId, SecretType.M_MEGOLM_BACKUP_V1.id, keyBackupPrivateKey, api.json)
             )
             store.keys.secrets.update {
-                it + (M_MEGOLM_BACKUP_V1 to StoredSecret(
+                it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
                     Event.GlobalAccountDataEvent(encryptedBackupKey),
                     keyBackupPrivateKey
                 ))

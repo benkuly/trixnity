@@ -1,9 +1,9 @@
 package net.folivo.trixnity.client.store.exposed
 
-import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message_index") {

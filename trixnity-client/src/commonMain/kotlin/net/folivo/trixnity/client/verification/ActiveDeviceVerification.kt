@@ -1,12 +1,7 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmEventService
-import net.folivo.trixnity.client.crypto.IOlmService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
@@ -17,6 +12,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.crypto.olm.IOlmService
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
@@ -31,7 +28,7 @@ class ActiveDeviceVerification(
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
     private val api: IMatrixClientServerApiClient,
-    private val olmEvent: IOlmEventService,
+    private val olmService: IOlmService,
     keyTrust: IKeyTrustService,
     store: Store,
 ) : ActiveVerification(
@@ -56,7 +53,15 @@ class ActiveDeviceVerification(
         requireNotNull(theirDeviceId) { "their device id should never be null" }
         try {
             api.users.sendToDevice(
-                mapOf(theirUserId to mapOf(theirDeviceId to olmEvent.encryptOlm(step, theirUserId, theirDeviceId)))
+                mapOf(
+                    theirUserId to mapOf(
+                        theirDeviceId to olmService.event.encryptOlm(
+                            step,
+                            theirUserId,
+                            theirDeviceId
+                        )
+                    )
+                )
             )
         } catch (error: Exception) {
             log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
@@ -64,23 +69,20 @@ class ActiveDeviceVerification(
         }.getOrThrow()
     }
 
-    override suspend fun lifecycle(scope: CoroutineScope) {
-        api.sync.subscribe(::handleVerificationStepEvents)
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        val job = scope.launch(start = UNDISPATCHED) {
-            olmEvent.decryptedOlmEvents.collect(::handleOlmDecryptedVerificationRequestEvents)
-        }
-        scope.launch(start = UNDISPATCHED) {
+    override suspend fun lifecycle() {
+        try {
+            api.sync.subscribe(::handleVerificationStepEvents)
+            olmService.decrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
             while (isVerificationRequestActive(timestamp, state.value)) {
                 delay(500)
             }
-            log.debug { "stop verification request lifecycle" }
-            job.cancel()
-            api.sync.unsubscribe(::handleVerificationStepEvents)
             if (isVerificationTimedOut(timestamp, state.value)) {
                 cancel(Timeout, "verification timed out")
             }
+        } finally {
+            api.sync.unsubscribe(::handleVerificationStepEvents)
+            olmService.decrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
         }
     }
 
@@ -88,9 +90,7 @@ class ActiveDeviceVerification(
         if (event is Event.ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
     }
 
-    private suspend fun handleOlmDecryptedVerificationRequestEvents(
-        event: IOlmService.DecryptedOlmEventContainer,
-    ) {
+    private suspend fun handleOlmDecryptedVerificationRequestEvents(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (content is VerificationStep) handleVerificationStepEvent(content, event.decrypted.sender)
     }
@@ -108,7 +108,7 @@ class ActiveDeviceVerification(
                     try {
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
-                                olmEvent.encryptOlm(cancelEvent, theirUserId, it)
+                                olmService.event.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (olmError: OlmLibraryException) {
                                 cancelEvent
                             }

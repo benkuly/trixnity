@@ -1,10 +1,10 @@
 package net.folivo.trixnity.client.store.sqldelight
 
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightInboundMegolmMessageIndexRepository(

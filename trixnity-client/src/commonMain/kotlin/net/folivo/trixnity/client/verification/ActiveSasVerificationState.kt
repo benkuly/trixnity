@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.crypto.getAllKeysFromUser
+import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo

@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.getAllKeysFromUser
 import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId

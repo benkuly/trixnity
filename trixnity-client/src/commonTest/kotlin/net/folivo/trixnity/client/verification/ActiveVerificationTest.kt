@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.store.InMemoryStore
@@ -29,7 +30,7 @@ class ActiveVerificationTest : ShouldSpec({
     val aliceDevice = "AAAAAA"
     val bob = UserId("bob", "server")
     val bobDevice = "BBBBBB"
-    var lifecycleCalled = 0
+    val lifecycleCalled = MutableStateFlow(0)
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
 
     class TestActiveVerification(request: VerificationRequestEventContent) : ActiveVerification(
@@ -49,8 +50,8 @@ class ActiveVerificationTest : ShouldSpec({
     ) {
         override fun theirDeviceId(): String? = theirDeviceId
 
-        override suspend fun lifecycle(scope: CoroutineScope) {
-            lifecycleCalled++
+        override suspend fun lifecycle() {
+            lifecycleCalled.value++
         }
 
         override suspend fun sendVerificationStep(step: VerificationStep) {
@@ -68,7 +69,7 @@ class ActiveVerificationTest : ShouldSpec({
 
     lateinit var cut: TestActiveVerification
     beforeTest {
-        lifecycleCalled = 0
+        lifecycleCalled.value = 0
         sendVerificationStepFlow = MutableSharedFlow(replay = 10)
         cut = TestActiveVerification(VerificationRequestEventContent(bobDevice, setOf(Sas), 1234, "t"))
     }
@@ -77,7 +78,7 @@ class ActiveVerificationTest : ShouldSpec({
         should("start lifecycle once") {
             cut.startLifecycle(this)
             cut.startLifecycle(this)
-            lifecycleCalled shouldBe 1
+            lifecycleCalled.value shouldBe 1
         }
     }
     context(ActiveVerification::cancel.name) {
