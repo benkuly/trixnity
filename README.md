@@ -21,6 +21,7 @@ This project contains the following modules, which can be used independently:
 - [trixnity-olm](/trixnity-olm) implements the wrappers of the
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native. It also ships the
   olm binaries for Android packages and Windows/Linux binaries on JVM and Native packages.
+- [trixnity-crypto](/trixnity-crypto) contains various cryptographic algorithms used in Matrix.
 - [trixnity-api-client](/trixnity-api-client) provides tools for api client modules.
 - [trixnity-api-server](/trixnity-api-server) provides tools for api server modules.
 - [trixnity-clientserverapi-*](/trixnity-clientserverapi) provides modules to use
