@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -118,12 +119,19 @@ class SasVerificationIT {
             client2SasVerification.state.first { it is TheirSasStart }
                 .shouldBeInstanceOf<TheirSasStart>().accept()
 
-            client1SasVerification.state.first { it is ComparisonByUser }
-                .shouldBeInstanceOf<ComparisonByUser>().match()
+            val client1Comparison = client1SasVerification.state.first { it is ComparisonByUser }
+                .shouldBeInstanceOf<ComparisonByUser>()
+
+            val client2Comparison = client2SasVerification.state.first { it is ComparisonByUser }
+                .shouldBeInstanceOf<ComparisonByUser>()
+
+            client1Comparison.decimal shouldBe client2Comparison.decimal
+            client1Comparison.emojis shouldBe client2Comparison.emojis
+
+            client1Comparison.match()
             client1SasVerification.state.first { it is WaitForMacs }
                 .shouldBeInstanceOf<WaitForMacs>()
-            client2SasVerification.state.first { it is ComparisonByUser }
-                .shouldBeInstanceOf<ComparisonByUser>().match()
+            client2Comparison.match()
 
             client1Verification.state.first { it is Done }
                 .shouldBeInstanceOf<Done>()
