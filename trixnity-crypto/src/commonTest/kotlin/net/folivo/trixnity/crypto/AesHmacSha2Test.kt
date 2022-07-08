@@ -9,7 +9,7 @@ class AesHmacSha2Test : ShouldSpec({
     timeout = 30_000
 
     should("deriveKeys") {
-        assertSoftly(deriveKeys("this is a key".encodeToByteArray(), "")) {
+        assertSoftly(deriveKeys("this is a key".encodeToByteArray(), "name")) {
             aesKey.size shouldBe 32
             hmacKey.size shouldBe 32
         }

@@ -56,7 +56,7 @@ kotlin {
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}") // FIXME still needed?
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
 
@@ -65,7 +65,7 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // FIXME still needed?
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
         val commonTest by getting {

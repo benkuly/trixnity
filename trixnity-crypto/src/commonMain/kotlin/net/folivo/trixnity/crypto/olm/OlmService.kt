@@ -117,7 +117,7 @@ class OlmService(
             log.debug { "got inbound megolm session for room ${content.roomId}" }
             val senderSigningKey = event.decrypted.senderKeys.keys.filterIsInstance<Ed25519Key>().firstOrNull()
             if (senderSigningKey == null) {
-                log.debug { "ignore inbound megolm session because it did not contain any sender signing key" }
+                log.warn { "ignore inbound megolm session because it did not contain any sender signing key" }
                 return
             }
             store.updateInboundMegolmSession(content.sessionId, content.roomId) {
@@ -139,7 +139,7 @@ class OlmService(
                             )
                         }
                     } catch (exception: OlmLibraryException) {
-                        log.debug { "ignore inbound megolm session due to: ${exception.message}" }
+                        log.warn { "ignore inbound megolm session due to: ${exception.message}" }
                         null
                     }
             }
