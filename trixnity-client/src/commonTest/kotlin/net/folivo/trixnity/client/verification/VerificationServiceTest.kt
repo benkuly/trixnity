@@ -254,7 +254,12 @@ private val body: ShouldSpec.() -> Unit = {
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
                 eventually(1.seconds) {
                     olmService.event.encryptOlmCalled shouldBe Triple(
-                        VerificationCancelEventContent(Code.User, "user cancelled verification", null, "transaction2"),
+                        VerificationCancelEventContent(
+                            Code.User,
+                            "already have an active device verification",
+                            null,
+                            "transaction2"
+                        ),
                         aliceUserId,
                         aliceDeviceId
                     )

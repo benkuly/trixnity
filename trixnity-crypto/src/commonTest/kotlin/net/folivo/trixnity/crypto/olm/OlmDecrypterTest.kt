@@ -24,7 +24,8 @@ class OlmDecrypterTest : ShouldSpec({
         subscriberReceived.add(it)
     }
 
-    val cut = OlmDecrypter(mockOlmEventService, subscriber)
+    val cut = OlmDecrypter(mockOlmEventService)
+    cut.subscribe(subscriber)
 
     afterEach {
         subscriberReceived.clear()

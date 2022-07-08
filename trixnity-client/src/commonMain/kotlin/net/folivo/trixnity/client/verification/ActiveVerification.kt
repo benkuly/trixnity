@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,7 +72,7 @@ abstract class ActiveVerification(
     internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
         log.debug { "start lifecycle of verification ${transactionId ?: relatesTo}" }
         return if (!lifecycleAlreadyStarted()) {
-            scope.launch {
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 lifecycle()
                 log.debug { "stop lifecycle of verification ${transactionId ?: relatesTo}" }
             }
