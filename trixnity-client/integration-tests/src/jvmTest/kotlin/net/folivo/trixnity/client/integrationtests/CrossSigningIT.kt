@@ -12,7 +12,6 @@ import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
 import net.folivo.trixnity.client.key.IKeyService
-import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
@@ -221,7 +220,7 @@ class CrossSigningIT {
                     getTrustLevel(client1.userId, scope3).first { it == CrossSigned(false) }
                 }
             }
-            withClue("verification between client2 and client3") {
+            withClue("verification between user1 and user3") {
                 client2.verification.createDeviceVerificationRequest(client3.userId, client3.deviceId)
                 val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
                 val client3Verification = client3.verification.activeDeviceVerification.first { it != null }
@@ -229,7 +228,7 @@ class CrossSigningIT {
                 client2Verification.shouldNotBeNull()
                 client3Verification.shouldNotBeNull()
 
-                scope2.launch {
+                val user1Comparison = scope2.async {
                     client2Verification.state.first { it is ActiveVerificationState.Ready }
                         .shouldBeInstanceOf<ActiveVerificationState.Ready>().start(VerificationMethod.Sas)
                     client2Verification.state.first { it is ActiveVerificationState.Start }
@@ -237,10 +236,9 @@ class CrossSigningIT {
                         .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                         .state.first { it is ActiveSasVerificationState.ComparisonByUser }
                         .shouldBeInstanceOf<ActiveSasVerificationState.ComparisonByUser>()
-                        .match()
                 }
 
-                scope3.launch {
+                val user3Comparison = scope3.async {
                     client3Verification.state.first { it is ActiveVerificationState.TheirRequest }
                         .shouldBeInstanceOf<ActiveVerificationState.TheirRequest>()
                         .ready()
@@ -252,8 +250,13 @@ class CrossSigningIT {
                         .accept()
                     sas.state.first { it is ActiveSasVerificationState.ComparisonByUser }
                         .shouldBeInstanceOf<ActiveSasVerificationState.ComparisonByUser>()
-                        .match()
                 }
+
+                user1Comparison.await().decimal shouldBe user3Comparison.await().decimal
+                user1Comparison.await().emojis shouldBe user3Comparison.await().emojis
+
+                user1Comparison.await().match()
+                user3Comparison.await().match()
 
                 client2Verification.state.first { it is ActiveVerificationState.Done }
                 client3Verification.state.first { it is ActiveVerificationState.Done }

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
@@ -30,7 +29,6 @@ sealed interface ActiveSasVerificationState {
         private val transactionId: String?,
         private val send: suspend (step: VerificationStep) -> Unit
     ) : ActiveSasVerificationState {
-        @OptIn(ExperimentalSerializationApi::class)
         suspend fun accept() {
             if (content.hashes.contains("sha256")) {
                 val commitment = createSasCommitment(olmSas.publicKey, content, json)
