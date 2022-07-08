@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
+import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -27,7 +28,7 @@ suspend fun MatrixClientServerApiClient.register(
     username: String? = null,
     password: String,
     deviceId: String? = null
-): Result<MatrixClient.Companion.LoginInfo> {
+): Result<IMatrixClient.LoginInfo> {
     val registerStep = authentication.register(
         password = password,
         username = username,
@@ -40,7 +41,7 @@ suspend fun MatrixClientServerApiClient.register(
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.Companion.LoginInfo(userId, createdDeviceId, accessToken, "displayName", null))
+    return Result.success(IMatrixClient.LoginInfo(userId, createdDeviceId, accessToken, "displayName", null))
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")
@@ -48,7 +49,7 @@ fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;"
 data class StartedClient(
     val scope: CoroutineScope,
     val database: Database,
-    val client: MatrixClient,
+    val client: IMatrixClient,
     val password: String
 )
 

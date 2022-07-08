@@ -16,7 +16,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(FlowPreview::class)
 suspend fun timelineExample() = coroutineScope {
     val scope = CoroutineScope(Dispatchers.Default)
 

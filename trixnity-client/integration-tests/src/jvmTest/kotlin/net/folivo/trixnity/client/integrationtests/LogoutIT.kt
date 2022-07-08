@@ -7,8 +7,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
+import net.folivo.trixnity.client.IMatrixClient.LoginState
+import net.folivo.trixnity.client.IMatrixClient.LoginState.LOGGED_IN
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
@@ -68,7 +68,7 @@ class LogoutIT {
         withClue("check client2 is logged out and sync is stopped") {
             withTimeout(30_000) {
                 startedClient2.client.syncState.first { it == SyncState.STOPPED }
-                startedClient2.client.loginState.first { it == MatrixClient.LoginState.LOGGED_OUT }
+                startedClient2.client.loginState.first { it == LoginState.LOGGED_OUT }
             }
         }
 

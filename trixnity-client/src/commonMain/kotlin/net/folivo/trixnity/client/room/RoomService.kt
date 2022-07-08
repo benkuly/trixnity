@@ -827,7 +827,6 @@ class RoomService(
                     nextEvent = nextEvent,
                     nextEventChunk = nextEventChunk,
                     processTimelineEventsBeforeSave = { list ->
-                        println(list)
                         list.forEach {
                             val event = it.event
                             val content = event.content

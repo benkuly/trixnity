@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
@@ -26,7 +27,7 @@ import kotlin.test.Test
 @Testcontainers
 class OutboxIT {
 
-    private lateinit var client: MatrixClient
+    private lateinit var client: IMatrixClient
     private lateinit var scope: CoroutineScope
     private lateinit var database: Database
 

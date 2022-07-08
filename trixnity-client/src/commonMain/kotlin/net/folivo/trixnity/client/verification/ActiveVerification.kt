@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
@@ -19,24 +20,38 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import kotlin.js.JsName
 
 private val log = KotlinLogging.logger {}
+
+interface IActiveVerification {
+    val theirUserId: UserId
+    val timestamp: Long
+    val relatesTo: RelatesTo.Reference?
+    val transactionId: String?
+    val state: StateFlow<ActiveVerificationState>
+
+    fun theirDeviceId(): String?
+
+    suspend fun cancel(message: String = "user cancelled verification")
+}
 
 abstract class ActiveVerification(
     request: VerificationRequest,
     requestIsFromOurOwn: Boolean,
     protected val ownUserId: UserId,
     protected val ownDeviceId: String,
-    val theirUserId: UserId,
+    override val theirUserId: UserId,
     theirInitialDeviceId: String?,
-    val timestamp: Long,
+    override val timestamp: Long,
     protected val supportedMethods: Set<VerificationMethod>,
-    val relatesTo: RelatesTo.Reference?,
-    val transactionId: String?,
+    override val relatesTo: RelatesTo.Reference?,
+    override val transactionId: String?,
     protected val store: Store,
     private val keyTrustService: IKeyTrustService,
     protected val json: Json,
-) {
+) : IActiveVerification {
+    @JsName("_theirDeviceId")
     var theirDeviceId: String? = theirInitialDeviceId
         private set
 
@@ -49,7 +64,7 @@ abstract class ActiveVerification(
                 request, ownDeviceId, supportedMethods, relatesTo, transactionId, ::sendVerificationStepAndHandleIt
             )
         )
-    val state = mutableState.asStateFlow()
+    override val state = mutableState.asStateFlow()
 
     private val lifecycleStarted = MutableStateFlow(false)
     protected abstract suspend fun lifecycle()
@@ -237,7 +252,7 @@ abstract class ActiveVerification(
         sendVerificationStepAndHandleIt(VerificationCancelEventContent(code, reason, relatesTo, transactionId))
     }
 
-    suspend fun cancel(message: String = "user cancelled verification") {
+    override suspend fun cancel(message: String) {
         log.debug { "user cancelled verification" }
         cancel(Code.User, message)
     }

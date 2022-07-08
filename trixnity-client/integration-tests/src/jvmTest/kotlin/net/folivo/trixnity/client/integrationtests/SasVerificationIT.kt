@@ -5,6 +5,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key.DeviceTrustLevel
 import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
@@ -27,8 +28,8 @@ import kotlin.test.Test
 @Testcontainers
 class SasVerificationIT {
 
-    private lateinit var client1: MatrixClient
-    private lateinit var client2: MatrixClient
+    private lateinit var client1: IMatrixClient
+    private lateinit var client2: IMatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
