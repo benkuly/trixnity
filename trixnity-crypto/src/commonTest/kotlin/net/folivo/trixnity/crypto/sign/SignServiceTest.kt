@@ -28,6 +28,7 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 
 class SignServiceTest : ShouldSpec({
+    timeout = 60_000
     val json = createMatrixEventJson()
     lateinit var aliceSigningAccount: OlmAccount
     val ownUserId = UserId("me", "server")

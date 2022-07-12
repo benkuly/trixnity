@@ -59,7 +59,7 @@ import kotlin.random.Random
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+    timeout = 120_000
 
     val alice = UserId("alice", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -317,7 +317,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.") {
                     val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
                         salt = SecureRandom.nextBytes(32).encodeBase64(),
-                        iterations = 10_000,  // just a test, not secure
+                        iterations = 1_000,  // just a test, not secure
                         bits = 32 * 8
                     )
                     val iv = SecureRandom.nextBytes(16)

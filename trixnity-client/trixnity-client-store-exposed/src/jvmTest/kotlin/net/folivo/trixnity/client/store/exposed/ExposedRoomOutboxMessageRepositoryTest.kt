@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import kotlin.test.assertNotNull
 
 class ExposedRoomOutboxMessageRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: ExposedRoomOutboxMessageRepository
     beforeTest {
         createDatabase()

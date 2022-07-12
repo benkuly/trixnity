@@ -37,13 +37,11 @@ class OlmServiceTest : ShouldSpec({
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
-    val bobDevice = "BOBDEVICE"
     val roomId = RoomId("room", "server")
 
     lateinit var mockStore: OlmServiceStoreMock
     val mockRequestHandler = MockOlmServiceRequestHandler(mocker)
     val json = createMatrixEventJson()
-    val contentMappings = createEventContentSerializerMappings()
 
     lateinit var eventEmitter: EventEmitter
     lateinit var oneTimeKeysCountEmitter: OneTimeKeysCountEmitter
@@ -102,7 +100,6 @@ class OlmServiceTest : ShouldSpec({
         cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
         cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 0))
 
-        println(captureOneTimeKeys)
         captureOneTimeKeys.size shouldBe 2
         captureOneTimeKeys[0].keys.size shouldBe 26
         captureOneTimeKeys[1].keys.size shouldBe 75

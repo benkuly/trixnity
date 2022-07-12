@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 class MessageBuilderTest : ShouldSpec({
+    timeout = 60_000
     val mediaService = MediaServiceMock()
 
     context(MessageBuilder::build.name) {

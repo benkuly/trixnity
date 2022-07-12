@@ -8,40 +8,9 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
-    js(IR) {
-        browser {
-            testTask {
-                enabled = false
-                useKarma {
-                    useFirefoxHeadless()
-                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
-                }
-            }
-        }
-        nodejs {
-            testTask {
-                enabled = false
-            }
-        }
-        binaries.executable()
-    }
-
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
-    ios()
-
-    targets.disableCompilationsOnCI()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, testEnabled = false)
+    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
 
     sourceSets {
         all {
@@ -81,7 +50,7 @@ kotlin {
                 implementation("io.kotest:kotest-framework-datatest:${Versions.kotest}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")

@@ -12,6 +12,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
 class SqlDelightOutboundMegolmSessionRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightOutboundMegolmSessionRepository
     lateinit var driver: SqlDriver
     beforeTest {

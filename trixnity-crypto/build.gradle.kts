@@ -9,36 +9,9 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        withJava()
-    }
-    js(IR) {
-        browser {
-            testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
-                }
-            }
-        }
-        nodejs()
-        binaries.executable()
-    }
-
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
-    ios()
-
-    targets.disableCompilationsOnCI()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
+    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
 
     sourceSets {
         all {
@@ -60,8 +33,8 @@ kotlin {
         val nativeMain by creating {
             dependsOn(commonMain)
         }
-        setOf("linuxX64Main", "mingwX64Main", "macosX64Main", "macosArm64Main", "iosMain").forEach {
-            getByName(it).dependsOn(nativeMain)
+        nativeTargets.forEach {
+            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {
@@ -72,7 +45,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")

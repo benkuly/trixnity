@@ -7,31 +7,9 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
-    jvm {
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        withJava()
-    }
-    js(IR) {
-        browser {
-            testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                }
-            }
-        }
-        nodejs()
-        binaries.executable()
-    }
-
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
-    ios()
-
-    targets.disableCompilationsOnCI()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
+    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
 
     sourceSets {
         all {

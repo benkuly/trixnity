@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class RoomStateStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var roomStateRepository: RoomStateRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomStateStore

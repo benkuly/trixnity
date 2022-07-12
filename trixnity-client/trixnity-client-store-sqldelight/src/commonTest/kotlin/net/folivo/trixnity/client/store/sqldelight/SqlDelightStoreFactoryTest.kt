@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreFactoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var driver: SqlDriver
     lateinit var cut: SqlDelightStoreFactory
     lateinit var scope: CoroutineScope

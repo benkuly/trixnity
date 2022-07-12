@@ -32,6 +32,7 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomServiceDisplayNameTest : ShouldSpec({
+    timeout = 60_000
     val roomId = RoomId("room", "server")
     lateinit var store: Store
     lateinit var scope: CoroutineScope

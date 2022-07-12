@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 
 class Pbkdf2Test : ShouldSpec({
-    timeout = 30_000
+    timeout = 120_000
 
     should(::generatePbkdf2Sha512.name) {
         val password = "super secret. not"

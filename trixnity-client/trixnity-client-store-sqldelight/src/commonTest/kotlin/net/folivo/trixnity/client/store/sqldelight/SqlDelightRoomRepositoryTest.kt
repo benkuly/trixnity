@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightRoomRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightRoomRepository
     lateinit var driver: SqlDriver
     beforeTest {

@@ -12,6 +12,7 @@ import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.milliseconds
 
 class RoomStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var roomRepository: RoomRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomStore

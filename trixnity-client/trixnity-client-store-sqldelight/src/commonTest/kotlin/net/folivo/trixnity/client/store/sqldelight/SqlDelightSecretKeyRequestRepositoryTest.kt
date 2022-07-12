@@ -14,6 +14,7 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventConte
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightSecretKeyRequestRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightSecretKeyRequestRepository
     lateinit var driver: SqlDriver
     beforeTest {

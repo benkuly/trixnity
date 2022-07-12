@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedMediaRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: ExposedMediaRepository
     beforeTest {
         createDatabase()

@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightOutdatedDeviceKeysRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightOutdatedDeviceKeysRepository
     lateinit var driver: SqlDriver
     beforeTest {

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.konan.target.KonanTarget
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -7,17 +9,8 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        withJava()
-    }
-
-    linuxX64()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val linuxX64Target = addNativeTargetWhenEnabled(KonanTarget.LINUX_X64) { linuxX64() }
 
     sourceSets {
         all {
@@ -47,7 +40,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }

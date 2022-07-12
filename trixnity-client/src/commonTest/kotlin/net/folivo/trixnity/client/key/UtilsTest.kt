@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.milliseconds
 
 class UtilsTest : ShouldSpec({
+    timeout = 60_000
 
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope

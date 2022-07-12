@@ -1,21 +1,15 @@
+import org.jetbrains.kotlin.konan.target.HostManager
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.squareup.sqldelight")
 }
 
 kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled(testEnabled = (isCI && HostManager.hostIsMac).not())
 
     sourceSets {
         all {
@@ -34,7 +28,7 @@ kotlin {
                 implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
@@ -44,11 +38,5 @@ kotlin {
                 implementation("com.h2database:h2:${Versions.h2}")
             }
         }
-    }
-}
-
-sqldelight {
-    database("Database") {
-        packageName = "net.folivo.trixnity.client.store.sqldelight.db"
     }
 }

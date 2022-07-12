@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.ContentType.Image.PNG
 
 class CreateThumbnailTest : ShouldSpec({
+    timeout = 60_000
     should(::createThumbnail.name) {
         val thumbnail = createThumbnail(miniPng, 30, 20)
         assertSoftly(thumbnail) {
