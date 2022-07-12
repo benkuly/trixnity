@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedKeyChainLinkRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: ExposedKeyChainLinkRepository
 
     beforeTest {

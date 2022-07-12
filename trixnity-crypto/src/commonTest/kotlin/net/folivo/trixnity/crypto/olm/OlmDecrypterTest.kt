@@ -15,6 +15,7 @@ import org.kodein.mock.UsesMocks
 
 @UsesMocks(IOlmEventService::class)
 class OlmDecrypterTest : ShouldSpec({
+    timeout = 60_000
 
     val mocker = Mocker()
     val mockOlmEventService = MockIOlmEventService(mocker)

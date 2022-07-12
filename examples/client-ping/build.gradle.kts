@@ -6,34 +6,13 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnit()
-        }
-        withJava()
-    }
-    js(IR) {
-        browser {
-            commonWebpackConfig {
-                this.configDirectory = rootDir.resolve("webpack.config.d")
-            }
-        }
-        nodejs()
-        binaries.executable()
-    }
-//    val hostOs = System.getProperty("os.name")
-//    val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-//    }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+        }
         val commonMain by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
@@ -41,7 +20,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting {
+        jvmTarget?.mainSourceSet(sourceSets) {
             dependencies {
                 implementation(project(":trixnity-client:trixnity-client-store-exposed"))
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
@@ -49,15 +28,10 @@ kotlin {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-        val jsMain by getting {
+        jsTarget?.mainSourceSet(sourceSets) {
             dependencies {
                 implementation("io.ktor:ktor-client-js:${Versions.ktor}")
             }
         }
-//        val nativeMain by getting {
-//            dependencies {
-//                implementation("io.ktor:ktor-client-curl:${Versions.ktor}")
-//            }
-//        }
     }
 }

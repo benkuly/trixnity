@@ -14,6 +14,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedStoreFactoryTest : ShouldSpec({
+    timeout = 60_000
 
     lateinit var scope: CoroutineScope
     beforeTest {

@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 
 class SqlDelightOlmSessionRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightOlmSessionRepository
     lateinit var driver: SqlDriver
     beforeTest {

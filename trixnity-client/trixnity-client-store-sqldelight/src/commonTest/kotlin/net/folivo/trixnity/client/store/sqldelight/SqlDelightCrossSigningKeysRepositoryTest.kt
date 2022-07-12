@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightCrossSigningKeysRepository
     lateinit var driver: SqlDriver
 

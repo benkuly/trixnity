@@ -7,41 +7,9 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-        withJava()
-    }
-    js(IR) {
-        browser {
-            testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-                }
-            }
-        }
-        nodejs {
-            testTask {
-                useMocha {
-                    timeout = "30000"
-                }
-            }
-        }
-        binaries.executable()
-    }
-
-    linuxX64()
-    mingwX64()
-    macosX64()
-    macosArm64()
-    ios()
-
-    targets.disableCompilationsOnCI()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
+    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
 
     sourceSets {
         all {
@@ -73,7 +41,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }

@@ -9,6 +9,7 @@ import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.random.Random
 
 class AesTest : ShouldSpec({
+    timeout = 60_000
     val key = ByteArray(32) { (it + 1).toByte() }
     val nonce = ByteArray(8) { (it + 1).toByte() }
     val initialisationVector = nonce + ByteArray(8)

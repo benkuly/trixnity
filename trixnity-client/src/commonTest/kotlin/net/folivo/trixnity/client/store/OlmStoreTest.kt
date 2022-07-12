@@ -17,6 +17,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import kotlin.time.Duration.Companion.seconds
 
 class OlmStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var olmAccountRepository: OlmAccountRepository
     lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
 

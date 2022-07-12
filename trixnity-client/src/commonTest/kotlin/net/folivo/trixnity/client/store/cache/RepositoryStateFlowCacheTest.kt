@@ -10,6 +10,7 @@ import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 
 class RepositoryStateFlowCacheTest : ShouldSpec({
+    timeout = 60_000
     lateinit var repository: MinimalStoreRepository<String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: RepositoryStateFlowCache<String, String, MinimalStoreRepository<String, String>>

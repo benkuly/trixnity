@@ -17,7 +17,6 @@ variables:
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
-  BUILD_MAC_IMAGE_NAME: macos-12-xcode-13
 
 .build-cache: &build-cache
   - key: global-tixnity-cache
@@ -61,18 +60,17 @@ build-trixnity-build-linux-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push $BUILD_LINUX_IMAGE_NAME
 
-# build-mac:
-#   stage: build
-#   tags: [ "shared-macos-amd64" ]
-#   image: $BUILD_MAC_IMAGE_NAME
-#   cache:
-#     - *build-cache
-#   artifacts: *artifact-reports
-#   rules:
-#     - *if-merge-request
-#   script:
-#     - ./gradlew buildOlm
-#     - ./gradlew build --stacktrace
+build-mac:
+  stage: build
+  tags: [ "trixnity-mac-internal" ]
+  cache:
+    - *build-cache
+  artifacts: *artifact-reports
+  rules:
+    - *if-merge-request
+  script:
+    - ./gradlew buildOlm
+    - ./gradlew build --stacktrace
 
 build-linux:
   stage: build
@@ -91,20 +89,19 @@ build-linux:
     - ./gradlew buildOlm
     - ./gradlew build --stacktrace
 
-# publish-snapshot-mac:
-#   stage: publish-snapshot-mac
-#   tags: [ "shared-macos-amd64" ]
-#   image: $BUILD_MAC_IMAGE_NAME
-#   cache:
-#     - *build-cache
-#   artifacts:
-#     paths: [ "./trixnity-olm/build/processedResources" ]
-#   rules:
-#    - *if-master
-#   script:
-#     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-#     - ./gradlew buildOlm
-#     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+publish-snapshot-mac:
+  stage: publish-snapshot-mac
+  tags: [ "trixnity-mac-internal" ]
+  cache:
+    - *build-cache
+  artifacts:
+    paths: [ "./trixnity-olm/build/processedResources" ]
+  rules:
+   - *if-master
+  script:
+    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - ./gradlew buildOlm
+    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
 publish-snapshot-linux:
   stage: publish-snapshot-linux
@@ -116,7 +113,7 @@ publish-snapshot-linux:
   cache:
     - *build-cache
   dependencies:
-#     - publish-mac
+     - publish-snapshot-mac
   rules:
     - *if-master
   script:
@@ -149,22 +146,21 @@ create-nexus-staging-repo:
         fi
     - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
-# publish-mac:
-#   stage: publish-mac
-#   tags: [ "shared-macos-amd64" ]
-#   image: $BUILD_MAC_IMAGE_NAME
-#   cache:
-#     - *build-cache
-#   artifacts:
-#     paths: [ "./trixnity-olm/build/processedResources" ]
-#   dependencies:
-#     - create-nexus-staging-repo
-#   rules:
-#    - *if-release
-#   script:
-#     - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-#     - ./gradlew buildOlm
-#     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
+publish-mac:
+  stage: publish-mac
+  tags: [ "trixnity-mac-internal" ]
+  cache:
+    - *build-cache
+  artifacts:
+    paths: [ "./trixnity-olm/build/processedResources" ]
+  dependencies:
+    - create-nexus-staging-repo
+  rules:
+   - *if-release
+  script:
+    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - ./gradlew buildOlm
+    - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
 
 publish-linux:
   stage: publish-linux
@@ -177,7 +173,7 @@ publish-linux:
     - *build-cache
   dependencies:
     - create-nexus-staging-repo
-#     - publish-mac
+    - publish-mac
   rules:
     - *if-release
   script:

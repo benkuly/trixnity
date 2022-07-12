@@ -31,6 +31,8 @@ import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 
 class MediaServiceTest : ShouldSpec({
+    timeout = 60_000
+    
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val json = createMatrixEventJson()

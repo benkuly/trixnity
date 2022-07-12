@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedRoomUserRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: ExposedRoomUserRepository
     beforeTest {
         createDatabase()

@@ -16,7 +16,7 @@ import kotlin.random.Random
 import kotlin.test.assertNotNull
 
 class SelfVerificationMethodTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 120_000
 
     lateinit var keyService: KeyServiceMock
 
@@ -65,7 +65,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val key = generatePbkdf2Sha512(
                     password = "password",
                     salt = salt,
-                    iterationCount = 10_000,  // just a test, not secure
+                    iterationCount = 1_000, // just a test, not secure
                     keyBitLength = 32 * 8
                 )
                 val mac = encryptAesHmacSha2(
@@ -77,7 +77,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val info = SecretKeyEventContent.AesHmacSha2Key(
                     passphrase = Pbkdf2(
                         salt = salt.encodeBase64(),
-                        iterations = 10_000,
+                        iterations = 1_000, // just a test, not secure
                         bits = 32 * 8
                     ),
                     iv = iv.encodeBase64(),

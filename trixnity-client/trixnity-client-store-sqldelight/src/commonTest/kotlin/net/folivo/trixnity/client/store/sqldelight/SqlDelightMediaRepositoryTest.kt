@@ -8,6 +8,7 @@ import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
 
 class SqlDelightMediaRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightMediaRepository
     lateinit var driver: SqlDriver
     beforeTest {

@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.seconds
 
 class AccountStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var repository: AccountRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: AccountStore

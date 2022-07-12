@@ -9,7 +9,7 @@ import net.folivo.trixnity.crypto.generatePbkdf2Sha512
 import kotlin.random.Random
 
 class RecoveryKeyUtilsTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 120_000
 
     val curve25519Key = listOf(
         0x77, 0x07, 0x6D, 0x0A, 0x73, 0x18, 0xA5, 0x7D,

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.konan.target.KonanTarget
+
 plugins {
     kotlin("multiplatform")
 }
@@ -6,30 +8,17 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnit()
-        }
-        withJava()
-    }
-    js(IR) {
-        browser()
-        nodejs()
-        binaries.executable()
-    }
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-    }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
+    val nativeTargets = setOfNotNull(
+        addNativeTargetWhenEnabled(KonanTarget.LINUX_X64) { linuxX64() },
+        addNativeTargetWhenEnabled(KonanTarget.MINGW_X64) { mingwX64() },
+    )
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+        }
         val commonMain by getting {
             dependencies {
                 implementation(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
@@ -37,21 +26,25 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting {
+        jvmTarget?.mainSourceSet(this) {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-        val jsMain by getting {
+        jsTarget?.mainSourceSet(this) {
             dependencies {
                 implementation("io.ktor:ktor-client-js:${Versions.ktor}")
             }
         }
-        val nativeMain by getting {
+        val nativeMain by creating {
+            dependsOn(commonMain)
             dependencies {
                 implementation("io.ktor:ktor-client-curl:${Versions.ktor}")
             }
+        }
+        nativeTargets.forEach {
+            it.mainSourceSet(this).dependsOn(nativeMain)
         }
     }
 }

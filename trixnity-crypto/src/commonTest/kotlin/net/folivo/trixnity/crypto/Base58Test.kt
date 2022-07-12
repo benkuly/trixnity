@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 
 class Base58Test : ShouldSpec({
+    timeout = 60_000
     // Tests from https://github.com/bitcoin/bitcoin/blob/master/src/test/data/base58_encode_decode.json
     val testVectors = mapOf(
         listOf<Int>() to "",
