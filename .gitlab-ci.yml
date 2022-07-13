@@ -116,10 +116,8 @@ publish-snapshot-linux:
   rules:
     - *if-master
   script:
-    - ls -la ./trixnity-olm/build/processedResources/jvm/main
     - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
-    - ls -la ./trixnity-olm/build/processedResources/jvm/main
 
 create-nexus-staging-repo:
   stage: prepare-publish
