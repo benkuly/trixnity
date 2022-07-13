@@ -129,8 +129,8 @@ class ActiveSasVerificationMethod private constructor(
                     onMac(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
-            is VerificationCancelEventContent -> {
-                onCancel()
+            is VerificationCancelEventContent, is VerificationDoneEventContent -> {
+                onDoneOrCancel()
             }
         }
     }
@@ -290,7 +290,7 @@ class ActiveSasVerificationMethod private constructor(
         }
     }
 
-    private fun onCancel() {
+    private fun onDoneOrCancel() {
         olmSas.free()
     }
 
