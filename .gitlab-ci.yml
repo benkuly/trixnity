@@ -99,7 +99,6 @@ publish-snapshot-mac:
   rules:
    - *if-master
   script:
-    - OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
