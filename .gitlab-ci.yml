@@ -6,9 +6,11 @@ workflow:
 stages:
   - prepare-build
   - build
-  - publish-snapshot
+  - publish-snapshot-mac
+  - publish-snapshot-linux
   - prepare-publish
-  - publish
+  - publish-mac
+  - publish-linux
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
@@ -88,7 +90,7 @@ build-linux:
     - ./gradlew build --stacktrace
 
 publish-snapshot-mac:
-  stage: publish-snapshot
+  stage: publish-snapshot-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *build-cache
@@ -101,7 +103,7 @@ publish-snapshot-mac:
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
 publish-snapshot-linux:
-  stage: publish-snapshot
+  stage: publish-snapshot-linux
   tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
@@ -114,7 +116,6 @@ publish-snapshot-linux:
   rules:
     - *if-master
   script:
-    - ls -la "./trixnity-olm/build/processedResources"
     - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
@@ -145,7 +146,7 @@ create-nexus-staging-repo:
     - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
 publish-mac:
-  stage: publish
+  stage: publish-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *build-cache
@@ -161,7 +162,7 @@ publish-mac:
     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
 
 publish-linux:
-  stage: publish
+  stage: publish-linux
   tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
