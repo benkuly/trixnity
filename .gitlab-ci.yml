@@ -116,6 +116,7 @@ publish-snapshot-linux:
   rules:
     - *if-master
   script:
+    - ls -la ./trixnity-olm/build/processedResources
     - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
