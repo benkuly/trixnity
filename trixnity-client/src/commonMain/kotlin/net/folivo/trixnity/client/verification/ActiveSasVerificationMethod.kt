@@ -83,31 +83,45 @@ class ActiveSasVerificationMethod private constructor(
             keyTrustService: IKeyTrustService,
             json: Json,
         ): ActiveSasVerificationMethod? {
-            return if (!startEventContent.keyAgreementProtocols.contains("curve25519-hkdf-sha256")) {
-                sendVerificationStep(
-                    VerificationCancelEventContent(
-                        UnknownMethod,
-                        "key agreement protocol not supported",
-                        relatesTo,
-                        transactionId
+            return when {
+                startEventContent.keyAgreementProtocols.none { it == "curve25519-hkdf-sha256" } -> {
+                    sendVerificationStep(
+                        VerificationCancelEventContent(
+                            UnknownMethod,
+                            "key agreement protocol not supported",
+                            relatesTo,
+                            transactionId
+                        )
                     )
+                    null
+                }
+                startEventContent.shortAuthenticationString.none { it == SasMethod.EMOJI || it == SasMethod.DECIMAL } -> {
+                    sendVerificationStep(
+                        VerificationCancelEventContent(
+                            UnknownMethod,
+                            "short authentication string not supported",
+                            relatesTo,
+                            transactionId
+                        )
+                    )
+                    null
+                }
+                else -> ActiveSasVerificationMethod(
+                    startEventContent,
+                    weStartedVerification,
+                    ownUserId,
+                    ownDeviceId,
+                    theirUserId,
+                    theirDeviceId,
+                    relatesTo,
+                    transactionId,
+                    sendVerificationStep,
+                    store,
+                    keyTrustService,
+                    json,
+                    OlmSAS.create()
                 )
-                null
-            } else return ActiveSasVerificationMethod(
-                startEventContent,
-                weStartedVerification,
-                ownUserId,
-                ownDeviceId,
-                theirUserId,
-                theirDeviceId,
-                relatesTo,
-                transactionId,
-                sendVerificationStep,
-                store,
-                keyTrustService,
-                json,
-                OlmSAS.create()
-            )
+            }
         }
     }
 
