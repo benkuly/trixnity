@@ -67,6 +67,7 @@ This project contains the following modules, which can be used independently:
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
     - [x] notifications
+    - [x] server discovery
 
 - [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
   implementation. It does not support advanced features like E2E or persistence at the moment.
@@ -129,6 +130,8 @@ val matrixClient = MatrixClient.fromStore(
 
 matrixClient.startSync() // important to fully start the client!
 ```
+
+To get the `baseUrl` via server discovery you can use the `.serverDiscovery()` extension on `UserId`s or `String`s.
 
 ### Read data
 

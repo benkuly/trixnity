@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.WithoutAuth
 object GetVersions : MatrixEndpoint<Unit, GetVersions.Response> {
     @Serializable
     data class Response(
-        @SerialName("versions") val versions: List<String>,
-        @SerialName("unstable_features") val unstable_features: Map<String, Boolean>
+        @SerialName("versions") val versions: List<String> = listOf(),
+        @SerialName("unstable_features") val unstable_features: Map<String, Boolean> = mapOf()
     )
 }
