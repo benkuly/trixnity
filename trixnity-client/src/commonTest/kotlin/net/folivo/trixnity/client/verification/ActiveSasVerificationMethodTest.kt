@@ -79,13 +79,38 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
     }
 
     context("create") {
-        should("not cancel when key agreement protocol is not supported") {
+        should("cancel when key agreement protocol is not supported") {
             val method = ActiveSasVerificationMethod.create(
                 startEventContent = SasStartEventContent(
                     aliceDevice,
                     keyAgreementProtocols = setOf(),
                     relatesTo = null,
                     transactionId = "t"
+                ),
+                weStartedVerification = true,
+                ownUserId = alice,
+                ownDeviceId = aliceDevice,
+                theirUserId = bob,
+                theirDeviceId = bobDevice,
+                relatesTo = null,
+                transactionId = "t",
+                sendVerificationStep = { sendVerificationStepFlow.emit(it) },
+                store = store,
+                keyTrustService = keyTrustService,
+                json = json,
+            )
+            method shouldBe null
+            val result = sendVerificationStepFlow.first()
+            result.shouldBeInstanceOf<VerificationCancelEventContent>()
+            result.code shouldBe UnknownMethod
+        }
+        should("cancel when short authentication string is not supported") {
+            val method = ActiveSasVerificationMethod.create(
+                startEventContent = SasStartEventContent(
+                    aliceDevice,
+                    relatesTo = null,
+                    transactionId = "t",
+                    shortAuthenticationString = setOf()
                 ),
                 weStartedVerification = true,
                 ownUserId = alice,
@@ -146,6 +171,19 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     SasAcceptEventContent(
                         "c",
                         keyAgreementProtocol = "c",
+                        relatesTo = null,
+                        transactionId = "t"
+                    ), false
+                )
+                val result = sendVerificationStepFlow.first()
+                result.shouldBeInstanceOf<VerificationCancelEventContent>()
+                result.code shouldBe UnknownMethod
+            }
+            should("cancel when short authentication string is not supported") {
+                cut.handleVerificationStep(
+                    SasAcceptEventContent(
+                        "c",
+                        shortAuthenticationString = setOf(),
                         relatesTo = null,
                         transactionId = "t"
                     ), false

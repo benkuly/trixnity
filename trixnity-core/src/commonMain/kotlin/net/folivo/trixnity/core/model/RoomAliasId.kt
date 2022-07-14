@@ -23,6 +23,8 @@ value class RoomAliasId(val full: String) {
         get() = full.trimStart(sigilCharacter).substringBefore(':')
     val domain: String
         get() = full.trimStart(sigilCharacter).substringAfter(':')
+
+    override fun toString() = full
 }
 
 object RoomAliasIdSerializer : KSerializer<RoomAliasId> {
