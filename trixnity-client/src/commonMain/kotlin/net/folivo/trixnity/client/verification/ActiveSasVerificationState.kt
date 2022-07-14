@@ -62,8 +62,8 @@ sealed interface ActiveSasVerificationState {
         suspend fun match() {
             if (messageAuthenticationCode == "hkdf-hmac-sha256") {
                 val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
-                        ownUserId + ownDeviceId +
-                        theirUserId + theirDeviceId +
+                        ownUserId.full + ownDeviceId +
+                        theirUserId.full + theirDeviceId +
                         actualTransactionId
                 val keysToMac = store.keys.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
                 if (keysToMac.isNotEmpty()) {
