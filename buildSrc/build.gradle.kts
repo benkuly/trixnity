@@ -1,6 +1,6 @@
 plugins {
     // TODO workaround https://github.com/gradle/gradle/issues/16345 remove with newer gradle version
-    `kotlin-dsl` version "2.4.0" // version from https://plugins.gradle.org/plugin/org.gradle.kotlin.kotlin-dsl
+    `kotlin-dsl` version "2.4.1" // version from https://plugins.gradle.org/plugin/org.gradle.kotlin.kotlin-dsl
 }
 
 repositories {
