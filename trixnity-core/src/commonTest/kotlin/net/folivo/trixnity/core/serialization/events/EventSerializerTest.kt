@@ -246,7 +246,7 @@ class EventSerializerTest {
                     body = "hello", relatesTo = RelatesTo.Unknown(buildJsonObject {
                         put("event_id", JsonPrimitive(24))
                         put("rel_type", JsonPrimitive("m.reference"))
-                    })
+                    }, EventId("24"), RelationType.Reference)
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
@@ -751,7 +751,9 @@ class EventSerializerTest {
                                     )
                                 )
                             )
-                        )
+                        ),
+                        EventId("UNKNOWN"),
+                        RelationType.Unknown("UNKNOWN")
                     )
                 ),
                 id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),

@@ -9,10 +9,10 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightStore(
-    val database: Database,
+    val db: Database,
     contentMappings: EventContentSerializerMappings,
     json: Json,
-    databaseCoroutineContext: CoroutineContext,
+    dbContext: CoroutineContext,
     private val blockingTransactionCoroutineContext: CoroutineContext,
     scope: CoroutineScope
 ) : Store(
@@ -25,65 +25,36 @@ class SqlDelightStore(
          */
         override suspend fun <T> transaction(block: suspend () -> T): T =
             callRunBlocking(blockingTransactionCoroutineContext) {
-                database.transactionWithResult {
+                db.transactionWithResult {
                     callRunBlocking {
                         block()
                     }
                 }
             }
     },
-    accountRepository = SqlDelightAccountRepository(database.accountQueries, databaseCoroutineContext),
-    outdatedKeysRepository = SqlDelightOutdatedDeviceKeysRepository(
-        database.keysQueries, json, databaseCoroutineContext
-    ),
-    deviceKeysRepository = SqlDelightDeviceKeysRepository(
-        database.keysQueries, json, databaseCoroutineContext
-    ),
-    crossSigningKeysRepository = SqlDelightCrossSigningKeysRepository(
-        database.keysQueries, json, databaseCoroutineContext
-    ),
-    keyVerificationStateRepository = SqlDelightKeyVerificationStateRepository(
-        database.keysQueries, json, databaseCoroutineContext
-    ),
-    keyChainLinkRepository = SqlDelightKeyChainLinkRepository(database.keysQueries, databaseCoroutineContext),
-    secretsRepository = SqlDelightSecretsRepository(database.keysQueries, json, databaseCoroutineContext),
-    secretKeyRequestRepository = SqlDelightSecretKeyRequestRepository(
-        database.keysQueries, json, databaseCoroutineContext
-    ),
-    olmAccountRepository = SqlDelightOlmAccountRepository(database.olmQueries, databaseCoroutineContext),
-    olmSessionRepository = SqlDelightOlmSessionRepository(database.olmQueries, json, databaseCoroutineContext),
-    inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(
-        database.olmQueries, json, databaseCoroutineContext
-    ),
-    inboundMegolmMessageIndexRepository = SqlDelightInboundMegolmMessageIndexRepository(
-        database.olmQueries, databaseCoroutineContext
-    ),
-    outboundMegolmSessionRepository = SqlDelightOutboundMegolmSessionRepository(
-        database.olmQueries, json, databaseCoroutineContext
-    ),
-    roomRepository = SqlDelightRoomRepository(database.roomQueries, json, databaseCoroutineContext),
-    roomUserRepository = SqlDelightRoomUserRepository(database.roomUserQueries, json, databaseCoroutineContext),
-    roomStateRepository = SqlDelightRoomStateRepository(
-        database.roomStateQueries,
-        json,
-        databaseCoroutineContext
-    ),
-    roomTimelineEventRepository = SqlDelightRoomTimelineEventRepository(
-        database.roomTimelineQueries, json, databaseCoroutineContext
-    ),
+    accountRepository = SqlDelightAccountRepository(db.accountQueries, dbContext),
+    outdatedKeysRepository = SqlDelightOutdatedDeviceKeysRepository(db.keysQueries, json, dbContext),
+    deviceKeysRepository = SqlDelightDeviceKeysRepository(db.keysQueries, json, dbContext),
+    crossSigningKeysRepository = SqlDelightCrossSigningKeysRepository(db.keysQueries, json, dbContext),
+    keyVerificationStateRepository = SqlDelightKeyVerificationStateRepository(db.keysQueries, json, dbContext),
+    keyChainLinkRepository = SqlDelightKeyChainLinkRepository(db.keysQueries, dbContext),
+    secretsRepository = SqlDelightSecretsRepository(db.keysQueries, json, dbContext),
+    secretKeyRequestRepository = SqlDelightSecretKeyRequestRepository(db.keysQueries, json, dbContext),
+    olmAccountRepository = SqlDelightOlmAccountRepository(db.olmQueries, dbContext),
+    olmSessionRepository = SqlDelightOlmSessionRepository(db.olmQueries, json, dbContext),
+    inboundMegolmSessionRepository = SqlDelightInboundMegolmSessionRepository(db.olmQueries, json, dbContext),
+    inboundMegolmMessageIndexRepository = SqlDelightInboundMegolmMessageIndexRepository(db.olmQueries, dbContext),
+    outboundMegolmSessionRepository = SqlDelightOutboundMegolmSessionRepository(db.olmQueries, json, dbContext),
+    roomRepository = SqlDelightRoomRepository(db.roomQueries, json, dbContext),
+    roomUserRepository = SqlDelightRoomUserRepository(db.roomUserQueries, json, dbContext),
+    roomStateRepository = SqlDelightRoomStateRepository(db.roomStateQueries, json, dbContext),
+    timelineEventRepository = SqlDelightTimelineEventRepository(db.roomTimelineQueries, json, dbContext),
+    timelineEventRelationRepository = SqlDelightTimelineEventRelationRepository(db.roomTimelineQueries, dbContext),
     roomOutboxMessageRepository = SqlDelightRoomOutboxMessageRepository(
-        database.roomOutboxMessageQueries, json, contentMappings, databaseCoroutineContext
+        db.roomOutboxMessageQueries, json, contentMappings, dbContext
     ),
-    mediaRepository = SqlDelightMediaRepository(database.mediaQueries, databaseCoroutineContext),
-    uploadMediaRepository = SqlDelightUploadMediaRepository(database.mediaQueries, databaseCoroutineContext),
-    globalAccountDataRepository = SqlDelightGlobalAccountDataRepository(
-        database.globalAccountDataQueries,
-        json,
-        databaseCoroutineContext
-    ),
-    roomAccountDataRepository = SqlDelightRoomAccountDataRepository(
-        database.roomAccountDataQueries,
-        json,
-        databaseCoroutineContext
-    )
+    mediaRepository = SqlDelightMediaRepository(db.mediaQueries, dbContext),
+    uploadMediaRepository = SqlDelightUploadMediaRepository(db.mediaQueries, dbContext),
+    globalAccountDataRepository = SqlDelightGlobalAccountDataRepository(db.globalAccountDataQueries, json, dbContext),
+    roomAccountDataRepository = SqlDelightRoomAccountDataRepository(db.roomAccountDataQueries, json, dbContext)
 )

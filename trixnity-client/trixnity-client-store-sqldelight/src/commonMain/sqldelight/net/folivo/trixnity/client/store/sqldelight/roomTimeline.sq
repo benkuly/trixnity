@@ -19,3 +19,34 @@ WHERE event_id = ? AND room_id = ?;
 
 deleteAllTimelineEvents:
 DELETE FROM sql_room_timeline_event;
+
+CREATE TABLE sql_room_timeline_event_relation (
+  event_id TEXT NOT NULL,
+  room_id TEXT NOT NULL,
+  relation_type TEXT NOT NULL,
+  related_event_id TEXT NOT NULL,
+  PRIMARY KEY(event_id,room_id,relation_type,related_event_id)
+);
+
+getTimelineEventRelation:
+SELECT * FROM sql_room_timeline_event_relation
+WHERE related_event_id = ? AND room_id = ?;
+
+getTimelineEventRelationByRelationType:
+SELECT * FROM sql_room_timeline_event_relation
+WHERE related_event_id = ? AND room_id = ? AND relation_type = ?;
+
+saveTimelineEventRelation:
+INSERT OR REPLACE INTO sql_room_timeline_event_relation
+VALUES ?;
+
+deleteTimelineEventRelation:
+DELETE FROM sql_room_timeline_event_relation
+WHERE related_event_id = ? AND room_id = ?;
+
+deleteTimelineEventRelationByRelationType:
+DELETE FROM sql_room_timeline_event_relation
+WHERE related_event_id = ? AND room_id = ? AND relation_type = ?;
+
+deleteAllTimelineEventRelations:
+DELETE FROM sql_room_timeline_event_relation;

@@ -37,6 +37,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
@@ -867,6 +868,33 @@ class RoomServiceTest : ShouldSpec({
                 outboxMessages[0].reachedMaxRetryCount shouldBe true
             }
             job.cancel()
+        }
+    }
+    context(RoomService::addRelation.name) {
+        should("add relation") {
+            cut.addRelation(
+                MessageEvent(
+                    TextMessageEventContent(
+                        "hi",
+                        relatesTo = RelatesTo.Reference(EventId("$1other"))
+                    ),
+                    EventId("$1event"),
+                    UserId("sender", "server"),
+                    RoomId("room", "server"),
+                    1234,
+                )
+            )
+            store.roomTimeline.getRelations(EventId("$1other"), RoomId("room", "server")) shouldBe
+                    mapOf(
+                        RelationType.Reference to setOf(
+                            TimelineEventRelation(
+                                RoomId("room", "server"),
+                                EventId("$1event"),
+                                RelationType.Reference,
+                                EventId("$1other"),
+                            )
+                        )
+                    )
         }
     }
 })
