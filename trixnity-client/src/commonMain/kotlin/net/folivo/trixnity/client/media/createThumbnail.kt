@@ -16,7 +16,9 @@ class Thumbnail(
 
 suspend fun createThumbnail(file: ByteArray, maxWidth: Int, maxHeight: Int): Thumbnail {
     val image = file.asMemoryVfsFile().readBitmap()
+    if (image.width == 0 || image.height == 0) throw IllegalArgumentException("cannot create thumbnail from image with at least one dimension of 0")
     val resizedImage = image.resizedUpTo(maxWidth, maxHeight)
+    if (resizedImage.width == 0 || resizedImage.height == 0) throw IllegalStateException("generated thumbnail has at least one dimension of 0")
     return Thumbnail(
         file = resizedImage.encode(PNG),
         contentType = ContentType.Image.PNG,

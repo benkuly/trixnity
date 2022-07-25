@@ -1,13 +1,12 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.IRoomService
@@ -26,6 +25,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.crypto.olm.IOlmEventService
 
 private val log = KotlinLogging.logger {}
 
@@ -61,6 +61,7 @@ class ActiveUserVerification(
     keyTrust,
     api.json,
 ) {
+    override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val sendContent = try {
@@ -80,8 +81,8 @@ class ActiveUserVerification(
         ) : VerificationStepSearchResult
     }
 
-    override suspend fun lifecycle(scope: CoroutineScope) {
-        val timelineJob = scope.launch {
+    override suspend fun lifecycle() = coroutineScope {
+        val timelineJob = launch {
             room.getTimelineEvents(requestEventId, roomId, FORWARDS)
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
@@ -115,16 +116,14 @@ class ActiveUserVerification(
                     }
                 }
         }
-        scope.launch {
-            // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
-            while (isVerificationRequestActive(timestamp, state.value)) {
-                delay(500)
-            }
-            timelineJob.cancel()
+        // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
+        while (isVerificationRequestActive(timestamp, state.value)) {
+            delay(500)
+        }
+        timelineJob.cancel()
 
-            if (isVerificationTimedOut(timestamp, state.value)) {
-                cancel(Code.Timeout, "verification timed out")
-            }
+        if (isVerificationTimedOut(timestamp, state.value)) {
+            cancel(Code.Timeout, "verification timed out")
         }
     }
 }

@@ -19,15 +19,13 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.CrossSigned
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.crypto.VerifyResult
-import net.folivo.trixnity.client.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.CrossSigned
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeySecretServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.mocks.OlmSignServiceMock
+import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -45,6 +43,12 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
+import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.key.encryptSecret
+import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
+import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
@@ -55,7 +59,7 @@ import kotlin.random.Random
 class KeyServiceCrossSigningTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+    timeout = 120_000
 
     val alice = UserId("alice", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -63,7 +67,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var store: Store
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
-    lateinit var olmSign: OlmSignServiceMock
+    lateinit var olmSign: SignServiceMock
     lateinit var backup: KeyBackupServiceMock
     lateinit var trust: KeyTrustServiceMock
     lateinit var apiConfig: PortableMockEngineConfig
@@ -74,7 +78,7 @@ private val body: ShouldSpec.() -> Unit = {
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
-        olmSign = OlmSignServiceMock()
+        olmSign = SignServiceMock()
         backup = KeyBackupServiceMock()
         trust = KeyTrustServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -294,8 +298,8 @@ private val body: ShouldSpec.() -> Unit = {
                 ) to alice)
                 backup.bootstrapRoomKeyBackupCalled.value shouldBe true
                 store.keys.secrets.value.keys shouldBe setOf(
-                    AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
-                    AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
+                    M_CROSS_SIGNING_SELF_SIGNING,
+                    M_CROSS_SIGNING_USER_SIGNING
                 )
                 secretKeyEventContentCalled shouldBe true
                 capturedPassphrase shouldBe null
@@ -313,11 +317,11 @@ private val body: ShouldSpec.() -> Unit = {
                 val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.") {
                     val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
                         salt = SecureRandom.nextBytes(32).encodeBase64(),
-                        iterations = 10_000,  // just a test, not secure
+                        iterations = 1_000,  // just a test, not secure
                         bits = 32 * 8
                     )
                     val iv = SecureRandom.nextBytes(16)
-                    val key = recoveryKeyFromPassphrase("super secret. not.", passphraseInfo).getOrThrow()
+                    val key = recoveryKeyFromPassphrase("super secret. not.", passphraseInfo)
                     key to AesHmacSha2Key(
                         passphrase = passphraseInfo,
                         iv = iv.encodeBase64(),
@@ -334,8 +338,8 @@ private val body: ShouldSpec.() -> Unit = {
                 ) to alice)
                 backup.bootstrapRoomKeyBackupCalled.value shouldBe true
                 store.keys.secrets.value.keys shouldBe setOf(
-                    AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING,
-                    AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
+                    M_CROSS_SIGNING_SELF_SIGNING,
+                    M_CROSS_SIGNING_USER_SIGNING
                 )
                 secretKeyEventContentCalled shouldBe true
                 capturedPassphrase.shouldBeInstanceOf<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>()

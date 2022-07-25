@@ -21,6 +21,7 @@ This project contains the following modules, which can be used independently:
 - [trixnity-olm](/trixnity-olm) implements the wrappers of the
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin JVM/Android/JS/Native. It also ships the
   olm binaries for Android packages and Windows/Linux binaries on JVM and Native packages.
+- [trixnity-crypto](/trixnity-crypto) contains various cryptographic algorithms used in Matrix.
 - [trixnity-api-client](/trixnity-api-client) provides tools for api client modules.
 - [trixnity-api-server](/trixnity-api-server) provides tools for api server modules.
 - [trixnity-clientserverapi-*](/trixnity-clientserverapi) provides modules to use
@@ -66,6 +67,7 @@ This project contains the following modules, which can be used independently:
     - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
     - [x] notifications
+    - [x] server discovery
 
 - [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
   implementation. It does not support advanced features like E2E or persistence at the moment.
@@ -128,6 +130,8 @@ val matrixClient = MatrixClient.fromStore(
 
 matrixClient.startSync() // important to fully start the client!
 ```
+
+To get the `baseUrl` via server discovery you can use the `.serverDiscovery()` extension on `UserId`s or `String`s.
 
 ### Read data
 

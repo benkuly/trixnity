@@ -4,9 +4,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.StoredOlmSession
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import kotlin.coroutines.CoroutineContext
 
 class SqlDelightOlmSessionRepository(

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.milliseconds
 
 class StateFlowCacheTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: StateFlowCache<String, String>
 

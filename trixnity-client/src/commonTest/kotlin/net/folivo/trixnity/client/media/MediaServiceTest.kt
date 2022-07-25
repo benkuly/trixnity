@@ -20,17 +20,19 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.crypto.DecryptionException
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 
 class MediaServiceTest : ShouldSpec({
+    timeout = 60_000
+    
     lateinit var store: Store
     lateinit var storeScope: CoroutineScope
     val json = createMatrixEventJson()

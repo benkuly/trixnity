@@ -9,14 +9,16 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyServiceMock
-import net.folivo.trixnity.client.mocks.OlmEventServiceMock
+import net.folivo.trixnity.client.mocks.OlmServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.*
@@ -54,6 +56,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -64,7 +67,7 @@ class VerificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
 
-    timeout = 35_000
+    timeout = 120_000
     val aliceUserId = UserId("alice", "server")
     val aliceDeviceId = "AAAAAA"
     val bobUserId = UserId("bob", "server")
@@ -75,22 +78,20 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var api: MatrixClientServerApiClient
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    lateinit var olmEventService: OlmEventServiceMock
+    lateinit var olmService: OlmServiceMock
     val keyService = KeyServiceMock()
     lateinit var room: RoomServiceMock
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-    lateinit var decryptedOlmEventFlow: MutableSharedFlow<IOlmService.DecryptedOlmEventContainer>
 
     lateinit var cut: VerificationService
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope)
-        decryptedOlmEventFlow = MutableSharedFlow()
         room = RoomServiceMock()
-        olmEventService = OlmEventServiceMock(decryptedOlmEventFlow)
+        olmService = OlmServiceMock()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         api = newApi
@@ -99,7 +100,7 @@ private val body: ShouldSpec.() -> Unit = {
             ownDeviceId = aliceDeviceId,
             api = api,
             store = store,
-            olmEventService = olmEventService,
+            olmService = olmService,
             roomService = room,
             userService = UserServiceMock(),
             keyService = keyService,
@@ -182,7 +183,7 @@ private val body: ShouldSpec.() -> Unit = {
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
                 eventually(1.seconds) {
-                    olmEventService.encryptOlmCalled shouldBe Triple(
+                    olmService.event.encryptOlmCalled shouldBe Triple(
                         VerificationCancelEventContent(Code.User, "user cancelled verification", null, "transaction2"),
                         aliceUserId,
                         aliceDeviceId
@@ -193,8 +194,8 @@ private val body: ShouldSpec.() -> Unit = {
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
             should("ignore request, that is timed out") {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
-                decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                olmService.decrypter.emit(
+                    DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
@@ -208,8 +209,8 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                olmService.decrypter.emit(
+                    DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
@@ -236,14 +237,14 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction2"
                 )
-                decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                olmService.decrypter.emit(
+                    DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
-                decryptedOlmEventFlow.emit(
-                    IOlmService.DecryptedOlmEventContainer(
+                olmService.decrypter.emit(
+                    DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
                     )
@@ -252,8 +253,13 @@ private val body: ShouldSpec.() -> Unit = {
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.theirDeviceId shouldBe bobDeviceId
                 eventually(1.seconds) {
-                    olmEventService.encryptOlmCalled shouldBe Triple(
-                        VerificationCancelEventContent(Code.User, "user cancelled verification", null, "transaction2"),
+                    olmService.event.encryptOlmCalled shouldBe Triple(
+                        VerificationCancelEventContent(
+                            Code.User,
+                            "already have an active device verification",
+                            null,
+                            "transaction2"
+                        ),
                         aliceUserId,
                         aliceDeviceId
                     )
@@ -367,7 +373,7 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            olmEventService.returnEncryptOlm = { throw OlmLibraryException(message = "dino") }
+            olmService.event.returnEncryptOlm = { throw OlmLibraryException(message = "dino") }
             val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
@@ -413,7 +419,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                olmEventService.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
+                olmService.event.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
                 sendMessageEventCalled shouldBe true
             }
@@ -432,7 +438,7 @@ private val body: ShouldSpec.() -> Unit = {
                         SendEventResponse(EventId("$1event"))
                     }
                 }
-                olmEventService.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
+                olmService.event.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
                 store.globalAccountData.update(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )

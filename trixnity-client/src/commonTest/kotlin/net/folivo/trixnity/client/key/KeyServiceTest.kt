@@ -5,27 +5,32 @@ import io.kotest.assertions.until.fixed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.crypto.VerifyResult
-import net.folivo.trixnity.client.crypto.getCrossSigningKey
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeySecretServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.mocks.OlmSignServiceMock
+import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.simpleRoom
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -33,6 +38,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
@@ -40,6 +47,8 @@ import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
+import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
@@ -53,20 +62,30 @@ private val body: ShouldSpec.() -> Unit = {
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
+    val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var store: Store
-    lateinit var olmSignMock: OlmSignServiceMock
+    lateinit var signServiceMock: SignServiceMock
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var trust: KeyTrustServiceMock
+
+    val aliceKeys = StoredDeviceKeys(
+        Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
+        Valid(false)
+    )
+    val bobKeys = StoredDeviceKeys(
+        Signed(DeviceKeys(bob, bobDevice, setOf(), keysOf()), mapOf()),
+        Valid(false)
+    )
 
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: KeyService
 
     beforeTest {
-        olmSignMock = OlmSignServiceMock()
+        signServiceMock = SignServiceMock()
         scope = CoroutineScope(Dispatchers.Default)
         store = InMemoryStore(scope).apply { init() }
         trust = KeyTrustServiceMock()
@@ -76,7 +95,7 @@ private val body: ShouldSpec.() -> Unit = {
             alice,
             aliceDevice,
             store,
-            olmSignMock,
+            signServiceMock,
             api,
             currentSyncState,
             KeySecretServiceMock(),
@@ -86,13 +105,229 @@ private val body: ShouldSpec.() -> Unit = {
         )
         trust.returnCalculateCrossSigningKeysTrustLevel = CrossSigned(false)
         trust.returnCalculateDeviceKeysTrustLevel = CrossSigned(false)
-        olmSignMock.returnVerify = VerifyResult.Valid
+        signServiceMock.returnVerify = VerifyResult.Valid
     }
 
     afterTest {
         scope.cancel()
     }
 
+    context(KeyService::handleMemberEvents.name) {
+        val room = RoomId("room", "server")
+        beforeTest {
+            store.room.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = EncryptionAlgorithm.Megolm) }
+        }
+        should("ignore unencrypted rooms") {
+            val room2 = RoomId("roo2", "server")
+            store.room.update(room2) { simpleRoom.copy(roomId = room2) }
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room2,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+        should("remove device keys on leave or ban of the last encrypted room") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.LEAVE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) should beNull()
+
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) should beNull()
+        }
+        should("not remove device keys on leave or ban when there are more rooms") {
+            val otherRoom = RoomId("otherRoom", "server")
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            store.room.update(otherRoom) {
+                simpleRoom.copy(
+                    roomId = otherRoom,
+                    encryptionAlgorithm = EncryptionAlgorithm.Megolm
+                )
+            }
+            delay(500)
+            store.roomState.update(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    otherRoom,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.LEAVE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) shouldNot beNull()
+
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            store.keys.getDeviceKeys(alice) shouldNot beNull()
+        }
+        should("ignore join without real change (already join)") {
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                    unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                        previousContent = MemberEventContent(membership = Membership.JOIN)
+                    )
+                )
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+        should("mark keys as outdated when join or invite") {
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldContain alice
+
+            store.keys.outdatedKeys.value = setOf()
+
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.INVITE),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldContain alice
+        }
+        should("not mark keys as outdated when join, but devices are already tracked") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.handleMemberEvents(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full,
+                )
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+    }
+    context(KeyService::handleEncryptionEvents.name) {
+        should("mark all joined and invited users as outdated") {
+            listOf(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
+            cut.handleEncryptionEvents(
+                Event.StateEvent(
+                    EncryptionEventContent(),
+                    EventId("\$event3"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = ""
+                ),
+            )
+            store.keys.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+        }
+        should("not mark joined or invited users as outdated, when keys already tracked") {
+            store.keys.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            store.keys.updateDeviceKeys(bob) { mapOf(bobDevice to bobKeys) }
+            listOf(
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { store.roomState.update(it) }
+            cut.handleEncryptionEvents(
+                Event.StateEvent(
+                    EncryptionEventContent(),
+                    EventId("\$event3"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = ""
+                ),
+            )
+            store.keys.outdatedKeys.value shouldHaveSize 0
+        }
+    }
     context(KeyService::handleDeviceLists.name) {
         context("device key is tracked") {
             should("add changed devices to outdated keys") {
@@ -167,7 +402,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val key = Signed<CrossSigningKeys, UserId>(
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))), mapOf()
                 )
-                olmSignMock.returnVerify = VerifyResult.MissingSignature("")
+                signServiceMock.returnVerify = VerifyResult.MissingSignature("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -191,7 +426,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(MasterKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                olmSignMock.returnVerify = VerifyResult.Invalid("")
+                signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -235,7 +470,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(SelfSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                olmSignMock.returnVerify = VerifyResult.Invalid("")
+                signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -309,7 +544,7 @@ private val body: ShouldSpec.() -> Unit = {
                     CrossSigningKeys(alice, setOf(UserSigningKey), keysOf(Ed25519Key("id", "value"))),
                     mapOf(alice to keysOf(Ed25519Key("invalid", "invalid")))
                 )
-                olmSignMock.returnVerify = VerifyResult.Invalid("")
+                signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -626,7 +861,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("manipulation of ") {
                 should("signature") {
-                    olmSignMock.returnVerify = VerifyResult.Invalid("")
+                    signServiceMock.returnVerify = VerifyResult.Invalid("")
                     apiConfig.endpoints {
                         matrixJsonEndpoint(json, mappings, GetKeys()) {
                             GetKeys.Response(

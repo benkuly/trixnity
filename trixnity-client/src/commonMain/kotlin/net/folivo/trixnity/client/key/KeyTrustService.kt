@@ -5,22 +5,19 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.*
-import net.folivo.trixnity.client.crypto.IOlmSignService.SignWith
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.*
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_SELF_SIGNING
-import net.folivo.trixnity.client.store.AllowedSecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.*
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.model.keys.Keys
-import net.folivo.trixnity.core.model.keys.Signatures
-import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
-import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
+import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
+import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.crypto.sign.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.jvm.JvmName
@@ -41,7 +38,7 @@ interface IKeyTrustService {
 class KeyTrustService(
     private val ownUserId: UserId,
     private val store: Store,
-    private val olmSign: IOlmSignService,
+    private val signService: ISignService,
     private val api: MatrixClientServerApiClient,
 ) : IKeyTrustService {
 
@@ -107,7 +104,7 @@ class KeyTrustService(
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olmSign.verify(deviceKeys, it) },
+            { signService.verify(deviceKeys, it) },
             signedKey,
             deviceKeys.signatures ?: mapOf(),
             deviceKeys.getVerificationState(),
@@ -122,7 +119,7 @@ class KeyTrustService(
             ?: return Invalid("missing ed25519 key")
         return calculateTrustLevel(
             userId,
-            { olmSign.verify(crossSigningKeys, it) },
+            { signService.verify(crossSigningKeys, it) },
             signedKey,
             crossSigningKeys.signatures ?: mapOf(),
             crossSigningKeys.getVerificationState(),
@@ -183,7 +180,7 @@ class KeyTrustService(
                             else -> {
                                 searchSignaturesForTrustLevel(
                                     signingUserId,
-                                    { olmSign.verify(crossSigningKey, it) },
+                                    { signService.verify(crossSigningKey, it) },
                                     signingCrossSigningKey,
                                     crossSigningKey.signatures ?: mapOf(),
                                     visitedKeys
@@ -208,7 +205,7 @@ class KeyTrustService(
                             is KeyVerificationState.Blocked -> Blocked
                             else -> searchSignaturesForTrustLevel(
                                 signedUserId,
-                                { olmSign.verify(deviceKey, it) },
+                                { signService.verify(deviceKey, it) },
                                 signingDeviceKey,
                                 deviceKey.signatures ?: mapOf(),
                                 visitedKeys
@@ -232,19 +229,33 @@ class KeyTrustService(
         }
     }
 
+    private suspend fun signWithSecret(type: SecretType): SignWith.PrivateKey {
+        val privateKey = store.keys.secrets.value[type]?.decryptedPrivateKey
+        requireNotNull(privateKey) { "could not find private key of $type" }
+        val publicKey =
+            store.keys.getCrossSigningKey(
+                ownUserId,
+                when (type) {
+                    M_CROSS_SIGNING_SELF_SIGNING -> CrossSigningKeysUsage.SelfSigningKey
+                    M_CROSS_SIGNING_USER_SIGNING -> CrossSigningKeysUsage.UserSigningKey
+                    else -> throw IllegalArgumentException("cannot sign with $type")
+                }
+            )?.value?.signed?.get<Ed25519Key>()?.keyId
+        requireNotNull(publicKey) { "could not find public key of $type" }
+        return SignWith.PrivateKey(privateKey, publicKey)
+    }
+
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
         log.debug { "sign keys (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
             val deviceKey = key.keyId?.let { store.keys.getDeviceKey(userId, it) }?.value?.signed
             if (deviceKey != null) {
-                store.keys.saveKeyVerificationState(
-                    key, KeyVerificationState.Verified(key.value)
-                )
+                store.keys.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
                 updateTrustLevelOfKey(userId, key)
                 try {
                     if (userId == ownUserId && deviceKey.get<Ed25519Key>() == key) {
                         log.info { "sign own accounts device with own self signing key" }
-                        olmSign.sign(deviceKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_SELF_SIGNING))
+                        signService.sign(deviceKey, signWithSecret(M_CROSS_SIGNING_SELF_SIGNING))
                     } else null
                 } catch (error: Throwable) {
                     log.warn { "could not sign key $key: ${error.message}" }
@@ -262,10 +273,10 @@ class KeyTrustService(
                         if (crossSigningKey.get<Ed25519Key>() == key) {
                             if (userId == ownUserId) {
                                 log.info { "sign own master key with own device key" }
-                                olmSign.sign(crossSigningKey, SignWith.DeviceKey)
+                                signService.sign(crossSigningKey, SignWith.DeviceKey)
                             } else {
                                 log.info { "sign other users master key with own user signing key" }
-                                olmSign.sign(crossSigningKey, SignWith.AllowedSecrets(M_CROSS_SIGNING_USER_SIGNING))
+                                signService.sign(crossSigningKey, signWithSecret(M_CROSS_SIGNING_USER_SIGNING))
                             }
                         } else null
                     } catch (error: Throwable) {

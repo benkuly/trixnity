@@ -11,7 +11,9 @@ import kotlin.jvm.JvmInline
 
 @Serializable(with = EventIdSerializer::class)
 @JvmInline
-value class EventId(val full: String)
+value class EventId(val full: String) {
+    override fun toString() = full
+}
 
 object EventIdSerializer : KSerializer<EventId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventIdSerializer", PrimitiveKind.STRING)

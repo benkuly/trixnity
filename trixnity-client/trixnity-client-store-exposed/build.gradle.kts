@@ -7,14 +7,7 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
 
     sourceSets {
         all {
@@ -39,7 +32,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting {
+        jvmTarget?.mainSourceSet(this) {
             dependencies {
                 api("org.jetbrains.exposed:exposed-core:${Versions.exposed}")
 
@@ -47,7 +40,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-jdbc:${Versions.exposed}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("com.h2database:h2:${Versions.h2}")

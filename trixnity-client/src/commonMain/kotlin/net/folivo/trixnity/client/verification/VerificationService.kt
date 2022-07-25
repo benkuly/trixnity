@@ -8,10 +8,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IOlmEventService
-import net.folivo.trixnity.client.crypto.IOlmService
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
 import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.possiblyEncryptEvent
 import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.Store
@@ -34,6 +32,8 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.crypto.olm.IOlmService
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
@@ -87,7 +87,7 @@ class VerificationService(
     private val ownDeviceId: String,
     private val api: MatrixClientServerApiClient,
     private val store: Store,
-    private val olmEventService: IOlmEventService,
+    private val olmService: IOlmService,
     private val roomService: IRoomService,
     private val userService: IUserService,
     private val keyService: IKeyService,
@@ -101,10 +101,8 @@ class VerificationService(
 
     init {
         api.sync.subscribe(::handleDeviceVerificationRequestEvents)
+        olmService.decrypter.subscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = UNDISPATCHED) {
-            olmEventService.decryptedOlmEvents.collect(::handleOlmDecryptedDeviceVerificationRequestEvents)
-        }
         scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
@@ -130,7 +128,7 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olmEvent = olmEventService,
+                            olmService = olmService,
                             store = store,
                             keyTrust = keyService.trust,
                         ).cancel()
@@ -145,7 +143,7 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olmEvent = olmEventService,
+                                olmService = olmService,
                                 keyTrust = keyService.trust,
                                 store = store,
                             )
@@ -158,7 +156,7 @@ class VerificationService(
         }
     }
 
-    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: IOlmService.DecryptedOlmEventContainer) {
+    private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
             is VerificationRequestEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
@@ -174,10 +172,10 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olmEvent = olmEventService,
+                            olmService = olmService,
                             keyTrust = keyService.trust,
                             store = store,
-                        ).cancel()
+                        ).cancel("already have an active device verification")
                     } else {
                         _activeDeviceVerification.value =
                             ActiveDeviceVerification(
@@ -189,7 +187,7 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olmEvent = olmEventService,
+                                olmService = olmService,
                                 keyTrust = keyService.trust,
                                 store = store,
                             )
@@ -231,7 +229,7 @@ class VerificationService(
         )
         api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             try {
-                olmEventService.encryptOlm(request, theirUserId, it)
+                olmService.event.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
                 request
             }
@@ -245,7 +243,7 @@ class VerificationService(
             theirDeviceIds = theirDeviceIds.toSet(),
             supportedMethods = supportedMethods,
             api = api,
-            olmEvent = olmEventService,
+            olmService = olmService,
             keyTrust = keyService.trust,
             store = store,
         ).also { newDeviceVerification ->
@@ -263,7 +261,7 @@ class VerificationService(
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
-            possiblyEncryptEvent(request, roomId, store, olmEventService, userService)
+            possiblyEncryptEvent(request, roomId, store, olmService.event, userService)
         } catch (error: Exception) {
             request
         }
@@ -281,7 +279,7 @@ class VerificationService(
             supportedMethods = supportedMethods,
             api = api,
             store = store,
-            olmEvent = olmEventService,
+            olmEvent = olmService.event,
             user = userService,
             room = roomService,
             keyTrust = keyService.trust,
@@ -389,7 +387,7 @@ class VerificationService(
                             supportedMethods = supportedMethods,
                             api = api,
                             store = store,
-                            olmEvent = olmEventService,
+                            olmEvent = olmService.event,
                             user = userService,
                             room = roomService,
                             keyTrust = keyService.trust,

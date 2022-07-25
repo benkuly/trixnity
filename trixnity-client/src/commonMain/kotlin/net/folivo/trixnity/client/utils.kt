@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.retryOnRateLimit
-import net.folivo.trixnity.client.crypto.IOlmEventService
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.getByStateKey
 import net.folivo.trixnity.client.user.IUserService
@@ -22,6 +21,7 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.crypto.olm.IOlmEventService
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

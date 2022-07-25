@@ -8,32 +8,7 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
-//    js(IR) {
-//        browser {
-//            testTask {
-//                useKarma {
-//                    useFirefoxHeadless()
-//                }
-//            }
-//        }
-//        binaries.executable()
-//    }
-//    val hostOs = System.getProperty("os.name")
-//    val isMingwX64 = hostOs.startsWith("Windows")
-//    val nativeTarget = when {
-//        hostOs == "Mac OS X" -> macosX64("native")
-//        hostOs == "Linux" -> linuxX64("native")
-//        isMingwX64 -> mingwX64("native")
-//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-//    }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
 
     sourceSets {
         all {
@@ -61,16 +36,13 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
-        val jvmMain by getting { }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("com.squareup.sqldelight:sqlite-driver:${Versions.sqlDelight}")
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }
         }
-//        val jsTest by getting
-//        val nativeTest by getting
     }
 }
 

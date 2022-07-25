@@ -8,7 +8,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.InMemoryStore
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys

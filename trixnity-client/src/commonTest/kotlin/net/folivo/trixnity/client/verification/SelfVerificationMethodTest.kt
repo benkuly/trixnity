@@ -4,19 +4,19 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import net.folivo.trixnity.client.crypto.encryptAesHmacSha2
-import net.folivo.trixnity.client.crypto.generatePbkdf2Sha512
-import net.folivo.trixnity.client.key.encodeRecoveryKey
 import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
+import net.folivo.trixnity.crypto.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.generatePbkdf2Sha512
+import net.folivo.trixnity.crypto.key.encodeRecoveryKey
 import kotlin.random.Random
 import kotlin.test.assertNotNull
 
 class SelfVerificationMethodTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 120_000
 
     lateinit var keyService: KeyServiceMock
 
@@ -65,7 +65,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val key = generatePbkdf2Sha512(
                     password = "password",
                     salt = salt,
-                    iterationCount = 10_000,  // just a test, not secure
+                    iterationCount = 1_000, // just a test, not secure
                     keyBitLength = 32 * 8
                 )
                 val mac = encryptAesHmacSha2(
@@ -77,7 +77,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 val info = SecretKeyEventContent.AesHmacSha2Key(
                     passphrase = Pbkdf2(
                         salt = salt.encodeBase64(),
-                        iterations = 10_000,
+                        iterations = 1_000, // just a test, not secure
                         bits = 32 * 8
                     ),
                     iv = iv.encodeBase64(),

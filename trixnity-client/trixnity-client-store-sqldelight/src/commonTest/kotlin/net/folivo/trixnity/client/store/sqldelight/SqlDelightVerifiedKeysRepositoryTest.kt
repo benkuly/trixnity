@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightKeyVerificationStateRepository
     lateinit var driver: SqlDriver
 

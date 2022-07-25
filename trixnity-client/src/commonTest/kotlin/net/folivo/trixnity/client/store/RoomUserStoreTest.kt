@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 
 class RoomUserStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var roomUserRepository: RoomUserRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: RoomUserStore

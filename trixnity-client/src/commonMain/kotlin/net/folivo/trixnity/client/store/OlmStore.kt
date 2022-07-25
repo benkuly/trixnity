@@ -11,6 +11,10 @@ import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
+import net.folivo.trixnity.crypto.olm.StoredOlmSession
+import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
 class OlmStore(
     private val olmAccountRepository: OlmAccountRepository,

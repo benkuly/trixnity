@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository
 
-import net.folivo.trixnity.client.store.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 
 typealias InboundMegolmMessageIndexRepository =
         MinimalStoreRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>

@@ -4,7 +4,6 @@ import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import net.folivo.trixnity.client.store.StoredInboundMegolmSession
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
@@ -12,8 +11,10 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 class SqlDelightInboundMegolmSessionRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightInboundMegolmSessionRepository
     lateinit var driver: SqlDriver
     beforeTest {

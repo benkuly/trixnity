@@ -1,12 +1,14 @@
+import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
-import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.presetName
 
 plugins {
-    id("com.android.library")
+    if (isAndroidEnabled) id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
@@ -31,27 +33,27 @@ data class OlmJNATarget(
 
 data class OlmNativeTarget(
     val target: KonanTarget,
-    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> Unit,
+    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
     val additionalParams: List<String> = listOf()
 ) {
     val libDir = olmNativeLibPath.resolve(target.name)
     val libPath = libDir.resolve("libolm.a")
-    val compilationAllowed = target.isCompilationAllowed()
+    val enabledOnThisPlatform = target.isEnabledOnThisPlatform()
 }
 
 val olmJNATargets = listOf(
     OlmJNATarget(
         name = "linux-x86-64",
-        compilationAllowed = Family.LINUX.isCompilationAllowed()
+        compilationAllowed = KonanTarget.LINUX_X64.isEnabledOnThisPlatform()
     ),
     OlmJNATarget(
         name = "darwin",
-        compilationAllowed = Family.OSX.isCompilationAllowed(),
+        compilationAllowed = KonanTarget.MACOS_X64.isEnabledOnThisPlatform() && KonanTarget.MACOS_ARM64.isEnabledOnThisPlatform(),
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
     ),
     OlmJNATarget(
         name = "win32-x86-64",
-        compilationAllowed = Family.MINGW.isCompilationAllowed(),
+        compilationAllowed = KonanTarget.MINGW_X64.isEnabledOnThisPlatform(),
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
     )
 )
@@ -88,22 +90,24 @@ val olmNativeTargets = listOf(
     ),
 )
 
-android {
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
-    ndkVersion = Versions.androidNdk
-    defaultConfig {
-        minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    sourceSets.getByName("main") {
-        manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    }
-    externalNativeBuild {
-        cmake {
-            path = file(olmCMakeLists)
-            version = Versions.cmake
+if (isAndroidEnabled) {
+    configure<LibraryExtension> {
+        compileSdk = Versions.androidTargetSdk
+        buildToolsVersion = Versions.androidBuildTools
+        ndkVersion = Versions.androidNdk
+        defaultConfig {
+            minSdk = Versions.androidMinSdk
+            targetSdk = Versions.androidTargetSdk
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/androidMain/AndroidManifest.xml")
+        }
+        externalNativeBuild {
+            cmake {
+                path = file(olmCMakeLists)
+                version = Versions.cmake
+            }
         }
     }
 }
@@ -112,55 +116,35 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
-    android {
-        publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-        }
-    }
-    js(IR) {
-        browser {
-            testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                    useConfigDirectory(rootDir.resolve("karma.config.d"))
-                    webpackConfig.configDirectory = rootDir.resolve("webpack.config.d")
-                }
+    val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
+    val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
+        android {
+            publishLibraryVariants("release")
+            compilations.all {
+                kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
             }
         }
-        nodejs()
-        binaries.executable()
     }
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
 
-    olmNativeTargets.forEach { target ->
-        target.createTarget(this@kotlin)
-        targets.getByName<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>(target.target.presetName) {
-            compilations {
-                "main" {
-                    cinterops {
-                        val libolm by creating {
-                            packageName("org.matrix.olm")
-                            includeDirs(olmIncludeDir)
-                            tasks.named(interopProcessingTaskName) {
-                                dependsOn(olmNativeTargetsTasks)
+    val nativeTargets = olmNativeTargets.mapNotNull { target ->
+        addNativeTargetWhenEnabled(target.target) {
+            target.createTarget(this).apply {
+                compilations {
+                    "main" {
+                        cinterops {
+                            val libolm by creating {
+                                packageName("org.matrix.olm")
+                                includeDirs(olmIncludeDir)
+                                tasks.named(interopProcessingTaskName) {
+                                    dependsOn(olmNativeTargetsTasks)
+                                }
                             }
                         }
+                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                     }
-                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                 }
             }
-            if (target.compilationAllowed.not())
-                compilations.configureEach {
-                    compileKotlinTask.enabled = false
-                }
         }
     }
 
@@ -179,20 +163,20 @@ kotlin {
         val olmLibraryMain by creating {
             dependsOn(commonMain)
         }
-        val jvmMain by getting {
+        jvmTarget?.mainSourceSet(this) {
             dependsOn(olmLibraryMain)
             dependencies {
                 implementation("net.java.dev.jna:jna:${Versions.jna}")
             }
         }
-        val androidMain by getting {
+        androidJvmTarget?.mainSourceSet(this) {
             dependsOn(olmLibraryMain)
             kotlin.srcDirs("src/jvmMain/kotlin")
             dependencies {
                 api("net.java.dev.jna:jna:${Versions.jna}@aar")
             }
         }
-        val jsMain by getting {
+        jsTarget?.mainSourceSet(this) {
             dependencies {
                 implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
             }
@@ -200,8 +184,8 @@ kotlin {
         val nativeMain by creating {
             dependsOn(olmLibraryMain)
         }
-        olmNativeTargets.forEach {
-            if (it.compilationAllowed) sourceSets.getByName(it.target.presetName + "Main").dependsOn(nativeMain)
+        nativeTargets.forEach {
+            it.mainSourceSet(this).dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {
@@ -210,7 +194,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val androidTest by getting {
+        androidJvmTarget?.testSourceSet(this) {
             kotlin.srcDirs("src/jvmTest/kotlin")
             dependencies {
                 implementation("androidx.test:runner:${Versions.androidxTestRunner}")
@@ -305,7 +289,7 @@ val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
             *target.additionalParams.toTypedArray()
         )
         dependsOn(extractOlm, downloadIOSCmakeToolchain)
-        onlyIf { target.compilationAllowed }
+        onlyIf { target.enabledOnThisPlatform }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)
@@ -315,7 +299,7 @@ val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
         workingDir(target.libDir)
         commandLine("cmake", "--build", ".")
         dependsOn(prepareTask)
-        onlyIf { target.compilationAllowed }
+        onlyIf { target.enabledOnThisPlatform }
         outputs.cacheIf { true }
         inputs.files(olmCMakeLists)
         outputs.dir(target.libDir)

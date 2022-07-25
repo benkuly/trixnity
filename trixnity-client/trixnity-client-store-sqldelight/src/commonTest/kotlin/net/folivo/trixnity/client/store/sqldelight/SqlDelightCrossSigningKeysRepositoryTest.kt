@@ -4,7 +4,7 @@ import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightCrossSigningKeysRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: SqlDelightCrossSigningKeysRepository
     lateinit var driver: SqlDriver
 

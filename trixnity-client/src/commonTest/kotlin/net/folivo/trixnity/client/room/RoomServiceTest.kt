@@ -18,8 +18,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.crypto.DecryptionException
-import net.folivo.trixnity.client.crypto.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.key.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -57,6 +56,8 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.DecryptionException
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -222,7 +223,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            content = Result.failure(DecryptionException.ValidationFailed),
+                            content = Result.failure(DecryptionException.ValidationFailed("")),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -283,7 +284,7 @@ class RoomServiceTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            content = Result.failure(DecryptionException.ValidationFailed),
+                            content = Result.failure(DecryptionException.ValidationFailed("")),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -344,7 +345,7 @@ class RoomServiceTest : ShouldSpec({
                 )
                 val timelineEvent2 = TimelineEvent(
                     event = event2,
-                    content = Result.failure(DecryptionException.ValidationFailed),
+                    content = Result.failure(DecryptionException.ValidationFailed("")),
                     roomId = room,
                     eventId = event2.id,
                     previousEventId = event1.id,
@@ -435,8 +436,8 @@ class RoomServiceTest : ShouldSpec({
             gap = null
         )
         val storedSession = StoredInboundMegolmSession(
-            senderKey, session, room, 1, hasBeenBackedUp = false, isTrusted = false,
-            senderSigningKey = Key.Ed25519Key(null, "ed"), forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
+            senderKey, Key.Ed25519Key(null, "ed"), session, room, 1, hasBeenBackedUp = false, isTrusted = false,
+            forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
         )
 
         context("event not in database") {
@@ -507,7 +508,7 @@ class RoomServiceTest : ShouldSpec({
                         content = Result.success(TextMessageEventContent("hi"))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
-                        content = Result.failure(DecryptionException.ValidationFailed)
+                        content = Result.failure(DecryptionException.ValidationFailed(""))
                     ),
                     "without RoomEvent" to encryptedTimelineEvent.copy(
                         event = nameEvent(24)
@@ -568,7 +569,7 @@ class RoomServiceTest : ShouldSpec({
                 result.job.children.count() shouldBe 0
             }
             should("handle error") {
-                olmEventService.returnDecryptMegolm.add { throw DecryptionException.ValidationFailed }
+                olmEventService.returnDecryptMegolm.add { throw DecryptionException.ValidationFailed("") }
                 store.roomTimeline.addAll(listOf(encryptedTimelineEvent))
                 store.olm.updateInboundMegolmSession(session, room) { storedSession }
                 val result = cut.getTimelineEvent(eventId, room, this)
@@ -576,7 +577,7 @@ class RoomServiceTest : ShouldSpec({
                 assertSoftly(result) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed
+                    content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed("")
                 }
             }
             should("wait for olm session and ask key backup for it") {

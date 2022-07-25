@@ -2,14 +2,15 @@ package net.folivo.trixnity.client.store.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import net.folivo.trixnity.client.store.StoredOutboundMegolmSession
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedOutboundMegolmSessionRepositoryTest : ShouldSpec({
+    timeout = 60_000
     lateinit var cut: ExposedOutboundMegolmSessionRepository
     beforeTest {
         createDatabase()

@@ -12,14 +12,9 @@ kotlin {
     jvmToolchain {
         (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
     }
-    jvm {
-        testRuns["test"].executionTask.configure {
-//            useJUnitPlatform()
-        }
-        withJava()
-    }
-
-    linuxX64()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled(useJUnitPlatform = false)
+    val linuxX64Target =
+        addNativeTargetWhenEnabled(org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64) { linuxX64() }
 
     sourceSets {
         all {
@@ -49,7 +44,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val jvmTest by getting {
+        jvmTarget?.testSourceSet(this) {
             dependencies {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }

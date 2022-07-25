@@ -10,6 +10,7 @@ import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.crypto.SecretType
 
 class KeyStore(
     private val outdatedKeysRepository: OutdatedKeysRepository,
@@ -23,7 +24,7 @@ class KeyStore(
     private val storeScope: CoroutineScope
 ) {
     val outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
-    val secrets = MutableStateFlow<Map<AllowedSecretType, StoredSecret>>(mapOf())
+    val secrets = MutableStateFlow<Map<SecretType, StoredSecret>>(mapOf())
     private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)
     private val crossSigningKeysCache = RepositoryStateFlowCache(storeScope, crossSigningKeysRepository, rtm)
     private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)

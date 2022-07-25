@@ -1,8 +1,7 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.crypto.getAllKeysFromUser
+import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.Store
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -30,7 +29,6 @@ sealed interface ActiveSasVerificationState {
         private val transactionId: String?,
         private val send: suspend (step: VerificationStep) -> Unit
     ) : ActiveSasVerificationState {
-        @OptIn(ExperimentalSerializationApi::class)
         suspend fun accept() {
             if (content.hashes.contains("sha256")) {
                 val commitment = createSasCommitment(olmSas.publicKey, content, json)
@@ -64,8 +62,8 @@ sealed interface ActiveSasVerificationState {
         suspend fun match() {
             if (messageAuthenticationCode == "hkdf-hmac-sha256") {
                 val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
-                        ownUserId + ownDeviceId +
-                        theirUserId + theirDeviceId +
+                        ownUserId.full + ownDeviceId +
+                        theirUserId.full + theirDeviceId +
                         actualTransactionId
                 val keysToMac = store.keys.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
                 if (keysToMac.isNotEmpty()) {

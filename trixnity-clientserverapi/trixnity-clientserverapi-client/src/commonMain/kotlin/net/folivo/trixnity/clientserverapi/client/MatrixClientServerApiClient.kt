@@ -22,13 +22,16 @@ interface IMatrixClientServerApiClient {
     val media: IMediaApiClient
     val devices: IDevicesApiClient
     val push: IPushApiClient
+
+    val eventContentSerializerMappings: EventContentSerializerMappings
+    val json: Json
 }
 
 class MatrixClientServerApiClient(
     baseUrl: Url? = null,
     onLogout: suspend (isSoft: Boolean) -> Unit = {},
-    val eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
-    val json: Json = createMatrixEventJson(eventContentSerializerMappings),
+    override val eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) : IMatrixClientServerApiClient {
     override val accessToken = MutableStateFlow<String?>(null)

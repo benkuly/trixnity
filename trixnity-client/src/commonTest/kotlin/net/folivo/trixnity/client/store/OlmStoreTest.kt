@@ -13,9 +13,11 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositor
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import kotlin.time.Duration.Companion.seconds
 
 class OlmStoreTest : ShouldSpec({
+    timeout = 60_000
     lateinit var olmAccountRepository: OlmAccountRepository
     lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
 
