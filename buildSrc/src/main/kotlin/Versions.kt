@@ -13,7 +13,7 @@ object Versions {
     const val korlibs = "3.0.0-Beta6" // https://github.com/korlibs/korge/releases
     const val mocKmp = "1.8.1" // https://github.com/Kodein-Framework/MocKMP/releases
     const val uuid = "0.5.0" // https://github.com/benasher44/uuid/releases
-    const val kotest = "5.3.2" // https://github.com/kotest/kotest/releases
+    const val kotest = "5.4.0" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.3" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
     const val arrow = "1.1.2" // https://github.com/arrow-kt/arrow/releases

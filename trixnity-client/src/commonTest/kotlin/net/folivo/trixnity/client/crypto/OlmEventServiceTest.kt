@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ContainerScope
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
@@ -650,47 +649,48 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         context("handle olm event with manipulated") {
-            suspend fun ContainerScope.handleManipulation(manipulatedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>) {
-                val job1 = launch {
-                    store.keys.outdatedKeys.first { it.isNotEmpty() }
-                    store.keys.outdatedKeys.value = setOf()
-                }
-                freeAfter(
-                    OlmSession.createOutbound(
-                        aliceAccount,
-                        bobCurveKey.value,
-                        bobAccount.getOneTimeKey()
-                    )
-                ) { aliceSession ->
-                    val firstMessage = aliceSession.encrypt("first message")
-                    val encryptedMessage = freeAfter(
-                        OlmSession.createInbound(bobAccount, firstMessage.cipherText)
-                    ) { bobSession ->
-                        bobSession.decrypt(firstMessage)
-                        bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, manipulatedOlmEvent))
+            suspend fun handleManipulation(manipulatedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>) =
+                coroutineScope {
+                    val job1 = launch {
+                        store.keys.outdatedKeys.first { it.isNotEmpty() }
+                        store.keys.outdatedKeys.value = setOf()
                     }
-                    val storedOlmSession = StoredOlmSession(
-                        bobCurveKey,
-                        aliceSession.sessionId,
-                        Clock.System.now(),
-                        Clock.System.now(),
-                        aliceSession.pickle("")
-                    )
-                    store.olm.updateOlmSessions(bobCurveKey) { setOf(storedOlmSession) }
-
-                    shouldThrow<DecryptionException> {
-                        cut.decryptOlm(
-                            OlmEncryptedEventContent(
-                                ciphertext = mapOf(
-                                    aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
-                                ),
-                                senderKey = bobCurveKey
-                            ), bob
+                    freeAfter(
+                        OlmSession.createOutbound(
+                            aliceAccount,
+                            bobCurveKey.value,
+                            bobAccount.getOneTimeKey()
                         )
+                    ) { aliceSession ->
+                        val firstMessage = aliceSession.encrypt("first message")
+                        val encryptedMessage = freeAfter(
+                            OlmSession.createInbound(bobAccount, firstMessage.cipherText)
+                        ) { bobSession ->
+                            bobSession.decrypt(firstMessage)
+                            bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, manipulatedOlmEvent))
+                        }
+                        val storedOlmSession = StoredOlmSession(
+                            bobCurveKey,
+                            aliceSession.sessionId,
+                            Clock.System.now(),
+                            Clock.System.now(),
+                            aliceSession.pickle("")
+                        )
+                        store.olm.updateOlmSessions(bobCurveKey) { setOf(storedOlmSession) }
+
+                        shouldThrow<DecryptionException> {
+                            cut.decryptOlm(
+                                OlmEncryptedEventContent(
+                                    ciphertext = mapOf(
+                                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                                    ),
+                                    senderKey = bobCurveKey
+                                ), bob
+                            )
+                        }
                     }
+                    job1.cancel()
                 }
-                job1.cancel()
-            }
             should("sender") {
                 handleManipulation(decryptedOlmEvent.copy(sender = UserId("cedric", "server")))
             }
