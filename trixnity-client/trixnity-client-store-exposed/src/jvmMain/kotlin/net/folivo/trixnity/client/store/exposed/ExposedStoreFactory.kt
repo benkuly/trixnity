@@ -46,7 +46,7 @@ class ExposedStoreFactory(
                 ExposedRoomOutboxMessage,
                 ExposedRoom,
                 ExposedRoomState,
-                ExposedRoomTimelineEvent,
+                ExposedTimelineEvent,
                 ExposedRoomUser,
                 ExposedUploadMedia,
             )

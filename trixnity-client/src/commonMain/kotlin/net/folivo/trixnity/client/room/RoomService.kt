@@ -169,6 +169,19 @@ interface IRoomService {
         limitPerFetch: Long = 20,
     ): Flow<List<StateFlow<TimelineEvent?>>>
 
+    suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        scope: CoroutineScope,
+    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?>
+
+    suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        relationType: RelationType,
+        scope: CoroutineScope,
+    ): Flow<Set<TimelineEventRelation>?>
+
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
 
     suspend fun abortSendMessage(transactionId: String)
@@ -234,13 +247,14 @@ class RoomService(
         api.sync.subscribe(::setOwnMembership)
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::redactTimelineEvent)
-        api.sync.subscribe<StateEventContent> { store.roomState.update(it) }
+        api.sync.subscribe(store.roomState::update)
         api.sync.subscribe(::setDirectEventContent)
         api.sync.subscribe(::setAvatarUrlForMemberUpdates)
         api.sync.subscribe(::setAvatarUrlForAvatarEvents)
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
         api.sync.subscribe(::setReadReceipts)
+        api.sync.subscribe(::addRelation)
         api.sync.subscribeAfterSyncResponse { removeOldOutboxMessages() }
         api.sync.subscribeAfterSyncResponse { handleSetRoomDisplayNamesQueue() }
         api.sync.subscribeAfterSyncResponse { handleDirectEventContent() }
@@ -618,6 +632,20 @@ class RoomService(
         }
     }
 
+    internal suspend fun addRelation(event: Event<MessageEventContent>) {
+        if (event is MessageEvent) {
+            val relatesTo = event.content.relatesTo
+            if (relatesTo != null)
+                store.roomTimeline.addRelation(
+                    TimelineEventRelation(
+                        roomId = event.roomId,
+                        eventId = event.id,
+                        relationType = relatesTo.type,
+                        relatedEventId = relatesTo.eventId
+                    )
+                )
+        }
+    }
 
     internal suspend fun redactTimelineEvent(redactionEvent: Event<RedactionEventContent>) {
         if (redactionEvent is MessageEvent) {
@@ -870,6 +898,12 @@ class RoomService(
         nextEventChunk: List<RoomEvent<*>>?,
         processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
+        // TODO should be less complicated with plugin system
+        suspend fun internalProcessTimelineEventsBeforeSave(timelineEvents: List<TimelineEvent>): List<TimelineEvent> {
+            timelineEvents.asFlow().map { it.event }.filterIsInstance<Event<MessageEventContent>>()
+                .collect(::addRelation)
+            return processTimelineEventsBeforeSave(timelineEvents)
+        }
         log.trace {
             "addEventsToTimeline with parameters:\n" +
                     "startEvent=${startEvent.eventId.full}\n" +
@@ -883,7 +917,7 @@ class RoomService(
                 oldPreviousEvent?.copy(
                     nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
                     gap = if (previousHasGap) oldGap else oldGap?.removeGapAfter(),
-                )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
+                )?.let { internalProcessTimelineEventsBeforeSave(listOf(it)).first() }
             }
         if (nextEvent != null)
             store.roomTimeline.update(nextEvent, roomId, withTransaction = false) { oldNextEvent ->
@@ -891,7 +925,7 @@ class RoomService(
                 oldNextEvent?.copy(
                     previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
                     gap = if (nextHasGap) oldGap else oldGap?.removeGapBefore()
-                )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
+                )?.let { internalProcessTimelineEventsBeforeSave(listOf(it)).first() }
             }
         store.roomTimeline.update(startEvent.eventId, roomId, withTransaction = false) { oldStartEvent ->
             val hasGapBefore = previousEventChunk.isNullOrEmpty() && previousHasGap
@@ -906,7 +940,7 @@ class RoomService(
                     hasGapAfter && nextToken != null -> GapAfter(nextToken)
                     else -> null
                 }
-            ).let { processTimelineEventsBeforeSave(listOf(it)).first() }
+            ).let { internalProcessTimelineEventsBeforeSave(listOf(it)).first() }
         }
 
         if (!previousEventChunk.isNullOrEmpty()) {
@@ -946,7 +980,7 @@ class RoomService(
                     }
                 }
             }
-            store.roomTimeline.addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
+            store.roomTimeline.addAll(internalProcessTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
         }
 
         if (!nextEventChunk.isNullOrEmpty()) {
@@ -986,7 +1020,7 @@ class RoomService(
                     }
                 }
             }
-            store.roomTimeline.addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
+            store.roomTimeline.addAll(internalProcessTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
         }
     }
 
@@ -1218,6 +1252,20 @@ class RoomService(
             afterElements + startEvent + beforeElements
         }.collectLatest { send(it) }
     }.buffer(0)
+
+    override suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        scope: CoroutineScope,
+    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = store.roomTimeline.getRelations(eventId, roomId, scope)
+
+    override suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        relationType: RelationType,
+        scope: CoroutineScope,
+    ): Flow<Set<TimelineEventRelation>?> = store.roomTimeline.getRelations(eventId, roomId, relationType, scope)
+
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
         val isEncryptedRoom = store.room.get(roomId).value?.encryptionAlgorithm == Megolm

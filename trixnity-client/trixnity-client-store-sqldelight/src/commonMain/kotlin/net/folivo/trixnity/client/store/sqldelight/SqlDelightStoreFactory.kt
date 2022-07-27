@@ -69,11 +69,11 @@ class SqlDelightStoreFactory(
 
         return SqlDelightStore(
             scope = scope,
-            databaseCoroutineContext = databaseCoroutineContext,
+            dbContext = databaseCoroutineContext,
             blockingTransactionCoroutineContext = blockingTransactionCoroutineContext,
             json = json,
             contentMappings = contentMappings,
-            database = database
+            db = database
         )
     }
 }

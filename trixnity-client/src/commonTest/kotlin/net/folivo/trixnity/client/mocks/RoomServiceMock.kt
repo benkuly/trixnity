@@ -9,10 +9,12 @@ import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.RelationType
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
@@ -101,6 +103,23 @@ class RoomServiceMock : IRoomService {
         limitPerFetch: Long
     ): Flow<List<StateFlow<TimelineEvent?>>> {
         throw NotImplementedError()
+    }
+
+    override suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        scope: CoroutineScope
+    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getTimelineEventRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        relationType: RelationType,
+        scope: CoroutineScope
+    ): Flow<Set<TimelineEventRelation>?> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {

@@ -1,38 +1,31 @@
-package net.folivo.trixnity.client.store.sqldelight
+package net.folivo.trixnity.client.store.exposed
 
-import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import net.folivo.trixnity.client.store.RoomTimelineKey
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.sqldelight.db.Database
-import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
+import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
-class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
+class ExposedTimelineEventRepositoryTest : ShouldSpec({
     timeout = 60_000
-    lateinit var cut: SqlDelightRoomTimelineEventRepository
-    lateinit var driver: SqlDriver
+    lateinit var cut: ExposedTimelineEventRepository
     beforeTest {
-        driver = createDriverWithSchema()
-        cut = SqlDelightRoomTimelineEventRepository(
-            Database(driver).roomTimelineQueries,
-            createMatrixEventJson(),
-            Dispatchers.Default
-        )
-    }
-    afterTest {
-        driver.close()
+        createDatabase()
+        newSuspendedTransaction {
+            SchemaUtils.create(ExposedTimelineEvent)
+        }
+        cut = ExposedTimelineEventRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
-        val key1 = RoomTimelineKey(EventId("\$event1"), RoomId("room1", "server"))
-        val key2 = RoomTimelineKey(EventId("\$event2"), RoomId("room1", "server"))
+        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
+        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
             Event.MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
@@ -63,13 +56,15 @@ class SqlDelightRoomTimelineEventRepositoryTest : ShouldSpec({
         )
         val session2Copy = event2.copy(nextEventId = EventId("\$superfancy"))
 
-        cut.save(key1, event1)
-        cut.save(key2, event2)
-        cut.get(key1) shouldBe event1
-        cut.get(key2) shouldBe event2
-        cut.save(key2, session2Copy)
-        cut.get(key2) shouldBe session2Copy
-        cut.delete(key1)
-        cut.get(key1) shouldBe null
+        newSuspendedTransaction {
+            cut.save(key1, event1)
+            cut.save(key2, event2)
+            cut.get(key1) shouldBe event1
+            cut.get(key2) shouldBe event2
+            cut.save(key2, session2Copy)
+            cut.get(key2) shouldBe session2Copy
+            cut.delete(key1)
+            cut.get(key1) shouldBe null
+        }
     }
 })

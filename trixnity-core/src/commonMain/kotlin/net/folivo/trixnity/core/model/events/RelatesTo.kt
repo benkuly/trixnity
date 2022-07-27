@@ -13,18 +13,22 @@ import net.folivo.trixnity.core.model.EventId
 @Serializable(with = RelatesToSerializer::class)
 sealed class RelatesTo {
 
+    abstract val type: RelationType
+    abstract val eventId: EventId
+
     @Serializable
     data class Reference(
         @SerialName("event_id")
-        val eventId: EventId,
+        override val eventId: EventId,
     ) : RelatesTo() {
-        companion object {
-            val type = RelationType.Reference
-        }
+        @SerialName("rel_type")
+        override val type: RelationType = RelationType.Reference
     }
 
     data class Unknown(
-        val raw: JsonObject
+        val raw: JsonObject,
+        override val eventId: EventId,
+        override val type: RelationType,
     ) : RelatesTo()
 }
 
@@ -34,27 +38,33 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
     override fun deserialize(decoder: Decoder): RelatesTo {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        return when (jsonObject["rel_type"]?.jsonPrimitive?.content) {
-            RelatesTo.Reference.type.name -> try {
-                decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
-            } catch (e: Exception) {
-                RelatesTo.Unknown(jsonObject)
+        val relationType = RelationType.of(jsonObject["rel_type"]?.jsonPrimitive?.content ?: "UNKNOWN")
+        return try {
+            when (relationType) {
+                is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
+                else -> {
+                    RelatesTo.Unknown(
+                        jsonObject,
+                        EventId(jsonObject["event_id"]?.jsonPrimitive?.content ?: "UNKNOWN"),
+                        relationType
+                    )
+                }
             }
-            else -> {
-                RelatesTo.Unknown(jsonObject)
-            }
+        } catch (e: Exception) {
+            RelatesTo.Unknown(
+                jsonObject,
+                EventId(jsonObject["event_id"]?.jsonPrimitive?.content ?: "UNKNOWN"),
+                relationType
+            )
         }
     }
 
     override fun serialize(encoder: Encoder, value: RelatesTo) {
         require(encoder is JsonEncoder)
-        val (jsonObject, type) = when (value) {
-            is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value) to RelatesTo.Reference.type
-            is RelatesTo.Unknown -> value.raw to null
+        val jsonObject = when (value) {
+            is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value)
+            is RelatesTo.Unknown -> value.raw
         }
-        encoder.encodeJsonElement(JsonObject(buildMap {
-            if (type != null) put("rel_type", JsonPrimitive(type.name))
-            putAll(jsonObject.jsonObject)
-        }))
+        encoder.encodeJsonElement(jsonObject)
     }
 }

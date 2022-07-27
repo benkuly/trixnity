@@ -40,7 +40,6 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> {
         return ExposedRoomState.select { ExposedRoomState.roomId.eq(key.roomId.full) and ExposedRoomState.type.eq(key.type) }
             .associate {
