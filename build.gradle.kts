@@ -20,12 +20,12 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "2.2.0" +
-            when {
-                isRelease -> ""
-                isCI -> "-SNAPSHOT"
-                else -> "-LOCAL"
-            }
+    version = "2.2.0" //+
+//            when {
+//                isRelease -> ""
+//                isCI -> "-SNAPSHOT"
+//                else -> "-LOCAL"
+//            }
 
     repositories {
         mavenCentral()
