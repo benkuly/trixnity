@@ -96,7 +96,7 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasDeviceVerification(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.createDeviceVerificationRequest(client2.userId, client2.deviceId)
+            client1.verification.createDeviceVerificationRequest(client2.userId, setOf(client2.deviceId))
             val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
             val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
 

@@ -10,14 +10,14 @@ import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
 sealed interface SelfVerificationMethod {
     data class CrossSignedDeviceVerification(
         private val ownUserId: UserId,
-        private val sendToDevices: List<String>,
+        private val sendToDevices: Set<String>,
         private val createDeviceVerificationRequest: suspend (
             theirUserId: UserId,
-            theirDeviceIds: Array<String>
+            theirDeviceIds: Set<String>
         ) -> Result<ActiveDeviceVerification>
     ) : SelfVerificationMethod {
         suspend fun createDeviceVerification(): Result<ActiveDeviceVerification> {
-            return createDeviceVerificationRequest(ownUserId, sendToDevices.toTypedArray())
+            return createDeviceVerificationRequest(ownUserId, sendToDevices)
         }
     }
 
