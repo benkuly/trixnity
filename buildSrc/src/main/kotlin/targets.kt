@@ -48,7 +48,7 @@ fun KotlinTarget.testSourceSet(
     sourceSets: NamedDomainObjectContainer<KotlinSourceSet>,
     configure: KotlinSourceSet.() -> Unit
 ): KotlinSourceSet =
-    sourceSets.getByName(targetName + "Main").apply(configure)
+    sourceSets.getByName(targetName + "Test").apply(configure)
 
 fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
     useJUnitPlatform: Boolean = true,
