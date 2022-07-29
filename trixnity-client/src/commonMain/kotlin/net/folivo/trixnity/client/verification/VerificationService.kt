@@ -44,7 +44,7 @@ interface IVerificationService {
 
     suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
-        vararg theirDeviceIds: String
+        theirDeviceIds: Set<String>
     ): Result<ActiveDeviceVerification>
 
     suspend fun createUserVerificationRequest(
@@ -221,7 +221,7 @@ class VerificationService(
 
     override suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
-        vararg theirDeviceIds: String
+        theirDeviceIds: Set<String>
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
         val request = VerificationRequestEventContent(
@@ -330,7 +330,7 @@ class VerificationService(
                         setOf(
                             SelfVerificationMethod.CrossSignedDeviceVerification(
                                 ownUserId,
-                                sendToDevices,
+                                sendToDevices.toSet(),
                                 ::createDeviceVerificationRequest
                             )
                         )

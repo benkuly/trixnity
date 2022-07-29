@@ -221,7 +221,7 @@ class CrossSigningIT {
                 }
             }
             withClue("verification between user1 and user3") {
-                client2.verification.createDeviceVerificationRequest(client3.userId, client3.deviceId)
+                client2.verification.createDeviceVerificationRequest(client3.userId, setOf(client3.deviceId))
                 val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
                 val client3Verification = client3.verification.activeDeviceVerification.first { it != null }
 

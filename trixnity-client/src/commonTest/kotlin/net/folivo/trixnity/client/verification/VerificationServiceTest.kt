@@ -374,7 +374,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             olmService.event.returnEncryptOlm = { throw OlmLibraryException(message = "dino") }
-            val createdVerification = cut.createDeviceVerificationRequest(bobUserId, bobDeviceId).getOrThrow()
+            val createdVerification = cut.createDeviceVerificationRequest(bobUserId, setOf(bobDeviceId)).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
             assertSoftly(sendToDeviceEvents) {
