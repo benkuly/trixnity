@@ -299,7 +299,7 @@ You can use for example `implementation("ch.qos.logback:logback-classic:<version
 ## Snapshot builds
 
 Snapshot are published on each commit to main. Add `https://oss.sonatype.org/content/repositories/snapshots` to your
-maven repositoreis.
+maven repositories and append `-SNAPSHOT` to the current Trixnity version.
 
 ## Build this project
 

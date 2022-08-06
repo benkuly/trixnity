@@ -41,3 +41,8 @@ enum class HttpMethodType {
 @SerialInfo
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
 annotation class WithoutAuth
+
+@OptIn(ExperimentalSerializationApi::class)
+@SerialInfo
+@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
+annotation class ForceJson

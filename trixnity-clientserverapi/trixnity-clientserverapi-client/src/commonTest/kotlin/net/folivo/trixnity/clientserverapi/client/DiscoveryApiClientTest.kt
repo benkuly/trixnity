@@ -46,4 +46,37 @@ class DiscoveryApiClientTest {
             identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
         )
     }
+
+    @Test
+    fun shouldGetWellKnownRegardlessOfContentType() = runTest {
+        val matrixRestClient = MatrixClientServerApiClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/.well-known/matrix/client", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "m.homeserver": {
+                                "base_url": "https://matrix.example.com"
+                              },
+                              "m.identity_server": {
+                                "base_url": "https://identity.example.com"
+                              },
+                              "org.example.custom.property": {
+                                "app_url": "https://custom.app.example.org"
+                              }
+                            }
+
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                    )
+                }
+            })
+        matrixRestClient.discovery.getWellKnown().getOrThrow() shouldBe DiscoveryInformation(
+            homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
+            identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
+        )
+    }
 }
