@@ -86,7 +86,12 @@ open class MatrixApiClient(
             requestBuilder()
         }
         val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json)
-        return if (responseSerializer != null) json.decodeFromJsonElement(responseSerializer, response.body())
-        else response.body()
+        val forceJson =
+            serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<ForceJson>().isNotEmpty()
+        return when {
+            forceJson -> json.decodeFromString(responseSerializer ?: serializer(), response.bodyAsText())
+            responseSerializer != null -> json.decodeFromJsonElement(responseSerializer, response.body())
+            else -> response.body()
+        }
     }
 }

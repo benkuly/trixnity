@@ -44,6 +44,31 @@ class DiscoveryApiClientTest {
     }
 
     @Test
+    fun shouldGetWellKnownRegardlessOfContentType() = runTest {
+        val matrixRestClient = MatrixServerServerApiClient(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/.well-known/matrix/server", request.url.encodedPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "m.server": "delegated.example.com:1234"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                    )
+                }
+            })
+        matrixRestClient.discovery.getWellKnown(Url(""))
+            .getOrThrow() shouldBe GetWellKnown.Response("delegated.example.com:1234")
+    }
+
+    @Test
     fun shouldGetServerVersion() = runTest {
         val matrixRestClient = MatrixServerServerApiClient(
             hostname = "hostname",
