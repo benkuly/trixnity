@@ -22,7 +22,7 @@ object Login : MatrixEndpoint<Login.Request, Login.Response> {
         @SerialName("type")
         val type: String,
         @SerialName("identifier")
-        val identifier: IdentifierType,
+        val identifier: IdentifierType? = null,
         @SerialName("password")
         val password: String? = null,
         @SerialName("refresh_token")

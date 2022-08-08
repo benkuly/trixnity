@@ -74,7 +74,7 @@ interface IAuthenticationApiClient {
      * @see [Login]
      */
     suspend fun login(
-        identifier: IdentifierType,
+        identifier: IdentifierType? = null,
         passwordOrToken: String,
         type: LoginType = LoginType.Password,
         deviceId: String? = null,
@@ -229,7 +229,7 @@ class AuthenticationApiClient(
         httpClient.request(GetLoginTypes).mapCatching { it.flows }
 
     override suspend fun login(
-        identifier: IdentifierType,
+        identifier: IdentifierType?,
         passwordOrToken: String,
         type: LoginType,
         deviceId: String?,
