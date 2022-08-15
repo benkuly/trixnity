@@ -303,6 +303,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         1 -> {
                             assertEquals(
                                 "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
@@ -316,6 +317,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             delay(10_000)
                             respond(
@@ -371,6 +373,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         1 -> {
                             assertEquals(
                                 "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
@@ -384,6 +387,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             delay(10_000)
                             respond(
@@ -561,6 +565,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             respond(
                                 "{}",
@@ -613,6 +618,7 @@ class SyncApiClientTest {
                             delay(100)
                             throw HttpRequestTimeoutException(HttpRequestBuilder())
                         }
+
                         else -> {
                             assertEquals(
                                 "/_matrix/client/v3/sync?since=a&timeout=0",
@@ -658,6 +664,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         1 -> {
                             assertEquals(
                                 "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
@@ -671,6 +678,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         2 -> {
                             assertEquals(
                                 "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
@@ -684,6 +692,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             respond(
                                 json.encodeToString(serverResponse2),
@@ -738,6 +747,7 @@ class SyncApiClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             respond(
                                 json.encodeToString(serverResponse2),

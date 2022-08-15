@@ -7,6 +7,7 @@ import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
+import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
 
@@ -39,6 +40,12 @@ class OlmDecrypter(
             val decryptedEvent = try {
                 olmEventService.decryptOlm(event.content, event.sender)
             } catch (e: DecryptionException) {
+                log.error(e) { "could not decrypt $event" }
+                null
+            } catch (e: KeyException) {
+                log.error(e) { "could not decrypt $event" }
+                null
+            } catch (e: OlmLibraryException) {
                 log.error(e) { "could not decrypt $event" }
                 null
             }

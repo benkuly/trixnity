@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.mock.Mocker
 import org.kodein.mock.UsesMocks
 
@@ -33,7 +34,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.reset()
     }
 
-    should("catch exceptions") {
+    should("catch DecryptionException") {
         val event = Event.ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 mapOf(), Key.Curve25519Key(null, "")
@@ -43,6 +44,32 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw DecryptionException.ValidationFailed("whoops") }
+        cut(event)
+        subscriberReceived shouldHaveSize 0
+    }
+    should("catch KeyException") {
+        val event = Event.ToDeviceEvent(
+            EncryptedEventContent.OlmEncryptedEventContent(
+                mapOf(), Key.Curve25519Key(null, "")
+            ),
+            UserId("sender", "server")
+        )
+        mocker.everySuspending {
+            mockOlmEventService.decryptOlm(isAny(), isAny())
+        } runs { throw KeyException.KeyNotFoundException("not found") }
+        cut(event)
+        subscriberReceived shouldHaveSize 0
+    }
+    should("catch OlmLibraryException") {
+        val event = Event.ToDeviceEvent(
+            EncryptedEventContent.OlmEncryptedEventContent(
+                mapOf(), Key.Curve25519Key(null, "")
+            ),
+            UserId("sender", "server")
+        )
+        mocker.everySuspending {
+            mockOlmEventService.decryptOlm(isAny(), isAny())
+        } runs { throw OlmLibraryException("something") }
         cut(event)
         subscriberReceived shouldHaveSize 0
     }
