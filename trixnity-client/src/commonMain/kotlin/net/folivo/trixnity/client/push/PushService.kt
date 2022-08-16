@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
+import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.model.push.PushRuleKind.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -70,8 +71,8 @@ class PushService(
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
                     setOf(OVERRIDE, CONTENT, ROOM, SENDER, UNDERRIDE)
-                        .mapNotNull { globalRuleSet[it] }
-                        .fold(listOf<PushRule>()) { old, new -> old + new }
+                        .mapNotNull { kind -> globalRuleSet[kind]?.map { rule -> kind to rule } }
+                        .fold(listOf<Pair<PushRuleKind, PushRule>>()) { old, new -> old + new }
                 } ?: listOf()
             }.stateIn(this)
         val inviteEvents = syncResponseFlow
@@ -125,8 +126,9 @@ class PushService(
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun evaluatePushRules(
         event: Event<*>,
-        allRules: List<PushRule>,
+        allRules: List<Pair<PushRuleKind, PushRule>>,
     ): Notification? {
+        log.trace { "evaluate push rules for event: ${event.getEventId()}" }
         val eventJson = lazy {
             try {
                 json.serializersModule.getContextual(Event::class)?.let {
@@ -137,12 +139,14 @@ class PushService(
                 null
             }
         }
-        val rule = allRules.find { pushRule ->
+        val rule = allRules.find { (kind, pushRule) ->
             val pattern = pushRule.pattern
             pushRule.enabled
-                    && pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) }
-                    && if (pattern != null) bodyContainsPattern(event, pattern) else true
-        }
+                    && (pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) })
+                    && (if (pattern != null) bodyContainsPattern(event, pattern) else true)
+                    && (if (kind == ROOM) pushRule.ruleId == event.getRoomId()?.full else true)
+        }?.second
+        log.trace { "event ${event.getEventId()}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
