@@ -284,7 +284,6 @@ val olmJNATargetsTasks = olmJNATargets.flatMap { target ->
 }
 
 val olmNativeTargetsTasks = olmNativeTargets.flatMap { target ->
-    val useXCode = target.target.family == org.jetbrains.kotlin.konan.target.Family.IOS
     val prepareTask = tasks.register<Exec>("prepareBuildOlmNative${target.target.presetName}") {
         group = "olm"
         workingDir(olmRootDir)
