@@ -105,5 +105,6 @@ fun KotlinMultiplatformExtension.addDefaultNativeTargetsWhenEnabled(): Set<Kotli
         addNativeTargetWhenEnabled(KonanTarget.MACOS_X64) { macosX64() },
         addNativeTargetWhenEnabled(KonanTarget.MACOS_ARM64) { macosArm64() },
         addNativeTargetWhenEnabled(KonanTarget.IOS_ARM64) { iosArm64() },
+        addNativeTargetWhenEnabled(KonanTarget.IOS_SIMULATOR_ARM64) { iosSimulatorArm64() },
         addNativeTargetWhenEnabled(KonanTarget.IOS_X64) { iosX64() },
     )
