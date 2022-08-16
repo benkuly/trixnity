@@ -74,6 +74,16 @@ val olmNativeTargets = listOf(
         additionalParams = listOf("-DCMAKE_OSX_ARCHITECTURES=x86_64")
     ),
     OlmNativeTarget(
+        target = KonanTarget.MINGW_X64,
+        createTarget = { mingwX64() },
+        additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
+    ),
+    OlmNativeTarget(
+        target = KonanTarget.IOS_SIMULATOR_ARM64,
+        createTarget = { iosSimulatorArm64() },
+        additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=SIMULATORARM64")
+    ),
+    OlmNativeTarget(
         target = KonanTarget.IOS_ARM64,
         createTarget = { iosArm64() },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=OS64")
@@ -82,11 +92,6 @@ val olmNativeTargets = listOf(
         target = KonanTarget.IOS_X64,
         createTarget = { iosX64() },
         additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake", "-DPLATFORM=SIMULATOR64")
-    ),
-    OlmNativeTarget(
-        target = KonanTarget.MINGW_X64,
-        createTarget = { mingwX64() },
-        additionalParams = listOf("-DCMAKE_TOOLCHAIN_FILE=Windows64.cmake")
     ),
 )
 
