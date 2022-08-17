@@ -15,7 +15,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y apt-utils && \
     apt-get upgrade -y && \
-    apt-get install -y docker.io wget unzip build-essential ninja-build mingw-w64 libncurses5 libcurl4-openssl-dev openjdk-17-jdk firefox
+    apt-get install -y locales docker.io wget unzip build-essential ninja-build mingw-w64 libncurses5 libcurl4-openssl-dev openjdk-17-jdk firefox
+
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
 RUN wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE}/cmake-${CMAKE}-linux-x86_64.sh" && \
     chmod +x cmake-${CMAKE}-linux-x86_64.sh && \
     ./cmake-${CMAKE}-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr && \
