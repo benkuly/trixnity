@@ -458,6 +458,57 @@ private val body: ShouldSpec.() -> Unit = {
 
                 checkNoNotification()
             }
+
+            context("room push rules") {
+                should("ignore other room's rules") {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(
+                            PushRulesEventContent(
+                                global = mapOf(
+                                    PushRuleKind.ROOM to listOf(
+                                        PushRule(
+                                            ruleId = "!andNowForSomethingCompletelyDifferent:localhost",
+                                            enabled = true,
+                                            default = false,
+                                            conditions = null,
+                                            actions = setOf(Notify)
+                                        )
+                                    ),
+                                    PushRuleKind.CONTENT to listOf(
+                                        pushRuleDisplayName()
+                                    )
+                                )
+                            )
+                        )
+                    )
+
+                    checkNoNotification()
+                }
+                should("consider this room's rule") {
+                    store.globalAccountData.update(
+                        GlobalAccountDataEvent(
+                            PushRulesEventContent(
+                                global = mapOf(
+                                    PushRuleKind.ROOM to listOf(
+                                        PushRule(
+                                            ruleId = roomId.full,
+                                            enabled = true,
+                                            default = false,
+                                            conditions = null,
+                                            actions = setOf(Notify)
+                                        )
+                                    ),
+                                    PushRuleKind.CONTENT to listOf(
+                                        pushRuleDisplayName()
+                                    )
+                                )
+                            )
+                        )
+                    )
+
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                }
+            }
         }
         context("push actions") {
             val timelineEvent = messageEventWithContent(
