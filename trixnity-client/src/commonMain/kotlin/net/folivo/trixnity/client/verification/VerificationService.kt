@@ -51,6 +51,13 @@ interface IVerificationService {
         theirUserId: UserId
     ): Result<ActiveUserVerification>
 
+    /**
+     * Possible states include:
+     * * [SelfVerificationMethods.PreconditionsNotMet]
+     * * [SelfVerificationMethods.NoCrossSigningEnabled]
+     * * [SelfVerificationMethods.AlreadyCrossSigned]
+     * * [SelfVerificationMethods.CrossSigningEnabled]
+     */
     interface SelfVerificationMethods {
         /**
          * We don't have enough information yet to calculated available methods (e.g. waiting for the first sync).
@@ -286,12 +293,6 @@ class VerificationService(
         ).also { auv -> activeUserVerifications.update { it + auv } }
     }
 
-    /**
-     * This should be called on login. If it is null, it means, that we don't have enough information yet to calculate
-     * available methods or this device is already verified.
-     * If it is empty, it means, that cross signing needs to be bootstrapped.
-     * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
-     */
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getSelfVerificationMethods(scope: CoroutineScope): Flow<SelfVerificationMethods> {
         return combine(
@@ -313,7 +314,7 @@ class VerificationService(
                         "crossSigningKeys=$crossSigningKeys deviceKeys=$deviceKeys defaultKey=$defaultKey"
             }
             // preconditions: sync running, login was successful and we are not yet cross-signed
-            if (deviceKeys == null || crossSigningKeys == null) return@combine SelfVerificationMethods.PreconditionsNotMet
+            if (currentSyncState != SyncState.RUNNING || deviceKeys == null || crossSigningKeys == null) return@combine SelfVerificationMethods.PreconditionsNotMet
             val ownTrustLevel = deviceKeys[ownDeviceId]?.trustLevel
             if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine SelfVerificationMethods.AlreadyCrossSigned
 
