@@ -451,6 +451,22 @@ private val body: ShouldSpec.() -> Unit = {
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
         }
+        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when initial sync is still running") {
+            currentSyncState.value = SyncState.INITIAL_SYNC
+            store.keys.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    )
+                )
+            }
+            store.keys.updateCrossSigningKeys(aliceUserId) {
+                setOf()
+            }
+            val result = cut.getSelfVerificationMethods(scope)
+            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
+        }
         should("return ${SelfVerificationMethods.PreconditionsNotMet}, when device keys not fetched yet") {
             store.keys.updateCrossSigningKeys(aliceUserId) {
                 setOf()
