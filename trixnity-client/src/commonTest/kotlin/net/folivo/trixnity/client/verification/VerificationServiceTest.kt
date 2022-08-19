@@ -452,7 +452,7 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = SyncState.RUNNING
         }
         should("return ${SelfVerificationMethods.PreconditionsNotMet}, when initial sync is still running") {
-            currentSyncState.value =SyncState.INITIAL_SYNC
+            currentSyncState.value = SyncState.INITIAL_SYNC
             store.keys.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
