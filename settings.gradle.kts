@@ -22,7 +22,8 @@ include(
     "trixnity-client",
     "trixnity-client:integration-tests",
     "trixnity-client:trixnity-client-store-sqldelight",
-    "trixnity-client:trixnity-client-store-exposed"
+    "trixnity-client:trixnity-client-store-exposed",
+    "trixnity-client:trixnity-client-store-realm"
 )
 include("trixnity-applicationservice")
 include("test-utils")

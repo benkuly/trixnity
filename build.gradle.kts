@@ -6,6 +6,7 @@ buildscript {
     }
     dependencies {
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
+        classpath("io.realm.kotlin:gradle-plugin:${Versions.realm}")
     }
 }
 
