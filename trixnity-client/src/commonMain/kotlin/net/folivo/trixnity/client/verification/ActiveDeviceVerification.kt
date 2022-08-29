@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.verification
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -13,7 +13,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmService
+import net.folivo.trixnity.crypto.olm.IOlmDecrypter
+import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
@@ -28,9 +29,10 @@ class ActiveDeviceVerification(
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
     private val api: IMatrixClientServerApiClient,
-    private val olmService: IOlmService,
+    private val olmDecrypter: IOlmDecrypter,
+    private val olmEncryptionService: IOlmEncryptionService,
     keyTrust: IKeyTrustService,
-    store: Store,
+    keyStore: KeyStore,
 ) : ActiveVerification(
     request,
     requestIsOurs,
@@ -42,7 +44,7 @@ class ActiveDeviceVerification(
     supportedMethods,
     null,
     request.transactionId,
-    store,
+    keyStore,
     keyTrust,
     api.json,
 ) {
@@ -55,7 +57,7 @@ class ActiveDeviceVerification(
             api.users.sendToDevice(
                 mapOf(
                     theirUserId to mapOf(
-                        theirDeviceId to olmService.event.encryptOlm(
+                        theirDeviceId to olmEncryptionService.encryptOlm(
                             step,
                             theirUserId,
                             theirDeviceId
@@ -72,7 +74,7 @@ class ActiveDeviceVerification(
     override suspend fun lifecycle() {
         try {
             api.sync.subscribe(::handleVerificationStepEvents)
-            olmService.decrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
+            olmDecrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
             while (isVerificationRequestActive(timestamp, state.value)) {
                 delay(500)
@@ -82,7 +84,7 @@ class ActiveDeviceVerification(
             }
         } finally {
             api.sync.unsubscribe(::handleVerificationStepEvents)
-            olmService.decrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
+            olmDecrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
         }
     }
 
@@ -108,7 +110,7 @@ class ActiveDeviceVerification(
                     try {
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
-                                olmService.event.encryptOlm(cancelEvent, theirUserId, it)
+                                olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (olmError: OlmLibraryException) {
                                 cancelEvent
                             }

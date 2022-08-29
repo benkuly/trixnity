@@ -5,7 +5,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
-import net.folivo.trixnity.client.verification.KeyVerificationState
+import net.folivo.trixnity.client.store.KeyVerificationState
 import org.jetbrains.exposed.sql.*
 
 internal object ExposedKeyVerificationState : Table("key_verification_state") {

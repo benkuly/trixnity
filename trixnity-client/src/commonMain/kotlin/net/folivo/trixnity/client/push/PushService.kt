@@ -11,12 +11,11 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.push.IPushService.Notification
 import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.get
-import net.folivo.trixnity.client.store.getByStateKey
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
+import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -47,9 +46,13 @@ interface IPushService {
 }
 
 class PushService(
-    private val api: MatrixClientServerApiClient,
+    private val userInfo: UserInfo,
+    private val api: IMatrixClientServerApiClient,
     private val room: IRoomService,
-    private val store: Store,
+    private val roomStore: RoomStore,
+    private val roomStateStore: RoomStateStore,
+    private val roomUserStore: RoomUserStore,
+    private val globalAccountDataStore: GlobalAccountDataStore,
     private val json: Json,
 ) : IPushService {
 
@@ -67,7 +70,7 @@ class PushService(
         }
 
         val pushRules =
-            store.globalAccountData.get<PushRulesEventContent>(scope = this).map { event ->
+            globalAccountDataStore.get<PushRulesEventContent>(scope = this).map { event ->
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
                     setOf(OVERRIDE, CONTENT, ROOM, SENDER, UNDERRIDE)
@@ -89,7 +92,7 @@ class PushService(
                 .filterNotNull()
                 .filter {
                     when (it) {
-                        is Event.RoomEvent -> it.sender != store.account.userId.value
+                        is Event.RoomEvent -> it.sender != userInfo.userId
                         else -> true
                     }
                 }
@@ -118,6 +121,7 @@ class PushService(
                     originTimestamp = originalEvent.originTimestamp,
                     unsigned = originalEvent.unsigned
                 )
+
             originalEvent is Event.StateEvent && content is StateEventContent -> originalEvent
             else -> null
         }
@@ -166,31 +170,32 @@ class PushService(
                 val content = event.content
                 if (content is RoomMessageEventContent) {
                     event.getRoomId()?.let { roomId ->
-                        store.account.userId.value?.let { userId ->
-                            store.roomUser.get(userId, roomId)?.name?.let { username ->
-                                content.body.contains(username)
-                            } ?: false
+                        roomUserStore.get(userInfo.userId, roomId)?.name?.let { username ->
+                            content.body.contains(username)
                         } ?: false
                     } ?: false
                 } else false
             }
+
             is PushCondition.RoomMemberCount -> {
                 event.getRoomId()?.let { roomId ->
                     pushCondition.isCount.checkIsCount(
-                        store.room.get(roomId).value?.name?.summary?.joinedMemberCount ?: 0
+                        roomStore.get(roomId).value?.name?.summary?.joinedMemberCount ?: 0
                     )
                 } ?: false
             }
+
             is PushCondition.SenderNotificationPermission -> {
                 event.getRoomId()?.let { roomId ->
                     // at the moment, key can only be "room"
                     val powerLevels =
-                        store.roomState.getByStateKey<PowerLevelsEventContent>(roomId, "")?.content
+                        roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId, "")?.content
                     val requiredNotificationPowerLevel = powerLevels?.notifications?.room ?: 100
                     val senderPowerLevel = powerLevels?.users?.get(event.getSender()) ?: 0
                     senderPowerLevel >= requiredNotificationPowerLevel
                 } ?: false
             }
+
             is PushCondition.EventMatch -> {
                 val eventValue = getEventValue(event, eventJson, pushCondition)
                 if (eventValue == null) {
@@ -200,6 +205,7 @@ class PushService(
                     pushCondition.pattern.globToRegExp().containsMatchIn(eventValue)
                 }
             }
+
             is PushCondition.Unknown -> false
         }
     }

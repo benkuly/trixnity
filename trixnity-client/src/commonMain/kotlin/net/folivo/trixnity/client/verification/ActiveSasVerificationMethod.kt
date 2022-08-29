@@ -6,7 +6,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.client.key.getAllKeysFromUser
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -28,7 +28,7 @@ class ActiveSasVerificationMethod private constructor(
     private val relatesTo: RelatesTo.Reference?,
     private val transactionId: String?,
     private val sendVerificationStep: suspend (step: VerificationStep) -> Unit,
-    private val store: Store,
+    private val keyStore: KeyStore,
     private val keyTrustService: IKeyTrustService,
     private val json: Json,
     private val olmSas: OlmSAS,
@@ -79,7 +79,7 @@ class ActiveSasVerificationMethod private constructor(
             relatesTo: RelatesTo.Reference?,
             transactionId: String?,
             sendVerificationStep: suspend (step: VerificationStep) -> Unit,
-            store: Store,
+            keyStore: KeyStore,
             keyTrustService: IKeyTrustService,
             json: Json,
         ): ActiveSasVerificationMethod? {
@@ -95,6 +95,7 @@ class ActiveSasVerificationMethod private constructor(
                     )
                     null
                 }
+
                 startEventContent.shortAuthenticationString.none { it == SasMethod.EMOJI || it == SasMethod.DECIMAL } -> {
                     sendVerificationStep(
                         VerificationCancelEventContent(
@@ -106,6 +107,7 @@ class ActiveSasVerificationMethod private constructor(
                     )
                     null
                 }
+
                 else -> ActiveSasVerificationMethod(
                     startEventContent,
                     weStartedVerification,
@@ -116,7 +118,7 @@ class ActiveSasVerificationMethod private constructor(
                     relatesTo,
                     transactionId,
                     sendVerificationStep,
-                    store,
+                    keyStore,
                     keyTrustService,
                     json,
                     OlmSAS.create()
@@ -133,16 +135,19 @@ class ActiveSasVerificationMethod private constructor(
                     onAccept(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
+
             is SasKeyEventContent -> {
                 if (currentState is Accept || currentState is WaitForKeys)
                     onKey(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
+
             is SasMacEventContent -> {
                 if (currentState is ComparisonByUser || currentState is WaitForMacs)
                     onMac(step, isOurOwn)
                 else cancelUnexpectedMessage(currentState)
             }
+
             is VerificationCancelEventContent, is VerificationDoneEventContent -> {
                 onDoneOrCancel()
             }
@@ -174,6 +179,7 @@ class ActiveSasVerificationMethod private constructor(
                             transactionId
                         )
                     )
+
                 stepContent.shortAuthenticationString.none { it == SasMethod.EMOJI || it == SasMethod.DECIMAL } ->
                     sendVerificationStep(
                         VerificationCancelEventContent(
@@ -183,6 +189,7 @@ class ActiveSasVerificationMethod private constructor(
                             transactionId
                         )
                     )
+
                 else -> {
                     theirCommitment = stepContent.commitment
                     sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
@@ -203,6 +210,7 @@ class ActiveSasVerificationMethod private constructor(
                     }
                 } else cancelUnexpectedMessage(currentState)
             }
+
             is WaitForKeys -> {
                 if (currentState.isOurOwn != isOurOwn) {
                     fun createComparison() {
@@ -242,7 +250,7 @@ class ActiveSasVerificationMethod private constructor(
                             relatesTo = relatesTo,
                             transactionId = transactionId,
                             olmSas = olmSas,
-                            store = store,
+                            keyStore = keyStore,
                             send = sendVerificationStep
                         ).also { log.debug { "created comparison: $it" } }
                     }
@@ -264,6 +272,7 @@ class ActiveSasVerificationMethod private constructor(
 
                 } else cancelUnexpectedMessage(currentState)
             }
+
             else -> {}
         }
     }
@@ -281,7 +290,7 @@ class ActiveSasVerificationMethod private constructor(
                         actualTransactionId
                 val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
                 val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-                val allKeysOfDevice = store.keys.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
+                val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
                 val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
                 val input = theirMacIds.sortedBy { it }.joinToString(",")
                 val info = baseInfo + "KEY_IDS"
@@ -312,6 +321,7 @@ class ActiveSasVerificationMethod private constructor(
                     )
                 }
             }
+
             else -> {}
         }
     }

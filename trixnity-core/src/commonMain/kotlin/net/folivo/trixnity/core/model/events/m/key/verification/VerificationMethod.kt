@@ -9,14 +9,14 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = VerificationMethodSerializer::class)
-sealed class VerificationMethod {
-    abstract val value: String
+sealed interface VerificationMethod {
+    val value: String
 
-    object Sas : VerificationMethod() {
+    object Sas : VerificationMethod {
         override val value = "m.sas.v1"
     }
 
-    data class Unknown(override val value: String) : VerificationMethod()
+    data class Unknown(override val value: String) : VerificationMethod
 }
 
 object VerificationMethodSerializer : KSerializer<VerificationMethod> {

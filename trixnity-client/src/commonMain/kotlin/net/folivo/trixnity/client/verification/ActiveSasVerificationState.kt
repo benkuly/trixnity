@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.SasAcceptEventContent
@@ -52,7 +52,7 @@ sealed interface ActiveSasVerificationState {
         private val relatesTo: RelatesTo.Reference?,
         private val transactionId: String?,
         private val olmSas: OlmSAS,
-        private val store: Store,
+        private val keyStore: KeyStore,
         private val send: suspend (stepContent: VerificationStep) -> Unit,
     ) : ActiveSasVerificationState {
         private val actualTransactionId = relatesTo?.eventId?.full
@@ -65,7 +65,7 @@ sealed interface ActiveSasVerificationState {
                         ownUserId.full + ownDeviceId +
                         theirUserId.full + theirDeviceId +
                         actualTransactionId
-                val keysToMac = store.keys.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
+                val keysToMac = keyStore.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
                 if (keysToMac.isNotEmpty()) {
                     val keys = olmSas.calculateMac(
                         keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(","),

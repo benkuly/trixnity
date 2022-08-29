@@ -65,6 +65,7 @@ class RoomServiceMock : IRoomService {
     }
 
     var returnGetTimelineEvents: Flow<StateFlow<TimelineEvent?>> = flowOf()
+
     override suspend fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
@@ -72,9 +73,7 @@ class RoomServiceMock : IRoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<StateFlow<TimelineEvent?>> {
-        return returnGetTimelineEvents
-    }
+    ): Flow<StateFlow<TimelineEvent?>> = returnGetTimelineEvents
 
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,

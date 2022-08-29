@@ -1,6 +1,5 @@
 package net.folivo.trixnity.examples.client.ping
 
-import kotlinx.coroutines.CoroutineScope
-import net.folivo.trixnity.client.store.StoreFactory
+import org.koin.core.module.Module
 
-expect fun createStoreFactory(scope: CoroutineScope): StoreFactory
+expect suspend fun createRepositoriesModule(): Module

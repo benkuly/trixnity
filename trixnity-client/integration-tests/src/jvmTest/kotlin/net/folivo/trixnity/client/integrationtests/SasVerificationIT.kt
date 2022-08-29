@@ -8,8 +8,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.key.DeviceTrustLevel
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -66,18 +68,18 @@ class SasVerificationIT {
         ).build()
         database1 = newDatabase()
         database2 = newDatabase()
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()

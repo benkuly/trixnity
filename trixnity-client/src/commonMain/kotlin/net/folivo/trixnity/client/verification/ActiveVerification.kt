@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -48,7 +48,7 @@ abstract class ActiveVerification(
     protected val supportedMethods: Set<VerificationMethod>,
     override val relatesTo: RelatesTo.Reference?,
     override val transactionId: String?,
-    protected val store: Store,
+    protected val keyStore: KeyStore,
     private val keyTrustService: IKeyTrustService,
     protected val json: Json,
 ) : IActiveVerification {
@@ -113,19 +113,23 @@ abstract class ActiveVerification(
                         onReady(step)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationStartEventContent -> {
                     if (currentState is Ready || currentState is Start)
                         onStart(step, sender, isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationDoneEventContent -> {
                     if (currentState is Start || currentState is PartlyDone)
                         onDone(isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationCancelEventContent -> {
                     onCancel(step, isOurOwn)
                 }
+
                 else -> when (currentState) {
                     is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
                     else -> cancelUnexpectedMessage(currentState)
@@ -169,7 +173,7 @@ abstract class ActiveVerification(
                         relatesTo = relatesTo,
                         transactionId = transactionId,
                         sendVerificationStep = ::sendVerificationStepAndHandleIt,
-                        store = store,
+                        keyStore = keyStore,
                         keyTrustService = keyTrustService,
                         json = json,
                     )
@@ -185,6 +189,7 @@ abstract class ActiveVerification(
                     userIdComparison > 0 -> setNewStartEvent()
                     userIdComparison < 0 -> {// do nothing (we keep the current Start)
                     }
+
                     else -> {
                         val deviceIdComparison = currentState.senderDeviceId.compareTo(step.fromDevice)
                         when {
@@ -212,6 +217,7 @@ abstract class ActiveVerification(
             is Start -> {
                 currentState.method.handleVerificationStep(step, isOurOwn)
             }
+
             else -> {}
         }
     }
@@ -231,6 +237,7 @@ abstract class ActiveVerification(
                     }
                 handleVerificationStep(step, ownUserId, true)
             }
+
             else -> try {
                 sendVerificationStep(step)
                 handleVerificationStep(step, ownUserId, true)

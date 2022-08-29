@@ -108,23 +108,24 @@ If you are using a module, which depends on `trixnity-olm` you may need to insta
 ### Create MatrixClient
 
 With `MatrixClient` you have access to the whole library. It can be instantiated by various static functions,
-e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database and a `CouroutineScope`, which
+e.g. `MatrixClient.login(...)`. You always need to pass a `repositoriesModule` for a Database and a `CouroutineScope`,
+which
 will be used for the lifecycle of the client.
 
 Secrets are also stored in the store. Therefore, you should encrypt the store!
 
 ```kotlin
-val storeFactory = createStoreFactory()
-val scope = CoroutineScope(Dispatchers.Default)
+val repositoriesModule = createRepositoriesModule() // e.g. createExposedRepositoriesModule(database, Dispatchers.IO)
+val scope = CoroutineScope(Dispatchers.Default) // should be managed by a lifecycle (e.g. Android Service)
 
 val matrixClient = MatrixClient.fromStore(
-    storeFactory = storeFactory,
+    repositoriesModule = repositoriesModule,
     scope = scope,
 ).getOrThrow() ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
-    storeFactory = storeFactory,
+    repositoriesModule = repositoriesModule,
     scope = scope,
 ).getOrThrow()
 

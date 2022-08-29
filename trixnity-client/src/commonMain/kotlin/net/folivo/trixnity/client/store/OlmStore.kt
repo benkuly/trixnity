@@ -24,7 +24,7 @@ class OlmStore(
     private val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
-) {
+) : IStore {
     val account = MutableStateFlow<String?>(null)
 
     private val _notBackedUpInboundMegolmSessions =
@@ -32,7 +32,7 @@ class OlmStore(
 
     val notBackedUpInboundMegolmSessions = _notBackedUpInboundMegolmSessions.asStateFlow()
 
-    suspend fun init() {
+    override suspend fun init() {
         account.value = rtm.transaction { olmAccountRepository.get(1) }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
@@ -50,7 +50,9 @@ class OlmStore(
         }
     }
 
-    suspend fun deleteAll() {
+    override suspend fun clearCache() {}
+
+    override suspend fun deleteAll() {
         rtm.transaction {
             olmAccountRepository.deleteAll()
             olmSessionRepository.deleteAll()

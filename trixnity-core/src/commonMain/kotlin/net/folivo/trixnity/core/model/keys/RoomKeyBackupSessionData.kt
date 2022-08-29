@@ -8,7 +8,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = RoomKeyBackupSessionDataSerializer::class)
-sealed class RoomKeyBackupSessionData {
+sealed interface RoomKeyBackupSessionData {
     @Serializable
     data class EncryptedRoomKeyBackupV1SessionData(
         @SerialName("ciphertext")
@@ -17,7 +17,7 @@ sealed class RoomKeyBackupSessionData {
         val ephemeral: String,
         @SerialName("mac")
         val mac: String,
-    ) : RoomKeyBackupSessionData() {
+    ) : RoomKeyBackupSessionData {
         @Serializable
         data class RoomKeyBackupV1SessionData(
             @SerialName("sender_key")

@@ -13,9 +13,6 @@ import net.folivo.trixnity.core.model.keys.CrossSigningKeys
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 
 class KeyServiceMock(
-    override val backup: KeyBackupServiceMock = KeyBackupServiceMock(),
-    override val trust: KeyTrustServiceMock = KeyTrustServiceMock(),
-    override val secret: KeySecretServiceMock = KeySecretServiceMock(),
     override val bootstrapRunning: StateFlow<Boolean> = MutableStateFlow(false)
 ) : IKeyService {
     override suspend fun bootstrapCrossSigning(
@@ -68,18 +65,5 @@ class KeyServiceMock(
 
     override suspend fun getCrossSigningKeys(userId: UserId): List<CrossSigningKeys>? {
         throw NotImplementedError()
-    }
-
-    var returnCheckOwnAdvertisedMasterKeyAndVerifySelf: Result<Unit> = Result.success(Unit)
-    val checkOwnAdvertisedMasterKeyAndVerifySelfCalled =
-        MutableStateFlow<Triple<ByteArray, String, SecretKeyEventContent>?>(null)
-
-    override suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
-        key: ByteArray,
-        keyId: String,
-        keyInfo: SecretKeyEventContent
-    ): Result<Unit> {
-        checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value = Triple(key, keyId, keyInfo)
-        return returnCheckOwnAdvertisedMasterKeyAndVerifySelf
     }
 }

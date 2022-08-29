@@ -18,14 +18,14 @@ data class DecryptedOlmEventContainer(
 
 typealias DecryptedOlmEventSubscriber = suspend (DecryptedOlmEventContainer) -> Unit
 
-interface IOlmDecrypter {
+interface IOlmDecrypter : EventSubscriber<OlmEncryptedEventContent> {
     fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber)
     fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber)
 }
 
 class OlmDecrypter(
-    private val olmEventService: IOlmEventService,
-) : EventSubscriber<OlmEncryptedEventContent>, IOlmDecrypter {
+    private val olmEncryptionService: IOlmEncryptionService,
+) : IOlmDecrypter {
 
     private val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
 
@@ -38,7 +38,7 @@ class OlmDecrypter(
     override suspend operator fun invoke(event: Event<OlmEncryptedEventContent>) {
         if (event is Event.ToDeviceEvent) {
             val decryptedEvent = try {
-                olmEventService.decryptOlm(event.content, event.sender)
+                olmEncryptionService.decryptOlm(event.content, event.sender)
             } catch (e: DecryptionException) {
                 log.error(e) { "could not decrypt $event" }
                 null

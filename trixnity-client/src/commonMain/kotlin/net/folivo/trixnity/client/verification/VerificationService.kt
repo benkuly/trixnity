@@ -8,19 +8,24 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.crypto.IPossiblyEncryptEvent
+import net.folivo.trixnity.client.key.IKeySecretService
 import net.folivo.trixnity.client.key.IKeyService
-import net.folivo.trixnity.client.key.KeySignatureTrustLevel
-import net.folivo.trixnity.client.possiblyEncryptEvent
+import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.GlobalAccountDataStore
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.get
-import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -32,8 +37,10 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmService
+import net.folivo.trixnity.crypto.olm.IOlmDecrypter
+import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
@@ -90,31 +97,39 @@ interface IVerificationService {
 }
 
 class VerificationService(
-    private val ownUserId: UserId,
-    private val ownDeviceId: String,
-    private val api: MatrixClientServerApiClient,
-    private val store: Store,
-    private val olmService: IOlmService,
+    userInfo: UserInfo,
+    private val api: IMatrixClientServerApiClient,
+    private val possiblyEncryptEvent: IPossiblyEncryptEvent,
+    private val keyStore: KeyStore,
+    private val globalAccountDataStore: GlobalAccountDataStore,
+    private val olmDecrypter: IOlmDecrypter,
+    private val olmEncryptionService: IOlmEncryptionService,
     private val roomService: IRoomService,
-    private val userService: IUserService,
     private val keyService: IKeyService,
-    private val supportedMethods: Set<VerificationMethod> = setOf(Sas),
-    private val currentSyncState: StateFlow<SyncState>,
-    scope: CoroutineScope,
-) : IVerificationService {
+    private val keyTrustService: IKeyTrustService,
+    private val keySecretService: IKeySecretService,
+    private val currentSyncState: CurrentSyncState,
+) : IVerificationService, EventHandler {
+    private val ownUserId = userInfo.userId
+    private val ownDeviceId = userInfo.deviceId
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
     override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
     private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
+    private val supportedMethods: Set<VerificationMethod> = setOf(Sas)
 
-    init {
+    override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::handleDeviceVerificationRequestEvents)
-        olmService.decrypter.subscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
+        olmDecrypter.subscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
         scope.launch(start = UNDISPATCHED) {
             activeDeviceVerification.collect { it?.let { startLifecycleOfActiveVerifications(listOf(it), this) } }
+        }
+        scope.coroutineContext.job.invokeOnCompletion {
+            api.sync.unsubscribe(::handleDeviceVerificationRequestEvents)
+            olmDecrypter.unsubscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
     }
 
@@ -135,9 +150,10 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olmService = olmService,
-                            store = store,
-                            keyTrust = keyService.trust,
+                            olmDecrypter = olmDecrypter,
+                            olmEncryptionService = olmEncryptionService,
+                            keyStore = keyStore,
+                            keyTrust = keyTrustService,
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -150,15 +166,17 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olmService = olmService,
-                                keyTrust = keyService.trust,
-                                store = store,
+                                olmDecrypter = olmDecrypter,
+                                olmEncryptionService = olmEncryptionService,
+                                keyTrust = keyTrustService,
+                                keyStore = keyStore,
                             )
                     }
                 } else {
                     log.warn { "Received device verification request that is not active anymore: $event" }
                 }
             }
+
             else -> log.warn { "got new device verification request with an event type ${event::class.simpleName}, that we did not expected" }
         }
     }
@@ -179,9 +197,10 @@ class VerificationService(
                             theirDeviceId = content.fromDevice,
                             supportedMethods = supportedMethods,
                             api = api,
-                            olmService = olmService,
-                            keyTrust = keyService.trust,
-                            store = store,
+                            olmDecrypter = olmDecrypter,
+                            olmEncryptionService = olmEncryptionService,
+                            keyTrust = keyTrustService,
+                            keyStore = keyStore,
                         ).cancel("already have an active device verification")
                     } else {
                         _activeDeviceVerification.value =
@@ -194,9 +213,10 @@ class VerificationService(
                                 theirDeviceId = content.fromDevice,
                                 supportedMethods = supportedMethods,
                                 api = api,
-                                olmService = olmService,
-                                keyTrust = keyService.trust,
-                                store = store,
+                                olmDecrypter = olmDecrypter,
+                                olmEncryptionService = olmEncryptionService,
+                                keyTrust = keyTrustService,
+                                keyStore = keyStore,
                             )
                     }
                 }
@@ -218,6 +238,7 @@ class VerificationService(
                             delay(20.minutes)
                             activeUserVerifications.update { it - verification }
                         }
+
                         is ActiveDeviceVerification -> {
                             _activeDeviceVerification.update { null }
                         }
@@ -236,7 +257,7 @@ class VerificationService(
         )
         api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             try {
-                olmService.event.encryptOlm(request, theirUserId, it)
+                olmEncryptionService.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
                 request
             }
@@ -250,9 +271,10 @@ class VerificationService(
             theirDeviceIds = theirDeviceIds.toSet(),
             supportedMethods = supportedMethods,
             api = api,
-            olmService = olmService,
-            keyTrust = keyService.trust,
-            store = store,
+            olmDecrypter = olmDecrypter,
+            olmEncryptionService = olmEncryptionService,
+            keyTrust = keyTrustService,
+            keyStore = keyStore,
         ).also { newDeviceVerification ->
             _activeDeviceVerification.getAndUpdate { newDeviceVerification }?.cancel()
         }
@@ -264,11 +286,11 @@ class VerificationService(
         log.info { "create new user verification request to $theirUserId" }
         val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
         val roomId =
-            store.globalAccountData.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
+            globalAccountDataStore.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = try {
-            possiblyEncryptEvent(request, roomId, store, olmService.event, userService)
+            possiblyEncryptEvent(request, roomId)
         } catch (error: Exception) {
             request
         }
@@ -285,11 +307,10 @@ class VerificationService(
             roomId = roomId,
             supportedMethods = supportedMethods,
             api = api,
-            store = store,
-            olmEvent = olmService.event,
-            user = userService,
+            keyStore = keyStore,
             room = roomService,
-            keyTrust = keyService.trust,
+            keyTrust = keyTrustService,
+            possiblyEncryptEvent = possiblyEncryptEvent,
         ).also { auv -> activeUserVerifications.update { it + auv } }
     }
 
@@ -298,13 +319,13 @@ class VerificationService(
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
-            store.keys.getCrossSigningKeys(ownUserId, scope),
-            store.keys.getDeviceKeys(ownUserId, scope),
-            store.globalAccountData.get<DefaultSecretKeyEventContent>(scope = scope)
+            keyStore.getCrossSigningKeys(ownUserId, scope),
+            keyStore.getDeviceKeys(ownUserId, scope),
+            globalAccountDataStore.get<DefaultSecretKeyEventContent>(scope = scope)
                 .transformLatest { event ->
                     coroutineScope {
                         event?.content?.key?.let {
-                            emitAll(store.globalAccountData.get<SecretKeyEventContent>(it, this))
+                            emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it, this))
                         } ?: emit(null)
                     }
                 },
@@ -343,15 +364,30 @@ class VerificationService(
                     is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 ->
                         setOf(
                             SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
-                                keyService,
+                                keySecretService,
+                                keyTrustService,
                                 defaultKey.key,
                                 content
                             ),
-                            SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content)
+                            SelfVerificationMethod.AesHmacSha2RecoveryKey(
+                                keySecretService,
+                                keyTrustService,
+                                defaultKey.key,
+                                content
+                            )
                         )
+
                     is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown, null ->
-                        setOf(SelfVerificationMethod.AesHmacSha2RecoveryKey(keyService, defaultKey.key, content))
+                        setOf(
+                            SelfVerificationMethod.AesHmacSha2RecoveryKey(
+                                keySecretService,
+                                keyTrustService,
+                                defaultKey.key,
+                                content
+                            )
+                        )
                 }
+
                 is SecretKeyEventContent.Unknown, null -> setOf()
             }
 
@@ -387,11 +423,10 @@ class VerificationService(
                             roomId = timelineEvent.roomId,
                             supportedMethods = supportedMethods,
                             api = api,
-                            store = store,
-                            olmEvent = olmService.event,
-                            user = userService,
+                            keyStore = keyStore,
                             room = roomService,
-                            keyTrust = keyService.trust,
+                            keyTrust = keyTrustService,
+                            possiblyEncryptEvent = possiblyEncryptEvent,
                         ).also { auv -> activeUserVerifications.update { it + auv } }
                     } else null
                 }

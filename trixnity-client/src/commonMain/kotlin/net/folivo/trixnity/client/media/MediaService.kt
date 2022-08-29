@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.MediaStore
 import net.folivo.trixnity.client.store.UploadCache
+import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.Media
@@ -64,8 +65,8 @@ interface IMediaService {
 }
 
 class MediaService(
-    private val api: MatrixClientServerApiClient,
-    private val store: Store,
+    private val api: IMatrixClientServerApiClient,
+    private val mediaStore: MediaStore,
 ) : IMediaService {
     companion object {
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
@@ -77,15 +78,17 @@ class MediaService(
         progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         when {
-            uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> store.media.getContent(uri)
+            uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> mediaStore.getContent(uri)
                 ?: api.media.download(uri, progress = progress).getOrThrow().content.toByteArray()
                     .also { mediaDownload ->
-                        store.media.addContent(uri, mediaDownload)
+                        mediaStore.addContent(uri, mediaDownload)
                     }
-            uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> store.media.getContent(uri)
-                ?: store.media.getUploadCache(uri)?.mxcUri
-                    ?.let { store.media.getContent(it) }
+
+            uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> mediaStore.getContent(uri)
+                ?: mediaStore.getUploadCache(uri)?.mxcUri
+                    ?.let { mediaStore.getContent(it) }
                 ?: throw IllegalArgumentException("cache uri $uri does not exists")
+
             else -> throw IllegalArgumentException("uri $uri is no valid cache or mxc uri")
         }
     }
@@ -118,18 +121,18 @@ class MediaService(
         progress: MutableStateFlow<FileTransferProgress?>?
     ): Result<ByteArray> = kotlin.runCatching {
         val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
-        store.media.getContent(thumbnailUrl)
+        mediaStore.getContent(thumbnailUrl)
             ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress)
                 .getOrThrow().content.toByteArray()
                 .also { mediaDownload ->
-                    store.media.addContent(thumbnailUrl, mediaDownload)
+                    mediaStore.addContent(thumbnailUrl, mediaDownload)
                 }
     }
 
     override suspend fun prepareUploadMedia(content: ByteArray, contentType: ContentType): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
-            store.media.addContent(cacheUri, content)
-            store.media.updateUploadCache(cacheUri) { UploadCache(cacheUri, contentType = contentType.toString()) }
+            mediaStore.addContent(cacheUri, content)
+            mediaStore.updateUploadCache(cacheUri) { UploadCache(cacheUri, contentType = contentType.toString()) }
         }
     }
 
@@ -196,12 +199,12 @@ class MediaService(
     ): Result<String> {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 
-        val uploadMediaCache = store.media.getUploadCache(cacheUri)
+        val uploadMediaCache = mediaStore.getUploadCache(cacheUri)
         val cachedMxcUri = uploadMediaCache?.mxcUri
 
         return if (cachedMxcUri == null) {
             val content =
-                store.media.getContent(cacheUri)
+                mediaStore.getContent(cacheUri)
                     ?: throw IllegalArgumentException("content for cacheUri $cacheUri not found")
             api.media.upload(
                 Media(
@@ -214,8 +217,8 @@ class MediaService(
                 progress = progress
             ).map { response ->
                 response.contentUri.also { mxcUri ->
-                    store.media.changeUri(cacheUri, mxcUri)
-                    store.media.updateUploadCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
+                    mediaStore.changeUri(cacheUri, mxcUri)
+                    mediaStore.updateUploadCache(cacheUri) { it?.copy(mxcUri = mxcUri) }
                 }
             }
         } else Result.success(cachedMxcUri)

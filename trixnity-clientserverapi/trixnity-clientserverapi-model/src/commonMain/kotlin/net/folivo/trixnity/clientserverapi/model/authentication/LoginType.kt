@@ -10,23 +10,23 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 @Serializable(with = LoginTypeSerializer::class)
-sealed class LoginType {
-    abstract val name: String
+sealed interface LoginType {
+    val name: String
 
     @Serializable
-    object Password : LoginType() {
+    object Password : LoginType {
         @SerialName("type")
         override val name = "m.login.password"
     }
 
     @Serializable
-    object Token : LoginType() {
+    object Token : LoginType {
         @SerialName("type")
         override val name = "m.login.token"
     }
 
     @Serializable
-    object AppService : LoginType() {
+    object AppService : LoginType {
         @SerialName("type")
         override val name = "m.login.application_service"
     }
@@ -34,7 +34,7 @@ sealed class LoginType {
     data class Unknown(
         override val name: String,
         val raw: JsonObject
-    ) : LoginType()
+    ) : LoginType
 }
 
 object LoginTypeSerializer : KSerializer<LoginType> {

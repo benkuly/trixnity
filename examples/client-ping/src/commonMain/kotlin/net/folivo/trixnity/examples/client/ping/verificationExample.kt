@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -19,14 +20,14 @@ suspend fun verificationExample() = coroutineScope {
     val password = "password"
     val baseUrl = Url("https://example.org")
     val matrixClient = MatrixClient.fromStore(
-        storeFactory = createStoreFactory(scope),
+        repositoriesModule = createRepositoriesModule(),
         scope = scope,
     ).getOrThrow() ?: MatrixClient.login(
         baseUrl = baseUrl,
         IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${kotlin.random.Random.Default.nextInt()}",
-        storeFactory = createStoreFactory(scope),
+        repositoriesModule = createRepositoriesModule(),
         scope = scope,
     ).getOrThrow()
 
@@ -39,10 +40,12 @@ suspend fun verificationExample() = coroutineScope {
                     println("new verification request from ${activeDeviceVerification.theirUserId}(${activeDeviceVerification.theirDeviceId})")
                     state.ready()
                 }
+
                 is Ready -> {
                     println("verification is ready")
                     state.start(VerificationMethod.Sas)
                 }
+
                 is Start -> {
                     println("started verification")
                     when (val method = state.method) {
@@ -52,16 +55,20 @@ suspend fun verificationExample() = coroutineScope {
                                     is OwnSasStart -> {
                                         println("sas started")
                                     }
+
                                     is TheirSasStart -> {
                                         println("sas started")
                                         methodState.accept()
                                     }
+
                                     is Accept -> {
                                         println("sas accepted")
                                     }
+
                                     is WaitForKeys -> {
                                         println("waits for keys")
                                     }
+
                                     is ComparisonByUser -> {
                                         println(
                                             "start comparison: ${methodState.emojis.joinToString()} " +
@@ -70,6 +77,7 @@ suspend fun verificationExample() = coroutineScope {
                                         delay(2000)
                                         methodState.match()
                                     }
+
                                     is WaitForMacs -> {
                                         println("wait for macs")
                                     }
@@ -78,15 +86,19 @@ suspend fun verificationExample() = coroutineScope {
                         }
                     }
                 }
+
                 is PartlyDone -> {
                     println("wait for done")
                 }
+
                 is Done -> {
                     println("we are done!")
                 }
+
                 is Cancel -> {
                     println("cancelled because ${state.content} (isOurOwn=${state.isOurOwn})")
                 }
+
                 AcceptedByOtherDevice -> println("another device accepted others request")
                 Undefined -> println("undefined")
             }

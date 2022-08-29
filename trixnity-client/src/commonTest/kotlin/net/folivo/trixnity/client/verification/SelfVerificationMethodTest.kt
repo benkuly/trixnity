@@ -4,7 +4,8 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
-import net.folivo.trixnity.client.mocks.KeyServiceMock
+import net.folivo.trixnity.client.mocks.KeySecretServiceMock
+import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -18,10 +19,12 @@ import kotlin.test.assertNotNull
 class SelfVerificationMethodTest : ShouldSpec({
     timeout = 120_000
 
-    lateinit var keyService: KeyServiceMock
+    lateinit var keySecretServiceMock: KeySecretServiceMock
+    lateinit var keyTrustServiceMock: KeyTrustServiceMock
 
     beforeTest {
-        keyService = KeyServiceMock()
+        keySecretServiceMock = KeySecretServiceMock()
+        keyTrustServiceMock = KeyTrustServiceMock()
     }
     context("${AesHmacSha2RecoveryKey::class.simpleName}") {
         context(AesHmacSha2RecoveryKey::verify.name) {
@@ -40,15 +43,15 @@ class SelfVerificationMethodTest : ShouldSpec({
                     mac = mac,
                     iv = iv.encodeBase64()
                 )
-                val cut = AesHmacSha2RecoveryKey(keyService, "KEY", info)
+                val cut = AesHmacSha2RecoveryKey(keySecretServiceMock, keyTrustServiceMock, "KEY", info)
                 cut.verify(encodeRecoveryKey(key)).getOrThrow()
-                assertSoftly(keyService.secret.decryptMissingSecretsCalled.value) {
+                assertSoftly(keySecretServiceMock.decryptMissingSecretsCalled.value) {
                     assertNotNull(this)
                     first shouldBe key
                     second shouldBe "KEY"
                     third shouldBe info
                 }
-                assertSoftly(keyService.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
+                assertSoftly(keyTrustServiceMock.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
                     assertNotNull(this)
                     first shouldBe key
                     second shouldBe "KEY"
@@ -83,15 +86,16 @@ class SelfVerificationMethodTest : ShouldSpec({
                     iv = iv.encodeBase64(),
                     mac = mac
                 )
-                val cut = AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keyService, "KEY", info)
+                val cut =
+                    AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keySecretServiceMock, keyTrustServiceMock, "KEY", info)
                 cut.verify("password").getOrThrow()
-                assertSoftly(keyService.secret.decryptMissingSecretsCalled.value) {
+                assertSoftly(keySecretServiceMock.decryptMissingSecretsCalled.value) {
                     assertNotNull(this)
                     first shouldBe key
                     second shouldBe "KEY"
                     third shouldBe info
                 }
-                assertSoftly(keyService.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
+                assertSoftly(keyTrustServiceMock.checkOwnAdvertisedMasterKeyAndVerifySelfCalled.value) {
                     assertNotNull(this)
                     first shouldBe key
                     second shouldBe "KEY"

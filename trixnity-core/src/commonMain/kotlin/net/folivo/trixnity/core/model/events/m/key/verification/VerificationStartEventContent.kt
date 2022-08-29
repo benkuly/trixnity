@@ -14,9 +14,9 @@ import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.EMOJI
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("method")
-sealed class VerificationStartEventContent : VerificationStep {
-    abstract val fromDevice: String
-    abstract val nextMethod: VerificationMethod?
+sealed interface VerificationStartEventContent : VerificationStep {
+    val fromDevice: String
+    val nextMethod: VerificationMethod?
 
     /**
      * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationstartmsasv1">matrix spec</a>
@@ -38,7 +38,7 @@ sealed class VerificationStartEventContent : VerificationStep {
         override val relatesTo: RelatesTo.Reference?,
         @SerialName("transaction_id")
         override val transactionId: String?,
-    ) : VerificationStartEventContent() {
+    ) : VerificationStartEventContent {
         @SerialName("next_method")
         override val nextMethod: VerificationMethod? = null
     }

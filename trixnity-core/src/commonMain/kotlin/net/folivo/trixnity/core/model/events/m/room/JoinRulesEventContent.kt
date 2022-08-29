@@ -23,34 +23,34 @@ data class JoinRulesEventContent(
     val allow: Set<AllowCondition>? = null
 ) : StateEventContent {
     @Serializable(with = JoinRuleSerializer::class)
-    sealed class JoinRule {
+    sealed interface JoinRule {
         abstract val name: String
 
-        object Public : JoinRule() {
+        object Public : JoinRule {
             override val name = "public"
         }
 
-        object Knock : JoinRule() {
+        object Knock : JoinRule {
             override val name = "knock"
         }
 
-        object Invite : JoinRule() {
+        object Invite : JoinRule {
             override val name = "invite"
         }
 
-        object Private : JoinRule() {
+        object Private : JoinRule {
             override val name = "private"
         }
 
-        object Restricted : JoinRule() {
+        object Restricted : JoinRule {
             override val name = "restricted"
         }
 
-        object KnockRestricted : JoinRule() {
+        object KnockRestricted : JoinRule {
             override val name = "knock_restricted"
         }
 
-        data class Unknown(override val name: String) : JoinRule()
+        data class Unknown(override val name: String) : JoinRule
     }
 
     @Serializable
@@ -61,14 +61,14 @@ data class JoinRulesEventContent(
         val type: AllowConditionType
     ) {
         @Serializable(with = AllowConditionTypeSerializer::class)
-        sealed class AllowConditionType {
-            abstract val name: String
+        sealed interface AllowConditionType {
+            val name: String
 
-            object RoomMembership : AllowConditionType() {
+            object RoomMembership : AllowConditionType {
                 override val name = "m.room_membership"
             }
 
-            data class Unknown(override val name: String) : AllowConditionType()
+            data class Unknown(override val name: String) : AllowConditionType
         }
     }
 }

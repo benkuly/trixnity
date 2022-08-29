@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
@@ -21,10 +22,13 @@ class RoomAccountDataStore(
     private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
-) {
+) : IStore {
     private val roomAccountDataCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomAccountDataRepository, rtm)
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+    override suspend fun deleteAll() {
         rtm.transaction {
             roomAccountDataRepository.deleteAll()
         }

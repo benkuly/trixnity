@@ -7,8 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.sqldelight.testutils.createDriverWithSchema
-import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
-import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
+import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
+import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 

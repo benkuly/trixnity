@@ -2,12 +2,13 @@ package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventSubscriber
 import net.folivo.trixnity.crypto.olm.IOlmDecrypter
 
 class OlmDecrypterMock : IOlmDecrypter {
-    private val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
+    val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
 
     override fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber) =
         eventSubscribers.update { it + eventSubscriber }
@@ -15,5 +16,7 @@ class OlmDecrypterMock : IOlmDecrypter {
     override fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber) =
         eventSubscribers.update { it - eventSubscriber }
 
-    suspend fun emit(event: DecryptedOlmEventContainer) = eventSubscribers.value.forEach { it(event) }
+    override suspend fun invoke(p1: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
+        NotImplementedError()
+    }
 }

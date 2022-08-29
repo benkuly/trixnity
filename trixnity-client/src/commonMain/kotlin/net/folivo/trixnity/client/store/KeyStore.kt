@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.verification.KeyVerificationState
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
@@ -22,7 +21,7 @@ class KeyStore(
     private val secretKeyRequestRepository: SecretKeyRequestRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
-) {
+) : IStore {
     val outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
     val secrets = MutableStateFlow<Map<SecretType, StoredSecret>>(mapOf())
     private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)
@@ -30,7 +29,7 @@ class KeyStore(
     private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)
     private val secretKeyRequestCache = RepositoryStateFlowCache(storeScope, secretKeyRequestRepository, rtm, true)
 
-    suspend fun init() {
+    override suspend fun init() {
         outdatedKeys.value = rtm.transaction { outdatedKeysRepository.get(1) ?: setOf() }
         secrets.value = rtm.transaction { secretsRepository.get(1) ?: mapOf() }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
@@ -44,7 +43,21 @@ class KeyStore(
             .associateBy { it.content.requestId })
     }
 
-    suspend fun deleteAll() {
+    override suspend fun clearCache() {
+        rtm.transaction {
+            outdatedKeysRepository.deleteAll()
+            deviceKeysRepository.deleteAll()
+            crossSigningKeysRepository.deleteAll()
+            keyChainLinkRepository.deleteAll()
+            secretKeyRequestRepository.deleteAll()
+        }
+        outdatedKeys.value = setOf()
+        deviceKeysCache.reset()
+        crossSigningKeysCache.reset()
+        secretKeyRequestCache.reset()
+    }
+
+    override suspend fun deleteAll() {
         rtm.transaction {
             outdatedKeysRepository.deleteAll()
             deviceKeysRepository.deleteAll()
@@ -59,20 +72,6 @@ class KeyStore(
         deviceKeysCache.reset()
         crossSigningKeysCache.reset()
         keyVerificationStateCache.reset()
-        secretKeyRequestCache.reset()
-    }
-
-    suspend fun deleteNonLocal() {
-        rtm.transaction {
-            outdatedKeysRepository.deleteAll()
-            deviceKeysRepository.deleteAll()
-            crossSigningKeysRepository.deleteAll()
-            keyChainLinkRepository.deleteAll()
-            secretKeyRequestRepository.deleteAll()
-        }
-        outdatedKeys.value = setOf()
-        deviceKeysCache.reset()
-        crossSigningKeysCache.reset()
         secretKeyRequestCache.reset()
     }
 

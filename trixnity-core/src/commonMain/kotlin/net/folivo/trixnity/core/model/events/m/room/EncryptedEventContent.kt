@@ -22,8 +22,8 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
-sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
-    abstract val algorithm: EncryptionAlgorithm
+sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
+    val algorithm: EncryptionAlgorithm
 
     @Serializable
     data class MegolmEncryptedEventContent(
@@ -39,7 +39,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         val sessionId: String,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null,
-    ) : EncryptedEventContent() {
+    ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
     }
@@ -52,7 +52,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
         val senderKey: Curve25519Key,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null
-    ) : EncryptedEventContent() {
+    ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
 
@@ -83,7 +83,7 @@ sealed class EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
     data class UnknownEncryptedEventContent(
         override val algorithm: Unknown,
         val raw: JsonObject
-    ) : EncryptedEventContent() {
+    ) : EncryptedEventContent {
         override val relatesTo: RelatesTo? = null
     }
 }
