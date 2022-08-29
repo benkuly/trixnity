@@ -11,10 +11,13 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.key
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -115,7 +118,7 @@ class KeyBackupIT {
             withClue("login with another client and look if keybackup works") {
                 val scope = CoroutineScope(Dispatchers.Default) + CoroutineName("client3")
                 val database = newDatabase()
-                val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+                val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
                 val client3 = MatrixClient.login(
                     baseUrl = URLBuilder(
@@ -125,7 +128,7 @@ class KeyBackupIT {
                     ).build(),
                     identifier = IdentifierType.User("user1"),
                     passwordOrToken = "user$1passw0rd",
-                    storeFactory = storeFactory,
+                    repositoriesModule = repositoriesModule,
                     scope = scope,
                 ).getOrThrow()
                 client3.startSync()

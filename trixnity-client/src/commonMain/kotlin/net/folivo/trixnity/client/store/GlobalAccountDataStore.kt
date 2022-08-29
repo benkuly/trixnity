@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
@@ -19,11 +20,15 @@ class GlobalAccountDataStore(
     private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
-) {
+) : IStore {
     private val globalAccountDataCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, globalAccountDataRepository, rtm)
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+
+    override suspend fun deleteAll() {
         rtm.transaction {
             globalAccountDataRepository.deleteAll()
         }

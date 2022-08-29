@@ -11,14 +11,14 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.*
 
 @Serializable(with = IdentifierTypeSerializer::class)
-sealed class IdentifierType {
+sealed interface IdentifierType {
     abstract val name: String
 
     @Serializable
     data class User(
         @SerialName("user")
         val user: String
-    ) : IdentifierType() {
+    ) : IdentifierType {
         @SerialName("type")
         override val name = "m.id.user"
     }
@@ -29,7 +29,7 @@ sealed class IdentifierType {
         val medium: String,
         @SerialName("address")
         val address: String
-    ) : IdentifierType() {
+    ) : IdentifierType {
         @SerialName("type")
         override val name = "m.id.thirdparty"
     }
@@ -40,7 +40,7 @@ sealed class IdentifierType {
         val country: String,
         @SerialName("phone")
         val number: String
-    ) : IdentifierType() {
+    ) : IdentifierType {
         @SerialName("type")
         override val name = "m.id.phone"
     }
@@ -48,7 +48,7 @@ sealed class IdentifierType {
     data class Unknown(
         override val name: String,
         val raw: JsonElement
-    ) : IdentifierType()
+    ) : IdentifierType
 }
 
 object IdentifierTypeSerializer : KSerializer<IdentifierType> {

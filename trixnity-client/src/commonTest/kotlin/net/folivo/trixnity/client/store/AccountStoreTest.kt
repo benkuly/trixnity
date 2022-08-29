@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.AccountRepository
+import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.seconds
 
@@ -20,7 +21,7 @@ class AccountStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        repository = InMemoryMinimalStoreRepository()
+        repository = InMemoryAccountRepository()
         cut = AccountStore(repository, NoopRepositoryTransactionManager, storeScope)
     }
     afterTest {

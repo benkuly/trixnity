@@ -8,13 +8,12 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.IMatrixClient
-import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
@@ -85,13 +84,13 @@ class CrossSigningIT {
         database1 = newDatabase()
         database2 = newDatabase()
         database3 = newDatabase()
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-        val storeFactory3 = ExposedStoreFactory(database3, Dispatchers.IO, scope3)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
+        val repositoriesModule3 = createExposedRepositoriesModule(database3, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
@@ -99,12 +98,12 @@ class CrossSigningIT {
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
             passwordOrToken = password,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
             scope = scope2,
         ).getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory3,
+            repositoriesModule = repositoriesModule3,
             scope = scope3,
             getLoginInfo = { it.register("user3", password) }
         ).getOrThrow()

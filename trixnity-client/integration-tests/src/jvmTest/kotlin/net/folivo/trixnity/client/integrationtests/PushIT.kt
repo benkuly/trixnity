@@ -10,7 +10,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import net.folivo.trixnity.client.push
 import net.folivo.trixnity.client.push.IPushService
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.InitialStateEvent

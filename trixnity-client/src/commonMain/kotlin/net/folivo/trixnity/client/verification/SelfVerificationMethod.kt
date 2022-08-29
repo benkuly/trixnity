@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.verification
 
-import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.IKeySecretService
+import net.folivo.trixnity.client.key.IKeyTrustService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.crypto.key.checkRecoveryKey
@@ -22,7 +23,8 @@ sealed interface SelfVerificationMethod {
     }
 
     data class AesHmacSha2RecoveryKey(
-        private val keyService: IKeyService,
+        private val keySecretService: IKeySecretService,
+        private val keyTrustService: IKeyTrustService,
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key
     ) : SelfVerificationMethod {
@@ -30,14 +32,15 @@ sealed interface SelfVerificationMethod {
             val recoveryKey = decodeRecoveryKey(recoverKey)
             checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keyService.secret.decryptMissingSecrets(recoveryKey, keyId, info)
-                    keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
+                    keySecretService.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keyTrustService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
                 }.getOrThrow()
         }
     }
 
     data class AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
-        private val keyService: IKeyService,
+        private val keySecretService: IKeySecretService,
+        private val keyTrustService: IKeyTrustService,
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key,
     ) : SelfVerificationMethod {
@@ -47,8 +50,8 @@ sealed interface SelfVerificationMethod {
             val recoveryKey = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
             checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keyService.secret.decryptMissingSecrets(recoveryKey, keyId, info)
-                    keyService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
+                    keySecretService.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keyTrustService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
                 }.getOrThrow()
         }
     }

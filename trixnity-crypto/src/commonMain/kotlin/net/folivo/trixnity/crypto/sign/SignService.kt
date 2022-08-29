@@ -6,13 +6,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.serializer
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.model.keys.Signatures
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -20,6 +18,7 @@ import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 
 interface ISignService {
+    suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
     suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = SignWith.DeviceKey): Signatures<UserId>
 
     suspend fun <T> signatures(
@@ -44,31 +43,44 @@ interface ISignService {
 }
 
 class SignService(
-    private val ownUserId: UserId,
-    private val ownDeviceId: String,
+    private val userInfo: UserInfo,
     private val json: Json,
     private val store: SignServiceStore,
-    private val olmPickleKey: String,
 ) : ISignService {
+
+    override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> = sign(
+        DeviceKeys(
+            userId = userInfo.userId,
+            deviceId = userInfo.deviceId,
+            algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+            keys = keysOf(userInfo.signingPublicKey, userInfo.identityPublicKey)
+        )
+    )
 
     override suspend fun signatures(jsonObject: JsonObject, signWith: SignWith): Signatures<UserId> {
         val stringToSign = canonicalFilteredJson(jsonObject)
         return when (signWith) {
             SignWith.DeviceKey -> {
-                freeAfter(OlmAccount.unpickle(olmPickleKey, requireNotNull(store.getOlmAccount()))) { olmAccount ->
+                freeAfter(
+                    OlmAccount.unpickle(
+                        store.olmPickleKey,
+                        requireNotNull(store.olmAccount)
+                    )
+                ) { olmAccount ->
                     mapOf(
-                        ownUserId to keysOf(
+                        userInfo.userId to keysOf(
                             Ed25519Key(
-                                keyId = ownDeviceId,
+                                keyId = userInfo.deviceId,
                                 value = olmAccount.sign(stringToSign)
                             )
                         )
                     )
                 }
             }
+
             is SignWith.PrivateKey -> {
                 mapOf(
-                    ownUserId to keysOf(
+                    userInfo.userId to keysOf(
                         Ed25519Key(
                             keyId = signWith.publicKey,
                             value = freeAfter(OlmPkSigning.create(signWith.privateKey)) {
@@ -127,6 +139,7 @@ class SignService(
                 ),
                 checkSignaturesOf
             )
+
             else -> {
                 val signed = signedObject.signed
                 val jsonObject = json.encodeToJsonElement(serializer, signed)

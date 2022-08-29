@@ -12,34 +12,34 @@ import kotlinx.serialization.json.*
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#actions">matrix spec</a>
  */
 @Serializable(with = PushActionSerializer::class)
-sealed class PushAction {
-    abstract val name: String?
+sealed interface PushAction {
+    val name: String?
 
-    object Notify : PushAction() {
+    object Notify : PushAction {
         override val name = "notify"
     }
 
-    object DontNotify : PushAction() {
+    object DontNotify : PushAction {
         override val name = "dont_notify"
     }
 
-    object Coalesce : PushAction() {
+    object Coalesce : PushAction {
         override val name = "coalesce"
     }
 
     data class SetSoundTweak(
         val value: String? = null
-    ) : PushAction() {
+    ) : PushAction {
         override val name = "sound"
     }
 
     data class SetHighlightTweak(
         val value: Boolean? = null
-    ) : PushAction() {
+    ) : PushAction {
         override val name = "highlight"
     }
 
-    data class Unknown(override val name: String?, val raw: JsonElement) : PushAction()
+    data class Unknown(override val name: String?, val raw: JsonElement) : PushAction
 }
 
 object PushActionSerializer : KSerializer<PushAction> {
@@ -54,11 +54,13 @@ object PushActionSerializer : KSerializer<PushAction> {
                 PushAction.Coalesce.name -> PushAction.Coalesce
                 else -> PushAction.Unknown(name, json)
             }
+
             is JsonObject -> when (val name = json["set_tweak"]?.jsonPrimitive?.content) {
                 "sound" -> PushAction.SetSoundTweak(json["value"]?.jsonPrimitive?.content)
                 "highlight" -> PushAction.SetHighlightTweak(json["value"]?.let { decoder.json.decodeFromJsonElement(it) })
                 else -> PushAction.Unknown(name, json)
             }
+
             else -> PushAction.Unknown(null, json)
         }
     }
@@ -75,12 +77,14 @@ object PushActionSerializer : KSerializer<PushAction> {
                     value.value?.let { put("value", JsonPrimitive(it)) }
                 }
             )
+
             is PushAction.SetHighlightTweak -> JsonObject(
                 buildMap {
                     put("set_tweak", JsonPrimitive(value.name))
                     value.value?.let { put("value", JsonPrimitive(it)) }
                 }
             )
+
             is PushAction.Unknown -> value.raw
         }
         encoder.encodeJsonElement(json)

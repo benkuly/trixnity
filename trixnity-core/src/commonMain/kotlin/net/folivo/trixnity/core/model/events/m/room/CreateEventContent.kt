@@ -41,18 +41,18 @@ data class CreateEventContent(
     )
 
     @Serializable(with = RoomTypeSerializer::class)
-    sealed class RoomType {
-        abstract val name: String?
+    sealed interface RoomType {
+        val name: String?
 
-        object Room : RoomType() {
+        object Room : RoomType {
             override val name: String? = null
         }
 
-        object Space : RoomType() {
+        object Space : RoomType {
             override val name = "m.space"
         }
 
-        data class Unknown(override val name: String) : RoomType()
+        data class Unknown(override val name: String) : RoomType
     }
 }
 

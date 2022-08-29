@@ -21,6 +21,8 @@ kotlin {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 api(project(":trixnity-crypto"))
 
+                api("io.insert-koin:koin-core:${Versions.koin}")
+
                 implementation("io.ktor:ktor-client-core:${Versions.ktor}")
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")

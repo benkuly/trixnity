@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.MediaRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 
 class MediaStore(
@@ -10,10 +11,13 @@ class MediaStore(
     private val uploadMediaRepository: UploadMediaRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
-) {
+) : IStore {
     private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+    override suspend fun deleteAll() {
         rtm.transaction {
             mediaRepository.deleteAll()
             uploadMediaRepository.deleteAll()

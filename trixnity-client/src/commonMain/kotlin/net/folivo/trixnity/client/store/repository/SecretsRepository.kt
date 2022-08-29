@@ -3,4 +3,4 @@ package net.folivo.trixnity.client.store.repository
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.crypto.SecretType
 
-typealias SecretsRepository = MinimalStoreRepository<Long, Map<SecretType, StoredSecret>>
+interface SecretsRepository : MinimalStoreRepository<Long, Map<SecretType, StoredSecret>>

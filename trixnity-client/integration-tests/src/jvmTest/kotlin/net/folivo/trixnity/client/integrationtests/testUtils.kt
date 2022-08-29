@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -56,11 +56,11 @@ data class StartedClient(
 suspend fun registerAndStartClient(name: String, username: String = name, baseUrl: Url): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
     val database = newDatabase()
-    val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+    val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
-        storeFactory = storeFactory,
+        repositoriesModule = repositoriesModule,
         scope = scope,
         getLoginInfo = { it.register(username, password, name) }
     ).getOrThrow()
@@ -72,14 +72,14 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
 suspend fun startClient(name: String, username: String = name, baseUrl: Url): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
     val database = newDatabase()
-    val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+    val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
     val client = MatrixClient.login(
         baseUrl = baseUrl,
         identifier = IdentifierType.User(username),
         passwordOrToken = password,
         deviceId = name,
-        storeFactory = storeFactory,
+        repositoriesModule = repositoriesModule,
         scope = scope,
     ).getOrThrow()
     client.startSync()

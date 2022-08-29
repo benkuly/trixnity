@@ -5,10 +5,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
+import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -24,14 +25,14 @@ suspend fun timelineExample() = coroutineScope {
     val roomId = RoomId("!room:example.org")
     val baseUrl = Url("https://example.org")
     val matrixClient = MatrixClient.fromStore(
-        storeFactory = createStoreFactory(scope),
+        repositoriesModule = createRepositoriesModule(),
         scope = scope,
     ).getOrThrow() ?: MatrixClient.login(
         baseUrl = baseUrl,
         IdentifierType.User(username),
         password,
         initialDeviceDisplayName = "trixnity-client-${Random.Default.nextInt()}",
-        storeFactory = createStoreFactory(scope),
+        repositoriesModule = createRepositoriesModule(),
         scope = scope,
     ).getOrThrow()
 

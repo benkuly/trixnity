@@ -16,7 +16,7 @@ class UserServiceMock : IUserService {
         get() = throw NotImplementedError()
 
     val loadMembersCalled = MutableStateFlow<RoomId?>(null)
-    override fun loadMembers(roomId: RoomId) {
+    override suspend fun loadMembers(roomId: RoomId, wait: Boolean) {
         loadMembersCalled.value = roomId
     }
 

@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.InMemoryRoomRepository
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.milliseconds

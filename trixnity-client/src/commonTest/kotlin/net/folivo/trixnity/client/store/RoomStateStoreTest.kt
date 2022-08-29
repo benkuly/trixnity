@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
@@ -29,7 +30,7 @@ class RoomStateStoreTest : ShouldSpec({
     lateinit var cut: RoomStateStore
 
     beforeTest {
-        roomStateRepository = InMemoryTwoDimensionsStoreRepository()
+        roomStateRepository = InMemoryRoomStateRepository()
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = RoomStateStore(
             roomStateRepository,

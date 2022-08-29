@@ -21,10 +21,10 @@ data class ReceiptEventContent(
     val events: Map<EventId, Set<Receipt>>
 ) : EphemeralEventContent {
 
-    sealed class Receipt {
+    sealed interface Receipt {
         data class ReadReceipt(
             val read: Map<UserId, ReadEvent>
-        ) : Receipt() {
+        ) : Receipt {
             @Serializable
             data class ReadEvent(@SerialName("ts") val timestamp: Long)
         }
@@ -32,7 +32,7 @@ data class ReceiptEventContent(
         data class Unknown(
             val raw: JsonElement,
             val type: String
-        ) : Receipt()
+        ) : Receipt
     }
 }
 

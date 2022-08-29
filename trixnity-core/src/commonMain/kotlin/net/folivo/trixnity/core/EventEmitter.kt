@@ -14,6 +14,7 @@ typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
 private val log = KotlinLogging.logger { }
 
 interface IEventEmitter {
+    suspend fun emitEvent(event: Event<*>)
     fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
     fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
     fun subscribeAllEvents(subscriber: EventSubscriber<EventContent>)
@@ -24,7 +25,7 @@ abstract class EventEmitter : IEventEmitter {
     private val eventSubscribers =
         MutableStateFlow<Map<KClass<out EventContent>, Set<EventSubscriber<out EventContent>>>>(mapOf())
 
-    protected suspend fun emitEvent(event: Event<*>) = coroutineScope {
+    override suspend fun emitEvent(event: Event<*>) = coroutineScope {
         eventSubscribers.value
             .filterKeys {
                 it.isInstance(event.content)

@@ -3,8 +3,8 @@ package net.folivo.trixnity.client.store.exposed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
-import net.folivo.trixnity.client.verification.KeyVerificationState.Blocked
-import net.folivo.trixnity.client.verification.KeyVerificationState.Verified
+import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
+import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils

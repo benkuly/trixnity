@@ -20,8 +20,8 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroommessage">matrix spec</a>
  */
 @Serializable(with = RoomMessageEventContentSerializer::class)
-sealed class RoomMessageEventContent : MessageEventContent {
-    abstract val body: String
+sealed interface RoomMessageEventContent : MessageEventContent {
+    val body: String
 
     /**
      * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mnotice">matrix spec</a>
@@ -32,7 +32,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.notice"
 
@@ -50,7 +50,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.text"
 
@@ -68,7 +68,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.emote"
 
@@ -87,7 +87,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.image"
 
@@ -107,7 +107,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.file"
 
@@ -126,7 +126,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.audio"
 
@@ -145,7 +145,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent() {
+    ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.video"
 
@@ -161,7 +161,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent(), VerificationRequest {
+    ) : RoomMessageEventContent, VerificationRequest {
         @SerialName("msgtype")
         val type = "m.key.verification.request"
 
@@ -175,7 +175,7 @@ sealed class RoomMessageEventContent : MessageEventContent {
         override val body: String,
         val raw: JsonObject,
         override val relatesTo: RelatesTo? = null,
-    ) : RoomMessageEventContent()
+    ) : RoomMessageEventContent
 }
 
 object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> {
@@ -195,6 +195,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             VideoMessageEventContent.type -> decoder.json.decodeFromJsonElement<VideoMessageEventContent>(jsonObj)
             VerificationRequestMessageEventContent.type ->
                 decoder.json.decodeFromJsonElement<VerificationRequestMessageEventContent>(jsonObj)
+
             else -> {
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 val relatesTo: RelatesTo? =

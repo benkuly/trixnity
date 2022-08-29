@@ -6,8 +6,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.client.store.InMemoryTwoDimensionsStoreRepository
-import net.folivo.trixnity.client.store.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.InMemoryTwoDimensionsStoreRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 
 class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({

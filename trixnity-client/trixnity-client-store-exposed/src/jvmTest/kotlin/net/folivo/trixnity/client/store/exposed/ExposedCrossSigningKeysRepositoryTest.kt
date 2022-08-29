@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import net.folivo.trixnity.client.key.KeySignatureTrustLevel
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*

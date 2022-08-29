@@ -4,12 +4,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.client.store.OlmStore
-import net.folivo.trixnity.client.store.StoredCrossSigningKeys
-import net.folivo.trixnity.client.store.StoredDeviceKeys
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
+import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
+import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.olm.OlmAccount
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(user: UserId) = waitForUpdateOutdatedKey(setOf(user))
@@ -123,4 +124,10 @@ internal inline fun <reified T : Key> Keys.get(): T? {
 
 internal inline fun <reified T : Key> SignedDeviceKeys.get(): T? {
     return signed.keys.keys.filterIsInstance<T>().firstOrNull()
+}
+
+internal suspend fun SecretType.getEncryptedSecret(globalAccountDataStore: GlobalAccountDataStore) = when (this) {
+    SecretType.M_CROSS_SIGNING_USER_SIGNING -> globalAccountDataStore.get<UserSigningKeyEventContent>()
+    SecretType.M_CROSS_SIGNING_SELF_SIGNING -> globalAccountDataStore.get<SelfSigningKeyEventContent>()
+    SecretType.M_MEGOLM_BACKUP_V1 -> globalAccountDataStore.get<MegolmBackupV1EventContent>()
 }

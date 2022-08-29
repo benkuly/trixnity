@@ -8,15 +8,13 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -28,9 +26,6 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
@@ -41,7 +36,6 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.Ignore
 
 @Testcontainers
 class TimelineEventIT {
@@ -52,7 +46,6 @@ class TimelineEventIT {
     private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
-    private lateinit var store2: Store
 
     @Container
     val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
@@ -84,25 +77,19 @@ class TimelineEventIT {
         ).build()
         database1 = newDatabase()
         database2 = newDatabase()
-        store2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-            .createStore(createEventContentSerializerMappings(), createMatrixEventJson())
 
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = object : StoreFactory {
-            override suspend fun createStore(contentMappings: EventContentSerializerMappings, json: Json): Store {
-                return store2
-            }
-        }
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
@@ -310,52 +297,6 @@ class TimelineEventIT {
                 client1.room.fillTimelineGaps(last.eventId, last.roomId)
         }
         .mapNotNull { it.value?.removeUnsigned() }
-
-    @Test
-    @Ignore // CI is too fast
-    fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
-        withTimeout(60_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
-
-            client2.stopSync(true)
-
-            (0..199).forEach {
-                client1.room.sendMessage(room) { text(it.toString()) }
-                delay(50) // give it time to sync back
-            }
-            val lastEvent = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "199"
-            }?.value?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(lastEvent, room)
-                .toFlowList(MutableStateFlow(200), MutableStateFlow(200))
-                .first()
-                .mapNotNull { it.value?.removeUnsigned() }
-
-            expectedTimeline shouldHaveSize 200
-
-            val middleEvent = expectedTimeline[150].eventId
-
-            client2.startSync().getOrThrow()
-            client2.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "199"
-            }
-            val job = scope2.launch {
-                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 200).collect()
-            }
-            store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
-            scope2.cancel()
-            job.join()
-
-            val newStore2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-                .createStore(createEventContentSerializerMappings(), createMatrixEventJson())
-            newStore2.roomTimeline.get(middleEvent, room) shouldBe null
-        }
-    }
 
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {

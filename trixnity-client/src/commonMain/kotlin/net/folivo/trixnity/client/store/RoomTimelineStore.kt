@@ -5,10 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.TimelineEventKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
-import net.folivo.trixnity.client.store.repository.TimelineEventRepository
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
@@ -18,13 +15,16 @@ class RoomTimelineStore(
     private val timelineEventRelationRepository: TimelineEventRelationRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope,
-) {
+) : IStore {
     private val timelineEventCache = RepositoryStateFlowCache(storeScope, timelineEventRepository, rtm)
     private val timelineEventRelationCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, timelineEventRelationRepository, rtm)
 
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+    override suspend fun deleteAll() {
         rtm.transaction {
             timelineEventRepository.deleteAll()
             timelineEventRelationRepository.deleteAll()

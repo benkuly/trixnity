@@ -33,12 +33,12 @@ class DeviceKeysStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        outdatedKeysRepository = InMemoryMinimalStoreRepository()
-        deviceKeysRepository = InMemoryMinimalStoreRepository()
-        crossSigningKeysRepository = InMemoryMinimalStoreRepository()
-        keyVerificationStateRepository = InMemoryMinimalStoreRepository()
+        outdatedKeysRepository = InMemoryOutdatedKeysRepository()
+        deviceKeysRepository = InMemoryDeviceKeysRepository()
+        crossSigningKeysRepository = InMemoryCrossSigningKeysRepository()
+        keyVerificationStateRepository = InMemoryKeyVerificationStateRepository()
         keyChainLinkRepository = InMemoryKeyChainLinkRepository()
-        secretsRepository = InMemoryMinimalStoreRepository()
+        secretsRepository = InMemorySecretsRepository()
         secretKeyRequestRepository = InMemorySecretKeyRequestRepository()
         cut = KeyStore(
             outdatedKeysRepository,

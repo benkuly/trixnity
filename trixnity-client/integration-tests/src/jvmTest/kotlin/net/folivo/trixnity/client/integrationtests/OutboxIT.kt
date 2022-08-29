@@ -6,8 +6,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -60,11 +61,11 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = newDatabase()
-        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+        val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory,
+            repositoriesModule = repositoriesModule,
             scope = scope,
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()

@@ -11,16 +11,15 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 
 @Serializable(with = RelatesToSerializer::class)
-sealed class RelatesTo {
-
-    abstract val type: RelationType
-    abstract val eventId: EventId
+sealed interface RelatesTo {
+    val type: RelationType
+    val eventId: EventId
 
     @Serializable
     data class Reference(
         @SerialName("event_id")
         override val eventId: EventId,
-    ) : RelatesTo() {
+    ) : RelatesTo {
         @SerialName("rel_type")
         override val type: RelationType = RelationType.Reference
     }
@@ -29,7 +28,7 @@ sealed class RelatesTo {
         val raw: JsonObject,
         override val eventId: EventId,
         override val type: RelationType,
-    ) : RelatesTo()
+    ) : RelatesTo
 }
 
 object RelatesToSerializer : KSerializer<RelatesTo> {

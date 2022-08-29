@@ -8,9 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
-import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
-import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
-import net.folivo.trixnity.client.store.repository.OlmAccountRepository
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -26,14 +24,14 @@ class OlmStoreTest : ShouldSpec({
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        olmAccountRepository = InMemoryMinimalStoreRepository()
+        olmAccountRepository = InMemoryOlmAccountRepository()
         inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
         cut = OlmStore(
             olmAccountRepository,
-            InMemoryMinimalStoreRepository(),
+            InMemoryOlmSessionRepository(),
             inboundMegolmSessionRepository,
-            InMemoryMinimalStoreRepository(),
-            InMemoryMinimalStoreRepository(),
+            InMemoryInboundMegolmMessageIndexRepository(),
+            InMemoryOutboundMegolmSessionRepository(),
             NoopRepositoryTransactionManager,
             storeScope
         )
