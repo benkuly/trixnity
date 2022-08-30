@@ -9,8 +9,8 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 
 interface OlmStore {
-    suspend fun getCurve25519Key(userId: UserId, deviceId: String): Curve25519Key?
-    suspend fun getEd25519Key(userId: UserId, deviceId: String): Ed25519Key?
+    suspend fun findCurve25519Key(userId: UserId, deviceId: String): Curve25519Key?
+    suspend fun findEd25519Key(userId: UserId, deviceId: String): Ed25519Key?
 
     suspend fun findDeviceKeys(userId: UserId, senderKey: Curve25519Key): DeviceKeys?
 
