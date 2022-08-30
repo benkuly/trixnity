@@ -75,9 +75,9 @@ class OlmEncryptionService(
         deviceId: String,
         forceNewSession: Boolean
     ): OlmEncryptedEventContent {
-        val identityKey = store.getCurve25519Key(receiverId, deviceId)
+        val identityKey = store.findCurve25519Key(receiverId, deviceId)
             ?: throw KeyException.KeyNotFoundException("could not find curve25519 key for $receiverId ($deviceId)")
-        val signingKey = store.getEd25519Key(receiverId, deviceId)
+        val signingKey = store.findEd25519Key(receiverId, deviceId)
             ?: throw KeyException.KeyNotFoundException("could not find ed25519 key for $receiverId ($deviceId)")
 
         lateinit var finalEncryptionResult: OlmEncryptedEventContent
@@ -150,7 +150,7 @@ class OlmEncryptionService(
             senderKeys = keysOf(ownEd25519Key.copy(keyId = null)),
             recipient = receiverId,
             recipientKeys = keysOf(
-                store.getEd25519Key(receiverId, deviceId)?.copy(keyId = null)
+                store.findEd25519Key(receiverId, deviceId)?.copy(keyId = null)
                     ?: throw KeyException.KeyNotFoundException("could not find es25519 key for $receiverId ($deviceId)")
             )
         ).also { log.trace { "olm event: $it" } }

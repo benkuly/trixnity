@@ -10,12 +10,12 @@ import net.folivo.trixnity.crypto.olm.*
 
 class OlmStoreMock : OlmStore {
     val curve25519Keys = mutableMapOf<Pair<UserId, String>, Key.Curve25519Key>()
-    override suspend fun getCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? {
+    override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? {
         return curve25519Keys[userId to deviceId]
     }
 
     val ed25519Keys = mutableMapOf<Pair<UserId, String>, Key.Ed25519Key>()
-    override suspend fun getEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? {
+    override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? {
         return ed25519Keys[userId to deviceId]
     }
 
