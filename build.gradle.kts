@@ -35,7 +35,6 @@ allprojects {
 
     apply(plugin = "org.jetbrains.dokka")
 
-    org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMultiplatformPlugin
     dependencies {
         dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:${Versions.dokka}")
     }

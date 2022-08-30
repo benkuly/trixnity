@@ -72,7 +72,8 @@ This project contains the following modules, which can be used independently:
 - [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
   implementation. It does not support advanced features like E2E or persistence at the moment.
 
-If you want to see Trixnity in action, take a look into the [examples](/examples).
+If you want to see Trixnity in action, take a look into
+the [trixnity-examples](https://gitlab.com/trixnity/trixnity-examples).
 
 ### Add Trixnity to you project
 
