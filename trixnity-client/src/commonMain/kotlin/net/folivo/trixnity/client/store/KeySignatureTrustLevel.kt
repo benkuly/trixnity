@@ -39,7 +39,7 @@ sealed interface KeySignatureTrustLevel {
         }
 
         override fun hashCode(): Int {
-            return this::class.hashCode()
+            return "KeySignatureTrustLevel.NotCrossSigned".hashCode()
         }
     }
 
@@ -63,7 +63,7 @@ sealed interface KeySignatureTrustLevel {
         }
 
         override fun hashCode(): Int {
-            return this::class.hashCode()
+            return "KeySignatureTrustLevel.Blocked".hashCode()
         }
     }
 
