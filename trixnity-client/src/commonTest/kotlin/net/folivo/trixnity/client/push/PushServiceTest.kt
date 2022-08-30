@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.push.IPushService.Notification
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.UserInfo
@@ -56,10 +57,12 @@ private val body: ShouldSpec.() -> Unit = {
     val user1 = UserId("user1", "localhost")
     val otherUser = UserId("otherUser", "localhost")
     val user1DisplayName = "User1 🦊"
+    val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: PushService
 
     beforeTest {
+        currentSyncState.value = SyncState.RUNNING
         room = RoomServiceMock()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
@@ -79,6 +82,7 @@ private val body: ShouldSpec.() -> Unit = {
             roomUserStore,
             globalAccountDataStore,
             json,
+            CurrentSyncState(currentSyncState)
         )
     }
 
@@ -215,6 +219,50 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(PushService::getNotifications.name) {
+        should("wait for sync to be started or running") {
+            currentSyncState.value = SyncState.INITIAL_SYNC
+            globalAccountDataStore.update(
+                GlobalAccountDataEvent(
+                    pushRules(
+                        listOf(
+                            pushRuleInvitation(),
+                        )
+                    )
+                )
+            )
+            val invitation = Event.StrippedStateEvent(
+                content = MemberEventContent(
+                    membership = Membership.INVITE,
+                    displayName = user1DisplayName,
+                ),
+                sender = otherUser,
+                roomId = roomId,
+                stateKey = user1.full,
+            )
+            apiConfig.endpoints {
+                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    Sync.Response(
+                        nextBatch = "next",
+                        room = Sync.Response.Rooms(
+                            invite = mapOf(
+                                roomId to Sync.Response.Rooms.InvitedRoom(
+                                    inviteState = Sync.Response.Rooms.InvitedRoom.InviteState(
+                                        events = listOf(invitation)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                }
+            }
+            val notification = async { cut.getNotifications(0.seconds).first() }
+            delay(50)
+            api.sync.startOnce().getOrThrow()
+            continually(50.milliseconds) {
+                notification.isCompleted shouldBe false
+            }
+            notification.cancel()
+        }
         should("do nothing when no events") {
             apiConfig.endpoints {
                 matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {

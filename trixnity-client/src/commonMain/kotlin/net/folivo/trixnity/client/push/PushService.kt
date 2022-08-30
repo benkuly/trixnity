@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
+import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
@@ -14,7 +15,7 @@ import net.folivo.trixnity.client.room.IRoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -54,6 +55,7 @@ class PushService(
     private val roomUserStore: RoomUserStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val json: Json,
+    private val currentSyncState: CurrentSyncState,
 ) : IPushService {
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
@@ -63,6 +65,7 @@ class PushService(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {
+        currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
         val syncResponseFlow = callbackFlow {
             val subscriber: AfterSyncResponseSubscriber = { send(it) }
             api.sync.subscribeAfterSyncResponse(subscriber)
