@@ -27,12 +27,39 @@ typealias AfterSyncResponseSubscriber = suspend (Sync.Response) -> Unit
 private val log = KotlinLogging.logger {}
 
 enum class SyncState {
+    /**
+     * The fist sync has been started.
+     */
     INITIAL_SYNC,
+
+    /**
+     * A normal sync has been started.
+     */
     STARTED,
+
+    /**
+     * A normal sync has been finished. It is normally set when the sync is run in a loop.
+     */
     RUNNING,
+
+    /**
+     * The sync has been aborted because of an internal or external error.
+     */
     ERROR,
+
+    /**
+     * The sync request is timed out.
+     */
     TIMEOUT,
+
+    /**
+     * The sync loop is going to be stopped.
+     */
     STOPPING,
+
+    /**
+     * The sync is stopped.
+     */
     STOPPED,
 }
 
@@ -231,8 +258,8 @@ class SyncApiClient(
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
-            log.info { "started single sync" }
             val isInitialSync = currentBatchToken.value == null
+            log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
             val syncResponse = syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
             runOnce(syncResponse)
