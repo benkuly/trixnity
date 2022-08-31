@@ -24,7 +24,7 @@ private val log = KotlinLogging.logger {}
 class OutdatedKeysHandler(
     private val api: IMatrixClientServerApiClient,
     private val accountStore: AccountStore,
-    private val olmStore: OlmStore,
+    private val olmCryptoStore: OlmCryptoStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val keyStore: KeyStore,
@@ -159,7 +159,7 @@ class OutdatedKeysHandler(
                 }.also {
                     if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDeviceKeys" }
                 }.forEach { roomId ->
-                    olmStore.updateOutboundMegolmSession(roomId) { oms ->
+                    olmCryptoStore.updateOutboundMegolmSession(roomId) { oms ->
                         oms?.copy(
                             newDevices = oms.newDevices + Pair(
                                 userId,

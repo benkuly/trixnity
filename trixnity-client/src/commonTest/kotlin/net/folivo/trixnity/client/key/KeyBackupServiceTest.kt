@@ -62,7 +62,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var scope: CoroutineScope
     lateinit var accountStore: AccountStore
-    lateinit var olmStore: OlmStore
+    lateinit var olmCryptoStore: OlmCryptoStore
     lateinit var keyStore: KeyStore
     lateinit var apiConfig: PortableMockEngineConfig
 
@@ -82,7 +82,7 @@ private val body: ShouldSpec.() -> Unit = {
         validKeyBackupPublicKey = newValidKeyBackupPublicKey
         scope = CoroutineScope(Dispatchers.Default)
         accountStore = getInMemoryAccountStore(scope)
-        olmStore = getInMemoryOlmStore(scope)
+        olmCryptoStore = getInMemoryOlmStore(scope)
         keyStore = getInMemoryKeyStore(scope)
         accountStore.olmPickleKey.value = ""
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -90,7 +90,7 @@ private val body: ShouldSpec.() -> Unit = {
         cut = KeyBackupService(
             UserInfo(ownUserId, ownDeviceId, Ed25519Key(null, ""), Curve25519Key(null, "")),
             accountStore,
-            olmStore,
+            olmCryptoStore,
             keyStore,
             api,
             olmSignMock,
@@ -281,7 +281,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("do nothing when version is null") {
             cut.loadMegolmSession(roomId, sessionId)
             continually(500.milliseconds) {
-                olmStore.getInboundMegolmSession(sessionId, roomId) shouldBe null
+                olmCryptoStore.getInboundMegolmSession(sessionId, roomId) shouldBe null
             }
         }
         context("megolm session on server") {
@@ -328,11 +328,11 @@ private val body: ShouldSpec.() -> Unit = {
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
-                    olmStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
+                    olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
                     assertSoftly(
-                        olmStore.getInboundMegolmSession(sessionId, roomId, scope)
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId, scope)
                             .first { it?.firstKnownIndex == 1L }
                     ) {
                         assertNotNull(this)
@@ -357,11 +357,11 @@ private val body: ShouldSpec.() -> Unit = {
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
-                    olmStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
+                    olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
                     continually(300.milliseconds) {
-                        olmStore.getInboundMegolmSession(sessionId, roomId) shouldBe currentSession
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId) shouldBe currentSession
                     }
                 }
             }
@@ -383,7 +383,7 @@ private val body: ShouldSpec.() -> Unit = {
                         cut.loadMegolmSession(roomId, sessionId)
                     }
                     allLoadMegolmSessionsCalled.value = true
-                    olmStore.getInboundMegolmSession(sessionId, roomId, scope).first { it != null }
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId, scope).first { it != null }
                     getRoomKeyBackupDataCalled shouldBe true
                 }
             }
@@ -405,7 +405,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("retry fetch megolm session") {
                     cut.loadMegolmSession(roomId, sessionId)
-                    assertSoftly(olmStore.getInboundMegolmSession(sessionId, roomId, scope)
+                    assertSoftly(olmCryptoStore.getInboundMegolmSession(sessionId, roomId, scope)
                         .first { it != null }) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
@@ -511,8 +511,8 @@ private val body: ShouldSpec.() -> Unit = {
         )
         beforeTest {
             currentSyncState.value = RUNNING
-            session1.run { olmStore.updateInboundMegolmSession(sessionId, roomId) { this } }
-            session2.run { olmStore.updateInboundMegolmSession(sessionId, roomId) { this } }
+            session1.run { olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this } }
+            session2.run { olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this } }
         }
         should("do nothing when version is null") {
             var setRoomKeyBackupVersionCalled = false
@@ -524,21 +524,21 @@ private val body: ShouldSpec.() -> Unit = {
             }
             continually(2.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
-                olmStore.notBackedUpInboundMegolmSessions.value.size shouldBe 2
+                olmCryptoStore.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
-                    olmStore.getInboundMegolmSession(sessionId, roomId)
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
                 }?.hasBeenBackedUp shouldBe false
                 session2.run {
-                    olmStore.getInboundMegolmSession(sessionId, roomId)
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
                 }?.hasBeenBackedUp shouldBe false
             }
         }
         should("do nothing when not backed up is empty") {
             session1.run {
-                olmStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
+                olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
             session2.run {
-                olmStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
+                olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
             val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
@@ -577,14 +577,14 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
 
-            olmStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            olmCryptoStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
             setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                olmStore.getInboundMegolmSession(sessionId, roomId, scope)
+                olmCryptoStore.getInboundMegolmSession(sessionId, roomId, scope)
                     .first { it?.hasBeenBackedUp == true }
             }?.hasBeenBackedUp shouldBe true
             session2.run {
-                olmStore.getInboundMegolmSession(sessionId, roomId, scope)
+                olmCryptoStore.getInboundMegolmSession(sessionId, roomId, scope)
                     .first { it?.hasBeenBackedUp == true }
             }
         }
@@ -613,7 +613,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
 
-            olmStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            olmCryptoStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
             setRoomKeyBackupDataCalled shouldBe true
         }
     }

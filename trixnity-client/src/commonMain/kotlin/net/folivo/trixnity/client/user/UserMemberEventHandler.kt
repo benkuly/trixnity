@@ -11,7 +11,6 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.originalName
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
@@ -24,7 +23,7 @@ import net.folivo.trixnity.core.unsubscribe
 
 private val log = KotlinLogging.logger {}
 
-class MemberEventHandler(
+class UserMemberEventHandler(
     private val api: IMatrixClientServerApiClient,
     private val accountStore: AccountStore,
     private val roomUserStore: RoomUserStore,

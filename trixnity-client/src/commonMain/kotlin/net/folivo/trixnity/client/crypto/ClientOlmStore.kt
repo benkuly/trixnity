@@ -19,7 +19,7 @@ import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
 class ClientOlmStore(
     accountStore: AccountStore,
-    private val olmStore: OlmStore,
+    private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
@@ -61,31 +61,31 @@ class ClientOlmStore(
     override suspend fun updateOlmSessions(
         senderKey: Key.Curve25519Key,
         updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
-    ) = olmStore.updateOlmSessions(senderKey, updater)
+    ) = olmCryptoStore.updateOlmSessions(senderKey, updater)
 
     override suspend fun updateOutboundMegolmSession(
         roomId: RoomId,
         updater: suspend (StoredOutboundMegolmSession?) -> StoredOutboundMegolmSession?
-    ) = olmStore.updateOutboundMegolmSession(roomId, updater)
+    ) = olmCryptoStore.updateOutboundMegolmSession(roomId, updater)
 
     override suspend fun updateInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
         updater: suspend (StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
-    ) = olmStore.updateInboundMegolmSession(sessionId, roomId, updater)
+    ) = olmCryptoStore.updateInboundMegolmSession(sessionId, roomId, updater)
 
 
     override suspend fun getInboundMegolmSession(sessionId: String, roomId: RoomId): StoredInboundMegolmSession? =
-        olmStore.getInboundMegolmSession(sessionId, roomId)
+        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
 
     override suspend fun updateInboundMegolmMessageIndex(
         sessionId: String,
         roomId: RoomId,
         messageIndex: Long,
         updater: suspend (StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
-    ) = olmStore.updateInboundMegolmMessageIndex(sessionId, roomId, messageIndex, updater)
+    ) = olmCryptoStore.updateInboundMegolmMessageIndex(sessionId, roomId, messageIndex, updater)
 
-    override val olmAccount = olmStore.account
+    override val olmAccount = olmCryptoStore.account
     override val olmPickleKey = requireNotNull(accountStore.olmPickleKey.value)
 
     override suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>> {

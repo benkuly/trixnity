@@ -21,12 +21,12 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryOlmStore
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
@@ -59,7 +59,7 @@ private val body: ShouldSpec.() -> Unit = {
     val aliceDevice = "ALICEDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
-    lateinit var olmStore: OlmStore
+    lateinit var olmCryptoStore: OlmCryptoStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var signServiceMock: SignServiceMock
     lateinit var keyBackupServiceMock: KeyBackupServiceMock
@@ -75,7 +75,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         olmSign = SignServiceMock()
         keyStore = getInMemoryKeyStore(scope)
-        olmStore = getInMemoryOlmStore(scope)
+        olmCryptoStore = getInMemoryOlmStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         signServiceMock = SignServiceMock()
         keyBackupServiceMock = KeyBackupServiceMock()
@@ -85,7 +85,7 @@ private val body: ShouldSpec.() -> Unit = {
         cut = KeyService(
             UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             keyStore,
-            olmStore,
+            olmCryptoStore,
             globalAccountDataStore,
             signServiceMock,
             keyBackupServiceMock,

@@ -16,7 +16,7 @@ class OlmDecrypterMock : IOlmDecrypter {
     override fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber) =
         eventSubscribers.update { it - eventSubscriber }
 
-    override suspend fun invoke(p1: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
+    override suspend fun handleOlmEvent(event: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
         NotImplementedError()
     }
 }

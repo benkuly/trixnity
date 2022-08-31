@@ -11,7 +11,6 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.IMatrixClient.*
 import net.folivo.trixnity.client.IMatrixClient.LoginState.*
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.KeyVerificationState
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -195,11 +194,10 @@ class MatrixClient private constructor(
             accountStore.displayName.value = displayName
             accountStore.avatarUrl.value = avatarUrl
 
-            val olmStore = di.get<OlmStore>()
-
+            val olmCryptoStore = di.get<OlmCryptoStore>()
             val (signingKey, identityKey) = freeAfter(
-                olmStore.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
-                    ?: OlmAccount.create().also { olmStore.account.value = it.pickle(olmPickleKey) }
+                olmCryptoStore.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
+                    ?: OlmAccount.create().also { olmCryptoStore.account.value = it.pickle(olmPickleKey) }
             ) {
                 Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
                         Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
@@ -262,13 +260,13 @@ class MatrixClient private constructor(
             rootStore.init()
 
             val accountStore = di.get<AccountStore>()
-            val olmStore = di.get<OlmStore>()
+            val olmCryptoStore = di.get<OlmCryptoStore>()
 
             val baseUrl = accountStore.baseUrl.value
             val userId = accountStore.userId.value
             val deviceId = accountStore.deviceId.value
             val olmPickleKey = accountStore.olmPickleKey.value
-            val olmAccount = olmStore.account.value
+            val olmAccount = olmCryptoStore.account.value
 
             if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
                 val api = MatrixClientServerApiClient(
@@ -400,9 +398,16 @@ class MatrixClient private constructor(
                     stopSync(true)
                 }
             }
+            val allHandlersStarted = MutableStateFlow(false)
             scope.launch(handler, CoroutineStart.UNDISPATCHED) {
-                eventHandlers.forEach { it.startInCoroutineScope(this) }
+                eventHandlers.forEach {
+                    log.debug { "start EventHandler: ${it::class.simpleName}" }
+                    it.startInCoroutineScope(this)
+                }
+                allHandlersStarted.value = true
             }
+            allHandlersStarted.first { it }
+            log.debug { "all EventHandler started" }
             scope.launch {
                 loginState.debounce(100.milliseconds).collect {
                     log.info { "login state: $it" }

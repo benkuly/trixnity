@@ -25,19 +25,19 @@ class EncryptionEventHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
 
-    lateinit var cut: EncryptionEventHandler
+    lateinit var cut: RoomEncryptionEventHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        cut = EncryptionEventHandler(mockMatrixClientServerApiClient(json).first, roomStore)
+        cut = RoomEncryptionEventHandler(mockMatrixClientServerApiClient(json).first, roomStore)
     }
 
     afterTest {
         scope.cancel()
     }
 
-    context(EncryptionEventHandler::setEncryptionAlgorithm.name) {
+    context(RoomEncryptionEventHandler::setEncryptionAlgorithm.name) {
         should("update set encryption algorithm") {
             roomStore.update(room) { simpleRoom.copy(membersLoaded = true) }
             cut.setEncryptionAlgorithm(

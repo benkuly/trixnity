@@ -14,7 +14,7 @@ class OlmDecrypterMock : IOlmDecrypter {
         TODO("Not yet implemented")
     }
 
-    override suspend fun invoke(p1: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
+    override suspend fun handleOlmEvent(event: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
         TODO("Not yet implemented")
     }
 }

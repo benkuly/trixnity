@@ -55,6 +55,7 @@ class IncomingKeyRequestEventHandler(
 
     internal fun handleIncomingKeyRequests(event: Event<SecretKeyRequestEventContent>) {
         if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
+            log.debug { "handle incoming key requests" }
             val content = event.content
             when (content.action) {
                 KeyRequestAction.REQUEST -> incomingSecretKeyRequests.update { it + content }
@@ -66,6 +67,7 @@ class IncomingKeyRequestEventHandler(
 
     internal suspend fun processIncomingKeyRequests(syncResponse: Sync.Response) {
         incomingSecretKeyRequests.value.forEach { request ->
+            log.debug { "process incoming key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId
             val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId)?.trustLevel
             if (senderTrustLevel is KeySignatureTrustLevel.CrossSigned && senderTrustLevel.verified || senderTrustLevel is KeySignatureTrustLevel.Valid && senderTrustLevel.verified) {

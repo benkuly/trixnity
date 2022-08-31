@@ -2,11 +2,11 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
+import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -15,6 +15,8 @@ import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
+
+private val log = KotlinLogging.logger {}
 
 class RoomAvatarUrlEventHandler(
     private val userInfo: UserInfo,
@@ -35,6 +37,7 @@ class RoomAvatarUrlEventHandler(
 
     internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
         memberEvent.getRoomId()?.let { roomId ->
+            log.debug { "set room avatar of room $roomId due to member update" }
             val room = roomStore.get(roomId).value
             if (room?.isDirect == true && userInfo.userId.full != memberEvent.getStateKey()) {
                 roomStore.update(roomId) { oldRoom ->
@@ -46,6 +49,7 @@ class RoomAvatarUrlEventHandler(
 
     internal suspend fun setAvatarUrlForAvatarEvents(avatarEvent: Event<AvatarEventContent>) {
         avatarEvent.getRoomId()?.let { roomId ->
+            log.debug { "set room avatar of room $roomId due to new avatar event" }
             val avatarUrl = avatarEvent.content.url
             val room = roomStore.get(roomId).value
             if (room?.isDirect?.not() == true || avatarUrl.isNullOrEmpty().not()) {

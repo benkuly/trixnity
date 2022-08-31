@@ -4,7 +4,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyBackupService
-import net.folivo.trixnity.client.store.OlmStore
+import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.waitForInboundMegolmSession
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -16,7 +16,7 @@ import net.folivo.trixnity.olm.OlmLibraryException
 private val log = KotlinLogging.logger {}
 
 class MegolmRoomEventDecryptionService(
-    private val olmStore: OlmStore,
+    private val olmCryptoStore: OlmCryptoStore,
     private val keyBackupService: IKeyBackupService,
     private val olmEncryptionService: IOlmEncryptionService,
 ) : RoomEventDecryptionService {
@@ -25,12 +25,12 @@ class MegolmRoomEventDecryptionService(
         val roomId = event.roomId
         val eventId = event.id
         if (content is EncryptedEventContent.MegolmEncryptedEventContent) {
-            val session = olmStore.getInboundMegolmSession(content.sessionId, roomId, this)
+            val session = olmCryptoStore.getInboundMegolmSession(content.sessionId, roomId, this)
             val firstKnownIndex = session.value?.firstKnownIndex
             if (session.value == null) {
                 keyBackupService.loadMegolmSession(roomId, content.sessionId)
                 log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                olmStore.waitForInboundMegolmSession(roomId, content.sessionId, this)
+                olmCryptoStore.waitForInboundMegolmSession(roomId, content.sessionId, this)
             }
             log.trace { "try to decrypt event $eventId in $roomId" }
             @Suppress("UNCHECKED_CAST")
@@ -45,7 +45,7 @@ class MegolmRoomEventDecryptionService(
                 ) {
                     keyBackupService.loadMegolmSession(roomId, content.sessionId)
                     log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
-                    olmStore.waitForInboundMegolmSession(
+                    olmCryptoStore.waitForInboundMegolmSession(
                         roomId,
                         content.sessionId,
                         this,

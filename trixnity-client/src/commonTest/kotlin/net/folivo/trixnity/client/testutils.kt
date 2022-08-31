@@ -47,7 +47,7 @@ suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAcc
     scope
 ).apply { init() }
 
-suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmStore(
+suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     InMemoryOlmAccountRepository(),
     InMemoryOlmSessionRepository(),
     InMemoryInboundMegolmSessionRepository(),

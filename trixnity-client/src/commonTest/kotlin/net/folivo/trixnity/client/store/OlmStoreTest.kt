@@ -20,13 +20,13 @@ class OlmStoreTest : ShouldSpec({
     lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
 
     lateinit var storeScope: CoroutineScope
-    lateinit var cut: OlmStore
+    lateinit var cut: OlmCryptoStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         olmAccountRepository = InMemoryOlmAccountRepository()
         inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
-        cut = OlmStore(
+        cut = OlmCryptoStore(
             olmAccountRepository,
             InMemoryOlmSessionRepository(),
             inboundMegolmSessionRepository,
@@ -39,7 +39,7 @@ class OlmStoreTest : ShouldSpec({
     afterTest {
         storeScope.cancel()
     }
-    context(OlmStore::init.name) {
+    context(OlmCryptoStore::init.name) {
         should("load values from database") {
             olmAccountRepository.save(1, "olm_account")
 
@@ -91,7 +91,7 @@ class OlmStoreTest : ShouldSpec({
             }
         }
     }
-    context(OlmStore::updateInboundMegolmSession.name) {
+    context(OlmCryptoStore::updateInboundMegolmSession.name) {
         val session = StoredInboundMegolmSession(
             senderKey = Key.Curve25519Key(null, "senderCurve"),
             sessionId = "session",
@@ -103,7 +103,7 @@ class OlmStoreTest : ShouldSpec({
             forwardingCurve25519KeyChain = listOf(),
             pickled = "pickle"
         )
-        should("add and remove to ${OlmStore::notBackedUpInboundMegolmSessions.name}") {
+        should("add and remove to ${OlmCryptoStore::notBackedUpInboundMegolmSessions.name}") {
             cut.updateInboundMegolmSession(session.sessionId, session.roomId) { session }
             cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
             cut.updateInboundMegolmSession(session.sessionId, session.roomId) {

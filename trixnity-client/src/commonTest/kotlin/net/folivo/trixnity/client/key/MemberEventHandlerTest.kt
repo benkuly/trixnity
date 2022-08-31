@@ -45,7 +45,7 @@ private val body: ShouldSpec.() -> Unit = {
         KeySignatureTrustLevel.Valid(false)
     )
 
-    lateinit var cut: MemberEventHandler
+    lateinit var cut: KeyMemberEventHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -53,7 +53,7 @@ private val body: ShouldSpec.() -> Unit = {
         roomStore = getInMemoryRoomStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         keyTrustServiceMock = KeyTrustServiceMock()
-        cut = MemberEventHandler(
+        cut = KeyMemberEventHandler(
             mockMatrixClientServerApiClient(json).first,
             roomStore, roomStateStore, keyStore
         )
@@ -65,7 +65,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(MemberEventHandler::handleMemberEvents.name) {
+    context(KeyMemberEventHandler::handleMemberEvents.name) {
         val room = RoomId("room", "server")
         beforeTest {
             roomStore.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = EncryptionAlgorithm.Megolm) }

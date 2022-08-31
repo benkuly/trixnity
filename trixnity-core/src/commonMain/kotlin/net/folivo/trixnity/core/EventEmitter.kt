@@ -33,7 +33,7 @@ abstract class EventEmitter : IEventEmitter {
             .forEach { (_, subscribers) ->
                 subscribers.forEach {
                     launch {
-                        log.trace { "called subscriber: $it" }
+                        log.trace { "called subscriber for event $event: $it" }
                         it.invoke(event)
                     }
                 }

@@ -110,7 +110,7 @@ class OutgoingKeyRequestEventHandler(
     internal suspend fun handleOutgoingKeyRequestAnswer(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
-            log.trace { "handle outgoing key request answer $content" }
+            log.debug { "handle outgoing key request answer ${content.requestId}" }
             val (senderDeviceId, senderTrustLevel) = keyStore.getDeviceKeys(ownUserId)?.firstNotNullOfOrNull {
                 if (it.value.value.get<Key.Ed25519Key>()?.value == event.decrypted.senderKeys.get<Key.Ed25519Key>()?.value)
                     it.key to it.value.trustLevel
@@ -183,6 +183,7 @@ class OutgoingKeyRequestEventHandler(
     internal suspend fun cancelOldOutgoingKeyRequests(syncResponse: Sync.Response) {
         keyStore.allSecretKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
+                log.debug { "cancel outgoing key request ${it.content.requestId}" }
                 cancelStoredSecretKeyRequest(it)
             }
         }
@@ -198,6 +199,7 @@ class OutgoingKeyRequestEventHandler(
     }
 
     internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
+        log.debug { "handle changed secrets" }
         val secretType =
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }
                 ?.let { SecretType.ofId(it.type) }
