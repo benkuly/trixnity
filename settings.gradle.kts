@@ -26,11 +26,6 @@ include(
 )
 include("trixnity-applicationservice")
 include("test-utils")
-include(
-    "examples",
-    "examples:clientserverapi-client-ping",
-    "examples:client-ping"
-)
 
 buildCache {
     local {
