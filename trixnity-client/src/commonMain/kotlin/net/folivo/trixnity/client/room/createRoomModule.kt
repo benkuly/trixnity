@@ -14,9 +14,9 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<DirectRoomEventHandler>()
     }
-    singleOf(::EncryptionEventHandler) {
+    singleOf(::RoomEncryptionEventHandler) {
         bind<EventHandler>()
-        named<EncryptionEventHandler>()
+        named<RoomEncryptionEventHandler>()
     }
     singleOf(::MembershipEventHandler) {
         bind<EventHandler>()

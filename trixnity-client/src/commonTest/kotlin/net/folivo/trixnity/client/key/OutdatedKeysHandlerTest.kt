@@ -46,7 +46,7 @@ private val body: ShouldSpec.() -> Unit = {
     val alice = UserId("alice", "server")
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
-    lateinit var olmStore: OlmStore
+    lateinit var olmCryptoStore: OlmCryptoStore
     lateinit var accountStore: AccountStore
     lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
@@ -64,7 +64,7 @@ private val body: ShouldSpec.() -> Unit = {
         signServiceMock = SignServiceMock()
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
-        olmStore = getInMemoryOlmStore(scope)
+        olmCryptoStore = getInMemoryOlmStore(scope)
         accountStore = getInMemoryAccountStore(scope)
         roomStore = getInMemoryRoomStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
@@ -75,7 +75,7 @@ private val body: ShouldSpec.() -> Unit = {
         cut = OutdatedKeysHandler(
             api,
             accountStore,
-            olmStore,
+            olmCryptoStore,
             roomStore,
             roomStateStore,
             keyStore,
@@ -501,8 +501,8 @@ private val body: ShouldSpec.() -> Unit = {
                     ),
                 ).forEach { roomStateStore.update(it) }
 
-                olmStore.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
-                olmStore.updateOutboundMegolmSession(room3) {
+                olmCryptoStore.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
+                olmCryptoStore.updateOutboundMegolmSession(room3) {
                     StoredOutboundMegolmSession(
                         room3,
                         newDevices = mapOf(cedric to setOf(cedricDevice)),
@@ -512,12 +512,12 @@ private val body: ShouldSpec.() -> Unit = {
 
                 keyStore.outdatedKeys.value = setOf(cedric, alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                olmStore.getOutboundMegolmSession(room1)?.newDevices shouldBe mapOf(
+                olmCryptoStore.getOutboundMegolmSession(room1)?.newDevices shouldBe mapOf(
                     alice to setOf(aliceDevice2),
                     cedric to setOf(cedricDevice)
                 )
-                olmStore.getOutboundMegolmSession(room2) should beNull()
-                olmStore.getOutboundMegolmSession(room3)?.newDevices shouldBe mapOf(
+                olmCryptoStore.getOutboundMegolmSession(room2) should beNull()
+                olmCryptoStore.getOutboundMegolmSession(room3)?.newDevices shouldBe mapOf(
                     alice to setOf(aliceDevice2),
                     cedric to setOf(cedricDevice)
                 )

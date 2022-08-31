@@ -8,9 +8,9 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createUserModule() = module {
-    singleOf(::MemberEventHandler) {
+    singleOf(::UserMemberEventHandler) {
         bind<EventHandler>()
-        named<MemberEventHandler>()
+        named<UserMemberEventHandler>()
     }
     singleOf(::PresenceEventHandler) {
         bind<EventHandler>()

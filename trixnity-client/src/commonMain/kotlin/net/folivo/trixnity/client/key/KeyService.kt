@@ -133,7 +133,7 @@ interface IKeyService {
 class KeyService(
     private val userInfo: UserInfo,
     private val keyStore: KeyStore,
-    private val olmStore: OlmStore,
+    private val olmCryptoStore: OlmCryptoStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val signService: ISignService,
     private val keyBackupService: IKeyBackupService,
@@ -303,7 +303,7 @@ class KeyService(
         val content = event.content
         return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
             combine(
-                olmStore.getInboundMegolmSession(content.sessionId, event.roomId, scope),
+                olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId, scope),
                 keyStore.getDeviceKeys(event.sender, scope)
             ) { megolmSession, deviceKeys ->
                 if (megolmSession == null || deviceKeys == null || megolmSession.isTrusted.not())

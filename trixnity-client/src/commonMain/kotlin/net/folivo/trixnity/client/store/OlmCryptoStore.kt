@@ -16,7 +16,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
-class OlmStore(
+class OlmCryptoStore(
     private val olmAccountRepository: OlmAccountRepository,
     private val olmSessionRepository: OlmSessionRepository,
     private val inboundMegolmSessionRepository: InboundMegolmSessionRepository,

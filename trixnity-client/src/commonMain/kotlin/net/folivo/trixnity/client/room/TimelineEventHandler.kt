@@ -378,7 +378,8 @@ class TimelineEventHandler(
     internal suspend fun addRelation(event: Event<MessageEventContent>) {
         if (event is Event.MessageEvent) {
             val relatesTo = event.content.relatesTo
-            if (relatesTo != null)
+            if (relatesTo != null) {
+                log.debug { "add relation to ${relatesTo.eventId}" }
                 roomTimelineStore.addRelation(
                     TimelineEventRelation(
                         roomId = event.roomId,
@@ -387,6 +388,7 @@ class TimelineEventHandler(
                         relatedEventId = relatesTo.eventId
                     )
                 )
+            }
         }
     }
 }

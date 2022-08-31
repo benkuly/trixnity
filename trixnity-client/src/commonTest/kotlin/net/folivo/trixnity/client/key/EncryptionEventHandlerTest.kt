@@ -48,13 +48,13 @@ private val body: ShouldSpec.() -> Unit = {
         KeySignatureTrustLevel.Valid(false)
     )
 
-    lateinit var cut: EncryptionEventHandler
+    lateinit var cut: KeyEncryptionEventHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
-        cut = EncryptionEventHandler(
+        cut = KeyEncryptionEventHandler(
             mockMatrixClientServerApiClient(json).first, roomStateStore, keyStore
         )
     }
@@ -63,7 +63,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(EncryptionEventHandler::handleEncryptionEvents.name) {
+    context(KeyEncryptionEventHandler::handleEncryptionEvents.name) {
         should("mark all joined and invited users as outdated") {
             listOf(
                 Event.StateEvent(

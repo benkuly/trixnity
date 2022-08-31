@@ -92,7 +92,7 @@ suspend inline fun RoomTimelineStore.getPrevious(event: TimelineEvent): Timeline
 suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId) != null
 
-suspend inline fun OlmStore.waitForInboundMegolmSession(
+suspend inline fun OlmCryptoStore.waitForInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,
     scope: CoroutineScope,

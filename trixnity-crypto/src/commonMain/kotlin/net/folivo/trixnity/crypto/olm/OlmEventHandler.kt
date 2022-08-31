@@ -39,12 +39,12 @@ class OlmEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         oneTimeKeysCountEmitter.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
         eventEmitter.subscribe(::handleMemberEvents)
-        eventEmitter.subscribe(decrypter)
+        eventEmitter.subscribe(decrypter::handleOlmEvent)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent)
         scope.coroutineContext.job.invokeOnCompletion {
             oneTimeKeysCountEmitter.unsubscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
             eventEmitter.unsubscribe(::handleMemberEvents)
-            eventEmitter.unsubscribe(decrypter)
+            eventEmitter.unsubscribe(decrypter::handleOlmEvent)
             decrypter.unsubscribe(::handleOlmEncryptedRoomKeyEventContent)
         }
     }

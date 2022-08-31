@@ -8,7 +8,7 @@ fun createStoreModule() = module {
     singleOf(::GlobalAccountDataStore)
     singleOf(::KeyStore)
     singleOf(::MediaStore)
-    singleOf(::OlmStore)
+    singleOf(::OlmCryptoStore)
     singleOf(::RoomAccountDataStore)
     singleOf(::RoomOutboxMessageStore)
     singleOf(::RoomStateStore)
@@ -23,7 +23,7 @@ fun createStoreModule() = module {
                 getOrNull<GlobalAccountDataStore>(),
                 getOrNull<KeyStore>(),
                 getOrNull<MediaStore>(),
-                getOrNull<OlmStore>(),
+                getOrNull<OlmCryptoStore>(),
                 getOrNull<RoomAccountDataStore>(),
                 getOrNull<RoomOutboxMessageStore>(),
                 getOrNull<RoomStateStore>(),

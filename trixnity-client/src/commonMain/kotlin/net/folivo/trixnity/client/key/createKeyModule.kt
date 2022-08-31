@@ -8,13 +8,13 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createKeyModule() = module {
-    singleOf(::MemberEventHandler) {
+    singleOf(::KeyMemberEventHandler) {
         bind<EventHandler>()
-        named<MemberEventHandler>()
+        named<KeyMemberEventHandler>()
     }
-    singleOf(::EncryptionEventHandler) {
+    singleOf(::KeyEncryptionEventHandler) {
         bind<EventHandler>()
-        named<EncryptionEventHandler>()
+        named<KeyEncryptionEventHandler>()
     }
     singleOf(::DeviceListsHandler) {
         bind<EventHandler>()

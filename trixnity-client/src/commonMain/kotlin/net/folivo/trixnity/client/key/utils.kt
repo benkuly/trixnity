@@ -106,7 +106,7 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
     }
 }
 
-internal fun OlmStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
+internal fun OlmCryptoStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
     account.update { olmAccount.pickle(pickleKey) }
 }
 

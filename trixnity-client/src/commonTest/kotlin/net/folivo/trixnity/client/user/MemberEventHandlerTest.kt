@@ -26,14 +26,14 @@ class MemberEventHandlerTest : ShouldSpec({
     lateinit var roomUserStore: RoomUserStore
     lateinit var scope: CoroutineScope
 
-    lateinit var cut: MemberEventHandler
+    lateinit var cut: UserMemberEventHandler
 
     val json = createMatrixEventJson()
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         accountStore = getInMemoryAccountStore(scope)
         roomUserStore = getInMemoryRoomUserStore(scope)
-        cut = MemberEventHandler(
+        cut = UserMemberEventHandler(
             mockMatrixClientServerApiClient(json).first,
             accountStore,
             roomUserStore,
@@ -44,7 +44,7 @@ class MemberEventHandlerTest : ShouldSpec({
         scope.cancel()
     }
 
-    context(MemberEventHandler::setRoomUser.name) {
+    context(UserMemberEventHandler::setRoomUser.name) {
         val user1 = UserId("user1", "server")
         val user2 = UserId("user2", "server")
         val user3 = UserId("user3", "server")

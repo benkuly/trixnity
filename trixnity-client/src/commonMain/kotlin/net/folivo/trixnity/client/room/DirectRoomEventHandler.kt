@@ -9,7 +9,6 @@ import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
@@ -52,6 +51,7 @@ class DirectRoomEventHandler(
         val stateKey = event.getStateKey()
         val sender = event.getSender()
         if (roomId != null && stateKey != null && sender != null) {
+            log.debug { "set direct room $roomId" }
             val userWithMembershipChange = UserId(stateKey)
             val directUser =
                 when {
