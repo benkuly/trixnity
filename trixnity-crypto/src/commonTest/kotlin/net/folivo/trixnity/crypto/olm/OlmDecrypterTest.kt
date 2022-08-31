@@ -44,7 +44,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw DecryptionException.ValidationFailed("whoops") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("catch KeyException") {
@@ -57,7 +57,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw KeyException.KeyNotFoundException("not found") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("catch OlmLibraryException") {
@@ -70,7 +70,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw OlmLibraryException("something") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("emit decrypted events") {
@@ -86,7 +86,7 @@ class OlmDecrypterTest : ShouldSpec({
             UserId("receiver", "server"), keysOf()
         )
         mocker.everySuspending { mockOlmEventService.decryptOlm(isAny(), isAny()) } returns decryptedEvent
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldContainExactly listOf(DecryptedOlmEventContainer(event, decryptedEvent))
     }
 })
