@@ -19,7 +19,7 @@ fun createMatrixJson(
 }
 
 fun createMatrixEventJson(
-    eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
     val modules = createEventSerializersModule(eventContentSerializerMappings)
@@ -28,13 +28,11 @@ fun createMatrixEventJson(
 
 fun createMatrixDataUnitJson(
     getRoomVersion: GetRoomVersionFunction,
-    eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
-    ephemeralDateUnitContentSerializerMappings: EphemeralDataUnitContentMappings = createEphemeralDateUnitContentSerializerMappings(),
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
     val modules = createDataUnitSerializersModule(
         eventContentSerializerMappings,
-        ephemeralDateUnitContentSerializerMappings,
         getRoomVersion
     )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
@@ -42,14 +40,12 @@ fun createMatrixDataUnitJson(
 
 fun createMatrixEventAndDataUnitJson(
     getRoomVersion: GetRoomVersionFunction,
-    eventContentSerializerMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
-    ephemeralDateUnitContentSerializerMappings: EphemeralDataUnitContentMappings = createEphemeralDateUnitContentSerializerMappings(),
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
     val modules = createEventSerializersModule(eventContentSerializerMappings) +
             createDataUnitSerializersModule(
                 eventContentSerializerMappings,
-                ephemeralDateUnitContentSerializerMappings,
                 getRoomVersion
             )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
@@ -58,5 +54,5 @@ fun createMatrixEventAndDataUnitJson(
 fun createEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
     DefaultEventContentSerializerMappings + customMappings
 
-fun createEphemeralDateUnitContentSerializerMappings(customMappings: EphemeralDataUnitContentMappings? = null): EphemeralDataUnitContentMappings =
-    DefaultEphemeralDataUnitContentSerializerMappings + customMappings.orEmpty()
+fun createDataUnitContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+    DefaultDataUnitContentSerializerMappings + customMappings

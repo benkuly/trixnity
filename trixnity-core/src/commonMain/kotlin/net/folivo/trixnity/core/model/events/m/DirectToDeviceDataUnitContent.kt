@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
+import net.folivo.trixnity.core.model.events.EphemeralEventContent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#send-to-device-messaging">matrix spec</a>
@@ -19,4 +19,4 @@ data class DirectToDeviceDataUnitContent(
     val sender: UserId,
     @SerialName("type")
     val type: String,
-) : EphemeralDataUnitContent
+) : EphemeralEventContent

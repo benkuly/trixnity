@@ -27,4 +27,22 @@ interface EventContentSerializerMappings {
             override val roomAccountData = roomAccountDataEventContentSerializerMappings
         }
     }
+
+    operator fun minus(minus: EventContentSerializerMappings?): EventContentSerializerMappings {
+        if (minus == null) return this
+        val roomEventContentSerializerMappings = this.message - minus.message
+        val stateEventContentSerializerMappings = this.state - minus.state
+        val ephemeralEventContentSerializerMappings = this.ephemeral - minus.ephemeral
+        val toDeviceEventContentSerializerMappings = this.toDevice - minus.toDevice
+        val globalAccountDataEventContentSerializerMappings = this.globalAccountData - minus.globalAccountData
+        val roomAccountDataEventContentSerializerMappings = this.roomAccountData - minus.roomAccountData
+        return object : EventContentSerializerMappings {
+            override val message = roomEventContentSerializerMappings
+            override val state = stateEventContentSerializerMappings
+            override val ephemeral = ephemeralEventContentSerializerMappings
+            override val toDevice = toDeviceEventContentSerializerMappings
+            override val globalAccountData = globalAccountDataEventContentSerializerMappings
+            override val roomAccountData = roomAccountDataEventContentSerializerMappings
+        }
+    }
 }

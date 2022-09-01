@@ -21,20 +21,20 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class MatrixClientServerApiHttpClient(
     private val baseUrl: Url? = null,
-    json: Json = createMatrixEventJson(),
-    contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) : MatrixApiClient(
+    eventContentSerializerMappings,
     json,
-    contentMappings,
     {
         httpClientFactory {
             it()

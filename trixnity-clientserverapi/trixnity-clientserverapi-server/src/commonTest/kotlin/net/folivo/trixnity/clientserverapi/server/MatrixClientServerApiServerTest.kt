@@ -9,6 +9,7 @@ import io.ktor.http.HttpHeaders.AccessControlRequestMethod
 import io.ktor.http.HttpHeaders.Origin
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.auth.*
+import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -56,17 +57,22 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
                         null
                     )
                 },
-                authenticationApiHandler = authenticationApiHandlerMock,
-                discoveryApiHandler = discoveryApiHandlerMock,
-                devicesApiHandler = devicesApiHandlerMock,
-                keysApiHandler = keysApiHandlerMock,
-                mediaApiHandler = mediaApiHandlerMock,
-                pushApiHandler = pushApiHandlerMock,
-                roomsApiHandler = roomsApiHandlerMock,
-                serverApiHandler = serverApiHandlerMock,
-                syncApiHandler = syncApiHandlerMock,
-                usersApiHandler = usersApiHandlerMock,
-            )
+            ) {
+                routing {
+                    matrixClientServerApiServerRoutes(
+                        authenticationApiHandler = authenticationApiHandlerMock,
+                        discoveryApiHandler = discoveryApiHandlerMock,
+                        devicesApiHandler = devicesApiHandlerMock,
+                        keysApiHandler = keysApiHandlerMock,
+                        mediaApiHandler = mediaApiHandlerMock,
+                        pushApiHandler = pushApiHandlerMock,
+                        roomsApiHandler = roomsApiHandlerMock,
+                        serverApiHandler = serverApiHandlerMock,
+                        syncApiHandler = syncApiHandlerMock,
+                        usersApiHandler = usersApiHandlerMock,
+                    )
+                }
+            }
         }
     }
 

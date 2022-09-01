@@ -40,31 +40,12 @@ fun Set<SerializerMapping<out EphemeralEventContent>>.contentDeserializer(
 ): KSerializer<out EphemeralEventContent> =
     firstOrNull { it.type == type }?.serializer ?: UnknownEphemeralEventContentSerializer(type)
 
-@JvmName("ephemeralDataUnitContentDeserializer")
-fun Set<SerializerMapping<out EphemeralDataUnitContent>>.contentDeserializer(
-    type: String,
-): KSerializer<out EphemeralDataUnitContent> =
-    firstOrNull { it.type == type }?.serializer ?: UnknownEphemeralDataUnitContentSerializer(type)
-
 @JvmName("ephemeralEventContentSerializer")
 fun Set<SerializerMapping<out EphemeralEventContent>>.contentSerializer(
     content: EphemeralEventContent,
 ): Pair<String, KSerializer<out EphemeralEventContent>> =
     when (content) {
         is UnknownEphemeralEventContent -> content.eventType to UnknownEphemeralEventContentSerializer(content.eventType)
-        else -> {
-            val contentSerializerMapping =
-                find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
-            contentSerializerMapping.type to contentSerializerMapping.serializer
-        }
-    }
-
-@JvmName("ephemeralDataUnitContentSerializer")
-fun Set<SerializerMapping<out EphemeralDataUnitContent>>.contentSerializer(
-    content: EphemeralDataUnitContent,
-): Pair<String, KSerializer<out EphemeralDataUnitContent>> =
-    when (content) {
-        is UnknownEphemeralDataUnitContent -> content.eventType to UnknownEphemeralDataUnitContentSerializer(content.eventType)
         else -> {
             val contentSerializerMapping =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
@@ -85,6 +66,7 @@ fun Set<SerializerMapping<out GlobalAccountDataEventContent>>.contentSerializer(
     when (content) {
         is UnknownGlobalAccountDataEventContent ->
             content.eventType to UnknownGlobalAccountDataEventContentSerializer(content.eventType)
+
         else -> {
             val contentSerializerMapping =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
@@ -105,6 +87,7 @@ fun Set<SerializerMapping<out RoomAccountDataEventContent>>.contentSerializer(
     when (content) {
         is UnknownRoomAccountDataEventContent ->
             content.eventType to UnknownRoomAccountDataEventContentSerializer(content.eventType)
+
         else -> {
             val contentSerializerMapping =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
@@ -126,6 +109,7 @@ fun Set<SerializerMapping<out RoomEventContent>>.contentSerializer(
         is UnknownRoomEventContent -> {
             content.eventType to UnknownRoomEventContentSerializer(content.eventType)
         }
+
         else -> {
             val contentDescriptor =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
@@ -149,9 +133,11 @@ fun Set<SerializerMapping<out StateEventContent>>.contentSerializer(
         is UnknownStateEventContent -> {
             content.eventType to UnknownStateEventContentSerializer(content.eventType)
         }
+
         is RedactedStateEventContent -> {
             content.eventType to RedactedStateEventContentSerializer(content.eventType)
         }
+
         else -> {
             val contentDescriptor = find { it.kClass.isInstance(content) }
             requireNotNull(contentDescriptor) { "event content type ${content::class} must be registered" }
@@ -175,9 +161,11 @@ fun Set<SerializerMapping<out MessageEventContent>>.contentSerializer(
         is UnknownMessageEventContent -> {
             content.eventType to UnknownMessageEventContentSerializer(content.eventType)
         }
+
         is RedactedMessageEventContent -> {
             content.eventType to RedactedMessageEventContentSerializer(content.eventType)
         }
+
         else -> {
             val contentDescriptor =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
@@ -199,6 +187,7 @@ fun Set<SerializerMapping<out ToDeviceEventContent>>.contentSerializer(
         is UnknownToDeviceEventContent -> {
             content.eventType to UnknownToDeviceEventContentSerializer(content.eventType)
         }
+
         else -> {
             val contentDescriptor =
                 find { it.kClass.isInstance(content) } ?: throw UnsupportedEventContentTypeException(content::class)
