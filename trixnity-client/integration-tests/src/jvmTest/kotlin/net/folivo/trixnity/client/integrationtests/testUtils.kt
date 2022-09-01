@@ -21,7 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
 
 const val synapseVersion =
-    "v1.60.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+    "v1.66.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
 private const val password = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(

@@ -214,8 +214,9 @@ class TimelineEventHandler(
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId ?: response.chunk?.findPreviousEvent()?.eventId
                 previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
-                previousHasGap = response.end != destinationBatch
-                        && response.chunk?.none { it.id == previousEvent } == true
+                previousHasGap = response.end != null &&
+                        response.end != destinationBatch &&
+                        response.chunk?.none { it.id == previousEvent } == true
             } else {
                 previousToken = null
                 previousEvent = possiblyPreviousEvent?.eventId
@@ -239,8 +240,9 @@ class TimelineEventHandler(
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId ?: response.chunk?.findNextEvent()?.eventId
                 nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
-                nextHasGap = response.end != destinationBatch
-                        && response.chunk?.none { it.id == nextEvent } == true
+                nextHasGap = response.end != null &&
+                        response.end != destinationBatch &&
+                        response.chunk?.none { it.id == nextEvent } == true
             } else {
                 nextToken = startGapBatchAfter
                 nextEvent = possiblyNextEvent?.eventId

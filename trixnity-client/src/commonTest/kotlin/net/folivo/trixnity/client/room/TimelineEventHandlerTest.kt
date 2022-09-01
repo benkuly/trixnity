@@ -910,6 +910,46 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     }
+                    should("add element to timeline when end is null") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start-3",
+                                    "end-1",
+                                    dir = GetEvents.Direction.BACKWARDS,
+                                    limit = 20,
+                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start-3",
+                                    end = null,
+                                    chunk = listOf(event2),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        roomTimelineStore.addAll(timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                gap("end-1")
+                                gap("start-3")
+                                +event3
+                            }
+                        })
+                        cut.unsafeFillTimelineGaps(event3.id, room)
+                        storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                            fragment {
+                                gap("start-1")
+                                +event1
+                                +event2
+                                +event3
+                            }
+                        }
+                    }
                     should("ignore overlapping events") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
@@ -1049,6 +1089,49 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 GetEvents.Response(
                                     start = "start",
                                     end = "end",
+                                    chunk = listOf(event3, event4),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        roomTimelineStore.addAll(timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                gap("start")
+                                gap("end")
+                                +event5
+                            }
+                        })
+                        cut.unsafeFillTimelineGaps(event2.id, room)
+                        storeTimeline(event1, event2, event3, event4, event5) shouldContainExactly timeline {
+                            fragment {
+                                gap("gap-before")
+                                +event1
+                                +event2
+                                +event3
+                                +event4
+                                +event5
+                            }
+                        }
+                    }
+                    should("add elements to timeline when end is null") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "start",
+                                    "end",
+                                    dir = GetEvents.Direction.FORWARDS,
+                                    limit = 20,
+                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "start",
+                                    end = null,
                                     chunk = listOf(event3, event4),
                                     state = listOf()
                                 )
