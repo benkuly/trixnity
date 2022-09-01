@@ -12,14 +12,14 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
-import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
+import net.folivo.trixnity.core.model.events.EphemeralEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class EphemeralDataUnitSerializer(
-    private val ephemeralDataUnitContentSerializers: Set<SerializerMapping<out EphemeralDataUnitContent>>,
+    private val ephemeralDataUnitContentSerializers: Set<SerializerMapping<out EphemeralEventContent>>,
 ) : KSerializer<EphemeralDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EphemeralDataUnitSerializer")
 
@@ -30,7 +30,7 @@ class EphemeralDataUnitSerializer(
         val contentSerializer = ephemeralDataUnitContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(EphemeralDataUnit.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event of type $type" }
-            EphemeralDataUnit.serializer(UnknownEphemeralDataUnitContentSerializer(type))
+            EphemeralDataUnit.serializer(UnknownEphemeralEventContentSerializer(type))
         }
     }
 
