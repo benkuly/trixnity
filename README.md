@@ -305,35 +305,10 @@ maven repositories and append `-SNAPSHOT` to the current Trixnity version.
 
 ## Build this project
 
-### Build Olm
-
-Build olm with the `buildOlm` gradle tasks.
-
 ### Android SDK
 
-Install the Android SDK with the following packages:
-
-- platforms;android-30
-- build-tools
-- ndk
-
-Add a file named `local.properties` with the following content in the project root:
+Install the Android SDK and add a file named `local.properties` with the following content in the project root:
 
 ```properties
 sdk.dir=/path/to/android/sdk
 ```
-
-### Libraries for c-bindings
-
-Linux:
-
-- cmake `3.24.0` (e.g. by running `sudo ./cmake-3.24.0-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
-  from
-  https://cmake.org/files/v3.24/cmake-3.24.0-linux-x86_64.sh).
-- libncurses5
-- ninja-build
-- mingw-w64
-
-Windows: Install msys2. Add cmake and run in msys2 mingw64
-shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
-. **Important:** Run this command and all gradle tasks within the msys2 **mingw64** shell!
