@@ -21,8 +21,8 @@ variables:
 .build-cache: &build-cache
   - key: global-tixnity-cache
     paths:
-    - $GRADLE_USER_HOME
-    - $KONAN_DATA_DIR
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
@@ -69,7 +69,6 @@ build-mac:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew buildOlm
     - ./gradlew build --stacktrace
 
 build-linux:
@@ -86,7 +85,6 @@ build-linux:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew buildOlm
     - ./gradlew build --stacktrace
 
 publish-snapshot-mac:
@@ -97,9 +95,8 @@ publish-snapshot-mac:
   artifacts:
     paths: [ "./trixnity-olm/build/processedResources" ]
   rules:
-   - *if-master
+    - *if-master
   script:
-    - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
 publish-snapshot-linux:
@@ -112,11 +109,10 @@ publish-snapshot-linux:
   cache:
     - *build-cache
   dependencies:
-     - publish-snapshot-mac
+    - publish-snapshot-mac
   rules:
     - *if-master
   script:
-    - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
 create-nexus-staging-repo:
@@ -130,19 +126,19 @@ create-nexus-staging-repo:
   script:
     - apt-get update && apt-get install -y curl jq
     - >
-        jsonOutput=$(curl -s
-        --request POST -u "$OSSRH_USERNAME:$OSSRH_PASSWORD"
-        --url https://oss.sonatype.org/service/local/staging/profiles/65b35e28422b2/start
-        --header 'Accept: application/json'
-        --header 'Content-Type: application/json'
-        --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
-        )
+      jsonOutput=$(curl -s
+      --request POST -u "$OSSRH_USERNAME:$OSSRH_PASSWORD"
+      --url https://oss.sonatype.org/service/local/staging/profiles/65b35e28422b2/start
+      --header 'Accept: application/json'
+      --header 'Content-Type: application/json'
+      --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
+      )
     - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
     - >
-        if [ -z "$OSSRH_REPOSITORY_ID" ]; then
-        echo "Error while creating the staging repository. Response: $jsonOutput";
-        exit 1;
-        fi
+      if [ -z "$OSSRH_REPOSITORY_ID" ]; then
+      echo "Error while creating the staging repository. Response: $jsonOutput";
+      exit 1;
+      fi
     - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
 publish-mac:
@@ -155,10 +151,9 @@ publish-mac:
   dependencies:
     - create-nexus-staging-repo
   rules:
-   - *if-release
+    - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
 
 publish-linux:
@@ -177,5 +172,4 @@ publish-linux:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew buildOlm
     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
