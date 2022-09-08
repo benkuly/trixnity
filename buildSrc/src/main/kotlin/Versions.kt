@@ -8,6 +8,7 @@ object Versions {
     const val kotlinxKover = "0.6.0" // https://github.com/Kotlin/kotlinx-kover/releases
     const val dokka = "1.7.10" // https://github.com/Kotlin/dokka/releases
     const val olm = "3.2.12" // https://gitlab.matrix.org/matrix-org/olm/-/releases
+    const val olmBinaries = "3.2.12-1" // https://gitlab.com/trixnity/olm-binaries/-/releases
     const val jna = "5.12.1" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.1.0" // https://github.com/ktorio/ktor/releases
     const val koin = "3.2.0" // https://insert-koin.io/docs/setup/v3.2
@@ -25,9 +26,7 @@ object Versions {
     const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
-    const val androidTargetSdk = 32
+    const val androidTargetSdk = 33
     const val androidMinSdk = 26
-    const val androidBuildTools = "32.0.0"
-    const val androidNdk = "23.1.7779620"
-    const val cmake = "3.24.0" // also update this in README.md
+    const val androidBuildTools = "33.0.0"
 }
