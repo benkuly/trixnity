@@ -223,7 +223,7 @@ class RoomService(
         scope.async {
             currentSyncState.retryWhenSyncIs(
                 RUNNING,
-                onError = { log.error(it) { "could not fetch missing event $startEventId" } },
+                onError = { log.error(it) { "could not fill gap starting from event $startEventId" } },
             ) {
                 timelineEventHandler.unsafeFillTimelineGaps(startEventId, roomId, limit).getOrThrow()
             }
