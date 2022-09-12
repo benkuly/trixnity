@@ -14,7 +14,7 @@ interface IPossiblyEncryptEvent {
     suspend operator fun invoke(
         content: MessageEventContent,
         roomId: RoomId,
-    ): MessageEventContent
+    ): Result<MessageEventContent>
 }
 
 class PossiblyEncryptEvent(
@@ -26,13 +26,13 @@ class PossiblyEncryptEvent(
     override suspend operator fun invoke(
         content: MessageEventContent,
         roomId: RoomId,
-    ): MessageEventContent {
+    ): Result<MessageEventContent> {
         return if (roomStore.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
             userService.loadMembers(roomId)
 
             val megolmSettings = roomStateStore.getByStateKey<EncryptionEventContent>(roomId)?.content
             requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
-            olmEncryptionService.encryptMegolm(content, roomId, megolmSettings)
-        } else content
+            kotlin.runCatching { olmEncryptionService.encryptMegolm(content, roomId, megolmSettings) }
+        } else Result.success(content)
     }
 }

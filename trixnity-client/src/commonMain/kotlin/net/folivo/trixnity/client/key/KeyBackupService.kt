@@ -226,7 +226,7 @@ class KeyBackupService(
     ): Boolean {
         val generatedPublicKey = try {
             freeAfter(OlmPkDecryption.create(privateKey)) { it.publicKey }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             log.warn(error) { "could not generate public key from private backup key" }
             return false
         }

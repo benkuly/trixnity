@@ -251,18 +251,14 @@ class OlmEncryptionService(
                 if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
                     val deviceId = senderDeviceKeys.deviceId
                     log.info { "try recover corrupted olm session by sending a dummy event due to: ${decryptError.message}" }
-                    requests.sendToDevice(
-                        mapOf(
-                            senderId to mapOf(
-                                deviceId to encryptOlm(
-                                    DummyEventContent,
-                                    senderId,
-                                    deviceId,
-                                    true
-                                )
-                            )
-                        )
-                    ).getOrThrow()
+                    val dummyEvent = try {
+                        encryptOlm(DummyEventContent, senderId, deviceId, true)
+                    } catch (e: Exception) {
+                        log.warn(e) { "could not encrypt dummy event for $senderId ($deviceId)" }
+                        null
+                    }
+                    if (dummyEvent != null)
+                        requests.sendToDevice(mapOf(senderId to mapOf(deviceId to dummyEvent))).getOrThrow()
                 }
                 throw decryptError
             }
@@ -369,7 +365,7 @@ class OlmEncryptionService(
                     .mapNotNull { deviceId ->
                         try {
                             deviceId to encryptOlm(roomKeyEventContent, user, deviceId)
-                        } catch (e: Throwable) {
+                        } catch (e: Exception) {
                             log.warn(e) { "could not encrypt room key with olm for $user ($deviceId)" }
                             null
                         }

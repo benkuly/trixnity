@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.room
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyBackupService
@@ -58,13 +57,7 @@ class MegolmRoomEventDecryptionService(
         } else null
     }
 
-    private suspend fun Event.RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>.decryptCatching(): Result<RoomEventContent> {
-        return try {
-            Result.success(olmEncryptionService.decryptMegolm(this).content)
-        } catch (ex: Exception) {
-            if (ex is CancellationException) throw ex
-            else Result.failure(ex)
-        }
-    }
+    private suspend fun Event.RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>.decryptCatching(): Result<RoomEventContent> =
+        kotlin.runCatching { olmEncryptionService.decryptMegolm(this).content }
 }
 

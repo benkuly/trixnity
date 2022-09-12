@@ -296,7 +296,7 @@ class KeyTrustService(
                         log.info { "sign own accounts device with own self signing key" }
                         signService.sign(deviceKey, signWithSecret(M_CROSS_SIGNING_SELF_SIGNING))
                     } else null
-                } catch (error: Throwable) {
+                } catch (error: Exception) {
                     log.warn { "could not sign key $key: ${error.message}" }
                     null
                 }
@@ -318,7 +318,7 @@ class KeyTrustService(
                                 signService.sign(crossSigningKey, signWithSecret(M_CROSS_SIGNING_USER_SIGNING))
                             }
                         } else null
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn { "could not sign key $key: ${error.message}" }
                         null
                     }
