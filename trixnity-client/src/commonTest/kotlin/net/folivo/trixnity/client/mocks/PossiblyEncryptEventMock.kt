@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 
 class PossiblyEncryptEventMock : IPossiblyEncryptEvent {
     lateinit var returnEncryptMegolm: suspend (MessageEventContent) -> MessageEventContent
-    override suspend fun invoke(content: MessageEventContent, roomId: RoomId): MessageEventContent {
-        return returnEncryptMegolm(content)
+    override suspend fun invoke(content: MessageEventContent, roomId: RoomId): Result<MessageEventContent> {
+        return kotlin.runCatching { returnEncryptMegolm(content) }
     }
 }
