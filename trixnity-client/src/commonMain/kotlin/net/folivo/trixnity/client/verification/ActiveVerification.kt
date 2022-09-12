@@ -135,7 +135,7 @@ abstract class ActiveVerification(
                     else -> cancelUnexpectedMessage(currentState)
                 }
             }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             cancel(Code.InternalError, "something went wrong: ${error.message}")
         }
     }
@@ -231,7 +231,7 @@ abstract class ActiveVerification(
                 if (state.value !is Cancel)
                     try {
                         sendVerificationStep(step)
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
@@ -241,7 +241,7 @@ abstract class ActiveVerification(
             else -> try {
                 sendVerificationStep(step)
                 handleVerificationStep(step, ownUserId, true)
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 log.debug { "could not send step $step because: ${error.message}" }
                 handleVerificationStep(
                     VerificationCancelEventContent(

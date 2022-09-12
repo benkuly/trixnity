@@ -76,17 +76,19 @@ class IncomingKeyRequestEventHandler(
                     ?.let { keyStore.secrets.value[it] }
                 if (requestedSecret != null) {
                     log.info { "send incoming key request answer (${request.name}) to device $requestingDeviceId" }
-                    api.users.sendToDevice(
-                        mapOf(
-                            ownUserId to mapOf(
-                                requestingDeviceId to olmEncryptionService.encryptOlm(
-                                    SecretKeySendEventContent(
-                                        request.requestId, requestedSecret.decryptedPrivateKey
-                                    ), ownUserId, requestingDeviceId
-                                )
-                            )
+                    val encryptedAnswer = try {
+                        olmEncryptionService.encryptOlm(
+                            SecretKeySendEventContent(request.requestId, requestedSecret.decryptedPrivateKey),
+                            ownUserId, requestingDeviceId
                         )
-                    ).getOrThrow()
+                    } catch (exception: Exception) {
+                        log.warn(exception) { "could not encrypt answer for key request (${request.name}) to device $requestingDeviceId" }
+                        null
+                    }
+                    if (encryptedAnswer != null)
+                        api.users.sendToDevice(
+                            mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
+                        ).getOrThrow()
                 } else log.info { "got a key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }
             }
             incomingSecretKeyRequests.update { it - request }

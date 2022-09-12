@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
@@ -37,12 +36,10 @@ class OlmEventHandlerTest : ShouldSpec({
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
-    val aliceDevice = "ALICEDEVICE"
     val roomId = RoomId("room", "server")
 
     lateinit var mockStore: OlmStoreMock
     val mockRequestHandler = MockOlmEventHandlerRequestHandler(mocker)
-    val json = createMatrixEventJson()
 
     lateinit var eventEmitter: EventEmitter
     lateinit var oneTimeKeysCountEmitter: OneTimeKeysCountEmitter

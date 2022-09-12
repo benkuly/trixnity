@@ -13,12 +13,8 @@ import net.folivo.trixnity.client.crypto.IPossiblyEncryptEvent
 import net.folivo.trixnity.client.key.IKeySecretService
 import net.folivo.trixnity.client.key.IKeyService
 import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.get
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
@@ -259,6 +255,7 @@ class VerificationService(
             try {
                 olmEncryptionService.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
+                log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${error.message}" }
                 request
             }
         })).getOrThrow()
@@ -289,11 +286,9 @@ class VerificationService(
             globalAccountDataStore.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
-        val sendContent = try {
-            possiblyEncryptEvent(request, roomId)
-        } catch (error: Exception) {
-            request
-        }
+        val sendContent = possiblyEncryptEvent(request, roomId)
+            .onFailure { log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${it.message}" } }
+            .getOrNull() ?: request
         val eventId = api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
         ActiveUserVerification(
             request = request,

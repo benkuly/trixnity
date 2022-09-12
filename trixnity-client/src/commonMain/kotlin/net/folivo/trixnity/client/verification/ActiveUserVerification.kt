@@ -61,12 +61,9 @@ class ActiveUserVerification(
     override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
-        val sendContent = try {
-            possiblyEncryptEvent(step, roomId)
-        } catch (error: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted." }
-            step
-        }
+        val sendContent = possiblyEncryptEvent(step, roomId)
+            .onFailure { log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${it.message}" } }
+            .getOrNull() ?: step
         api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
     }
 

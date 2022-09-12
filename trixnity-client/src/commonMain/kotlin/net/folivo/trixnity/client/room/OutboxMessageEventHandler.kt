@@ -83,7 +83,7 @@ class OutboxMessageEventHandler(
                                 val uploadedContent = uploader(content) { cacheUri ->
                                     mediaService.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress).getOrThrow()
                                 }
-                                possiblyEncryptEvent(uploadedContent, roomId)
+                                possiblyEncryptEvent(uploadedContent, roomId).getOrThrow()
                             }
                         log.trace { "send to $roomId : $content" }
                         val eventId =

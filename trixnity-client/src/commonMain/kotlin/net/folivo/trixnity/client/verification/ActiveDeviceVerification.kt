@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.IOlmDecrypter
 import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
-import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
 
@@ -53,22 +52,13 @@ class ActiveDeviceVerification(
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
         requireNotNull(theirDeviceId) { "their device id should never be null" }
-        try {
-            api.users.sendToDevice(
-                mapOf(
-                    theirUserId to mapOf(
-                        theirDeviceId to olmEncryptionService.encryptOlm(
-                            step,
-                            theirUserId,
-                            theirDeviceId
-                        )
-                    )
-                )
-            )
-        } catch (error: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
-            api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to step)))
-        }.getOrThrow()
+        val stepToSend = try {
+            olmEncryptionService.encryptOlm(step, theirUserId, theirDeviceId)
+        } catch (exception: Exception) {
+            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
+            step
+        }
+        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to stepToSend))).getOrThrow()
     }
 
     override suspend fun lifecycle() {
@@ -111,11 +101,12 @@ class ActiveDeviceVerification(
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
                                 olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
-                            } catch (olmError: OlmLibraryException) {
+                            } catch (exception: Exception) {
+                                log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
                                 cancelEvent
                             }
                         })).getOrThrow()
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }
                     }
                 }

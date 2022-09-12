@@ -136,7 +136,7 @@ class OutgoingKeyRequestEventHandler(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING, SecretType.M_CROSS_SIGNING_SELF_SIGNING -> {
                     val generatedPublicKey = try {
                         freeAfter(OlmPkSigning.create(content.secret)) { it.publicKey }
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn(error) { "could not generate public key from received secret" }
                         return
                     }
