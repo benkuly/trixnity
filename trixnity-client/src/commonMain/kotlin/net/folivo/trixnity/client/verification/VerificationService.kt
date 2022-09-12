@@ -255,6 +255,7 @@ class VerificationService(
             try {
                 olmEncryptionService.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
+                log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${error.message}" }
                 request
             }
         })).getOrThrow()
@@ -285,7 +286,9 @@ class VerificationService(
             globalAccountDataStore.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
-        val sendContent = possiblyEncryptEvent(request, roomId).getOrNull() ?: request
+        val sendContent = possiblyEncryptEvent(request, roomId)
+            .onFailure { log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${it.message}" } }
+            .getOrNull() ?: request
         val eventId = api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
         ActiveUserVerification(
             request = request,

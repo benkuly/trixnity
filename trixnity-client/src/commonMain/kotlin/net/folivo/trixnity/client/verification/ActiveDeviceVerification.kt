@@ -55,6 +55,7 @@ class ActiveDeviceVerification(
         val stepToSend = try {
             olmEncryptionService.encryptOlm(step, theirUserId, theirDeviceId)
         } catch (exception: Exception) {
+            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
             step
         }
         api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to stepToSend))).getOrThrow()
@@ -101,6 +102,7 @@ class ActiveDeviceVerification(
                             try {
                                 olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (exception: Exception) {
+                                log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
                                 cancelEvent
                             }
                         })).getOrThrow()
