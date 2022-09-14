@@ -89,7 +89,7 @@ class OutboxMessageEventHandler(
                         val eventId =
                             api.rooms.sendMessageEvent(roomId, content, outboxMessage.transactionId).getOrThrow()
                         if (config.setOwnMessagesAsFullyRead) {
-                            api.rooms.setReadMarkers(roomId, eventId).getOrThrow()
+                            api.rooms.setReadMarkers(roomId, eventId, eventId).getOrThrow()
                         }
                         roomOutboxMessageStore.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }
                         log.debug { "sent message with transactionId '${outboxMessage.transactionId}' and content $content" }
