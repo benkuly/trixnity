@@ -50,6 +50,7 @@ interface IMatrixClient {
     val avatarUrl: StateFlow<String?>
 
     val syncState: StateFlow<SyncState>
+    val initialSyncDone: StateFlow<Boolean>
 
     val loginState: StateFlow<LoginState?>
 
@@ -322,6 +323,11 @@ class MatrixClient private constructor(
         }
     }
 
+    override val initialSyncDone: StateFlow<Boolean> =
+        accountStore.syncBatchToken
+            .map { token -> token != null }
+            .stateIn(scope, Eagerly, accountStore.syncBatchToken.value != null)
+
     override val loginState: StateFlow<LoginState?> =
         combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
             when {
@@ -386,69 +392,79 @@ class MatrixClient private constructor(
         )
     }
 
-    private val isInitialized = MutableStateFlow(false)
     private val initializationMutex = Mutex()
+    private var initializationJob: Job? = null
 
     @OptIn(FlowPreview::class)
     private suspend fun startMatrixClient() = initializationMutex.withLock {
-        if (isInitialized.getAndUpdate { true }.not()) {
-            val handler = CoroutineExceptionHandler { _, exception ->
-                log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
-                scope.launch {
-                    stopSync(true)
+        if (initializationJob == null) {
+            // even if the caller is cancelled, the initialization should be done -> scope.launch()
+            initializationJob = scope.launch {
+                val handler = CoroutineExceptionHandler { _, exception ->
+                    log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
+                    scope.launch {
+                        stopSync(true)
+                    }
                 }
-            }
-            val allHandlersStarted = MutableStateFlow(false)
-            scope.launch(handler, CoroutineStart.UNDISPATCHED) {
-                eventHandlers.forEach {
-                    log.debug { "start EventHandler: ${it::class.simpleName}" }
-                    it.startInCoroutineScope(this)
+                val allHandlersStarted = MutableStateFlow(false)
+                scope.launch(handler, CoroutineStart.UNDISPATCHED) {
+                    eventHandlers.forEach {
+                        log.debug { "start EventHandler: ${it::class.simpleName}" }
+                        it.startInCoroutineScope(this)
+                    }
+                    allHandlersStarted.value = true
                 }
-                allHandlersStarted.value = true
-            }
-            allHandlersStarted.first { it }
-            log.debug { "all EventHandler started" }
-            scope.launch {
-                loginState.debounce(100.milliseconds).collect {
-                    log.info { "login state: $it" }
-                    when (it) {
-                        LOGGED_OUT_SOFT -> {
-                            log.info { "stop sync" }
-                            stopSync(true)
-                        }
+                allHandlersStarted.first { it }
+                log.debug { "all EventHandler started" }
+                scope.launch(handler) {
+                    loginState.debounce(100.milliseconds).collect {
+                        log.info { "login state: $it" }
+                        when (it) {
+                            LOGGED_OUT_SOFT -> {
+                                log.info { "stop sync" }
+                                stopSync(true)
+                            }
 
-                        LOGGED_OUT -> {
-                            log.info { "stop sync and delete all" }
-                            stopSync(true)
-                            rootStore.deleteAll()
-                        }
+                            LOGGED_OUT -> {
+                                log.info { "stop sync and delete all" }
+                                stopSync(true)
+                                rootStore.deleteAll()
+                            }
 
-                        else -> {}
+                            else -> {}
+                        }
+                    }
+                }
+
+                val filterId = accountStore.filterId.value
+                if (filterId == null) {
+                    accountStore.filterId.value = retryWhen(flowOf(true)) {
+                        api.users.setFilter(
+                            userId,
+                            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
+                        ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                    }
+                }
+                val backgroundFilterId = accountStore.backgroundFilterId.value
+                if (backgroundFilterId == null) {
+                    accountStore.backgroundFilterId.value = retryWhen(flowOf(true)) {
+                        api.users.setFilter(
+                            userId,
+                            Filters(
+                                room = Filters.RoomFilter(
+                                    state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                                    ephemeral = Filters.RoomFilter.RoomEventFilter(limit = 0)
+                                ),
+                                presence = Filters.EventFilter(limit = 0)
+                            )
+                        ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                     }
                 }
             }
-
-            val filterId = accountStore.filterId.value
-            if (filterId == null) {
-                accountStore.filterId.value = api.users.setFilter(
-                    userId,
-                    Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
-                ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
-            }
-            val backgroundFilterId = accountStore.backgroundFilterId.value
-            if (backgroundFilterId == null) {
-                accountStore.backgroundFilterId.value = api.users.setFilter(
-                    userId,
-                    Filters(
-                        room = Filters.RoomFilter(
-                            state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
-                            ephemeral = Filters.RoomFilter.RoomEventFilter(limit = 0)
-                        ),
-                        presence = Filters.EventFilter(limit = 0)
-                    )
-                ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
-            }
         }
+
+        // everyone has to wait for the initialization to finish
+        initializationJob?.join()
     }
 
     override suspend fun stopSync(wait: Boolean) {
