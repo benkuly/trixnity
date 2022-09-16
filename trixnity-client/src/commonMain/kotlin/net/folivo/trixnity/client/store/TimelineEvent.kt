@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
-import kotlinx.serialization.json.JsonNames
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
@@ -44,7 +43,6 @@ data class TimelineEvent(
         @Serializable
         @SerialName("before")
         data class GapBefore(
-            @JsonNames("batch")
             override val batchBefore: String,
         ) : Gap {
             @Transient
@@ -54,16 +52,13 @@ data class TimelineEvent(
         @Serializable
         @SerialName("both")
         data class GapBoth(
-            @JsonNames("batch")
             override val batchBefore: String,
-            @JsonNames("batch")
             override val batchAfter: String,
         ) : Gap
 
         @Serializable
         @SerialName("after")
         data class GapAfter(
-            @JsonNames("batch")
             override val batchAfter: String,
         ) : Gap {
             @Transient
