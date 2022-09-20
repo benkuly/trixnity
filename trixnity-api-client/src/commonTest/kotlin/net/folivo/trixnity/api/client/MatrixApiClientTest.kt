@@ -71,6 +71,37 @@ class MatrixApiClientTest {
     }
 
     @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    data class PostUnitPath(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<Unit, Unit>
+
+    @Test
+    fun itShouldAllowSendUnitPostRequest() = runTest {
+        val cut = MatrixApiClient(
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/path/1?requestParam=2", request.url.fullPath)
+                    assertEquals("localhost", request.url.host)
+                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
+                    assertEquals(Post, request.method)
+                    assertEquals("""{}""", request.body.toByteArray().decodeToString())
+                    respond(
+                        """{}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            json = json,
+        )
+
+        cut.request(PostUnitPath("1", "2")).getOrThrow()
+    }
+
+    @Serializable
     @Resource("/path")
     @HttpMethod(GET)
     @ForceJson
