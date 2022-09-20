@@ -1135,6 +1135,8 @@ class RoomsRoutesTest : TestsWithMocks() {
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event") {
                 bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("{}")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK

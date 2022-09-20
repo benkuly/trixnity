@@ -82,6 +82,10 @@ open class MatrixApiClient(
             if (requestBody != Unit) {
                 if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, requestBody))
                 else setBody(requestBody)
+            } else {
+                if (endpoint.requestContentType == ContentType.Application.Json
+                    && (method == io.ktor.http.HttpMethod.Post || method == io.ktor.http.HttpMethod.Put)
+                ) setBody("{}")
             }
             requestBuilder()
         }
