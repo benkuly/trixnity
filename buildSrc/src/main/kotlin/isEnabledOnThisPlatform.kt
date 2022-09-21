@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 val isCI = System.getenv("CI") != null
+val isMainCIHost = isCI && HostManager.hostIsLinux
 val isRelease = System.getenv("CI_COMMIT_TAG")?.matches("^v\\d+.\\d+.\\d+.*".toRegex()) ?: false
 
 val isAndroidEnabled = KotlinPlatformType.androidJvm.isEnabledOnThisPlatform()

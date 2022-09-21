@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.coverage.JacocoReportTask.JacocoReportWorkerAction.Companion.logger
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.kotlin.dsl.get
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -17,9 +18,17 @@ fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
     target: KotlinPlatformType,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
 ): T? =
-    createTarget().apply {
-        compilations.configureEach {
-            compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+    when {
+        isMainCIHost -> createTarget().apply {
+            compilations.configureEach {
+                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+            }
+        }
+
+        target.isEnabledOnThisPlatform() -> createTarget()
+        else -> {
+            logger.info("disabled target ${target.name} because it is not enabled on this platform")
+            null
         }
     }
 
@@ -27,9 +36,17 @@ fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEna
     target: KonanTarget,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
 ): T? =
-    createTarget().apply {
-        compilations.configureEach {
-            compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+    when {
+        isMainCIHost -> createTarget().apply {
+            compilations.configureEach {
+                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+            }
+        }
+
+        target.isEnabledOnThisPlatform() -> createTarget()
+        else -> {
+            logger.info("disabled native target ${target.name} because it is not enabled on this platform")
+            null
         }
     }
 
