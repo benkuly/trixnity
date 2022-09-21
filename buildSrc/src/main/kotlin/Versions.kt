@@ -10,10 +10,10 @@ object Versions {
     const val olm = "3.2.12" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val olmBinaries = "3.2.12-1" // https://gitlab.com/trixnity/olm-binaries/-/releases
     const val jna = "5.12.1" // https://github.com/java-native-access/jna/tags
-    const val ktor = "2.1.0" // https://github.com/ktorio/ktor/releases
-    const val koin = "3.2.0" // https://insert-koin.io/docs/setup/v3.2
+    const val ktor = "2.1.1" // https://github.com/ktorio/ktor/releases
+    const val koin = "3.2.1" // https://insert-koin.io/docs/setup/v3.2
     const val korlibs = "3.0.0-Beta7" // https://github.com/korlibs/korge/releases
-    const val mocKmp = "1.8.1" // https://github.com/Kodein-Framework/MocKMP/releases
+    const val mocKmp = "1.9.0" // https://github.com/Kodein-Framework/MocKMP/releases
     const val uuid = "0.5.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.4.2" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.3" // https://github.com/testcontainers/testcontainers-java/releases
@@ -22,8 +22,8 @@ object Versions {
     const val sqlDelight = "1.5.3" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.39.2" // https://github.com/JetBrains/Exposed/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
-    const val kotlinLogging = "2.1.23" // https://github.com/MicroUtils/kotlin-logging/releases
-    const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
+    const val kotlinLogging = "3.0.0" // https://github.com/MicroUtils/kotlin-logging/releases
+    const val logback = "1.4.1" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
     const val androidTargetSdk = 33
