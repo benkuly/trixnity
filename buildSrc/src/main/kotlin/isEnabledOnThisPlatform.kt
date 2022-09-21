@@ -21,6 +21,9 @@ fun CIRequiredHostType.isEnabledOnThisPlatform() =
         CIRequiredHostType.COMMON -> true
     }
 
+val currentCIRequiredHostType
+    get() = if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+
 fun Family.isEnabledOnThisPlatform(): Boolean =
     when (this) {
         Family.OSX,
@@ -31,7 +34,7 @@ fun Family.isEnabledOnThisPlatform(): Boolean =
         Family.LINUX,
         Family.ANDROID,
         Family.WASM,
-        Family.MINGW -> if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+        Family.MINGW -> currentCIRequiredHostType
 
         Family.ZEPHYR -> error("Unsupported family: $this")
     }.isEnabledOnThisPlatform()
@@ -43,12 +46,12 @@ fun KotlinTarget.isEnabledOnThisPlatform(): Boolean =
     else platformType.isEnabledOnThisPlatform()
 
 fun KotlinPlatformType.isEnabledOnThisPlatform(): Boolean = when (this) {
-    KotlinPlatformType.common,
-    KotlinPlatformType.jvm -> CIRequiredHostType.COMMON
+    KotlinPlatformType.common -> CIRequiredHostType.COMMON
 
+    KotlinPlatformType.jvm,
     KotlinPlatformType.androidJvm,
     KotlinPlatformType.wasm,
-    KotlinPlatformType.js -> if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+    KotlinPlatformType.js -> currentCIRequiredHostType
 
     KotlinPlatformType.native -> throw IllegalArgumentException("Cannot determine enabled state for native. Don't use KotlinPlatformType for it.")
 }.isEnabledOnThisPlatform()

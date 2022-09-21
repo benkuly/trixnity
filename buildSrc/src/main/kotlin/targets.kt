@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.coverage.JacocoReportTask.JacocoReportWorkerAction.Companion.logger
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.kotlin.dsl.get
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -17,26 +16,22 @@ val slf4jLogger = LoggerFactory.getLogger("targets")
 fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
     target: KotlinPlatformType,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
-): T? {
-    return if (target.isEnabledOnThisPlatform()) {
-        this.run { createTarget() }
-    } else {
-        logger.info("disabled target ${target.name} because it is not enabled on this platform")
-        null
+): T? =
+    createTarget().apply {
+        compilations.configureEach {
+            compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+        }
     }
-}
 
 fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEnabled(
     target: KonanTarget,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
-): T? {
-    return if (target.isEnabledOnThisPlatform()) {
-        this.run { createTarget() }
-    } else {
-        logger.info("disabled native target ${target.name} because it is not enabled on this platform")
-        null
+): T? =
+    createTarget().apply {
+        compilations.configureEach {
+            compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+        }
     }
-}
 
 fun KotlinTarget.mainSourceSet(
     sourceSets: NamedDomainObjectContainer<KotlinSourceSet>,
