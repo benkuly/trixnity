@@ -47,9 +47,9 @@ fun KotlinTarget.isEnabledOnThisPlatform(): Boolean =
     else platformType.isEnabledOnThisPlatform()
 
 fun KotlinPlatformType.isEnabledOnThisPlatform(): Boolean = when (this) {
-    KotlinPlatformType.common -> CIRequiredHostType.COMMON
+    KotlinPlatformType.common,
+    KotlinPlatformType.jvm -> CIRequiredHostType.COMMON
 
-    KotlinPlatformType.jvm,
     KotlinPlatformType.androidJvm,
     KotlinPlatformType.wasm,
     KotlinPlatformType.js -> currentCIRequiredHostType
