@@ -1,10 +1,12 @@
 package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
+import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VideoMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.VideoInfo
 
+@TrixnityDsl
 suspend fun MessageBuilder.video(
     body: String,
     video: ByteArray,

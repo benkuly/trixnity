@@ -1,10 +1,12 @@
 package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
+import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.m.room.AudioInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.AudioMessageEventContent
 
+@TrixnityDsl
 suspend fun MessageBuilder.audio(
     body: String,
     audio: ByteArray,
