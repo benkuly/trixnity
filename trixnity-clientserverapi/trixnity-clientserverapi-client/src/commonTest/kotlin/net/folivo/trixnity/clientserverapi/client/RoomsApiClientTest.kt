@@ -1514,9 +1514,9 @@ class RoomsApiClientTest {
         matrixRestClient.rooms.getTags(UserId("user", "server"), RoomId("room", "server"))
             .getOrThrow() shouldBe TagEventContent(
             mapOf(
-                "m.favourite" to TagEventContent.Tag(0.1),
-                "u.Customers" to TagEventContent.Tag(),
-                "u.Work" to TagEventContent.Tag(0.7)
+                TagEventContent.TagName.Favourite to TagEventContent.Tag(0.1),
+                TagEventContent.TagName.Unknown("u.Customers") to TagEventContent.Tag(),
+                TagEventContent.TagName.Unknown("u.Work") to TagEventContent.Tag(0.7)
             )
         )
     }
