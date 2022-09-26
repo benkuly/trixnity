@@ -24,13 +24,21 @@ import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
+import mu.KotlinLogging
+
+private val log = KotlinLogging.logger { }
 
 object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"
 
     init {
-        val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
-        Native.register(OlmLibraryWrapper::class.java, lib)
+        try {
+            val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
+            Native.register(OlmLibraryWrapper::class.java, lib)
+        } catch (exception: Exception) {
+            log.error(exception) { "could not load olm library" }
+            throw exception
+        }
     }
 
 
