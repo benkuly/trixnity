@@ -24,21 +24,11 @@ import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
-import mu.KotlinLogging
-import java.io.IOException
-
-private val log = KotlinLogging.logger { }
 
 object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"
 
     init {
-        try {
-            Native.extractFromResourcePath(JNA_LIBRARY_NAME)
-        } catch (error: IOException) {
-            log.warn(error) { "could not load olm library from resources" }
-            // we don't want to fail, because the user may have added the library path manually
-        }
         val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
         Native.register(OlmLibraryWrapper::class.java, lib)
     }
