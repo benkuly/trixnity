@@ -32,11 +32,16 @@ object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"
 
     init {
-        try {
-            val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
-            Native.register(OlmLibraryWrapper::class.java, lib)
+        val lib = try {
+            NativeLibrary.getInstance(JNA_LIBRARY_NAME)
         } catch (exception: Throwable) {
             log.error(exception) { "could not load olm library" }
+            throw exception
+        }
+        try {
+            Native.register(OlmLibraryWrapper::class.java, lib)
+        } catch (exception: Throwable) {
+            log.error(exception) { "could not register olm library" }
             throw exception
         }
     }
