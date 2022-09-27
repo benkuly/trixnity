@@ -8,7 +8,7 @@ object Versions {
     const val kotlinxKover = "0.6.0" // https://github.com/Kotlin/kotlinx-kover/releases
     const val dokka = "1.7.10" // https://github.com/Kotlin/dokka/releases
     const val olm = "3.2.12" // https://gitlab.matrix.org/matrix-org/olm/-/releases
-    const val olmBinaries = "3.2.12-1" // https://gitlab.com/trixnity/olm-binaries/-/releases
+    const val olmBinaries = "3.2.12-2" // https://gitlab.com/trixnity/olm-binaries/-/releases
     const val jna = "5.12.1" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.1.1" // https://github.com/ktorio/ktor/releases
     const val koin = "3.2.1" // https://insert-koin.io/docs/setup/v3.2
