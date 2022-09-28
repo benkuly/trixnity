@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
@@ -161,18 +163,6 @@ class TimelineEventHandler(
         }
     }
 
-    private suspend fun List<Event.RoomEvent<*>>.findPreviousEvent() =
-        asFlow()
-            .mapNotNull { roomTimelineStore.get(it.id, it.roomId, withTransaction = false) }
-            .firstOrNull { it.gap?.hasGapAfter == true }
-            ?.also { log.trace { "previousEvent ${it.eventId} found in chunk" } }
-
-    private suspend fun List<Event.RoomEvent<*>>.findNextEvent() =
-        asFlow()
-            .mapNotNull { roomTimelineStore.get(it.id, it.roomId, withTransaction = false) }
-            .firstOrNull { it.gap?.hasGapBefore == true }
-            ?.also { log.trace { "nextEvent ${it.eventId} found in chunk" } }
-
     override suspend fun unsafeFillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
@@ -212,7 +202,7 @@ class TimelineEventHandler(
                     filter = LAZY_LOAD_MEMBERS_FILTER
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
-                previousEvent = possiblyPreviousEvent?.eventId ?: response.chunk?.findPreviousEvent()?.eventId
+                previousEvent = possiblyPreviousEvent?.eventId
                 previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
                 previousHasGap = response.end != null &&
                         response.end != destinationBatch &&
@@ -238,7 +228,7 @@ class TimelineEventHandler(
                     filter = LAZY_LOAD_MEMBERS_FILTER
                 ).getOrThrow()
                 nextToken = response.end
-                nextEvent = possiblyNextEvent?.eventId ?: response.chunk?.findNextEvent()?.eventId
+                nextEvent = possiblyNextEvent?.eventId
                 nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
                 nextHasGap = response.end != null &&
                         response.end != destinationBatch &&

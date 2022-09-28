@@ -990,6 +990,46 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     }
+                    should("prevent loop") {
+                        apiConfig.endpoints {
+                            matrixJsonEndpoint(
+                                json, mappings,
+                                GetEvents(
+                                    room.e(),
+                                    "gap",
+                                    null,
+                                    dir = GetEvents.Direction.BACKWARDS,
+                                    limit = 20,
+                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                )
+                            ) {
+                                GetEvents.Response(
+                                    start = "gap",
+                                    end = null,
+                                    chunk = listOf(event3, event2, event1),
+                                    state = listOf()
+                                )
+                            }
+                        }
+                        roomTimelineStore.addAll(timeline {
+                            fragment {
+                                gap("gap")
+                                +event1
+                                +event2
+                                +event3
+                                gap("gap")
+                            }
+                        })
+                        cut.unsafeFillTimelineGaps(event1.id, room)
+                        storeTimeline(event1, event2, event3) shouldContainExactly timeline {
+                            fragment {
+                                +event1
+                                +event2
+                                +event3
+                                gap("gap")
+                            }
+                        }
+                    }
                 }
                 context("gap not filled") {
                     should("add element to timeline") {
