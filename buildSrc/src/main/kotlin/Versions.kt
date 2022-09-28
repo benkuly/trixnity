@@ -27,6 +27,6 @@ object Versions {
 
     // make sure to update the build images, when you change a version here!
     const val androidTargetSdk = 33
-    const val androidMinSdk = 26
+    const val androidMinSdk = 24
     const val androidBuildTools = "33.0.0"
 }
