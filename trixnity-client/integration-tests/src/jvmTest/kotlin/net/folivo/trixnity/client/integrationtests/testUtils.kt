@@ -19,9 +19,34 @@ import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.utility.DockerImageName
 
 const val synapseVersion =
-    "v1.66.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+    "v1.68.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+
+fun synapseDocker() =
+    GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))
+        .apply {
+            withEnv(
+                mapOf(
+                    "VIRTUAL_HOST" to "localhost",
+                    "VIRTUAL_PORT" to "8008",
+                    "SYNAPSE_SERVER_NAME" to "localhost",
+                    "SYNAPSE_REPORT_STATS" to "no",
+                    "UID" to "1000",
+                    "GID" to "1000"
+                )
+            )
+            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
+            withExposedPorts(8008)
+            waitingFor(Wait.forHealthcheck())
+            withNetwork(Network.SHARED)
+        }
+
 private const val password = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(
