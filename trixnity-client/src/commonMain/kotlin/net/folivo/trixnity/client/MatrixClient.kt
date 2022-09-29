@@ -91,6 +91,8 @@ interface IMatrixClient {
 
     suspend fun stopSync(wait: Boolean = false)
 
+    suspend fun cancelSync(wait: Boolean = false)
+
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
     suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit>
@@ -469,6 +471,10 @@ class MatrixClient private constructor(
 
     override suspend fun stopSync(wait: Boolean) {
         api.sync.stop(wait)
+    }
+
+    override suspend fun cancelSync(wait: Boolean) {
+        api.sync.cancel(wait)
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {

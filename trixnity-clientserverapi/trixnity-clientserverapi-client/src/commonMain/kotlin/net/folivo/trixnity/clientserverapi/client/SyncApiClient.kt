@@ -115,6 +115,7 @@ interface ISyncApiClient : IEventEmitter {
     ): Result<T>
 
     suspend fun stop(wait: Boolean = false)
+    suspend fun cancel(wait: Boolean = false)
 }
 
 class SyncApiClient(
@@ -353,6 +354,11 @@ class SyncApiClient(
                 if (wait) syncJob?.join()
             }
         }
+    }
+
+    override suspend fun cancel(wait: Boolean) {
+        syncJob?.cancel()
+        if (wait) syncJob?.join()
     }
 
     private fun updateSyncState(newSyncState: SyncState) {
