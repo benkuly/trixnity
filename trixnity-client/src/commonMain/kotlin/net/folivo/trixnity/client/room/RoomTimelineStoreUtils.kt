@@ -58,6 +58,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
             gap = when {
                 hasGapBefore && hasGapAfter && previousToken != null && nextToken != null
                 -> TimelineEvent.Gap.GapBoth(previousToken, nextToken)
+
                 hasGapBefore && previousToken != null -> TimelineEvent.Gap.GapBefore(previousToken)
                 hasGapAfter && nextToken != null -> TimelineEvent.Gap.GapAfter(nextToken)
                 else -> null
@@ -80,6 +81,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                         gap = if (previousHasGap) previousToken?.let { TimelineEvent.Gap.GapBefore(it) } else null
                     )
                 }
+
                 0 -> {
                     TimelineEvent(
                         event = event,
@@ -90,6 +92,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                         gap = null
                     )
                 }
+
                 else -> {
                     TimelineEvent(
                         event = event,
@@ -106,7 +109,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
     }
 
     if (!nextEventChunk.isNullOrEmpty()) {
-        log.debug { "add events to timeline of $roomId before ${startEvent.eventId}" }
+        log.debug { "add events to timeline of $roomId after ${startEvent.eventId}" }
         val timelineEvents = nextEventChunk.mapIndexed { index, event ->
             when (index) {
                 nextEventChunk.lastIndex -> {
@@ -120,6 +123,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                         gap = if (nextHasGap) nextToken?.let { TimelineEvent.Gap.GapAfter(it) } else null,
                     )
                 }
+
                 0 -> {
                     TimelineEvent(
                         event = event,
@@ -130,6 +134,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                         gap = null
                     )
                 }
+
                 else -> {
                     TimelineEvent(
                         event = event,
