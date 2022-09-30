@@ -20,7 +20,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "2.3.8" +
+    version = "2.3.9" +
             when {
                 isRelease -> ""
                 isCI -> "-SNAPSHOT"

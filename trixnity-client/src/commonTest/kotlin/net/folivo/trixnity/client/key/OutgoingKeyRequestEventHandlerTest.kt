@@ -162,6 +162,28 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
         }
+        beforeTest {
+            cut.requestSecretKeysRequestIds.value = setOf("requestId")
+        }
+        should("ignore, when request was never made") {
+            cut.requestSecretKeysRequestIds.value = emptySet()
+            setDeviceKeys(true)
+            setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
+            setCrossSigningKeys(crossSigningPublicKey)
+            val secretEvent = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            globalAccountDataStore.update(secretEvent)
+            cut.handleOutgoingKeyRequestAnswer(
+                DecryptedOlmEventContainer(
+                    encryptedEvent, DecryptedOlmEvent(
+                        SecretKeySendEventContent("requestId", crossSigningPrivateKey),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                keyStore.secrets.value shouldBe mapOf()
+            }
+        }
         should("ignore, when sender device id cannot be found") {
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
@@ -479,6 +501,7 @@ private val body: ShouldSpec.() -> Unit = {
                 this.requestId shouldNot beEmpty()
             }
             keyStore.allSecretKeyRequests.first { it.size == 2 } shouldHaveSize 2
+            cut.requestSecretKeysRequestIds.value shouldHaveSize 1
         }
     }
     context(OutgoingKeyRequestEventHandler::requestSecretKeysWhenCrossSigned.name) {

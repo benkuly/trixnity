@@ -90,12 +90,12 @@ class OlmEventHandler(
                         ) { session ->
                             StoredInboundMegolmSession(
                                 senderKey = event.encrypted.content.senderKey,
+                                senderSigningKey = senderSigningKey,
                                 sessionId = content.sessionId,
                                 roomId = content.roomId,
                                 firstKnownIndex = session.firstKnownIndex,
                                 hasBeenBackedUp = false,
                                 isTrusted = true,
-                                senderSigningKey = senderSigningKey,
                                 forwardingCurve25519KeyChain = emptyList(),
                                 pickled = session.pickle(store.olmPickleKey)
                             )
