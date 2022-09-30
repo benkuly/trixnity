@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.key
 import com.benasher44.uuid.uuid4
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
@@ -57,6 +58,8 @@ class OutgoingKeyRequestEventHandler(
         }
     }
 
+    internal val requestSecretKeysRequestIds = MutableStateFlow(emptySet<String>())
+
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.values()
             .subtract(keyStore.secrets.value.keys)
@@ -82,6 +85,7 @@ class OutgoingKeyRequestEventHandler(
                 requestingDeviceId = ownDeviceId,
                 requestId = requestId
             )
+            requestSecretKeysRequestIds.update { it + requestId }
             log.debug { "send secret key request (${missingSecret.id}) to $receiverDeviceIds" }
             api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                 .onSuccess {
@@ -111,6 +115,10 @@ class OutgoingKeyRequestEventHandler(
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
             log.debug { "handle outgoing key request answer ${content.requestId}" }
+            if (requestSecretKeysRequestIds.value.contains(content.requestId).not()) {
+                log.warn { "received a key request, but we don't requested one with the id ${content.requestId}" }
+                return
+            }
             val (senderDeviceId, senderTrustLevel) = keyStore.getDeviceKeys(ownUserId)?.firstNotNullOfOrNull {
                 if (it.value.value.get<Key.Ed25519Key>()?.value == event.decrypted.senderKeys.get<Key.Ed25519Key>()?.value)
                     it.key to it.value.trustLevel
@@ -168,6 +176,7 @@ class OutgoingKeyRequestEventHandler(
             keyStore.secrets.update {
                 it + (secretType to StoredSecret(encryptedSecret, content.secret))
             }
+            requestSecretKeysRequestIds.update { it - content.requestId }
             val cancelRequestTo = request.receiverDeviceIds - senderDeviceId
             log.debug { "stored secret $secretType and cancel outgoing key request to $cancelRequestTo" }
             if (cancelRequestTo.isNotEmpty()) {
