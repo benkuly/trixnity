@@ -44,6 +44,19 @@ suspend inline fun <reified C : StateEventContent> IRoomService.getState(
     return getState(roomId, stateKey, C::class)
 }
 
+suspend inline fun <reified C : StateEventContent> IRoomService.getAllState(
+    roomId: RoomId,
+    scope: CoroutineScope,
+): Flow<Map<String, Event<C>?>?> {
+    return getAllState(roomId, C::class, scope)
+}
+
+suspend inline fun <reified C : StateEventContent> IRoomService.getAllState(
+    roomId: RoomId
+): Map<String, Event<C>?>? {
+    return getAllState(roomId, C::class)
+}
+
 /**
  * This collects all rooms, so when one room changes, a new room set gets emitted.
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,

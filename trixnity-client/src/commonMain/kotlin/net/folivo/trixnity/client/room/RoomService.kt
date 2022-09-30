@@ -199,6 +199,17 @@ interface IRoomService {
         stateKey: String = "",
         eventContentClass: KClass<C>,
     ): Event<C>?
+
+    suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): Flow<Map<String, Event<C>?>?>
+
+    suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+    ): Map<String, Event<C>?>?
 }
 
 class RoomService(
@@ -504,4 +515,20 @@ class RoomService(
     ): Event<C>? {
         return roomStateStore.getByStateKey(roomId, stateKey, eventContentClass)
     }
+
+    override suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): Flow<Map<String, Event<C>?>?> {
+        return roomStateStore.get(roomId, eventContentClass, scope)
+    }
+
+    override suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+    ): Map<String, Event<C>?>? {
+        return roomStateStore.get(roomId, eventContentClass)
+    }
+
 }
