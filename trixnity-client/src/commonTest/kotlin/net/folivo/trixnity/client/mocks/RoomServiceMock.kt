@@ -178,4 +178,19 @@ class RoomServiceMock : IRoomService {
     ): Event<C>? {
         throw NotImplementedError()
     }
+
+    override suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>,
+        scope: CoroutineScope
+    ): Flow<Map<String, Event<C>?>?> {
+        throw NotImplementedError()
+    }
+
+    override suspend fun <C : StateEventContent> getAllState(
+        roomId: RoomId,
+        eventContentClass: KClass<C>
+    ): Map<String, Event<C>?>? {
+        throw NotImplementedError()
+    }
 }
