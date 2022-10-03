@@ -169,7 +169,7 @@ class TimelineEventIT {
                 timelineEvent.previousEventId shouldNotBe null
             }
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
@@ -203,7 +203,7 @@ class TimelineEventIT {
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
@@ -240,7 +240,7 @@ class TimelineEventIT {
             }?.value?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
                 val content = it?.value?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"

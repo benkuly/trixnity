@@ -302,7 +302,7 @@ class MatrixClientTest : ShouldSpec({
             cut.displayName.first { it != null } shouldBe "bob"
             cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
 
-            cut.startSync().getOrThrow()
+            cut.startSync()
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"

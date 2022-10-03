@@ -83,7 +83,7 @@ interface IMatrixClient {
 
     suspend fun clearMediaCache(): Result<Unit>
 
-    suspend fun startSync(): Result<Unit>
+    suspend fun startSync()
 
     suspend fun syncOnce(timeout: Long = 0L): Result<Unit>
 
@@ -371,7 +371,7 @@ class MatrixClient private constructor(
         startSync()
     }
 
-    override suspend fun startSync(): Result<Unit> = kotlin.runCatching {
+    override suspend fun startSync() {
         startMatrixClient()
         api.sync.start(
             filter = requireNotNull(accountStore.filterId.value),
@@ -440,7 +440,10 @@ class MatrixClient private constructor(
 
                 val filterId = accountStore.filterId.value
                 if (filterId == null) {
-                    accountStore.filterId.value = retryWhen(flowOf(true)) {
+                    accountStore.filterId.value = retryWhen(
+                        flowOf(true),
+                        onError = { log.warn(it) { "could not set filter" } }
+                    ) {
                         api.users.setFilter(
                             userId,
                             Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
@@ -449,7 +452,10 @@ class MatrixClient private constructor(
                 }
                 val backgroundFilterId = accountStore.backgroundFilterId.value
                 if (backgroundFilterId == null) {
-                    accountStore.backgroundFilterId.value = retryWhen(flowOf(true)) {
+                    accountStore.backgroundFilterId.value = retryWhen(
+                        flowOf(true),
+                        onError = { log.warn(it) { "could not set filter" } }
+                    ) {
                         api.users.setFilter(
                             userId,
                             Filters(
