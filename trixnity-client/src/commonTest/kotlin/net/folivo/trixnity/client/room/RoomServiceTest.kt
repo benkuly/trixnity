@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
@@ -411,6 +412,38 @@ class RoomServiceTest : ShouldSpec({
             )
             cut.canBeRedacted(
                 timelineEvent = timelineEventByOtherUser,
+            ).firstOrNull() shouldBe false
+        }
+
+        should("not allow to redact an already redacted event") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 40,
+                        ),
+                        redact = 30,
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = TimelineEvent(
+                    event = MessageEvent(
+                        content = RedactedMessageEventContent(eventType = "redacted"),
+                        id = EventId("event"),
+                        sender = thisUser,
+                        roomId = room,
+                        originTimestamp = 0L
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                ),
             ).firstOrNull() shouldBe false
         }
 

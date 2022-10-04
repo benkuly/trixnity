@@ -549,7 +549,8 @@ class RoomService(
                     val redactPowerLevelNeeded = powerLevels.redact
                     val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
                     val otherMessages = userPowerLevel >= redactPowerLevelNeeded
-                    timelineEvent.content?.getOrNull() is MessageEventContent &&
+                    val content = timelineEvent.content?.getOrNull()
+                    content is MessageEventContent && content !is RedactedMessageEventContent &&
                             (timelineEvent.event.sender == userInfo.userId && ownMessages || otherMessages)
                 }.collect {
                     send(it)
