@@ -542,12 +542,13 @@ class RoomService(
         scope: CoroutineScope
     ): Flow<Boolean> {
         return roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class, scope)
-            .map { it?.content }
+            .filterNotNull()
+            .map { it.content }
             .map { powerLevels ->
-                val userPowerLevel = powerLevels?.users?.get(by) ?: powerLevels?.usersDefault ?: 0
+                val userPowerLevel = powerLevels.users[by] ?: powerLevels.usersDefault
                 val sendRedactionEventPowerLevel =
-                    powerLevels?.events?.get("m.room.redaction") ?: powerLevels?.eventsDefault ?: 0
-                val redactPowerLevelNeeded = powerLevels?.redact ?: 100
+                    powerLevels.events["m.room.redaction"] ?: powerLevels.eventsDefault
+                val redactPowerLevelNeeded = powerLevels.redact
                 val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
                 val otherMessages = userPowerLevel >= redactPowerLevelNeeded
                 timelineEvent.content?.getOrNull() is MessageEventContent &&
