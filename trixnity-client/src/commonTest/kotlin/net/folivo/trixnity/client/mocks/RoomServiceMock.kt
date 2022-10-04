@@ -13,7 +13,6 @@ import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RelationType
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -195,7 +194,7 @@ class RoomServiceMock : IRoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun canBeRedacted(timelineEvent: TimelineEvent, by: UserId, scope: CoroutineScope): Flow<Boolean> {
+    override suspend fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
         throw NotImplementedError()
     }
 }

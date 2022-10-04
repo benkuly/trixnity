@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -51,6 +52,13 @@ class RoomServiceTest : ShouldSpec({
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    val thisUser = UserId("thisUser")
+    val userInfo = UserInfo(
+        thisUser,
+        "deviceId",
+        signingPublicKey = Key.Ed25519Key(value = ""),
+        Key.Curve25519Key(value = "")
+    )
 
     lateinit var cut: RoomService
 
@@ -73,6 +81,7 @@ class RoomServiceTest : ShouldSpec({
             mediaServiceMock,
             TimelineEventHandlerMock(),
             CurrentSyncState(currentSyncState),
+            userInfo,
             scope
         )
     }
@@ -294,12 +303,11 @@ class RoomServiceTest : ShouldSpec({
         }
     }
     context(RoomService::canBeRedacted.name) {
-        val userId = UserId("userId")
         val timelineEventByUser = TimelineEvent(
             event = MessageEvent(
                 content = TextMessageEventContent(body = "Hi"),
                 id = EventId("4711"),
-                sender = userId,
+                sender = thisUser,
                 roomId = room,
                 originTimestamp = 0L,
             ),
@@ -325,14 +333,14 @@ class RoomServiceTest : ShouldSpec({
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
-                            userId to 40,
+                            thisUser to 40,
                         ),
                         events = mapOf(
                             "m.room.redaction" to 30,
                         )
                     ),
                     id = EventId("eventId"),
-                    sender = userId,
+                    sender = thisUser,
                     roomId = room,
                     originTimestamp = 0L,
                     stateKey = "",
@@ -340,8 +348,6 @@ class RoomServiceTest : ShouldSpec({
             )
             cut.canBeRedacted(
                 timelineEvent = timelineEventByUser,
-                by = userId,
-                this,
             ).firstOrNull() shouldBe true
         }
 
@@ -350,12 +356,12 @@ class RoomServiceTest : ShouldSpec({
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
-                            userId to 40,
+                            thisUser to 40,
                         ),
                         redact = 30,
                     ),
                     id = EventId("eventId"),
-                    sender = userId,
+                    sender = thisUser,
                     roomId = room,
                     originTimestamp = 0L,
                     stateKey = "",
@@ -363,8 +369,6 @@ class RoomServiceTest : ShouldSpec({
             )
             cut.canBeRedacted(
                 timelineEvent = timelineEventByOtherUser,
-                by = userId,
-                this,
             ).firstOrNull() shouldBe true
         }
         should("return false if the user has no high enough power level for event redactions") {
@@ -372,14 +376,14 @@ class RoomServiceTest : ShouldSpec({
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
-                            userId to 20,
+                            thisUser to 20,
                         ),
                         events = mapOf(
                             "m.room.redaction" to 30,
                         )
                     ),
                     id = EventId("eventId"),
-                    sender = userId,
+                    sender = thisUser,
                     roomId = room,
                     originTimestamp = 0L,
                     stateKey = "",
@@ -387,8 +391,6 @@ class RoomServiceTest : ShouldSpec({
             )
             cut.canBeRedacted(
                 timelineEvent = timelineEventByUser,
-                by = userId,
-                this,
             ).firstOrNull() shouldBe false
         }
         should("return false if the user has no high enough power level for redactions of events of other users") {
@@ -396,12 +398,12 @@ class RoomServiceTest : ShouldSpec({
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
-                            userId to 20,
+                            thisUser to 20,
                         ),
                         redact = 30,
                     ),
                     id = EventId("eventId"),
-                    sender = userId,
+                    sender = thisUser,
                     roomId = room,
                     originTimestamp = 0L,
                     stateKey = "",
@@ -409,8 +411,6 @@ class RoomServiceTest : ShouldSpec({
             )
             cut.canBeRedacted(
                 timelineEvent = timelineEventByOtherUser,
-                by = userId,
-                this,
             ).firstOrNull() shouldBe false
         }
 
@@ -420,12 +420,12 @@ class RoomServiceTest : ShouldSpec({
                     StateEvent(
                         content = PowerLevelsEventContent(
                             users = mapOf(
-                                userId to 40,
+                                thisUser to 40,
                             ),
                             redact = 30,
                         ),
                         id = EventId("eventId"),
-                        sender = userId,
+                        sender = thisUser,
                         roomId = room,
                         originTimestamp = 0L,
                         stateKey = "",
@@ -433,20 +433,18 @@ class RoomServiceTest : ShouldSpec({
                 )
                 val resultFlow = cut.canBeRedacted(
                     timelineEvent = timelineEventByOtherUser,
-                    by = userId,
-                    this,
                 )
                 resultFlow.first() shouldBe true
                 roomStateStore.update(
                     StateEvent(
                         content = PowerLevelsEventContent(
                             users = mapOf(
-                                userId to 20,
+                                thisUser to 20,
                             ),
                             redact = 30,
                         ),
                         id = EventId("eventId"),
-                        sender = userId,
+                        sender = thisUser,
                         roomId = room,
                         originTimestamp = 0L,
                         stateKey = "",

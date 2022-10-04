@@ -14,6 +14,7 @@ import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -45,6 +46,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     val json = createMatrixEventJson()
     val contentMappings = DefaultEventContentSerializerMappings
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
+    val userInfo = UserInfo(UserId("thisUser"), "deviceId", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
 
     lateinit var cut: RoomService
 
@@ -69,6 +71,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             mediaServiceMock,
             timelineEventHandlerMock,
             CurrentSyncState(currentSyncState),
+            userInfo,
             scope
         )
     }
