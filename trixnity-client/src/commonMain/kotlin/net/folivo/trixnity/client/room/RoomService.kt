@@ -19,11 +19,10 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKW
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.RelationType
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -210,6 +209,12 @@ interface IRoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Map<String, Event<C>?>?
+
+    suspend fun canBeRedacted(
+        timelineEvent: TimelineEvent,
+        by: UserId,
+        scope: CoroutineScope
+    ): Flow<Boolean>
 }
 
 class RoomService(
@@ -529,6 +534,25 @@ class RoomService(
         eventContentClass: KClass<C>,
     ): Map<String, Event<C>?>? {
         return roomStateStore.get(roomId, eventContentClass)
+    }
+
+    override suspend fun canBeRedacted(
+        timelineEvent: TimelineEvent,
+        by: UserId,
+        scope: CoroutineScope
+    ): Flow<Boolean> {
+        return roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class, scope)
+            .map { it?.content }
+            .map { powerLevels ->
+                val userPowerLevel = powerLevels?.users?.get(by) ?: powerLevels?.usersDefault ?: 0
+                val sendRedactionEventPowerLevel =
+                    powerLevels?.events?.get("m.room.redaction") ?: powerLevels?.eventsDefault ?: 0
+                val redactPowerLevelNeeded = powerLevels?.redact ?: 100
+                val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
+                val otherMessages = userPowerLevel >= redactPowerLevelNeeded
+                timelineEvent.content?.getOrNull() is MessageEventContent &&
+                        (timelineEvent.event.sender == by && ownMessages || otherMessages)
+            }
     }
 
 }
