@@ -7,11 +7,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlin.jvm.JvmInline
 
 @Serializable(with = EventIdSerializer::class)
-@JvmInline
-value class EventId(val full: String) {
+data class EventId(val full: String) {
     override fun toString() = full
 }
 

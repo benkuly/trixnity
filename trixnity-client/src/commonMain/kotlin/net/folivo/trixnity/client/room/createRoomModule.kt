@@ -63,6 +63,7 @@ fun createRoomModule() = module {
             get(named<TimelineEventHandler>()),
             get(),
             get(),
+            get(),
         )
     }
 }

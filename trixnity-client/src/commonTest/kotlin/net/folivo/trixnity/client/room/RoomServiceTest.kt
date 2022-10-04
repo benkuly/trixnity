@@ -17,13 +17,16 @@ import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
@@ -50,6 +53,13 @@ class RoomServiceTest : ShouldSpec({
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    val thisUser = UserId("thisUser")
+    val userInfo = UserInfo(
+        thisUser,
+        "deviceId",
+        signingPublicKey = Key.Ed25519Key(value = ""),
+        Key.Curve25519Key(value = "")
+    )
 
     lateinit var cut: RoomService
 
@@ -72,6 +82,7 @@ class RoomServiceTest : ShouldSpec({
             mediaServiceMock,
             TimelineEventHandlerMock(),
             CurrentSyncState(currentSyncState),
+            userInfo,
             scope
         )
     }
@@ -289,6 +300,190 @@ class RoomServiceTest : ShouldSpec({
                     content shouldBe content
                     transactionId.length shouldBeGreaterThan 12
                 }
+            }
+        }
+    }
+    context(RoomService::canBeRedacted.name) {
+        val timelineEventByUser = TimelineEvent(
+            event = MessageEvent(
+                content = TextMessageEventContent(body = "Hi"),
+                id = EventId("4711"),
+                sender = thisUser,
+                roomId = room,
+                originTimestamp = 0L,
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = null,
+        )
+        val timelineEventByOtherUser = TimelineEvent(
+            event = MessageEvent(
+                content = TextMessageEventContent(body = "Hi"),
+                id = EventId("4711"),
+                sender = UserId("otherUser"),
+                roomId = room,
+                originTimestamp = 0L,
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = null,
+        )
+
+        should("return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 40,
+                        ),
+                        events = mapOf(
+                            "m.room.redaction" to 30,
+                        )
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = timelineEventByUser,
+            ).firstOrNull() shouldBe true
+        }
+
+        should("return true if it is the event of another user but the user's power level is at least as high as the needed redaction power level") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 40,
+                        ),
+                        redact = 30,
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = timelineEventByOtherUser,
+            ).firstOrNull() shouldBe true
+        }
+        should("return false if the user has no high enough power level for event redactions") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 20,
+                        ),
+                        events = mapOf(
+                            "m.room.redaction" to 30,
+                        )
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = timelineEventByUser,
+            ).firstOrNull() shouldBe false
+        }
+        should("return false if the user has no high enough power level for redactions of events of other users") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 20,
+                        ),
+                        redact = 30,
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = timelineEventByOtherUser,
+            ).firstOrNull() shouldBe false
+        }
+
+        should("not allow to redact an already redacted event") {
+            roomStateStore.update(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            thisUser to 40,
+                        ),
+                        redact = 30,
+                    ),
+                    id = EventId("eventId"),
+                    sender = thisUser,
+                    roomId = room,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            cut.canBeRedacted(
+                timelineEvent = TimelineEvent(
+                    event = MessageEvent(
+                        content = RedactedMessageEventContent(eventType = "redacted"),
+                        id = EventId("event"),
+                        sender = thisUser,
+                        roomId = room,
+                        originTimestamp = 0L
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                ),
+            ).firstOrNull() shouldBe false
+        }
+
+        context("react to changes in the power levels") {
+            should("react to changes in the user's power levels") {
+                roomStateStore.update(
+                    StateEvent(
+                        content = PowerLevelsEventContent(
+                            users = mapOf(
+                                thisUser to 40,
+                            ),
+                            redact = 30,
+                        ),
+                        id = EventId("eventId"),
+                        sender = thisUser,
+                        roomId = room,
+                        originTimestamp = 0L,
+                        stateKey = "",
+                    )
+                )
+                val resultFlow = cut.canBeRedacted(
+                    timelineEvent = timelineEventByOtherUser,
+                )
+                resultFlow.first() shouldBe true
+                roomStateStore.update(
+                    StateEvent(
+                        content = PowerLevelsEventContent(
+                            users = mapOf(
+                                thisUser to 20,
+                            ),
+                            redact = 30,
+                        ),
+                        id = EventId("eventId"),
+                        sender = thisUser,
+                        roomId = room,
+                        originTimestamp = 0L,
+                        stateKey = "",
+                    )
+                )
+                resultFlow.first() shouldBe false
             }
         }
     }

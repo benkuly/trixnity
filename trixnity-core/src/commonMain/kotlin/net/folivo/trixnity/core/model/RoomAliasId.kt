@@ -7,11 +7,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlin.jvm.JvmInline
 
 @Serializable(with = RoomAliasIdSerializer::class)
-@JvmInline
-value class RoomAliasId(val full: String) {
+data class RoomAliasId(val full: String) {
 
     constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
 

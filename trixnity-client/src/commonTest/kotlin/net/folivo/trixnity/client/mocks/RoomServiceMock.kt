@@ -193,4 +193,8 @@ class RoomServiceMock : IRoomService {
     ): Map<String, Event<C>?>? {
         throw NotImplementedError()
     }
+
+    override suspend fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
+        throw NotImplementedError()
+    }
 }
