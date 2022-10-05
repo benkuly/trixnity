@@ -77,12 +77,7 @@ class KeyStore(
 
     suspend fun getDeviceKeys(
         userId: UserId,
-        scope: CoroutineScope
-    ): StateFlow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.get(userId, scope = scope)
-
-    suspend fun getDeviceKeys(
-        userId: UserId,
-    ): Map<String, StoredDeviceKeys>? = deviceKeysCache.get(userId)
+    ): Flow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.get(userId)
 
     suspend fun updateDeviceKeys(
         userId: UserId,
@@ -91,12 +86,7 @@ class KeyStore(
 
     suspend fun getCrossSigningKeys(
         userId: UserId,
-        scope: CoroutineScope
-    ): StateFlow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId, scope = scope)
-
-    suspend fun getCrossSigningKeys(
-        userId: UserId,
-    ): Set<StoredCrossSigningKeys>? = crossSigningKeysCache.get(userId)
+    ): Flow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId)
 
     suspend fun updateCrossSigningKeys(
         userId: UserId,
@@ -113,7 +103,7 @@ class KeyStore(
                     keyId = it,
                     keyAlgorithm = key.algorithm,
                 )
-            )?.let { state ->
+            ).first()?.let { state ->
                 if (state.keyValue == key.value) state
                 else KeyVerificationState.Blocked(state.keyValue)
             }

@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
@@ -54,7 +55,7 @@ class MembershipEventHandlerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            roomStore.get(room).value?.membership shouldBe Membership.LEAVE
+            roomStore.get(room).first()?.membership shouldBe Membership.LEAVE
         }
     }
 })

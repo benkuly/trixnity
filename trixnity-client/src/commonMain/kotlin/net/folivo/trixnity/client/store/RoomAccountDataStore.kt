@@ -51,26 +51,11 @@ class RoomAccountDataStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String = "",
-        scope: CoroutineScope
     ): Flow<RoomAccountDataEvent<C>?> {
         val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        return roomAccountDataCache.getBySecondKey(RoomAccountDataRepositoryKey(roomId, eventType), key, scope)
+        return roomAccountDataCache.getBySecondKey(RoomAccountDataRepositoryKey(roomId, eventType), key)
             .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
             .filterIsInstance()
-    }
-
-    suspend fun <C : RoomAccountDataEventContent> get(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String = "",
-    ): RoomAccountDataEvent<C>? {
-        val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
-            ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        val value = roomAccountDataCache.getBySecondKey(RoomAccountDataRepositoryKey(roomId, eventType), key)
-        return if (value?.content?.instanceOf(eventContentClass) == true) {
-            @Suppress("UNCHECKED_CAST")
-            value as RoomAccountDataEvent<C>?
-        } else null
     }
 }

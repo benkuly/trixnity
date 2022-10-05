@@ -121,9 +121,9 @@ class SasVerificationIT {
             client2Verification.state.first { it is Done }
                 .shouldBeInstanceOf<Done>()
 
-            client1.key.getTrustLevel(client2.userId, client2.deviceId, scope1)
+            client1.key.getTrustLevel(client2.userId, client2.deviceId)
                 .first { it == DeviceTrustLevel.Verified }
-            client2.key.getTrustLevel(client1.userId, client1.deviceId, scope2)
+            client2.key.getTrustLevel(client1.userId, client1.deviceId)
                 .first { it == DeviceTrustLevel.Verified }
         }
     }

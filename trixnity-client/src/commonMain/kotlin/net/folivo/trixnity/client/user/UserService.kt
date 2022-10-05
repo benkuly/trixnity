@@ -25,24 +25,14 @@ interface IUserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
-    suspend fun getAll(roomId: RoomId, scope: CoroutineScope): Flow<Set<RoomUser>?>
+    suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?>
 
-    suspend fun getAll(roomId: RoomId): Set<RoomUser>?
-
-    suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): Flow<RoomUser?>
-
-    suspend fun getById(userId: UserId, roomId: RoomId): RoomUser?
+    suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?>
 
     suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String = "",
-        scope: CoroutineScope
     ): Flow<C?>
-
-    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
-        eventContentClass: KClass<C>,
-        key: String = "",
-    ): C?
 }
 
 class UserService(
@@ -65,7 +55,7 @@ class UserService(
                     SyncState.RUNNING,
                     onError = { log.warn(it) { "failed loading members" } },
                 ) {
-                    val room = roomStore.get(roomId).value
+                    val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
@@ -81,35 +71,19 @@ class UserService(
         if (wait) roomStore.get(roomId).first { it?.membersLoaded == true }
     }
 
-    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): Flow<Set<RoomUser>?> {
-        return roomUserStore.getAll(roomId, scope)
-    }
-
-    override suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
+    override suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
         return roomUserStore.getAll(roomId)
     }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): Flow<RoomUser?> {
-        return roomUserStore.get(userId, roomId, scope)
-    }
-
-    override suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
+    override suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
         return roomUserStore.get(userId, roomId)
     }
 
     override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
     ): Flow<C?> {
-        return globalAccountDataStore.get(eventContentClass, key, scope)
+        return globalAccountDataStore.get(eventContentClass, key)
             .map { it?.content }
-    }
-
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
-        eventContentClass: KClass<C>,
-        key: String,
-    ): C? {
-        return globalAccountDataStore.get(eventContentClass, key)?.content
     }
 }

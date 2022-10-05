@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.MediaRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -28,7 +29,7 @@ class MediaStore(
 
     suspend fun addContent(uri: String, content: ByteArray) = mediaCache.update(uri) { content }
 
-    suspend fun getContent(uri: String): ByteArray? = mediaCache.get(uri)
+    suspend fun getContent(uri: String): ByteArray? = mediaCache.get(uri).first()
 
     suspend fun deleteContent(uri: String) = mediaCache.update(uri) { null }
 
@@ -39,7 +40,7 @@ class MediaStore(
     private val uploadMediaCache = RepositoryStateFlowCache(storeScope, uploadMediaRepository, rtm)
 
     suspend fun getUploadCache(cacheUri: String): UploadCache? =
-        uploadMediaCache.get(cacheUri)
+        uploadMediaCache.get(cacheUri).first()
 
     suspend fun updateUploadCache(
         cacheUri: String,

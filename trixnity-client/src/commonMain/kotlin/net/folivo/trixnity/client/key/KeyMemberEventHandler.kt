@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
@@ -32,13 +33,15 @@ class KeyMemberEventHandler(
     }
 
     internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
-        if (event is Event.StateEvent && roomStore.get(event.roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+        if (event is Event.StateEvent && roomStore.get(event.roomId)
+                .first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm
+        ) {
             log.debug { "handle membership change in an encrypted room" }
             val userId = UserId(event.stateKey)
             when (event.content.membership) {
                 Membership.LEAVE, Membership.BAN -> {
                     if (roomStore.encryptedJoinedRooms().find { roomId ->
-                            roomStateStore.getByStateKey<MemberEventContent>(roomId, event.stateKey)
+                            roomStateStore.getByStateKey<MemberEventContent>(roomId, event.stateKey).first()
                                 ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
                         } == null)
                         keyStore.updateDeviceKeys(userId) { null }
@@ -46,7 +49,7 @@ class KeyMemberEventHandler(
 
                 Membership.JOIN, Membership.INVITE -> {
                     if (event.unsigned?.previousContent?.membership != event.content.membership
-                        && keyStore.getDeviceKeys(userId) == null
+                        && keyStore.getDeviceKeys(userId).first() == null
                     ) keyStore.outdatedKeys.update { it + userId }
                 }
 

@@ -73,7 +73,7 @@ class UserServiceTest : ShouldSpec({
             roomStore.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
             continually(500.milliseconds) {
-                roomStore.get(roomId).value shouldBe storedRoom
+                roomStore.get(roomId).first() shouldBe storedRoom
             }
         }
         should("load members") {

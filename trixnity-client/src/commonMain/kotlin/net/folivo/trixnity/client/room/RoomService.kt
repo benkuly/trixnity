@@ -47,32 +47,29 @@ interface IRoomService {
     suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): StateFlow<TimelineEvent?>
+    ): Flow<TimelineEvent?>
 
     suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): StateFlow<TimelineEvent?>?
+    ): Flow<TimelineEvent?>?
 
     suspend fun getNextTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): StateFlow<TimelineEvent?>?
+    ): Flow<TimelineEvent?>?
 
     suspend fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
-    ): Flow<StateFlow<TimelineEvent?>?>
+    ): Flow<Flow<TimelineEvent?>?>
 
     /**
      * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
@@ -90,7 +87,7 @@ interface IRoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<StateFlow<TimelineEvent?>>
+    ): Flow<Flow<TimelineEvent?>>
 
     /**
      * Returns the last timeline events as flow.
@@ -111,7 +108,7 @@ interface IRoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<Flow<StateFlow<TimelineEvent?>>?>
+    ): Flow<Flow<Flow<TimelineEvent?>>?>
 
     /**
      * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
@@ -147,19 +144,17 @@ interface IRoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<List<StateFlow<TimelineEvent?>>>
+    ): Flow<List<Flow<TimelineEvent?>>>
 
     suspend fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?>
 
     suspend fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope,
     ): Flow<Set<TimelineEventRelation>?>
 
     suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
@@ -169,20 +164,13 @@ interface IRoomService {
     suspend fun retrySendMessage(transactionId: String)
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
 
-    suspend fun getById(roomId: RoomId): StateFlow<Room?>
+    suspend fun getById(roomId: RoomId): Flow<Room?>
 
     suspend fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String = "",
-        scope: CoroutineScope
     ): Flow<C?>
-
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String = "",
-    ): C?
 
     fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
 
@@ -190,25 +178,12 @@ interface IRoomService {
         roomId: RoomId,
         stateKey: String = "",
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Event<C>?>
 
-    suspend fun <C : StateEventContent> getState(
-        roomId: RoomId,
-        stateKey: String = "",
-        eventContentClass: KClass<C>,
-    ): Event<C>?
-
     suspend fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Map<String, Event<C>?>?>
-
-    suspend fun <C : StateEventContent> getAllState(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-    ): Map<String, Event<C>?>?
 
     suspend fun canBeRedacted(
         timelineEvent: TimelineEvent,
@@ -258,15 +233,14 @@ class RoomService(
     override suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): StateFlow<TimelineEvent?> {
-        return roomTimelineStore.get(eventId, roomId, coroutineScope).also { timelineEventFlow ->
-            coroutineScope.launch {
-                val timelineEvent = timelineEventFlow.value ?: withTimeoutOrNull(fetchTimeout) {
-                    val lastEventId = roomStore.get(roomId).value?.lastEventId
+    ): Flow<TimelineEvent?> = channelFlow {
+        roomTimelineStore.get(eventId, roomId).also { timelineEventFlow ->
+            launch {
+                val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
+                    val lastEventId = roomStore.get(roomId).first()?.lastEventId
                     if (lastEventId != null) {
                         log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
                         getTimelineEvents(
@@ -276,7 +250,7 @@ class RoomService(
                             decryptionTimeout = ZERO,
                             fetchTimeout = fetchTimeout,
                             limitPerFetch = limitPerFetch
-                        ).map { it.value }.first { it?.eventId == eventId }
+                        ).map { it.first() }.first { it?.eventId == eventId }
                             .also { log.trace { "found TimelineEvent $eventId" } }
                     } else null
                 }
@@ -293,30 +267,28 @@ class RoomService(
                     }
                 }
             }
-        }
+        }.collect { send(it) }
     }
 
     override suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         return event.previousEventId?.let {
-            getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
+            getTimelineEvent(it, event.roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
         }
     }
 
     override suspend fun getNextTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         return event.nextEventId?.let {
-            getTimelineEvent(it, event.roomId, coroutineScope, decryptionTimeout, fetchTimeout, limitPerFetch)
+            getTimelineEvent(it, event.roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
         }
     }
 
@@ -324,10 +296,10 @@ class RoomService(
     override suspend fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
-    ): Flow<StateFlow<TimelineEvent?>?> {
+    ): Flow<Flow<TimelineEvent?>?> {
         return roomStore.get(roomId).transformLatest { room ->
             coroutineScope {
-                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, this, decryptionTimeout))
+                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, decryptionTimeout))
                 else emit(null)
                 delay(INFINITE) // ensure, that the TimelineEvent does not get removed from cache
             }
@@ -341,15 +313,15 @@ class RoomService(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<StateFlow<TimelineEvent?>> =
+    ): Flow<Flow<TimelineEvent?>> =
         channelFlow {
             fun TimelineEvent.Gap?.hasGap() =
                 this != null && (this.hasGapBoth
                         || direction == FORWARDS && this.hasGapAfter
                         || direction == BACKWARDS && this.hasGapBefore)
 
-            var currentTimelineEventFlow: StateFlow<TimelineEvent?> =
-                getTimelineEvent(startFrom, roomId, this, decryptionTimeout, fetchTimeout, limitPerFetch)
+            var currentTimelineEventFlow: Flow<TimelineEvent?> =
+                getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
             send(currentTimelineEventFlow)
             do {
                 currentTimelineEventFlow = currentTimelineEventFlow
@@ -364,13 +336,15 @@ class RoomService(
                     .filter { it.gap.hasGap().not() }
                     .mapNotNull { currentTimelineEvent ->
                         when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
-                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, this, decryptionTimeout, ZERO)
+                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, decryptionTimeout, ZERO)
+                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, decryptionTimeout, ZERO)
                         }
                     }
                     .first()
                 send(currentTimelineEventFlow)
-            } while (isActive && (direction != BACKWARDS || currentTimelineEventFlow.value.let { it == null || it.isFirst.not() }))
+            } while (isActive && (direction != BACKWARDS || currentTimelineEventFlow.first()
+                    .let { it == null || it.isFirst.not() })
+            )
             log.info { "reached start of timeline $roomId" }
             close()
         }.buffer(0)
@@ -381,7 +355,7 @@ class RoomService(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<Flow<StateFlow<TimelineEvent?>>?> =
+    ): Flow<Flow<Flow<TimelineEvent?>>?> =
         roomStore.get(roomId)
             .mapLatest { it?.lastEventId }
             .distinctUntilChanged()
@@ -406,11 +380,13 @@ class RoomService(
                             syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
                 timelineEvents.map {
                     async {
-                        getTimelineEvent(it.id, it.roomId, this, decryptionTimeout)
+                        getTimelineEvent(it.id, it.roomId, decryptionTimeout)
                     }
                 }.asFlow()
-                    .map {
-                        it.await().value
+                    .map { timelineEventFlow ->
+                        withTimeoutOrNull(decryptionTimeout) {
+                            timelineEventFlow.await().first { it?.content != null }
+                        } ?: timelineEventFlow.await().first()
                     }.filterNotNull()
             }
         }
@@ -423,8 +399,8 @@ class RoomService(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<List<StateFlow<TimelineEvent?>>> = channelFlow {
-        val startEvent = getTimelineEvent(startFrom, roomId, this, decryptionTimeout, fetchTimeout, limitPerFetch)
+    ): Flow<List<Flow<TimelineEvent?>>> = channelFlow {
+        val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
         startEvent.filterNotNull().first()
         combine(
             getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
@@ -442,19 +418,17 @@ class RoomService(
     override suspend fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope,
-    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = roomTimelineStore.getRelations(eventId, roomId, scope)
+    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = roomTimelineStore.getRelations(eventId, roomId)
 
     override suspend fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope,
-    ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType, scope)
+    ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
 
 
     override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
-        val isEncryptedRoom = roomStore.get(roomId).value?.encryptionAlgorithm == Megolm
+        val isEncryptedRoom = roomStore.get(roomId).first()?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, mediaService).build(builder)
         requireNotNull(content)
         val transactionId = uuid4().toString()
@@ -479,7 +453,7 @@ class RoomService(
 
     override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()
 
-    override suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+    override suspend fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
     }
 
@@ -487,18 +461,9 @@ class RoomService(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
     ): Flow<C?> {
-        return roomAccountDataStore.get(roomId, eventContentClass, key, scope)
+        return roomAccountDataStore.get(roomId, eventContentClass, key)
             .map { it?.content }
-    }
-
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String,
-    ): C? {
-        return roomAccountDataStore.get(roomId, eventContentClass, key)?.content
     }
 
     override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = roomOutboxMessageStore.getAll()
@@ -507,55 +472,34 @@ class RoomService(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Event<C>?> {
-        return roomStateStore.getByStateKey(roomId, stateKey, eventContentClass, scope)
-    }
-
-    override suspend fun <C : StateEventContent> getState(
-        roomId: RoomId,
-        stateKey: String,
-        eventContentClass: KClass<C>,
-    ): Event<C>? {
         return roomStateStore.getByStateKey(roomId, stateKey, eventContentClass)
     }
 
     override suspend fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Map<String, Event<C>?>?> {
-        return roomStateStore.get(roomId, eventContentClass, scope)
-    }
-
-    override suspend fun <C : StateEventContent> getAllState(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-    ): Map<String, Event<C>?>? {
         return roomStateStore.get(roomId, eventContentClass)
     }
 
     override suspend fun canBeRedacted(
         timelineEvent: TimelineEvent,
     ): Flow<Boolean> {
-        return channelFlow {
-            roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class, this)
-                .filterNotNull()
-                .map { it.content }
-                .map { powerLevels ->
-                    val userPowerLevel = powerLevels.users[userInfo.userId] ?: powerLevels.usersDefault
-                    val sendRedactionEventPowerLevel =
-                        powerLevels.events["m.room.redaction"] ?: powerLevels.eventsDefault
-                    val redactPowerLevelNeeded = powerLevels.redact
-                    val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
-                    val otherMessages = userPowerLevel >= redactPowerLevelNeeded
-                    val content = timelineEvent.content?.getOrNull()
-                    content is MessageEventContent && content !is RedactedMessageEventContent &&
-                            (timelineEvent.event.sender == userInfo.userId && ownMessages || otherMessages)
-                }.collect {
-                    send(it)
-                }
-        }
+        return roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class)
+            .filterNotNull()
+            .map { it.content }
+            .map { powerLevels ->
+                val userPowerLevel = powerLevels.users[userInfo.userId] ?: powerLevels.usersDefault
+                val sendRedactionEventPowerLevel =
+                    powerLevels.events["m.room.redaction"] ?: powerLevels.eventsDefault
+                val redactPowerLevelNeeded = powerLevels.redact
+                val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
+                val otherMessages = userPowerLevel >= redactPowerLevelNeeded
+                val content = timelineEvent.content?.getOrNull()
+                content is MessageEventContent && content !is RedactedMessageEventContent &&
+                        (timelineEvent.event.sender == userInfo.userId && ownMessages || otherMessages)
+            }
     }
 
 }

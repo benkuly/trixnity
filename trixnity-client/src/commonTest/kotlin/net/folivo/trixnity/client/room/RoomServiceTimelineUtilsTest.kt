@@ -129,7 +129,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("get timeline events backwards") {
                 cut.getTimelineEvents(event3.id, room)
-                    .take(3).toList().map { it.value } shouldBe listOf(
+                    .take(3).toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
                     timelineEvent1
@@ -137,7 +137,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("get timeline events forwards") {
                 cut.getTimelineEvents(event1.id, room, FORWARDS)
-                    .take(3).toList().map { it.value } shouldBe listOf(
+                    .take(3).toList().map { it.first() } shouldBe listOf(
                     timelineEvent1,
                     timelineEvent2,
                     timelineEvent3
@@ -165,7 +165,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("fetch missing events by filling gaps") {
                 val result = async {
-                    cut.getTimelineEvents(event3.id, room).take(4).toList().map { it.value }
+                    cut.getTimelineEvents(event3.id, room).take(4).toList().map { it.first() }
                 }
                 timelineEventHandlerMock.unsafeFillTimelineGaps.first { it }
                 roomTimelineStore.addAll(
@@ -196,7 +196,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("flow should be finished when all collected") {
                 cut.getTimelineEvents(event3.id, room)
-                    .toList().map { it.value } shouldBe listOf(
+                    .toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
                     timelineEvent1.copy(gap = null, previousEventId = null)
@@ -213,7 +213,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val job = scope.launch {
                     cut.getTimelineEvents(event3.id, room)
                         .toFlowList(size)
-                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
                 }
                 resultList.first { it?.size == 2 } shouldBe listOf(
                     timelineEvent3,
@@ -265,7 +265,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
                 val job = scope.launch {
                     cut.getTimelineEventsAround(event2.id, room, beforeMaxSize, afterMaxSize)
-                        .collect { result.value = it.mapNotNull { it.value } }
+                        .collect { result.value = it.mapNotNull { it.first() } }
                 }
 
                 result.first { it?.size == 3 } shouldBe listOf(
@@ -306,7 +306,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             cut.getLastTimelineEvents(room)
                 .first()
                 .shouldNotBeNull()
-                .take(3).toList().map { it.value } shouldBe listOf(
+                .take(3).toList().map { it.first() } shouldBe listOf(
                 timelineEvent3,
                 timelineEvent2,
                 timelineEvent1
@@ -320,7 +320,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 cut.getLastTimelineEvents(room)
                     .filterNotNull()
                     .collectLatest { timelineEventFlow ->
-                        collectedEvents.value = timelineEventFlow.take(2).toList().map { it.value }
+                        collectedEvents.value = timelineEventFlow.take(2).toList().map { it.first() }
                     }
             }
 
@@ -347,7 +347,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .toFlowList(size)
-                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
             }
 
             resultList.first { it?.size == 2 } shouldBe listOf(

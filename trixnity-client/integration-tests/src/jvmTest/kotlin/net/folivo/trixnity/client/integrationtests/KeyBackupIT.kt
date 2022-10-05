@@ -63,7 +63,7 @@ class KeyBackupIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            startedClient1.client.verification.getSelfVerificationMethods(startedClient1.scope)
+            startedClient1.client.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                 .first()
 
@@ -86,9 +86,9 @@ class KeyBackupIT {
                 startedClient2.client.api.rooms.joinRoom(roomId).getOrThrow()
                 startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
-                startedClient1.client.room.getState<EncryptionEventContent>(roomId, scope = startedClient1.scope)
+                startedClient1.client.room.getState<EncryptionEventContent>(roomId)
                     .first { it != null }
-                startedClient2.client.room.getState<EncryptionEventContent>(roomId, scope = startedClient2.scope)
+                startedClient2.client.room.getState<EncryptionEventContent>(roomId)
                     .first { it != null }
             }
             withClue("send some messages") {
@@ -117,7 +117,7 @@ class KeyBackupIT {
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =
-                        client3.verification.getSelfVerificationMethods(scope)
+                        client3.verification.getSelfVerificationMethods()
                             .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
                             .first().methods
                     client3VerificationMethods.filterIsInstance<SelfVerificationMethod.CrossSignedDeviceVerification>().size shouldBe 1
@@ -129,12 +129,12 @@ class KeyBackupIT {
 
                 val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
-                    .map { it.map { it.value?.eventId } }
+                    .map { it.map { it.first()?.eventId } }
                     .first { it.size == 2 }
-                events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
-                events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()

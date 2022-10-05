@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
@@ -34,7 +35,7 @@ class KeySecretService(
         val decryptedSecrets = SecretType.values()
             .subtract(keyStore.secrets.value.keys)
             .mapNotNull { allowedSecret ->
-                val event = allowedSecret.getEncryptedSecret(globalAccountDataStore)
+                val event = allowedSecret.getEncryptedSecret(globalAccountDataStore).first()
                 if (event != null) {
                     kotlin.runCatching {
                         decryptSecret(key, keyId, keyInfo, allowedSecret.id, event.content, json)

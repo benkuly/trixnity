@@ -85,7 +85,7 @@ interface IVerificationService {
         value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
     }
 
-    suspend fun getSelfVerificationMethods(scope: CoroutineScope): Flow<SelfVerificationMethods>
+    suspend fun getSelfVerificationMethods(): Flow<SelfVerificationMethods>
 
     suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
@@ -283,7 +283,7 @@ class VerificationService(
         log.info { "create new user verification request to $theirUserId" }
         val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
         val roomId =
-            globalAccountDataStore.get<DirectEventContent>()?.content?.mappings?.get(theirUserId)
+            globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
                 ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = possiblyEncryptEvent(request, roomId)
@@ -310,17 +310,17 @@ class VerificationService(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getSelfVerificationMethods(scope: CoroutineScope): Flow<SelfVerificationMethods> {
+    override suspend fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
-            keyStore.getCrossSigningKeys(ownUserId, scope),
-            keyStore.getDeviceKeys(ownUserId, scope),
-            globalAccountDataStore.get<DefaultSecretKeyEventContent>(scope = scope)
+            keyStore.getCrossSigningKeys(ownUserId),
+            keyStore.getDeviceKeys(ownUserId),
+            globalAccountDataStore.get<DefaultSecretKeyEventContent>()
                 .transformLatest { event ->
                     coroutineScope {
                         event?.content?.key?.let {
-                            emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it, this))
+                            emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it))
                         } ?: emit(null)
                     }
                 },

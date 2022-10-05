@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.repository.InMemoryTwoDimensionsStoreRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
@@ -35,10 +36,10 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
 
     should("handle get after getBySecondKey") {
         repository.save("firstKey", mapOf("secondKey1" to "value1", "secondKey2" to "value2"))
-        cut.getBySecondKey("firstKey", "secondKey1") shouldBe "value1"
-        cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "value1"
+        cut.get("firstKey").first() shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
         repository.save("firstKey", mapOf())
-        cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        cut.get("firstKey").first() shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
     }
     context("updateBySecondKey") {
         should("always save") {
@@ -53,7 +54,7 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
                 it shouldBe "value1"
                 "value2"
             }
-            cut.get("firstKey") shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
+            cut.get("firstKey").first() shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
         }
         should("always delete") {
@@ -68,7 +69,7 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
                 null
             }
             repository.get("firstKey") shouldBe mapOf()
-            cut.get("firstKey") shouldBe mapOf()
+            cut.get("firstKey").first() shouldBe mapOf()
         }
         should("update existing cache value") {
             repository.save("firstKey", mapOf("secondKey1" to "old"))
@@ -76,25 +77,25 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
                 it shouldBe "old"
                 "value1"
             }
-            cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
+            cut.get("firstKey").first() shouldBe mapOf("secondKey1" to "value1")
             cut.updateBySecondKey("firstKey", "secondKey2") { "value2" }
-            cut.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+            cut.get("firstKey").first() shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
         }
     }
     context("getBySecondKey") {
         should("load from database, when not exists in cache") {
             repository.save("firstKey", mapOf("secondKey1" to "old"))
-            cut.getBySecondKey("firstKey", "secondKey1") shouldBe "old"
+            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old"
             repository.save("firstKey", mapOf("secondKey1" to "new"))
-            cut.getBySecondKey("firstKey", "secondKey1") shouldBe "old"
+            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old"
         }
         should("prefer cache") {
             cut.update("firstKey") {
                 mapOf("secondKey1" to "value1")
             }
             repository.save("firstKey", mapOf())
-            cut.getBySecondKey("firstKey", "secondKey1") shouldBe "value1"
+            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "value1"
         }
     }
 })

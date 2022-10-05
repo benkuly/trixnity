@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -33,11 +34,10 @@ class RoomStore(
 
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = allRooms
 
-    suspend fun get(roomId: RoomId): StateFlow<Room?> = roomCache.readWithCache(
+    suspend fun get(roomId: RoomId): Flow<Room?> = roomCache.readWithCache(
         roomId,
         isContainedInCache = { true },
         retrieveAndUpdateCache = { it },
-        null
     )
 
     suspend fun update(roomId: RoomId, withTransaction: Boolean = true, updater: suspend (oldRoom: Room?) -> Room?) =

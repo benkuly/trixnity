@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
@@ -27,7 +28,7 @@ class ClientOlmStore(
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
     private suspend fun getLocalCurve25519Key(userId: UserId, deviceId: String) =
-        keyStore.getDeviceKey(userId, deviceId)?.value?.get<Key.Curve25519Key>()
+        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Curve25519Key>()
 
     override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
         getLocalCurve25519Key(userId, deviceId) ?: run {
@@ -37,7 +38,7 @@ class ClientOlmStore(
         }
 
     private suspend fun getLocalEd25519Key(userId: UserId, deviceId: String) =
-        keyStore.getDeviceKey(userId, deviceId)?.value?.get<Key.Ed25519Key>()
+        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Ed25519Key>()
 
     override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
         getLocalEd25519Key(userId, deviceId) ?: run {
@@ -47,7 +48,7 @@ class ClientOlmStore(
         }
 
     private suspend fun getLocalDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key) =
-        keyStore.getDeviceKeys(userId)?.values?.map { it.value.signed }
+        keyStore.getDeviceKeys(userId).first()?.values?.map { it.value.signed }
             ?.find { it.keys.keys.any { key -> key.value == senderKey.value } }
 
     override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? =
@@ -76,7 +77,7 @@ class ClientOlmStore(
 
 
     override suspend fun getInboundMegolmSession(sessionId: String, roomId: RoomId): StoredInboundMegolmSession? =
-        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
+        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
 
     override suspend fun updateInboundMegolmMessageIndex(
         sessionId: String,
@@ -93,10 +94,10 @@ class ClientOlmStore(
         val members = roomStateStore.members(roomId, Membership.JOIN, Membership.INVITE)
         keyStore.waitForUpdateOutdatedKey(members)
         return members.mapNotNull { userId ->
-            keyStore.getDeviceKeys(userId)?.let { userId to it.keys }
+            keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }
         }.toMap()
     }
 
     override suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm? =
-        roomStore.get(roomId).value?.encryptionAlgorithm
+        roomStore.get(roomId).first()?.encryptionAlgorithm
 }

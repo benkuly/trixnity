@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
@@ -136,7 +137,7 @@ class OutdatedKeysHandler(
         devices: Map<String, SignedDeviceKeys>,
         joinedEncryptedRooms: Deferred<List<RoomId>>
     ) {
-        val oldDevices = keyStore.getDeviceKeys(userId)
+        val oldDevices = keyStore.getDeviceKeys(userId).first()
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
                 signService.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
@@ -154,7 +155,7 @@ class OutdatedKeysHandler(
         if (addedDeviceKeys.isNotEmpty()) {
             joinedEncryptedRooms.await()
                 .filter { roomId ->
-                    roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full)
+                    roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full).first()
                         ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
                 }.also {
                     if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDeviceKeys" }

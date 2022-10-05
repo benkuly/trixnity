@@ -48,5 +48,5 @@ class RoomOutboxMessageStore(
         roomOutboxMessageCache.update(transactionId, updater = updater)
 
     suspend fun get(transactionId: String): RoomOutboxMessage<*>? =
-        roomOutboxMessageCache.get(transactionId)
+        roomOutboxMessageCache.get(transactionId).first()
 }

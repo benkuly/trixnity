@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryAccountStore
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -103,7 +104,7 @@ class MemberEventHandlerTest : ShouldSpec({
                 event.copy(content = event.content.copy(displayName = "CHANGED!!!")),
                 skipWhenAlreadyPresent = true
             )
-            roomUserStore.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
+            roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
         }
         context("user is new member") {
             should("set our displayName to 'DisplayName'") {
@@ -114,7 +115,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     )
                 )
                 cut.setRoomUser(event)
-                roomUserStore.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
+                roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
             }
         }
         context("user is member") {
@@ -152,7 +153,7 @@ class MemberEventHandlerTest : ShouldSpec({
                         )
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
                 }
                 should("not change our displayName when it has not changed") {
                     val event = user1Event.copy(
@@ -162,12 +163,12 @@ class MemberEventHandlerTest : ShouldSpec({
                         )
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(roomId, user1, "OLD", event)
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "OLD", event)
                 }
                 should("set our displayName to '@user:server' when no displayName set") {
                     val event = user1Event.copy(content = MemberEventContent(membership = Membership.JOIN))
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId,
                         user1,
                         "@user1:server",
@@ -178,7 +179,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event =
                         user1Event.copy(content = MemberEventContent(displayName = "", membership = Membership.JOIN))
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId,
                         user1,
                         "@user1:server",
@@ -195,10 +196,10 @@ class MemberEventHandlerTest : ShouldSpec({
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1 (@user2:server)", event2
                     )
                 }
@@ -219,13 +220,13 @@ class MemberEventHandlerTest : ShouldSpec({
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1 (@user2:server)", event2
                     )
-                    roomUserStore.get(user3, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user3, roomId).first() shouldBe RoomUser(
                         roomId, user3, "U1 (@user3:server)", event3
                     )
                 }
@@ -241,7 +242,7 @@ class MemberEventHandlerTest : ShouldSpec({
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "OLD", event2
                     )
                 }
@@ -263,10 +264,10 @@ class MemberEventHandlerTest : ShouldSpec({
                     )
                     cut.setRoomUser(event)
 
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "OLD (@user2:server)", event2
                     )
-                    roomUserStore.get(user3, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user3, roomId).first() shouldBe RoomUser(
                         roomId, user3, "OLD (@user3:server)", event3
                     )
                 }
@@ -288,7 +289,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     content = MemberEventContent(displayName = "OLD", membership = Membership.LEAVE)
                 )
                 cut.setRoomUser(event)
-                roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                     roomId, user1, "OLD (@user1:server)", event
                 )
             }
@@ -301,10 +302,10 @@ class MemberEventHandlerTest : ShouldSpec({
                         content = MemberEventContent(displayName = "U1", membership = Membership.BAN)
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1", event2
                     )
                 }
@@ -328,13 +329,13 @@ class MemberEventHandlerTest : ShouldSpec({
                         )
                     )
                     cut.setRoomUser(event)
-                    roomUserStore.get(user1, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
-                    roomUserStore.get(user2, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1 (@user2:server)", event2
                     )
-                    roomUserStore.get(user3, roomId) shouldBe RoomUser(
+                    roomUserStore.get(user3, roomId).first() shouldBe RoomUser(
                         roomId, user3, "U1 (@user3:server)", event3
                     )
                 }

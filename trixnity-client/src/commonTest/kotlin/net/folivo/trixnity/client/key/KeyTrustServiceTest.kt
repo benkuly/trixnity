@@ -7,6 +7,7 @@ import io.ktor.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
@@ -209,7 +210,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             keyStore.updateDeviceKeys(bob) { mapOf(bobDevice to bobKey) }
             cut.updateTrustLevelOfKeyChainSignedBy(alice, aliceSigningKey1)
-            keyStore.getDeviceKey(bob, bobDevice) shouldBe bobKey.copy(trustLevel = Valid(false))
+            keyStore.getDeviceKey(bob, bobDevice).first() shouldBe bobKey.copy(trustLevel = Valid(false))
         }
         should("calculate trust level and update cross signing keys") {
             val key = StoredCrossSigningKeys(
@@ -221,7 +222,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             keyStore.updateCrossSigningKeys(bob) { setOf(key) }
             cut.updateTrustLevelOfKeyChainSignedBy(alice, aliceSigningKey1)
-            keyStore.getCrossSigningKeys(bob)?.firstOrNull() shouldBe key.copy(trustLevel = CrossSigned(false))
+            keyStore.getCrossSigningKeys(bob).first()?.firstOrNull() shouldBe key.copy(trustLevel = CrossSigned(false))
         }
     }
     context("calculateTrustLevel") {

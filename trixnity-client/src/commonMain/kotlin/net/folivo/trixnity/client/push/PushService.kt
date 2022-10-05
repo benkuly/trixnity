@@ -73,7 +73,7 @@ class PushService(
         }
 
         val pushRules =
-            globalAccountDataStore.get<PushRulesEventContent>(scope = this).map { event ->
+            globalAccountDataStore.get<PushRulesEventContent>().map { event ->
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
                     setOf(OVERRIDE, CONTENT, ROOM, SENDER, UNDERRIDE)
@@ -173,7 +173,7 @@ class PushService(
                 val content = event.content
                 if (content is RoomMessageEventContent) {
                     event.getRoomId()?.let { roomId ->
-                        roomUserStore.get(userInfo.userId, roomId)?.name?.let { username ->
+                        roomUserStore.get(userInfo.userId, roomId).first()?.name?.let { username ->
                             content.body.contains(username)
                         } ?: false
                     } ?: false
@@ -183,7 +183,7 @@ class PushService(
             is PushCondition.RoomMemberCount -> {
                 event.getRoomId()?.let { roomId ->
                     pushCondition.isCount.checkIsCount(
-                        roomStore.get(roomId).value?.name?.summary?.joinedMemberCount ?: 0
+                        roomStore.get(roomId).first()?.name?.summary?.joinedMemberCount ?: 0
                     )
                 } ?: false
             }
@@ -192,9 +192,9 @@ class PushService(
                 event.getRoomId()?.let { roomId ->
                     // at the moment, key can only be "room"
                     val powerLevels =
-                        roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId, "")?.content
+                        roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId, "").first()?.content
                     val requiredNotificationPowerLevel = powerLevels?.notifications?.room ?: 100
-                    val senderPowerLevel = powerLevels?.users?.get(event.getSender()) ?: 0
+                    val senderPowerLevel = powerLevels?.users?.get(event.getSender()) ?: powerLevels?.usersDefault ?: 0
                     senderPowerLevel >= requiredNotificationPowerLevel
                 } ?: false
             }

@@ -1,9 +1,6 @@
 package net.folivo.trixnity.client.key
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
@@ -60,7 +57,7 @@ class KeyTrustService(
         keyId: String,
         keyInfo: SecretKeyEventContent
     ): Result<Unit> {
-        val encryptedMasterKey = globalAccountDataStore.get<MasterKeyEventContent>()?.content
+        val encryptedMasterKey = globalAccountDataStore.get<MasterKeyEventContent>().first()?.content
             ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
         val decryptedPublicKey =
             kotlin.runCatching {
@@ -74,7 +71,8 @@ class KeyTrustService(
         return if (advertisedPublicKey?.value?.decodeUnpaddedBase64Bytes()
                 ?.contentEquals(decryptedPublicKey?.decodeUnpaddedBase64Bytes()) == true
         ) {
-            val ownDeviceKeys = keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId)?.value?.get<Ed25519Key>()
+            val ownDeviceKeys =
+                keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId).first()?.value?.get<Ed25519Key>()
             kotlin.runCatching {
                 trustAndSignKeys(setOfNotNull(advertisedPublicKey, ownDeviceKeys), userInfo.userId)
             }
@@ -231,7 +229,7 @@ class KeyTrustService(
                         } else null
                     } else null
 
-                    val deviceKey = signatureKey.keyId?.let { keyStore.getDeviceKey(signingUserId, it) }?.value
+                    val deviceKey = signatureKey.keyId?.let { keyStore.getDeviceKey(signingUserId, it).first() }?.value
                     val signingDeviceKey = deviceKey?.get<Ed25519Key>()
                     val deviceKeyState = if (signingDeviceKey != null) {
                         val isValid = verifySignedObject(mapOf(signingUserId to setOf(signingDeviceKey)))
@@ -287,7 +285,7 @@ class KeyTrustService(
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
         log.debug { "sign keys (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
-            val deviceKey = key.keyId?.let { keyStore.getDeviceKey(userId, it) }?.value?.signed
+            val deviceKey = key.keyId?.let { keyStore.getDeviceKey(userId, it).first() }?.value?.signed
             if (deviceKey != null) {
                 keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
                 updateTrustLevelOfKey(userId, key)

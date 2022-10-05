@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.getByStateKey
@@ -27,10 +28,10 @@ class PossiblyEncryptEvent(
         content: MessageEventContent,
         roomId: RoomId,
     ): Result<MessageEventContent> {
-        return if (roomStore.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+        return if (roomStore.get(roomId).first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
             userService.loadMembers(roomId)
 
-            val megolmSettings = roomStateStore.getByStateKey<EncryptionEventContent>(roomId)?.content
+            val megolmSettings = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first()?.content
             requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
             kotlin.runCatching { olmEncryptionService.encryptMegolm(content, roomId, megolmSettings) }
         } else Result.success(content)
