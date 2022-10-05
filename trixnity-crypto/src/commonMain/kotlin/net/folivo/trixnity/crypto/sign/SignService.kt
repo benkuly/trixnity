@@ -17,7 +17,7 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 
-interface ISignService {
+interface SignService {
     suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
     suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = SignWith.DeviceKey): Signatures<UserId>
 
@@ -42,11 +42,11 @@ interface ISignService {
     ): VerifyResult
 }
 
-class SignService(
+class SignServiceImpl(
     private val userInfo: UserInfo,
     private val json: Json,
     private val store: SignServiceStore,
-) : ISignService {
+) : SignService {
 
     override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> = sign(
         DeviceKeys(
@@ -176,19 +176,19 @@ class SignService(
         canonicalJsonString(JsonObject(input.filterKeys { it != "unsigned" && it != "signatures" }))
 }
 
-suspend inline fun <reified T> ISignService.sign(
+suspend inline fun <reified T> SignService.sign(
     unsignedObject: T,
     signWith: SignWith = SignWith.DeviceKey
 ): Signed<T, UserId> =
     sign(unsignedObject, serializer(), signWith)
 
-suspend inline fun <reified T> ISignService.signatures(
+suspend inline fun <reified T> SignService.signatures(
     unsignedObject: T,
     signWith: SignWith = SignWith.DeviceKey
 ): Signatures<UserId> =
     signatures(unsignedObject, serializer(), signWith)
 
-suspend inline fun <reified T> ISignService.verify(
+suspend inline fun <reified T> SignService.verify(
     signedObject: Signed<T, UserId>,
     checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
 ): VerifyResult =

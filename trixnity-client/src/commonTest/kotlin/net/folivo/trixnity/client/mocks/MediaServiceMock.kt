@@ -2,13 +2,13 @@ package net.folivo.trixnity.client.mocks
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.client.media.IMediaService
+import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 
-class MediaServiceMock : IMediaService {
+class MediaServiceMock : MediaService {
     override suspend fun getMedia(uri: String, progress: MutableStateFlow<FileTransferProgress?>?): Result<ByteArray> {
         throw NotImplementedError()
     }

@@ -15,7 +15,7 @@ class RoomTimelineStore(
     private val timelineEventRelationRepository: TimelineEventRelationRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope,
-) : IStore {
+) : Store {
     private val timelineEventCache = RepositoryStateFlowCache(storeScope, timelineEventRepository, rtm)
     private val timelineEventRelationCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, timelineEventRelationRepository, rtm)

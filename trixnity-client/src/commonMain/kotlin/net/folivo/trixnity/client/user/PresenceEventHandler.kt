@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.getSender
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
@@ -16,7 +15,7 @@ import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 
 class PresenceEventHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {

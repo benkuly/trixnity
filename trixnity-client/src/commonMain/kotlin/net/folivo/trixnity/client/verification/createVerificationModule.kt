@@ -7,7 +7,7 @@ import org.koin.dsl.module
 
 fun createVerificationModule() = module {
     single {
-        VerificationService(
+        VerificationServiceImpl(
             get(),
             get(),
             get(),
@@ -22,8 +22,8 @@ fun createVerificationModule() = module {
             get(),
         )
     }.apply {
-        bind<IVerificationService>()
+        bind<VerificationService>()
         bind<EventHandler>()
-        named<VerificationService>()
+        named<VerificationServiceImpl>()
     }
 }

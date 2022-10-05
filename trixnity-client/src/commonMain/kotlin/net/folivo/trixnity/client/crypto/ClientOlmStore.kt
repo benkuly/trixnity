@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.key.waitForUpdateOutdatedKey
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -24,7 +24,7 @@ class ClientOlmStore(
     private val keyStore: KeyStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
-    private val userService: IUserService
+    private val userService: UserService
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
     private suspend fun getLocalCurve25519Key(userId: UserId, deviceId: String) =

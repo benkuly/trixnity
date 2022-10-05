@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
@@ -29,7 +29,7 @@ class ActiveSasVerificationMethod private constructor(
     private val transactionId: String?,
     private val sendVerificationStep: suspend (step: VerificationStep) -> Unit,
     private val keyStore: KeyStore,
-    private val keyTrustService: IKeyTrustService,
+    private val keyTrustService: KeyTrustService,
     private val json: Json,
     private val olmSas: OlmSAS,
 ) : ActiveVerificationMethod() {
@@ -80,7 +80,7 @@ class ActiveSasVerificationMethod private constructor(
             transactionId: String?,
             sendVerificationStep: suspend (step: VerificationStep) -> Unit,
             keyStore: KeyStore,
-            keyTrustService: IKeyTrustService,
+            keyTrustService: KeyTrustService,
             json: Json,
         ): ActiveSasVerificationMethod? {
             return when {

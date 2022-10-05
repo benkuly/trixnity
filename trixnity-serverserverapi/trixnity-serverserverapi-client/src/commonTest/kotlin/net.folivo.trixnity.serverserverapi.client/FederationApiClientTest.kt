@@ -9,8 +9,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
@@ -80,7 +80,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldSendTransaction() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -159,7 +159,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetEventAuthChain() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -187,7 +187,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldBackfillRoom() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -222,7 +222,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetMissingEvents() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -276,7 +276,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetEvent() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -308,7 +308,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetState() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -338,7 +338,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetStateIds() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -371,7 +371,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldMakeJoin() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -433,7 +433,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldSendJoin() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -573,7 +573,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldMakeKnock() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -633,7 +633,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldSendKnock() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -740,7 +740,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldInvite() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -897,7 +897,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldMakeLeave() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -957,7 +957,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldSendLeave() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1030,7 +1030,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldOnBindThirdPid() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1098,7 +1098,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldExchangeThirdPartyInvite() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1189,7 +1189,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetPublicRooms() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1254,7 +1254,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetPublicRoomsWithFilter() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1332,7 +1332,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetHierarchy() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1469,7 +1469,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldQueryDirectory() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1512,7 +1512,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldQueryProfile() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1547,7 +1547,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetOIDCUserInfo() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1579,7 +1579,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetDevices() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1713,7 +1713,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldClaimKeys() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -1789,7 +1789,7 @@ class FederationApiClientTest {
 
     @Test
     fun shouldGetKeys() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },

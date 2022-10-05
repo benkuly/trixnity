@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
@@ -25,7 +25,7 @@ import kotlin.js.JsName
 
 private val log = KotlinLogging.logger {}
 
-interface IActiveVerification {
+interface ActiveVerification {
     val theirUserId: UserId
     val timestamp: Long
     val relatesTo: RelatesTo.Reference?
@@ -37,7 +37,7 @@ interface IActiveVerification {
     suspend fun cancel(message: String = "user cancelled verification")
 }
 
-abstract class ActiveVerification(
+abstract class ActiveVerificationImpl(
     request: VerificationRequest,
     requestIsFromOurOwn: Boolean,
     protected val ownUserId: UserId,
@@ -49,9 +49,9 @@ abstract class ActiveVerification(
     override val relatesTo: RelatesTo.Reference?,
     override val transactionId: String?,
     protected val keyStore: KeyStore,
-    private val keyTrustService: IKeyTrustService,
+    private val keyTrustService: KeyTrustService,
     protected val json: Json,
-) : IActiveVerification {
+) : ActiveVerification {
     @JsName("_theirDeviceId")
     var theirDeviceId: String? = theirInitialDeviceId
         private set

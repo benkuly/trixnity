@@ -7,7 +7,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.crypto.sign.verify
 import kotlin.time.Duration.Companion.seconds
@@ -23,14 +23,14 @@ import kotlin.time.Duration.Companion.seconds
 private val log = KotlinLogging.logger {}
 
 class OutdatedKeysHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val keyStore: KeyStore,
-    private val signService: ISignService,
-    private val keyTrustService: IKeyTrustService,
+    private val signService: SignService,
+    private val keyTrustService: KeyTrustService,
     private val currentSyncState: CurrentSyncState,
 ) : EventHandler {
 

@@ -13,7 +13,7 @@ import net.folivo.trixnity.crypto.key.decryptSecret
 
 private val log = KotlinLogging.logger {}
 
-interface IKeySecretService {
+interface KeySecretService {
     suspend fun decryptMissingSecrets(
         key: ByteArray,
         keyId: String,
@@ -21,11 +21,11 @@ interface IKeySecretService {
     )
 }
 
-class KeySecretService(
+class KeySecretServiceImpl(
     private val json: Json,
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-) : IKeySecretService {
+) : KeySecretService {
 
     override suspend fun decryptMissingSecrets(
         key: ByteArray,

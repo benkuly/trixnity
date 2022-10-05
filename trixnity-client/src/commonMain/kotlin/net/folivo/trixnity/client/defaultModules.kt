@@ -1,20 +1,20 @@
 package net.folivo.trixnity.client
 
 import net.folivo.trixnity.client.crypto.createCryptoModule
-import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.createKeyModule
-import net.folivo.trixnity.client.media.IMediaService
+import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.media.createMediaModule
-import net.folivo.trixnity.client.push.IPushService
-import net.folivo.trixnity.client.push.createPushModule
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.notification.NotificationService
+import net.folivo.trixnity.client.notification.createNotificationModule
 import net.folivo.trixnity.client.room.LastRelevantEventFilter
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.createRoomModule
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.createStoreModule
-import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.user.createUserModule
-import net.folivo.trixnity.client.verification.IVerificationService
+import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.client.verification.createVerificationModule
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -50,23 +50,23 @@ fun createDefaultModules() = listOf(
     createCryptoModule(),
     createVerificationModule(),
     createMediaModule(),
-    createPushModule(),
+    createNotificationModule(),
 )
 
-val IMatrixClient.room
-    get() = di.get<IRoomService>()
+val MatrixClient.room
+    get() = di.get<RoomService>()
 
-val IMatrixClient.user
-    get() = di.get<IUserService>()
+val MatrixClient.user
+    get() = di.get<UserService>()
 
-val IMatrixClient.media
-    get() = di.get<IMediaService>()
+val MatrixClient.media
+    get() = di.get<MediaService>()
 
-val IMatrixClient.verification
-    get() = di.get<IVerificationService>()
+val MatrixClient.verification
+    get() = di.get<VerificationService>()
 
-val IMatrixClient.key
-    get() = di.get<IKeyService>()
+val MatrixClient.key
+    get() = di.get<KeyService>()
 
-val IMatrixClient.push
-    get() = di.get<IPushService>()
+val MatrixClient.push
+    get() = di.get<NotificationService>()

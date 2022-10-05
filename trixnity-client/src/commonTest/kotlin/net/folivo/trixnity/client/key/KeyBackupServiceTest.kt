@@ -69,7 +69,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var olmSignMock: SignServiceMock
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
-    lateinit var cut: KeyBackupService
+    lateinit var cut: KeyBackupServiceImpl
 
     lateinit var validKeyBackupPrivateKey: String
     lateinit var validKeyBackupPublicKey: String
@@ -87,7 +87,7 @@ private val body: ShouldSpec.() -> Unit = {
         accountStore.olmPickleKey.value = ""
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyBackupService(
+        cut = KeyBackupServiceImpl(
             UserInfo(ownUserId, ownDeviceId, Ed25519Key(null, ""), Curve25519Key(null, "")),
             accountStore,
             olmCryptoStore,
@@ -132,7 +132,7 @@ private val body: ShouldSpec.() -> Unit = {
         cut.version.first { newVersion -> newVersion == keyVersion }
     }
 
-    context(KeyBackupService::setAndSignNewKeyBackupVersion.name) {
+    context(KeyBackupServiceImpl::setAndSignNewKeyBackupVersion.name) {
         lateinit var keyVersion: GetRoomKeysBackupVersionResponse.V1
         beforeTest {
             currentSyncState.value = RUNNING
@@ -270,7 +270,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(KeyBackupService::loadMegolmSession.name) {
+    context(KeyBackupServiceImpl::loadMegolmSession.name) {
         val roomId = RoomId("room", "server")
         val sessionId = "sessionId"
         val version = "1"
@@ -420,7 +420,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(KeyBackupService::bootstrapRoomKeyBackup.name) {
+    context(KeyBackupServiceImpl::bootstrapRoomKeyBackup.name) {
         should("upload new room key version and add secret to account data") {
             val (masterSigningPrivateKey, masterSigningPublicKey) =
                 freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
@@ -476,7 +476,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.secrets.value.keys shouldContain M_MEGOLM_BACKUP_V1
         }
     }
-    context(KeyBackupService::uploadRoomKeyBackup.name) {
+    context(KeyBackupServiceImpl::uploadRoomKeyBackup.name) {
         val room1 = RoomId("room1", "server")
         val room2 = RoomId("room2", "server")
         val sessionId1 = "session1"
@@ -617,7 +617,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRoomKeyBackupDataCalled shouldBe true
         }
     }
-    context(KeyBackupService::keyBackupCanBeTrusted.name) {
+    context(KeyBackupServiceImpl::keyBackupCanBeTrusted.name) {
         suspend fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
                 publicKey = Curve25519Key(null, validKeyBackupPublicKey),

@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
@@ -18,9 +18,9 @@ object NoopRepositoryTransactionManager : RepositoryTransactionManager {
     override suspend fun <T> transaction(block: suspend () -> T): T = block()
 }
 
-fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClient, PortableMockEngineConfig> {
+fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()
-    val api = MatrixClientServerApiClient(
+    val api = MatrixClientServerApiClientImpl(
         json = json,
         httpClientFactory = mockEngineFactory { configurePortableMockEngine(config) }
     )

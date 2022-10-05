@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -13,8 +13,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmDecrypter
-import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 private val log = KotlinLogging.logger {}
 
@@ -27,12 +27,12 @@ class ActiveDeviceVerification(
     theirDeviceId: String? = null,
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
-    private val api: IMatrixClientServerApiClient,
-    private val olmDecrypter: IOlmDecrypter,
-    private val olmEncryptionService: IOlmEncryptionService,
-    keyTrust: IKeyTrustService,
+    private val api: MatrixClientServerApiClient,
+    private val olmDecrypter: OlmDecrypter,
+    private val olmEncryptionService: OlmEncryptionService,
+    keyTrust: KeyTrustService,
     keyStore: KeyStore,
-) : ActiveVerification(
+) : ActiveVerificationImpl(
     request,
     requestIsOurs,
     ownUserId,

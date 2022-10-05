@@ -4,7 +4,7 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.devices.*
 import net.folivo.trixnity.core.model.UserId
 
-interface IDevicesApiClient {
+interface DevicesApiClient {
     /**
      * @see [GetDevices]
      */
@@ -35,9 +35,9 @@ interface IDevicesApiClient {
     suspend fun deleteDevice(deviceId: String, asUserId: UserId? = null): Result<UIA<Unit>>
 }
 
-class DevicesApiClient(
+class DevicesApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient
-) : IDevicesApiClient {
+) : DevicesApiClient {
 
     override suspend fun getDevices(asUserId: UserId?): Result<List<Device>> =
         httpClient.request(GetDevices(asUserId)).map { it.devices }

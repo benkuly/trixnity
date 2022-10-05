@@ -6,7 +6,6 @@ import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.isTracked
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -14,7 +13,7 @@ import net.folivo.trixnity.core.EventHandler
 private val log = KotlinLogging.logger {}
 
 class DeviceListsHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val keyStore: KeyStore,
 ) : EventHandler {
 

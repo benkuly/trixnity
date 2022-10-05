@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.push
+package net.folivo.trixnity.client.notification
 
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
@@ -10,11 +10,11 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getSender
-import net.folivo.trixnity.client.push.IPushService.Notification
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.notification.NotificationService.Notification
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -35,7 +35,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger { }
 
-interface IPushService {
+interface NotificationService {
     data class Notification(
         val event: Event<*>
     )
@@ -46,17 +46,17 @@ interface IPushService {
     ): Flow<Notification>
 }
 
-class PushService(
+class NotificationServiceImpl(
     private val userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
-    private val room: IRoomService,
+    private val api: MatrixClientServerApiClient,
+    private val room: RoomService,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val roomUserStore: RoomUserStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val json: Json,
     private val currentSyncState: CurrentSyncState,
-) : IPushService {
+) : NotificationService {
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 

@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.contentSerializer
 import net.folivo.trixnity.core.serialization.events.fromClass
 
-interface IRoomsApiClient {
+interface RoomsApiClient {
 
     val contentMappings: EventContentSerializerMappings
 
@@ -468,10 +468,10 @@ interface IRoomsApiClient {
     ): Result<GetHierarchy.Response>
 }
 
-class RoomsApiClient(
+class RoomsApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     override val contentMappings: EventContentSerializerMappings
-) : IRoomsApiClient {
+) : RoomsApiClient {
 
     override suspend fun getEvent(
         roomId: RoomId,
@@ -898,7 +898,7 @@ class RoomsApiClient(
 /**
  * @see [GetRoomAccountData]
  */
-suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.getAccountData(
+suspend inline fun <reified C : RoomAccountDataEventContent> RoomsApiClient.getAccountData(
     roomId: RoomId,
     userId: UserId,
     key: String = "",
@@ -912,7 +912,7 @@ suspend inline fun <reified C : RoomAccountDataEventContent> IRoomsApiClient.get
 /**
  * @see [GetStateEvent]
  */
-suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent(
+suspend inline fun <reified C : StateEventContent> RoomsApiClient.getStateEvent(
     roomId: RoomId,
     stateKey: String = "",
     asUserId: UserId? = null
@@ -925,7 +925,7 @@ suspend inline fun <reified C : StateEventContent> IRoomsApiClient.getStateEvent
 /**
  * @see [GetRelationsByRelationTypeAndEventType]
  */
-suspend inline fun <reified C : MessageEventContent> IRoomsApiClient.getRelationsByType(
+suspend inline fun <reified C : MessageEventContent> RoomsApiClient.getRelationsByType(
     roomId: RoomId,
     eventId: EventId,
     relationType: RelationType,

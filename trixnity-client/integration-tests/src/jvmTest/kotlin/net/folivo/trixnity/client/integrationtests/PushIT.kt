@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.push
-import net.folivo.trixnity.client.push.IPushService
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.core.model.events.Event
@@ -59,7 +59,7 @@ class PushIT {
     fun testPushNotificationForNormalMessage(): Unit = runBlocking {
         withTimeout(30_000) {
             val notifications = startedClient2.client.push.getNotifications()
-                .scan(listOf<IPushService.Notification>()) { old, new -> old + new }
+                .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
                 .onEach { println(it) }
                 .stateIn(scope)
 

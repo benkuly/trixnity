@@ -38,13 +38,13 @@ class SignServiceTest : ShouldSpec({
     val aliceDevice = "AAAAAA"
     val bob = UserId("bob", "server")
 
-    lateinit var cut: SignService
-    lateinit var aliceSigningAccountSignService: SignService
+    lateinit var cut: SignServiceImpl
+    lateinit var aliceSigningAccountSignService: SignServiceImpl
 
     beforeEach {
         aliceSigningAccount = OlmAccount.create()
         val aliceOlmKeys = getOlmPublicKeys("", aliceSigningAccount.pickle(""), aliceDevice)
-        aliceSigningAccountSignService = SignService(
+        aliceSigningAccountSignService = SignServiceImpl(
             UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
             json,
             object : SignServiceStore {
@@ -54,7 +54,7 @@ class SignServiceTest : ShouldSpec({
         )
         val olmAccount = freeAfter(OlmAccount.create()) { it.pickle("") }
         val olmKeys = getOlmPublicKeys("", olmAccount, aliceDevice)
-        cut = SignService(
+        cut = SignServiceImpl(
             UserInfo(ownUserId, "ABCDEF", olmKeys.signingKey, olmKeys.identityKey),
             json,
             object : SignServiceStore {

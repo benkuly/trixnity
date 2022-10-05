@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.contentSerializer
 import net.folivo.trixnity.core.serialization.events.fromClass
 
-interface IUsersApiClient {
+interface UsersApiClient {
     val contentMappings: EventContentSerializerMappings
 
     /**
@@ -142,10 +142,10 @@ interface IUsersApiClient {
     ): Result<SearchUsers.Response>
 }
 
-class UsersApiClient(
+class UsersApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     override val contentMappings: EventContentSerializerMappings
-) : IUsersApiClient {
+) : UsersApiClient {
 
     override suspend fun getDisplayName(
         userId: UserId,
@@ -260,7 +260,7 @@ class UsersApiClient(
 /**
  * @see [GetAccountData]
  */
-suspend inline fun <reified C : GlobalAccountDataEventContent> IUsersApiClient.getAccountData(
+suspend inline fun <reified C : GlobalAccountDataEventContent> UsersApiClient.getAccountData(
     userId: UserId,
     key: String = "",
     asUserId: UserId? = null

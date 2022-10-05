@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -21,7 +21,7 @@ import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
 
-interface IUserService {
+interface UserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
@@ -35,15 +35,15 @@ interface IUserService {
     ): Flow<C?>
 }
 
-class UserService(
+class UserServiceImpl(
     private val roomUserStore: RoomUserStore,
     private val roomStore: RoomStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     presenceEventHandler: PresenceEventHandler,
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
-) : IUserService {
+) : UserService {
 
     private val currentlyLoadingMembers = MutableStateFlow<Set<RoomId>>(setOf())
     override val userPresence = presenceEventHandler.userPresence

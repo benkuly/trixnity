@@ -8,7 +8,7 @@ import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
@@ -20,16 +20,16 @@ import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmDecrypter
-import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 private val log = KotlinLogging.logger {}
 
 class IncomingKeyRequestEventHandler(
     userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
-    private val olmDecrypter: IOlmDecrypter,
-    private val olmEncryptionService: IOlmEncryptionService,
+    private val api: MatrixClientServerApiClient,
+    private val olmDecrypter: OlmDecrypter,
+    private val olmEncryptionService: OlmEncryptionService,
     private val keyStore: KeyStore,
 ) : EventHandler {
     private val ownUserId = userInfo.userId

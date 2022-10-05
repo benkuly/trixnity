@@ -5,9 +5,9 @@ import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventSubscriber
-import net.folivo.trixnity.crypto.olm.IOlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
 
-class OlmDecrypterMock : IOlmDecrypter {
+class OlmDecrypterMock : OlmDecrypter {
     val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
 
     override fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber) =

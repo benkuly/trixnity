@@ -7,8 +7,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.IMatrixClient.LoginState
-import net.folivo.trixnity.client.IMatrixClient.LoginState.LOGGED_IN
+import net.folivo.trixnity.client.MatrixClient.LoginState
+import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User

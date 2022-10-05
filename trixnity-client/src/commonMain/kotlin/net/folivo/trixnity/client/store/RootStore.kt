@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class RootStore(private val stores: List<IStore>) : IStore {
+class RootStore(private val stores: List<Store>) : Store {
     private val hasBeenInit = MutableStateFlow(false)
     override suspend fun init() {
         if (hasBeenInit.getAndUpdate { true }.not())

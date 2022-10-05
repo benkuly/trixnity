@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -26,7 +26,7 @@ import kotlin.jvm.JvmName
 
 private val log = KotlinLogging.logger {}
 
-interface IKeyTrustService {
+interface KeyTrustService {
 
     suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
         key: ByteArray,
@@ -44,13 +44,13 @@ interface IKeyTrustService {
     )
 }
 
-class KeyTrustService(
+class KeyTrustServiceImpl(
     private val userInfo: UserInfo,
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val signService: ISignService,
-    private val api: IMatrixClientServerApiClient,
-) : IKeyTrustService {
+    private val signService: SignService,
+    private val api: MatrixClientServerApiClient,
+) : KeyTrustService {
 
     override suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
         key: ByteArray,

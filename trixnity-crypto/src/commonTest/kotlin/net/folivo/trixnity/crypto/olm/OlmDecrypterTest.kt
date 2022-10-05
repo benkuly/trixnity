@@ -14,19 +14,19 @@ import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.mock.Mocker
 import org.kodein.mock.UsesMocks
 
-@UsesMocks(IOlmEncryptionService::class)
+@UsesMocks(OlmEncryptionService::class)
 class OlmDecrypterTest : ShouldSpec({
     timeout = 60_000
 
     val mocker = Mocker()
-    val mockOlmEventService = MockIOlmEncryptionService(mocker)
+    val mockOlmEventService = MockOlmEncryptionService(mocker)
 
     val subscriberReceived = mutableListOf<DecryptedOlmEventContainer>()
     val subscriber: DecryptedOlmEventSubscriber = {
         subscriberReceived.add(it)
     }
 
-    val cut = OlmDecrypter(mockOlmEventService)
+    val cut = OlmDecrypterImpl(mockOlmEventService)
     cut.subscribe(subscriber)
 
     afterEach {

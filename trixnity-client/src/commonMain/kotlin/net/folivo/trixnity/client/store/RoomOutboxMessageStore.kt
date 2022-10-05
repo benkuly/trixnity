@@ -12,7 +12,7 @@ class RoomOutboxMessageStore(
     private val roomOutboxMessageRepository: RoomOutboxMessageRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
-) : IStore {
+) : Store {
     private val roomOutboxMessageCache = RepositoryStateFlowCache(
         storeScope, roomOutboxMessageRepository, infiniteCache = true,
         rtm = rtm

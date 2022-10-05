@@ -24,7 +24,7 @@ fun createUserModule() = module {
         bind<EventHandler>()
         named<GlobalAccountDataEventHandler>()
     }
-    single<IUserService> {
-        UserService(get(), get(), get(), get(), get(named<PresenceEventHandler>()), get(), get())
+    single<UserService> {
+        UserServiceImpl(get(), get(), get(), get(), get(named<PresenceEventHandler>()), get(), get())
     }
 }

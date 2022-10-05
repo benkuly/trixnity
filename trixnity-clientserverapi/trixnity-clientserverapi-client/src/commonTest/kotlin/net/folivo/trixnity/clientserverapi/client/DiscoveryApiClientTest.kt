@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 class DiscoveryApiClientTest {
     @Test
     fun shouldGetWellKnown() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -49,7 +49,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldGetWellKnownRegardlessOfContentType() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

@@ -9,16 +9,16 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.crypto.IPossiblyEncryptEvent
-import net.folivo.trixnity.client.key.IKeySecretService
-import net.folivo.trixnity.client.key.IKeyService
-import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
+import net.folivo.trixnity.client.key.KeySecretService
+import net.folivo.trixnity.client.key.KeyService
+import net.folivo.trixnity.client.key.KeyTrustService
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
-import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
@@ -35,14 +35,14 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmDecrypter
-import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
 
-interface IVerificationService {
+interface VerificationService {
     val activeDeviceVerification: StateFlow<ActiveDeviceVerification?>
 
     suspend fun createDeviceVerificationRequest(
@@ -69,7 +69,7 @@ interface IVerificationService {
 
         /**
          * Cross signing can be bootstrapped.
-         * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyService.bootstrapCrossSigning].
+         * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyServiceImpl.bootstrapCrossSigning].
          */
         object NoCrossSigningEnabled : SelfVerificationMethods
 
@@ -92,20 +92,20 @@ interface IVerificationService {
     ): ActiveUserVerification?
 }
 
-class VerificationService(
+class VerificationServiceImpl(
     userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
-    private val possiblyEncryptEvent: IPossiblyEncryptEvent,
+    private val api: MatrixClientServerApiClient,
+    private val possiblyEncryptEvent: PossiblyEncryptEvent,
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val olmDecrypter: IOlmDecrypter,
-    private val olmEncryptionService: IOlmEncryptionService,
-    private val roomService: IRoomService,
-    private val keyService: IKeyService,
-    private val keyTrustService: IKeyTrustService,
-    private val keySecretService: IKeySecretService,
+    private val olmDecrypter: OlmDecrypter,
+    private val olmEncryptionService: OlmEncryptionService,
+    private val roomService: RoomService,
+    private val keyService: KeyService,
+    private val keyTrustService: KeyTrustService,
+    private val keySecretService: KeySecretService,
     private val currentSyncState: CurrentSyncState,
-) : IVerificationService, EventHandler {
+) : VerificationService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
@@ -221,7 +221,7 @@ class VerificationService(
     }
 
     private suspend fun startLifecycleOfActiveVerifications(
-        verifications: List<ActiveVerification>,
+        verifications: List<ActiveVerificationImpl>,
         scope: CoroutineScope
     ) {
         verifications.forEach { verification ->

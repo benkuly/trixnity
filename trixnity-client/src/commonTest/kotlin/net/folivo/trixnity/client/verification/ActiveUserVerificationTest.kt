@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.model.EventId
@@ -56,7 +56,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     val relatesTo = RelatesTo.Reference(event)
 
     lateinit var apiConfig: PortableMockEngineConfig
-    lateinit var api: MatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClientImpl
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var roomServiceMock: RoomServiceMock

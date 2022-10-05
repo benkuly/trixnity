@@ -8,7 +8,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.users.SetDisplayName
@@ -31,7 +31,7 @@ class ApplicationServiceUserServiceTest {
     @Test
     fun `should create and save user`() = runTest {
         var setDisplayNameCalled = false
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) { requestBody ->
                 assertSoftly(requestBody.request) {
                     it.type shouldBe "m.login.application_service"
@@ -60,7 +60,7 @@ class ApplicationServiceUserServiceTest {
 
     @Test
     fun `should have error when register fails`() = runTest {
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
                 throw MatrixServerException(
                     HttpStatusCode.InternalServerError,
@@ -82,7 +82,7 @@ class ApplicationServiceUserServiceTest {
     @Test
     fun `should catch error when register fails due to already existing id`() = runTest {
         var setDisplayNameCalled = false
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
                 throw MatrixServerException(
                     HttpStatusCode.BadRequest,
@@ -108,7 +108,7 @@ class ApplicationServiceUserServiceTest {
 
     @Test
     fun `should have error when saving by user service fails`() = runTest {
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
                 ResponseWithUIA.Success(Register.Response(userId))
             }
@@ -127,7 +127,7 @@ class ApplicationServiceUserServiceTest {
     @Test
     fun `should not set displayName if null`() = runTest {
         var setDisplayNameCalled = false
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
                 ResponseWithUIA.Success(Register.Response(userId))
             }
@@ -147,7 +147,7 @@ class ApplicationServiceUserServiceTest {
     @Test
     fun `should not have error when setting displayName fails`() = runTest {
         var setDisplayNameCalled = false
-        val api = MatrixClientServerApiClient(json = json, httpClientFactory = mockEngineFactory {
+        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
             matrixJsonEndpoint(json, mappings, Register()) {
                 ResponseWithUIA.Success(Register.Response(userId))
             }

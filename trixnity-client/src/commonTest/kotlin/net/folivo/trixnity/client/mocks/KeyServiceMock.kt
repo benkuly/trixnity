@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.mocks
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.key.DeviceTrustLevel
-import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.UserId
@@ -13,18 +13,18 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 
 class KeyServiceMock(
     override val bootstrapRunning: StateFlow<Boolean> = MutableStateFlow(false)
-) : IKeyService {
+) : KeyService {
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,
         secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
-    ): IKeyService.BootstrapCrossSigning {
+    ): KeyService.BootstrapCrossSigning {
         throw NotImplementedError()
     }
 
     override suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
         secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent>
-    ): IKeyService.BootstrapCrossSigning {
+    ): KeyService.BootstrapCrossSigning {
         throw NotImplementedError()
     }
 

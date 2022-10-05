@@ -2,22 +2,22 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.flow.first
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyBackupService
+import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.waitForInboundMegolmSession
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.crypto.olm.DecryptionException
-import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.olm.OlmLibraryException
 
 private val log = KotlinLogging.logger {}
 
 class MegolmRoomEventDecryptionService(
     private val olmCryptoStore: OlmCryptoStore,
-    private val keyBackupService: IKeyBackupService,
-    private val olmEncryptionService: IOlmEncryptionService,
+    private val keyBackupService: KeyBackupService,
+    private val olmEncryptionService: OlmEncryptionService,
 ) : RoomEventDecryptionService {
     override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? {
         val content = event.content

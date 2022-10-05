@@ -61,7 +61,7 @@ class RoomServiceTest : ShouldSpec({
         Key.Curve25519Key(value = "")
     )
 
-    lateinit var cut: RoomService
+    lateinit var cut: RoomServiceImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -75,7 +75,7 @@ class RoomServiceTest : ShouldSpec({
         roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = RoomService(
+        cut = RoomServiceImpl(
             api,
             roomStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
             listOf(roomEventDecryptionServiceMock),
@@ -117,7 +117,7 @@ class RoomServiceTest : ShouldSpec({
     }
 
 
-    context(RoomService::getTimelineEvent.name) {
+    context(RoomServiceImpl::getTimelineEvent.name) {
         val eventId = EventId("\$event1")
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
@@ -256,7 +256,7 @@ class RoomServiceTest : ShouldSpec({
             }
         }
     }
-    context(RoomService::getLastTimelineEvent.name) {
+    context(RoomServiceImpl::getLastTimelineEvent.name) {
         should("return last event of room") {
             val initialRoom = Room(room, lastEventId = null)
             val event1 = textEvent(1)
@@ -286,7 +286,7 @@ class RoomServiceTest : ShouldSpec({
             result.await()[2]?.first() shouldBe event2Timeline
         }
     }
-    context(RoomService::sendMessage.name) {
+    context(RoomServiceImpl::sendMessage.name) {
         should("just save message in store for later use") {
             val content = TextMessageEventContent("hi")
             cut.sendMessage(room) {
@@ -303,7 +303,7 @@ class RoomServiceTest : ShouldSpec({
             }
         }
     }
-    context(RoomService::canBeRedacted.name) {
+    context(RoomServiceImpl::canBeRedacted.name) {
         val timelineEventByUser = TimelineEvent(
             event = MessageEvent(
                 content = TextMessageEventContent(body = "Hi"),

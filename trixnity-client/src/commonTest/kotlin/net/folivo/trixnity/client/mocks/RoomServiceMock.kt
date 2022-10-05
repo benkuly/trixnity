@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.mocks
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-class RoomServiceMock : IRoomService {
+class RoomServiceMock : RoomService {
     override suspend fun fillTimelineGaps(startEventId: EventId, roomId: RoomId, limit: Long) {
         throw NotImplementedError()
     }

@@ -38,7 +38,7 @@ class MediaServiceTest : ShouldSpec({
     val json = createMatrixEventJson()
     lateinit var apiConfig: PortableMockEngineConfig
 
-    lateinit var cut: MediaService
+    lateinit var cut: MediaServiceImpl
 
     val mxcUri = "mxc://example.com/abc"
     val cacheUri = "cache://some-string"
@@ -48,12 +48,12 @@ class MediaServiceTest : ShouldSpec({
         mediaStore = getInMemoryMediaStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = MediaService(api, mediaStore)
+        cut = MediaServiceImpl(api, mediaStore)
     }
     afterTest {
         scope.cancel()
     }
-    context(MediaService::getMedia.name) {
+    context(MediaServiceImpl::getMedia.name) {
         context("is mxc uri") {
             should("prefer cache") {
                 mediaStore.addContent(mxcUri, "test".encodeToByteArray())
@@ -83,7 +83,7 @@ class MediaServiceTest : ShouldSpec({
             }
         }
     }
-    context(MediaService::getEncryptedMedia.name) {
+    context(MediaServiceImpl::getEncryptedMedia.name) {
         val rawFile = "lQ/twg".decodeUnpaddedBase64Bytes()
         val encryptedFile = EncryptedFile(
             url = mxcUri,
@@ -115,7 +115,7 @@ class MediaServiceTest : ShouldSpec({
             }
         }
     }
-    context(MediaService::getThumbnail.name) {
+    context(MediaServiceImpl::getThumbnail.name) {
         should("prefer cache") {
             mediaStore.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
             cut.getThumbnail(mxcUri, 32, 32).getOrThrow().decodeToString() shouldBe "test"
@@ -131,19 +131,19 @@ class MediaServiceTest : ShouldSpec({
             mediaStore.getContent("$mxcUri/32x32/crop") shouldBe "test".encodeToByteArray()
         }
     }
-    context(MediaService::prepareUploadMedia.name) {
+    context(MediaServiceImpl::prepareUploadMedia.name) {
         should("save and return local cache uri from media") {
             val result = cut.prepareUploadMedia("test".encodeToByteArray(), Plain)
-            result shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
+            result shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
             result.length shouldBeGreaterThan 12
             mediaStore.getContent(result) shouldBe "test".encodeToByteArray()
             mediaStore.getUploadCache(result) shouldBe UploadCache(result, null, Plain.toString())
         }
     }
-    context(MediaService::prepareUploadThumbnail.name) {
+    context(MediaServiceImpl::prepareUploadThumbnail.name) {
         should("save and return local cache uri from thumbnail") {
             val result = cut.prepareUploadThumbnail(miniPng, PNG)
-            result?.first shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
+            result?.first shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
             assertSoftly(result.shouldNotBeNull().second) {
                 width shouldBe 600
                 height shouldBe 600
@@ -157,11 +157,11 @@ class MediaServiceTest : ShouldSpec({
             cut.prepareUploadThumbnail("test".toByteArray(), PNG) shouldBe null
         }
     }
-    context(MediaService::prepareUploadEncryptedMedia.name) {
+    context(MediaServiceImpl::prepareUploadEncryptedMedia.name) {
         should("encrypt, save, and return local cache uri from media") {
             val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray())
             assertSoftly(result) {
-                url shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
+                url shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
                 key.key shouldNot beEmpty()
                 initialisationVector shouldNot beEmpty()
@@ -171,11 +171,11 @@ class MediaServiceTest : ShouldSpec({
             mediaStore.getUploadCache(result.url) shouldBe UploadCache(result.url, null, OctetStream.toString())
         }
     }
-    context(MediaService::prepareUploadEncryptedThumbnail.name) {
+    context(MediaServiceImpl::prepareUploadEncryptedThumbnail.name) {
         should("encrypt, save, and return local cache uri from thumbnail") {
             val result = cut.prepareUploadEncryptedThumbnail(miniPng, PNG)
             assertSoftly(result.shouldNotBeNull().first) {
-                url shouldStartWith MediaService.UPLOAD_MEDIA_CACHE_URI_PREFIX
+                url shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
                 key.key shouldNot beEmpty()
                 initialisationVector shouldNot beEmpty()
@@ -198,7 +198,7 @@ class MediaServiceTest : ShouldSpec({
             cut.prepareUploadEncryptedThumbnail("test".toByteArray(), PNG) shouldBe null
         }
     }
-    context(MediaService::uploadMedia.name) {
+    context(MediaServiceImpl::uploadMedia.name) {
         should("upload and add to cache") {
             apiConfig.endpoints {
                 addHandler {

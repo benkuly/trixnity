@@ -16,7 +16,7 @@ import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoo
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.signatures
 import net.folivo.trixnity.olm.*
@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-interface IKeyBackupService {
+interface KeyBackupService {
     /**
      * This is the active key backup version.
      * Is null, when the backup algorithm is not supported or there is no existing backup.
@@ -64,16 +64,16 @@ interface IKeyBackupService {
     ): Result<Unit>
 }
 
-class KeyBackupService(
+class KeyBackupServiceImpl(
     userInfo: UserInfo,
     private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
-    private val api: IMatrixClientServerApiClient,
-    private val signService: ISignService,
+    private val api: MatrixClientServerApiClient,
+    private val signService: SignService,
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
-) : IKeyBackupService, EventHandler {
+) : KeyBackupService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)

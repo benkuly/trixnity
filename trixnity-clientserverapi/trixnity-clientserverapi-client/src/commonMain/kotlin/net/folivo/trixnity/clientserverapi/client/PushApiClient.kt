@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
 
-interface IPushApiClient {
+interface PushApiClient {
     /**
      * @see [GetPushers]
      */
@@ -109,9 +109,9 @@ interface IPushApiClient {
     ): Result<Unit>
 }
 
-class PushApiClient(
+class PushApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient
-) : IPushApiClient {
+) : PushApiClient {
 
     override suspend fun getPushers(asUserId: UserId?): Result<GetPushers.Response> =
         httpClient.request(GetPushers(asUserId))

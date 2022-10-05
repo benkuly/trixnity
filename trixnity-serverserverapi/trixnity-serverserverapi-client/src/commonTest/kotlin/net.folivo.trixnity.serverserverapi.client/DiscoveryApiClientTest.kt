@@ -19,7 +19,7 @@ import kotlin.test.assertEquals
 class DiscoveryApiClientTest {
     @Test
     fun shouldGetWellKnown() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -45,7 +45,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldGetWellKnownRegardlessOfContentType() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -70,7 +70,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldGetServerVersion() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -104,7 +104,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldGetServerKeys() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -168,7 +168,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldQueryServerKeys() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
@@ -261,7 +261,7 @@ class DiscoveryApiClientTest {
 
     @Test
     fun shouldQueryServerKeysByServer() = runTest {
-        val matrixRestClient = MatrixServerServerApiClient(
+        val matrixRestClient = MatrixServerServerApiClientImpl(
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },

@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.room
 
-import net.folivo.trixnity.client.key.KeyBackupService
+import net.folivo.trixnity.client.key.KeyBackupServiceImpl
 import net.folivo.trixnity.core.EventHandler
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
@@ -42,16 +42,16 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<RoomStateEventHandler>()
     }
-    singleOf(::TimelineEventHandler) {
-        bind<ITimelineEventHandler>()
+    singleOf(::TimelineEventHandlerImpl) {
+        bind<TimelineEventHandler>()
         bind<EventHandler>()
-        named<TimelineEventHandler>()
+        named<TimelineEventHandlerImpl>()
     }
     single<RoomEventDecryptionService>(named<MegolmRoomEventDecryptionService>()) {
-        MegolmRoomEventDecryptionService(get(), get(named<KeyBackupService>()), get())
+        MegolmRoomEventDecryptionService(get(), get(named<KeyBackupServiceImpl>()), get())
     }
-    single<IRoomService> {
-        RoomService(
+    single<RoomService> {
+        RoomServiceImpl(
             get(),
             get(),
             get(),
@@ -60,7 +60,7 @@ fun createRoomModule() = module {
             get(),
             getAll(),
             get(),
-            get(named<TimelineEventHandler>()),
+            get(named<TimelineEventHandlerImpl>()),
             get(),
             get(),
             get(),

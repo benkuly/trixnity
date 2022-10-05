@@ -14,7 +14,7 @@ class AccountStore(
     private val repository: AccountRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
-) : IStore {
+) : Store {
     val olmPickleKey = MutableStateFlow<String?>(null)
     val baseUrl = MutableStateFlow<Url?>(null)
     val userId = MutableStateFlow<UserId?>(null)

@@ -7,7 +7,7 @@ import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import net.folivo.trixnity.core.EventEmitter
+import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -41,7 +41,7 @@ class OlmEventHandlerTest : ShouldSpec({
     lateinit var mockStore: OlmStoreMock
     val mockRequestHandler = MockOlmEventHandlerRequestHandler(mocker)
 
-    lateinit var eventEmitter: EventEmitter
+    lateinit var eventEmitter: EventEmitterImpl
     lateinit var oneTimeKeysCountEmitter: OneTimeKeysCountEmitter
     lateinit var oneTimeKeysCountEmitterSubscriber: DeviceOneTimeKeysCountSubscriber
 
@@ -53,7 +53,7 @@ class OlmEventHandlerTest : ShouldSpec({
 
         mockStore.olmAccount.value = olmAccount.pickle("")
 
-        eventEmitter = object : EventEmitter() {
+        eventEmitter = object : EventEmitterImpl() {
             suspend fun testEmitEvent(event: Event<*>) {
                 this.emitEvent(event)
             }

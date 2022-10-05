@@ -9,14 +9,14 @@ import net.folivo.trixnity.core.serialization.events.DefaultDataUnitContentSeria
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
 
-interface IMatrixServerServerApiClient {
+interface MatrixServerServerApiClient {
     val httpClient: MatrixApiClient
 
-    val discovery: IDiscoveryApiClient
-    val federation: IFederationApiClient
+    val discovery: DiscoveryApiClient
+    val federation: FederationApiClient
 }
 
-class MatrixServerServerApiClient(
+class MatrixServerServerApiClientImpl(
     hostname: String,
     getDelegatedDestination: (String, Int) -> Pair<String, Int>,
     sign: (String) -> Key.Ed25519Key,
@@ -24,7 +24,7 @@ class MatrixServerServerApiClient(
     private val eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     private val json: Json = createMatrixEventAndDataUnitJson(getRoomVersion, eventContentSerializerMappings),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
-) : IMatrixServerServerApiClient {
+) : MatrixServerServerApiClient {
     override val httpClient = MatrixApiClient(eventContentSerializerMappings, json) {
         httpClientFactory {
             it()
@@ -33,6 +33,6 @@ class MatrixServerServerApiClient(
         }
     }
 
-    override val discovery = DiscoveryApiClient(httpClient)
-    override val federation = FederationApiClient(httpClient)
+    override val discovery = DiscoveryApiClientImpl(httpClient)
+    override val federation = FederationApiClientImpl(httpClient)
 }

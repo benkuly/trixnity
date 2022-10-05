@@ -23,9 +23,9 @@ import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
-import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
@@ -74,7 +74,7 @@ private val body: ShouldSpec.() -> Unit = {
     val eventId = EventId("$1event")
     val roomId = RoomId("room", "server")
     lateinit var apiConfig: PortableMockEngineConfig
-    lateinit var api: MatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClientImpl
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
@@ -89,7 +89,7 @@ private val body: ShouldSpec.() -> Unit = {
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
-    lateinit var cut: VerificationService
+    lateinit var cut: VerificationServiceImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -105,7 +105,7 @@ private val body: ShouldSpec.() -> Unit = {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         api = newApi
-        cut = VerificationService(
+        cut = VerificationServiceImpl(
             UserInfo(aliceUserId, aliceDeviceId, Key.Ed25519Key(null, ""), Curve25519Key(null, "")),
             api,
             possiblyEncryptEventMock,
@@ -370,7 +370,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(VerificationService::createDeviceVerificationRequest.name) {
+    context(VerificationServiceImpl::createDeviceVerificationRequest.name) {
         should("send request to device and save locally") {
             var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
@@ -393,7 +393,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(VerificationService::createUserVerificationRequest.name) {
+    context(VerificationServiceImpl::createUserVerificationRequest.name) {
         context("no direct room with user exists") {
             should("create room and send request into it") {
                 var sendMessageEventCalled = false
@@ -441,7 +441,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(VerificationService::getSelfVerificationMethods.name) {
+    context(VerificationServiceImpl::getSelfVerificationMethods.name) {
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
         }
@@ -629,7 +629,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
     }
-    context(VerificationService::getActiveUserVerification.name) {
+    context(VerificationServiceImpl::getActiveUserVerification.name) {
         should("skip timed out verifications") {
             val timelineEvent = TimelineEvent(
                 event = Event.MessageEvent(

@@ -26,7 +26,7 @@ class AuthenticationApiClientTest {
     @Test
     fun shouldGetWhoami() = runTest {
         val response = WhoAmI.Response(UserId("user", "server"), "ABCDEF", false)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -45,7 +45,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldIsRegistrationTokenValid() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -70,7 +70,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldIsUsernameAvailable() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -88,7 +88,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetEmailRequestTokenForPassword() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -133,7 +133,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetEmailRequestTokenForRegistration() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -178,7 +178,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetMsisdnRequestTokenForPassword() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -225,7 +225,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetMsisdnRequestTokenForRegistration() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -282,7 +282,7 @@ class AuthenticationApiClientTest {
               "inhibit_login":true
             }
         """.trimToFlatJson()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -310,7 +310,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetLoginTypes() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -371,7 +371,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldLogin() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -430,7 +430,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldLogout() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -448,7 +448,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldLogoutAll() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -466,7 +466,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldDeactivateAccount() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -490,7 +490,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldChangePassword() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -513,7 +513,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetThirdPartyIdentifiers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -549,7 +549,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldAddThirdPartyIdentifiers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -574,7 +574,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldBindThirdPartyIdentifiers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -605,7 +605,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldDeleteThirdPartyIdentifiers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -631,7 +631,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldUnbindThirdPartyIdentifiers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -657,7 +657,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldGetOIDCRequestToken() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -687,7 +687,7 @@ class AuthenticationApiClientTest {
 
     @Test
     fun shouldRefresh() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

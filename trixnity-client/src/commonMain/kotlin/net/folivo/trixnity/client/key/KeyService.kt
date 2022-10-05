@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
 import net.folivo.trixnity.core.UserInfo
@@ -30,7 +30,7 @@ import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
 import net.folivo.trixnity.crypto.key.encodeRecoveryKey
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.sign
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -40,7 +40,7 @@ import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger {}
 
-interface IKeyService {
+interface KeyService {
     val bootstrapRunning: StateFlow<Boolean>
 
     data class BootstrapCrossSigning(
@@ -116,16 +116,16 @@ interface IKeyService {
     ): Flow<List<CrossSigningKeys>?>
 }
 
-class KeyService(
+class KeyServiceImpl(
     private val userInfo: UserInfo,
     private val keyStore: KeyStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val signService: ISignService,
-    private val keyBackupService: IKeyBackupService,
-    private val keyTrustService: IKeyTrustService,
-    private val api: IMatrixClientServerApiClient,
-) : IKeyService {
+    private val signService: SignService,
+    private val keyBackupService: KeyBackupService,
+    private val keyTrustService: KeyTrustService,
+    private val api: MatrixClientServerApiClient,
+) : KeyService {
 
     private val _bootstrapRunning = MutableStateFlow(false)
     override val bootstrapRunning = _bootstrapRunning.asStateFlow()
@@ -133,7 +133,7 @@ class KeyService(
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,
         secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
-    ): IKeyService.BootstrapCrossSigning {
+    ): KeyService.BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
         _bootstrapRunning.value = true
 
@@ -143,7 +143,7 @@ class KeyService(
             generateSequence { alphabet.random() }.take(24).joinToString("")
         }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it).first() == null }
         val secretKeyEventContent = secretKeyEventContentGenerator()
-        return IKeyService.BootstrapCrossSigning(
+        return KeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
             result = api.users.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
                 .flatMapResult { api.users.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
@@ -258,7 +258,7 @@ class KeyService(
     override suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
         secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent>
-    ): IKeyService.BootstrapCrossSigning {
+    ): KeyService.BootstrapCrossSigning {
         val secretKeyEventContent = secretKeyEventContentGenerator()
         return bootstrapCrossSigning(secretKeyEventContent.first) { secretKeyEventContent.second }
     }

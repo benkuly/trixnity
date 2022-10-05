@@ -32,20 +32,20 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var globalAccountDataStore: GlobalAccountDataStore
 
 
-    lateinit var cut: KeySecretService
+    lateinit var cut: KeySecretServiceImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
-        cut = KeySecretService(json, keyStore, globalAccountDataStore)
+        cut = KeySecretServiceImpl(json, keyStore, globalAccountDataStore)
     }
 
     afterTest {
         scope.cancel()
     }
 
-    context(KeySecretService::decryptMissingSecrets.name) {
+    context(KeySecretServiceImpl::decryptMissingSecrets.name) {
         should("decrypt missing secrets and update secure store") {
             val existingPrivateKeys = mapOf(
                 M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(

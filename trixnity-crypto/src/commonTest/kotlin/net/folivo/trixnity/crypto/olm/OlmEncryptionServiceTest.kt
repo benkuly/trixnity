@@ -67,7 +67,7 @@ private val body: ShouldSpec.() -> Unit = {
     val mockRequestHandler = MockOlmEncryptionServiceRequestHandler(mocker)
     val mockSignService = SignServiceMock()
 
-    lateinit var cut: OlmEncryptionService
+    lateinit var cut: OlmEncryptionServiceImpl
 
     lateinit var aliceCurveKey: Curve25519Key
     lateinit var aliceEdKey: Ed25519Key
@@ -136,7 +136,7 @@ private val body: ShouldSpec.() -> Unit = {
             recipientKeys = keysOf(aliceEdKey.copy(keyId = null))
         )
 
-        cut = OlmEncryptionService(
+        cut = OlmEncryptionServiceImpl(
             UserInfo(alice, aliceDeviceId, aliceEdKey, aliceCurveKey),
             json,
             olmStoreMock,

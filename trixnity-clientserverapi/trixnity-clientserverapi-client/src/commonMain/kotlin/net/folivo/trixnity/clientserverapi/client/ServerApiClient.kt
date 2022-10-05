@@ -6,7 +6,7 @@ import net.folivo.trixnity.clientserverapi.model.server.Search
 import net.folivo.trixnity.clientserverapi.model.server.WhoIs
 import net.folivo.trixnity.core.model.UserId
 
-interface IServerApiClient {
+interface ServerApiClient {
     /**
      * @see [GetVersions]
      */
@@ -35,7 +35,7 @@ interface IServerApiClient {
     ): Result<WhoIs.Response>
 }
 
-class ServerApiClient(private val httpClient: MatrixClientServerApiHttpClient) : IServerApiClient {
+class ServerApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient) : ServerApiClient {
 
     override suspend fun getVersions(): Result<GetVersions.Response> =
         httpClient.request(GetVersions)

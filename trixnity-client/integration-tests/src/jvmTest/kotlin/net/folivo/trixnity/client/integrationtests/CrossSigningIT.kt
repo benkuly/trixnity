@@ -10,16 +10,16 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
-import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
 import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
-import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -38,9 +38,9 @@ import kotlin.test.Test
 @Testcontainers
 class CrossSigningIT {
 
-    private lateinit var client1: IMatrixClient
-    private lateinit var client2: IMatrixClient
-    private lateinit var client3: IMatrixClient
+    private lateinit var client1: MatrixClient
+    private lateinit var client2: MatrixClient
+    private lateinit var client3: MatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var scope3: CoroutineScope
@@ -242,7 +242,7 @@ class CrossSigningIT {
                 client3Verification.state.first { it is ActiveVerificationState.Done }
             }
 
-            suspend fun IKeyService.checkEverythingVerified() {
+            suspend fun KeyService.checkEverythingVerified() {
                 this.getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 this.getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
                 this.getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }

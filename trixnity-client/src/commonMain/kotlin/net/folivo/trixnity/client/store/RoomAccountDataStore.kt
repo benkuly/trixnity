@@ -22,7 +22,7 @@ class RoomAccountDataStore(
     private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
-) : IStore {
+) : Store {
     private val roomAccountDataCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomAccountDataRepository, rtm)
 
     override suspend fun init() {}

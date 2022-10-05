@@ -35,7 +35,7 @@ class ActiveVerificationTest : ShouldSpec({
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
     lateinit var keyStore: KeyStore
 
-    class TestActiveVerification(request: VerificationRequestEventContent, keyStore: KeyStore) : ActiveVerification(
+    class TestActiveVerification(request: VerificationRequestEventContent, keyStore: KeyStore) : ActiveVerificationImpl(
         request = request,
         requestIsFromOurOwn = request.fromDevice == aliceDevice,
         ownUserId = alice,
@@ -77,14 +77,14 @@ class ActiveVerificationTest : ShouldSpec({
         cut = TestActiveVerification(VerificationRequestEventContent(bobDevice, setOf(Sas), 1234, "t"), keyStore)
     }
 
-    context(ActiveVerification::startLifecycle.name) {
+    context(ActiveVerificationImpl::startLifecycle.name) {
         should("start lifecycle once") {
             cut.startLifecycle(this)
             cut.startLifecycle(this)
             lifecycleCalled.value shouldBe 1
         }
     }
-    context(ActiveVerification::cancel.name) {
+    context(ActiveVerificationImpl::cancel.name) {
         should("send user cancel event content") {
             val expectedCancelEvent =
                 VerificationCancelEventContent(Code.User, "user cancelled verification", null, "t")
