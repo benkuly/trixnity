@@ -10,6 +10,7 @@ plugins {
     if (isAndroidEnabled) id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("de.undercouch.download") version Versions.undercouchDownloadGradlePlugin
 }
 
 val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
