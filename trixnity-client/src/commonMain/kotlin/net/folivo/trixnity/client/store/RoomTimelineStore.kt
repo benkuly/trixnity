@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
@@ -33,43 +33,27 @@ class RoomTimelineStore(
         timelineEventRelationCache.reset()
     }
 
-    suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
-        timelineEventCache.get(TimelineEventKey(eventId, roomId), scope = scope)
+    suspend fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
+        timelineEventCache.get(TimelineEventKey(eventId, roomId))
 
     suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
-        timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction)
+        timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction).first()
 
     suspend fun getRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> =
-        timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId), scope = scope)
-
-    suspend fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-    ): Map<RelationType, Set<TimelineEventRelation>?>? =
         timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId))
 
     suspend fun getRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope
     ): Flow<Set<TimelineEventRelation>?> =
         timelineEventRelationCache.getBySecondKey(
             TimelineEventRelationKey(eventId, roomId),
             relationType,
-            scope = scope
         )
-
-    suspend fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-        relationType: RelationType
-    ): Set<TimelineEventRelation>? =
-        timelineEventRelationCache.getBySecondKey(TimelineEventRelationKey(eventId, roomId), relationType)
 
     suspend fun update(
         eventId: EventId,

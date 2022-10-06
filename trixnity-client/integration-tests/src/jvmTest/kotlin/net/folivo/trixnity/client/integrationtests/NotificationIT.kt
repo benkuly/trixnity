@@ -27,7 +27,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class PushIT {
+class NotificationIT {
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
 

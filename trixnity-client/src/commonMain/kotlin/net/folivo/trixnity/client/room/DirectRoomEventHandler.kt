@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
@@ -64,7 +65,7 @@ class DirectRoomEventHandler(
             if (directUser != userInfo.userId && event.content.isDirect == true) {
                 log.debug { "mark room $roomId as direct room with $directUser" }
                 val currentDirectRooms = setDirectRoomsEventContent.value
-                    ?: globalAccountDataStore.get<DirectEventContent>()?.content
+                    ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
                 val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser) ?: setOf()
                 val newDirectRooms =
                     currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
@@ -75,7 +76,7 @@ class DirectRoomEventHandler(
                 if (directUser != userInfo.userId) {
                     log.debug { "unmark room $roomId as direct room with $directUser" }
                     val currentDirectRooms = setDirectRoomsEventContent.value
-                        ?: globalAccountDataStore.get<DirectEventContent>()?.content
+                        ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
                     if (currentDirectRooms != null) {
                         val newDirectRooms = DirectEventContent(
                             (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
@@ -86,7 +87,7 @@ class DirectRoomEventHandler(
                 } else {
                     log.debug { "remove room $roomId from direct rooms, because we left it" }
                     val currentDirectRooms = setDirectRoomsEventContent.value
-                        ?: globalAccountDataStore.get<DirectEventContent>()?.content
+                        ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
                     if (currentDirectRooms != null) {
                         val newDirectRooms = DirectEventContent(
                             currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
@@ -101,7 +102,9 @@ class DirectRoomEventHandler(
 
     internal suspend fun setDirectRoomsAfterSync(syncResponse: Sync.Response) {
         val newDirectRooms = setDirectRoomsEventContent.value
-        if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()?.content)
+        if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()
+                .first()?.content
+        )
             api.users.setAccountData(newDirectRooms, userInfo.userId)
         setDirectRoomsEventContent.value = null
     }
@@ -136,9 +139,10 @@ class DirectRoomEventHandler(
     internal suspend fun setAvatarUrlForDirectRooms(directEventContent: DirectEventContent) {
         directEventContent.mappings.entries.forEach { (userId, rooms) ->
             rooms?.forEach { room ->
-                if (roomStateStore.getByStateKey<AvatarEventContent>(room)?.content?.url.isNullOrEmpty()) {
-                    val avatarUrl = roomStateStore.getByStateKey<MemberEventContent>(room, stateKey = userId.full)
-                        ?.content?.avatarUrl
+                if (roomStateStore.getByStateKey<AvatarEventContent>(room).first()?.content?.url.isNullOrEmpty()) {
+                    val avatarUrl =
+                        roomStateStore.getByStateKey<MemberEventContent>(room, stateKey = userId.full).first()
+                            ?.content?.avatarUrl
                     roomStore.update(room) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
                 }
             }

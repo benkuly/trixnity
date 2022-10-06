@@ -134,8 +134,8 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             keyStore.outdatedKeys.value = setOf(alice)
-            keyStore.getCrossSigningKeys(alice, this).first { it?.isEmpty() == true }
-            keyStore.getDeviceKeys(alice, this).first { it?.isEmpty() == true }
+            keyStore.getCrossSigningKeys(alice).first { it?.isEmpty() == true }
+            keyStore.getDeviceKeys(alice).first { it?.isEmpty() == true }
         }
         context("master keys") {
             should("allow missing signature") {
@@ -158,7 +158,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -186,7 +186,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice).shouldBeEmpty()
+                keyStore.getCrossSigningKeys(alice).first().shouldBeEmpty()
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add master key") {
@@ -208,7 +208,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -238,7 +238,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice).shouldBeEmpty()
+                keyStore.getCrossSigningKeys(alice).first().shouldBeEmpty()
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add self signing key") {
@@ -260,7 +260,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -294,7 +294,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -323,7 +323,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice).shouldBeEmpty()
+                keyStore.getCrossSigningKeys(alice).first().shouldBeEmpty()
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe null
             }
             should("add user signing key") {
@@ -344,7 +344,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -377,7 +377,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                keyStore.getCrossSigningKeys(alice) shouldContainExactly setOf(
+                keyStore.getCrossSigningKeys(alice).first() shouldContainExactly setOf(
                     StoredCrossSigningKeys(key, KeySignatureTrustLevel.CrossSigned(false))
                 )
                 keyTrustServiceMock.updateTrustLevelOfKeyChainSignedByCalled.value shouldBe Pair(
@@ -408,7 +408,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 keyStore.outdatedKeys.value = setOf(cedric, alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                val storedCedricKeys = keyStore.getDeviceKeys(cedric)
+                val storedCedricKeys = keyStore.getDeviceKeys(cedric).first()
                 assertNotNull(storedCedricKeys)
                 storedCedricKeys shouldContainExactly mapOf(
                     cedricDevice to StoredDeviceKeys(
@@ -416,7 +416,7 @@ private val body: ShouldSpec.() -> Unit = {
                         KeySignatureTrustLevel.CrossSigned(false)
                     )
                 )
-                val storedAliceKeys = keyStore.getDeviceKeys(alice)
+                val storedAliceKeys = keyStore.getDeviceKeys(alice).first()
                 assertNotNull(storedAliceKeys)
                 storedAliceKeys shouldContainExactly mapOf(
                     aliceDevice2 to StoredDeviceKeys(
@@ -428,7 +428,7 @@ private val body: ShouldSpec.() -> Unit = {
                 // check delete of device keys
                 keyStore.outdatedKeys.value = setOf(alice)
                 keyStore.outdatedKeys.first { it.isEmpty() }
-                val storedAliceKeysAfterDelete = keyStore.getDeviceKeys(alice)
+                val storedAliceKeysAfterDelete = keyStore.getDeviceKeys(alice).first()
                 assertNotNull(storedAliceKeysAfterDelete)
                 storedAliceKeysAfterDelete shouldContainExactly mapOf()
             }
@@ -650,7 +650,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     keyStore.outdatedKeys.value = setOf(cedric)
                     keyStore.outdatedKeys.first { it.isEmpty() }
-                    val storedKeys = keyStore.getDeviceKeys(cedric)
+                    val storedKeys = keyStore.getDeviceKeys(cedric).first()
                     assertNotNull(storedKeys)
                     storedKeys shouldHaveSize 0
                 }
@@ -669,7 +669,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     keyStore.outdatedKeys.value = setOf(alice, cedric)
                     keyStore.outdatedKeys.first { it.isEmpty() }
-                    val storedKeys = keyStore.getDeviceKeys(alice)
+                    val storedKeys = keyStore.getDeviceKeys(alice).first()
                     assertNotNull(storedKeys)
                     storedKeys shouldHaveSize 0
                 }

@@ -6,6 +6,7 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
@@ -83,7 +84,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(event)
 
-            roomUserStore.get(alice, room) shouldBeSameInstanceAs existingRoomUser
+            roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
 
         should("do nothing on unknown receipt events") {
@@ -104,7 +105,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(event)
 
-            roomUserStore.get(alice, room) shouldBeSameInstanceAs existingRoomUser
+            roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
 
         should("set the last read message for a user with no existing receipts in this room") {
@@ -127,7 +128,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(event)
 
-            roomUserStore.get(alice, room)?.lastReadMessage shouldBe eventId
+            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
         }
 
         should("replace the last read message of a user when a new last message is received") {
@@ -150,7 +151,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 roomId = room,
             )
             cut.setReadReceipts(event)
-            roomUserStore.get(alice, room)?.lastReadMessage shouldBe eventId
+            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
         }
 
         should("set the last read message even when unknown receipt types are encountered") {
@@ -181,7 +182,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(event)
 
-            roomUserStore.get(alice, room)?.lastReadMessage shouldBe eventId
+            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
         }
     }
 })

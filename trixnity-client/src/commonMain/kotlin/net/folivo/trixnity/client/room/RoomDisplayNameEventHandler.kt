@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
@@ -77,7 +78,7 @@ class RoomDisplayNameEventHandler(
         roomId: RoomId,
         roomSummary: RoomSummary?,
     ) {
-        val oldRoomSummary = roomStore.get(roomId).value?.name?.summary
+        val oldRoomSummary = roomStore.get(roomId).first()?.name?.summary
 
         val mergedRoomSummary = RoomSummary(
             heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
@@ -85,9 +86,9 @@ class RoomDisplayNameEventHandler(
             invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
         )
 
-        val nameFromNameEvent = roomStateStore.getByStateKey<NameEventContent>(roomId)?.content?.name
+        val nameFromNameEvent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content?.name
         val nameFromAliasEvent =
-            roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId)?.content?.alias?.full
+            roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content?.alias?.full
 
         val roomName = when {
             nameFromNameEvent.isNullOrEmpty().not() ->

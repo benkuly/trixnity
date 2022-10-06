@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -29,31 +28,28 @@ class RoomServiceMock : IRoomService {
     override suspend fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): StateFlow<TimelineEvent?> {
+    ): Flow<TimelineEvent?> {
         return returnGetTimelineEvent
     }
 
     override suspend fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
     override suspend fun getNextTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
@@ -73,14 +69,14 @@ class RoomServiceMock : IRoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<StateFlow<TimelineEvent?>> = returnGetTimelineEvents
+    ): Flow<Flow<TimelineEvent?>> = returnGetTimelineEvents
 
     override suspend fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<Flow<StateFlow<TimelineEvent?>>?> {
+    ): Flow<Flow<Flow<TimelineEvent?>>?> {
         throw NotImplementedError()
     }
 
@@ -100,14 +96,13 @@ class RoomServiceMock : IRoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): Flow<List<StateFlow<TimelineEvent?>>> {
+    ): Flow<List<Flow<TimelineEvent?>>> {
         throw NotImplementedError()
     }
 
     override suspend fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
         TODO("Not yet implemented")
     }
@@ -116,7 +111,6 @@ class RoomServiceMock : IRoomService {
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope
     ): Flow<Set<TimelineEventRelation>?> {
         TODO("Not yet implemented")
     }
@@ -145,16 +139,7 @@ class RoomServiceMock : IRoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
     ): StateFlow<C?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String
-    ): C? {
         throw NotImplementedError()
     }
 
@@ -166,31 +151,14 @@ class RoomServiceMock : IRoomService {
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): StateFlow<Event<C>?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun <C : StateEventContent> getState(
-        roomId: RoomId,
-        stateKey: String,
-        eventContentClass: KClass<C>
-    ): Event<C>? {
         throw NotImplementedError()
     }
 
     override suspend fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Map<String, Event<C>?>?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun <C : StateEventContent> getAllState(
-        roomId: RoomId,
-        eventContentClass: KClass<C>
-    ): Map<String, Event<C>?>? {
         throw NotImplementedError()
     }
 

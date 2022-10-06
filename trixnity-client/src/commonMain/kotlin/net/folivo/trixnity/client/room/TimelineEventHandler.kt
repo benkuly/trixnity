@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
@@ -130,7 +131,7 @@ class TimelineEventHandler(
         val events = roomTimelineStore.filterDuplicateEvents(newEvents)
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
-            val room = roomStore.get(roomId).value
+            val room = roomStore.get(roomId).first()
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
                 timelineEvents.alsoAddRelationFromTimelineEvents().map {
@@ -169,7 +170,7 @@ class TimelineEventHandler(
         limit: Long
     ): Result<Unit> = timelineMutex.withTransactionalLock(roomId) {
         kotlin.runCatching {
-            val isLastEventId = roomStore.get(roomId).value?.lastEventId == startEventId
+            val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
 
             val startEvent =
                 roomTimelineStore.get(startEventId, roomId, withTransaction = false) ?: return@runCatching
@@ -214,7 +215,7 @@ class TimelineEventHandler(
                 previousHasGap = false
             }
 
-            val possiblyNextEvent = roomTimelineStore.getNext(startEvent)
+            val possiblyNextEvent = roomTimelineStore.getNext(startEvent)?.first()
             if (startGapBatchAfter != null && !isLastEventId) {
                 insertNewEvents = true
                 log.debug { "fetch missing events after $startEventId" }

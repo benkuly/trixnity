@@ -458,14 +458,14 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf()
             }
-            val result = cut.getSelfVerificationMethods(scope)
+            val result = cut.getSelfVerificationMethods()
             result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
         }
         should("return ${SelfVerificationMethods.PreconditionsNotMet}, when device keys not fetched yet") {
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf()
             }
-            val result = cut.getSelfVerificationMethods(scope)
+            val result = cut.getSelfVerificationMethods()
             result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
         }
         should("return ${SelfVerificationMethods.PreconditionsNotMet}, when cross signing keys not fetched yet") {
@@ -477,7 +477,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            val result = cut.getSelfVerificationMethods(scope)
+            val result = cut.getSelfVerificationMethods()
             result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
         }
         should("return ${SelfVerificationMethods.NoCrossSigningEnabled}, when cross signing keys are fetched, but empty") {
@@ -492,7 +492,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf()
             }
-            val result = cut.getSelfVerificationMethods(scope)
+            val result = cut.getSelfVerificationMethods()
             result.first() shouldBe SelfVerificationMethods.NoCrossSigningEnabled
         }
         should("return ${SelfVerificationMethods.AlreadyCrossSigned} when already cross signed") {
@@ -512,7 +512,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).first() shouldBe SelfVerificationMethods.AlreadyCrossSigned
+            cut.getSelfVerificationMethods().first() shouldBe SelfVerificationMethods.AlreadyCrossSigned
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             apiConfig.endpoints {
@@ -543,7 +543,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            val result = cut.getSelfVerificationMethods(scope).first()
+            val result = cut.getSelfVerificationMethods().first()
                 .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods
             result.size shouldBe 1
             val firstResult = result.first()
@@ -567,7 +567,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).first()
+            cut.getSelfVerificationMethods().first()
                 .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>()
                 .methods.size shouldBe 0
         }
@@ -594,7 +594,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).first()
+            cut.getSelfVerificationMethods().first()
                 .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods shouldBe setOf(
                 AesHmacSha2RecoveryKey(keySecretServiceMock, keyTrustServiceMock, "KEY", defaultKey)
             )
@@ -622,7 +622,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.getSelfVerificationMethods(scope).first()
+            cut.getSelfVerificationMethods().first()
                 .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods shouldBe setOf(
                 AesHmacSha2RecoveryKey(keySecretServiceMock, keyTrustServiceMock, "KEY", defaultKey),
                 AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keySecretServiceMock, keyTrustServiceMock, "KEY", defaultKey)

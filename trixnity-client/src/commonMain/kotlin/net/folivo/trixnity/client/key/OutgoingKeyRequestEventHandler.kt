@@ -2,9 +2,13 @@ package net.folivo.trixnity.client.key
 
 import com.benasher44.uuid.uuid4
 import io.ktor.util.reflect.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
@@ -70,7 +74,7 @@ class OutgoingKeyRequestEventHandler(
             log.debug { "there are no missing secrets or they are already requested" }
             return
         }
-        val receiverDeviceIds = keyStore.getDeviceKeys(ownUserId)
+        val receiverDeviceIds = keyStore.getDeviceKeys(ownUserId).first()
             ?.filter { it.value.trustLevel == KeySignatureTrustLevel.CrossSigned(true) }
             ?.map { it.value.value.signed.deviceId }?.minus(ownDeviceId)?.toSet()
         if (receiverDeviceIds.isNullOrEmpty()) {
@@ -101,11 +105,9 @@ class OutgoingKeyRequestEventHandler(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
         ) {
-            coroutineScope {
-                keyStore.getDeviceKey(ownUserId, ownDeviceId, this).collect { deviceKeys ->
-                    if (deviceKeys?.trustLevel == KeySignatureTrustLevel.CrossSigned(true)) {
-                        requestSecretKeys()
-                    }
+            keyStore.getDeviceKey(ownUserId, ownDeviceId).collect { deviceKeys ->
+                if (deviceKeys?.trustLevel == KeySignatureTrustLevel.CrossSigned(true)) {
+                    requestSecretKeys()
                 }
             }
         }
@@ -119,7 +121,7 @@ class OutgoingKeyRequestEventHandler(
                 log.warn { "received a key request, but we don't requested one with the id ${content.requestId}" }
                 return
             }
-            val (senderDeviceId, senderTrustLevel) = keyStore.getDeviceKeys(ownUserId)?.firstNotNullOfOrNull {
+            val (senderDeviceId, senderTrustLevel) = keyStore.getDeviceKeys(ownUserId).first()?.firstNotNullOfOrNull {
                 if (it.value.value.get<Key.Ed25519Key>()?.value == event.decrypted.senderKeys.get<Key.Ed25519Key>()?.value)
                     it.key to it.value.trustLevel
                 else null
@@ -168,7 +170,7 @@ class OutgoingKeyRequestEventHandler(
                 log.warn { "generated public key of secret ${request.content.name} did not match the original" }
                 return
             }
-            val encryptedSecret = secretType.getEncryptedSecret(globalAccountDataStore)
+            val encryptedSecret = secretType.getEncryptedSecret(globalAccountDataStore).first()
             if (encryptedSecret == null) {
                 log.warn { "could not find encrypted secret" }
                 return

@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
@@ -20,34 +20,20 @@ class UserServiceMock : IUserService {
         loadMembersCalled.value = roomId
     }
 
-    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {
+    override suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
         throw NotImplementedError()
     }
 
-    override suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
-        throw NotImplementedError()
-    }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
+    override suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
         throw NotImplementedError()
     }
 
     override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
-    ): StateFlow<C?> {
+    ): Flow<C?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
-        eventContentClass: KClass<C>,
-        key: String
-    ): C? {
-        throw NotImplementedError()
-    }
 }

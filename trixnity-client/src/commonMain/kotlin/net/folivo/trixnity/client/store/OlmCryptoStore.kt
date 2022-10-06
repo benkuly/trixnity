@@ -2,10 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
@@ -72,7 +69,7 @@ class OlmCryptoStore(
 
     suspend fun getOlmSessions(
         senderKey: Curve25519Key
-    ): Set<StoredOlmSession>? = olmSessionsCache.get(senderKey)
+    ): Set<StoredOlmSession>? = olmSessionsCache.get(senderKey).first()
 
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
@@ -84,14 +81,7 @@ class OlmCryptoStore(
     suspend fun getInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
-        scope: CoroutineScope
-    ): StateFlow<StoredInboundMegolmSession?> =
-        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(sessionId, roomId), scope = scope)
-
-    suspend fun getInboundMegolmSession(
-        sessionId: String,
-        roomId: RoomId,
-    ): StoredInboundMegolmSession? =
+    ): Flow<StoredInboundMegolmSession?> =
         inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(sessionId, roomId))
 
     suspend fun updateInboundMegolmSession(
@@ -125,7 +115,7 @@ class OlmCryptoStore(
     private val outboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, outboundMegolmSessionRepository, rtm)
 
     suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
-        outboundMegolmSessionCache.get(roomId)
+        outboundMegolmSessionCache.get(roomId).first()
 
     suspend fun updateOutboundMegolmSession(
         roomId: RoomId,

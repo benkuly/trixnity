@@ -382,7 +382,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
 
             cut.setRoomIsDirect(eventContent)
 
-            roomStore.get(room).value?.isDirect shouldBe true
+            roomStore.get(room).first()?.isDirect shouldBe true
         }
         should("set the room to direct == 'false' when no DirectEventContent is found for the room") {
             val room1 = RoomId("room1", "localhost")
@@ -398,8 +398,8 @@ class DirectRoomEventHandlerTest : ShouldSpec({
 
             cut.setRoomIsDirect(eventContent)
 
-            roomStore.get(room1).value?.isDirect shouldBe false
-            roomStore.get(room2).value?.isDirect shouldBe true
+            roomStore.get(room1).first()?.isDirect shouldBe false
+            roomStore.get(room2).first()?.isDirect shouldBe true
         }
     }
     context(DirectRoomEventHandler::setAvatarUrlForDirectRooms.name) {
@@ -426,7 +426,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForDirectRooms(eventContent)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/abcdef"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/abcdef"
         }
 
         should("when the avatar URL is explicitly set use it instead of member's avatar URL") {
@@ -462,7 +462,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForDirectRooms(eventContent)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
     }
 })

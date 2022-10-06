@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.simpleRoom
@@ -50,8 +51,8 @@ class EncryptionEventHandlerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            roomStore.get(room).value?.encryptionAlgorithm shouldBe EncryptionAlgorithm.Megolm
-            roomStore.get(room).value?.membersLoaded shouldBe false
+            roomStore.get(room).first()?.encryptionAlgorithm shouldBe EncryptionAlgorithm.Megolm
+            roomStore.get(room).first()?.membersLoaded shouldBe false
         }
     }
 })

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.key.DeviceTrustLevel
@@ -32,38 +31,28 @@ class KeyServiceMock(
     override suspend fun getTrustLevel(
         userId: UserId,
         deviceId: String,
-        scope: CoroutineScope
     ): StateFlow<DeviceTrustLevel> {
         throw NotImplementedError()
     }
 
     override suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
-        scope: CoroutineScope
     ): StateFlow<DeviceTrustLevel>? {
         throw NotImplementedError()
     }
 
-    override suspend fun getTrustLevel(userId: UserId, scope: CoroutineScope): StateFlow<UserTrustLevel> {
+    override suspend fun getTrustLevel(userId: UserId): StateFlow<UserTrustLevel> {
         throw NotImplementedError()
     }
 
-    override suspend fun getDeviceKeys(userId: UserId, scope: CoroutineScope): StateFlow<List<DeviceKeys>?> {
+    override suspend fun getDeviceKeys(userId: UserId): StateFlow<List<DeviceKeys>?> {
         throw NotImplementedError()
     }
 
-    override suspend fun getDeviceKeys(userId: UserId): List<DeviceKeys>? {
-        throw NotImplementedError()
-    }
 
     override suspend fun getCrossSigningKeys(
         userId: UserId,
-        scope: CoroutineScope
     ): StateFlow<List<CrossSigningKeys>?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun getCrossSigningKeys(userId: UserId): List<CrossSigningKeys>? {
         throw NotImplementedError()
     }
 }

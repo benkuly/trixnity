@@ -67,7 +67,7 @@ class TimelineEventHandlerTest : ShouldSpec({
     }
 
     suspend fun storeTimeline(vararg events: Event.RoomEvent<*>) = events.map {
-        roomTimelineStore.get(it.id, it.roomId)
+        roomTimelineStore.get(it.id, it.roomId).first()
     }
 
     fun nameEvent(i: Long = 60): Event.StateEvent<NameEventContent> {
@@ -95,7 +95,7 @@ class TimelineEventHandlerTest : ShouldSpec({
         should("set unread message count for room") {
             roomStore.update(room) { simpleRoom.copy(roomId = room) }
             cut.setUnreadMessageCount(room, 24)
-            roomStore.get(room).value?.unreadMessageCount shouldBe 24
+            roomStore.get(room).first()?.unreadMessageCount shouldBe 24
         }
     }
     context(TimelineEventHandler::syncOutboxMessage.name) {
@@ -189,7 +189,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(roomTimelineStore.get(event2.id, room).shouldNotBeNull()) {
+                assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe MessageEvent(
                         RedactedMessageEventContent("m.room.message"),
                         event2.id,
@@ -250,7 +250,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                assertSoftly(roomTimelineStore.get(event2.id, room).shouldNotBeNull()) {
+                assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe Event.StateEvent(
                         RedactedStateEventContent("m.room.name"),
                         event2.id,
@@ -307,9 +307,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                     originTimestamp = 3
                 )
                 cut.redactTimelineEvent(redactionEvent)
-                roomTimelineStore.get(EventId("\$incorrectlyEvent"), room) shouldBe null
-                roomTimelineStore.get(timelineEvent1.eventId, room) shouldBe timelineEvent1
-                roomTimelineStore.get(timelineEvent2.eventId, room) shouldBe timelineEvent2
+                roomTimelineStore.get(EventId("\$incorrectlyEvent"), room).first() shouldBe null
+                roomTimelineStore.get(timelineEvent1.eventId, room).first() shouldBe timelineEvent1
+                roomTimelineStore.get(timelineEvent2.eventId, room).first() shouldBe timelineEvent2
             }
         }
     }
@@ -615,13 +615,13 @@ class TimelineEventHandlerTest : ShouldSpec({
                     false
                 )
 
-                assertSoftly(roomTimelineStore.get(eventId1, room).shouldNotBeNull()) {
+                assertSoftly(roomTimelineStore.get(eventId1, room).first().shouldNotBeNull()) {
                     content shouldBe Result.success(TextMessageEventContent("Hello!"))
                 }
-                assertSoftly(roomTimelineStore.get(eventId2, room).shouldNotBeNull()) {
+                assertSoftly(roomTimelineStore.get(eventId2, room).first().shouldNotBeNull()) {
                     content shouldBe null
                 }
-                assertSoftly(roomTimelineStore.get(eventId3, room).shouldNotBeNull()) {
+                assertSoftly(roomTimelineStore.get(eventId3, room).first().shouldNotBeNull()) {
                     content shouldBe null
                 }
             }
@@ -630,7 +630,7 @@ class TimelineEventHandlerTest : ShouldSpec({
     context(TimelineEventHandler::setLastEventId.name) {
         should("set last event from room event") {
             cut.setLastEventId(textEvent(24))
-            roomStore.get(room).value?.lastEventId shouldBe EventId("\$event24")
+            roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
         }
         should("set last event from state event") {
             cut.setLastEventId(
@@ -643,7 +643,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     stateKey = alice.full
                 )
             )
-            roomStore.get(room).value?.lastEventId shouldBe EventId("\$event1")
+            roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event1")
         }
     }
 
@@ -686,7 +686,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     ), nextBatch = "123456"
                 )
             )
-            roomStore.get(room).value?.lastRelevantEventId shouldBe EventId("event2")
+            roomStore.get(room).first()?.lastRelevantEventId shouldBe EventId("event2")
         }
     }
     context(TimelineEventHandler::addRelation.name) {
@@ -703,7 +703,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     1234,
                 )
             )
-            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")) shouldBe
+            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")).first() shouldBe
                     mapOf(
                         RelationType.Reference to setOf(
                             TimelineEventRelation(

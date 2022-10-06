@@ -169,7 +169,7 @@ class RoomServiceTest : ShouldSpec({
                         )
                     )
                 )
-                val timelineEventFlow = cut.getTimelineEvent(eventId, room, this)
+                val timelineEventFlow = cut.getTimelineEvent(eventId, room)
                 roomTimelineStore.addAll(
                     listOf(
                         TimelineEvent(
@@ -207,15 +207,15 @@ class RoomServiceTest : ShouldSpec({
                 )
             ) { timelineEvent ->
                 roomTimelineStore.addAll(listOf(timelineEvent))
-                cut.getTimelineEvent(eventId, room, this).value shouldBe timelineEvent
+                cut.getTimelineEvent(eventId, room).first() shouldBe timelineEvent
 
                 // event gets changed later (e.g. redaction)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room, this)
+                val result = cut.getTimelineEvent(eventId, room)
                 delay(20)
                 roomTimelineStore.addAll(listOf(timelineEvent))
                 delay(20)
-                result.value shouldBe timelineEvent
+                result.first() shouldBe timelineEvent
             }
         }
         context("event can be decrypted") {
@@ -223,7 +223,7 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room, this)
+                val result = cut.getTimelineEvent(eventId, room)
                     .first { it?.content?.getOrNull() != null }
                 assertSoftly(result) {
                     assertNotNull(this)
@@ -237,7 +237,7 @@ class RoomServiceTest : ShouldSpec({
                     null
                 }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = async { cut.getTimelineEvent(eventId, room, this, 0.seconds).first() }
+                val result = async { cut.getTimelineEvent(eventId, room, 0.seconds).first() }
                 // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
                 result.await() shouldBe encryptedTimelineEvent
                 result.job.children.count() shouldBe 0
@@ -246,7 +246,7 @@ class RoomServiceTest : ShouldSpec({
                 roomEventDecryptionServiceMock.returnDecrypt =
                     { Result.failure(DecryptionException.ValidationFailed("")) }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room, this)
+                val result = cut.getTimelineEvent(eventId, room)
                     .first { it?.content?.isFailure == true }
                 assertSoftly(result) {
                     assertNotNull(this)
@@ -282,8 +282,8 @@ class RoomServiceTest : ShouldSpec({
             roomStore.update(room) { initialRoom.copy(lastEventId = event2.id) }
             result.await()[0] shouldBe null
             result.await()[1] shouldNotBe null
-            result.await()[1]?.value shouldBe null
-            result.await()[2]?.value shouldBe event2Timeline
+            result.await()[1]?.first() shouldBe null
+            result.await()[2]?.first() shouldBe event2Timeline
         }
     }
     context(RoomService::sendMessage.name) {

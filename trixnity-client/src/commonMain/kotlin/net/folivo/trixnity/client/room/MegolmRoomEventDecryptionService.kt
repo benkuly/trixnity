@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.room
 
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.IKeyBackupService
 import net.folivo.trixnity.client.store.OlmCryptoStore
@@ -19,17 +19,17 @@ class MegolmRoomEventDecryptionService(
     private val keyBackupService: IKeyBackupService,
     private val olmEncryptionService: IOlmEncryptionService,
 ) : RoomEventDecryptionService {
-    override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? = coroutineScope {
+    override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? {
         val content = event.content
         val roomId = event.roomId
         val eventId = event.id
-        if (content is EncryptedEventContent.MegolmEncryptedEventContent) {
-            val session = olmCryptoStore.getInboundMegolmSession(content.sessionId, roomId, this)
-            val firstKnownIndex = session.value?.firstKnownIndex
-            if (session.value == null) {
+        return if (content is EncryptedEventContent.MegolmEncryptedEventContent) {
+            val session = olmCryptoStore.getInboundMegolmSession(content.sessionId, roomId).first()
+            val firstKnownIndex = session?.firstKnownIndex
+            if (session == null) {
                 keyBackupService.loadMegolmSession(roomId, content.sessionId)
                 log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
-                olmCryptoStore.waitForInboundMegolmSession(roomId, content.sessionId, this)
+                olmCryptoStore.waitForInboundMegolmSession(roomId, content.sessionId)
             }
             log.trace { "try to decrypt event $eventId in $roomId" }
             @Suppress("UNCHECKED_CAST")
@@ -47,7 +47,6 @@ class MegolmRoomEventDecryptionService(
                     olmCryptoStore.waitForInboundMegolmSession(
                         roomId,
                         content.sessionId,
-                        this,
                         firstKnownIndexLessThen = firstKnownIndex
                     )
                     encryptedEvent.decryptCatching()

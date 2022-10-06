@@ -7,6 +7,7 @@ import io.kotest.matchers.should
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.KeyStore
@@ -53,7 +54,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.outdatedKeys.value = setOf(alice, bob)
                 keyStore.updateDeviceKeys(alice) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)))
-                keyStore.getDeviceKeys(alice) should beNull()
+                keyStore.getDeviceKeys(alice).first() should beNull()
                 keyStore.outdatedKeys.value shouldContainExactly setOf(bob)
             }
         }

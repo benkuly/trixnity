@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.store.*
@@ -97,7 +98,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full
                 )
             )
-            keyStore.getDeviceKeys(alice) should beNull()
+            keyStore.getDeviceKeys(alice).first() should beNull()
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.handleMemberEvents(
@@ -110,7 +111,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full
                 )
             )
-            keyStore.getDeviceKeys(alice) should beNull()
+            keyStore.getDeviceKeys(alice).first() should beNull()
         }
         should("not remove device keys on leave or ban when there are more rooms") {
             val otherRoom = RoomId("otherRoom", "server")

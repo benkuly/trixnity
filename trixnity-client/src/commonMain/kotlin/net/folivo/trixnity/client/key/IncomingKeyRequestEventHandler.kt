@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
@@ -69,7 +70,7 @@ class IncomingKeyRequestEventHandler(
         incomingSecretKeyRequests.value.forEach { request ->
             log.debug { "process incoming key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId
-            val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId)?.trustLevel
+            val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId).first()?.trustLevel
             if (senderTrustLevel is KeySignatureTrustLevel.CrossSigned && senderTrustLevel.verified || senderTrustLevel is KeySignatureTrustLevel.Valid && senderTrustLevel.verified) {
                 val requestedSecret = request.name
                     ?.let { SecretType.ofId(it) }

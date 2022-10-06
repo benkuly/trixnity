@@ -106,7 +106,7 @@ class CrossSigningIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.getSelfVerificationMethods(scope1)
+            client1.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                 .first()
 
@@ -127,7 +127,7 @@ class CrossSigningIT {
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 
-            client1.verification.getSelfVerificationMethods(scope1)
+            client1.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
                 .first()
 
@@ -140,64 +140,64 @@ class CrossSigningIT {
 
             withClue("observe trust level with client1 before self verification") {
                 client1.key.apply {
-                    getTrustLevel(client1.userId, scope1).first { it == NotAllDevicesCrossSigned(true) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope1).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope1).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(false) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
                 }
             }
             withClue("observe trust level with client2 before self verification") {
                 client2.key.apply {
-                    getTrustLevel(client1.userId, scope2).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope2).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope2).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope2).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope2).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(false) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
                 }
             }
             withClue("observe trust level with client3 before self verification") {
                 client3.key.apply {
-                    getTrustLevel(client1.userId, scope3).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope3).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope3).first { it == CrossSigned(true) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope3).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(true) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
                 }
             }
 
             withClue("self verification of client2") {
                 val client2VerificationMethods =
-                    client2.verification.getSelfVerificationMethods(scope2)
+                    client2.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
                         .first { it.methods.size == 2 }.methods
                 client2VerificationMethods.filterIsInstance<CrossSignedDeviceVerification>().size shouldBe 1
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().size shouldBe 1
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
-                client2.verification.getSelfVerificationMethods(scope2)
+                client2.verification.getSelfVerificationMethods()
                     .first { it == SelfVerificationMethods.AlreadyCrossSigned }
             }
 
             withClue("observe trust level with client1 after self verification") {
                 client1.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client1.userId, scope1).first { it == CrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client2 after self verification") {
                 client2.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope2).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope2).first { it == Verified }
-                    getTrustLevel(client1.userId, scope2).first { it == CrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client3 after self verification") {
                 client3.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client1.userId, scope3).first { it == CrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(false) }
                 }
             }
             withClue("verification between user1 and user3") {
@@ -243,11 +243,11 @@ class CrossSigningIT {
             }
 
             suspend fun IKeyService.checkEverythingVerified() {
-                this.getTrustLevel(client1.userId, scope1).first { it == CrossSigned(true) }
-                this.getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                this.getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == Verified }
-                this.getTrustLevel(client3.userId, scope1).first { it == CrossSigned(true) }
-                this.getTrustLevel(client3.userId, client3.deviceId, scope1).first { it == Verified }
+                this.getTrustLevel(client1.userId).first { it == CrossSigned(true) }
+                this.getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                this.getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                this.getTrustLevel(client3.userId).first { it == CrossSigned(true) }
+                this.getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
             }
 
             withClue("observe trust level with client1 after user verification") {

@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
@@ -92,7 +91,6 @@ interface IKeyService {
     suspend fun getTrustLevel(
         userId: UserId,
         deviceId: String,
-        scope: CoroutineScope
     ): Flow<DeviceTrustLevel>
 
     /**
@@ -100,7 +98,6 @@ interface IKeyService {
      */
     suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
-        scope: CoroutineScope
     ): Flow<DeviceTrustLevel>?
 
     /**
@@ -108,26 +105,15 @@ interface IKeyService {
      */
     suspend fun getTrustLevel(
         userId: UserId,
-        scope: CoroutineScope
     ): Flow<UserTrustLevel>
 
     suspend fun getDeviceKeys(
         userId: UserId,
-        scope: CoroutineScope,
     ): Flow<List<DeviceKeys>?>
 
-    suspend fun getDeviceKeys(
-        userId: UserId,
-    ): List<DeviceKeys>?
-
     suspend fun getCrossSigningKeys(
         userId: UserId,
-        scope: CoroutineScope,
     ): Flow<List<CrossSigningKeys>?>
-
-    suspend fun getCrossSigningKeys(
-        userId: UserId,
-    ): List<CrossSigningKeys>?
 }
 
 class KeyService(
@@ -155,7 +141,7 @@ class KeyService(
         val keyId = generateSequence {
             val alphabet = 'a'..'z'
             generateSequence { alphabet.random() }.take(24).joinToString("")
-        }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it) == null }
+        }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it).first() == null }
         val secretKeyEventContent = secretKeyEventContentGenerator()
         return IKeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
@@ -259,7 +245,7 @@ class KeyService(
                         val masterKey =
                             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
                         val ownDeviceKey =
-                            keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId)?.value?.get<Ed25519Key>()
+                            keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId).first()?.value?.get<Ed25519Key>()
 
                         keyTrustService.trustAndSignKeys(setOfNotNull(masterKey, ownDeviceKey), userInfo.userId)
                         _bootstrapRunning.value = false
@@ -280,9 +266,8 @@ class KeyService(
     override suspend fun getTrustLevel(
         userId: UserId,
         deviceId: String,
-        scope: CoroutineScope
     ): Flow<DeviceTrustLevel> {
-        return keyStore.getDeviceKey(userId, deviceId, scope).map { deviceKeys ->
+        return keyStore.getDeviceKey(userId, deviceId).map { deviceKeys ->
             when (val trustLevel = deviceKeys?.trustLevel) {
                 is Valid -> if (trustLevel.verified) DeviceTrustLevel.Verified else DeviceTrustLevel.NotVerified
                 is CrossSigned -> if (trustLevel.verified) DeviceTrustLevel.Verified else DeviceTrustLevel.NotVerified
@@ -297,14 +282,13 @@ class KeyService(
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun getTrustLevel(
         timelineEvent: TimelineEvent,
-        scope: CoroutineScope
     ): Flow<DeviceTrustLevel>? {
         val event = timelineEvent.event
         val content = event.content
         return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
             combine(
-                olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId, scope),
-                keyStore.getDeviceKeys(event.sender, scope)
+                olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
+                keyStore.getDeviceKeys(event.sender)
             ) { megolmSession, deviceKeys ->
                 if (megolmSession == null || deviceKeys == null || megolmSession.isTrusted.not())
                     flowOf(DeviceTrustLevel.NotVerified)
@@ -312,7 +296,7 @@ class KeyService(
                     val deviceId =
                         deviceKeys.values.find { it.value.signed.keys.keys.contains(megolmSession.senderKey) }
                             ?.value?.signed?.deviceId
-                    if (deviceId != null) getTrustLevel(event.sender, deviceId, scope)
+                    if (deviceId != null) getTrustLevel(event.sender, deviceId)
                     else flowOf(DeviceTrustLevel.NotVerified)
                 }
             }.flatMapLatest { it }
@@ -321,9 +305,8 @@ class KeyService(
 
     override suspend fun getTrustLevel(
         userId: UserId,
-        scope: CoroutineScope
     ): Flow<UserTrustLevel> {
-        return keyStore.getCrossSigningKeys(userId, scope)
+        return keyStore.getCrossSigningKeys(userId)
             .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(MasterKey) } }
             .map { crossSigningKeys ->
                 when (val trustLevel = crossSigningKeys?.trustLevel) {
@@ -340,31 +323,17 @@ class KeyService(
 
     override suspend fun getDeviceKeys(
         userId: UserId,
-        scope: CoroutineScope,
     ): Flow<List<DeviceKeys>?> {
-        return keyStore.getDeviceKeys(userId, scope).map {
+        return keyStore.getDeviceKeys(userId).map {
             it?.values?.map { storedKeys -> storedKeys.value.signed }
         }
     }
 
-    override suspend fun getDeviceKeys(
-        userId: UserId,
-    ): List<DeviceKeys>? {
-        return keyStore.getDeviceKeys(userId)?.values?.map { it.value.signed }
-    }
-
     override suspend fun getCrossSigningKeys(
         userId: UserId,
-        scope: CoroutineScope,
     ): Flow<List<CrossSigningKeys>?> {
-        return keyStore.getCrossSigningKeys(userId, scope).map {
+        return keyStore.getCrossSigningKeys(userId).map {
             it?.map { storedKeys -> storedKeys.value.signed }
         }
-    }
-
-    override suspend fun getCrossSigningKeys(
-        userId: UserId,
-    ): List<CrossSigningKeys>? {
-        return keyStore.getCrossSigningKeys(userId)?.map { it.value.signed }
     }
 }

@@ -74,7 +74,7 @@ class RoomUserStoreTest : ShouldSpec({
                 )
             )
 
-            cut.getAll(roomId, scope).first() shouldContainExactly listOf(aliceUser, bobUser)
+            cut.getAll(roomId).first() shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
         }

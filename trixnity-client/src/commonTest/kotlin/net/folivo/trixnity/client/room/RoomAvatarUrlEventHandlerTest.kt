@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.getInMemoryRoomStore
@@ -72,7 +73,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForMemberUpdates(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
 
         should("do nothing when the room is not a direct room") {
@@ -91,7 +92,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForMemberUpdates(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe null
+            roomStore.get(room).first()?.avatarUrl shouldBe null
         }
 
         should("use the membership event of other user and not own (which is the invitation we might have sent)") {
@@ -111,7 +112,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForMemberUpdates(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe null
+            roomStore.get(room).first()?.avatarUrl shouldBe null
         }
     }
 
@@ -129,7 +130,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForAvatarEvents(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
 
         should("set an empty avatar URL for normal rooms") {
@@ -145,7 +146,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForAvatarEvents(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe null
+            roomStore.get(room).first()?.avatarUrl shouldBe null
         }
 
         should("set the avatar URL for direct rooms") {
@@ -161,7 +162,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForAvatarEvents(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
 
         should("set the avatar URL to a member of a direct room when the new avatar URL is empty") {
@@ -195,7 +196,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
             cut.setAvatarUrlForAvatarEvents(event)
 
-            roomStore.get(room).value?.avatarUrl shouldBe "mxc://localhost/123456"
+            roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
     }
 })

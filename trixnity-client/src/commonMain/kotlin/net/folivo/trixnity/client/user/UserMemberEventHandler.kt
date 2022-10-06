@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
@@ -45,7 +46,7 @@ class UserMemberEventHandler(
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
             val userId = UserId(stateKey)
-            val storedRoomUser = roomUserStore.get(userId, roomId)
+            val storedRoomUser = roomUserStore.get(userId, roomId).first()
             if (skipWhenAlreadyPresent && storedRoomUser != null) return
             val membership = event.content.membership
             val newDisplayName = event.content.displayName
@@ -53,7 +54,7 @@ class UserMemberEventHandler(
             val hasLeftRoom =
                 membership == Membership.LEAVE || membership == Membership.BAN
 
-            val oldDisplayName = roomUserStore.get(userId, roomId)?.originalName
+            val oldDisplayName = roomUserStore.get(userId, roomId).first()?.originalName
             val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
                 if (!oldDisplayName.isNullOrEmpty())
                     resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
