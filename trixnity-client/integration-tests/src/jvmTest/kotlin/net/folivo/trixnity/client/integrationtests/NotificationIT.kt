@@ -8,7 +8,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.push
@@ -28,7 +27,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class PushIT {
+class NotificationIT {
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
 
@@ -60,7 +59,6 @@ class PushIT {
         withTimeout(30_000) {
             val notifications = startedClient2.client.push.getNotifications()
                 .scan(listOf<IPushService.Notification>()) { old, new -> old + new }
-                .onEach { println(it) }
                 .stateIn(scope)
 
             val room = startedClient1.client.api.rooms.createRoom(
