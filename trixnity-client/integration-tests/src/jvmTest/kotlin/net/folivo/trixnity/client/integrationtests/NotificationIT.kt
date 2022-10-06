@@ -8,7 +8,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.notification.NotificationService
@@ -28,7 +27,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 @Testcontainers
-class PushIT {
+class NotificationIT {
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
 
