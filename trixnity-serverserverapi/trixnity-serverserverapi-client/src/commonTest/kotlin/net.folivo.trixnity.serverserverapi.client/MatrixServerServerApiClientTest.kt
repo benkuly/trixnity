@@ -18,7 +18,7 @@ class MatrixServerServerApiClientTest {
     @Test
     fun shouldUseDelegate() = runTest {
         var endpointCalled = false
-        val cut = MatrixServerServerApiClient(
+        val cut = MatrixServerServerApiClientImpl(
             hostname = "myHost",
             getDelegatedDestination = { hostname, port ->
                 hostname shouldBe "otherHost"
@@ -45,7 +45,7 @@ class MatrixServerServerApiClientTest {
     @Test
     fun shouldCreateSignatureAuthenticationHeader() = runTest {
         var endpointCalled = false
-        val cut = MatrixServerServerApiClient(
+        val cut = MatrixServerServerApiClientImpl(
             hostname = "myHost",
             getDelegatedDestination = { hostname, port -> hostname to port },
             sign = {
@@ -73,7 +73,7 @@ class MatrixServerServerApiClientTest {
     @Test
     fun shouldCreateSignatureAuthenticationHeaderWithoutBody() = runTest {
         var endpointCalled = false
-        val cut = MatrixServerServerApiClient(
+        val cut = MatrixServerServerApiClientImpl(
             hostname = "myHost",
             getDelegatedDestination = { hostname, port -> hostname to port },
             sign = {

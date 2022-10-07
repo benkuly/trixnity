@@ -28,7 +28,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.crypto.sign.verify
 import net.folivo.trixnity.olm.*
@@ -37,7 +37,7 @@ import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
 
 private val log = KotlinLogging.logger {}
 
-interface IOlmEncryptionService {
+interface OlmEncryptionService {
     suspend fun encryptOlm(
         content: EventContent,
         receiverId: UserId,
@@ -56,13 +56,13 @@ interface IOlmEncryptionService {
     suspend fun decryptMegolm(encryptedEvent: RoomEvent<MegolmEncryptedEventContent>): DecryptedMegolmEvent<*>
 }
 
-class OlmEncryptionService(
+class OlmEncryptionServiceImpl(
     userInfo: UserInfo,
     private val json: Json,
     private val store: OlmStore,
     private val requests: OlmEncryptionServiceRequestHandler,
-    private val signService: ISignService,
-) : IOlmEncryptionService {
+    private val signService: SignService,
+) : OlmEncryptionService {
 
     private val ownUserId: UserId = userInfo.userId
     private val ownDeviceId: String = userInfo.deviceId

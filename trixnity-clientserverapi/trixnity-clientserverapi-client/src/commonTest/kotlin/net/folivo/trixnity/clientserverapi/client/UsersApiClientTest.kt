@@ -26,7 +26,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetDisplayName() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -48,7 +48,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetDisplayName() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -66,7 +66,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetAvatarUrl() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -88,7 +88,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetAvatarUrl() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -109,7 +109,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetProfile() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -130,7 +130,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetNullForMissingProfileValues() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -151,7 +151,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetPresence() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -177,7 +177,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetPresence() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -201,7 +201,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSendToDevice() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -245,7 +245,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetFilter() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -276,7 +276,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetFilter() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -306,7 +306,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetAccountData() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -334,7 +334,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldGetAccountDataWithKey() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -357,7 +357,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetAccountData() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -389,7 +389,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSetAccountDataWithKey() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -418,7 +418,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSearchUsers() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

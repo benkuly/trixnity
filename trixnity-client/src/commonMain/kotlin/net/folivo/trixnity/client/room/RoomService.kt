@@ -7,12 +7,12 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.media.IMediaService
+import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-interface IRoomService {
+interface RoomService {
     suspend fun fillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
@@ -190,20 +190,20 @@ interface IRoomService {
     ): Flow<Boolean>
 }
 
-class RoomService(
-    private val api: IMatrixClientServerApiClient,
+class RoomServiceImpl(
+    private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val roomEventDecryptionServices: List<RoomEventDecryptionService>,
-    private val mediaService: IMediaService,
-    private val timelineEventHandler: ITimelineEventHandler,
+    private val mediaService: MediaService,
+    private val timelineEventHandler: TimelineEventHandler,
     private val currentSyncState: CurrentSyncState,
     private val userInfo: UserInfo,
     private val scope: CoroutineScope,
-) : IRoomService {
+) : RoomService {
 
     override suspend fun fillTimelineGaps(
         startEventId: EventId,

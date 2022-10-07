@@ -3,7 +3,7 @@ package net.folivo.trixnity.appservice
 import net.folivo.trixnity.applicationserviceapi.server.ApplicationServiceApiServerHandler
 import net.folivo.trixnity.appservice.ApplicationServiceRoomService.RoomExistingState
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState
-import net.folivo.trixnity.core.EventEmitter
+import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -12,7 +12,7 @@ class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceEventTxnService: ApplicationServiceEventTxnService,
     private val applicationServiceUserService: ApplicationServiceUserService,
     private val applicationServiceRoomService: ApplicationServiceRoomService,
-) : ApplicationServiceApiServerHandler, EventEmitter() {
+) : ApplicationServiceApiServerHandler, EventEmitterImpl() {
 
     override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
         when (applicationServiceEventTxnService.eventTnxProcessingState(txnId)) {
@@ -20,6 +20,7 @@ class DefaultApplicationServiceApiServerHandler(
                 events.forEach { emitEvent(it) }
                 applicationServiceEventTxnService.onEventTnxProcessed(txnId)
             }
+
             ApplicationServiceEventTxnService.EventTnxProcessingState.PROCESSED -> {
             }
         }

@@ -4,14 +4,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import kotlin.reflect.KClass
 
-class UserServiceMock : IUserService {
+class UserServiceMock : UserService {
     override val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
         get() = throw NotImplementedError()
 

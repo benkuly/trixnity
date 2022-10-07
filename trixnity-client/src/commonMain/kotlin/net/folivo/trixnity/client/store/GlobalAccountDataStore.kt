@@ -20,7 +20,7 @@ class GlobalAccountDataStore(
     private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
-) : IStore {
+) : Store {
     private val globalAccountDataCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, globalAccountDataRepository, rtm)
 

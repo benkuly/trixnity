@@ -17,16 +17,16 @@ data class DecryptedOlmEventContainer(
 
 typealias DecryptedOlmEventSubscriber = suspend (DecryptedOlmEventContainer) -> Unit
 
-interface IOlmDecrypter {
+interface OlmDecrypter {
     fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber)
     fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber)
 
     suspend fun handleOlmEvent(event: Event<OlmEncryptedEventContent>)
 }
 
-class OlmDecrypter(
-    private val olmEncryptionService: IOlmEncryptionService,
-) : IOlmDecrypter {
+class OlmDecrypterImpl(
+    private val olmEncryptionService: OlmEncryptionService,
+) : OlmDecrypter {
 
     private val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
 

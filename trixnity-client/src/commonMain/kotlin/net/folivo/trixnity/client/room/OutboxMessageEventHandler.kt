@@ -11,13 +11,13 @@ import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.crypto.IPossiblyEncryptEvent
-import net.folivo.trixnity.client.media.IMediaService
+import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
+import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -27,9 +27,9 @@ private val log = KotlinLogging.logger {}
 
 class OutboxMessageEventHandler(
     private val config: MatrixClientConfiguration,
-    private val api: IMatrixClientServerApiClient,
-    private val possiblyEncryptEvent: IPossiblyEncryptEvent,
-    private val mediaService: IMediaService,
+    private val api: MatrixClientServerApiClient,
+    private val possiblyEncryptEvent: PossiblyEncryptEvent,
+    private val mediaService: MediaService,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,

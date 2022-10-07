@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.unsubscribe
 
 private val log = KotlinLogging.logger {}
 
-interface ITimelineEventHandler {
+interface TimelineEventHandler {
     suspend fun unsafeFillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
@@ -31,15 +31,15 @@ interface ITimelineEventHandler {
     ): Result<Unit>
 }
 
-class TimelineEventHandler(
+class TimelineEventHandlerImpl(
     private val userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val lastRelevantEventFilter: LastRelevantEventFilter,
     private val timelineMutex: TimelineMutex,
-) : EventHandler, ITimelineEventHandler {
+) : EventHandler, TimelineEventHandler {
     companion object {
         const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""
     }

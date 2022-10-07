@@ -14,7 +14,7 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.RoomUserStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.model.EventId
@@ -40,13 +40,13 @@ class UserServiceTest : ShouldSpec({
     lateinit var roomStore: RoomStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var scope: CoroutineScope
-    lateinit var api: IMatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
-    lateinit var cut: UserService
+    lateinit var cut: UserServiceImpl
 
     beforeTest {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -57,7 +57,7 @@ class UserServiceTest : ShouldSpec({
         roomUserStore = getInMemoryRoomUserStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         roomStore = getInMemoryRoomStore(scope)
-        cut = UserService(
+        cut = UserServiceImpl(
             roomUserStore, roomStore, globalAccountDataStore, api, PresenceEventHandler(api),
             CurrentSyncState(currentSyncState), scope
         )
@@ -67,7 +67,7 @@ class UserServiceTest : ShouldSpec({
         scope.cancel()
     }
 
-    context(UserService::loadMembers.name) {
+    context(UserServiceImpl::loadMembers.name) {
         should("do nothing when members already loaded") {
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
             roomStore.update(roomId) { storedRoom }

@@ -14,7 +14,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.days
@@ -39,9 +39,9 @@ private val log = KotlinLogging.logger {}
 
 class OutgoingKeyRequestEventHandler(
     userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
-    private val olmDecrypter: IOlmDecrypter,
-    private val keyBackupService: IKeyBackupService,
+    private val api: MatrixClientServerApiClient,
+    private val olmDecrypter: OlmDecrypter,
+    private val keyBackupService: KeyBackupService,
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val currentSyncState: CurrentSyncState,

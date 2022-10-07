@@ -11,7 +11,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.MediaStore
 import net.folivo.trixnity.client.store.UploadCache
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.Media
@@ -28,7 +27,7 @@ import net.folivo.trixnity.olm.encodeUnpaddedBase64
 
 private val log = KotlinLogging.logger {}
 
-interface IMediaService {
+interface MediaService {
     suspend fun getMedia(
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null
@@ -64,10 +63,10 @@ interface IMediaService {
     ): Result<String>
 }
 
-class MediaService(
-    private val api: IMatrixClientServerApiClient,
+class MediaServiceImpl(
+    private val api: MatrixClientServerApiClient,
     private val mediaStore: MediaStore,
-) : IMediaService {
+) : MediaService {
     companion object {
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "cache://"
         const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"

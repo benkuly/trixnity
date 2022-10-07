@@ -15,7 +15,7 @@ class RoomUserStore(
     private val roomUserRepository: RoomUserRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
-) : IStore {
+) : Store {
     private val roomUserCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomUserRepository, rtm)
 
     override suspend fun init() {}

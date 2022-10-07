@@ -3,16 +3,16 @@ package net.folivo.trixnity.clientserverapi.client
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
 import net.folivo.trixnity.clientserverapi.model.discovery.GetWellKnown
 
-interface IDiscoveryApiClient {
+interface DiscoveryApiClient {
     /**
      * @see [GetWellKnown]
      */
     suspend fun getWellKnown(): Result<DiscoveryInformation>
 }
 
-class DiscoveryApiClient(
+class DiscoveryApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient
-) : IDiscoveryApiClient {
+) : DiscoveryApiClient {
 
     override suspend fun getWellKnown(): Result<DiscoveryInformation> =
         httpClient.request(GetWellKnown)

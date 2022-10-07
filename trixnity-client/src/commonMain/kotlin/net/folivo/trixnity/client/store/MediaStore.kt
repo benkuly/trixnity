@@ -12,7 +12,7 @@ class MediaStore(
     private val uploadMediaRepository: UploadMediaRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope
-) : IStore {
+) : Store {
     private val mediaCache = RepositoryStateFlowCache(storeScope, mediaRepository, rtm)
 
     override suspend fun init() {}

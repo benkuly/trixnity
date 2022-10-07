@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
+import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.IEventEmitter
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmLibraryException
@@ -28,10 +28,10 @@ import net.folivo.trixnity.olm.freeAfter
 private val log = KotlinLogging.logger {}
 
 class OlmEventHandler(
-    private val eventEmitter: IEventEmitter,
+    private val eventEmitter: EventEmitter,
     private val oneTimeKeysCountEmitter: OneTimeKeysCountEmitter,
-    private val decrypter: IOlmDecrypter,
-    private val signService: ISignService,
+    private val decrypter: OlmDecrypter,
+    private val signService: SignService,
     private val requestHandler: OlmEventHandlerRequestHandler,
     private val store: OlmStore,
 ) : EventHandler {

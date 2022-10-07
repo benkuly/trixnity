@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.crypto.IPossiblyEncryptEvent
-import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
+import net.folivo.trixnity.client.key.KeyTrustService
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -38,12 +38,12 @@ class ActiveUserVerification(
     theirInitialDeviceId: String?,
     val roomId: RoomId,
     supportedMethods: Set<VerificationMethod>,
-    private val api: IMatrixClientServerApiClient,
-    private val possiblyEncryptEvent: IPossiblyEncryptEvent,
+    private val api: MatrixClientServerApiClient,
+    private val possiblyEncryptEvent: PossiblyEncryptEvent,
     keyStore: KeyStore,
-    private val room: IRoomService,
-    keyTrust: IKeyTrustService,
-) : ActiveVerification(
+    private val room: RoomService,
+    keyTrust: KeyTrustService,
+) : ActiveVerificationImpl(
     request,
     requestIsFromOurOwn,
     ownUserId,

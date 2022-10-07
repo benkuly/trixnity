@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.UserId
@@ -48,7 +48,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     val bobDevice = "BBBBBB"
 
     lateinit var apiConfig: PortableMockEngineConfig
-    lateinit var api: MatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClientImpl
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     lateinit var olmDecrypterMock: OlmDecrypterMock

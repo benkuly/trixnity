@@ -5,9 +5,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.crypto.olm.IOlmEncryptionService
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
-class OlmEncryptionServiceMock : IOlmEncryptionService {
+class OlmEncryptionServiceMock : OlmEncryptionService {
 
     lateinit var returnEncryptOlm: () -> EncryptedEventContent.OlmEncryptedEventContent
     var encryptOlmCalled: Triple<EventContent, UserId, String>? = null

@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -19,7 +19,7 @@ private val log = KotlinLogging.logger {}
 
 class MembershipEventHandler(
     private val userInfo: UserInfo,
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
 ) : EventHandler {
 

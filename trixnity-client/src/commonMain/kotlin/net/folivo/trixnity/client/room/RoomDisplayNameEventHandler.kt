@@ -8,7 +8,7 @@ import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.EventHandler
@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.unsubscribe
 private val log = KotlinLogging.logger {}
 
 class RoomDisplayNameEventHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
 ) : EventHandler {

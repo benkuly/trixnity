@@ -61,7 +61,7 @@ private val body: ShouldSpec.() -> Unit = {
     val contentMappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
 
-    lateinit var cut: KeyTrustService
+    lateinit var cut: KeyTrustServiceImpl
 
     beforeTest {
         signServiceMock.returnVerify = VerifyResult.Valid
@@ -71,7 +71,7 @@ private val body: ShouldSpec.() -> Unit = {
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyTrustService(
+        cut = KeyTrustServiceImpl(
             UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             keyStore, globalAccountDataStore,
             signServiceMock, api
@@ -83,7 +83,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
 
-    context(KeyTrustService::checkOwnAdvertisedMasterKeyAndVerifySelf.name) {
+    context(KeyTrustServiceImpl::checkOwnAdvertisedMasterKeyAndVerifySelf.name) {
         val recoveryKey = Random.nextBytes(32)
         val iv = Random.nextBytes(16)
         val keyInfo = SecretKeyEventContent.AesHmacSha2Key(
@@ -167,7 +167,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
         }
     }
-    context(KeyTrustService::updateTrustLevelOfKeyChainSignedBy.name) {
+    context(KeyTrustServiceImpl::updateTrustLevelOfKeyChainSignedBy.name) {
         val aliceSigningKey1 = Ed25519Key(aliceDevice, "signingValue1")
         val aliceSigningKey2 = Ed25519Key("OTHER_ALICE", "signingValue2")
         val bobSignedKey = Ed25519Key(bobDevice, "signedValue")
@@ -516,7 +516,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    context(KeyTrustService::trustAndSignKeys.name) {
+    context(KeyTrustServiceImpl::trustAndSignKeys.name) {
         should("handle own account keys") {
             var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
             apiConfig.endpoints {

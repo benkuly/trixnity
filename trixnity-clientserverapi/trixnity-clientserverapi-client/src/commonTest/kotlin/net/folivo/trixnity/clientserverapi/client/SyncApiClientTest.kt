@@ -63,7 +63,7 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncOnce() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -252,7 +252,7 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncOnceAndHandleLongTimeout() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -285,7 +285,7 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncLoop() = runTest {
         val requestCount = MutableStateFlow(0)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -355,7 +355,7 @@ class SyncApiClientTest {
     @Test
     fun shouldIntialSyncLoop() = runTest {
         val requestCount = MutableStateFlow(0)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -424,7 +424,7 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -483,7 +483,7 @@ class SyncApiClientTest {
 
     @Test
     fun shouldSyncLoopWithoutInitialSyncState() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -547,7 +547,7 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncLoopWithErrorState() = runTest {
         val requestCount = MutableStateFlow(1)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -603,7 +603,7 @@ class SyncApiClientTest {
     @Test
     fun shouldSyncLoopAndHandleTimeout() = runTest {
         val requestCount = MutableStateFlow(0)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -646,7 +646,7 @@ class SyncApiClientTest {
     @Test
     fun shouldRetrySyncLoopOnError() = runTest {
         val requestCount = MutableStateFlow(0)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -729,7 +729,7 @@ class SyncApiClientTest {
     @Test
     fun shouldRetrySyncLoopOnSubscriberError() = runTest {
         val requestCount = MutableStateFlow(0)
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler { request ->
@@ -911,7 +911,7 @@ class SyncApiClientTest {
         )
         val inChannel = Channel<Response>()
 
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler {
@@ -996,7 +996,7 @@ class SyncApiClientTest {
         )
         val inChannel = Channel<Response>()
 
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler {
@@ -1055,7 +1055,7 @@ class SyncApiClientTest {
             ),
             toDevice = Response.ToDevice(emptyList())
         )
-        val matrixClientServerApiClient = MatrixClientServerApiClient(
+        val matrixClientServerApiClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
                 addHandler {

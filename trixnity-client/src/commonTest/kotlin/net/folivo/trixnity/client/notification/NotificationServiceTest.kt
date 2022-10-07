@@ -8,9 +8,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.push.IPushService.Notification
+import net.folivo.trixnity.client.notification.NotificationService.Notification
+import net.folivo.trixnity.client.notification.NotificationServiceImpl
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
@@ -37,7 +38,7 @@ import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class PushServiceTest : ShouldSpec(body)
+class NotificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
     timeout = 10_000
@@ -49,7 +50,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
-    lateinit var api: MatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClientImpl
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var room: RoomServiceMock
 
@@ -59,7 +60,7 @@ private val body: ShouldSpec.() -> Unit = {
     val user1DisplayName = "User1 🦊"
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
-    lateinit var cut: PushService
+    lateinit var cut: NotificationServiceImpl
 
     beforeTest {
         currentSyncState.value = SyncState.RUNNING
@@ -73,7 +74,7 @@ private val body: ShouldSpec.() -> Unit = {
         roomUserStore = getInMemoryRoomUserStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         roomStore.update(roomId) { Room(roomId) }
-        cut = PushService(
+        cut = NotificationServiceImpl(
             UserInfo(user1, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             room,
@@ -218,7 +219,7 @@ private val body: ShouldSpec.() -> Unit = {
         notifications.cancel()
     }
 
-    context(PushService::getNotifications.name) {
+    context(NotificationServiceImpl::getNotifications.name) {
         should("wait for sync to be started or running") {
             currentSyncState.value = SyncState.INITIAL_SYNC
             globalAccountDataStore.update(

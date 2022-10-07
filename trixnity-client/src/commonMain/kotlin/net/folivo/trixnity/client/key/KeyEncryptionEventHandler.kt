@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.members
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.unsubscribe
 private val log = KotlinLogging.logger {}
 
 class KeyEncryptionEventHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val roomStateStore: RoomStateStore,
     private val keyStore: KeyStore,
 ) : EventHandler {

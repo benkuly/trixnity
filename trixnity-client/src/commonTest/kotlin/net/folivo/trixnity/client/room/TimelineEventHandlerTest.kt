@@ -44,7 +44,7 @@ class TimelineEventHandlerTest : ShouldSpec({
     val json = createMatrixEventJson()
     val mappings = DefaultEventContentSerializerMappings
 
-    lateinit var cut: TimelineEventHandler
+    lateinit var cut: TimelineEventHandlerImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -53,7 +53,7 @@ class TimelineEventHandlerTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = TimelineEventHandler(
+        cut = TimelineEventHandlerImpl(
             UserInfo(alice, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             roomStore, roomTimelineStore, roomOutboxMessageStore,
@@ -91,14 +91,14 @@ class TimelineEventHandlerTest : ShouldSpec({
         )
     }
 
-    context(TimelineEventHandler::setUnreadMessageCount.name) {
+    context(TimelineEventHandlerImpl::setUnreadMessageCount.name) {
         should("set unread message count for room") {
             roomStore.update(room) { simpleRoom.copy(roomId = room) }
             cut.setUnreadMessageCount(room, 24)
             roomStore.get(room).first()?.unreadMessageCount shouldBe 24
         }
     }
-    context(TimelineEventHandler::syncOutboxMessage.name) {
+    context(TimelineEventHandlerImpl::syncOutboxMessage.name) {
         should("ignore messages from foreign users") {
             val roomOutboxMessage =
                 RoomOutboxMessage(
@@ -144,7 +144,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
         }
     }
-    context(TimelineEventHandler::redactTimelineEvent.name) {
+    context(TimelineEventHandlerImpl::redactTimelineEvent.name) {
         context("with existent event") {
             should("redact room event") {
                 val event1 = textEvent(1)
@@ -313,7 +313,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
         }
     }
-    context(TimelineEventHandler::addEventsToTimelineAtEnd.name) {
+    context(TimelineEventHandlerImpl::addEventsToTimelineAtEnd.name) {
         val event1 = plainEvent(1)
         val event2 = plainEvent(2)
         val event3 = plainEvent(3)
@@ -627,7 +627,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
         }
     }
-    context(TimelineEventHandler::setLastEventId.name) {
+    context(TimelineEventHandlerImpl::setLastEventId.name) {
         should("set last event from room event") {
             cut.setLastEventId(textEvent(24))
             roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
@@ -647,7 +647,7 @@ class TimelineEventHandlerTest : ShouldSpec({
         }
     }
 
-    context(TimelineEventHandler::setLastRelevantEvent.name) {
+    context(TimelineEventHandlerImpl::setLastRelevantEvent.name) {
         should("set last message event") {
             cut.handleSyncResponse(
                 Sync.Response(
@@ -689,7 +689,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             roomStore.get(room).first()?.lastRelevantEventId shouldBe EventId("event2")
         }
     }
-    context(TimelineEventHandler::addRelation.name) {
+    context(TimelineEventHandlerImpl::addRelation.name) {
         should("add relation") {
             cut.addRelation(
                 MessageEvent(
@@ -716,7 +716,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     )
         }
     }
-    context(TimelineEventHandler::unsafeFillTimelineGaps.name) {
+    context(TimelineEventHandlerImpl::unsafeFillTimelineGaps.name) {
         val event1 = plainEvent(1)
         val event2 = plainEvent(2)
         val event3 = plainEvent(3)
@@ -733,7 +733,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
-                                filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                             )
                         ) {
                             GetEvents.Response(
@@ -769,7 +769,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
-                                filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                             )
                         ) {
                             GetEvents.Response(
@@ -804,7 +804,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
-                                filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                             )
                         ) {
                             GetEvents.Response(
@@ -841,7 +841,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
-                                filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                             )
                         ) {
                             GetEvents.Response(
@@ -880,7 +880,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -920,7 +920,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -960,7 +960,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1000,7 +1000,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     null,
                                     dir = GetEvents.Direction.BACKWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1042,7 +1042,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1086,7 +1086,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 "start",
                                 dir = GetEvents.Direction.FORWARDS,
                                 limit = 20,
-                                filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                             )
                         ) {
                             GetEvents.Response(
@@ -1123,7 +1123,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1166,7 +1166,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1209,7 +1209,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1255,7 +1255,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     "next",
                                     dir = GetEvents.Direction.FORWARDS,
                                     limit = 20,
-                                    filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                                 )
                             ) {
                                 GetEvents.Response(
@@ -1303,7 +1303,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "start",
                             dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1343,7 +1343,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "after-1",
                             dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1395,7 +1395,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "after-2",
                             dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1413,7 +1413,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "before-4",
                             dir = GetEvents.Direction.FORWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1459,7 +1459,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "after-2",
                             dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1477,7 +1477,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             "before-4",
                             dir = GetEvents.Direction.FORWARDS,
                             limit = 20,
-                            filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                            filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                         )
                     ) {
                         GetEvents.Response(
@@ -1535,7 +1535,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                     )
                 ) {
                     GetEvents.Response(
@@ -1573,7 +1573,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         "before-3",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                     )
                 ) {
                     firstEndpointCalled.value = true
@@ -1592,7 +1592,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         "before-3",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandler.LAZY_LOAD_MEMBERS_FILTER
+                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
                     )
                 ) {
                     GetEvents.Response(

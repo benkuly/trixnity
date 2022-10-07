@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.user
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
@@ -12,7 +11,7 @@ import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 
 class GlobalAccountDataEventHandler(
-    private val api: IMatrixClientServerApiClient,
+    private val api: MatrixClientServerApiClient,
     private val globalAccountDataStore: GlobalAccountDataStore,
 ) : EventHandler {
 

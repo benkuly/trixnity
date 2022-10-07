@@ -13,7 +13,7 @@ typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
 
 private val log = KotlinLogging.logger { }
 
-interface IEventEmitter {
+interface EventEmitter {
     suspend fun emitEvent(event: Event<*>)
     fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
     fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
@@ -21,7 +21,7 @@ interface IEventEmitter {
     fun unsubscribeAllEvents(subscriber: EventSubscriber<EventContent>)
 }
 
-abstract class EventEmitter : IEventEmitter {
+abstract class EventEmitterImpl : EventEmitter {
     private val eventSubscribers =
         MutableStateFlow<Map<KClass<out EventContent>, Set<EventSubscriber<out EventContent>>>>(mapOf())
 
@@ -75,10 +75,10 @@ abstract class EventEmitter : IEventEmitter {
 /**
  * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
  */
-inline fun <reified T : EventContent> IEventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
+inline fun <reified T : EventContent> EventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
     subscribe(T::class, subscriber)
 }
 
-inline fun <reified T : EventContent> IEventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
+inline fun <reified T : EventContent> EventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
     unsubscribe(T::class, subscriber)
 }

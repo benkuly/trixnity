@@ -5,7 +5,7 @@ import net.folivo.trixnity.api.client.MatrixApiClient
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.serverserverapi.model.discovery.*
 
-interface IDiscoveryApiClient {
+interface DiscoveryApiClient {
     /**
      * @see [GetWellKnown]
      */
@@ -36,9 +36,9 @@ interface IDiscoveryApiClient {
     ): Result<QueryServerKeysResponse>
 }
 
-class DiscoveryApiClient(
+class DiscoveryApiClientImpl(
     private val httpClient: MatrixApiClient
-) : IDiscoveryApiClient {
+) : DiscoveryApiClient {
     override suspend fun getWellKnown(baseUrl: Url): Result<GetWellKnown.Response> =
         httpClient.request(GetWellKnown) { mergeUrl(baseUrl) }
 

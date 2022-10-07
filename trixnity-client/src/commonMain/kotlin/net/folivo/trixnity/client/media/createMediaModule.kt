@@ -5,5 +5,5 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 fun createMediaModule() = module {
-    singleOf(::MediaService) { bind<IMediaService>() }
+    singleOf(::MediaServiceImpl) { bind<MediaService>() }
 }

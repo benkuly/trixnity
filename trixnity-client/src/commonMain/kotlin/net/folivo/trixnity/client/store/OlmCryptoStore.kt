@@ -21,7 +21,7 @@ class OlmCryptoStore(
     private val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
-) : IStore {
+) : Store {
     val account = MutableStateFlow<String?>(null)
 
     private val _notBackedUpInboundMegolmSessions =

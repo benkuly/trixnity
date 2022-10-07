@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.verification
 
-import net.folivo.trixnity.client.key.IKeySecretService
-import net.folivo.trixnity.client.key.IKeyTrustService
+import net.folivo.trixnity.client.key.KeySecretService
+import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.crypto.key.checkRecoveryKey
@@ -23,8 +23,8 @@ sealed interface SelfVerificationMethod {
     }
 
     data class AesHmacSha2RecoveryKey(
-        private val keySecretService: IKeySecretService,
-        private val keyTrustService: IKeyTrustService,
+        private val keySecretService: KeySecretService,
+        private val keyTrustService: KeyTrustService,
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key
     ) : SelfVerificationMethod {
@@ -39,8 +39,8 @@ sealed interface SelfVerificationMethod {
     }
 
     data class AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(
-        private val keySecretService: IKeySecretService,
-        private val keyTrustService: IKeyTrustService,
+        private val keySecretService: KeySecretService,
+        private val keyTrustService: KeyTrustService,
         private val keyId: String,
         private val info: SecretKeyEventContent.AesHmacSha2Key,
     ) : SelfVerificationMethod {

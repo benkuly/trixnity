@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventDecryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -38,7 +38,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var roomTimelineStore: RoomTimelineStore
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
-    lateinit var api: IMatrixClientServerApiClient
+    lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var mediaServiceMock: MediaServiceMock
     lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
@@ -48,7 +48,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
     val userInfo = UserInfo(UserId("thisUser"), "deviceId", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
 
-    lateinit var cut: RoomService
+    lateinit var cut: RoomServiceImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -64,7 +64,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
-        cut = RoomService(
+        cut = RoomServiceImpl(
             api,
             roomStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
             listOf(roomEventDecryptionServiceMock),
@@ -122,7 +122,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         nextEventId = null,
         gap = TimelineEvent.Gap.GapAfter("3")
     )
-    context(RoomService::getTimelineEvents.name) {
+    context(RoomServiceImpl::getTimelineEvents.name) {
         context("all requested events in store") {
             beforeTest {
                 roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
@@ -292,7 +292,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
         }
     }
-    context(RoomService::getLastTimelineEvents.name) {
+    context(RoomServiceImpl::getLastTimelineEvents.name) {
         lateinit var localTestScope: CoroutineScope
         beforeTest {
             roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
@@ -372,7 +372,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
     }
-    context(RoomService::getTimelineEventsFromNowOn.name) {
+    context(RoomServiceImpl::getTimelineEventsFromNowOn.name) {
         should("get timeline events from now on") {
             val event10 = MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("hi"),

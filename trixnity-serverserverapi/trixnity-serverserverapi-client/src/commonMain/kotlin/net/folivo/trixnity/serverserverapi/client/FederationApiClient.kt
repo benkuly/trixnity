@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.serverserverapi.model.federation.*
 
-interface IFederationApiClient {
+interface FederationApiClient {
     /**
      * @see [SendTransaction]
      */
@@ -218,9 +218,9 @@ interface IFederationApiClient {
     suspend fun getKeys(baseUrl: Url, request: GetKeys.Request): Result<GetKeys.Response>
 }
 
-class FederationApiClient(
+class FederationApiClientImpl(
     private val httpClient: MatrixApiClient
-) : IFederationApiClient {
+) : FederationApiClient {
     override suspend fun sendTransaction(
         baseUrl: Url,
         txnId: String,

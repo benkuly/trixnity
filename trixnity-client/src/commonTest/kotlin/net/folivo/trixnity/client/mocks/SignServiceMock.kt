@@ -7,11 +7,11 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signatures
 import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.VerifyResult
 
-class SignServiceMock : ISignService {
+class SignServiceMock : SignService {
     override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> {
         TODO("Not yet implemented")
     }

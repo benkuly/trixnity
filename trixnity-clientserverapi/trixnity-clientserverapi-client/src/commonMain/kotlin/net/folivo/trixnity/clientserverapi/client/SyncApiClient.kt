@@ -14,7 +14,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventEmitter
-import net.folivo.trixnity.core.IEventEmitter
+import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 
@@ -63,7 +63,7 @@ enum class SyncState {
     STOPPED,
 }
 
-interface ISyncApiClient : IEventEmitter {
+interface SyncApiClient : EventEmitter {
     /**
      * @see [Sync]
      */
@@ -118,9 +118,9 @@ interface ISyncApiClient : IEventEmitter {
     suspend fun cancel(wait: Boolean = false)
 }
 
-class SyncApiClient(
+class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
-) : EventEmitter(), ISyncApiClient {
+) : EventEmitterImpl(), SyncApiClient {
 
     override suspend fun sync(
         filter: String?,

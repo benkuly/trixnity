@@ -12,7 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.IMatrixClient.LoginState.*
+import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.repository.*
@@ -62,7 +62,7 @@ class MatrixClientTest : ShouldSpec({
         scope.cancel()
     }
 
-    context(MatrixClient::displayName.name) {
+    context(MatrixClientImpl::displayName.name) {
         should("get the display name and avatar URL from the profile API when initially logging in") {
             val olmAccountRepository = InMemoryOlmAccountRepository().apply {
                 save(1, freeAfter(OlmAccount.create()) { it.pickle("") })
@@ -308,8 +308,8 @@ class MatrixClientTest : ShouldSpec({
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
         }
     }
-    context(MatrixClient::loginState.name) {
-        lateinit var cut: IMatrixClient
+    context(MatrixClientImpl::loginState.name) {
+        lateinit var cut: MatrixClient
         beforeTest {
             val account = Account(
                 olmPickleKey = "",
@@ -364,7 +364,7 @@ class MatrixClientTest : ShouldSpec({
             cut.loginState.first { it == LOGGED_OUT }
         }
     }
-    context(MatrixClient::logout.name) {
+    context(MatrixClientImpl::logout.name) {
         lateinit var repositoriesModule: Module
         beforeTest {
             val accountRepository = InMemoryAccountRepository().apply {

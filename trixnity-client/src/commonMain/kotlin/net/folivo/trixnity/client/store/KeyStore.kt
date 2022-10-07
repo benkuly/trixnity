@@ -21,7 +21,7 @@ class KeyStore(
     private val secretKeyRequestRepository: SecretKeyRequestRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
-) : IStore {
+) : Store {
     val outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
     val secrets = MutableStateFlow<Map<SecretType, StoredSecret>>(mapOf())
     private val deviceKeysCache = RepositoryStateFlowCache(storeScope, deviceKeysRepository, rtm)

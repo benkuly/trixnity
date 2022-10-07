@@ -69,7 +69,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var olmSign: SignServiceMock
     lateinit var apiConfig: PortableMockEngineConfig
 
-    lateinit var cut: KeyService
+    lateinit var cut: KeyServiceImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -82,7 +82,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyTrustServiceMock = KeyTrustServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = KeyService(
+        cut = KeyServiceImpl(
             UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             keyStore,
             olmCryptoStore,
@@ -99,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(KeyService::bootstrapCrossSigning.name) {
+    context(KeyServiceImpl::bootstrapCrossSigning.name) {
         context("successfull") {
             var secretKeyEventContentCalled = false
             var capturedPassphrase: AesHmacSha2Key.SecretStorageKeyPassphrase? = null
