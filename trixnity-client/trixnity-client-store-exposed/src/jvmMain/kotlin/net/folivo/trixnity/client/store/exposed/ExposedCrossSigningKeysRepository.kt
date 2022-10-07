@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
 import net.folivo.trixnity.core.model.UserId
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedCrossSigningKeys : Table("cross_signing_keys") {
     val userId = varchar("user_id", length = 255)

@@ -5,6 +5,7 @@ import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedKeyChainLink : Table("key_chain_link") {
     val signingUserId = varchar("signing_user_id", length = 128)

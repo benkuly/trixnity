@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionReposito
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") {
     val roomId = varchar("room_id", length = 255)

@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
 import net.folivo.trixnity.core.model.events.Event
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedGlobalAccountData : Table("global_account_data") {
     val type = varchar("type", length = 255)

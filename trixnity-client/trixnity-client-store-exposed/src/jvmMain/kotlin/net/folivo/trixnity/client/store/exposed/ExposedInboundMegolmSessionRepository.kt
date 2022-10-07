@@ -9,6 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedInboundMegolmSession : Table("inbound_megolm_session") {
     val senderKey = varchar("sender_key", length = 255)

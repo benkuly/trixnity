@@ -7,6 +7,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedTimelineEventRelation : Table("room_timeline_event_relation") {
     val roomId = varchar("room_id", length = 255)

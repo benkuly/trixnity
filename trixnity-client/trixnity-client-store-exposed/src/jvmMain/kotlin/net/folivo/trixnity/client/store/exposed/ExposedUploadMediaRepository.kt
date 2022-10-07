@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.exposed
 import net.folivo.trixnity.client.store.UploadCache
 import net.folivo.trixnity.client.store.repository.UploadMediaRepository
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedUploadMedia : Table("upload_media") {
     val cacheUri = varchar("cache_uri", length = 768)

@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.exposed
 
 import net.folivo.trixnity.client.store.repository.MediaRepository
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 
 internal object ExposedMedia : Table("media") {

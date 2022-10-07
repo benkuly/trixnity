@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedRoomOutboxMessage : Table("room_outbox") {
     val transactionId = varchar("transaction_id", length = 255)
