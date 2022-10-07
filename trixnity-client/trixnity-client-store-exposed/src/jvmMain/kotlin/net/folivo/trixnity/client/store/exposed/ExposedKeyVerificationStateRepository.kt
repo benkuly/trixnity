@@ -3,10 +3,11 @@ package net.folivo.trixnity.client.store.exposed
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.store.KeyVerificationState
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
-import net.folivo.trixnity.client.store.KeyVerificationState
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedKeyVerificationState : Table("key_verification_state") {
     val keyId = varchar("key_id", length = 255)

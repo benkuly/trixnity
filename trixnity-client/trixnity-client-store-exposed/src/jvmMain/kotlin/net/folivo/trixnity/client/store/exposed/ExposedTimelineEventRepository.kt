@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRepository
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedTimelineEvent : Table("room_timeline_event") {
     val roomId = varchar("room_id", length = 255)

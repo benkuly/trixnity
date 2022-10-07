@@ -116,8 +116,7 @@ If you are using a module, which depends on `trixnity-olm` you may need to do so
 
 With `MatrixClient` you have access to the whole library. It can be instantiated by various static functions,
 e.g. `MatrixClient.login(...)`. You always need to pass a `repositoriesModule` for a Database and a `CouroutineScope`,
-which
-will be used for the lifecycle of the client.
+which will be used for the lifecycle of the client.
 
 Secrets are also stored in the store. Therefore, you should encrypt the store!
 
@@ -174,13 +173,13 @@ You can always get the last known `TimelineEvent` of a room with `matrixClient.r
 The following example will always print the last 20 events of a room:
 
 ```kotlin
-matrixClient.room.getLastTimelineEvents(roomId, scope)
+matrixClient.room.getLastTimelineEvents(roomId)
     .toFlowList(MutableStateFlow(20)) // we always get max. 20 TimelineEvents
     .collectLatest { timelineEvents ->
         timelineEvents.forEach { timelineEvent ->
             val event = timelineEvent.value?.event
             val content = timelineEvent.value?.content?.getOrNull()
-            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
+            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId).first()?.name }
             when {
                 content is RoomMessageEventContent -> println("${sender}: ${content.body}")
                 content == null -> println("${sender}: not yet decrypted")

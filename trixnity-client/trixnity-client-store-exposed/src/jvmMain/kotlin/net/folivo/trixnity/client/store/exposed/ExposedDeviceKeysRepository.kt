@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.repository.DeviceKeysRepository
 import net.folivo.trixnity.core.model.UserId
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedDeviceKeys : Table("device_keys") {
     val userId = varchar("user_id", length = 255)

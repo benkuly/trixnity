@@ -7,8 +7,8 @@ repositories {
     google()
 }
 
-val kotlinVersion = "1.7.10" // https://github.com/JetBrains/kotlin/releases
-val androidGradleVersion = "7.0.4" // https://developer.android.com/reference/tools/gradle-api
+val kotlinVersion = "1.7.20" // https://github.com/JetBrains/kotlin/releases
+val androidGradleVersion = "7.2.2" // https://developer.android.com/reference/tools/gradle-api
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")

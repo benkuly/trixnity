@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
 import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedSecretKeyRequest : Table("secret_key_request") {
     val id = varchar("id", length = 255)

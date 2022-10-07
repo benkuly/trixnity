@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.repository.OlmSessionRepository
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedOlmSession : Table("olm_session") {
     val senderKey = varchar("sender_key", length = 255)
