@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedRoom : Table("room") {
     val roomId = varchar("room_id", length = 255)

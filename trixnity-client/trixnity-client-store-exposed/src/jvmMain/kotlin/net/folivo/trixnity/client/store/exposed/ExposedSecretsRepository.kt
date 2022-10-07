@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.client.store.repository.SecretsRepository
 import net.folivo.trixnity.crypto.SecretType
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.replace

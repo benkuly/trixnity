@@ -5,6 +5,7 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message_index") {
     val sessionId = varchar("session_id", length = 250)
