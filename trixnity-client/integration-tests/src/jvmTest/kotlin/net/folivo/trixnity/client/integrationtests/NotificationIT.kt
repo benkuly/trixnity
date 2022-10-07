@@ -59,7 +59,6 @@ class NotificationIT {
         withTimeout(30_000) {
             val notifications = startedClient2.client.push.getNotifications()
                 .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
-                .onEach { println(it) }
                 .stateIn(scope)
 
             val room = startedClient1.client.api.rooms.createRoom(
