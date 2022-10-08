@@ -28,29 +28,29 @@ class KeyServiceMock(
         throw NotImplementedError()
     }
 
-    override suspend fun getTrustLevel(
+    override fun getTrustLevel(
         userId: UserId,
         deviceId: String,
     ): StateFlow<DeviceTrustLevel> {
         throw NotImplementedError()
     }
 
-    override suspend fun getTrustLevel(
+    override fun getTrustLevel(
         timelineEvent: TimelineEvent,
     ): StateFlow<DeviceTrustLevel>? {
         throw NotImplementedError()
     }
 
-    override suspend fun getTrustLevel(userId: UserId): StateFlow<UserTrustLevel> {
+    override fun getTrustLevel(userId: UserId): StateFlow<UserTrustLevel> {
         throw NotImplementedError()
     }
 
-    override suspend fun getDeviceKeys(userId: UserId): StateFlow<List<DeviceKeys>?> {
+    override fun getDeviceKeys(userId: UserId): StateFlow<List<DeviceKeys>?> {
         throw NotImplementedError()
     }
 
 
-    override suspend fun getCrossSigningKeys(
+    override fun getCrossSigningKeys(
         userId: UserId,
     ): StateFlow<List<CrossSigningKeys>?> {
         throw NotImplementedError()
