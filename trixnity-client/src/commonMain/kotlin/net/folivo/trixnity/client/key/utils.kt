@@ -84,7 +84,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
 }
 
 
-internal suspend inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String) =
+internal inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String) =
     this.getDeviceKeys(userId).map { it?.get(deviceId) }
 
 internal suspend inline fun KeyStore.getCrossSigningKey(

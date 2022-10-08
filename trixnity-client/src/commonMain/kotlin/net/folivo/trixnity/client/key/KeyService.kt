@@ -88,7 +88,7 @@ interface KeyService {
     /**
      * @return the trust level of a device.
      */
-    suspend fun getTrustLevel(
+    fun getTrustLevel(
         userId: UserId,
         deviceId: String,
     ): Flow<DeviceTrustLevel>
@@ -96,22 +96,22 @@ interface KeyService {
     /**
      * @return the trust level of a device or null, if the timeline event is not a megolm encrypted event.
      */
-    suspend fun getTrustLevel(
+    fun getTrustLevel(
         timelineEvent: TimelineEvent,
     ): Flow<DeviceTrustLevel>?
 
     /**
      * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
      */
-    suspend fun getTrustLevel(
+    fun getTrustLevel(
         userId: UserId,
     ): Flow<UserTrustLevel>
 
-    suspend fun getDeviceKeys(
+    fun getDeviceKeys(
         userId: UserId,
     ): Flow<List<DeviceKeys>?>
 
-    suspend fun getCrossSigningKeys(
+    fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<List<CrossSigningKeys>?>
 }
@@ -263,7 +263,7 @@ class KeyServiceImpl(
         return bootstrapCrossSigning(secretKeyEventContent.first) { secretKeyEventContent.second }
     }
 
-    override suspend fun getTrustLevel(
+    override fun getTrustLevel(
         userId: UserId,
         deviceId: String,
     ): Flow<DeviceTrustLevel> {
@@ -280,7 +280,7 @@ class KeyServiceImpl(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getTrustLevel(
+    override fun getTrustLevel(
         timelineEvent: TimelineEvent,
     ): Flow<DeviceTrustLevel>? {
         val event = timelineEvent.event
@@ -303,7 +303,7 @@ class KeyServiceImpl(
         } else null
     }
 
-    override suspend fun getTrustLevel(
+    override fun getTrustLevel(
         userId: UserId,
     ): Flow<UserTrustLevel> {
         return keyStore.getCrossSigningKeys(userId)
@@ -321,7 +321,7 @@ class KeyServiceImpl(
             }
     }
 
-    override suspend fun getDeviceKeys(
+    override fun getDeviceKeys(
         userId: UserId,
     ): Flow<List<DeviceKeys>?> {
         return keyStore.getDeviceKeys(userId).map {
@@ -329,7 +329,7 @@ class KeyServiceImpl(
         }
     }
 
-    override suspend fun getCrossSigningKeys(
+    override fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<List<CrossSigningKeys>?> {
         return keyStore.getCrossSigningKeys(userId).map {
