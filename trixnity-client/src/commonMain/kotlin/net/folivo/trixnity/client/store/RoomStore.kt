@@ -34,7 +34,7 @@ class RoomStore(
 
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = allRooms
 
-    suspend fun get(roomId: RoomId): Flow<Room?> = roomCache.readWithCache(
+    fun get(roomId: RoomId): Flow<Room?> = roomCache.readWithCache(
         roomId,
         isContainedInCache = { true },
         retrieveAndUpdateCache = { it },

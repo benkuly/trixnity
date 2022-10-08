@@ -75,7 +75,7 @@ class KeyStore(
         secretKeyRequestCache.reset()
     }
 
-    suspend fun getDeviceKeys(
+    fun getDeviceKeys(
         userId: UserId,
     ): Flow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.get(userId)
 
@@ -84,7 +84,7 @@ class KeyStore(
         updater: suspend (Map<String, StoredDeviceKeys>?) -> Map<String, StoredDeviceKeys>?
     ) = deviceKeysCache.update(userId, updater = updater)
 
-    suspend fun getCrossSigningKeys(
+    fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.get(userId)
 

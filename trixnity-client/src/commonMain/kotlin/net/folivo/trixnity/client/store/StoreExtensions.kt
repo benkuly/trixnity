@@ -14,21 +14,21 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 
-suspend inline fun <reified C : StateEventContent> RoomStateStore.get(
+inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
 ): Flow<Map<String, Event<C>?>?> = get(roomId, C::class)
 
-suspend inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
+inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
 ): Flow<Event<C>?> = getByStateKey(roomId, stateKey, C::class)
 
-suspend inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
+inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
     key: String = "",
 ): Flow<RoomAccountDataEvent<C>?> = get(roomId, C::class, key)
 
-suspend inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
+inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.get(
     key: String = "",
 ): Flow<GlobalAccountDataEvent<C>?> = get(C::class, key)
 
@@ -58,7 +58,7 @@ fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
         .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == JOIN }
         .mapNotNull { it.value?.roomId }
 
-suspend inline fun RoomTimelineStore.getNext(
+inline fun RoomTimelineStore.getNext(
     event: TimelineEvent,
 ): Flow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId) }

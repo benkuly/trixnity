@@ -26,10 +26,10 @@ class RoomUserStore(
         roomUserCache.reset()
     }
 
-    suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> =
+    fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> =
         roomUserCache.get(roomId).map { it?.values?.toSet() }
 
-    suspend fun get(userId: UserId, roomId: RoomId): Flow<RoomUser?> =
+    fun get(userId: UserId, roomId: RoomId): Flow<RoomUser?> =
         roomUserCache.getBySecondKey(roomId, userId)
 
     suspend fun update(

@@ -85,7 +85,7 @@ interface VerificationService {
         value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
     }
 
-    suspend fun getSelfVerificationMethods(): Flow<SelfVerificationMethods>
+    fun getSelfVerificationMethods(): Flow<SelfVerificationMethods>
 
     suspend fun getActiveUserVerification(
         timelineEvent: TimelineEvent
@@ -310,7 +310,7 @@ class VerificationServiceImpl(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
+    override fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
             currentSyncState,
@@ -318,11 +318,9 @@ class VerificationServiceImpl(
             keyStore.getDeviceKeys(ownUserId),
             globalAccountDataStore.get<DefaultSecretKeyEventContent>()
                 .transformLatest { event ->
-                    coroutineScope {
-                        event?.content?.key?.let {
-                            emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it))
-                        } ?: emit(null)
-                    }
+                    event?.content?.key?.let {
+                        emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it))
+                    } ?: emit(null)
                 },
         ) { bootstrapRunning, currentSyncState, crossSigningKeys, deviceKeys, defaultKey ->
             log.trace {

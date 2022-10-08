@@ -78,7 +78,7 @@ class OlmCryptoStore(
 
     private val inboundMegolmSessionCache = RepositoryStateFlowCache(storeScope, inboundMegolmSessionRepository, rtm)
 
-    suspend fun getInboundMegolmSession(
+    fun getInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
     ): Flow<StoredInboundMegolmSession?> =

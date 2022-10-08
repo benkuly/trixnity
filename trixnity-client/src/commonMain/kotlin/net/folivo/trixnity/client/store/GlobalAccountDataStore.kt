@@ -45,7 +45,7 @@ class GlobalAccountDataStore(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : GlobalAccountDataEventContent> get(
+    fun <C : GlobalAccountDataEventContent> get(
         eventContentClass: KClass<C>,
         key: String = "",
     ): Flow<GlobalAccountDataEvent<C>?> {

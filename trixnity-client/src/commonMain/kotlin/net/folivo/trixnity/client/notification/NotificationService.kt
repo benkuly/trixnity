@@ -40,7 +40,7 @@ interface NotificationService {
         val event: Event<*>
     )
 
-    suspend fun getNotifications(
+    fun getNotifications(
         decryptionTimeout: Duration = 5.seconds,
         syncResponseBufferSize: Int = 0
     ): Flow<Notification>
@@ -61,7 +61,7 @@ class NotificationServiceImpl(
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
     @OptIn(FlowPreview::class)
-    override suspend fun getNotifications(
+    override fun getNotifications(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {

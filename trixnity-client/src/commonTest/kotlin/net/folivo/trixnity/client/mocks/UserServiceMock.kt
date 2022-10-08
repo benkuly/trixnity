@@ -20,16 +20,16 @@ class UserServiceMock : UserService {
         loadMembersCalled.value = roomId
     }
 
-    override suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
+    override fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
         throw NotImplementedError()
     }
 
 
-    override suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
+    override fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    override fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
     ): Flow<C?> {

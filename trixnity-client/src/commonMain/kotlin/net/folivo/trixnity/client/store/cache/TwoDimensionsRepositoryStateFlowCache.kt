@@ -46,7 +46,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         cache.reset()
     }
 
-    suspend fun get(
+    fun get(
         key: K1,
         withTransaction: Boolean = true,
     ): Flow<Map<K2, V>?> =
@@ -90,7 +90,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             }
         })
 
-    private suspend fun getBySecondKeyAsFlow(
+    private fun getBySecondKeyAsFlow(
         firstKey: K1,
         secondKey: K2,
     ) = cache.readWithCache(
@@ -120,7 +120,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         else cacheValue
     }
 
-    suspend fun getBySecondKey(
+    fun getBySecondKey(
         firstKey: K1,
         secondKey: K2,
     ): Flow<V?> {

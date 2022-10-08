@@ -13,21 +13,21 @@ import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-suspend inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
+inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
     key: String = "",
 ): Flow<C?> {
     return getAccountData(roomId, C::class, key)
 }
 
-suspend inline fun <reified C : StateEventContent> RoomService.getState(
+inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
 ): Flow<Event<C>?> {
     return getState(roomId, stateKey, C::class)
 }
 
-suspend inline fun <reified C : StateEventContent> RoomService.getAllState(
+inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
 ): Flow<Map<String, Event<C>?>?> {
     return getAllState(roomId, C::class)

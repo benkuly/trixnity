@@ -47,7 +47,7 @@ class RoomAccountDataStore(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : RoomAccountDataEventContent> get(
+    fun <C : RoomAccountDataEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String = "",
