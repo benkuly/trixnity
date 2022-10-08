@@ -44,7 +44,7 @@ interface RoomService {
      * Returns the [TimelineEvent] and starts decryption with the given [CoroutineScope]. If it is not found locally, it is tried
      * to find it by filling the sync-gaps.
      */
-    suspend fun getTimelineEvent(
+    fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
@@ -52,21 +52,21 @@ interface RoomService {
         limitPerFetch: Long = 20,
     ): Flow<TimelineEvent?>
 
-    suspend fun getPreviousTimelineEvent(
+    fun getPreviousTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
     ): Flow<TimelineEvent?>?
 
-    suspend fun getNextTimelineEvent(
+    fun getNextTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
     ): Flow<TimelineEvent?>?
 
-    suspend fun getLastTimelineEvent(
+    fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
     ): Flow<Flow<TimelineEvent?>?>
@@ -80,7 +80,7 @@ interface RoomService {
      * The manual approach needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
-    suspend fun getTimelineEvents(
+    fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: Direction = BACKWARDS,
@@ -103,7 +103,7 @@ interface RoomService {
      * The manual approach needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      */
-    suspend fun getLastTimelineEvents(
+    fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
@@ -136,7 +136,7 @@ interface RoomService {
      * @param maxSizeAfter how many events to possibly get after the start event
      *
      */
-    suspend fun getTimelineEventsAround(
+    fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
         maxSizeBefore: StateFlow<Int>,
@@ -146,12 +146,12 @@ interface RoomService {
         limitPerFetch: Long = 20,
     ): Flow<List<Flow<TimelineEvent?>>>
 
-    suspend fun getTimelineEventRelations(
+    fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?>
 
-    suspend fun getTimelineEventRelations(
+    fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
@@ -164,9 +164,9 @@ interface RoomService {
     suspend fun retrySendMessage(transactionId: String)
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
 
-    suspend fun getById(roomId: RoomId): Flow<Room?>
+    fun getById(roomId: RoomId): Flow<Room?>
 
-    suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String = "",
@@ -174,18 +174,18 @@ interface RoomService {
 
     fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
 
-    suspend fun <C : StateEventContent> getState(
+    fun <C : StateEventContent> getState(
         roomId: RoomId,
         stateKey: String = "",
         eventContentClass: KClass<C>,
     ): Flow<Event<C>?>
 
-    suspend fun <C : StateEventContent> getAllState(
+    fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?>
 
-    suspend fun canBeRedacted(
+    fun canBeRedacted(
         timelineEvent: TimelineEvent,
     ): Flow<Boolean>
 }
@@ -230,7 +230,7 @@ class RoomServiceImpl(
      * @param coroutineScope The [CoroutineScope] is used to fetch and/or decrypt the [TimelineEvent] and to determine,
      * how long the [TimelineEvent] should be hold in cache.
      */
-    override suspend fun getTimelineEvent(
+    override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         decryptionTimeout: Duration,
@@ -270,7 +270,7 @@ class RoomServiceImpl(
         }.collect { send(it) }
     }
 
-    override suspend fun getPreviousTimelineEvent(
+    override fun getPreviousTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -281,7 +281,7 @@ class RoomServiceImpl(
         }
     }
 
-    override suspend fun getNextTimelineEvent(
+    override fun getNextTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -293,7 +293,7 @@ class RoomServiceImpl(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getLastTimelineEvent(
+    override fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
     ): Flow<Flow<TimelineEvent?>?> {
@@ -306,7 +306,7 @@ class RoomServiceImpl(
         }.distinctUntilChanged()
     }
 
-    override suspend fun getTimelineEvents(
+    override fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: Direction,
@@ -350,7 +350,7 @@ class RoomServiceImpl(
         }.buffer(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun getLastTimelineEvents(
+    override fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -391,7 +391,7 @@ class RoomServiceImpl(
             }
         }
 
-    override suspend fun getTimelineEventsAround(
+    override fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
         maxSizeBefore: StateFlow<Int>,
@@ -415,12 +415,12 @@ class RoomServiceImpl(
         }.collectLatest { send(it) }
     }.buffer(0)
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = roomTimelineStore.getRelations(eventId, roomId)
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
@@ -453,11 +453,11 @@ class RoomServiceImpl(
 
     override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()
 
-    override suspend fun getById(roomId: RoomId): Flow<Room?> {
+    override fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
     }
 
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String,
@@ -468,7 +468,7 @@ class RoomServiceImpl(
 
     override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = roomOutboxMessageStore.getAll()
 
-    override suspend fun <C : StateEventContent> getState(
+    override fun <C : StateEventContent> getState(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
@@ -476,14 +476,14 @@ class RoomServiceImpl(
         return roomStateStore.getByStateKey(roomId, stateKey, eventContentClass)
     }
 
-    override suspend fun <C : StateEventContent> getAllState(
+    override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 
-    override suspend fun canBeRedacted(
+    override fun canBeRedacted(
         timelineEvent: TimelineEvent,
     ): Flow<Boolean> {
         return roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class)

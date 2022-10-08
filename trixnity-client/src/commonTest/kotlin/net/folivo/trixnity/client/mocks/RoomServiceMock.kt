@@ -25,7 +25,7 @@ class RoomServiceMock : RoomService {
     }
 
     lateinit var returnGetTimelineEvent: StateFlow<TimelineEvent?>
-    override suspend fun getTimelineEvent(
+    override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         decryptionTimeout: Duration,
@@ -35,7 +35,7 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEvent
     }
 
-    override suspend fun getPreviousTimelineEvent(
+    override fun getPreviousTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -44,7 +44,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun getNextTimelineEvent(
+    override fun getNextTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -53,7 +53,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun getLastTimelineEvent(
+    override fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
@@ -62,7 +62,7 @@ class RoomServiceMock : RoomService {
 
     var returnGetTimelineEvents: Flow<StateFlow<TimelineEvent?>> = flowOf()
 
-    override suspend fun getTimelineEvents(
+    override fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: GetEvents.Direction,
@@ -71,7 +71,7 @@ class RoomServiceMock : RoomService {
         limitPerFetch: Long,
     ): Flow<Flow<TimelineEvent?>> = returnGetTimelineEvents
 
-    override suspend fun getLastTimelineEvents(
+    override fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -88,7 +88,7 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override suspend fun getTimelineEventsAround(
+    override fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
         maxSizeBefore: StateFlow<Int>,
@@ -100,14 +100,14 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
@@ -131,11 +131,11 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+    override fun getById(roomId: RoomId): StateFlow<Room?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String,
@@ -147,7 +147,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : StateEventContent> getState(
+    override fun <C : StateEventContent> getState(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
@@ -155,14 +155,14 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : StateEventContent> getAllState(
+    override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?> {
         throw NotImplementedError()
     }
 
-    override suspend fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
+    override fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
         throw NotImplementedError()
     }
 }

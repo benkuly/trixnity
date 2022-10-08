@@ -39,7 +39,7 @@ open class StateFlowCache<K, V>(
         internalCache.value = emptyMap()
     }
 
-    suspend fun readWithCache(
+    fun readWithCache(
         key: K,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,

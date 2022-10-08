@@ -61,7 +61,7 @@ class RoomStateStore(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : StateEventContent> get(
+    fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?> {
@@ -78,7 +78,7 @@ class RoomStateStore(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : StateEventContent> getByStateKey(
+    fun <C : StateEventContent> getByStateKey(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,

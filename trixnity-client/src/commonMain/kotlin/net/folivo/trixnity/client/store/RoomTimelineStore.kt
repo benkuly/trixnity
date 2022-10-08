@@ -33,19 +33,19 @@ class RoomTimelineStore(
         timelineEventRelationCache.reset()
     }
 
-    suspend fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
+    fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
         timelineEventCache.get(TimelineEventKey(eventId, roomId))
 
     suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
         timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction).first()
 
-    suspend fun getRelations(
+    fun getRelations(
         eventId: EventId,
         roomId: RoomId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> =
         timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId))
 
-    suspend fun getRelations(
+    fun getRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,

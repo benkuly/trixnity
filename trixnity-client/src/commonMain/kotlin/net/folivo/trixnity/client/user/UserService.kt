@@ -25,11 +25,11 @@ interface UserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
-    suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?>
+    fun getAll(roomId: RoomId): Flow<Set<RoomUser>?>
 
-    suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?>
+    fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?>
 
-    suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String = "",
     ): Flow<C?>
@@ -71,15 +71,15 @@ class UserServiceImpl(
         if (wait) roomStore.get(roomId).first { it?.membersLoaded == true }
     }
 
-    override suspend fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
+    override fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
         return roomUserStore.getAll(roomId)
     }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
+    override fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
         return roomUserStore.get(userId, roomId)
     }
 
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    override fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
     ): Flow<C?> {

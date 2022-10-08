@@ -15,7 +15,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     cacheDuration: Duration = 1.minutes,
 ) : StateFlowCache<K, V>(cacheScope, infiniteCache, cacheDuration) {
 
-    private suspend fun internalGet(
+    private fun internalGet(
         key: K,
         withTransaction: Boolean = true,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
@@ -29,7 +29,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         },
     )
 
-    suspend fun get(
+    fun get(
         key: K,
         withTransaction: Boolean = true,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean = { it != null },
