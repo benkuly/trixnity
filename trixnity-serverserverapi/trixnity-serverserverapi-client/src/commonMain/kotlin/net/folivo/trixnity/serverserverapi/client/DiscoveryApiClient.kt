@@ -47,7 +47,7 @@ class DiscoveryApiClientImpl(
         httpClient.request(GetServerVersion) { mergeUrl(baseUrl) }
 
     override suspend fun getServerKeys(baseUrl: Url): Result<Signed<ServerKeys, String>> =
-        httpClient.request(GetServerKeys) { mergeUrl(baseUrl) }
+        httpClient.request(GetServerKeys()) { mergeUrl(baseUrl) }
 
     override suspend fun queryServerKeys(
         baseUrl: Url,
