@@ -20,12 +20,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "3.0.0" +
-            when {
-                isRelease -> ""
-                isCI -> "-SNAPSHOT"
-                else -> "-LOCAL"
-            }
+    version = withVersionSuffix("3.0.0")
 
     repositories {
         mavenCentral()
