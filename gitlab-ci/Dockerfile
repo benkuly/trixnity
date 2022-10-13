@@ -13,7 +13,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y apt-utils && \
     apt-get upgrade -y && \
-    apt-get install -y locales docker.io wget unzip libncurses5 libcurl4-openssl-dev openjdk-17-jdk firefox
+    apt-get install -y locales docker.io wget unzip libncurses5 libcurl4-openssl-dev openjdk-17-jdk-headless firefox
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
