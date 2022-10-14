@@ -58,6 +58,7 @@ object DefaultEventContentSerializerMappings : EventContentSerializerMappings {
         of<TypingEventContent>("m.typing"),
         of<ReceiptEventContent>("m.receipt"),
     )
+    override val ephemeralDataUnit: Set<SerializerMapping<out EphemeralDataUnitContent>> = setOf()
 
     override val toDevice: Set<SerializerMapping<out ToDeviceEventContent>> = setOf(
         of("m.room.encrypted", EncryptedEventContentSerializer),

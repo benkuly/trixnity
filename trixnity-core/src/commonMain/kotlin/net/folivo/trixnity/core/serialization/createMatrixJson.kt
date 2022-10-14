@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.serialization.events.*
 
 
 @OptIn(ExperimentalSerializationApi::class)
-fun createMatrixJson(
+private fun createMatrixJson(
     module: SerializersModule
 ) = Json {
     classDiscriminator = "IfYouSeeThatSomethingIsWrongWithSerialization"

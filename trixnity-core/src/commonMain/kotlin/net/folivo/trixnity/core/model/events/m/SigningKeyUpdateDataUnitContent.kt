@@ -3,7 +3,7 @@ package net.folivo.trixnity.core.model.events.m
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 
 /**
@@ -17,4 +17,4 @@ data class SigningKeyUpdateDataUnitContent(
     val selfSigningKey: SignedCrossSigningKeys? = null,
     @SerialName("user_id")
     val userId: UserId,
-) : EphemeralEventContent
+) : EphemeralDataUnitContent

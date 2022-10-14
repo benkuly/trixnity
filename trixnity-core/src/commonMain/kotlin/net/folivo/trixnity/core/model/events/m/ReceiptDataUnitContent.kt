@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#receipts">matrix spec</a>
@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.events.EphemeralEventContent
 @Serializable(with = ReceiptDataUnitContentSerializer::class)
 data class ReceiptDataUnitContent(
     val receipts: Map<String, RoomReceipts>,
-) : EphemeralEventContent {
+) : EphemeralDataUnitContent {
     @Serializable
     data class RoomReceipts(
         @SerialName("m.read")
