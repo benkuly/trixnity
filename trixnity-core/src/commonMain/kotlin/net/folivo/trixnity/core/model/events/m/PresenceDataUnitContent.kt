@@ -3,7 +3,7 @@ package net.folivo.trixnity.core.model.events.m
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#presence">matrix spec</a>
@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.EphemeralEventContent
 data class PresenceDataUnitContent(
     @SerialName("push")
     val push: List<PresenceUpdate>,
-) : EphemeralEventContent {
+) : EphemeralDataUnitContent {
     @Serializable
     data class PresenceUpdate(
         @SerialName("presence")

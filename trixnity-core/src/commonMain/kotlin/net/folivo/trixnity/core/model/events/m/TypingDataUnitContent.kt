@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EphemeralEventContent
+import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#typing-notificationse">matrix spec</a>
@@ -17,4 +17,4 @@ data class TypingDataUnitContent(
     val userId: UserId,
     @SerialName("typing")
     val typing: Boolean,
-) : EphemeralEventContent
+) : EphemeralDataUnitContent

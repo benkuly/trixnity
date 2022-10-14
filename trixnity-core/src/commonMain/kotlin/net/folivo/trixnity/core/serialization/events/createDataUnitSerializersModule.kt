@@ -10,7 +10,7 @@ fun createDataUnitSerializersModule(
     mappings: EventContentSerializerMappings,
     getRoomVersion: GetRoomVersionFunction,
 ): SerializersModule {
-    val ephemeralDataUnitSerializer = EphemeralDataUnitSerializer(mappings.ephemeral)
+    val ephemeralDataUnitSerializer = EphemeralDataUnitSerializer(mappings.ephemeralDataUnit)
     val persistentMessageDataUnitSerializer = PersistentMessageDataUnitSerializer(mappings.message, getRoomVersion)
     val persistentStateDataUnitSerializer = PersistentStateDataUnitSerializer(mappings.state, getRoomVersion)
     val persistentDataUnitSerializer =
