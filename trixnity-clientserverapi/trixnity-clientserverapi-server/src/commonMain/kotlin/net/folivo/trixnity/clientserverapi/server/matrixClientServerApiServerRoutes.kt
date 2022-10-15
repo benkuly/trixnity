@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-fun Routing.matrixClientServerApiServerRoutes(
+fun Route.matrixClientServerApiServerRoutes(
     discoveryApiHandler: DiscoveryApiHandler,
     authenticationApiHandler: AuthenticationApiHandler,
     devicesApiHandler: DevicesApiHandler,

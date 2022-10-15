@@ -8,7 +8,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
@@ -28,9 +27,7 @@ private fun Application.matrixApplicationServiceApiServerTestApplication(
     applicationServiceApiServerHandler: ApplicationServiceApiServerHandler,
 ) {
     matrixApplicationServiceApiServer("validToken") {
-        routing {
-            matrixApplicationServiceApiServerRoutes(applicationServiceApiServerHandler)
-        }
+        matrixApplicationServiceApiServerRoutes(applicationServiceApiServerHandler)
     }
 }
 

@@ -2,6 +2,7 @@ package net.folivo.trixnity.applicationserviceapi.server
 
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -12,12 +13,14 @@ fun Application.matrixApplicationServiceApiServer(
     hsToken: String,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    block: Application.() -> Unit,
+    block: Route.() -> Unit,
 ) {
+    install(Authentication) {
+        matrixQueryParameter("matrix-query-parameter-auth", "access_token", hsToken)
+    }
     matrixApiServer(json) {
-        install(Authentication) {
-            matrixQueryParameter(null, "access_token", hsToken)
+        authenticate("matrix-query-parameter-auth") {
+            block()
         }
-        block()
     }
 }

@@ -6,7 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import net.folivo.trixnity.clientserverapi.model.media.Media
 
-val ConvertMediaPlugin = createApplicationPlugin("ConvertMediaPlugin") {
+val ConvertMediaPlugin = createRouteScopedPlugin("ConvertMediaPlugin") {
     onCallReceive { call ->
         if (call.receiveType.type != Media::class) return@onCallReceive
 

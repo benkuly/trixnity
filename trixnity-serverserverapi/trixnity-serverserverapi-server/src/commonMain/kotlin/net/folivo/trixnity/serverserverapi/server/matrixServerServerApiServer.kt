@@ -1,7 +1,8 @@
 package net.folivo.trixnity.serverserverapi.server
 
 import io.ktor.server.application.*
-import io.ktor.server.plugins.doublereceive.*
+import io.ktor.server.auth.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
@@ -15,13 +16,14 @@ fun Application.matrixServerServerApiServer(
     getRoomVersionFunction: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventAndDataUnitJson(getRoomVersionFunction, eventContentSerializerMappings),
-    block: Application.() -> Unit,
+    block: Route.() -> Unit,
 ) {
+    installMatrixSignatureAuth("matrix-signature-auth", hostname = hostname) {
+        this.authenticationFunction = signatureAuthenticationFunction
+    }
     matrixApiServer(json) {
-        install(DoubleReceive)
-        installMatrixSignatureAuth(hostname = hostname) {
-            this.authenticationFunction = signatureAuthenticationFunction
+        authenticate("matrix-signature-auth") {
+            block()
         }
-        block()
     }
 }

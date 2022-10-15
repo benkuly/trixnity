@@ -60,21 +60,19 @@ class MatrixUIAEndpointRouteTest {
     fun shouldHandleRequestWithSuccessResponse() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        it.endpoint.pathParam shouldBe "unicorn"
-                        it.endpoint.requestParam shouldBe "2"
-                        it.requestBody.request.includeDino shouldBe true
-                        it.requestBody.authentication shouldBe AuthenticationRequestWithSession(
-                            AuthenticationRequest.Password(
-                                IdentifierType.User("user"),
-                                "password"
-                            ), "session"
-                        )
-                        ResponseWithUIA.Success(
-                            PostPath.Response("dino")
-                        )
-                    }
+                matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
+                    it.endpoint.pathParam shouldBe "unicorn"
+                    it.endpoint.requestParam shouldBe "2"
+                    it.requestBody.request.includeDino shouldBe true
+                    it.requestBody.authentication shouldBe AuthenticationRequestWithSession(
+                        AuthenticationRequest.Password(
+                            IdentifierType.User("user"),
+                            "password"
+                        ), "session"
+                    )
+                    ResponseWithUIA.Success(
+                        PostPath.Response("dino")
+                    )
                 }
             }
         }
@@ -104,19 +102,17 @@ class MatrixUIAEndpointRouteTest {
     fun shouldHandleRequestWithStepResponse() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        it.endpoint.pathParam shouldBe "unicorn"
-                        it.endpoint.requestParam shouldBe "2"
-                        it.requestBody.request.includeDino shouldBe true
-                        it.requestBody.authentication shouldBe null
-                        ResponseWithUIA.Step(
-                            UIAState(
-                                flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
-                                session = "session"
-                            )
+                matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
+                    it.endpoint.pathParam shouldBe "unicorn"
+                    it.endpoint.requestParam shouldBe "2"
+                    it.requestBody.request.includeDino shouldBe true
+                    it.requestBody.authentication shouldBe null
+                    ResponseWithUIA.Step(
+                        UIAState(
+                            flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
+                            session = "session"
                         )
-                    }
+                    )
                 }
             }
         }
@@ -133,20 +129,18 @@ class MatrixUIAEndpointRouteTest {
     fun shouldHandleRequestWithErrorResponse() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        it.endpoint.pathParam shouldBe "unicorn"
-                        it.endpoint.requestParam shouldBe "2"
-                        it.requestBody.request.includeDino shouldBe true
-                        it.requestBody.authentication shouldBe null
-                        ResponseWithUIA.Error(
-                            UIAState(
-                                flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
-                                session = "session"
-                            ),
-                            ErrorResponse.Unauthorized("password wrong")
-                        )
-                    }
+                matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
+                    it.endpoint.pathParam shouldBe "unicorn"
+                    it.endpoint.requestParam shouldBe "2"
+                    it.requestBody.request.includeDino shouldBe true
+                    it.requestBody.authentication shouldBe null
+                    ResponseWithUIA.Error(
+                        UIAState(
+                            flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
+                            session = "session"
+                        ),
+                        ErrorResponse.Unauthorized("password wrong")
+                    )
                 }
             }
         }
@@ -164,18 +158,16 @@ class MatrixUIAEndpointRouteTest {
         var getHasBeenCalled = false
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixUIAEndpoint<GetPath, Unit, GetPath.Response>(json, mapping) {
-                        getHasBeenCalled = true
-                        ResponseWithUIA.Success(
-                            GetPath.Response("anti-dino")
-                        )
-                    }
-                    matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                        ResponseWithUIA.Success(
-                            PostPath.Response("dino")
-                        )
-                    }
+                matrixUIAEndpoint<GetPath, Unit, GetPath.Response>(json, mapping) {
+                    getHasBeenCalled = true
+                    ResponseWithUIA.Success(
+                        GetPath.Response("anti-dino")
+                    )
+                }
+                matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
+                    ResponseWithUIA.Success(
+                        PostPath.Response("dino")
+                    )
                 }
             }
         }

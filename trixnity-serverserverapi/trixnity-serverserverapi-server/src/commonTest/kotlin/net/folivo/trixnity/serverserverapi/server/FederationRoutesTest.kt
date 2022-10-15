@@ -6,7 +6,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
@@ -15,8 +14,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
@@ -54,9 +53,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 authenticationFunction = { SignatureAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    federationApiRoutes(handlerMock, json, mapping)
-                }
+                federationApiRoutes(handlerMock, json, mapping)
             }
         }
     }

@@ -7,6 +7,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.util.logging.*
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -14,11 +15,8 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
 
-fun Application.matrixApiServer(json: Json, block: Application.() -> Unit) {
+fun Application.matrixApiServer(json: Json, block: Route.() -> Unit) {
     install(Resources)
-    install(ContentNegotiation) {
-        json(json)
-    }
     install(StatusPages) {
         exception { call: ApplicationCall, cause: Throwable ->
             call.application.log.error(cause)
@@ -28,11 +26,13 @@ fun Application.matrixApiServer(json: Json, block: Application.() -> Unit) {
                         cause.statusCode,
                         json.encodeToJsonElement(ErrorResponseSerializer, cause.errorResponse)
                     )
+
                 is SerializationException ->
                     call.respond(
                         HttpStatusCode.BadRequest,
                         json.encodeToJsonElement(ErrorResponseSerializer, ErrorResponse.BadJson(cause.message))
                     )
+
                 else -> {
                     call.respond(
                         HttpStatusCode.InternalServerError,
@@ -66,5 +66,10 @@ fun Application.matrixApiServer(json: Json, block: Application.() -> Unit) {
             )
         }
     }
-    block()
+    install(ContentNegotiation) {
+        json(json)
+    }
+    routing {
+        block()
+    }
 }
