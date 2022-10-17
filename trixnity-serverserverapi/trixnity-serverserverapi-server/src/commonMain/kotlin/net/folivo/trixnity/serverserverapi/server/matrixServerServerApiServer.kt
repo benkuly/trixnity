@@ -16,14 +16,14 @@ fun Application.matrixServerServerApiServer(
     getRoomVersionFunction: GetRoomVersionFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventAndDataUnitJson(getRoomVersionFunction, eventContentSerializerMappings),
-    block: Route.() -> Unit,
+    routes: Route.() -> Unit,
 ) {
     installMatrixSignatureAuth("matrix-signature-auth", hostname = hostname) {
         this.authenticationFunction = signatureAuthenticationFunction
     }
     matrixApiServer(json) {
         authenticate("matrix-signature-auth") {
-            block()
+            routes()
         }
     }
 }

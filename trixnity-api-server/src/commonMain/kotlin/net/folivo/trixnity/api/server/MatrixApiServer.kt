@@ -15,7 +15,14 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.MatrixServerException
 
-fun Application.matrixApiServer(json: Json, block: Route.() -> Unit) {
+fun Application.matrixApiServer(json: Json, routes: Route.() -> Unit) {
+    installMatrixApiServer(json)
+    routing {
+        routes()
+    }
+}
+
+fun Application.installMatrixApiServer(json: Json) {
     install(Resources)
     install(StatusPages) {
         exception { call: ApplicationCall, cause: Throwable ->
@@ -68,8 +75,5 @@ fun Application.matrixApiServer(json: Json, block: Route.() -> Unit) {
     }
     install(ContentNegotiation) {
         json(json)
-    }
-    routing {
-        block()
     }
 }

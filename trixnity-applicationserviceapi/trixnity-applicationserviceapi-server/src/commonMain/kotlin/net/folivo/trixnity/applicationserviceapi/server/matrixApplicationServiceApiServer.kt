@@ -13,14 +13,14 @@ fun Application.matrixApplicationServiceApiServer(
     hsToken: String,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    block: Route.() -> Unit,
+    routes: Route.() -> Unit,
 ) {
     install(Authentication) {
         matrixQueryParameter("matrix-query-parameter-auth", "access_token", hsToken)
     }
     matrixApiServer(json) {
         authenticate("matrix-query-parameter-auth") {
-            block()
+            routes()
         }
     }
 }
