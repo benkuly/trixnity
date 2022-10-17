@@ -10,10 +10,10 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 internal object ExposedTimelineEventRelation : Table("room_timeline_event_relation") {
-    val roomId = varchar("room_id", length = 255)
-    val eventId = varchar("event_id", length = 255)
-    val relationType = varchar("relation_type", length = 255)
-    val relatedEventId = varchar("related_event_id", length = 255)
+    val roomId = varchar("room_id", length = 128)
+    val eventId = varchar("event_id", length = 128)
+    val relationType = varchar("relation_type", length = 128)
+    val relatedEventId = varchar("related_event_id", length = 128)
     override val primaryKey = PrimaryKey(roomId, eventId, relationType, relatedEventId)
 }
 
