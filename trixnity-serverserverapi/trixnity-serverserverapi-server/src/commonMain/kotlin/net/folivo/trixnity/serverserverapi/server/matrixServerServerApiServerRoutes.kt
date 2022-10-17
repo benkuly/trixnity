@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
 
-fun Routing.matrixServerServerApiServerRoutes(
+fun Route.matrixServerServerApiServerRoutes(
     discoveryApiHandler: DiscoveryApiHandler,
     federationApiHandler: FederationApiHandler,
     getRoomVersionFunction: GetRoomVersionFunction,

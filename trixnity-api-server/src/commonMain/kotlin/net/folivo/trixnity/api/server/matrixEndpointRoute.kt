@@ -24,7 +24,7 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
     val call: ApplicationCall,
 )
 
-val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointConfig")
+val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointWithoutAuth")
 
 // TODO inject json and mappings with context receivers with kotlin > 1.7.0
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(

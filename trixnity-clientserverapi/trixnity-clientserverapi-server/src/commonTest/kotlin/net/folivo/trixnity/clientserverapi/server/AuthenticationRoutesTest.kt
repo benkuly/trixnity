@@ -6,7 +6,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
@@ -40,9 +39,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    authenticationApiRoutes(handlerMock, json, mapping)
-                }
+                authenticationApiRoutes(handlerMock, json, mapping)
             }
         }
     }

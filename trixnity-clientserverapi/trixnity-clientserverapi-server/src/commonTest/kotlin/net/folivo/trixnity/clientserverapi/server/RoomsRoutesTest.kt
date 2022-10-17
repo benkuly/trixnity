@@ -6,7 +6,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.JsonObject
@@ -46,9 +45,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    roomsApiRoutes(handlerMock, json, mapping)
-                }
+                roomsApiRoutes(handlerMock, json, mapping)
             }
         }
     }

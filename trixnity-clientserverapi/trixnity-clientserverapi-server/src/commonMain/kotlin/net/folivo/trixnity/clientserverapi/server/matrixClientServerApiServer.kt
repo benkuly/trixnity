@@ -1,13 +1,9 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import io.ktor.http.*
-import io.ktor.http.HttpMethod.Companion.Delete
-import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpMethod.Companion.Options
-import io.ktor.http.HttpMethod.Companion.Post
-import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -18,26 +14,38 @@ fun Application.matrixClientServerApiServer(
     accessTokenAuthenticationFunction: AccessTokenAuthenticationFunction,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    block: Application.() -> Unit,
+    routes: Route.() -> Unit,
 ) {
-    matrixApiServer(json) {
-        // TODO rate limit
-        install(ConvertMediaPlugin)
-        installMatrixAccessTokenAuth {
-            this.authenticationFunction = accessTokenAuthenticationFunction
-        }
-        // see also https://spec.matrix.org/v1.3/client-server-api/#web-browser-clients
-        install(CORS) {
-            anyHost()
-            allowMethod(Get)
-            allowMethod(Post)
-            allowMethod(Delete)
-            allowMethod(Options)
-            allowMethod(Put)
-            allowHeader(HttpHeaders.Authorization)
-            allowHeader(HttpHeaders.ContentType)
-            allowHeader("X-Requested-With")
-        }
-        block()
+    installMatrixAccessTokenAuth("matrix-access-token-auth") {
+        this.authenticationFunction = accessTokenAuthenticationFunction
     }
+    matrixApiServer(json) {
+        createChild(object : RouteSelector() {
+            override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation =
+                RouteSelectorEvaluation.Transparent
+        }).apply {
+            installMatrixClientServerApiServer()
+            authenticate("matrix-access-token-auth") {
+                routes()
+            }
+        }
+    }
+}
+
+fun Route.installMatrixClientServerApiServer() {
+    // TODO rate limit
+    install(ConvertMediaPlugin)
+    // see also https://spec.matrix.org/v1.3/client-server-api/#web-browser-clients
+    install(CORS) {
+        anyHost()
+        allowMethod(io.ktor.http.HttpMethod.Get)
+        allowMethod(io.ktor.http.HttpMethod.Post)
+        allowMethod(io.ktor.http.HttpMethod.Delete)
+        allowMethod(io.ktor.http.HttpMethod.Options)
+        allowMethod(io.ktor.http.HttpMethod.Put)
+        allowHeader(io.ktor.http.HttpHeaders.Authorization)
+        allowHeader(io.ktor.http.HttpHeaders.ContentType)
+        allowHeader("X-Requested-With")
+    }
+    options("{...}") { }
 }

@@ -21,7 +21,7 @@ class MatrixSignatureAuth internal constructor(
 ) : AuthenticationProvider(config) {
     class Config internal constructor(name: String? = null, val fallbackDestination: String) :
         AuthenticationProvider.Config(name) {
-        internal var authenticationFunction: SignatureAuthenticationFunction = {
+        var authenticationFunction: SignatureAuthenticationFunction = {
             throw NotImplementedError("MatrixSignatureAuth validate function is not specified.")
         }
     }
