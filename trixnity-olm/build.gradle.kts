@@ -79,6 +79,7 @@ if (isAndroidEnabled) {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
             jniLibs.srcDirs(olmSharedAndroidLibPath)
         }
+        testO
     }
 }
 

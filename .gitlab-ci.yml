@@ -6,7 +6,6 @@ workflow:
 stages:
   - prepare-build
   - build
-  - coverage
   - publish-snapshot-mac
   - publish-snapshot-linux
   - prepare-publish
@@ -33,7 +32,7 @@ variables:
 .artifact-reports: &artifact-reports
   name: reports
   when: always
-  paths: [ "**/build/reports", "build/reports/kover/merged/xml/report.xml" ]
+  paths: [ "**/build/reports" ]
   reports:
     junit: "**/build/test-results/**/TEST-*.xml"
 
@@ -89,21 +88,6 @@ build-linux:
     - *if-merge-request
   script:
     - ./gradlew build --stacktrace
-
-coverage-linux:
-  stage: coverage
-  image: haynes/jacoco2cobertura
-  needs: [ "build-linux" ]
-  rules:
-    - *if-merge-request
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: build/cobertura.xml
-  script:
-    - jacoco_paths=`find * -path "**/src/*Main/kotlin" -type d | sed -e 's@^@'"$CI_PROJECT_DIR"'/@'`
-    - python /opt/cover2cover.py build/reports/kover/merged/xml/report.xml $jacoco_paths > build/cobertura.xml
 
 publish-snapshot-mac:
   stage: publish-snapshot-mac

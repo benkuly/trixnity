@@ -1,5 +1,3 @@
-import kotlinx.kover.api.DefaultJacocoEngine
-
 buildscript {
     repositories {
         google()
@@ -17,7 +15,6 @@ plugins {
 //    id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
-    id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
 allprojects {
@@ -30,10 +27,6 @@ allprojects {
         mavenLocal()
     }
 
-    apply(plugin = "org.jetbrains.kotlinx.kover")
-    kover {
-        engine.set(DefaultJacocoEngine)
-    }
 //    apply(plugin = "org.jetbrains.dokka")
 }
 
@@ -103,8 +96,4 @@ subprojects {
             sign(publishing.publications)
         }
     }
-}
-
-koverMerged {
-    enable()
 }
