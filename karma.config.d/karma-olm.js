@@ -1,4 +1,3 @@
-const path = require("path");
 config.set({
   "mime": {
      "application/wasm" : ["wasm"]
@@ -8,6 +7,6 @@ config.set({
      {"pattern":"../../../node_modules/@matrix-org/olm/olm.wasm","watched": false, "served": true, "included": false,"type":"wasm"}
   ],
   proxies: {
-        "/olm.wasm": path.resolve("../../node_modules/@matrix-org/olm/olm.wasm"),
+        "/olm.wasm": require("path").resolve("../../node_modules/@matrix-org/olm/olm.wasm"),
       },
 });

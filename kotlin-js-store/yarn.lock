@@ -22,10 +22,10 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.4.tgz#b2ac626d6cb9c8718ab459166d4bb405b8ffa78b"
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
-"@matrix-org/olm@3.2.12":
-  version "3.2.12"
-  resolved "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.12.tgz#0bce3c86f9d36a4984d3c3e07df1c3fb4c679bd9"
-  integrity sha1-C848hvnTakmE08PgffHD+0xnm9k=
+"@matrix-org/olm@3.2.13":
+  version "3.2.13"
+  resolved "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.13.tgz#0109fde93bcc61def851f79826c9384c073b5175"
+  integrity sha1-AQn96TvMYd74UfeYJsk4TAc7UXU=
 
 "@types/body-parser@*":
   version "1.19.2"
