@@ -31,7 +31,6 @@ variables:
 
 .artifact-reports: &artifact-reports
   name: reports
-  expose_as: "reports"
   when: always
   paths: [ "**/build/reports" ]
   reports:
