@@ -15,7 +15,6 @@ plugins {
 //    id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
-    id("org.jetbrains.kotlinx.kover") version Versions.kotlinxKover
 }
 
 allprojects {

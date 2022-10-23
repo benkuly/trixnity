@@ -33,6 +33,8 @@ variables:
   name: reports
   when: always
   paths: [ "**/build/reports" ]
+  reports:
+    junit: "**/build/test-results/**/TEST-*.xml"
 
 .if-merge-request: &if-merge-request
   - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
