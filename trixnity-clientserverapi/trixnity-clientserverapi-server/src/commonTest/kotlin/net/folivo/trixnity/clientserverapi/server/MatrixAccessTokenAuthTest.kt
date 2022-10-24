@@ -143,7 +143,7 @@ class MatrixAccessTokenAuthTest {
                     matrixEndpoint<GetResourceWithAuth, Unit, Unit>(
                         json,
                         mapping
-                    ) { it.call.respond(HttpStatusCode.OK) }
+                    ) { call.respond(HttpStatusCode.OK) }
                 }
             }
         }
@@ -165,7 +165,7 @@ class MatrixAccessTokenAuthTest {
             routing {
                 authenticate {
                     matrixEndpoint<GetResourceWithoutAuth, Unit, Unit>(json, mapping) {
-                        it.call.respond(HttpStatusCode.OK)
+                        call.respond(HttpStatusCode.OK)
                     }
                 }
             }
