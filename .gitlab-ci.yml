@@ -75,7 +75,7 @@ build-mac:
 
 build-linux:
   stage: build
-  tags: [ "saas-linux-large-amd64" ]
+  tags: [ "gitlab-org-docker" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
