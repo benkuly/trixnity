@@ -10,7 +10,8 @@ import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.key.DeviceTrustLevel
 import net.folivo.trixnity.client.loginWith
-import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
@@ -55,12 +56,14 @@ class SasVerificationIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
+            mediaStore = InMemoryMediaStore(),
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
+            mediaStore = InMemoryMediaStore(),
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()

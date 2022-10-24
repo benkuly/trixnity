@@ -49,13 +49,20 @@ This project contains the following modules, which can be used independently:
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity. The key features are:
     - [x] exchangeable database
-        - [trixnity-client-store-exposed](/trixnity-client/trixnity-client-store-exposed) implements a database for
-          trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM based platforms.
-        - [trixnity-client-store-sqldelight](/trixnity-client/trixnity-client-store-sqldelight) implements a database
-          for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained
-          at the moment.
-        - We plan to add something like `trixnity-client-store-indexeddb` as a database backend for web in the future.
+        - in memory (e. g. for tests)
+        - [trixnity-client-repository-exposed](/trixnity-client/trixnity-client-repository-exposed) implements a
+          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM
+          based platforms.
+        - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight) implements a
+          database for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively
+          maintained at the moment.
+        - We plan to add something like `trixnity-client-repository-indexeddb` as a database for web in the future.
     - [x] fast cache on top of the database
+    - [x] exchangeable media store
+        - in memory (e. g. for tests)
+        - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio) implements a file system base media
+          store with [okio](https://github.com/square/okio)
+    - [x] media support (thumbnail generation, offline "upload", huge files, etc.)
     - [x] E2E (olm, megolm)
     - [x] verification
     - [x] cross signing
@@ -64,7 +71,6 @@ This project contains the following modules, which can be used independently:
     - [x] timelines
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
-    - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
     - [x] notifications
     - [x] server discovery

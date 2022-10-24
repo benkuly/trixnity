@@ -11,7 +11,8 @@ import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.login
 import net.folivo.trixnity.client.loginWith
-import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -87,6 +88,7 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
+        mediaStore = InMemoryMediaStore(),
         scope = scope,
         getLoginInfo = { it.register(username, password, name) }
     ).getOrThrow()
@@ -106,6 +108,7 @@ suspend fun startClient(name: String, username: String = name, baseUrl: Url): St
         passwordOrToken = password,
         deviceId = name,
         repositoriesModule = repositoriesModule,
+        mediaStore = InMemoryMediaStore(),
         scope = scope,
     ).getOrThrow()
     client.startSync()

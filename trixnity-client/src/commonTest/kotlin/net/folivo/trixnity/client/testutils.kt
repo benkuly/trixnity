@@ -95,9 +95,8 @@ suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     scope
 ).apply { init() }
 
-suspend fun getInMemoryMediaStore(scope: CoroutineScope) = MediaStore(
-    InMemoryMediaRepository(),
-    InMemoryUploadMediaRepository(),
+suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMappingStore(
+    InMemoryMediaCacheMappingRepository(),
     NoopRepositoryTransactionManager,
     scope
 ).apply { init() }

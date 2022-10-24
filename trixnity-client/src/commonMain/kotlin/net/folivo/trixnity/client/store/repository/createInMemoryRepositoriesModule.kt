@@ -26,8 +26,7 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<TimelineEventRepository>(::InMemoryTimelineEventRepository)
     singleOf<TimelineEventRelationRepository>(::InMemoryTimelineEventRelationRepository)
     singleOf<RoomOutboxMessageRepository>(::InMemoryRoomOutboxMessageRepository)
-    singleOf<MediaRepository>(::InMemoryMediaRepository)
-    singleOf<UploadMediaRepository>(::InMemoryUploadMediaRepository)
+    singleOf<MediaCacheMappingRepository>(::InMemoryMediaCacheMappingRepository)
     singleOf<GlobalAccountDataRepository>(::InMemoryGlobalAccountDataRepository)
     singleOf<RoomAccountDataRepository>(::InMemoryRoomAccountDataRepository)
 }

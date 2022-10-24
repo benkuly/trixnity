@@ -20,12 +20,15 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.getInMemoryMediaStore
+import kotlinx.coroutines.flow.count
+import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.store.MediaStore
-import net.folivo.trixnity.client.store.UploadCache
+import net.folivo.trixnity.client.store.MediaCacheMapping
+import net.folivo.trixnity.client.store.MediaCacheMappingStore
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.core.toByteFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -33,7 +36,8 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 class MediaServiceTest : ShouldSpec({
     timeout = 60_000
 
-    lateinit var mediaStore: MediaStore
+    lateinit var mediaCacheMappingStore: MediaCacheMappingStore
+    lateinit var mediaStore: InMemoryMediaStore
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
     lateinit var apiConfig: PortableMockEngineConfig
@@ -41,14 +45,15 @@ class MediaServiceTest : ShouldSpec({
     lateinit var cut: MediaServiceImpl
 
     val mxcUri = "mxc://example.com/abc"
-    val cacheUri = "cache://some-string"
+    val cacheUri = "upload://some-string"
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        mediaStore = getInMemoryMediaStore(scope)
+        mediaCacheMappingStore = getInMemoryMediaCacheMapping(scope)
+        mediaStore = InMemoryMediaStore()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = MediaServiceImpl(api, mediaStore)
+        cut = MediaServiceImpl(api, mediaStore, mediaCacheMappingStore)
     }
     afterTest {
         scope.cancel()
@@ -56,8 +61,8 @@ class MediaServiceTest : ShouldSpec({
     context(MediaServiceImpl::getMedia.name) {
         context("is mxc uri") {
             should("prefer cache") {
-                mediaStore.addContent(mxcUri, "test".encodeToByteArray())
-                cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
+                mediaStore.addMedia(mxcUri, "test".encodeToByteArray().toByteFlow())
+                cut.getMedia(mxcUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
             }
             should("download and cache") {
                 apiConfig.endpoints {
@@ -66,20 +71,20 @@ class MediaServiceTest : ShouldSpec({
                         respond(ByteReadChannel("test"), HttpStatusCode.OK)
                     }
                 }
-                cut.getMedia(mxcUri).getOrThrow().decodeToString() shouldBe "test"
+                cut.getMedia(mxcUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
 
-                mediaStore.getContent(mxcUri) shouldBe "test".encodeToByteArray()
+                mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe "test".encodeToByteArray()
             }
         }
         context("is cache uri") {
             should("prefer cache") {
-                mediaStore.addContent(cacheUri, "test".encodeToByteArray())
-                cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
+                mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteFlow())
+                cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
             }
             should("prefer cache, but use mxcUri, when already uploaded") {
-                mediaStore.updateUploadCache(cacheUri) { UploadCache(cacheUri, mxcUri) }
-                mediaStore.addContent(mxcUri, "test".encodeToByteArray())
-                cut.getMedia(cacheUri).getOrThrow().decodeToString() shouldBe "test"
+                mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { MediaCacheMapping(cacheUri, mxcUri) }
+                mediaStore.addMedia(mxcUri, "test".encodeToByteArray().toByteFlow())
+                cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
             }
         }
     }
@@ -94,8 +99,8 @@ class MediaServiceTest : ShouldSpec({
             hashes = mapOf("sha256" to "Hk9NwPYLemjX/b6MMxpLKYn632NkYSFaBEoEvj4Fzo4")
         )
         should("prefer cache and decrypt") {
-            mediaStore.addContent(mxcUri, rawFile)
-            cut.getEncryptedMedia(encryptedFile).getOrThrow().decodeToString() shouldBe "test"
+            mediaStore.addMedia(mxcUri, rawFile.toByteFlow())
+            cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray().decodeToString() shouldBe "test"
         }
         should("download, cache and decrypt") {
             apiConfig.endpoints {
@@ -104,21 +109,38 @@ class MediaServiceTest : ShouldSpec({
                     respond(rawFile, HttpStatusCode.OK)
                 }
             }
-            cut.getEncryptedMedia(encryptedFile).getOrThrow().decodeToString() shouldBe "test"
-            mediaStore.getContent(mxcUri) shouldBe rawFile
+            cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+            mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe rawFile
+        }
+        should("download, not cache and decrypt") {
+            apiConfig.endpoints {
+                addHandler {
+                    it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                    respond(rawFile, HttpStatusCode.OK)
+                }
+            }
+            cut.getEncryptedMedia(encryptedFile, saveToCache = false).getOrThrow().toByteArray()
+                .decodeToString() shouldBe "test"
+            mediaStore.getMedia(mxcUri) shouldBe null
         }
         should("validate hash") {
-            mediaStore.addContent(mxcUri, rawFile)
-            val encryptedFileWIthWrongHash = encryptedFile.copy(hashes = mapOf("sha256" to "nope"))
-            shouldThrow<DecryptionException.ValidationFailed> {
-                cut.getEncryptedMedia(encryptedFileWIthWrongHash).getOrThrow().decodeToString()
+            apiConfig.endpoints {
+                addHandler {
+                    it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                    respond(rawFile, HttpStatusCode.OK)
+                }
             }
+            val encryptedFileWithWrongHash = encryptedFile.copy(hashes = mapOf("sha256" to "nope"))
+            shouldThrow<DecryptionException.ValidationFailed> {
+                cut.getEncryptedMedia(encryptedFileWithWrongHash).getOrThrow().toByteArray().decodeToString()
+            }
+            mediaStore.getMedia(mxcUri) shouldBe null
         }
     }
     context(MediaServiceImpl::getThumbnail.name) {
         should("prefer cache") {
-            mediaStore.addContent("$mxcUri/32x32/crop", "test".encodeToByteArray())
-            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().decodeToString() shouldBe "test"
+            mediaStore.addMedia("$mxcUri/32x32/crop", "test".encodeToByteArray().toByteFlow())
+            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray().decodeToString() shouldBe "test"
         }
         should("download and cache") {
             apiConfig.endpoints {
@@ -127,22 +149,24 @@ class MediaServiceTest : ShouldSpec({
                     respond(ByteReadChannel("test"), HttpStatusCode.OK)
                 }
             }
-            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().decodeToString() shouldBe "test"
-            mediaStore.getContent("$mxcUri/32x32/crop") shouldBe "test".encodeToByteArray()
+            cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+            println(mediaStore.media.value)
+            mediaStore.getMedia("$mxcUri/32x32/crop")?.toByteArray() shouldBe "test".encodeToByteArray()
         }
     }
     context(MediaServiceImpl::prepareUploadMedia.name) {
         should("save and return local cache uri from media") {
-            val result = cut.prepareUploadMedia("test".encodeToByteArray(), Plain)
+            val result = cut.prepareUploadMedia("test".encodeToByteArray().toByteFlow(), Plain)
             result shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
             result.length shouldBeGreaterThan 12
-            mediaStore.getContent(result) shouldBe "test".encodeToByteArray()
-            mediaStore.getUploadCache(result) shouldBe UploadCache(result, null, Plain.toString())
+            mediaStore.getMedia(result)?.toByteArray() shouldBe "test".encodeToByteArray()
+            mediaCacheMappingStore.getMediaCacheMapping(result) shouldBe
+                    MediaCacheMapping(result, null, 4, Plain.toString())
         }
     }
     context(MediaServiceImpl::prepareUploadThumbnail.name) {
         should("save and return local cache uri from thumbnail") {
-            val result = cut.prepareUploadThumbnail(miniPng, PNG)
+            val result = cut.prepareUploadThumbnail(miniPng.toByteFlow(), PNG)
             result?.first shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
             assertSoftly(result.shouldNotBeNull().second) {
                 width shouldBe 600
@@ -150,16 +174,21 @@ class MediaServiceTest : ShouldSpec({
                 size.shouldNotBeNull() shouldBeGreaterThan 1000
                 mimeType shouldBe "image/png"
             }
-            mediaStore.getContent(result.first).shouldNotBeNull().size shouldBeGreaterThan 24
-            mediaStore.getUploadCache(result.first) shouldBe UploadCache(result.first, null, PNG.toString())
+            mediaStore.getMedia(result.first).shouldNotBeNull().count() shouldBeGreaterThan 24
+            mediaCacheMappingStore.getMediaCacheMapping(result.first) shouldBe MediaCacheMapping(
+                result.first,
+                null,
+                2790,
+                PNG.toString()
+            )
         }
         should("return null, when no thumbnail could be generated") {
-            cut.prepareUploadThumbnail("test".toByteArray(), PNG) shouldBe null
+            cut.prepareUploadThumbnail("test".toByteArray().toByteFlow(), PNG) shouldBe null
         }
     }
     context(MediaServiceImpl::prepareUploadEncryptedMedia.name) {
         should("encrypt, save, and return local cache uri from media") {
-            val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray())
+            val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray().toByteFlow())
             assertSoftly(result) {
                 url shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
@@ -167,13 +196,18 @@ class MediaServiceTest : ShouldSpec({
                 initialisationVector shouldNot beEmpty()
                 hashes["sha256"] shouldNot beEmpty()
             }
-            mediaStore.getContent(result.url) shouldNotBe "test".encodeToByteArray()
-            mediaStore.getUploadCache(result.url) shouldBe UploadCache(result.url, null, OctetStream.toString())
+            mediaStore.getMedia(result.url)?.toByteArray() shouldNotBe "test".encodeToByteArray()
+            mediaCacheMappingStore.getMediaCacheMapping(result.url) shouldBe MediaCacheMapping(
+                result.url,
+                null,
+                4,
+                OctetStream.toString()
+            )
         }
     }
     context(MediaServiceImpl::prepareUploadEncryptedThumbnail.name) {
         should("encrypt, save, and return local cache uri from thumbnail") {
-            val result = cut.prepareUploadEncryptedThumbnail(miniPng, PNG)
+            val result = cut.prepareUploadEncryptedThumbnail(miniPng.toByteFlow(), PNG)
             assertSoftly(result.shouldNotBeNull().first) {
                 url shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
                 url.length shouldBeGreaterThan 12
@@ -187,15 +221,16 @@ class MediaServiceTest : ShouldSpec({
                 size.shouldNotBeNull() shouldBeGreaterThan 1000
                 mimeType shouldBe "image/png"
             }
-            mediaStore.getContent(result.first.url).shouldNotBeNull().size shouldBeGreaterThan 24
-            mediaStore.getUploadCache(result.first.url) shouldBe UploadCache(
+            mediaStore.getMedia(result.first.url).shouldNotBeNull().count() shouldBeGreaterThan 24
+            mediaCacheMappingStore.getMediaCacheMapping(result.first.url) shouldBe MediaCacheMapping(
                 result.first.url,
                 null,
+                2790,
                 OctetStream.toString()
             )
         }
         should("return null, when no encrypted thumbnail could be generated") {
-            cut.prepareUploadEncryptedThumbnail("test".toByteArray(), PNG) shouldBe null
+            cut.prepareUploadEncryptedThumbnail("test".toByteArray().toByteFlow(), PNG) shouldBe null
         }
     }
     context(MediaServiceImpl::uploadMedia.name) {
@@ -209,15 +244,42 @@ class MediaServiceTest : ShouldSpec({
                     )
                 }
             }
-            mediaStore.addContent(cacheUri, "test".encodeToByteArray())
-            mediaStore.updateUploadCache(cacheUri) { UploadCache(cacheUri, null, Plain.toString()) }
+            mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteFlow())
+            mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
+                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+            }
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
-            mediaStore.getUploadCache(cacheUri) shouldBe UploadCache(cacheUri, mxcUri, Plain.toString())
-            // we cannot check this, because the value will stay in cache
-            // mediaStore.getContent(cacheUri) shouldBe null
-            mediaStore.getContent(mxcUri) shouldBe "test".encodeToByteArray()
+            mediaCacheMappingStore.getMediaCacheMapping(cacheUri) shouldBe MediaCacheMapping(
+                cacheUri,
+                mxcUri,
+                null,
+                Plain.toString()
+            )
+            mediaStore.getMedia(cacheUri) shouldBe null
+            mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe "test".encodeToByteArray()
+        }
+        should("upload and remove from cache after that") {
+            apiConfig.endpoints {
+                addHandler {
+                    it.url.encodedPath shouldBe "/_matrix/media/v3/upload"
+                    respond(
+                        """{"content_uri":"$mxcUri"}""", HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType to listOf(ContentType.Application.Json.toString()))
+                    )
+                }
+            }
+            mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteFlow())
+            mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
+                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+            }
+
+            cut.uploadMedia(cacheUri, keepMediaInCache = false).getOrThrow() shouldBe mxcUri
+
+            mediaCacheMappingStore.getMediaCacheMapping(cacheUri) shouldBe null
+            mediaStore.getMedia(cacheUri) shouldBe null
+            mediaStore.getMedia(mxcUri) shouldBe null
         }
         should("not upload twice") {
             var calledCount = 0
@@ -230,8 +292,10 @@ class MediaServiceTest : ShouldSpec({
                     )
                 }
             }
-            mediaStore.addContent(cacheUri, "test".encodeToByteArray())
-            mediaStore.updateUploadCache(cacheUri) { UploadCache(cacheUri, null, Plain.toString()) }
+            mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteFlow())
+            mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
+                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+            }
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri

@@ -82,7 +82,9 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
 
 fun KotlinMultiplatformExtension.addDefaultJsTargetWhenEnabled(
     rootDir: File,
-    testEnabled: Boolean = true
+    testEnabled: Boolean = true,
+    browserEnabled: Boolean = true,
+    nodeJsEnabled: Boolean = true,
 ): KotlinJsTargetDsl? =
     addTargetWhenEnabled(KotlinPlatformType.js) {
         js(IR) {

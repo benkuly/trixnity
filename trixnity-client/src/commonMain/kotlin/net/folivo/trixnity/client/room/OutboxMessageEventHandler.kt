@@ -81,7 +81,11 @@ class OutboxMessageEventHandler(
                                             "EventContent class ${content::class.simpleName}} is not supported by any media uploader."
                                         )
                                 val uploadedContent = uploader(content) { cacheUri ->
-                                    mediaService.uploadMedia(cacheUri, outboxMessage.mediaUploadProgress).getOrThrow()
+                                    mediaService.uploadMedia(
+                                        cacheUri,
+                                        outboxMessage.keepMediaInCache,
+                                        outboxMessage.mediaUploadProgress
+                                    ).getOrThrow()
                                 }
                                 possiblyEncryptEvent(uploadedContent, roomId).getOrThrow()
                             }

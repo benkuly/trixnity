@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store.repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.KeyVerificationState
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -80,7 +79,9 @@ class InMemoryTimelineEventRepository : TimelineEventRepository,
 class InMemoryTimelineEventRelationRepository : TimelineEventRelationRepository,
     InMemoryTwoDimensionsStoreRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>()
 
-class InMemoryUploadMediaRepository : UploadMediaRepository, InMemoryMinimalStoreRepository<String, UploadCache>()
+class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,
+    InMemoryMinimalStoreRepository<String, MediaCacheMapping>()
+
 class InMemoryGlobalAccountDataRepository : GlobalAccountDataRepository,
     InMemoryTwoDimensionsStoreRepository<String, String, Event.GlobalAccountDataEvent<*>>()
 
@@ -105,16 +106,6 @@ class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<Ro
 class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,
     InMemoryMinimalStoreRepository<String, RoomOutboxMessage<*>>() {
     override suspend fun getAll(): List<RoomOutboxMessage<*>> = content.value.values.toList()
-}
-
-class InMemoryMediaRepository : MediaRepository, InMemoryMinimalStoreRepository<String, ByteArray>() {
-    override suspend fun changeUri(oldUri: String, newUri: String) {
-        content.update {
-            val value = it[oldUri]
-            if (value != null) (it - oldUri) + (newUri to value)
-            else it
-        }
-    }
 }
 
 class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {

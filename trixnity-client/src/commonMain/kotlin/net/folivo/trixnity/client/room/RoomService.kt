@@ -157,7 +157,11 @@ interface RoomService {
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?>
 
-    suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit)
+    suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean = true,
+        builder: suspend MessageBuilder.() -> Unit
+    )
 
     suspend fun abortSendMessage(transactionId: String)
 
@@ -427,7 +431,11 @@ class RoomServiceImpl(
     ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
 
 
-    override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+    override suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit
+    ) {
         val isEncryptedRoom = roomStore.get(roomId).first()?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, mediaService).build(builder)
         requireNotNull(content)
@@ -438,6 +446,7 @@ class RoomServiceImpl(
                 roomId = roomId,
                 content = content,
                 sentAt = null,
+                keepMediaInCache = keepMediaInCache,
                 mediaUploadProgress = MutableStateFlow(null)
             )
         }

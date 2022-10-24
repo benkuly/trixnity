@@ -13,6 +13,7 @@ object Versions {
     const val koin = "3.2.2" // https://insert-koin.io/docs/setup/v3.2
     const val korlibs = "3.2.0" // https://github.com/korlibs/korge/releases
     const val mocKmp = "1.10.0" // https://github.com/Kodein-Framework/MocKMP/releases
+    const val okio = "3.2.0" // https://square.github.io/okio/changelog/
     const val uuid = "0.5.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.5.1" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.5" // https://github.com/testcontainers/testcontainers-java/releases

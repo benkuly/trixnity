@@ -11,10 +11,11 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
-import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -107,6 +108,7 @@ class KeyBackupIT {
                     identifier = IdentifierType.User("user1"),
                     passwordOrToken = "user$1passw0rd",
                     repositoriesModule = repositoriesModule,
+                    mediaStore = InMemoryMediaStore(),
                     scope = scope,
                 ).getOrThrow()
                 client3.startSync()
