@@ -32,6 +32,7 @@ import net.folivo.trixnity.core.toByteFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
+import kotlin.test.assertNotNull
 
 class MediaServiceTest : ShouldSpec({
     timeout = 60_000
@@ -175,12 +176,13 @@ class MediaServiceTest : ShouldSpec({
                 mimeType shouldBe "image/png"
             }
             mediaStore.getMedia(result.first).shouldNotBeNull().count() shouldBeGreaterThan 24
-            mediaCacheMappingStore.getMediaCacheMapping(result.first) shouldBe MediaCacheMapping(
-                result.first,
-                null,
-                2790,
-                PNG.toString()
-            )
+            assertSoftly(mediaCacheMappingStore.getMediaCacheMapping(result.first)) {
+                assertNotNull(this)
+                this.cacheUri shouldBe result.first
+                this.mxcUri shouldBe null
+                this.size.shouldNotBeNull() shouldBeGreaterThan 0
+                this.contentType shouldBe PNG.toString()
+            }
         }
         should("return null, when no thumbnail could be generated") {
             cut.prepareUploadThumbnail("test".toByteArray().toByteFlow(), PNG) shouldBe null
@@ -222,12 +224,13 @@ class MediaServiceTest : ShouldSpec({
                 mimeType shouldBe "image/png"
             }
             mediaStore.getMedia(result.first.url).shouldNotBeNull().count() shouldBeGreaterThan 24
-            mediaCacheMappingStore.getMediaCacheMapping(result.first.url) shouldBe MediaCacheMapping(
-                result.first.url,
-                null,
-                2790,
-                OctetStream.toString()
-            )
+            assertSoftly(mediaCacheMappingStore.getMediaCacheMapping(result.first.url)) {
+                assertNotNull(this)
+                this.cacheUri shouldBe result.first.url
+                this.mxcUri shouldBe null
+                this.size.shouldNotBeNull() shouldBeGreaterThan 0
+                this.contentType shouldBe OctetStream.toString()
+            }
         }
         should("return null, when no encrypted thumbnail could be generated") {
             cut.prepareUploadEncryptedThumbnail("test".toByteArray().toByteFlow(), PNG) shouldBe null
