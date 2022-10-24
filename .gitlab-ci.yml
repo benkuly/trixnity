@@ -75,7 +75,7 @@ build-mac:
 
 build-linux:
   stage: build
-  tags: [ "gitlab-org-docker" ]
+  tags: [ "trixnity-linux-internal" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
