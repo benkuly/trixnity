@@ -75,7 +75,7 @@ build-mac:
 
 build-linux:
   stage: build
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
