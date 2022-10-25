@@ -93,6 +93,16 @@ class MatrixAccessTokenAuthTest {
     }
 
     @Test
+    fun shouldRespondWitInternalServerErrorWhenAuthenticationFunctionHasError() = testApplication {
+        testEndpoint {
+            AccessTokenAuthenticationFunctionResult(null, AuthenticationFailedCause.Error("doppelwumms"))
+        }
+        val result = client.get("/test?access_token=wrong")
+        result.status shouldBe HttpStatusCode.InternalServerError
+        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN","error":"doppelwumms"}"""
+    }
+
+    @Test
     fun shouldAllowRetrievePrincipal() = testApplication {
         application {
             install(ContentNegotiation) {

@@ -44,8 +44,8 @@ class MatrixAccessTokenAuth internal constructor(
                     )
 
                     is Error -> challengeCall.respond<ErrorResponse>(
-                        HttpStatusCode.Unauthorized,
-                        ErrorResponse.UnknownToken(cause.message)
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse.Unknown(cause.message)
                     )
                 }
                 challenge.complete()
