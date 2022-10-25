@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
+import net.folivo.trixnity.core.ByteFlow
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.FileInfo
@@ -9,8 +10,9 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.File
 @TrixnityDsl
 suspend fun MessageBuilder.file(
     body: String,
-    file: ByteArray,
+    file: ByteFlow,
     type: ContentType,
+    size: Int? = null,
     name: String? = null
 ) {
     val format: FileInfo?
@@ -23,7 +25,7 @@ suspend fun MessageBuilder.file(
         encryptedFile = mediaService.prepareUploadEncryptedMedia(file)
         format = FileInfo(
             mimeType = type.toString(),
-            size = file.size,
+            size = size,
             thumbnailUrl = null,
             thumbnailFile = thumbnailFile,
             thumbnailInfo = thumbnailInfo
@@ -34,7 +36,7 @@ suspend fun MessageBuilder.file(
         val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(file, type) ?: Pair(null, null)
         format = FileInfo(
             mimeType = type.toString(),
-            size = file.size,
+            size = size,
             thumbnailUrl = thumbnailUrl,
             thumbnailFile = null,
             thumbnailInfo = thumbnailInfo

@@ -1,16 +1,16 @@
 package net.folivo.trixnity.crypto
 
+import net.folivo.trixnity.core.ByteFlow
+
 
 class AesDecryptionException(reason: Exception) : Exception(reason)
 
-expect suspend fun encryptAes256Ctr(
-    content: ByteArray,
+expect fun ByteFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteArray
+): ByteFlow
 
-expect suspend fun decryptAes256Ctr(
-    encryptedContent: ByteArray,
+expect fun ByteFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteArray
+): ByteFlow

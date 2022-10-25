@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
@@ -108,12 +109,14 @@ suspend fun MatrixClient.Companion.login(
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
+    mediaStore: MediaStore,
     scope: CoroutineScope,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     MatrixClient.Companion.loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
         scope = scope,
         getLoginInfo = { api ->
             api.authentication.login(
@@ -140,6 +143,7 @@ suspend fun MatrixClient.Companion.login(
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
     repositoriesModule: Module,
+    mediaStore: MediaStore,
     scope: CoroutineScope,
     getLoginInfo: suspend (MatrixClientServerApiClientImpl) -> Result<LoginInfo>,
     configuration: MatrixClientConfiguration.() -> Unit = {},
@@ -149,6 +153,7 @@ suspend fun MatrixClient.Companion.loginWith(
         modules(module {
             single { scope }
             single { config }
+            single { mediaStore }
         })
         modules(repositoriesModule)
         modules(config.modules)
@@ -212,6 +217,7 @@ suspend fun MatrixClient.Companion.loginWith(
         rootStore = rootStore,
         accountStore = accountStore,
         mediaStore = di.get(),
+        mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
         scope = scope,
     )
@@ -219,6 +225,7 @@ suspend fun MatrixClient.Companion.loginWith(
 
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
+    mediaStore: MediaStore,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
     scope: CoroutineScope,
     configuration: MatrixClientConfiguration.() -> Unit = {}
@@ -228,6 +235,7 @@ suspend fun MatrixClient.Companion.fromStore(
         modules(module {
             single { scope }
             single { config }
+            single { mediaStore }
         })
         modules(repositoriesModule)
         modules(config.modules)
@@ -281,6 +289,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 rootStore = rootStore,
                 accountStore = accountStore,
                 mediaStore = di.get(),
+                mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
                 scope = scope,
             )
@@ -312,6 +321,7 @@ class MatrixClientImpl internal constructor(
     private val rootStore: RootStore,
     private val accountStore: AccountStore,
     private val mediaStore: MediaStore,
+    private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
     private val scope: CoroutineScope,
 ) : MatrixClient {
@@ -361,6 +371,7 @@ class MatrixClientImpl internal constructor(
 
     override suspend fun clearMediaCache(): Result<Unit> = kotlin.runCatching {
         stopSync(true)
+        mediaCacheMappingStore.clearCache()
         mediaStore.clearCache()
         startSync()
     }

@@ -15,6 +15,7 @@ data class RoomOutboxMessage<T : MessageEventContent>(
     val content: T,
     val sentAt: Instant? = null,
     val retryCount: Int = 0,
+    val keepMediaInCache: Boolean = true,
     @Transient
     val mediaUploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow(null)
 ) {

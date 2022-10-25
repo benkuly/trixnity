@@ -82,30 +82,34 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
 
 fun KotlinMultiplatformExtension.addDefaultJsTargetWhenEnabled(
     rootDir: File,
-    testEnabled: Boolean = true
+    testEnabled: Boolean = true,
+    browserEnabled: Boolean = true,
+    nodeJsEnabled: Boolean = true,
 ): KotlinJsTargetDsl? =
     addTargetWhenEnabled(KotlinPlatformType.js) {
         js(IR) {
-            browser {
-                commonWebpackConfig {
-                    configDirectory = rootDir.resolve("webpack.config.d")
-                }
-                testTask {
-                    useKarma {
-                        useFirefoxHeadless()
-                        useConfigDirectory(rootDir.resolve("karma.config.d"))
+            if (browserEnabled)
+                browser {
+                    commonWebpackConfig {
+                        configDirectory = rootDir.resolve("webpack.config.d")
                     }
-                    enabled = testEnabled
-                }
-            }
-            nodejs {
-                testTask {
-                    useMocha {
-                        timeout = "30000"
+                    testTask {
+                        useKarma {
+                            useFirefoxHeadless()
+                            useConfigDirectory(rootDir.resolve("karma.config.d"))
+                        }
+                        enabled = testEnabled
                     }
-                    enabled = testEnabled
                 }
-            }
+            if (nodeJsEnabled)
+                nodejs {
+                    testTask {
+                        useMocha {
+                            timeout = "30000"
+                        }
+                        enabled = testEnabled
+                    }
+                }
             binaries.executable()
         }
     }

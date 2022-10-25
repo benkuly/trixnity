@@ -19,7 +19,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation(project(":trixnity-client:trixnity-client-store-exposed"))
+                implementation(project(":trixnity-client:trixnity-client-repository-exposed"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
                 implementation("io.kotest:kotest-common:${Versions.kotest}")

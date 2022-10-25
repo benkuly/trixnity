@@ -6,9 +6,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -47,6 +48,7 @@ class OutboxIT {
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule,
+            mediaStore = InMemoryMediaStore(),
             scope = scope,
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()

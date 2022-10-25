@@ -10,11 +10,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -65,12 +66,14 @@ class TimelineEventIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
+            mediaStore = InMemoryMediaStore(),
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
+            mediaStore = InMemoryMediaStore(),
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()

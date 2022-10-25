@@ -115,7 +115,11 @@ class RoomServiceMock : RoomService {
         TODO("Not yet implemented")
     }
 
-    override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+    override suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit
+    ) {
         throw NotImplementedError()
     }
 

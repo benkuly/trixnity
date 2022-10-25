@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.repository.*
@@ -78,6 +79,7 @@ class MatrixClientTest : ShouldSpec({
                 identifier = IdentifierType.User(userId.full),
                 passwordOrToken = "p4ssw0rd!",
                 repositoriesModule = repositoriesModule,
+                mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = {
                         HttpClient(MockEngine) {
@@ -183,6 +185,7 @@ class MatrixClientTest : ShouldSpec({
             }
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
+                mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = {
                         HttpClient(MockEngine) {
@@ -338,6 +341,7 @@ class MatrixClientTest : ShouldSpec({
             }
             cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
+                mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = {
                         HttpClient(MockEngine) {
@@ -398,6 +402,7 @@ class MatrixClientTest : ShouldSpec({
             var logoutCalled = false
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
+                mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = mockEngineFactory {
                         matrixJsonEndpoint(json, mappings, Logout()) {
@@ -421,6 +426,7 @@ class MatrixClientTest : ShouldSpec({
             var logoutCalled = false
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
+                mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = mockEngineFactory {
                         matrixJsonEndpoint(json, mappings, Logout()) {
