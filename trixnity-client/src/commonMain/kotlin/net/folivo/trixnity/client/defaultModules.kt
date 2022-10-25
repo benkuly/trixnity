@@ -7,7 +7,6 @@ import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.media.createMediaModule
 import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.notification.createNotificationModule
-import net.folivo.trixnity.client.room.LastRelevantEventFilter
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.createRoomModule
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
@@ -16,7 +15,6 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.user.createUserModule
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.client.verification.createVerificationModule
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -34,15 +32,10 @@ fun createDefaultMatrixJsonModule() = module {
     single { createMatrixEventJson(get()) }
 }
 
-fun createDefaultLastRelevantEventFilter() = module {
-    single<LastRelevantEventFilter> { { it is Event.MessageEvent<*> } }
-}
-
 fun createDefaultModules() = listOf(
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
-    createDefaultLastRelevantEventFilter(),
     createStoreModule(),
     createRoomModule(),
     createUserModule(),

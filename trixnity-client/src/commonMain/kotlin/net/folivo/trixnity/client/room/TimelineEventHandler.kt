@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
@@ -37,7 +38,7 @@ class TimelineEventHandlerImpl(
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
-    private val lastRelevantEventFilter: LastRelevantEventFilter,
+    private val config: MatrixClientConfiguration,
     private val timelineMutex: TimelineMutex,
 ) : EventHandler, TimelineEventHandler {
     companion object {
@@ -279,7 +280,7 @@ class TimelineEventHandlerImpl(
     }
 
     internal suspend fun setLastRelevantEvent(event: Event.RoomEvent<*>) {
-        if (lastRelevantEventFilter(event))
+        if (config.lastRelevantEventFilter(event))
             roomStore.update(event.roomId, withTransaction = false) { oldRoom ->
                 oldRoom?.copy(lastRelevantEventId = event.id)
                     ?: Room(roomId = event.roomId, lastRelevantEventId = event.id)

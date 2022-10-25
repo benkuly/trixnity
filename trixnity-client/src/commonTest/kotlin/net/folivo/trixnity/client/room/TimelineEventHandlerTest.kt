@@ -57,7 +57,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             UserInfo(alice, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             roomStore, roomTimelineStore, roomOutboxMessageStore,
-            { it is MessageEvent },
+            MatrixClientConfiguration(),
             TimelineMutex(NoopRepositoryTransactionManager)
         )
     }
