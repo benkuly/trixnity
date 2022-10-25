@@ -14,22 +14,21 @@ fun Route.matrixApplicationServiceApiServerRoutes(
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
 ) {
     matrixEndpoint<AddTransaction, AddTransaction.Request, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.addTransaction(it.endpoint.txnId, it.requestBody.events)
+        applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
     }
     matrixEndpoint<AddTransactionLegacy, AddTransactionLegacy.Request, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.addTransaction(it.endpoint.txnId, it.requestBody.events)
+        applicationServiceApiServerHandler.addTransaction(endpoint.txnId, requestBody.events)
     }
     matrixEndpoint<HasUser, Unit, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.hasUser(it.endpoint.userId)
+        applicationServiceApiServerHandler.hasUser(endpoint.userId)
     }
     matrixEndpoint<HasUserLegacy, Unit, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.hasUser(it.endpoint.userId)
+        applicationServiceApiServerHandler.hasUser(endpoint.userId)
     }
     matrixEndpoint<HasRoom, Unit, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.hasRoomAlias(it.endpoint.roomAlias)
+        applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
     }
     matrixEndpoint<HasRoomLegacy, Unit, Unit>(json, eventContentSerializerMappings) {
-        applicationServiceApiServerHandler.hasRoomAlias(it.endpoint.roomAlias)
-
+        applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
     }
 }

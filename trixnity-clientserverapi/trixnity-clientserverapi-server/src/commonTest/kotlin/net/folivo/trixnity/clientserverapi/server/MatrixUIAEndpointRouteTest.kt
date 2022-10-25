@@ -61,10 +61,10 @@ class MatrixUIAEndpointRouteTest {
         application {
             matrixApiServer(json) {
                 matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                    it.endpoint.pathParam shouldBe "unicorn"
-                    it.endpoint.requestParam shouldBe "2"
-                    it.requestBody.request.includeDino shouldBe true
-                    it.requestBody.authentication shouldBe AuthenticationRequestWithSession(
+                    endpoint.pathParam shouldBe "unicorn"
+                    endpoint.requestParam shouldBe "2"
+                    requestBody.request.includeDino shouldBe true
+                    requestBody.authentication shouldBe AuthenticationRequestWithSession(
                         AuthenticationRequest.Password(
                             IdentifierType.User("user"),
                             "password"
@@ -103,10 +103,10 @@ class MatrixUIAEndpointRouteTest {
         application {
             matrixApiServer(json) {
                 matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                    it.endpoint.pathParam shouldBe "unicorn"
-                    it.endpoint.requestParam shouldBe "2"
-                    it.requestBody.request.includeDino shouldBe true
-                    it.requestBody.authentication shouldBe null
+                    endpoint.pathParam shouldBe "unicorn"
+                    endpoint.requestParam shouldBe "2"
+                    requestBody.request.includeDino shouldBe true
+                    requestBody.authentication shouldBe null
                     ResponseWithUIA.Step(
                         UIAState(
                             flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
@@ -130,10 +130,10 @@ class MatrixUIAEndpointRouteTest {
         application {
             matrixApiServer(json) {
                 matrixUIAEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, mapping) {
-                    it.endpoint.pathParam shouldBe "unicorn"
-                    it.endpoint.requestParam shouldBe "2"
-                    it.requestBody.request.includeDino shouldBe true
-                    it.requestBody.authentication shouldBe null
+                    endpoint.pathParam shouldBe "unicorn"
+                    endpoint.requestParam shouldBe "2"
+                    requestBody.request.includeDino shouldBe true
+                    requestBody.authentication shouldBe null
                     ResponseWithUIA.Error(
                         UIAState(
                             flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
