@@ -43,7 +43,7 @@ open class StateFlowCache<K, V>(
         key: K,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
-    ): Flow<V?> = channelFlow {
+    ): Flow<V?> = flow {
         val result = internalCache.updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
 
@@ -66,7 +66,7 @@ open class StateFlowCache<K, V>(
         }[key]
         requireNotNull(result) { "We are sure, that it contains a value!" }
         result.removerJob.start()
-        result.value.collect { send(it) }
+        emitAll(result.value)
     }
 
     suspend fun writeWithCache(
