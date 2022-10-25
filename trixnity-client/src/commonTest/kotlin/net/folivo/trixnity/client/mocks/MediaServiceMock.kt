@@ -12,16 +12,16 @@ import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 class MediaServiceMock : MediaService {
     override suspend fun getMedia(
         uri: String,
-        saveToCache: Boolean,
-        progress: MutableStateFlow<FileTransferProgress?>?
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> {
         throw NotImplementedError()
     }
 
     override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
-        saveToCache: Boolean,
-        progress: MutableStateFlow<FileTransferProgress?>?
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> {
         throw NotImplementedError()
     }
@@ -31,8 +31,8 @@ class MediaServiceMock : MediaService {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
-        saveToCache: Boolean,
-        progress: MutableStateFlow<FileTransferProgress?>?
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> {
         throw NotImplementedError()
     }
@@ -67,8 +67,8 @@ class MediaServiceMock : MediaService {
     val uploadMediaCalled = MutableStateFlow<String?>(null)
     override suspend fun uploadMedia(
         cacheUri: String,
-        keepMediaInCache: Boolean,
-        progress: MutableStateFlow<FileTransferProgress?>?
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        keepMediaInCache: Boolean
     ): Result<String> {
         uploadMediaCalled.value = cacheUri
         return returnUploadMedia

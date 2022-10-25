@@ -35,14 +35,14 @@ private val log = KotlinLogging.logger {}
 interface MediaService {
     suspend fun getMedia(
         uri: String,
-        saveToCache: Boolean = true,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
+        saveToCache: Boolean = true,
     ): Result<ByteFlow>
 
     suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
-        saveToCache: Boolean = true,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
+        saveToCache: Boolean = true,
     ): Result<ByteFlow>
 
     suspend fun getThumbnail(
@@ -50,8 +50,8 @@ interface MediaService {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod = CROP,
-        saveToCache: Boolean = true,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
+        saveToCache: Boolean = true,
     ): Result<ByteFlow>
 
     suspend fun prepareUploadMedia(content: ByteFlow, contentType: ContentType?): String
@@ -67,8 +67,8 @@ interface MediaService {
 
     suspend fun uploadMedia(
         cacheUri: String,
-        keepMediaInCache: Boolean = true,
-        progress: MutableStateFlow<FileTransferProgress?>? = null
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        keepMediaInCache: Boolean = true
     ): Result<String>
 }
 
@@ -130,15 +130,15 @@ class MediaServiceImpl(
 
     override suspend fun getMedia(
         uri: String,
-        saveToCache: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> =
         getMedia(uri, saveToCache, null, progress)
 
     override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
-        saveToCache: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> = kotlin.runCatching {
         val originalHash = encryptedFile.hashes["sha256"]
             ?: throw DecryptionException.ValidationFailed("missing hash for media")
@@ -156,8 +156,8 @@ class MediaServiceImpl(
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
-        saveToCache: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
     ): Result<ByteFlow> = kotlin.runCatching {
         val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         mediaStore.getMedia(thumbnailUrl)
@@ -236,8 +236,8 @@ class MediaServiceImpl(
 
     override suspend fun uploadMedia(
         cacheUri: String,
-        keepMediaInCache: Boolean,
         progress: MutableStateFlow<FileTransferProgress?>?,
+        keepMediaInCache: Boolean
     ): Result<String> {
         if (!cacheUri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX)) throw IllegalArgumentException("$cacheUri is no cacheUri")
 

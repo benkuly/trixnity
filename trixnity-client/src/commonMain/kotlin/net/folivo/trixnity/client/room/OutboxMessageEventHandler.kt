@@ -83,8 +83,8 @@ class OutboxMessageEventHandler(
                                 val uploadedContent = uploader(content) { cacheUri ->
                                     mediaService.uploadMedia(
                                         cacheUri,
+                                        outboxMessage.mediaUploadProgress,
                                         outboxMessage.keepMediaInCache,
-                                        outboxMessage.mediaUploadProgress
                                     ).getOrThrow()
                                 }
                                 possiblyEncryptEvent(uploadedContent, roomId).getOrThrow()
