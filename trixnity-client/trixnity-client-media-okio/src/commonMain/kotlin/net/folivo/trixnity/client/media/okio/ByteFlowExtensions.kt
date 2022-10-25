@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.media.okio
 
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.core.ByteFlow
@@ -35,7 +36,7 @@ suspend fun FileSystem.readByteFlow(
         if (exists(path))
             flow {
                 source(path).buffer().use { source ->
-                    source.readByteFlow()
+                    emitAll(source.readByteFlow())
                 }
             }
         else null
