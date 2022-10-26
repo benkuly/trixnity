@@ -11,19 +11,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.client.store.RoomUserStore
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.subscribe
@@ -35,9 +38,11 @@ class UserServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
+    val me = UserId("me", "server")
     val roomId = simpleRoom.roomId
     lateinit var roomUserStore: RoomUserStore
     lateinit var roomStore: RoomStore
+    lateinit var roomStateStore: RoomStateStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var scope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
@@ -48,6 +53,24 @@ class UserServiceTest : ShouldSpec({
 
     lateinit var cut: UserServiceImpl
 
+    fun getCreateEvent(creator: UserId) = StateEvent(
+        CreateEventContent(creator = creator),
+        EventId("\$event"),
+        creator,
+        roomId,
+        1234,
+        stateKey = ""
+    )
+
+    fun getPowerLevelsEvent(powerLevelsEventContent: PowerLevelsEventContent) = StateEvent(
+        powerLevelsEventContent,
+        EventId("\$event"),
+        me,
+        roomId,
+        1234,
+        stateKey = ""
+    )
+
     beforeTest {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
@@ -57,9 +80,20 @@ class UserServiceTest : ShouldSpec({
         roomUserStore = getInMemoryRoomUserStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         roomStore = getInMemoryRoomStore(scope)
+        roomStateStore = getInMemoryRoomStateStore(scope)
         cut = UserServiceImpl(
-            roomUserStore, roomStore, globalAccountDataStore, api, PresenceEventHandler(api),
-            CurrentSyncState(currentSyncState), scope
+            roomUserStore,
+            roomStore,
+            roomStateStore,
+            globalAccountDataStore,
+            api,
+            PresenceEventHandler(api),
+            CurrentSyncState(currentSyncState),
+            userInfo = UserInfo(
+                me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
+                Key.Curve25519Key(value = "")
+            ),
+            scope = scope
         )
     }
 
@@ -109,6 +143,847 @@ class UserServiceTest : ShouldSpec({
             cut.loadMembers(roomId)
             roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
+        }
+    }
+
+    context(UserServiceImpl::getPowerLevel.name) {
+        context("the room contains no power_levels event") {
+            context("I am the creator of the room") {
+                should("return 100") {
+                    val createEvent = getCreateEvent(me)
+                    roomStateStore.update(createEvent)
+
+                    cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 100
+                }
+            }
+            context("I am not the creator of the room") {
+                should("return 0") {
+                    val createEvent = getCreateEvent(alice)
+                    roomStateStore.update(createEvent)
+
+                    cut.getPowerLevel(me, roomId).first() shouldBe 0
+
+                }
+            }
+        }
+        context("the room contains a power_level event") {
+            beforeTest {
+                val createEvent = getCreateEvent(me)
+                roomStateStore.update(createEvent)
+            }
+            should("return the value in the user_id list when I am in the user_id list") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 60,
+                            alice to 50
+                        )
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 60
+            }
+            should("return the usersDefault value when I am not in the user_id list") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(alice to 50),
+                        usersDefault = 40
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 40
+            }
+        }
+    }
+
+    context(UserServiceImpl::canKickUser.name) {
+        context("my power level > kick level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 56
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 57
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level == kick level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 55
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 56
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level < kick level") {
+            should("return false when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 55
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+    }
+
+    context(UserServiceImpl::canBanUser.name) {
+        context("my power level > ban level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 56
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 57
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level == ban level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 55
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 56
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level < ban level") {
+            should("return false when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 55
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+    }
+
+    context(UserServiceImpl::canUnbanUser.name) {
+        context("my level > kick level") {
+            val kickLevel = 60
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+        }
+        context("my level == kick level") {
+            val kickLevel = 61
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+
+            }
+        }
+        context("my level < kick level") {
+            val kickLevel = 62
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+        }
+    }
+
+    context(UserServiceImpl::canInvite.name) {
+        should("return true when my power level > invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe true
+        }
+        should("return true when my power level == invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe true
+        }
+        should("return false when my power level < invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 54,
+                        alice to 53
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe false
+        }
+    }
+
+    context(UserServiceImpl::canInviteUser.name) {
+        context("User I want to invite is banned") {
+            beforeTest {
+                val memberEvent = StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId(""),
+                    alice,
+                    roomId,
+                    0L,
+                    stateKey = ""
+                )
+                val aliceRoomUser = RoomUser(roomId, alice, "Alice", memberEvent)
+                roomUserStore.update(alice, roomId) { aliceRoomUser }
+            }
+            should("return false when my power level > invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my power level == invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my power level < invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("User I want to invite is not banned") {
+            beforeTest {
+                val memberEvent = StateEvent(
+                    MemberEventContent(membership = LEAVE),
+                    EventId(""),
+                    alice,
+                    roomId,
+                    0L,
+                    stateKey = ""
+                )
+                val aliceRoomUser = RoomUser(roomId, alice, "Alice", memberEvent)
+                roomUserStore.update(alice, roomId) { aliceRoomUser }
+            }
+            should("return true when my power level > invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe true
+            }
+            should("return true when my power level == invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my power level < invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
         }
     }
 })
