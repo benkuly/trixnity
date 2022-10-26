@@ -26,7 +26,8 @@ class OkioMediaStore(
         init()
     }
 
-    private fun Path.resolveUrl(url: String) = resolve(url.encodeToByteArray().toByteString().base64())
+    private fun Path.resolveUrl(url: String) =
+        resolve(url.encodeToByteArray().toByteString().sha256().hex())
 
     override suspend fun addMedia(url: String, content: ByteFlow) =
         fileSystem.writeByteFlow(basePath.resolveUrl(url), content, coroutineContext)
