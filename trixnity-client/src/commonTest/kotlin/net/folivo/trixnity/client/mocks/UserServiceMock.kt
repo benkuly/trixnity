@@ -29,6 +29,42 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
+    override fun canKickUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canBanUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canUnbanUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canInviteUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canInvite(roomId: RoomId): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun getPowerLevel(userId: UserId, roomId: RoomId): Flow<Int> {
+        throw NotImplementedError()
+    }
+
     override fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
