@@ -53,13 +53,17 @@ class OkioMediaStoreTest {
     fun shouldAddMedia() = runTest {
         fileSystem.createDirectories(basePath)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteFlow())
-        fileSystem.read(basePath.resolve("dXJsMQ==")) { readUtf8() } shouldBe "hi"
+        fileSystem.read(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) { readUtf8() } shouldBe "hi"
     }
 
     @Test
     fun shouldGetMedia() = runTest {
         fileSystem.createDirectories(basePath)
-        fileSystem.write(basePath.resolve("dXJsMQ==")) { writeUtf8("hi") }
+        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+            writeUtf8(
+                "hi"
+            )
+        }
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe "hi"
     }
 
@@ -72,7 +76,11 @@ class OkioMediaStoreTest {
     @Test
     fun shouldDeleteMedia() = runTest {
         fileSystem.createDirectories(basePath)
-        fileSystem.write(basePath.resolve("dXJsMQ==")) { writeUtf8("hi") }
+        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+            writeUtf8(
+                "hi"
+            )
+        }
         cut.deleteMedia("url1")
         fileSystem.listOrNull(basePath)?.size shouldBe 0
     }
@@ -87,8 +95,12 @@ class OkioMediaStoreTest {
     @Test
     fun shouldChangeMediaUrl() = runTest {
         fileSystem.createDirectories(basePath)
-        fileSystem.write(basePath.resolve("dXJsMQ==")) { writeUtf8("hi") }
+        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+            writeUtf8(
+                "hi"
+            )
+        }
         cut.changeMediaUrl("url1", "url2")
-        fileSystem.read(basePath.resolve("dXJsMg==")) { readUtf8() } shouldBe "hi"
+        fileSystem.read(basePath.resolve("86729d96320481bc7f78a334b8c81f216631fec96b0ef19040537c4144384068")) { readUtf8() } shouldBe "hi"
     }
 }
