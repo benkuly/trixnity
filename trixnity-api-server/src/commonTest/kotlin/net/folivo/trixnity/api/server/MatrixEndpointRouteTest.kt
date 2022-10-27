@@ -61,13 +61,11 @@ class MatrixEndpointRouteTest {
     fun shouldHandleRequest() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
-                        it.endpoint.pathParam shouldBe "unicorn"
-                        it.endpoint.requestParam shouldBe "2"
-                        it.requestBody.includeDino shouldBe true
-                        PostPath.Response("dino")
-                    }
+                matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
+                    endpoint.pathParam shouldBe "unicorn"
+                    endpoint.requestParam shouldBe "2"
+                    requestBody.includeDino shouldBe true
+                    PostPath.Response("dino")
                 }
             }
         }
@@ -86,15 +84,13 @@ class MatrixEndpointRouteTest {
         var postHasBeenCalled = false
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixEndpoint<GetPath, Unit, GetPath.Response>(json, contentMappings) {
-                        getHasBeenCalled = true
-                        GetPath.Response("anti-dino")
-                    }
-                    matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
-                        postHasBeenCalled = true
-                        PostPath.Response("dino")
-                    }
+                matrixEndpoint<GetPath, Unit, GetPath.Response>(json, contentMappings) {
+                    getHasBeenCalled = true
+                    GetPath.Response("anti-dino")
+                }
+                matrixEndpoint<PostPath, PostPath.Request, PostPath.Response>(json, contentMappings) {
+                    postHasBeenCalled = true
+                    PostPath.Response("dino")
                 }
             }
         }
@@ -179,14 +175,12 @@ class MatrixEndpointRouteTest {
     fun shouldHandleRequestWithCustomSerializers() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixEndpoint<PostPathWithCustomSerializer, PostPathWithCustomSerializer.Request, PostPathWithCustomSerializer.Response>(
-                        json,
-                        contentMappings
-                    ) {
-                        it.requestBody.includeDino shouldBe false
-                        PostPathWithCustomSerializer.Response("dino")
-                    }
+                matrixEndpoint<PostPathWithCustomSerializer, PostPathWithCustomSerializer.Request, PostPathWithCustomSerializer.Response>(
+                    json,
+                    contentMappings
+                ) {
+                    requestBody.includeDino shouldBe false
+                    PostPathWithCustomSerializer.Response("dino")
                 }
             }
         }
@@ -208,10 +202,8 @@ class MatrixEndpointRouteTest {
     fun shouldHandleUnitRequestAndResponse() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    matrixEndpoint<UnitPath, Unit, Unit>(json, contentMappings) {
-                        it.requestBody shouldBe Unit
-                    }
+                matrixEndpoint<UnitPath, Unit, Unit>(json, contentMappings) {
+                    requestBody shouldBe Unit
                 }
             }
         }

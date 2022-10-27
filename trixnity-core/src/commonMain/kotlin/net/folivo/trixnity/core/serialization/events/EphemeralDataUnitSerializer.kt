@@ -30,7 +30,7 @@ class EphemeralDataUnitSerializer(
         val contentSerializer = ephemeralDataUnitContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(EphemeralDataUnit.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event of type $type" }
-            EphemeralDataUnit.serializer(UnknownEphemeralDataUnitContentSerializer(type))
+            EphemeralDataUnit.serializer(UnknownEphemeralEventContentSerializer(type))
         }
     }
 

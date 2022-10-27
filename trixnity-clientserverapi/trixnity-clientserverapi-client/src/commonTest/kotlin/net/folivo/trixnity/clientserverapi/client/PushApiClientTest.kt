@@ -44,7 +44,7 @@ class PushApiClientTest {
               ]
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -99,7 +99,7 @@ class PushApiClientTest {
               "pushkey":"APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
             }
         """.trimToFlatJson()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -165,7 +165,7 @@ class PushApiClientTest {
               ]
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -403,7 +403,7 @@ class PushApiClientTest {
               }
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -517,7 +517,7 @@ class PushApiClientTest {
               "rule_id": "nocake"
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -567,7 +567,7 @@ class PushApiClientTest {
               "pattern":"cake*lie"
             }
         """.trimToFlatJson()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -600,7 +600,7 @@ class PushApiClientTest {
 
     @Test
     fun shouldDeletePushRule() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -632,7 +632,7 @@ class PushApiClientTest {
               ]
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -665,7 +665,7 @@ class PushApiClientTest {
               ]
             }
         """.trimToFlatJson()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -697,7 +697,7 @@ class PushApiClientTest {
               "enabled": true
             }
         """.trimIndent()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -724,7 +724,7 @@ class PushApiClientTest {
               "enabled":false
             }
         """.trimToFlatJson()
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

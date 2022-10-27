@@ -4,7 +4,7 @@ import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
 
-interface IAuthenticationApiClient {
+interface AuthenticationApiClient {
     /**
      * @see [WhoAmI]
      */
@@ -167,9 +167,9 @@ interface IAuthenticationApiClient {
     ): Result<Refresh.Response>
 }
 
-class AuthenticationApiClient(
+class AuthenticationApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient
-) : IAuthenticationApiClient {
+) : AuthenticationApiClient {
 
     override suspend fun whoAmI(asUserId: UserId?): Result<WhoAmI.Response> =
         httpClient.request(WhoAmI(asUserId))

@@ -13,9 +13,9 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupAlgorithm
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData
 
 @Serializable(with = SetRoomKeysVersionRequestSerializer::class)
-sealed class SetRoomKeyBackupVersionRequest {
-    abstract val algorithm: RoomKeyBackupAlgorithm
-    abstract val version: String?
+sealed interface SetRoomKeyBackupVersionRequest {
+    val algorithm: RoomKeyBackupAlgorithm
+    val version: String?
 
     @Serializable
     data class V1(
@@ -25,12 +25,12 @@ sealed class SetRoomKeyBackupVersionRequest {
         override val version: String? = null,
         @SerialName("algorithm")
         override val algorithm: RoomKeyBackupAlgorithm.RoomKeyBackupV1 = RoomKeyBackupAlgorithm.RoomKeyBackupV1,
-    ) : SetRoomKeyBackupVersionRequest()
+    ) : SetRoomKeyBackupVersionRequest
 
     data class Unknown(
         override val algorithm: RoomKeyBackupAlgorithm,
         val raw: JsonObject
-    ) : SetRoomKeyBackupVersionRequest() {
+    ) : SetRoomKeyBackupVersionRequest {
         override val version: String? = null
     }
 }
@@ -46,6 +46,7 @@ object SetRoomKeysVersionRequestSerializer : KSerializer<SetRoomKeyBackupVersion
         return when (jsonObject["algorithm"]?.jsonPrimitive?.content) {
             RoomKeyBackupAlgorithm.RoomKeyBackupV1.name ->
                 decoder.json.decodeFromJsonElement<SetRoomKeyBackupVersionRequest.V1>(jsonObject)
+
             else -> SetRoomKeyBackupVersionRequest.Unknown(RoomKeyBackupAlgorithm.Unknown(""), jsonObject)
         }
     }

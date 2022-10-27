@@ -202,7 +202,7 @@ class MatrixSignatureAuthTest {
                     matrixEndpoint<GetResourceWithAuth, Unit, Unit>(
                         json,
                         mapping
-                    ) { it.call.respond(HttpStatusCode.OK) }
+                    ) { call.respond(HttpStatusCode.OK) }
                 }
             }
         }
@@ -224,7 +224,7 @@ class MatrixSignatureAuthTest {
             routing {
                 authenticate {
                     matrixEndpoint<GetResourceWithoutAuth, Unit, Unit>(json, mapping) {
-                        it.call.respond(HttpStatusCode.OK)
+                        call.respond(HttpStatusCode.OK)
                     }
                 }
             }

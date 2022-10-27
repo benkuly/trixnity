@@ -1,11 +1,11 @@
 package net.folivo.trixnity.appservice
 
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
-class TestApplicationServiceRoomService(override val matrixClientServerApiClient: MatrixClientServerApiClient) :
+class TestApplicationServiceRoomService(override val matrixClientServerApiClient: MatrixClientServerApiClientImpl) :
     ApplicationServiceRoomService {
     var roomExistingStateCalled: RoomAliasId? = null
     lateinit var roomExistingState: ApplicationServiceRoomService.RoomExistingState
@@ -29,7 +29,7 @@ class TestApplicationServiceRoomService(override val matrixClientServerApiClient
     }
 }
 
-class TestApplicationServiceUserService(override val matrixClientServerApiClient: MatrixClientServerApiClient) :
+class TestApplicationServiceUserService(override val matrixClientServerApiClient: MatrixClientServerApiClientImpl) :
     ApplicationServiceUserService {
 
     var userExistingState: Result<ApplicationServiceUserService.UserExistingState> =

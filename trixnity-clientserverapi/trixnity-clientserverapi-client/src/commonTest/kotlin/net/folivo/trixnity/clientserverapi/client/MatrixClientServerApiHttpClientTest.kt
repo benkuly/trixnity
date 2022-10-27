@@ -95,7 +95,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -122,7 +122,7 @@ class MatrixClientServerApiHttpClientTest {
             },
             onLogout = { onLogout = it },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
         val error = shouldThrow<MatrixServerException> {
@@ -157,7 +157,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -179,7 +179,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -213,7 +213,7 @@ class MatrixClientServerApiHttpClientTest {
             },
             onLogout = { onLogout = it },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -259,6 +259,7 @@ class MatrixClientServerApiHttpClientTest {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         else -> {
                             requestCount++
                             request.body.toByteArray().decodeToString() shouldBe """
@@ -285,7 +286,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 
@@ -355,6 +356,7 @@ class MatrixClientServerApiHttpClientTest {
                                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                     )
                                 }
+
                                 1 -> {
                                     requestCount++
                                     request.body.toByteArray().decodeToString() shouldBe """
@@ -395,6 +397,7 @@ class MatrixClientServerApiHttpClientTest {
                                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                                     )
                                 }
+
                                 else -> {
                                     requestCount++
                                     request.body.toByteArray().decodeToString() shouldBe """
@@ -423,7 +426,7 @@ class MatrixClientServerApiHttpClientTest {
                 }
             },
             json = json,
-            contentMappings = mappings,
+            eventContentSerializerMappings = mappings,
             accessToken = MutableStateFlow("token")
         )
 

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
@@ -29,7 +30,7 @@ class RoomStateStoreTest : ShouldSpec({
     lateinit var cut: RoomStateStore
 
     beforeTest {
-        roomStateRepository = InMemoryTwoDimensionsStoreRepository()
+        roomStateRepository = InMemoryRoomStateRepository()
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = RoomStateStore(
             roomStateRepository,
@@ -93,19 +94,19 @@ class RoomStateStoreTest : ShouldSpec({
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1)
                 )
-                cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
+                cut.get<MemberEventContent>(roomId).first() shouldBe mapOf("@user:server" to event1)
             }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1)
                 )
-                cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
+                cut.get<MemberEventContent>(roomId).first() shouldBe mapOf("@user:server" to event1)
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1.copy(originTimestamp = 0))
                 )
-                cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1)
+                cut.get<MemberEventContent>(roomId).first() shouldBe mapOf("@user:server" to event1)
             }
             should("ignore unknown state event") {
                 roomStateRepository.save(
@@ -121,7 +122,10 @@ class RoomStateStoreTest : ShouldSpec({
                         )
                     )
                 )
-                cut.get<MemberEventContent>(roomId) shouldBe mapOf("@user:server" to event1, "@bob:server" to null)
+                cut.get<MemberEventContent>(roomId).first() shouldBe mapOf(
+                    "@user:server" to event1,
+                    "@bob:server" to null
+                )
             }
         }
         context("with scope") {
@@ -131,7 +135,7 @@ class RoomStateStoreTest : ShouldSpec({
                     mapOf("@user:server" to event1)
                 )
                 val scope = CoroutineScope(Dispatchers.Default)
-                val result = cut.get<MemberEventContent>(roomId, scope).shareIn(scope, SharingStarted.Eagerly, 3)
+                val result = cut.get<MemberEventContent>(roomId).shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it?.size == 1 }
                 cut.update(
                     Event.StateEvent(
@@ -158,19 +162,19 @@ class RoomStateStoreTest : ShouldSpec({
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1)
                 )
-                cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
+                cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1)
                 )
-                cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
+                cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     mapOf("@user:server" to event1.copy(originTimestamp = 0))
                 )
-                cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe event1
+                cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
             should("ignore unknown state event") {
                 cut.update(
@@ -183,7 +187,7 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@user:server"
                     )
                 )
-                cut.getByStateKey<MemberEventContent>(roomId, "@user:server") shouldBe null
+                cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe null
             }
         }
         context("with scope") {
@@ -191,7 +195,7 @@ class RoomStateStoreTest : ShouldSpec({
                 cut.update(event1)
 
                 val scope = CoroutineScope(Dispatchers.Default)
-                val result = cut.getByStateKey<MemberEventContent>(roomId, "@user:server", scope)
+                val result = cut.getByStateKey<MemberEventContent>(roomId, "@user:server")
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it != null }
                 cut.update(

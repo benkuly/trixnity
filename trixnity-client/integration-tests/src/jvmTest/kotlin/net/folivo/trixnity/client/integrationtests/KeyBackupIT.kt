@@ -10,13 +10,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
-import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -25,12 +26,8 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -42,22 +39,7 @@ class KeyBackupIT {
     private lateinit var startedClient2: StartedClient
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
@@ -79,7 +61,7 @@ class KeyBackupIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            startedClient1.client.verification.getSelfVerificationMethods(startedClient1.scope)
+            startedClient1.client.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                 .first()
 
@@ -102,9 +84,9 @@ class KeyBackupIT {
                 startedClient2.client.api.rooms.joinRoom(roomId).getOrThrow()
                 startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
-                startedClient1.client.room.getState<EncryptionEventContent>(roomId, scope = startedClient1.scope)
+                startedClient1.client.room.getState<EncryptionEventContent>(roomId)
                     .first { it != null }
-                startedClient2.client.room.getState<EncryptionEventContent>(roomId, scope = startedClient2.scope)
+                startedClient2.client.room.getState<EncryptionEventContent>(roomId)
                     .first { it != null }
             }
             withClue("send some messages") {
@@ -115,7 +97,7 @@ class KeyBackupIT {
             withClue("login with another client and look if keybackup works") {
                 val scope = CoroutineScope(Dispatchers.Default) + CoroutineName("client3")
                 val database = newDatabase()
-                val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+                val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
                 val client3 = MatrixClient.login(
                     baseUrl = URLBuilder(
@@ -125,7 +107,8 @@ class KeyBackupIT {
                     ).build(),
                     identifier = IdentifierType.User("user1"),
                     passwordOrToken = "user$1passw0rd",
-                    storeFactory = storeFactory,
+                    repositoriesModule = repositoriesModule,
+                    mediaStore = InMemoryMediaStore(),
                     scope = scope,
                 ).getOrThrow()
                 client3.startSync()
@@ -133,7 +116,7 @@ class KeyBackupIT {
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =
-                        client3.verification.getSelfVerificationMethods(scope)
+                        client3.verification.getSelfVerificationMethods()
                             .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
                             .first().methods
                     client3VerificationMethods.filterIsInstance<SelfVerificationMethod.CrossSignedDeviceVerification>().size shouldBe 1
@@ -145,12 +128,12 @@ class KeyBackupIT {
 
                 val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
-                    .map { it.map { it.value?.eventId } }
+                    .map { it.map { it.first()?.eventId } }
                     .first { it.size == 2 }
-                events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
-                events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId, scope) }
+                events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(it, roomId) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()

@@ -6,7 +6,17 @@ import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 val isCI = System.getenv("CI") != null
+val isMainCIHost = isCI && HostManager.hostIsLinux
 val isRelease = System.getenv("CI_COMMIT_TAG")?.matches("^v\\d+.\\d+.\\d+.*".toRegex()) ?: false
+fun checkSameReleaseVersion(version: String) {
+    if (isRelease) check(version == System.getenv("CI_COMMIT_TAG").removePrefix("v"))
+}
+
+fun withVersionSuffix(version: String) = (version + when {
+    isRelease -> ""
+    isCI -> "-SNAPSHOT"
+    else -> "-LOCAL"
+}).also { checkSameReleaseVersion(it) }
 
 val isAndroidEnabled = KotlinPlatformType.androidJvm.isEnabledOnThisPlatform()
 
@@ -21,6 +31,9 @@ fun CIRequiredHostType.isEnabledOnThisPlatform() =
         CIRequiredHostType.COMMON -> true
     }
 
+val currentCIRequiredHostType
+    get() = if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+
 fun Family.isEnabledOnThisPlatform(): Boolean =
     when (this) {
         Family.OSX,
@@ -31,7 +44,7 @@ fun Family.isEnabledOnThisPlatform(): Boolean =
         Family.LINUX,
         Family.ANDROID,
         Family.WASM,
-        Family.MINGW -> if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+        Family.MINGW -> currentCIRequiredHostType
 
         Family.ZEPHYR -> error("Unsupported family: $this")
     }.isEnabledOnThisPlatform()
@@ -48,7 +61,7 @@ fun KotlinPlatformType.isEnabledOnThisPlatform(): Boolean = when (this) {
 
     KotlinPlatformType.androidJvm,
     KotlinPlatformType.wasm,
-    KotlinPlatformType.js -> if (isCI) CIRequiredHostType.LINUX else CIRequiredHostType.COMMON
+    KotlinPlatformType.js -> currentCIRequiredHostType
 
     KotlinPlatformType.native -> throw IllegalArgumentException("Cannot determine enabled state for native. Don't use KotlinPlatformType for it.")
 }.isEnabledOnThisPlatform()

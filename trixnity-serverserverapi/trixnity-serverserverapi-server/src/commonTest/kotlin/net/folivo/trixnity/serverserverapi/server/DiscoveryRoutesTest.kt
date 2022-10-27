@@ -6,7 +6,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import kotlinx.serialization.json.JsonPrimitive
@@ -37,9 +36,7 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                 authenticationFunction = { SignatureAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    discoveryApiRoutes(handlerMock, json, mapping)
-                }
+                discoveryApiRoutes(handlerMock, json, mapping)
             }
         }
     }
@@ -152,7 +149,71 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                 """.trimToFlatJson()
         }
         verifyWithSuspend {
-            handlerMock.getServerKeys(isAny())
+            handlerMock.getServerKeys(assert {
+                it.endpoint.keyId shouldBe null
+            })
+        }
+    }
+
+    @Test
+    fun shouldGetServerKeysWithKeyId() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getServerKeys(isAny()) }
+            .returns(
+                Signed(
+                    ServerKeys(
+                        serverName = "example.org",
+                        validUntil = 1652262000000,
+                        oldVerifyKeys = mapOf(
+                            "ed25519:0ldk3y" to ServerKeys.OldVerifyKey(
+                                expiredAt = 1532645052628,
+                                keyValue = "VGhpcyBzaG91bGQgYmUgeW91ciBvbGQga2V5J3MgZWQyNTUxOSBwYXlsb2FkLg"
+                            )
+                        ),
+                        verifyKeys = mapOf(
+                            "ed25519:abc123" to ServerKeys.VerifyKey(
+                                keyValue = "VGhpcyBzaG91bGQgYmUgYSByZWFsIGVkMjU1MTkgcGF5bG9hZA"
+                            )
+                        )
+                    ),
+                    mapOf(
+                        "example.org" to keysOf(
+                            Key.Ed25519Key("auto2", "VGhpcyBzaG91bGQgYWN0dWFsbHkgYmUgYSBzaWduYXR1cmU")
+                        )
+                    )
+                )
+            )
+        val response = client.get("/_matrix/key/v2/server/keyIdAbc")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "server_name": "example.org",
+                      "valid_until_ts": 1652262000000,
+                      "old_verify_keys": {
+                        "ed25519:0ldk3y": {
+                          "key": "VGhpcyBzaG91bGQgYmUgeW91ciBvbGQga2V5J3MgZWQyNTUxOSBwYXlsb2FkLg",
+                          "expired_ts": 1532645052628
+                        }
+                      },
+                      "verify_keys": {
+                        "ed25519:abc123": {
+                          "key": "VGhpcyBzaG91bGQgYmUgYSByZWFsIGVkMjU1MTkgcGF5bG9hZA"
+                        }
+                      },
+                      "signatures": {
+                        "example.org": {
+                          "ed25519:auto2": "VGhpcyBzaG91bGQgYWN0dWFsbHkgYmUgYSBzaWduYXR1cmU"
+                        }
+                      }
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getServerKeys(assert {
+                it.endpoint.keyId shouldBe "keyIdAbc"
+            })
         }
     }
 

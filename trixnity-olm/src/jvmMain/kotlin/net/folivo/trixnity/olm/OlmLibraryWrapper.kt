@@ -21,22 +21,22 @@ package net.folivo.trixnity.olm
 
 import com.sun.jna.Library
 import com.sun.jna.Native
-import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
-import java.io.IOException
+import mu.KotlinLogging
+
+private val log = KotlinLogging.logger { }
 
 object OlmLibraryWrapper : Library {
     private const val JNA_LIBRARY_NAME: String = "olm"
 
     init {
         try {
-            Native.extractFromResourcePath(JNA_LIBRARY_NAME)
-        } catch (_: IOException) {
-            // we don't want to fail, because the user may have added the library path manually
+            Native.register(OlmLibraryWrapper::class.java, JNA_LIBRARY_NAME)
+        } catch (exception: Throwable) {
+            log.error(exception) { "could not load olm library" }
+            throw exception
         }
-        val lib = NativeLibrary.getInstance(JNA_LIBRARY_NAME)
-        Native.register(OlmLibraryWrapper::class.java, lib)
     }
 
 

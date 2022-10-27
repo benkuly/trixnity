@@ -15,32 +15,32 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#conditions-1">matrix spec</a>
  */
 @Serializable(with = PushConditionSerializer::class)
-sealed class PushCondition {
+sealed interface PushCondition {
     @Serializable
     data class EventMatch(
         @SerialName("key")
         val key: String,
         @SerialName("pattern")
         val pattern: String
-    ) : PushCondition()
+    ) : PushCondition
 
-    object ContainsDisplayName : PushCondition()
+    object ContainsDisplayName : PushCondition
 
     @Serializable
     data class RoomMemberCount(
         @SerialName("is")
         val isCount: String
-    ) : PushCondition()
+    ) : PushCondition
 
     @Serializable
     data class SenderNotificationPermission(
         @SerialName("key")
         val key: String
-    ) : PushCondition()
+    ) : PushCondition
 
     data class Unknown(
         val raw: JsonObject
-    ) : PushCondition()
+    ) : PushCondition
 }
 
 object PushConditionSerializer : KSerializer<PushCondition> {
@@ -55,6 +55,7 @@ object PushConditionSerializer : KSerializer<PushCondition> {
                 "room_member_count" -> decoder.json.decodeFromJsonElement<PushCondition.RoomMemberCount>(jsonObject)
                 "sender_notification_permission" ->
                     decoder.json.decodeFromJsonElement<PushCondition.SenderNotificationPermission>(jsonObject)
+
                 "contains_display_name" -> PushCondition.ContainsDisplayName
                 else -> PushCondition.Unknown(jsonObject)
             }
@@ -70,10 +71,12 @@ object PushConditionSerializer : KSerializer<PushCondition> {
                 AddFieldsSerializer(PushCondition.EventMatch.serializer(), "kind" to "event_match"),
                 value
             )
+
             is PushCondition.RoomMemberCount -> encoder.json.encodeToJsonElement(
                 AddFieldsSerializer(PushCondition.RoomMemberCount.serializer(), "kind" to "room_member_count"),
                 value
             )
+
             is PushCondition.SenderNotificationPermission -> encoder.json.encodeToJsonElement(
                 AddFieldsSerializer(
                     PushCondition.SenderNotificationPermission.serializer(),
@@ -81,6 +84,7 @@ object PushConditionSerializer : KSerializer<PushCondition> {
                 ),
                 value
             )
+
             is PushCondition.ContainsDisplayName -> JsonObject(mapOf("kind" to JsonPrimitive("contains_display_name")))
             is PushCondition.Unknown -> value.raw
         }

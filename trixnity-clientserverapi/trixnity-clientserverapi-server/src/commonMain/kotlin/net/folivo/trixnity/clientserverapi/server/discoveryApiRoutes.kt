@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixEndpoint
@@ -11,7 +10,5 @@ internal fun Route.discoveryApiRoutes(
     json: Json,
     contentMappings: EventContentSerializerMappings,
 ) {
-    authenticate {
-        matrixEndpoint(json, contentMappings, handler::getWellKnown)
-    }
+    matrixEndpoint(json, contentMappings, handler::getWellKnown)
 }

@@ -31,7 +31,7 @@ class StateFlowCacheTest : ShouldSpec({
                     cacheValue shouldBe null
                     "a new value"
                 }
-            ).value shouldBe "a new value"
+            ).first() shouldBe "a new value"
             // value is now in cache, but we say it isn't
             cut.readWithCache(
                 key = "key",
@@ -40,7 +40,7 @@ class StateFlowCacheTest : ShouldSpec({
                     cacheValue shouldBe "a new value"
                     "another value"
                 }
-            ).value shouldBe "another value"
+            ).first() shouldBe "another value"
         }
         should("not read value from repository") {
             cut = StateFlowCache(cacheScope)
@@ -51,7 +51,7 @@ class StateFlowCacheTest : ShouldSpec({
                 retrieveAndUpdateCache = {
                     "a new value"
                 }
-            ).value shouldBe "a new value"
+            ).first() shouldBe "a new value"
             // now there is a value in cache and the cache does not ask for it
             var wasCalled = false
             cut.readWithCache(
@@ -61,7 +61,7 @@ class StateFlowCacheTest : ShouldSpec({
                     wasCalled = true
                     "another value"
                 }
-            ).value shouldBe "a new value"
+            ).first() shouldBe "a new value"
             wasCalled shouldBe false
         }
         should("prefer cache") {
@@ -73,101 +73,93 @@ class StateFlowCacheTest : ShouldSpec({
                     cacheValue shouldBe null
                     "a new value"
                 }
-            ).value shouldBe "a new value"
+            ).first() shouldBe "a new value"
             cut.readWithCache(
                 key = "key",
                 isContainedInCache = { true },
                 retrieveAndUpdateCache = {
                     "another value"
                 }
-            ).value shouldBe "a new value"
+            ).first() shouldBe "a new value"
         }
-        context("with coroutine scope") {
-            should("remove from cache") {
-                cut = StateFlowCache(cacheScope, cacheDuration = 50.milliseconds)
-                val cache = cut.cache.stateIn(cacheScope)
-                val readScope1 = CoroutineScope(Dispatchers.Default)
-                val readScope2 = CoroutineScope(Dispatchers.Default)
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        "a new value"
-                    },
-                    readScope1
-                ).value shouldBe "a new value"
-                cache.first { it.isNotEmpty() }
-                readScope1.cancel()
-                cache.first { it.isEmpty() }
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        // if the key would be in cache, this would never be called
-                        "another value"
-                    },
-                    readScope2
-                ).value shouldBe "another value"
-                // calling it without scope should run a remover job and therefore cancelling a scope should not remove value from cache
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        // if the key is in cache, this will never be called
-                        "yet another value"
-                    }
-                ).value shouldBe "another value"
-                readScope2.cancel()
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        // if the key is in cache, this will never be called
-                        "yet another value"
-                    }
-                ).value shouldBe "another value"
-            }
+        should("remove from cache when not used anymore") {
+            cut = StateFlowCache(cacheScope, cacheDuration = 50.milliseconds)
+            val cache = cut.cache.stateIn(cacheScope)
+            val readScope1 = CoroutineScope(Dispatchers.Default)
+            val readScope2 = CoroutineScope(Dispatchers.Default)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    "a new value"
+                },
+            ).stateIn(readScope1).value shouldBe "a new value"
+            cache.first { it.isNotEmpty() }
+            readScope1.cancel()
+            cache.first { it.isEmpty() }
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    // if the key would be in cache, this would never be called
+                    "another value"
+                },
+            ).stateIn(readScope2).value shouldBe "another value"
+            // calling it without scope should run a remover job and therefore cancelling a scope should not remove value from cache
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    // if the key is in cache, this will never be called
+                    "yet another value"
+                }
+            ).first() shouldBe "another value"
+            readScope2.cancel()
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    // if the key is in cache, this will never be called
+                    "yet another value"
+                }
+            ).first() shouldBe "another value"
         }
-        context("without coroutine scope") {
-            should("remove from cache, when cache time expired") {
-                cut = StateFlowCache(cacheScope, cacheDuration = 30.milliseconds)
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        "a new value"
-                    }
-                ).value shouldBe "a new value"
-                delay(40)
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        "another value"
-                    }
-                ).value shouldBe "another value"
-                // we check, that the value is not removed before the time expires
-                val readScope = CoroutineScope(Dispatchers.Default)
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        "yet another value"
-                    },
-                    readScope
-                ).value shouldBe "another value"
-                // and that the value is not removed from cache, when there is a scope, that uses it
-                delay(40)
-                cut.readWithCache(
-                    key = "key",
-                    isContainedInCache = { true },
-                    retrieveAndUpdateCache = {
-                        "yet another value"
-                    },
-                    readScope
-                ).value shouldBe "another value"
-                readScope.cancel()
-            }
+        should("remove from cache, when cache time expired") {
+            cut = StateFlowCache(cacheScope, cacheDuration = 30.milliseconds)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    "a new value"
+                }
+            ).first() shouldBe "a new value"
+            delay(40)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    "another value"
+                }
+            ).first() shouldBe "another value"
+            // we check, that the value is not removed before the time expires
+            val readScope = CoroutineScope(Dispatchers.Default)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    "yet another value"
+                },
+            ).stateIn(readScope).value shouldBe "another value"
+            // and that the value is not removed from cache, when there is a scope, that uses it
+            delay(40)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = {
+                    "yet another value"
+                },
+            ).stateIn(readScope).value shouldBe "another value"
+            readScope.cancel()
         }
         context("infinite cache enabled") {
             should("never remove from cache") {
@@ -179,8 +171,7 @@ class StateFlowCacheTest : ShouldSpec({
                     retrieveAndUpdateCache = {
                         "a new value"
                     },
-                    readScope
-                ).value shouldBe "a new value"
+                ).stateIn(readScope).value shouldBe "a new value"
                 readScope.cancel()
                 cut.readWithCache(
                     key = "key",
@@ -188,7 +179,7 @@ class StateFlowCacheTest : ShouldSpec({
                     retrieveAndUpdateCache = {
                         "another value"
                     }
-                ).value shouldBe "a new value"
+                ).first() shouldBe "a new value"
                 delay(50)
                 cut.readWithCache(
                     key = "key",
@@ -196,7 +187,7 @@ class StateFlowCacheTest : ShouldSpec({
                     retrieveAndUpdateCache = {
                         "another value"
                     }
-                ).value shouldBe "a new value"
+                ).first() shouldBe "a new value"
             }
         }
     }

@@ -5,23 +5,16 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.OlmEventServiceMock
-import net.folivo.trixnity.client.mocks.UserServiceMock
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.mocks.RoomEventDecryptionServiceMock
+import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
-import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -29,8 +22,8 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.seconds
@@ -38,44 +31,52 @@ import kotlin.time.Duration.Companion.seconds
 class RoomServiceTimelineUtilsTest : ShouldSpec({
     timeout = 5_000
 
-    val room = RoomId("room", "server")
-    lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    val room = simpleRoom.roomId
+    lateinit var roomStore: RoomStore
+    lateinit var roomStateStore: RoomStateStore
+    lateinit var roomAccountDataStore: RoomAccountDataStore
+    lateinit var roomTimelineStore: RoomTimelineStore
+    lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
-    lateinit var localTestScope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var mediaServiceMock: MediaServiceMock
+    lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
+    lateinit var timelineEventHandlerMock: TimelineEventHandlerMock
     val json = createMatrixEventJson()
-    val contentMappings = createEventContentSerializerMappings()
+    val contentMappings = DefaultEventContentSerializerMappings
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
+    val userInfo = UserInfo(UserId("thisUser"), "deviceId", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
 
-    lateinit var cut: RoomService
+    lateinit var cut: RoomServiceImpl
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
         scope = CoroutineScope(Dispatchers.Default)
-        localTestScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        roomStore = getInMemoryRoomStore(scope)
+        roomStateStore = getInMemoryRoomStateStore(scope)
+        roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
+        roomTimelineStore = getInMemoryRoomTimelineStore(scope)
+        roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
+
+        mediaServiceMock = MediaServiceMock()
+        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
+        timelineEventHandlerMock = TimelineEventHandlerMock()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
         apiConfig = newApiConfig
-        cut = RoomService(
-            UserId("alice", "server"),
-            store,
+        cut = RoomServiceImpl(
             api,
-            OlmEventServiceMock(),
-            KeyBackupServiceMock(),
-            UserServiceMock(),
-            MediaServiceMock(),
-            currentSyncState,
-            MatrixClientConfiguration(),
-            scope,
+            roomStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
+            listOf(roomEventDecryptionServiceMock),
+            mediaServiceMock,
+            timelineEventHandlerMock,
+            CurrentSyncState(currentSyncState),
+            userInfo,
+            scope
         )
     }
 
     afterTest {
-        storeScope.cancel()
-        localTestScope.cancel()
         scope.cancel()
     }
 
@@ -121,14 +122,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         nextEventId = null,
         gap = TimelineEvent.Gap.GapAfter("3")
     )
-    context(RoomService::getTimelineEvents.name) {
+    context(RoomServiceImpl::getTimelineEvents.name) {
         context("all requested events in store") {
             beforeTest {
-                store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
+                roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
             }
             should("get timeline events backwards") {
                 cut.getTimelineEvents(event3.id, room)
-                    .take(3).toList().map { it.value } shouldBe listOf(
+                    .take(3).toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
                     timelineEvent1
@@ -136,7 +137,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("get timeline events forwards") {
                 cut.getTimelineEvents(event1.id, room, FORWARDS)
-                    .take(3).toList().map { it.value } shouldBe listOf(
+                    .take(3).toList().map { it.first() } shouldBe listOf(
                     timelineEvent1,
                     timelineEvent2,
                     timelineEvent3
@@ -154,38 +155,28 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 gap = null
             )
             beforeTest {
-                store.roomTimeline.addAll(
+                roomTimelineStore.addAll(
                     listOf(
                         timelineEvent1.copy(gap = TimelineEvent.Gap.GapAfter("after-1")),
                         timelineEvent2.copy(gap = TimelineEvent.Gap.GapBefore("before-2")),
                         timelineEvent3
                     )
                 )
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(
-                        json,
-                        contentMappings,
-                        GetEvents(
-                            roomId = room.e(),
-                            from = "before-2",
-                            to = "after-1",
-                            dir = BACKWARDS,
-                            limit = 20,
-                            filter = """{"lazy_load_members":true}"""
-                        )
-                    ) {
-                        GetEvents.Response(
-                            start = "before-2",
-                            end = "after-1",
-                            chunk = listOf(event0),
-                            state = listOf()
-                        )
-                    }
-                }
             }
-            should("fetch missing events from server") {
-                cut.getTimelineEvents(event3.id, room)
-                    .take(4).toList().map { it.value } shouldBe listOf(
+            should("fetch missing events by filling gaps") {
+                val result = async {
+                    cut.getTimelineEvents(event3.id, room).take(4).toList().map { it.first() }
+                }
+                timelineEventHandlerMock.unsafeFillTimelineGaps.first { it }
+                roomTimelineStore.addAll(
+                    listOf(
+                        timelineEvent3,
+                        timelineEvent2.copy(gap = null, previousEventId = event0.id),
+                        timelineEvent0,
+                        timelineEvent1.copy(gap = null, nextEventId = event0.id)
+                    )
+                )
+                result.await() shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2.copy(gap = null, previousEventId = event0.id),
                     timelineEvent0,
@@ -195,7 +186,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         context("complete timeline in store") {
             beforeTest {
-                store.roomTimeline.addAll(
+                roomTimelineStore.addAll(
                     listOf(
                         timelineEvent1.copy(gap = null, previousEventId = null),
                         timelineEvent2,
@@ -205,7 +196,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("flow should be finished when all collected") {
                 cut.getTimelineEvents(event3.id, room)
-                    .toList().map { it.value } shouldBe listOf(
+                    .toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
                     timelineEvent1.copy(gap = null, previousEventId = null)
@@ -214,15 +205,15 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         context("toList") {
             beforeTest {
-                store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
+                roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
             }
             should("transform to list") {
                 val size = MutableStateFlow(2)
                 val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
-                localTestScope.launch {
+                val job = scope.launch {
                     cut.getTimelineEvents(event3.id, room)
                         .toFlowList(size)
-                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
                 }
                 resultList.first { it?.size == 2 } shouldBe listOf(
                     timelineEvent3,
@@ -234,6 +225,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     timelineEvent2,
                     timelineEvent1
                 )
+                job.cancel()
             }
         }
         context("get timeline events around") {
@@ -257,7 +249,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 gap = null
             )
             beforeTest {
-                store.roomTimeline.addAll(
+                roomTimelineStore.addAll(
                     listOf(
                         newTimelineEvent1,
                         timelineEvent2,
@@ -271,9 +263,9 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val beforeMaxSize = MutableStateFlow(1)
                 val afterMaxSize = MutableStateFlow(1)
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
-                localTestScope.launch {
+                val job = scope.launch {
                     cut.getTimelineEventsAround(event2.id, room, beforeMaxSize, afterMaxSize)
-                        .collect { result.value = it.mapNotNull { it.value } }
+                        .collect { result.value = it.mapNotNull { it.first() } }
                 }
 
                 result.first { it?.size == 3 } shouldBe listOf(
@@ -296,19 +288,25 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     timelineEvent2,
                     newTimelineEvent1,
                 )
+                job.cancel()
             }
         }
     }
-    context(RoomService::getLastTimelineEvents.name) {
+    context(RoomServiceImpl::getLastTimelineEvents.name) {
+        lateinit var localTestScope: CoroutineScope
         beforeTest {
-            store.roomTimeline.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
+            roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
+            localTestScope = CoroutineScope(Dispatchers.Default)
+        }
+        afterTest {
+            localTestScope.cancel()
         }
         should("get timeline events") {
-            store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
+            roomStore.update(room) { Room(roomId = room, lastEventId = event3.id) }
             cut.getLastTimelineEvents(room)
                 .first()
                 .shouldNotBeNull()
-                .take(3).toList().map { it.value } shouldBe listOf(
+                .take(3).toList().map { it.first() } shouldBe listOf(
                 timelineEvent3,
                 timelineEvent2,
                 timelineEvent1
@@ -316,13 +314,13 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
         should("cancel old timeline event flow") {
-            store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
+            roomStore.update(room) { Room(roomId = room, lastEventId = event2.id) }
             val collectedEvents = MutableStateFlow<List<TimelineEvent?>?>(null)
             val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .filterNotNull()
                     .collectLatest { timelineEventFlow ->
-                        collectedEvents.value = timelineEventFlow.take(2).toList().map { it.value }
+                        collectedEvents.value = timelineEventFlow.take(2).toList().map { it.first() }
                     }
             }
 
@@ -332,7 +330,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent1,
             )
 
-            store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
+            roomStore.update(room) { Room(roomId = room, lastEventId = event3.id) }
             collectedEvents.first { it?.first()?.eventId == event3.id }
             collectedEvents.value shouldBe listOf(
                 timelineEvent3,
@@ -345,11 +343,11 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val size = MutableStateFlow(2)
             val resultList = MutableStateFlow<List<TimelineEvent>?>(null)
 
-            store.room.update(room) { Room(roomId = room, lastEventId = event2.id) }
+            roomStore.update(room) { Room(roomId = room, lastEventId = event2.id) }
             val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .toFlowList(size)
-                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.value } }
+                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
             }
 
             resultList.first { it?.size == 2 } shouldBe listOf(
@@ -357,7 +355,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 timelineEvent1,
             )
 
-            store.room.update(room) { Room(roomId = room, lastEventId = event3.id) }
+            roomStore.update(room) { Room(roomId = room, lastEventId = event3.id) }
             size.value = 1
             resultList.first { it?.size == 1 && it.first().eventId == event3.id } shouldBe listOf(
                 timelineEvent3
@@ -374,7 +372,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             localTestScope.coroutineContext.job.children.count() shouldBe 0
         }
     }
-    context(RoomService::getTimelineEventsFromNowOn.name) {
+    context(RoomServiceImpl::getTimelineEventsFromNowOn.name) {
         should("get timeline events from now on") {
             val event10 = MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("hi"),
@@ -383,7 +381,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 room,
                 10
             )
-            store.roomTimeline.addAll(
+            roomTimelineStore.addAll(
                 listOf(
                     timelineEvent1,
                     timelineEvent1.copy(eventId = event10.id, roomId = RoomId("other", "server"))

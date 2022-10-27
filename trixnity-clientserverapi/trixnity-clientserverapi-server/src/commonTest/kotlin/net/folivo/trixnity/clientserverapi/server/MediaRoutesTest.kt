@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
@@ -37,9 +36,7 @@ class MediaRoutesTest : TestsWithMocks() {
                 authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    mediaApiRoutes(handlerMock, json, mapping)
-                }
+                mediaApiRoutes(handlerMock, json, mapping)
             }
         }
     }

@@ -11,29 +11,29 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class PowerLevelsEventContent(
     @SerialName("ban")
-    val ban: Int? = null,
+    val ban: Int = 50,
     @SerialName("events")
     val events: Map<String, Int> = emptyMap(),
     @SerialName("events_default")
-    val eventsDefault: Int? = null,
+    val eventsDefault: Int = 0,
     @SerialName("invite")
-    val invite: Int? = null,
+    val invite: Int = 0,
     @SerialName("kick")
-    val kick: Int? = null,
+    val kick: Int = 50,
     @SerialName("redact")
-    val redact: Int? = null,
+    val redact: Int = 50,
     @SerialName("state_default")
-    val stateDefault: Int? = null,
+    val stateDefault: Int = 50,
     @SerialName("users")
     val users: Map<UserId, Int> = emptyMap(),
     @SerialName("users_default")
-    val usersDefault: Int? = null,
+    val usersDefault: Int = 0,
     @SerialName("notifications")
     val notifications: Notifications? = null
 ) : StateEventContent {
     @Serializable
     data class Notifications(
         @SerialName("room")
-        val room: Int? = null
+        val room: Int = 50
     )
 }

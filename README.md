@@ -3,7 +3,7 @@
 # Trixnity - Multiplatform Matrix SDK
 
 Trixnity is a multiplatform [Matrix](matrix.org) SDK written in Kotlin.
-You can write clients, bots and appservices with
+You can write clients, bots, appservices and servers with
 it. This SDK supports JVM (also Android), JS and Native as targets for most modules.
 [Ktor](https://github.com/ktorio/ktor) is used for the HTTP client/server and
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the serialization/deserialization.
@@ -49,13 +49,20 @@ This project contains the following modules, which can be used independently:
 - [trixnity-client](/trixnity-client) provides a high level client implementation. It allows you to easily implement
   clients by just rendering data from and passing user interactions to Trixnity. The key features are:
     - [x] exchangeable database
-        - [trixnity-client-store-exposed](/trixnity-client/trixnity-client-store-exposed) implements a database for
-          trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM based platforms.
-        - [trixnity-client-store-sqldelight](/trixnity-client/trixnity-client-store-sqldelight) implements a database
-          for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively maintained
-          at the moment.
-        - We plan to add something like `trixnity-client-store-indexeddb` as a database backend for web in the future.
+        - in memory (e. g. for tests)
+        - [trixnity-client-repository-exposed](/trixnity-client/trixnity-client-repository-exposed) implements a
+          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM
+          based platforms.
+        - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight) implements a
+          database for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively
+          maintained at the moment.
+        - We plan to add something like `trixnity-client-repository-indexeddb` as a database for web in the future.
     - [x] fast cache on top of the database
+    - [x] exchangeable media store
+        - in memory (e. g. for tests)
+        - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio) implements a file system base media
+          store with [okio](https://github.com/square/okio)
+    - [x] media support (thumbnail generation, offline "upload", huge files, etc.)
     - [x] E2E (olm, megolm)
     - [x] verification
     - [x] cross signing
@@ -64,7 +71,6 @@ This project contains the following modules, which can be used independently:
     - [x] timelines
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
-    - [x] media support (thumbnail generation, offline "upload", etc.)
     - [x] redactions
     - [x] notifications
     - [x] server discovery
@@ -72,7 +78,8 @@ This project contains the following modules, which can be used independently:
 - [trixnity-applicationservice](/trixnity-applicationservice) provides a basic high level application service
   implementation. It does not support advanced features like E2E or persistence at the moment.
 
-If you want to see Trixnity in action, take a look into the [examples](/examples).
+If you want to see Trixnity in action, take a look into
+the [trixnity-examples](https://gitlab.com/trixnity/trixnity-examples).
 
 ### Add Trixnity to you project
 
@@ -93,38 +100,44 @@ can find [here](https://ktor.io/docs/http-client-engines.html).
 
 #### Olm-Library
 
-If you are using a module, which depends on `trixnity-olm` you may need to install olm.
+We build [libolm](https://gitlab.matrix.org/matrix-org/olm) for various targets. The currently supported targets
+can be found [here](https://gitlab.com/trixnity/olm-binaries/-/blob/main/build.sh). If your platform is not supported,
+feel free to open a merge request or issue.
 
-- Android: Everything is packaged. There is nothing to do for you.
-- JS: You need to provide the url path `/olm.wasm`. The file can be found in the official olm js package.
-- JVM: If your platform is not build by Trixnity's CI, you
-  can [download or build it yourself](https://gitlab.matrix.org/matrix-org/olm). Make it available to your JVM (e.g.
-  with `-Djna.library.path="build/olm"`). You can also look into the `build.gradle.kts` file of `trixnity-olm`
-  for an automated way to build olm and e.g. use it for testing.
-- Native: If your platform is not supported, feel free to open a merge request for our CI.
+If you are using a module, which depends on `trixnity-olm` you may need to do some extra steps:
+
+- JS:
+    - You need to add the olm npm registry with a file called `.npmrc` and the
+      content `@matrix-org:registry=https://gitlab.matrix.org/api/v4/packages/npm/`.
+    - You need to provide the url path `/olm.wasm`. The file can be found in the official olm npm package.
+      You can do this with webpack
+      like [here](https://gitlab.com/trixnity/trixnity-examples/-/blob/main/webpack.config.d/webpack-olm.js).
+- JVM: If your platform is not supported yet, you can
+  [download or build libolm yourself](https://gitlab.matrix.org/matrix-org/olm) and make it available to your JVM (e.g.
+  with `-Djna.library.path="build/olm"`).
 
 ## Trixnity-Client
 
 ### Create MatrixClient
 
 With `MatrixClient` you have access to the whole library. It can be instantiated by various static functions,
-e.g. `MatrixClient.login(...)`. You always need to pass a `StoreFactory` for a Database and a `CouroutineScope`, which
-will be used for the lifecycle of the client.
+e.g. `MatrixClient.login(...)`. You always need to pass a `repositoriesModule` for a Database and a `CouroutineScope`,
+which will be used for the lifecycle of the client.
 
 Secrets are also stored in the store. Therefore, you should encrypt the store!
 
 ```kotlin
-val storeFactory = createStoreFactory()
-val scope = CoroutineScope(Dispatchers.Default)
+val repositoriesModule = createRepositoriesModule() // e.g. createExposedRepositoriesModule(database, Dispatchers.IO)
+val scope = CoroutineScope(Dispatchers.Default) // should be managed by a lifecycle (e.g. Android Service)
 
 val matrixClient = MatrixClient.fromStore(
-    storeFactory = storeFactory,
+    repositoriesModule = repositoriesModule,
     scope = scope,
 ).getOrThrow() ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
-    storeFactory = storeFactory,
+    repositoriesModule = repositoriesModule,
     scope = scope,
 ).getOrThrow()
 
@@ -166,13 +179,13 @@ You can always get the last known `TimelineEvent` of a room with `matrixClient.r
 The following example will always print the last 20 events of a room:
 
 ```kotlin
-matrixClient.room.getLastTimelineEvents(roomId, scope)
+matrixClient.room.getLastTimelineEvents(roomId)
     .toFlowList(MutableStateFlow(20)) // we always get max. 20 TimelineEvents
     .collectLatest { timelineEvents ->
         timelineEvents.forEach { timelineEvent ->
             val event = timelineEvent.value?.event
             val content = timelineEvent.value?.content?.getOrNull()
-            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId, scope).value?.name }
+            val sender = event?.sender?.let { matrixClient.user.getById(it, roomId).first()?.name }
             when {
                 content is RoomMessageEventContent -> println("${sender}: ${content.body}")
                 content == null -> println("${sender}: not yet decrypted")
@@ -303,35 +316,10 @@ maven repositories and append `-SNAPSHOT` to the current Trixnity version.
 
 ## Build this project
 
-### Build Olm
-
-Build olm with the `buildOlm` gradle tasks.
-
 ### Android SDK
 
-Install the Android SDK with the following packages:
-
-- platforms;android-30
-- build-tools
-- ndk
-
-Add a file named `local.properties` with the following content in the project root:
+Install the Android SDK and add a file named `local.properties` with the following content in the project root:
 
 ```properties
 sdk.dir=/path/to/android/sdk
 ```
-
-### Libraries for c-bindings
-
-Linux:
-
-- cmake `3.24.0` (e.g. by running `sudo ./cmake-3.24.0-linux-x86_64.sh --skip-license --exclude-subdir --prefix=/usr`
-  from
-  https://cmake.org/files/v3.24/cmake-3.24.0-linux-x86_64.sh).
-- libncurses5
-- ninja-build
-- mingw-w64
-
-Windows: Install msys2. Add cmake and run in msys2 mingw64
-shell `pacman -S clang mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-toolchain`
-. **Important:** Run this command and all gradle tasks within the msys2 **mingw64** shell!

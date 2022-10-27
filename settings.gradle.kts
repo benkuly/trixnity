@@ -21,17 +21,13 @@ include(
 include(
     "trixnity-client",
     "trixnity-client:integration-tests",
-    "trixnity-client:trixnity-client-store-sqldelight",
-    "trixnity-client:trixnity-client-store-exposed",
-    "trixnity-client:trixnity-client-store-realm"
+    "trixnity-client:trixnity-client-repository-sqldelight",
+    "trixnity-client:trixnity-client-repository-exposed",
+    "trixnity-client:trixnity-client-store-realm",
+    "trixnity-client:trixnity-client-media-okio",
 )
 include("trixnity-applicationservice")
 include("test-utils")
-include(
-    "examples",
-    "examples:clientserverapi-client-ping",
-    "examples:client-ping"
-)
 
 buildCache {
     local {

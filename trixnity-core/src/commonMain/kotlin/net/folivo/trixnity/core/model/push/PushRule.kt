@@ -9,13 +9,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PushRule(
     @SerialName("actions")
-    val actions: Set<PushAction>,
+    val actions: Set<PushAction> = setOf(),
     @SerialName("conditions")
     val conditions: Set<PushCondition>? = null,
     @SerialName("default")
-    val default: Boolean,
+    val default: Boolean = false,
     @SerialName("enabled")
-    val enabled: Boolean,
+    val enabled: Boolean = false,
     @SerialName("pattern")
     val pattern: String? = null,
     @SerialName("rule_id")

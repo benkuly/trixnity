@@ -8,9 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.NoopRepositoryTransactionManager
-import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
-import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
-import net.folivo.trixnity.client.store.repository.OlmAccountRepository
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -22,18 +20,18 @@ class OlmStoreTest : ShouldSpec({
     lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
 
     lateinit var storeScope: CoroutineScope
-    lateinit var cut: OlmStore
+    lateinit var cut: OlmCryptoStore
 
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
-        olmAccountRepository = InMemoryMinimalStoreRepository()
+        olmAccountRepository = InMemoryOlmAccountRepository()
         inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
-        cut = OlmStore(
+        cut = OlmCryptoStore(
             olmAccountRepository,
-            InMemoryMinimalStoreRepository(),
+            InMemoryOlmSessionRepository(),
             inboundMegolmSessionRepository,
-            InMemoryMinimalStoreRepository(),
-            InMemoryMinimalStoreRepository(),
+            InMemoryInboundMegolmMessageIndexRepository(),
+            InMemoryOutboundMegolmSessionRepository(),
             NoopRepositoryTransactionManager,
             storeScope
         )
@@ -41,7 +39,7 @@ class OlmStoreTest : ShouldSpec({
     afterTest {
         storeScope.cancel()
     }
-    context(OlmStore::init.name) {
+    context(OlmCryptoStore::init.name) {
         should("load values from database") {
             olmAccountRepository.save(1, "olm_account")
 
@@ -93,7 +91,7 @@ class OlmStoreTest : ShouldSpec({
             }
         }
     }
-    context(OlmStore::updateInboundMegolmSession.name) {
+    context(OlmCryptoStore::updateInboundMegolmSession.name) {
         val session = StoredInboundMegolmSession(
             senderKey = Key.Curve25519Key(null, "senderCurve"),
             sessionId = "session",
@@ -105,7 +103,7 @@ class OlmStoreTest : ShouldSpec({
             forwardingCurve25519KeyChain = listOf(),
             pickled = "pickle"
         )
-        should("add and remove to ${OlmStore::notBackedUpInboundMegolmSessions.name}") {
+        should("add and remove to ${OlmCryptoStore::notBackedUpInboundMegolmSessions.name}") {
             cut.updateInboundMegolmSession(session.sessionId, session.roomId) { session }
             cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
             cut.updateInboundMegolmSession(session.sessionId, session.roomId) {

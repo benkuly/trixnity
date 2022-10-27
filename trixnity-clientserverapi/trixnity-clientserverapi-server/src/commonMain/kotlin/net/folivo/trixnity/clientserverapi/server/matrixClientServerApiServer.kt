@@ -1,64 +1,51 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import io.ktor.http.*
-import io.ktor.http.HttpMethod.Companion.Delete
-import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpMethod.Companion.Options
-import io.ktor.http.HttpMethod.Companion.Post
-import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 fun Application.matrixClientServerApiServer(
     accessTokenAuthenticationFunction: AccessTokenAuthenticationFunction,
-    discoveryApiHandler: DiscoveryApiHandler,
-    authenticationApiHandler: AuthenticationApiHandler,
-    devicesApiHandler: DevicesApiHandler,
-    keysApiHandler: KeysApiHandler,
-    mediaApiHandler: MediaApiHandler,
-    pushApiHandler: PushApiHandler,
-    roomsApiHandler: RoomsApiHandler,
-    serverApiHandler: ServerApiHandler,
-    syncApiHandler: SyncApiHandler,
-    usersApiHandler: UsersApiHandler,
-    customMappings: EventContentSerializerMappings? = null,
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    json: Json = createMatrixEventJson(eventContentSerializerMappings),
+    routes: Route.() -> Unit,
 ) {
-    val contentMappings = createEventContentSerializerMappings(customMappings)
-    val json = createMatrixEventJson(contentMappings)
+    installMatrixAccessTokenAuth("matrix-access-token-auth") {
+        this.authenticationFunction = accessTokenAuthenticationFunction
+    }
     matrixApiServer(json) {
-        // TODO rate limit
-        install(ConvertMediaPlugin)
-        installMatrixAccessTokenAuth {
-            this.authenticationFunction = accessTokenAuthenticationFunction
-        }
-        // see also https://spec.matrix.org/v1.3/client-server-api/#web-browser-clients
-        install(CORS) {
-            anyHost()
-            allowMethod(Get)
-            allowMethod(Post)
-            allowMethod(Delete)
-            allowMethod(Options)
-            allowMethod(Put)
-            allowHeader(HttpHeaders.Authorization)
-            allowHeader(HttpHeaders.ContentType)
-            allowHeader("X-Requested-With")
-        }
-        routing {
-            discoveryApiRoutes(discoveryApiHandler, json, contentMappings)
-            authenticationApiRoutes(authenticationApiHandler, json, contentMappings)
-            devicesApiRoutes(devicesApiHandler, json, contentMappings)
-            keysApiRoutes(keysApiHandler, json, contentMappings)
-            mediaApiRoutes(mediaApiHandler, json, contentMappings)
-            pushApiRoutes(pushApiHandler, json, contentMappings)
-            roomsApiRoutes(roomsApiHandler, json, contentMappings)
-            serverApiRoutes(serverApiHandler, json, contentMappings)
-            syncApiRoutes(syncApiHandler, json, contentMappings)
-            usersApiRoutes(usersApiHandler, json, contentMappings)
+        createChild(object : RouteSelector() {
+            override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation =
+                RouteSelectorEvaluation.Transparent
+        }).apply {
+            installMatrixClientServerApiServer()
+            authenticate("matrix-access-token-auth") {
+                routes()
+            }
         }
     }
+}
+
+fun Route.installMatrixClientServerApiServer() {
+    // TODO rate limit
+    install(ConvertMediaPlugin)
+    // see also https://spec.matrix.org/v1.3/client-server-api/#web-browser-clients
+    install(CORS) {
+        anyHost()
+        allowMethod(io.ktor.http.HttpMethod.Get)
+        allowMethod(io.ktor.http.HttpMethod.Post)
+        allowMethod(io.ktor.http.HttpMethod.Delete)
+        allowMethod(io.ktor.http.HttpMethod.Options)
+        allowMethod(io.ktor.http.HttpMethod.Put)
+        allowHeader(io.ktor.http.HttpHeaders.Authorization)
+        allowHeader(io.ktor.http.HttpHeaders.ContentType)
+        allowHeader("X-Requested-With")
+    }
+    options("{...}") { }
 }

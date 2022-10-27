@@ -2,13 +2,10 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.TimelineEventKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
-import net.folivo.trixnity.client.store.repository.TimelineEventRepository
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
@@ -18,13 +15,16 @@ class RoomTimelineStore(
     private val timelineEventRelationRepository: TimelineEventRelationRepository,
     private val rtm: RepositoryTransactionManager,
     storeScope: CoroutineScope,
-) {
+) : Store {
     private val timelineEventCache = RepositoryStateFlowCache(storeScope, timelineEventRepository, rtm)
     private val timelineEventRelationCache =
         TwoDimensionsRepositoryStateFlowCache(storeScope, timelineEventRelationRepository, rtm)
 
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+    override suspend fun deleteAll() {
         rtm.transaction {
             timelineEventRepository.deleteAll()
             timelineEventRelationRepository.deleteAll()
@@ -33,43 +33,27 @@ class RoomTimelineStore(
         timelineEventRelationCache.reset()
     }
 
-    suspend fun get(eventId: EventId, roomId: RoomId, scope: CoroutineScope): StateFlow<TimelineEvent?> =
-        timelineEventCache.get(TimelineEventKey(eventId, roomId), scope = scope)
+    fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
+        timelineEventCache.get(TimelineEventKey(eventId, roomId))
 
     suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
-        timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction)
+        timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction).first()
 
-    suspend fun getRelations(
+    fun getRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> =
-        timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId), scope = scope)
-
-    suspend fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-    ): Map<RelationType, Set<TimelineEventRelation>?>? =
         timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId))
 
-    suspend fun getRelations(
+    fun getRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope
     ): Flow<Set<TimelineEventRelation>?> =
         timelineEventRelationCache.getBySecondKey(
             TimelineEventRelationKey(eventId, roomId),
             relationType,
-            scope = scope
         )
-
-    suspend fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-        relationType: RelationType
-    ): Set<TimelineEventRelation>? =
-        timelineEventRelationCache.getBySecondKey(TimelineEventRelationKey(eventId, roomId), relationType)
 
     suspend fun update(
         eventId: EventId,

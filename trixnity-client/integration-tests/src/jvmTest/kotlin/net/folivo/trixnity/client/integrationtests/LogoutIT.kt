@@ -7,40 +7,21 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.IMatrixClient.LoginState
-import net.folivo.trixnity.client.IMatrixClient.LoginState.LOGGED_IN
+import net.folivo.trixnity.client.MatrixClient.LoginState
+import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import kotlin.test.Test
 
 @Testcontainers
 class LogoutIT {
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     private fun getBaseUrl() = URLBuilder(
         protocol = URLProtocol.HTTP,

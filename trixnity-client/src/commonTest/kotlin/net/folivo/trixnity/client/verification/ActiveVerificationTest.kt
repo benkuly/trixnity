@@ -9,8 +9,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.store.InMemoryStore
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.OwnSasStart
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
@@ -32,8 +33,9 @@ class ActiveVerificationTest : ShouldSpec({
     val bobDevice = "BBBBBB"
     val lifecycleCalled = MutableStateFlow(0)
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
+    lateinit var keyStore: KeyStore
 
-    class TestActiveVerification(request: VerificationRequestEventContent) : ActiveVerification(
+    class TestActiveVerification(request: VerificationRequestEventContent, keyStore: KeyStore) : ActiveVerificationImpl(
         request = request,
         requestIsFromOurOwn = request.fromDevice == aliceDevice,
         ownUserId = alice,
@@ -44,7 +46,7 @@ class ActiveVerificationTest : ShouldSpec({
         setOf(Sas),
         null,
         "t",
-        InMemoryStore(CoroutineScope(EmptyCoroutineContext)),
+        keyStore,
         KeyTrustServiceMock(),
         createMatrixEventJson(),
     ) {
@@ -69,19 +71,20 @@ class ActiveVerificationTest : ShouldSpec({
 
     lateinit var cut: TestActiveVerification
     beforeTest {
+        keyStore = getInMemoryKeyStore(CoroutineScope(EmptyCoroutineContext))
         lifecycleCalled.value = 0
         sendVerificationStepFlow = MutableSharedFlow(replay = 10)
-        cut = TestActiveVerification(VerificationRequestEventContent(bobDevice, setOf(Sas), 1234, "t"))
+        cut = TestActiveVerification(VerificationRequestEventContent(bobDevice, setOf(Sas), 1234, "t"), keyStore)
     }
 
-    context(ActiveVerification::startLifecycle.name) {
+    context(ActiveVerificationImpl::startLifecycle.name) {
         should("start lifecycle once") {
             cut.startLifecycle(this)
             cut.startLifecycle(this)
             lifecycleCalled.value shouldBe 1
         }
     }
-    context(ActiveVerification::cancel.name) {
+    context(ActiveVerificationImpl::cancel.name) {
         should("send user cancel event content") {
             val expectedCancelEvent =
                 VerificationCancelEventContent(Code.User, "user cancelled verification", null, "t")
@@ -143,7 +146,10 @@ class ActiveVerificationTest : ShouldSpec({
                 VerificationDoneEventContent(null, "t"),
             )
             should("handle ${VerificationReadyEventContent::class.simpleName} when ${OwnRequest::class.simpleName}") {
-                cut = TestActiveVerification(VerificationRequestEventContent(aliceDevice, setOf(Sas), 1234, "t"))
+                cut = TestActiveVerification(
+                    VerificationRequestEventContent(aliceDevice, setOf(Sas), 1234, "t"),
+                    keyStore
+                )
                 cut.state.value.shouldBeInstanceOf<OwnRequest>()
                 cut.handleStep(
                     VerificationReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"),

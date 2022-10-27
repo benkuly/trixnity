@@ -1,9 +1,9 @@
 package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.client.store.RepositoryTransactionManager
+import kotlinx.coroutines.flow.Flow
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -15,12 +15,11 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     cacheDuration: Duration = 1.minutes,
 ) : StateFlowCache<K, V>(cacheScope, infiniteCache, cacheDuration) {
 
-    private suspend fun internalGet(
+    private fun internalGet(
         key: K,
         withTransaction: Boolean = true,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
-        scope: CoroutineScope?
-    ): StateFlow<V?> = readWithCache(
+    ): Flow<V?> = readWithCache(
         key,
         isContainedInCache = { infiniteCache || isContainedInCache(it) },
         retrieveAndUpdateCache = {
@@ -28,21 +27,13 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             else if (withTransaction) rtm.transaction { repository.get(key) }
             else repository.get(key)
         },
-        scope
     )
 
-    suspend fun get(
+    fun get(
         key: K,
         withTransaction: Boolean = true,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean = { it != null },
-    ): V? = internalGet(key, withTransaction, isContainedInCache, scope = null).value
-
-    suspend fun get(
-        key: K,
-        withTransaction: Boolean = true,
-        isContainedInCache: suspend (cacheValue: V?) -> Boolean = { it != null },
-        scope: CoroutineScope
-    ): StateFlow<V?> = internalGet(key, withTransaction, isContainedInCache, scope)
+    ): Flow<V?> = internalGet(key, withTransaction, isContainedInCache)
 
     suspend fun update(
         key: K,

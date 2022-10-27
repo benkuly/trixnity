@@ -26,7 +26,9 @@ import kotlin.test.assertNotNull
 private fun Application.matrixApplicationServiceApiServerTestApplication(
     applicationServiceApiServerHandler: ApplicationServiceApiServerHandler,
 ) {
-    matrixApplicationServiceApiServer("validToken", applicationServiceApiServerHandler)
+    matrixApplicationServiceApiServer("validToken") {
+        matrixApplicationServiceApiServerRoutes(applicationServiceApiServerHandler)
+    }
 }
 
 class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandler {

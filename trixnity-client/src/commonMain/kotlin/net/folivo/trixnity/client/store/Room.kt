@@ -12,7 +12,7 @@ data class Room(
     val name: RoomDisplayName? = null,
     val avatarUrl: String? = null,
     val isDirect: Boolean = false,
-    val lastEventId: EventId? = null, // This may only be changed by RoomManager::setLastEventId !!!
+    val lastEventId: EventId? = null,
     val lastRelevantEventId: EventId? = null,
     val unreadMessageCount: Long = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,

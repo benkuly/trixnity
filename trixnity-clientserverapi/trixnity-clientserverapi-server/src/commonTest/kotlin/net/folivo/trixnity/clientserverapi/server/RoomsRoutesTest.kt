@@ -6,7 +6,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.JsonObject
@@ -46,9 +45,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
             matrixApiServer(json) {
-                routing {
-                    roomsApiRoutes(handlerMock, json, mapping)
-                }
+                roomsApiRoutes(handlerMock, json, mapping)
             }
         }
     }
@@ -1135,6 +1132,8 @@ class RoomsRoutesTest : TestsWithMocks() {
         val response =
             client.post("/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event") {
                 bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("{}")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -1494,9 +1493,9 @@ class RoomsRoutesTest : TestsWithMocks() {
             .returns(
                 TagEventContent(
                     mapOf(
-                        "m.favourite" to TagEventContent.Tag(0.1),
-                        "u.Customers" to TagEventContent.Tag(),
-                        "u.Work" to TagEventContent.Tag(0.7)
+                        TagEventContent.TagName.Favourite to TagEventContent.Tag(0.1),
+                        TagEventContent.TagName.Unknown("u.Customers") to TagEventContent.Tag(),
+                        TagEventContent.TagName.Unknown("u.Work") to TagEventContent.Tag(0.7)
                     )
                 )
             )

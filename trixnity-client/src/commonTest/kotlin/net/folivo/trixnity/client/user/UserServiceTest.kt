@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,26 +10,26 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.api.client.e
-import net.folivo.trixnity.client.key.KeySignatureTrustLevel
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.m.Presence
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership.*
-import net.folivo.trixnity.core.model.keys.DeviceKeys
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
@@ -38,460 +38,952 @@ class UserServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
+    val me = UserId("me", "server")
     val roomId = simpleRoom.roomId
-    lateinit var store: Store
+    lateinit var roomUserStore: RoomUserStore
+    lateinit var roomStore: RoomStore
+    lateinit var roomStateStore: RoomStateStore
+    lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var scope: CoroutineScope
+    lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
     val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
-    lateinit var cut: UserService
+    lateinit var cut: UserServiceImpl
+
+    fun getCreateEvent(creator: UserId) = StateEvent(
+        CreateEventContent(creator = creator),
+        EventId("\$event"),
+        creator,
+        roomId,
+        1234,
+        stateKey = ""
+    )
+
+    fun getPowerLevelsEvent(powerLevelsEventContent: PowerLevelsEventContent) = StateEvent(
+        powerLevelsEventContent,
+        EventId("\$event"),
+        me,
+        roomId,
+        1234,
+        stateKey = ""
+    )
 
     beforeTest {
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        api = newApi
         apiConfig = newApiConfig
         currentSyncState.value = SyncState.RUNNING
         scope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(scope).apply { init() }
-        cut = UserService(store, api, currentSyncState, scope)
+        roomUserStore = getInMemoryRoomUserStore(scope)
+        globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
+        roomStore = getInMemoryRoomStore(scope)
+        roomStateStore = getInMemoryRoomStateStore(scope)
+        cut = UserServiceImpl(
+            roomUserStore,
+            roomStore,
+            roomStateStore,
+            globalAccountDataStore,
+            api,
+            PresenceEventHandler(api),
+            CurrentSyncState(currentSyncState),
+            userInfo = UserInfo(
+                me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
+                Key.Curve25519Key(value = "")
+            ),
+            scope = scope
+        )
     }
 
     afterTest {
         scope.cancel()
     }
 
-    context(UserService::loadMembers.name) {
+    context(UserServiceImpl::loadMembers.name) {
         should("do nothing when members already loaded") {
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
-            store.room.update(roomId) { storedRoom }
+            roomStore.update(roomId) { storedRoom }
             cut.loadMembers(roomId)
             continually(500.milliseconds) {
-                store.room.get(roomId).value shouldBe storedRoom
+                roomStore.get(roomId).first() shouldBe storedRoom
             }
         }
         should("load members") {
+            val aliceEvent = StateEvent(
+                MemberEventContent(membership = JOIN),
+                EventId("\$event1"),
+                alice,
+                roomId,
+                1234,
+                stateKey = alice.full
+            )
+            val bobEvent = StateEvent(
+                MemberEventContent(membership = JOIN),
+                EventId("\$event2"),
+                bob,
+                roomId,
+                1234,
+                stateKey = bob.full
+            )
             apiConfig.endpoints {
                 matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
                     GetMembers.Response(
-                        setOf(
-                            StateEvent(
-                                MemberEventContent(membership = JOIN),
-                                EventId("\$event1"),
-                                alice,
-                                roomId,
-                                1234,
-                                stateKey = alice.full
-                            ),
-                            StateEvent(
-                                MemberEventContent(membership = JOIN),
-                                EventId("\$event2"),
-                                bob,
-                                roomId,
-                                1234,
-                                stateKey = bob.full
-                            )
-                        )
+                        setOf(aliceEvent, bobEvent)
                     )
                 }
             }
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
-            store.room.update(roomId) { storedRoom }
+            roomStore.update(roomId) { storedRoom }
+            val newMemberEvents = mutableListOf<Event<MemberEventContent>>()
+            api.sync.subscribe {
+                newMemberEvents += it
+            }
             cut.loadMembers(roomId)
-            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
-            store.keys.outdatedKeys.value.shouldBeEmpty()
-            store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
-            store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
+            roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
         }
-        should("add outdated keys when room is encrypted") {
-            apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
-                    GetMembers.Response(
-                        setOf(
-                            StateEvent(
-                                MemberEventContent(membership = JOIN),
-                                EventId("\$event1"),
-                                alice,
-                                roomId,
-                                1234,
-                                stateKey = alice.full
-                            ),
-                            StateEvent(
-                                MemberEventContent(membership = JOIN),
-                                EventId("\$event2"),
-                                bob,
-                                roomId,
-                                1234,
-                                stateKey = bob.full
-                            )
-                        )
-                    )
+    }
+
+    context(UserServiceImpl::getPowerLevel.name) {
+        context("the room contains no power_levels event") {
+            context("I am the creator of the room") {
+                should("return 100") {
+                    val createEvent = getCreateEvent(me)
+                    roomStateStore.update(createEvent)
+
+                    cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 100
                 }
             }
-            store.keys.updateDeviceKeys(alice) {
-                mapOf(
-                    "alice" to StoredDeviceKeys(
-                        Signed(DeviceKeys(alice, "A", setOf(), keysOf()), mapOf()),
-                        KeySignatureTrustLevel.Valid(false)
+            context("I am not the creator of the room") {
+                should("return 0") {
+                    val createEvent = getCreateEvent(alice)
+                    roomStateStore.update(createEvent)
+
+                    cut.getPowerLevel(me, roomId).first() shouldBe 0
+
+                }
+            }
+        }
+        context("the room contains a power_level event") {
+            beforeTest {
+                val createEvent = getCreateEvent(me)
+                roomStateStore.update(createEvent)
+            }
+            should("return the value in the user_id list when I am in the user_id list") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 60,
+                            alice to 50
+                        )
                     )
                 )
-            } // we know alice keys, so only update bob keys
-            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false, encryptionAlgorithm = Megolm)
-            store.room.update(roomId) { storedRoom }
-            cut.loadMembers(roomId)
-            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
-            store.keys.outdatedKeys.value shouldBe setOf(bob)
-            store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
-            store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
+                roomStateStore.update(powerLevelsEvent)
+                cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 60
+            }
+            should("return the usersDefault value when I am not in the user_id list") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(alice to 50),
+                        usersDefault = 40
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.getPowerLevel(me, roomId).first { it != 0 } shouldBe 40
+            }
         }
-        should("skip members, that are already stored") {
-            store.roomState.update(
-                StateEvent(
-                    MemberEventContent(membership = JOIN),
-                    EventId("\$event1"),
+    }
+
+    context(UserServiceImpl::canKickUser.name) {
+        context("my power level > kick level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 56
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 57
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level == kick level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 55
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 56
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level < kick level") {
+            should("return false when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 54
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 55
+                        ), kick = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canKickUser(alice, roomId).first() shouldBe false
+            }
+        }
+    }
+
+    context(UserServiceImpl::canBanUser.name) {
+        context("my power level > ban level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 56
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                            alice to 57
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level == ban level") {
+            should("return true when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe true
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 55
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 56
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+        context("my power level < ban level") {
+            should("return false when my level > other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level == other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 54
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my level < other user level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 55
+                        ), ban = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canBanUser(alice, roomId).first() shouldBe false
+            }
+        }
+    }
+
+    context(UserServiceImpl::canUnbanUser.name) {
+        context("my level > kick level") {
+            val kickLevel = 60
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+        }
+        context("my level == kick level") {
+            val kickLevel = 61
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return true when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe true
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+
+            }
+        }
+        context("my level < kick level") {
+            val kickLevel = 62
+            val myLevel = 61
+            context("my power level > ban level") {
+                val banLevel = 60
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level == ban level") {
+                val banLevel = 61
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+            context("my power level < ban level") {
+                val banLevel = 62
+                should("return false when my level > other user level") {
+                    val otherUserLevel = 60
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level == other user level") {
+                    val otherUserLevel = 61
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+                should("return false when my level < other user level") {
+                    val otherUserLevel = 62
+                    val powerLevelsEvent = getPowerLevelsEvent(
+                        PowerLevelsEventContent(
+                            users = mapOf(
+                                me to myLevel,
+                                alice to otherUserLevel
+                            ), kick = kickLevel,
+                            ban = banLevel
+                        )
+                    )
+                    roomStateStore.update(powerLevelsEvent)
+                    cut.canUnbanUser(alice, roomId).first() shouldBe false
+                }
+            }
+        }
+    }
+
+    context(UserServiceImpl::canInvite.name) {
+        should("return true when my power level > invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe true
+        }
+        should("return true when my power level == invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe true
+        }
+        should("return false when my power level < invite level") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 54,
+                        alice to 53
+                    ), invite = 55
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe false
+        }
+    }
+
+    context(UserServiceImpl::canInviteUser.name) {
+        context("User I want to invite is banned") {
+            beforeTest {
+                val memberEvent = StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId(""),
                     alice,
                     roomId,
-                    1234,
-                    stateKey = alice.full
+                    0L,
+                    stateKey = ""
                 )
-            )
-            apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
-                    GetMembers.Response(
-                        setOf(
-                            StateEvent(
-                                MemberEventContent(membership = LEAVE),
-                                EventId("\$event1"),
-                                alice,
-                                roomId,
-                                1234,
-                                stateKey = alice.full
-                            ),
-                            StateEvent(
-                                MemberEventContent(membership = JOIN),
-                                EventId("\$event2"),
-                                bob,
-                                roomId,
-                                1234,
-                                stateKey = bob.full
-                            )
-                        )
-                    )
-                }
+                val aliceRoomUser = RoomUser(roomId, alice, "Alice", memberEvent)
+                roomUserStore.update(alice, roomId) { aliceRoomUser }
             }
-            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
-            store.room.update(roomId) { storedRoom }
-            cut.loadMembers(roomId)
-            store.room.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
-            store.keys.outdatedKeys.value.shouldBeEmpty()
-            store.roomState.getByStateKey<MemberEventContent>(roomId, alice.full)?.content?.membership shouldBe JOIN
-            store.roomState.getByStateKey<MemberEventContent>(roomId, bob.full)?.content?.membership shouldBe JOIN
+            should("return false when my power level > invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my power level == invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
+            should("return false when my power level < invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), invite = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
+            }
         }
-    }
-    context(UserService::setRoomUser.name) {
-        val user1 = UserId("user1", "server")
-        val user2 = UserId("user2", "server")
-        val user3 = UserId("user3", "server")
-        val user4 = UserId("user4", "server")
-        val user1Event = StateEvent(
-            MemberEventContent(membership = JOIN),
-            EventId("\$event1"),
-            UserId("sender", "server"),
-            roomId,
-            1234,
-            stateKey = user1.full
-        )
-        val user2Event = StateEvent(
-            MemberEventContent(membership = JOIN),
-            EventId("\$event2"),
-            UserId("sender", "server"),
-            roomId,
-            1234,
-            stateKey = user2.full
-        )
-        val user3Event = StateEvent(
-            MemberEventContent(membership = JOIN),
-            EventId("\$event3"),
-            UserId("sender", "server"),
-            roomId,
-            1234,
-            stateKey = user3.full
-        )
-        beforeTest {
-            // This should be ignored
-            store.roomUser.update(user4, roomId) {
-                RoomUser(
+        context("User I want to invite is not banned") {
+            beforeTest {
+                val memberEvent = StateEvent(
+                    MemberEventContent(membership = LEAVE),
+                    EventId(""),
+                    alice,
                     roomId,
-                    user4,
-                    "U1 (@user4:server)",
-                    StateEvent(
-                        MemberEventContent(displayName = "U1", membership = BAN),
-                        EventId("\$event4"),
-                        UserId("sender", "server"),
-                        roomId,
-                        1234,
-                        stateKey = user4.full
+                    0L,
+                    stateKey = ""
+                )
+                val aliceRoomUser = RoomUser(roomId, alice, "Alice", memberEvent)
+                roomUserStore.update(alice, roomId) { aliceRoomUser }
+            }
+            should("return true when my power level > invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 56,
+                        ), invite = 55
                     )
                 )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe true
             }
-        }
-        should("skip when user already present") {
-            val event = user1Event.copy(
-                content = MemberEventContent(
-                    displayName = "U1",
-                    membership = JOIN
-                )
-            )
-            cut.setRoomUser(event)
-            cut.setRoomUser(
-                event.copy(content = event.content.copy(displayName = "CHANGED!!!")),
-                skipWhenAlreadyPresent = true
-            )
-            store.roomUser.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
-        }
-        context("user is new member") {
-            should("set our displayName to 'DisplayName'") {
-                val event = user1Event.copy(
-                    content = MemberEventContent(
-                        displayName = "U1",
-                        membership = JOIN
+            should("return true when my power level == invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                        ), invite = 55
                     )
                 )
-                cut.setRoomUser(event)
-                store.roomUser.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe true
             }
-        }
-        context("user is member") {
-            beforeTest {
-                store.roomUser.update(user1, roomId) {
-                    RoomUser(
-                        roomId,
-                        user1,
-                        "OLD",
-                        user1Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
+            should("return false when my power level < invite level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 54,
+                            alice to 53
+                        ), invite = 55
                     )
-                }
-            }
-            context("no other user has same displayName") {
-                beforeTest {
-                    store.roomUser.update(user2, roomId) {
-                        RoomUser(
-                            roomId,
-                            user2,
-                            "U2",
-                            user2Event.copy(content = MemberEventContent(displayName = "U2", membership = JOIN))
-                        )
-                    }
-                }
-                should("set our displayName to 'DisplayName'") {
-                    val event = user1Event.copy(
-                        content = MemberEventContent(
-                            displayName = "U1",
-                            membership = JOIN
-                        )
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(roomId, user1, "U1", event)
-                }
-                should("not change our displayName when it has not changed") {
-                    val event = user1Event.copy(
-                        content = MemberEventContent(
-                            displayName = "OLD",
-                            membership = JOIN
-                        )
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(roomId, user1, "OLD", event)
-                }
-                should("set our displayName to '@user:server' when no displayName set") {
-                    val event = user1Event.copy(content = MemberEventContent(membership = JOIN))
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId,
-                        user1,
-                        "@user1:server",
-                        event
-                    )
-                }
-                should("set our displayName to '@user:server' when displayName is empty") {
-                    val event = user1Event.copy(content = MemberEventContent(displayName = "", membership = JOIN))
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId,
-                        user1,
-                        "@user1:server",
-                        event
-                    )
-                }
-            }
-            context("one other user has same displayName") {
-                should("set displayName of the other and us to 'DisplayName (@user1:server)'") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = JOIN)
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId, user1, "U1 (@user1:server)", event
-                    )
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "U1 (@user2:server)", event2
-                    )
-                }
-            }
-            context("two other users have same displayName") {
-                should("set our displayName to 'DisplayName (@user:server)'") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user2, roomId) {
-                        RoomUser(roomId, user2, "U1 (@user2:server)", event2)
-                    }
-                    val event3 =
-                        user3Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user3, roomId) {
-                        RoomUser(roomId, user3, "U1 (@user3:server)", event3)
-                    }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = JOIN)
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId, user1, "U1 (@user1:server)", event
-                    )
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "U1 (@user2:server)", event2
-                    )
-                    store.roomUser.get(user3, roomId) shouldBe RoomUser(
-                        roomId, user3, "U1 (@user3:server)", event3
-                    )
-                }
-            }
-            context("one other user has same old displayName") {
-                should("set displayName of the other to 'DisplayName'") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
-                    store.roomUser.update(user2, roomId) {
-                        RoomUser(roomId, user2, "OLD (@user2:server)", event2)
-                    }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = JOIN)
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "OLD", event2
-                    )
-                }
-            }
-            context("two other users have same old displayName") {
-                should("keep displayName of the others'") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
-                    store.roomUser.update(user2, roomId) {
-                        RoomUser(roomId, user2, "OLD (@user2:server)", event2)
-                    }
-                    val event3 =
-                        user3Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
-                    store.roomUser.update(user3, roomId) {
-                        RoomUser(roomId, user3, "OLD (@user3:server)", event3)
-                    }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = JOIN)
-                    )
-                    cut.setRoomUser(event)
-
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "OLD (@user2:server)", event2
-                    )
-                    store.roomUser.get(user3, roomId) shouldBe RoomUser(
-                        roomId, user3, "OLD (@user3:server)", event3
-                    )
-                }
-            }
-        }
-        context("user is not member anymore") {
-            beforeTest {
-                store.roomUser.update(user1, roomId) {
-                    RoomUser(
-                        roomId,
-                        user1,
-                        "OLD",
-                        user1Event.copy(content = MemberEventContent(displayName = "OLD", membership = JOIN))
-                    )
-                }
-            }
-            should("set our displayName to 'DisplayName (@user:server)'") {
-                val event = user1Event.copy(
-                    content = MemberEventContent(displayName = "OLD", membership = LEAVE)
                 )
-                cut.setRoomUser(event)
-                store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                    roomId, user1, "OLD (@user1:server)", event
-                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canInviteUser(alice, roomId).first() shouldBe false
             }
-            context("one other user has same displayName") {
-                should("set displayName of the other to 'DisplayName'") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(displayName = "U1", membership = BAN)
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId, user1, "U1 (@user1:server)", event
-                    )
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "U1", event2
-                    )
-                }
-            }
-            context("two other users have same displayName") {
-                should("keep displayName of the others") {
-                    val event2 =
-                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user2, roomId) {
-                        RoomUser(roomId, user2, "U1 (@user2:server)", event2)
-                    }
-                    val event3 =
-                        user3Event.copy(content = MemberEventContent(displayName = "U1", membership = JOIN))
-                    store.roomUser.update(user3, roomId) {
-                        RoomUser(roomId, user3, "U1 (@user3:server)", event3)
-                    }
-                    val event = user1Event.copy(
-                        content = MemberEventContent(
-                            displayName = "U1",
-                            membership = LEAVE
-                        )
-                    )
-                    cut.setRoomUser(event)
-                    store.roomUser.get(user1, roomId) shouldBe RoomUser(
-                        roomId, user1, "U1 (@user1:server)", event
-                    )
-                    store.roomUser.get(user2, roomId) shouldBe RoomUser(
-                        roomId, user2, "U1 (@user2:server)", event2
-                    )
-                    store.roomUser.get(user3, roomId) shouldBe RoomUser(
-                        roomId, user3, "U1 (@user3:server)", event3
-                    )
-                }
-            }
-        }
-    }
-
-    context("setPresence") {
-        should("set the presence for a user whose presence is not known") {
-            cut.userPresence.value[alice] shouldBe null
-            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.ONLINE), sender = alice))
-            cut.userPresence.value[alice] shouldBe PresenceEventContent(Presence.ONLINE)
-        }
-
-        should("overwrite the presence of a user when a new status is known") {
-            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.ONLINE), sender = bob))
-            cut.setPresence(Event.EphemeralEvent(PresenceEventContent(Presence.UNAVAILABLE), sender = bob))
-
-            cut.userPresence.value[bob] shouldBe PresenceEventContent(Presence.UNAVAILABLE)
         }
     }
 })

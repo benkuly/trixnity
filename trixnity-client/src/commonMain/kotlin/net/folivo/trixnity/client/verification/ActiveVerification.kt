@@ -11,8 +11,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.key.KeyTrustService
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -25,7 +25,7 @@ import kotlin.js.JsName
 
 private val log = KotlinLogging.logger {}
 
-interface IActiveVerification {
+interface ActiveVerification {
     val theirUserId: UserId
     val timestamp: Long
     val relatesTo: RelatesTo.Reference?
@@ -37,7 +37,7 @@ interface IActiveVerification {
     suspend fun cancel(message: String = "user cancelled verification")
 }
 
-abstract class ActiveVerification(
+abstract class ActiveVerificationImpl(
     request: VerificationRequest,
     requestIsFromOurOwn: Boolean,
     protected val ownUserId: UserId,
@@ -48,10 +48,10 @@ abstract class ActiveVerification(
     protected val supportedMethods: Set<VerificationMethod>,
     override val relatesTo: RelatesTo.Reference?,
     override val transactionId: String?,
-    protected val store: Store,
-    private val keyTrustService: IKeyTrustService,
+    protected val keyStore: KeyStore,
+    private val keyTrustService: KeyTrustService,
     protected val json: Json,
-) : IActiveVerification {
+) : ActiveVerification {
     @JsName("_theirDeviceId")
     var theirDeviceId: String? = theirInitialDeviceId
         private set
@@ -113,25 +113,29 @@ abstract class ActiveVerification(
                         onReady(step)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationStartEventContent -> {
                     if (currentState is Ready || currentState is Start)
                         onStart(step, sender, isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationDoneEventContent -> {
                     if (currentState is Start || currentState is PartlyDone)
                         onDone(isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
+
                 is VerificationCancelEventContent -> {
                     onCancel(step, isOurOwn)
                 }
+
                 else -> when (currentState) {
                     is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
                     else -> cancelUnexpectedMessage(currentState)
                 }
             }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             cancel(Code.InternalError, "something went wrong: ${error.message}")
         }
     }
@@ -169,7 +173,7 @@ abstract class ActiveVerification(
                         relatesTo = relatesTo,
                         transactionId = transactionId,
                         sendVerificationStep = ::sendVerificationStepAndHandleIt,
-                        store = store,
+                        keyStore = keyStore,
                         keyTrustService = keyTrustService,
                         json = json,
                     )
@@ -185,6 +189,7 @@ abstract class ActiveVerification(
                     userIdComparison > 0 -> setNewStartEvent()
                     userIdComparison < 0 -> {// do nothing (we keep the current Start)
                     }
+
                     else -> {
                         val deviceIdComparison = currentState.senderDeviceId.compareTo(step.fromDevice)
                         when {
@@ -212,6 +217,7 @@ abstract class ActiveVerification(
             is Start -> {
                 currentState.method.handleVerificationStep(step, isOurOwn)
             }
+
             else -> {}
         }
     }
@@ -225,16 +231,17 @@ abstract class ActiveVerification(
                 if (state.value !is Cancel)
                     try {
                         sendVerificationStep(step)
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
                 handleVerificationStep(step, ownUserId, true)
             }
+
             else -> try {
                 sendVerificationStep(step)
                 handleVerificationStep(step, ownUserId, true)
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 log.debug { "could not send step $step because: ${error.message}" }
                 handleVerificationStep(
                     VerificationCancelEventContent(

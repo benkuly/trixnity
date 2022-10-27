@@ -8,9 +8,9 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.key.KeySignatureTrustLevel
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.getInMemoryKeyStore
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.ComparisonByUser
@@ -31,15 +31,15 @@ import net.folivo.trixnity.olm.freeAfter
 class ActiveSasVerificationStateTest : ShouldSpec({
     timeout = 30_000
 
-    lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var keyStore: KeyStore
+    lateinit var scope: CoroutineScope
 
     beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        keyStore = getInMemoryKeyStore(scope)
     }
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
     context(TheirSasStart::class.simpleName ?: "TheirSasStart") {
@@ -88,7 +88,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
             should("send ${SasMacEventContent::class.simpleName} with own device key and master key") {
                 freeAfter(OlmSAS.create(), OlmSAS.create()) { olmSas1, olmSas2 ->
                     olmSas1.setTheirPublicKey(olmSas2.publicKey)
-                    store.keys.updateDeviceKeys(UserId("alice", "server")) {
+                    keyStore.updateDeviceKeys(UserId("alice", "server")) {
                         mapOf(
                             "AAAAAA" to StoredDeviceKeys(
                                 Signed(
@@ -118,7 +118,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                             )
                         )
                     }
-                    store.keys.updateCrossSigningKeys(UserId("alice", "server")) {
+                    keyStore.updateCrossSigningKeys(UserId("alice", "server")) {
                         setOf(
                             StoredCrossSigningKeys(
                                 Signed(
@@ -156,7 +156,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                         relatesTo = null,
                         transactionId = "t",
                         olmSas = olmSas1,
-                        store = store
+                        keyStore = keyStore
                     ) { step = it }
                     cut.match()
                     val result = step
@@ -179,7 +179,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                         relatesTo = null,
                         transactionId = "t",
                         olmSas = olmSAS,
-                        store = store
+                        keyStore = keyStore
                     ) { step = it }
                     cut.match()
                     val result = step
@@ -202,7 +202,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                     relatesTo = null,
                     transactionId = "t",
                     olmSas = olmSAS,
-                    store = store
+                    keyStore = keyStore
                 ) { step = it }
                 cut.noMatch()
                 val result = step

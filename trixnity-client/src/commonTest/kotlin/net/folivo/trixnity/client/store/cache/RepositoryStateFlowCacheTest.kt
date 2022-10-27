@@ -5,9 +5,10 @@ import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.client.store.InMemoryMinimalStoreRepository
-import net.folivo.trixnity.client.store.RepositoryTransactionManager
+import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.store.repository.InMemoryMinimalStoreRepository
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
 class RepositoryStateFlowCacheTest : ShouldSpec({
     timeout = 60_000
@@ -35,19 +36,19 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
     context("get") {
         should("read from database") {
             repository.save("key", "value")
-            cut.get("key") shouldBe "value"
+            cut.get("key").first() shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
         should("not use transaction when flag ist set") {
             repository.save("key", "value")
-            cut.get("key", withTransaction = false) shouldBe "value"
+            cut.get("key", withTransaction = false).first() shouldBe "value"
             transactionWasCalled.value shouldBe false
         }
         should("prefer cache") {
             repository.save("key", "value")
-            cut.get("key") shouldBe "value"
+            cut.get("key").first() shouldBe "value"
             repository.save("key", "value2")
-            cut.get("key") shouldBe "value"
+            cut.get("key").first() shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
     }

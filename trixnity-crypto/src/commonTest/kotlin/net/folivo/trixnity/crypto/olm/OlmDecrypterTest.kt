@@ -14,19 +14,19 @@ import net.folivo.trixnity.olm.OlmLibraryException
 import org.kodein.mock.Mocker
 import org.kodein.mock.UsesMocks
 
-@UsesMocks(IOlmEventService::class)
+@UsesMocks(OlmEncryptionService::class)
 class OlmDecrypterTest : ShouldSpec({
     timeout = 60_000
 
     val mocker = Mocker()
-    val mockOlmEventService = MockIOlmEventService(mocker)
+    val mockOlmEventService = MockOlmEncryptionService(mocker)
 
     val subscriberReceived = mutableListOf<DecryptedOlmEventContainer>()
     val subscriber: DecryptedOlmEventSubscriber = {
         subscriberReceived.add(it)
     }
 
-    val cut = OlmDecrypter(mockOlmEventService)
+    val cut = OlmDecrypterImpl(mockOlmEventService)
     cut.subscribe(subscriber)
 
     afterEach {
@@ -44,7 +44,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw DecryptionException.ValidationFailed("whoops") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("catch KeyException") {
@@ -57,7 +57,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw KeyException.KeyNotFoundException("not found") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("catch OlmLibraryException") {
@@ -70,7 +70,7 @@ class OlmDecrypterTest : ShouldSpec({
         mocker.everySuspending {
             mockOlmEventService.decryptOlm(isAny(), isAny())
         } runs { throw OlmLibraryException("something") }
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
     should("emit decrypted events") {
@@ -86,7 +86,7 @@ class OlmDecrypterTest : ShouldSpec({
             UserId("receiver", "server"), keysOf()
         )
         mocker.everySuspending { mockOlmEventService.decryptOlm(isAny(), isAny()) } returns decryptedEvent
-        cut(event)
+        cut.handleOlmEvent(event)
         subscriberReceived shouldContainExactly listOf(DecryptedOlmEventContainer(event, decryptedEvent))
     }
 })

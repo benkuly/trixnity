@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.transformLatest
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
@@ -25,10 +26,13 @@ class RoomStateStore(
     private val rtm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     storeScope: CoroutineScope,
-) {
+) : Store {
     private val roomStateCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
 
-    suspend fun deleteAll() {
+    override suspend fun init() {}
+
+    override suspend fun clearCache() = deleteAll()
+    override suspend fun deleteAll() {
         rtm.transaction {
             roomStateRepository.deleteAll()
         }
@@ -57,13 +61,12 @@ class RoomStateStore(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : StateEventContent> get(
+    fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Map<String, Event<C>?>?> {
         val eventType = findType(eventContentClass)
-        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType), scope = scope)
+        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType))
             .mapLatest { value ->
                 value?.mapValues {
                     if (it.value.content.instanceOf(eventContentClass)) {
@@ -74,43 +77,15 @@ class RoomStateStore(
             }
     }
 
-    suspend fun <C : StateEventContent> get(
-        roomId: RoomId,
-        eventContentClass: KClass<C>
-    ): Map<String, Event<C>?>? {
-        val eventType = findType(eventContentClass)
-        return roomStateCache.get(RoomStateRepositoryKey(roomId, eventType))
-            ?.mapValues {
-                if (it.value.content.instanceOf(eventContentClass)) {
-                    @Suppress("UNCHECKED_CAST")
-                    it.value as Event<C>
-                } else null
-            }
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun <C : StateEventContent> getByStateKey(
+    fun <C : StateEventContent> getByStateKey(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): Flow<Event<C>?> {
         val eventType = findType(eventContentClass)
-        return roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, scope)
+        return roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
             .transformLatest { if (it?.content?.instanceOf(eventContentClass) == true) emit(it) else emit(null) }
             .filterIsInstance()
-    }
-
-    suspend fun <C : StateEventContent> getByStateKey(
-        roomId: RoomId,
-        stateKey: String,
-        eventContentClass: KClass<C>,
-    ): Event<C>? {
-        val eventType = findType(eventContentClass)
-        val value = roomStateCache.getBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey)
-        return if (value?.content?.instanceOf(eventContentClass) == true) {
-            @Suppress("UNCHECKED_CAST")
-            value as Event<C>?
-        } else null
     }
 }

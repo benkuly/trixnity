@@ -1,7 +1,7 @@
 package net.folivo.trixnity.appservice
 
 import mu.KotlinLogging
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
@@ -10,7 +10,7 @@ private val log = KotlinLogging.logger {}
 
 interface ApplicationServiceUserService {
 
-    val matrixClientServerApiClient: MatrixClientServerApiClient
+    val matrixClientServerApiClient: MatrixClientServerApiClientImpl
 
     enum class UserExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED

@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.keys.SecretStorageAlgorithm
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#key-storage">matrix spec</a>
  */
 @Serializable(with = SecretKeyEventContentSerializer::class)
-sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
+sealed interface SecretKeyEventContent : GlobalAccountDataEventContent {
     @Serializable
     data class AesHmacSha2Key(
         @SerialName("name")
@@ -26,7 +26,7 @@ sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
         val iv: String? = null,
         @SerialName("mac")
         val mac: String? = null
-    ) : SecretKeyEventContent() {
+    ) : SecretKeyEventContent {
         @SerialName("algorithm")
         val algorithm = SecretStorageAlgorithm.AesHmacSha2.value
 
@@ -38,7 +38,7 @@ sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
         )
 
         @Serializable(with = SecretStorageKeyPassphraseSerializer::class)
-        sealed class SecretStorageKeyPassphrase {
+        sealed interface SecretStorageKeyPassphrase {
             @Serializable
             data class Pbkdf2(
                 @SerialName("salt")
@@ -47,16 +47,16 @@ sealed class SecretKeyEventContent : GlobalAccountDataEventContent {
                 val iterations: Int,
                 @SerialName("bits")
                 val bits: Int? = 256
-            ) : SecretStorageKeyPassphrase() {
+            ) : SecretStorageKeyPassphrase {
                 @SerialName("algorithm")
                 val algorithm: String = "m.pbkdf2"
             }
 
-            data class Unknown(val raw: JsonObject) : SecretStorageKeyPassphrase()
+            data class Unknown(val raw: JsonObject) : SecretStorageKeyPassphrase
         }
     }
 
-    data class Unknown(val raw: JsonObject) : SecretKeyEventContent()
+    data class Unknown(val raw: JsonObject) : SecretKeyEventContent
 }
 
 object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
@@ -93,6 +93,7 @@ object SecretStorageKeyPassphraseSerializer : KSerializer<AesHmacSha2Key.SecretS
                 "m.pbkdf2" -> decoder.json.decodeFromJsonElement<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>(
                     jsonElement
                 )
+
                 else -> AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown(jsonElement)
             }
         } catch (error: Exception) {

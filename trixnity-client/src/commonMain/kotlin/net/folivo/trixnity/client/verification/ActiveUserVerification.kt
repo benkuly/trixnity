@@ -7,11 +7,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.possiblyEncryptEvent
-import net.folivo.trixnity.client.room.IRoomService
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
+import net.folivo.trixnity.client.key.KeyTrustService
+import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -25,7 +24,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
-import net.folivo.trixnity.crypto.olm.IOlmEventService
 
 private val log = KotlinLogging.logger {}
 
@@ -41,12 +39,11 @@ class ActiveUserVerification(
     val roomId: RoomId,
     supportedMethods: Set<VerificationMethod>,
     private val api: MatrixClientServerApiClient,
-    store: Store,
-    private val olmEvent: IOlmEventService,
-    private val user: IUserService,
-    private val room: IRoomService,
-    keyTrust: IKeyTrustService,
-) : ActiveVerification(
+    private val possiblyEncryptEvent: PossiblyEncryptEvent,
+    keyStore: KeyStore,
+    private val room: RoomService,
+    keyTrust: KeyTrustService,
+) : ActiveVerificationImpl(
     request,
     requestIsFromOurOwn,
     ownUserId,
@@ -57,19 +54,16 @@ class ActiveUserVerification(
     supportedMethods,
     RelatesTo.Reference(requestEventId),
     null,
-    store,
+    keyStore,
     keyTrust,
     api.json,
 ) {
     override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
-        val sendContent = try {
-            possiblyEncryptEvent(step, roomId, store, olmEvent, user)
-        } catch (error: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted." }
-            step
-        }
+        val sendContent = possiblyEncryptEvent(step, roomId)
+            .onFailure { log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${it.message}" } }
+            .getOrNull() ?: step
         api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
     }
 
@@ -105,6 +99,7 @@ class ActiveUserVerification(
                                 else if (state.value !is Ready)
                                     mutableState.value = Undefined
                             }
+
                             state.value == AcceptedByOtherDevice || state.value == Undefined -> {}
                             // ignore own events (we already processed them)
                             searchResult.sender != ownUserId -> handleIncomingVerificationStep(

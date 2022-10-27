@@ -21,7 +21,7 @@ class MatrixSignatureAuth internal constructor(
 ) : AuthenticationProvider(config) {
     class Config internal constructor(name: String? = null, val fallbackDestination: String) :
         AuthenticationProvider.Config(name) {
-        internal var authenticationFunction: SignatureAuthenticationFunction = {
+        var authenticationFunction: SignatureAuthenticationFunction = {
             throw NotImplementedError("MatrixSignatureAuth validate function is not specified.")
         }
     }
@@ -47,10 +47,12 @@ class MatrixSignatureAuth internal constructor(
                             HttpStatusCode.Unauthorized,
                             ErrorResponse.Unauthorized("missing signature")
                         )
+
                     InvalidCredentials -> challengeCall.respond<ErrorResponse>(
                         HttpStatusCode.Unauthorized,
                         ErrorResponse.Unauthorized("wrong signature")
                     )
+
                     is Error -> challengeCall.respond<ErrorResponse>(
                         HttpStatusCode.Unauthorized,
                         ErrorResponse.Unauthorized(cause.message)
@@ -93,7 +95,7 @@ private suspend fun ApplicationRequest.getSignature(fallbackDestination: String)
                     }
                 SignedRequestAuthenticationBody(
                     signed = requestAuthenticationBody(
-                        content = call.receiveOrNull<ByteReadChannel>()?.toByteArray()?.decodeToString(),
+                        content = call.receiveNullable<ByteReadChannel>()?.toByteArray()?.decodeToString(),
                         destination = destination,
                         method = httpMethod.value,
                         origin = origin,
@@ -104,6 +106,7 @@ private suspend fun ApplicationRequest.getSignature(fallbackDestination: String)
                 )
             }
         }
+
         else -> null
     }
 }

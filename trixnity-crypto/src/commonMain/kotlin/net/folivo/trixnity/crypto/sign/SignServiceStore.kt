@@ -1,5 +1,6 @@
 package net.folivo.trixnity.crypto.sign
 
 interface SignServiceStore {
-    suspend fun getOlmAccount(): String?
+    val olmAccount: String
+    val olmPickleKey: String
 }

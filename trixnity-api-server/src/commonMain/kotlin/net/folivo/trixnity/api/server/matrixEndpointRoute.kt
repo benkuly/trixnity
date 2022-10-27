@@ -24,32 +24,31 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
     val call: ApplicationCall,
 )
 
-val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointConfig")
+val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointWithoutAuth")
 
-// TODO inject json and mappings with context receivers with kotlin > 1.7.0
+// TODO inject json and mappings with context receivers with kotlin >= 1.8.0
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, REQUEST, RESPONSE>) -> RESPONSE,
-) {
-    matrixEndpointResource<ENDPOINT, REQUEST, RESPONSE> { endpoint ->
-        val requestSerializer: KSerializer<REQUEST>? = endpoint.requestSerializerBuilder(mappings, json)
-        val requestBody: REQUEST =
-            when {
-                REQUEST::class == Unit::class -> Unit as REQUEST
-                requestSerializer != null -> json.decodeFromJsonElement(requestSerializer, call.receive())
-                else -> call.receive()
-            }
-        val responseBody: RESPONSE = handler(MatrixEndpointContext(endpoint, requestBody, call))
-        val responseSerializer = endpoint.responseSerializerBuilder(mappings, json)
+    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, REQUEST, RESPONSE>.() -> RESPONSE,
+) = matrixEndpointResource<ENDPOINT> { endpoint ->
+    val requestSerializer: KSerializer<REQUEST>? = endpoint.requestSerializerBuilder(mappings, json)
+    val requestBody: REQUEST =
         when {
-            responseSerializer != null -> call.respond(
-                HttpStatusCode.OK,
-                json.encodeToJsonElement(responseSerializer, responseBody)
-            )
-            responseBody == null -> call.respond(HttpStatusCode.OK)
-            else -> call.respond(HttpStatusCode.OK, responseBody)
+            REQUEST::class == Unit::class -> Unit as REQUEST
+            requestSerializer != null -> json.decodeFromJsonElement(requestSerializer, call.receive())
+            else -> call.receive()
         }
+    val responseBody: RESPONSE = handler(MatrixEndpointContext(endpoint, requestBody, call))
+    val responseSerializer = endpoint.responseSerializerBuilder(mappings, json)
+    when {
+        responseSerializer != null -> call.respond(
+            HttpStatusCode.OK,
+            json.encodeToJsonElement(responseSerializer, responseBody)
+        )
+
+        responseBody == null -> call.respond(HttpStatusCode.OK)
+        else -> call.respond(HttpStatusCode.OK, responseBody)
     }
 }
 
@@ -57,14 +56,14 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
 inline fun <reified ENDPOINT : MatrixEndpoint<Unit, Unit>> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, Unit, Unit>) -> Unit
+    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, Unit, Unit>.() -> Unit
 ) = matrixEndpoint<ENDPOINT, Unit, Unit>(json, mappings, handler = handler)
 
 @JvmName("matrixEndpointWithUnitResponse")
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, Unit>, reified REQUEST> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, REQUEST, Unit>) -> Unit
+    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, REQUEST, Unit>.() -> Unit
 ) = matrixEndpoint<ENDPOINT, REQUEST, Unit>(
     json,
     mappings,
@@ -75,7 +74,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, Unit>, reified REQUEST> R
 inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> Route.matrixEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, Unit, RESPONSE>) -> RESPONSE
+    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, Unit, RESPONSE>.() -> RESPONSE
 ) = matrixEndpoint<ENDPOINT, Unit, RESPONSE>(
     json,
     mappings,
@@ -83,21 +82,19 @@ inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE>
 )
 
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpointResource(
+inline fun <reified ENDPOINT : MatrixEndpoint<*, *>> Route.matrixEndpointResource(
     crossinline block: suspend PipelineContext<Unit, ApplicationCall>.(ENDPOINT) -> Unit
-) {
-    resource<ENDPOINT> {
-        val annotations = serializer<ENDPOINT>().descriptor.annotations
-        val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
-            ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
-        val withoutAuth = annotations.filterIsInstance<WithoutAuth>().firstOrNull() != null
-        method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
-            intercept(ApplicationCallPipeline.Plugins) {
-                call.attributes.put(withoutAuthAttributeKey, withoutAuth)
-            }
-            handle<ENDPOINT> { endpoint ->
-                block(endpoint)
-            }
+) = resource<ENDPOINT> {
+    val annotations = serializer<ENDPOINT>().descriptor.annotations
+    val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
+        ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+    val withoutAuth = annotations.filterIsInstance<WithoutAuth>().firstOrNull() != null
+    method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
+        intercept(ApplicationCallPipeline.Plugins) {
+            call.attributes.put(withoutAuthAttributeKey, withoutAuth)
+        }
+        handle<ENDPOINT> { endpoint ->
+            block(endpoint)
         }
     }
 }

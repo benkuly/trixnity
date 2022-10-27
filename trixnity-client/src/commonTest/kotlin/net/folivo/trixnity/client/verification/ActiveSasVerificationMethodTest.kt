@@ -17,10 +17,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.key.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.getInMemoryKeyStore
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.store.InMemoryStore
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
@@ -44,8 +44,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
     val bob = UserId("bob", "server")
     val bobDevice = "BBBBBB"
 
-    lateinit var store: Store
-    lateinit var storeScope: CoroutineScope
+    lateinit var keyStore: KeyStore
+    lateinit var scope: CoroutineScope
     lateinit var keyTrustService: KeyTrustServiceMock
     val json = createMatrixEventJson()
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
@@ -54,8 +54,8 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
 
     beforeTest {
         sendVerificationStepFlow = MutableSharedFlow(replay = 10)
-        storeScope = CoroutineScope(Dispatchers.Default)
-        store = InMemoryStore(storeScope).apply { init() }
+        scope = CoroutineScope(Dispatchers.Default)
+        keyStore = getInMemoryKeyStore(scope)
         keyTrustService = KeyTrustServiceMock()
         val method = ActiveSasVerificationMethod.create(
             startEventContent = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t"),
@@ -67,7 +67,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             relatesTo = null,
             transactionId = "t",
             sendVerificationStep = { sendVerificationStepFlow.emit(it) },
-            store = store,
+            keyStore = keyStore,
             keyTrustService = keyTrustService,
             json = json,
         )
@@ -75,7 +75,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         cut = method
     }
     afterTest {
-        storeScope.cancel()
+        scope.cancel()
     }
 
     context("create") {
@@ -95,7 +95,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 relatesTo = null,
                 transactionId = "t",
                 sendVerificationStep = { sendVerificationStepFlow.emit(it) },
-                store = store,
+                keyStore = keyStore,
                 keyTrustService = keyTrustService,
                 json = json,
             )
@@ -120,7 +120,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 relatesTo = null,
                 transactionId = "t",
                 sendVerificationStep = { sendVerificationStepFlow.emit(it) },
-                store = store,
+                keyStore = keyStore,
                 keyTrustService = keyTrustService,
                 json = json,
             )
@@ -320,7 +320,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         context("current state is ${WaitForMacs::class.simpleName}") {
             var sasMacFromBob: VerificationStep? = null
             beforeTest {
-                store.keys.updateDeviceKeys(bob) {
+                keyStore.updateDeviceKeys(bob) {
                     mapOf(
                         bobDevice to StoredDeviceKeys(
                             Signed(
@@ -335,7 +335,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                         )
                     )
                 }
-                store.keys.updateCrossSigningKeys(bob) {
+                keyStore.updateCrossSigningKeys(bob) {
                     setOf(
                         StoredCrossSigningKeys(
                             Signed(
@@ -373,7 +373,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                         bob, bobDevice, alice, aliceDevice,
                         "hkdf-hmac-sha256",
                         null, "t",
-                        bobOlmSas, store
+                        bobOlmSas, keyStore
                     ) { sasMacFromBob = it }.match()
                 }
             }

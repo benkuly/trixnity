@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.verification
 
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
-import net.folivo.trixnity.client.key.IKeyTrustService
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.clientserverapi.client.IMatrixClientServerApiClient
+import net.folivo.trixnity.client.key.KeyTrustService
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -13,8 +13,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.crypto.olm.IOlmService
-import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.crypto.olm.OlmDecrypter
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 private val log = KotlinLogging.logger {}
 
@@ -27,11 +27,12 @@ class ActiveDeviceVerification(
     theirDeviceId: String? = null,
     private val theirDeviceIds: Set<String> = setOf(),
     supportedMethods: Set<VerificationMethod>,
-    private val api: IMatrixClientServerApiClient,
-    private val olmService: IOlmService,
-    keyTrust: IKeyTrustService,
-    store: Store,
-) : ActiveVerification(
+    private val api: MatrixClientServerApiClient,
+    private val olmDecrypter: OlmDecrypter,
+    private val olmEncryptionService: OlmEncryptionService,
+    keyTrust: KeyTrustService,
+    keyStore: KeyStore,
+) : ActiveVerificationImpl(
     request,
     requestIsOurs,
     ownUserId,
@@ -42,7 +43,7 @@ class ActiveDeviceVerification(
     supportedMethods,
     null,
     request.transactionId,
-    store,
+    keyStore,
     keyTrust,
     api.json,
 ) {
@@ -51,28 +52,19 @@ class ActiveDeviceVerification(
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
         requireNotNull(theirDeviceId) { "their device id should never be null" }
-        try {
-            api.users.sendToDevice(
-                mapOf(
-                    theirUserId to mapOf(
-                        theirDeviceId to olmService.event.encryptOlm(
-                            step,
-                            theirUserId,
-                            theirDeviceId
-                        )
-                    )
-                )
-            )
-        } catch (error: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
-            api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to step)))
-        }.getOrThrow()
+        val stepToSend = try {
+            olmEncryptionService.encryptOlm(step, theirUserId, theirDeviceId)
+        } catch (exception: Exception) {
+            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
+            step
+        }
+        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to stepToSend))).getOrThrow()
     }
 
     override suspend fun lifecycle() {
         try {
             api.sync.subscribe(::handleVerificationStepEvents)
-            olmService.decrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
+            olmDecrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
             while (isVerificationRequestActive(timestamp, state.value)) {
                 delay(500)
@@ -82,7 +74,7 @@ class ActiveDeviceVerification(
             }
         } finally {
             api.sync.unsubscribe(::handleVerificationStepEvents)
-            olmService.decrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
+            olmDecrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
         }
     }
 
@@ -108,12 +100,13 @@ class ActiveDeviceVerification(
                     try {
                         api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
-                                olmService.event.encryptOlm(cancelEvent, theirUserId, it)
-                            } catch (olmError: OlmLibraryException) {
+                                olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
+                            } catch (exception: Exception) {
+                                log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
                                 cancelEvent
                             }
                         })).getOrThrow()
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }
                     }
                 }

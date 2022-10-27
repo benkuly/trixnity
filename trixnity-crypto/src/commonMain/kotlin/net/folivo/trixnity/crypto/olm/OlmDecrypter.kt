@@ -3,7 +3,6 @@ package net.folivo.trixnity.crypto.olm
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import mu.KotlinLogging
-import net.folivo.trixnity.core.EventSubscriber
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
@@ -18,14 +17,16 @@ data class DecryptedOlmEventContainer(
 
 typealias DecryptedOlmEventSubscriber = suspend (DecryptedOlmEventContainer) -> Unit
 
-interface IOlmDecrypter {
+interface OlmDecrypter {
     fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber)
     fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber)
+
+    suspend fun handleOlmEvent(event: Event<OlmEncryptedEventContent>)
 }
 
-class OlmDecrypter(
-    private val olmEventService: IOlmEventService,
-) : EventSubscriber<OlmEncryptedEventContent>, IOlmDecrypter {
+class OlmDecrypterImpl(
+    private val olmEncryptionService: OlmEncryptionService,
+) : OlmDecrypter {
 
     private val eventSubscribers = MutableStateFlow<Set<DecryptedOlmEventSubscriber>>(setOf())
 
@@ -35,10 +36,10 @@ class OlmDecrypter(
     override fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber) =
         eventSubscribers.update { it - eventSubscriber }
 
-    override suspend operator fun invoke(event: Event<OlmEncryptedEventContent>) {
+    override suspend fun handleOlmEvent(event: Event<OlmEncryptedEventContent>) {
         if (event is Event.ToDeviceEvent) {
             val decryptedEvent = try {
-                olmEventService.decryptOlm(event.content, event.sender)
+                olmEncryptionService.decryptOlm(event.content, event.sender)
             } catch (e: DecryptionException) {
                 log.error(e) { "could not decrypt $event" }
                 null

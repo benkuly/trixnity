@@ -29,7 +29,7 @@ class ServerApiClientTest {
             versions = emptyList(),
             unstable_features = mapOf()
         )
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -54,7 +54,7 @@ class ServerApiClientTest {
                 GetCapabilities.Response.Capabilities.RoomVersionsCapability("5", mapOf())
             )
         )
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -73,7 +73,7 @@ class ServerApiClientTest {
 
     @Test
     fun shouldSearch() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -200,7 +200,7 @@ class ServerApiClientTest {
 
     @Test
     fun shouldWhoIs() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

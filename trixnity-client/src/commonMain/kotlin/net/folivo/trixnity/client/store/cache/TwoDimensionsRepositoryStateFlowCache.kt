@@ -2,10 +2,9 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import net.folivo.trixnity.client.store.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -47,19 +46,11 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         cache.reset()
     }
 
-    suspend fun get(
+    fun get(
         key: K1,
         withTransaction: Boolean = true,
-    ): Map<K2, V>? {
-        return cache.get(key, withTransaction, isContainedInCache = { it?.fullyLoadedFromRepository == true })?.value
-    }
-
-    suspend fun get(
-        key: K1,
-        withTransaction: Boolean = true,
-        scope: CoroutineScope
     ): Flow<Map<K2, V>?> =
-        cache.get(key, withTransaction, isContainedInCache = { it?.fullyLoadedFromRepository == true }, scope)
+        cache.get(key, withTransaction, isContainedInCache = { it?.fullyLoadedFromRepository == true })
             .map { it?.value }
 
     suspend fun update(
@@ -99,15 +90,13 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             }
         })
 
-    private suspend fun getBySecondKeyAsFlow(
+    private fun getBySecondKeyAsFlow(
         firstKey: K1,
         secondKey: K2,
-        scope: CoroutineScope? = null
     ) = cache.readWithCache(
         key = firstKey,
         isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
         retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
-        scope
     ).map { it?.value?.get(secondKey) }
 
     private fun isContainedInCacheBySecondKey(
@@ -131,18 +120,10 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         else cacheValue
     }
 
-    suspend fun getBySecondKey(
+    fun getBySecondKey(
         firstKey: K1,
         secondKey: K2,
-        scope: CoroutineScope
     ): Flow<V?> {
-        return getBySecondKeyAsFlow(firstKey, secondKey, scope)
-    }
-
-    suspend fun getBySecondKey(
-        firstKey: K1,
-        secondKey: K2,
-    ): V? {
-        return getBySecondKeyAsFlow(firstKey, secondKey).firstOrNull()
+        return getBySecondKeyAsFlow(firstKey, secondKey)
     }
 }

@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.request.*
 import io.ktor.http.HttpHeaders.AccessControlAllowHeaders
@@ -49,24 +50,27 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
 
     private fun ApplicationTestBuilder.initCut() {
         application {
-            this.matrixClientServerApiServer(
+            matrixClientServerApiServer(
                 accessTokenAuthenticationFunction = {
                     AccessTokenAuthenticationFunctionResult(
                         UserIdPrincipal("user"),
                         null
                     )
                 },
-                authenticationApiHandler = authenticationApiHandlerMock,
-                discoveryApiHandler = discoveryApiHandlerMock,
-                devicesApiHandler = devicesApiHandlerMock,
-                keysApiHandler = keysApiHandlerMock,
-                mediaApiHandler = mediaApiHandlerMock,
-                pushApiHandler = pushApiHandlerMock,
-                roomsApiHandler = roomsApiHandlerMock,
-                serverApiHandler = serverApiHandlerMock,
-                syncApiHandler = syncApiHandlerMock,
-                usersApiHandler = usersApiHandlerMock,
-            )
+            ) {
+                matrixClientServerApiServerRoutes(
+                    authenticationApiHandler = authenticationApiHandlerMock,
+                    discoveryApiHandler = discoveryApiHandlerMock,
+                    devicesApiHandler = devicesApiHandlerMock,
+                    keysApiHandler = keysApiHandlerMock,
+                    mediaApiHandler = mediaApiHandlerMock,
+                    pushApiHandler = pushApiHandlerMock,
+                    roomsApiHandler = roomsApiHandlerMock,
+                    serverApiHandler = serverApiHandlerMock,
+                    syncApiHandler = syncApiHandlerMock,
+                    usersApiHandler = usersApiHandlerMock,
+                )
+            }
         }
     }
 
@@ -77,9 +81,11 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
             header(Origin, "https://localhost:2424")
             header(AccessControlRequestMethod, "GET")
         }
-        response.status shouldBe OK
-        response.headers[AccessControlAllowOrigin] shouldBe "*"
-        response.headers[AccessControlAllowMethods] shouldBe "DELETE, OPTIONS, PUT"
-        response.headers[AccessControlAllowHeaders] shouldBe "Authorization, Content-Type, X-Requested-With"
+        assertSoftly(response) {
+            status shouldBe OK
+            headers[AccessControlAllowOrigin] shouldBe "*"
+            headers[AccessControlAllowMethods] shouldBe "DELETE, OPTIONS, PUT"
+            headers[AccessControlAllowHeaders] shouldBe "Authorization, Content-Type, X-Requested-With"
+        }
     }
 }

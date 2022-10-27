@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
-import net.folivo.trixnity.client.room.IRoomService
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -20,44 +19,41 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-class RoomServiceMock : IRoomService {
+class RoomServiceMock : RoomService {
     override suspend fun fillTimelineGaps(startEventId: EventId, roomId: RoomId, limit: Long) {
         throw NotImplementedError()
     }
 
     lateinit var returnGetTimelineEvent: StateFlow<TimelineEvent?>
-    override suspend fun getTimelineEvent(
+    override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): StateFlow<TimelineEvent?> {
+    ): Flow<TimelineEvent?> {
         return returnGetTimelineEvent
     }
 
-    override suspend fun getPreviousTimelineEvent(
+    override fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
-    override suspend fun getNextTimelineEvent(
+    override fun getNextTimelineEvent(
         event: TimelineEvent,
-        coroutineScope: CoroutineScope,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): StateFlow<TimelineEvent?>? {
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
-    override suspend fun getLastTimelineEvent(
+    override fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
     ): StateFlow<StateFlow<TimelineEvent?>?> {
@@ -65,23 +61,22 @@ class RoomServiceMock : IRoomService {
     }
 
     var returnGetTimelineEvents: Flow<StateFlow<TimelineEvent?>> = flowOf()
-    override suspend fun getTimelineEvents(
+
+    override fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
         direction: GetEvents.Direction,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<StateFlow<TimelineEvent?>> {
-        return returnGetTimelineEvents
-    }
+    ): Flow<Flow<TimelineEvent?>> = returnGetTimelineEvents
 
-    override suspend fun getLastTimelineEvents(
+    override fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<Flow<StateFlow<TimelineEvent?>>?> {
+    ): Flow<Flow<Flow<TimelineEvent?>>?> {
         throw NotImplementedError()
     }
 
@@ -93,7 +88,7 @@ class RoomServiceMock : IRoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override suspend fun getTimelineEventsAround(
+    override fun getTimelineEventsAround(
         startFrom: EventId,
         roomId: RoomId,
         maxSizeBefore: StateFlow<Int>,
@@ -101,28 +96,30 @@ class RoomServiceMock : IRoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long
-    ): Flow<List<StateFlow<TimelineEvent?>>> {
+    ): Flow<List<Flow<TimelineEvent?>>> {
         throw NotImplementedError()
     }
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
-        scope: CoroutineScope
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getTimelineEventRelations(
+    override fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-        scope: CoroutineScope
     ): Flow<Set<TimelineEventRelation>?> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun sendMessage(roomId: RoomId, builder: suspend MessageBuilder.() -> Unit) {
+    override suspend fun sendMessage(
+        roomId: RoomId,
+        keepMediaInCache: Boolean,
+        builder: suspend MessageBuilder.() -> Unit
+    ) {
         throw NotImplementedError()
     }
 
@@ -138,24 +135,15 @@ class RoomServiceMock : IRoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun getById(roomId: RoomId): StateFlow<Room?> {
+    override fun getById(roomId: RoomId): StateFlow<Room?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
+    override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
     ): StateFlow<C?> {
-        throw NotImplementedError()
-    }
-
-    override suspend fun <C : RoomAccountDataEventContent> getAccountData(
-        roomId: RoomId,
-        eventContentClass: KClass<C>,
-        key: String
-    ): C? {
         throw NotImplementedError()
     }
 
@@ -163,20 +151,22 @@ class RoomServiceMock : IRoomService {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : StateEventContent> getState(
+    override fun <C : StateEventContent> getState(
         roomId: RoomId,
         stateKey: String,
         eventContentClass: KClass<C>,
-        scope: CoroutineScope
     ): StateFlow<Event<C>?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : StateEventContent> getState(
+    override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
-        stateKey: String,
-        eventContentClass: KClass<C>
-    ): Event<C>? {
+        eventContentClass: KClass<C>,
+    ): Flow<Map<String, Event<C>?>?> {
+        throw NotImplementedError()
+    }
+
+    override fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
         throw NotImplementedError()
     }
 }

@@ -14,7 +14,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventEmitter
-import net.folivo.trixnity.core.IEventEmitter
+import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 
@@ -27,16 +27,43 @@ typealias AfterSyncResponseSubscriber = suspend (Sync.Response) -> Unit
 private val log = KotlinLogging.logger {}
 
 enum class SyncState {
+    /**
+     * The fist sync has been started.
+     */
     INITIAL_SYNC,
+
+    /**
+     * A normal sync has been started.
+     */
     STARTED,
+
+    /**
+     * A normal sync has been finished. It is normally set when the sync is run in a loop.
+     */
     RUNNING,
+
+    /**
+     * The sync has been aborted because of an internal or external error.
+     */
     ERROR,
+
+    /**
+     * The sync request is timed out.
+     */
     TIMEOUT,
+
+    /**
+     * The sync loop is going to be stopped.
+     */
     STOPPING,
+
+    /**
+     * The sync is stopped.
+     */
     STOPPED,
 }
 
-interface ISyncApiClient : IEventEmitter {
+interface SyncApiClient : EventEmitter {
     /**
      * @see [Sync]
      */
@@ -88,11 +115,12 @@ interface ISyncApiClient : IEventEmitter {
     ): Result<T>
 
     suspend fun stop(wait: Boolean = false)
+    suspend fun cancel(wait: Boolean = false)
 }
 
-class SyncApiClient(
+class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
-) : EventEmitter(), ISyncApiClient {
+) : EventEmitterImpl(), SyncApiClient {
 
     override suspend fun sync(
         filter: String?,
@@ -231,8 +259,8 @@ class SyncApiClient(
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
-            log.info { "started single sync" }
             val isInitialSync = currentBatchToken.value == null
+            log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
             val syncResponse = syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
             runOnce(syncResponse)
@@ -326,6 +354,11 @@ class SyncApiClient(
                 if (wait) syncJob?.join()
             }
         }
+    }
+
+    override suspend fun cancel(wait: Boolean) {
+        syncJob?.cancel()
+        if (wait) syncJob?.join()
     }
 
     private fun updateSyncState(newSyncState: SyncState) {

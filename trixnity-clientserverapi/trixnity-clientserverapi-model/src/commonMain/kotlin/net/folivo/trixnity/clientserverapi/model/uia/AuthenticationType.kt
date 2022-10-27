@@ -9,48 +9,48 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = AuthenticationTypeSerializer::class)
-sealed class AuthenticationType {
-    abstract val name: String
+sealed interface AuthenticationType {
+    val name: String
 
     @Serializable(with = PasswordAuthenticationSerializer::class)
-    object Password : AuthenticationType() {
+    object Password : AuthenticationType {
         override val name = "m.login.password"
     }
 
     @Serializable(with = RecaptchaAuthenticationSerializer::class)
-    object Recaptcha : AuthenticationType() {
+    object Recaptcha : AuthenticationType {
         override val name = "m.login.recaptcha"
     }
 
     @Serializable(with = SSOAuthenticationSerializer::class)
-    object SSO : AuthenticationType() {
+    object SSO : AuthenticationType {
         override val name = "m.login.sso"
     }
 
     @Serializable(with = EmailIdentityAuthenticationSerializer::class)
-    object EmailIdentity : AuthenticationType() {
+    object EmailIdentity : AuthenticationType {
         override val name = "m.login.email.identity"
     }
 
     @Serializable(with = MsisdnAuthenticationSerializer::class)
-    object Msisdn : AuthenticationType() {
+    object Msisdn : AuthenticationType {
         override val name = "m.login.msisdn"
     }
 
     @Serializable(with = DummyAuthenticationSerializer::class)
-    object Dummy : AuthenticationType() {
+    object Dummy : AuthenticationType {
         override val name = "m.login.dummy"
     }
 
     @Serializable(with = RegistrationTokenAuthenticationSerializer::class)
-    object RegistrationToken : AuthenticationType() {
+    object RegistrationToken : AuthenticationType {
         override val name = "m.login.registration_token"
     }
 
     @Serializable(with = UnknownAuthenticationSerializer::class)
     data class Unknown(
         override val name: String
-    ) : AuthenticationType()
+    ) : AuthenticationType
 
     object PasswordAuthenticationSerializer : KSerializer<Password> {
         override val descriptor: SerialDescriptor =

@@ -25,5 +25,4 @@ data class DeviceListUpdateDataUnitContent(
     val streamId: Long,
     @SerialName("user_id")
     val userId: UserId,
-) : EphemeralDataUnitContent {
-}
+) : EphemeralDataUnitContent

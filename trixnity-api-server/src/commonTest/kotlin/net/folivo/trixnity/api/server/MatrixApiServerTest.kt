@@ -20,10 +20,8 @@ class MatrixApiServerTest {
     fun shouldRespondMatrixServerExceptionOnMatrixServerException() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    get("/") {
-                        throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound("not found"))
-                    }
+                get("/") {
+                    throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound("not found"))
                 }
             }
         }
@@ -37,10 +35,8 @@ class MatrixApiServerTest {
     fun shouldRespondMatrixServerExceptionOnSerializationException() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    get("/") {
-                        throw SerializationException("missing key")
-                    }
+                get("/") {
+                    throw SerializationException("missing key")
                 }
             }
         }
@@ -54,10 +50,8 @@ class MatrixApiServerTest {
     fun shouldRespondMatrixServerExceptionOnAllOtherExceptions() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    get("/") {
-                        throw RuntimeException("something")
-                    }
+                get("/") {
+                    throw RuntimeException("something")
                 }
             }
         }
@@ -71,10 +65,8 @@ class MatrixApiServerTest {
     fun shouldRespondMatrixServerExceptionWhenNoRouteFound() = testApplication {
         application {
             matrixApiServer(json) {
-                routing {
-                    get("/") {
-                        throw RuntimeException("never call me")
-                    }
+                get("/") {
+                    throw RuntimeException("never call me")
                 }
             }
         }

@@ -9,19 +9,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.retryOnRateLimit
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.getByStateKey
-import net.folivo.trixnity.client.user.IUserService
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.crypto.olm.IOlmEventService
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -72,23 +65,6 @@ fun Event<*>?.getSender(): UserId? {
 
 fun String.toMxcUri(): Url =
     Url(this).also { require(it.protocol.name == "mxc") { "uri protocol was not mxc" } }
-
-suspend fun possiblyEncryptEvent(
-    content: MessageEventContent,
-    roomId: RoomId,
-    store: Store,
-    olmEvent: IOlmEventService,
-    user: IUserService
-): MessageEventContent {
-    return if (store.room.get(roomId).value?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
-        user.loadMembers(roomId)
-        store.room.get(roomId).first { it?.membersLoaded == true }
-
-        val megolmSettings = store.roomState.getByStateKey<EncryptionEventContent>(roomId)?.content
-        requireNotNull(megolmSettings) { "room was marked as encrypted, but did not contain EncryptionEventContent in state" }
-        olmEvent.encryptMegolm(content, roomId, megolmSettings)
-    } else content
-}
 
 @OptIn(ExperimentalTime::class)
 suspend fun StateFlow<SyncState>.retryInfiniteWhenSyncIs(

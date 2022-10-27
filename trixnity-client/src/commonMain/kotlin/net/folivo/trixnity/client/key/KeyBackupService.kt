@@ -9,18 +9,22 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
+import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen
-import net.folivo.trixnity.client.store.Store
+import net.folivo.trixnity.client.store.AccountStore
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
@@ -29,7 +33,7 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoo
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.crypto.sign.ISignService
+import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.signatures
 import net.folivo.trixnity.olm.*
@@ -38,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-interface IKeyBackupService {
+interface KeyBackupService {
     /**
      * This is the active key backup version.
      * Is null, when the backup algorithm is not supported or there is no existing backup.
@@ -60,16 +64,18 @@ interface IKeyBackupService {
     ): Result<Unit>
 }
 
-class KeyBackupService(
-    private val olmPickleKey: String,
-    private val ownUserId: UserId,
-    private val ownDeviceId: String,
-    private val store: Store,
+class KeyBackupServiceImpl(
+    userInfo: UserInfo,
+    private val accountStore: AccountStore,
+    private val olmCryptoStore: OlmCryptoStore,
+    private val keyStore: KeyStore,
     private val api: MatrixClientServerApiClient,
-    private val signService: ISignService,
-    private val currentSyncState: StateFlow<SyncState>,
+    private val signService: SignService,
+    private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
-) : IKeyBackupService {
+) : KeyBackupService, EventHandler {
+    private val ownUserId = userInfo.userId
+    private val ownDeviceId = userInfo.deviceId
     private val currentBackupVersion = MutableStateFlow<GetRoomKeysBackupVersionResponse.V1?>(null)
 
     /**
@@ -78,7 +84,7 @@ class KeyBackupService(
      */
     override val version = currentBackupVersion.asStateFlow()
 
-    init {
+    override fun startInCoroutineScope(scope: CoroutineScope) {
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { setAndSignNewKeyBackupVersion() }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { uploadRoomKeyBackup() }
@@ -90,7 +96,7 @@ class KeyBackupService(
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
         ) {
-            store.keys.secrets.mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
+            keyStore.secrets.mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
                 .distinctUntilChanged()
                 // TODO should use the version from secret, when MSC2474 is merged
                 .collectLatest { updateKeyBackupVersion(it.decryptedPrivateKey) }
@@ -137,7 +143,7 @@ class KeyBackupService(
                                 version = currentVersion.version
                             )
                         ).getOrThrow()
-                    store.keys.secrets.update { it - SecretType.M_MEGOLM_BACKUP_V1 }
+                    keyStore.secrets.update { it - SecretType.M_MEGOLM_BACKUP_V1 }
                     null
                 }
             } else null
@@ -170,7 +176,7 @@ class KeyBackupService(
                         val encryptedSessionData =
                             api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                         require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
-                        val privateKey = store.keys.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
+                        val privateKey = keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                         val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                             it.decrypt(
                                 with(encryptedSessionData) {
@@ -185,14 +191,14 @@ class KeyBackupService(
                         val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
                         val (firstKnownIndex, pickledSession) =
                             freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                                it.firstKnownIndex to it.pickle(olmPickleKey)
+                                it.firstKnownIndex to it.pickle(requireNotNull(accountStore.olmPickleKey.value))
                             }
                         val senderSigningKey = Key.Ed25519Key(
                             null,
                             data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
                                 ?: throw IllegalArgumentException("sender claimed key should not be empty")
                         )
-                        store.olm.updateInboundMegolmSession(sessionId, roomId) {
+                        olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) {
                             if (it != null && it.firstKnownIndex <= firstKnownIndex) it
                             else StoredInboundMegolmSession(
                                 senderKey = data.senderKey,
@@ -220,7 +226,7 @@ class KeyBackupService(
     ): Boolean {
         val generatedPublicKey = try {
             freeAfter(OlmPkDecryption.create(privateKey)) { it.publicKey }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             log.warn(error) { "could not generate public key from private backup key" }
             return false
         }
@@ -236,8 +242,8 @@ class KeyBackupService(
 //    if ( // TODO this is only relevant, when we want to use the key backup without private key
 //        keyBackupVersion.authData.signatures[ownUserId]?.none {
 //            it.keyId?.let { keyId ->
-//                val keyTrustLevel = store.keys.getDeviceKey(ownUserId, keyId)?.trustLevel
-//                    ?: store.keys.getCrossSigningKey(ownUserId, keyId)?.trustLevel
+//                val keyTrustLevel = keyStore.getDeviceKey(ownUserId, keyId)?.trustLevel
+//                    ?: keyStore.getCrossSigningKey(ownUserId, keyId)?.trustLevel
 //                keyTrustLevel == KeySignatureTrustLevel.Valid(true)
 //                        || keyTrustLevel == KeySignatureTrustLevel.CrossSigned(true)
 //                        || keyTrustLevel == KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true)
@@ -257,60 +263,64 @@ class KeyBackupService(
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
         ) {
-            store.olm.notBackedUpInboundMegolmSessions.debounce(1.seconds).onEach { notBackedUpInboundMegolmSessions ->
-                val version = version.value
-                if (version != null && notBackedUpInboundMegolmSessions.isNotEmpty()) {
-                    log.debug { "upload room keys to key backup" }
-                    api.keys.setRoomKeys(version.version, RoomsKeyBackup(
-                        notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
-                            .mapValues { roomEntries ->
-                                RoomKeyBackup(roomEntries.value.associate { session ->
-                                    val encryptedRoomKeyBackupV1SessionData =
-                                        freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
-                                            val sessionKey = freeAfter(
-                                                OlmInboundGroupSession.unpickle(olmPickleKey, session.pickled)
-                                            ) { it.export(it.firstKnownIndex) }
-                                            pke.encrypt(
-                                                api.json.encodeToString(
-                                                    RoomKeyBackupV1SessionData(
-                                                        session.senderKey,
-                                                        session.forwardingCurve25519KeyChain,
-                                                        session.senderSigningKey.let { mapOf(it.algorithm.name to it.value) },
-                                                        sessionKey
+            olmCryptoStore.notBackedUpInboundMegolmSessions.debounce(1.seconds)
+                .onEach { notBackedUpInboundMegolmSessions ->
+                    val version = version.value
+                    if (version != null && notBackedUpInboundMegolmSessions.isNotEmpty()) {
+                        log.debug { "upload room keys to key backup" }
+                        api.keys.setRoomKeys(version.version, RoomsKeyBackup(
+                            notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
+                                .mapValues { roomEntries ->
+                                    RoomKeyBackup(roomEntries.value.associate { session ->
+                                        val encryptedRoomKeyBackupV1SessionData =
+                                            freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
+                                                val sessionKey = freeAfter(
+                                                    OlmInboundGroupSession.unpickle(
+                                                        requireNotNull(accountStore.olmPickleKey.value),
+                                                        session.pickled
                                                     )
-                                                )
-                                            ).run {
-                                                EncryptedRoomKeyBackupV1SessionData(
-                                                    ciphertext = cipherText,
-                                                    mac = mac,
-                                                    ephemeral = ephemeralKey
-                                                )
+                                                ) { it.export(it.firstKnownIndex) }
+                                                pke.encrypt(
+                                                    api.json.encodeToString(
+                                                        RoomKeyBackupV1SessionData(
+                                                            session.senderKey,
+                                                            session.forwardingCurve25519KeyChain,
+                                                            session.senderSigningKey.let { mapOf(it.algorithm.name to it.value) },
+                                                            sessionKey
+                                                        )
+                                                    )
+                                                ).run {
+                                                    EncryptedRoomKeyBackupV1SessionData(
+                                                        ciphertext = cipherText,
+                                                        mac = mac,
+                                                        ephemeral = ephemeralKey
+                                                    )
+                                                }
                                             }
-                                        }
-                                    session.sessionId to RoomKeyBackupData(
-                                        firstMessageIndex = session.firstKnownIndex,
-                                        forwardedCount = session.forwardingCurve25519KeyChain.size,
-                                        isVerified = session.isTrusted,
-                                        sessionData = encryptedRoomKeyBackupV1SessionData
-                                    )
-                                })
+                                        session.sessionId to RoomKeyBackupData(
+                                            firstMessageIndex = session.firstKnownIndex,
+                                            forwardedCount = session.forwardingCurve25519KeyChain.size,
+                                            isVerified = session.isTrusted,
+                                            sessionData = encryptedRoomKeyBackupV1SessionData
+                                        )
+                                    })
+                                }
+                        )).onFailure {
+                            if (it is MatrixServerException) {
+                                val errorResponse = it.errorResponse
+                                if (errorResponse is ErrorResponse.WrongRoomKeysVersion) {
+                                    log.info { "key backup version is outdated" }
+                                    updateKeyBackupVersion(keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
+                                }
                             }
-                    )).onFailure {
-                        if (it is MatrixServerException) {
-                            val errorResponse = it.errorResponse
-                            if (errorResponse is ErrorResponse.WrongRoomKeysVersion) {
-                                log.info { "key backup version is outdated" }
-                                updateKeyBackupVersion(store.keys.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
+                        }.getOrThrow()
+                        notBackedUpInboundMegolmSessions.values.forEach {
+                            olmCryptoStore.updateInboundMegolmSession(it.sessionId, it.roomId) { session ->
+                                session?.copy(hasBeenBackedUp = true)
                             }
-                        }
-                    }.getOrThrow()
-                    notBackedUpInboundMegolmSessions.values.forEach {
-                        store.olm.updateInboundMegolmSession(it.sessionId, it.roomId) { session ->
-                            session?.copy(hasBeenBackedUp = true)
                         }
                     }
-                }
-            }.collect()
+                }.collect()
         }
     }
 
@@ -344,7 +354,7 @@ class KeyBackupService(
             val encryptedBackupKey = MegolmBackupV1EventContent(
                 encryptSecret(key, keyId, SecretType.M_MEGOLM_BACKUP_V1.id, keyBackupPrivateKey, api.json)
             )
-            store.keys.secrets.update {
+            keyStore.secrets.update {
                 it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
                     Event.GlobalAccountDataEvent(encryptedBackupKey),
                     keyBackupPrivateKey

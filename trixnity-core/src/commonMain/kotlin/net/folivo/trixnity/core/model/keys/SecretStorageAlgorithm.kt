@@ -8,14 +8,14 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = SecretStorageAlgorithmSerializer::class)
-sealed class SecretStorageAlgorithm {
-    abstract val value: String
+sealed interface SecretStorageAlgorithm {
+    val value: String
 
-    object AesHmacSha2 : SecretStorageAlgorithm() {
+    object AesHmacSha2 : SecretStorageAlgorithm {
         override val value = "m.secret_storage.v1.aes-hmac-sha2"
     }
 
-    data class Unknown(override val value: String) : SecretStorageAlgorithm()
+    data class Unknown(override val value: String) : SecretStorageAlgorithm
 }
 
 object SecretStorageAlgorithmSerializer : KSerializer<SecretStorageAlgorithm> {

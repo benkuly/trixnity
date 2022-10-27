@@ -17,26 +17,38 @@ val slf4jLogger = LoggerFactory.getLogger("targets")
 fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
     target: KotlinPlatformType,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
-): T? {
-    return if (target.isEnabledOnThisPlatform()) {
-        this.run { createTarget() }
-    } else {
-        logger.info("disabled target ${target.name} because it is not enabled on this platform")
-        null
+): T? =
+    when {
+        isMainCIHost -> createTarget().apply {
+            compilations.configureEach {
+                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+            }
+        }
+
+        target.isEnabledOnThisPlatform() -> createTarget()
+        else -> {
+            logger.info("disabled target ${target.name} because it is not enabled on this platform")
+            null
+        }
     }
-}
 
 fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEnabled(
     target: KonanTarget,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
-): T? {
-    return if (target.isEnabledOnThisPlatform()) {
-        this.run { createTarget() }
-    } else {
-        logger.info("disabled native target ${target.name} because it is not enabled on this platform")
-        null
+): T? =
+    when {
+        isMainCIHost -> createTarget().apply {
+            compilations.configureEach {
+                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+            }
+        }
+
+        target.isEnabledOnThisPlatform() -> createTarget()
+        else -> {
+            logger.info("disabled native target ${target.name} because it is not enabled on this platform")
+            null
+        }
     }
-}
 
 fun KotlinTarget.mainSourceSet(
     sourceSets: NamedDomainObjectContainer<KotlinSourceSet>,
@@ -70,30 +82,34 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
 
 fun KotlinMultiplatformExtension.addDefaultJsTargetWhenEnabled(
     rootDir: File,
-    testEnabled: Boolean = true
+    testEnabled: Boolean = true,
+    browserEnabled: Boolean = true,
+    nodeJsEnabled: Boolean = true,
 ): KotlinJsTargetDsl? =
     addTargetWhenEnabled(KotlinPlatformType.js) {
         js(IR) {
-            browser {
-                commonWebpackConfig {
-                    configDirectory = rootDir.resolve("webpack.config.d")
-                }
-                testTask {
-                    useKarma {
-                        useFirefoxHeadless()
-                        useConfigDirectory(rootDir.resolve("karma.config.d"))
+            if (browserEnabled)
+                browser {
+                    commonWebpackConfig {
+                        configDirectory = rootDir.resolve("webpack.config.d")
                     }
-                    enabled = testEnabled
-                }
-            }
-            nodejs {
-                testTask {
-                    useMocha {
-                        timeout = "30000"
+                    testTask {
+                        useKarma {
+                            useFirefoxHeadless()
+                            useConfigDirectory(rootDir.resolve("karma.config.d"))
+                        }
+                        enabled = testEnabled
                     }
-                    enabled = testEnabled
                 }
-            }
+            if (nodeJsEnabled)
+                nodejs {
+                    testTask {
+                        useMocha {
+                            timeout = "30000"
+                        }
+                        enabled = testEnabled
+                    }
+                }
             binaries.executable()
         }
     }

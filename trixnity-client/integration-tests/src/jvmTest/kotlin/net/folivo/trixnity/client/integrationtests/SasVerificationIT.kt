@@ -6,22 +6,21 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.key.DeviceTrustLevel
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import org.jetbrains.exposed.sql.Database
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,30 +28,15 @@ import kotlin.test.Test
 @Testcontainers
 class SasVerificationIT {
 
-    private lateinit var client1: IMatrixClient
-    private lateinit var client2: IMatrixClient
+    private lateinit var client1: MatrixClient
+    private lateinit var client2: MatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
@@ -66,18 +50,20 @@ class SasVerificationIT {
         ).build()
         database1 = newDatabase()
         database2 = newDatabase()
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
+            mediaStore = InMemoryMediaStore(),
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
+            mediaStore = InMemoryMediaStore(),
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
@@ -138,9 +124,9 @@ class SasVerificationIT {
             client2Verification.state.first { it is Done }
                 .shouldBeInstanceOf<Done>()
 
-            client1.key.getTrustLevel(client2.userId, client2.deviceId, scope1)
+            client1.key.getTrustLevel(client2.userId, client2.deviceId)
                 .first { it == DeviceTrustLevel.Verified }
-            client2.key.getTrustLevel(client1.userId, client1.deviceId, scope2)
+            client2.key.getTrustLevel(client1.userId, client1.deviceId)
                 .first { it == DeviceTrustLevel.Verified }
         }
     }

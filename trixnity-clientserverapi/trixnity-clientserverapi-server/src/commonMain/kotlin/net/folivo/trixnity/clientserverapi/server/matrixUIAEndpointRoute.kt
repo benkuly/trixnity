@@ -19,13 +19,13 @@ import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-// TODO inject json and mappings with context receivers with kotlin > 1.7.0
+// TODO inject json and mappings with context receivers with kotlin >= 1.8.0
 inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixUIAEndpoint(
     json: Json,
     mappings: EventContentSerializerMappings,
-    crossinline handler: suspend (MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>) -> ResponseWithUIA<RESPONSE>
+    crossinline handler: suspend MatrixEndpointContext<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>>.() -> ResponseWithUIA<RESPONSE>
 ) {
-    matrixEndpointResource<ENDPOINT, RequestWithUIA<REQUEST>, ResponseWithUIA<RESPONSE>> { endpoint ->
+    matrixEndpointResource<ENDPOINT> { endpoint ->
         val requestSerializer: KSerializer<REQUEST>? = endpoint.plainRequestSerializerBuilder(mappings, json)
         val requestBody: RequestWithUIA<REQUEST> =
             when {
@@ -33,6 +33,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                     RequestWithUIASerializer(requestSerializer),
                     call.receive()
                 )
+
                 else -> call.receive()
             }
         val responseBody: ResponseWithUIA<RESPONSE> = handler(MatrixEndpointContext(endpoint, requestBody, call))
@@ -45,12 +46,15 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                         HttpStatusCode.OK,
                         json.encodeToJsonElement(responseSerializer, responseValue)
                     )
+
                     responseValue == null -> call.respond(HttpStatusCode.OK)
                     else -> call.respond(HttpStatusCode.OK, responseValue)
                 }
             }
+
             is Step ->
                 call.respond(HttpStatusCode.Unauthorized, json.encodeToJsonElement(responseBody.state))
+
             is Error ->
                 call.respond(
                     HttpStatusCode.Unauthorized,

@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 class MediaApiClientTest {
     @Test
     fun shouldGetConfig() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -40,7 +40,7 @@ class MediaApiClientTest {
 
     @Test
     fun shouldUploadFile() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -76,7 +76,7 @@ class MediaApiClientTest {
 
     @Test
     fun shouldDownloadFile() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -109,7 +109,7 @@ class MediaApiClientTest {
 
     @Test
     fun shouldDownloadThumbnail() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
@@ -145,7 +145,7 @@ class MediaApiClientTest {
 
     @Test
     fun shouldGetUrlPreview() = runTest {
-        val matrixRestClient = MatrixClientServerApiClient(
+        val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->

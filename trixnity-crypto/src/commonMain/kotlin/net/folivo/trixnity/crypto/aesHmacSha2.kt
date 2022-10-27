@@ -3,6 +3,8 @@ package net.folivo.trixnity.crypto
 import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
+import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.core.toByteFlow
 import kotlin.experimental.and
 
 class DerivedKeys(val aesKey: ByteArray, val hmacKey: ByteArray)
@@ -24,11 +26,10 @@ suspend fun encryptAesHmacSha2(
     val iv = initialisationVector.copyOf()
     iv[8] = iv[8] and 0x7f
     val keys = deriveKeys(key, name)
-    val ciphertext = encryptAes256Ctr(
-        content = content,
+    val ciphertext = content.toByteFlow().encryptAes256Ctr(
         key = keys.aesKey,
         initialisationVector = iv
-    )
+    ).toByteArray()
     return AesHmacSha2EncryptedData(
         iv = iv.encodeBase64(),
         ciphertext = ciphertext.encodeBase64(),
@@ -45,11 +46,10 @@ suspend fun decryptAesHmacSha2(
     val ciphertextBytes = content.ciphertext.decodeBase64Bytes()
     val hmac = hmacSha256(keys.hmacKey, ciphertextBytes).encodeBase64()
     if (hmac != content.mac) throw IllegalArgumentException("bad mac")
-    return decryptAes256Ctr(
-        encryptedContent = ciphertextBytes,
+    return ciphertextBytes.toByteFlow().decryptAes256Ctr(
         key = keys.aesKey,
         initialisationVector = content.iv.decodeBase64Bytes()
-    )
+    ).toByteArray()
 }
 
 suspend fun createAesHmacSha2MacFromKey(key: ByteArray, iv: ByteArray): String {

@@ -14,13 +14,13 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 open class MatrixApiClient(
-    val json: Json = createMatrixEventJson(),
-    val contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    val json: Json = createMatrixEventJson(contentMappings),
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) },
 ) {
     val baseClient: HttpClient = httpClientFactory {
@@ -82,6 +82,10 @@ open class MatrixApiClient(
             if (requestBody != Unit) {
                 if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, requestBody))
                 else setBody(requestBody)
+            } else {
+                if (endpoint.requestContentType == ContentType.Application.Json
+                    && (method == io.ktor.http.HttpMethod.Post || method == io.ktor.http.HttpMethod.Put)
+                ) setBody("{}")
             }
             requestBuilder()
         }

@@ -13,14 +13,14 @@ import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.*
 
 @Serializable(with = AuthenticationRequestSerializer::class)
-sealed class AuthenticationRequest {
-    abstract val type: AuthenticationType?
+sealed interface AuthenticationRequest {
+    val type: AuthenticationType?
 
     @Serializable
     data class Password(
         @SerialName("identifier") val identifier: IdentifierType,
         @SerialName("password") val password: String,
-    ) : AuthenticationRequest() {
+    ) : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.Password
     }
@@ -28,7 +28,7 @@ sealed class AuthenticationRequest {
     @Serializable
     data class Recaptcha(
         @SerialName("response") val response: JsonElement,
-    ) : AuthenticationRequest() {
+    ) : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.Recaptcha
     }
@@ -36,7 +36,7 @@ sealed class AuthenticationRequest {
     @Serializable
     data class EmailIdentify(
         @SerialName("threepid_creds") val thirdPidCredentials: ThirdPidCredentials,
-    ) : AuthenticationRequest() {
+    ) : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.EmailIdentity
     }
@@ -44,13 +44,13 @@ sealed class AuthenticationRequest {
     @Serializable
     data class Msisdn(
         @SerialName("threepid_creds") val thirdPidCredentials: ThirdPidCredentials,
-    ) : AuthenticationRequest() {
+    ) : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.Msisdn
     }
 
     @Serializable
-    object Dummy : AuthenticationRequest() {
+    object Dummy : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.Dummy
     }
@@ -58,13 +58,13 @@ sealed class AuthenticationRequest {
     @Serializable
     data class RegistrationToken(
         @SerialName("token") val token: String,
-    ) : AuthenticationRequest() {
+    ) : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.RegistrationToken
     }
 
     @Serializable
-    object Fallback : AuthenticationRequest() {
+    object Fallback : AuthenticationRequest {
         @SerialName("type")
         override val type: AuthenticationType? = null
     }
@@ -87,6 +87,7 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
             AuthenticationType.Dummy.name -> decoder.json.decodeFromJsonElement<Dummy>(jsonObject)
             AuthenticationType.RegistrationToken.name ->
                 decoder.json.decodeFromJsonElement<RegistrationToken>(jsonObject)
+
             null -> decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
             else -> throw SerializationException("could not deserialize authentication request")
         }

@@ -4,21 +4,19 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -27,27 +25,12 @@ import kotlin.test.Test
 @Testcontainers
 class OutboxIT {
 
-    private lateinit var client: IMatrixClient
+    private lateinit var client: MatrixClient
     private lateinit var scope: CoroutineScope
     private lateinit var database: Database
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
@@ -60,11 +43,12 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = newDatabase()
-        val storeFactory = ExposedStoreFactory(database, Dispatchers.IO, scope)
+        val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory,
+            repositoriesModule = repositoriesModule,
+            mediaStore = InMemoryMediaStore(),
             scope = scope,
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()

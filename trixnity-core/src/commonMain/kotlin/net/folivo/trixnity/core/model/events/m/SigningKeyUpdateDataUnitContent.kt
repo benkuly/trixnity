@@ -17,5 +17,4 @@ data class SigningKeyUpdateDataUnitContent(
     val selfSigningKey: SignedCrossSigningKeys? = null,
     @SerialName("user_id")
     val userId: UserId,
-) : EphemeralDataUnitContent {
-}
+) : EphemeralDataUnitContent

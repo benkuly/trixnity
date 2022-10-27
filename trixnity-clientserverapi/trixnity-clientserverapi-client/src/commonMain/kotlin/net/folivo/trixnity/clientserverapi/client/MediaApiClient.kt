@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.media.*
 
-interface IMediaApiClient {
+interface MediaApiClient {
     /**
      * @see [GetMediaConfig]
      */
@@ -52,7 +52,7 @@ interface IMediaApiClient {
     ): Result<GetUrlPreview.Response>
 }
 
-class MediaApiClient(private val httpClient: MatrixClientServerApiHttpClient) : IMediaApiClient {
+class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient) : MediaApiClient {
 
     override suspend fun getConfig(): Result<GetMediaConfig.Response> =
         httpClient.request(GetMediaConfig)

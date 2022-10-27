@@ -8,19 +8,19 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.IMatrixClient
-import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel.*
-import net.folivo.trixnity.client.key.IKeyService
+import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
-import net.folivo.trixnity.client.verification.IVerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -30,12 +30,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import org.jetbrains.exposed.sql.Database
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,9 +39,9 @@ import kotlin.test.Test
 @Testcontainers
 class CrossSigningIT {
 
-    private lateinit var client1: IMatrixClient
-    private lateinit var client2: IMatrixClient
-    private lateinit var client3: IMatrixClient
+    private lateinit var client1: MatrixClient
+    private lateinit var client2: MatrixClient
+    private lateinit var client3: MatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var scope3: CoroutineScope
@@ -55,22 +51,7 @@ class CrossSigningIT {
     private val password = "user$1passw0rd"
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
@@ -85,13 +66,14 @@ class CrossSigningIT {
         database1 = newDatabase()
         database2 = newDatabase()
         database3 = newDatabase()
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-        val storeFactory3 = ExposedStoreFactory(database3, Dispatchers.IO, scope3)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
+        val repositoriesModule3 = createExposedRepositoriesModule(database3, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
+            mediaStore = InMemoryMediaStore(),
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
@@ -99,12 +81,14 @@ class CrossSigningIT {
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
             passwordOrToken = password,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
+            mediaStore = InMemoryMediaStore(),
             scope = scope2,
         ).getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory3,
+            repositoriesModule = repositoriesModule3,
+            mediaStore = InMemoryMediaStore(),
             scope = scope3,
             getLoginInfo = { it.register("user3", password) }
         ).getOrThrow()
@@ -126,7 +110,7 @@ class CrossSigningIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.getSelfVerificationMethods(scope1)
+            client1.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                 .first()
 
@@ -147,7 +131,7 @@ class CrossSigningIT {
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 
-            client1.verification.getSelfVerificationMethods(scope1)
+            client1.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
                 .first()
 
@@ -160,64 +144,64 @@ class CrossSigningIT {
 
             withClue("observe trust level with client1 before self verification") {
                 client1.key.apply {
-                    getTrustLevel(client1.userId, scope1).first { it == NotAllDevicesCrossSigned(true) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope1).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope1).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(false) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
                 }
             }
             withClue("observe trust level with client2 before self verification") {
                 client2.key.apply {
-                    getTrustLevel(client1.userId, scope2).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope2).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope2).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope2).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope2).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(false) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
                 }
             }
             withClue("observe trust level with client3 before self verification") {
                 client3.key.apply {
-                    getTrustLevel(client1.userId, scope3).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope3).first { it == NotCrossSigned }
-                    getTrustLevel(client3.userId, scope3).first { it == CrossSigned(true) }
-                    getTrustLevel(client3.userId, client3.deviceId, scope3).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
+                    getTrustLevel(client3.userId).first { it == CrossSigned(true) }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
                 }
             }
 
             withClue("self verification of client2") {
                 val client2VerificationMethods =
-                    client2.verification.getSelfVerificationMethods(scope2)
+                    client2.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
                         .first { it.methods.size == 2 }.methods
                 client2VerificationMethods.filterIsInstance<CrossSignedDeviceVerification>().size shouldBe 1
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().size shouldBe 1
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
-                client2.verification.getSelfVerificationMethods(scope2)
+                client2.verification.getSelfVerificationMethods()
                     .first { it == SelfVerificationMethods.AlreadyCrossSigned }
             }
 
             withClue("observe trust level with client1 after self verification") {
                 client1.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == Verified }
-                    getTrustLevel(client1.userId, scope1).first { it == CrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client2 after self verification") {
                 client2.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope2).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope2).first { it == Verified }
-                    getTrustLevel(client1.userId, scope2).first { it == CrossSigned(true) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client3 after self verification") {
                 client3.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId, scope3).first { it == NotVerified }
-                    getTrustLevel(client1.userId, scope3).first { it == CrossSigned(false) }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotVerified }
+                    getTrustLevel(client1.userId).first { it == CrossSigned(false) }
                 }
             }
             withClue("verification between user1 and user3") {
@@ -262,12 +246,12 @@ class CrossSigningIT {
                 client3Verification.state.first { it is ActiveVerificationState.Done }
             }
 
-            suspend fun IKeyService.checkEverythingVerified() {
-                this.getTrustLevel(client1.userId, scope1).first { it == CrossSigned(true) }
-                this.getTrustLevel(client1.userId, client1.deviceId, scope1).first { it == Verified }
-                this.getTrustLevel(client2.userId, client2.deviceId, scope1).first { it == Verified }
-                this.getTrustLevel(client3.userId, scope1).first { it == CrossSigned(true) }
-                this.getTrustLevel(client3.userId, client3.deviceId, scope1).first { it == Verified }
+            suspend fun KeyService.checkEverythingVerified() {
+                this.getTrustLevel(client1.userId).first { it == CrossSigned(true) }
+                this.getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                this.getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                this.getTrustLevel(client3.userId).first { it == CrossSigned(true) }
+                this.getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
             }
 
             withClue("observe trust level with client1 after user verification") {

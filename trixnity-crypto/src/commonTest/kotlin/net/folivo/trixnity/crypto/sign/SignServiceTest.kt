@@ -12,6 +12,7 @@ import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -23,6 +24,7 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.olm.getOlmPublicKeys
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
@@ -36,30 +38,29 @@ class SignServiceTest : ShouldSpec({
     val aliceDevice = "AAAAAA"
     val bob = UserId("bob", "server")
 
-    lateinit var cut: SignService
-    lateinit var aliceSigningAccountSignService: SignService
+    lateinit var cut: SignServiceImpl
+    lateinit var aliceSigningAccountSignService: SignServiceImpl
 
     beforeEach {
         aliceSigningAccount = OlmAccount.create()
-        aliceSigningAccountSignService = SignService(
-            alice,
-            aliceDevice,
+        val aliceOlmKeys = getOlmPublicKeys("", aliceSigningAccount.pickle(""), aliceDevice)
+        aliceSigningAccountSignService = SignServiceImpl(
+            UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override suspend fun getOlmAccount(): String =
-                    freeAfter(OlmAccount.create()) { aliceSigningAccount.pickle("") }
+                override val olmAccount = aliceSigningAccount.pickle("")
+                override val olmPickleKey = ""
             },
-            ""
         )
         val olmAccount = freeAfter(OlmAccount.create()) { it.pickle("") }
-        cut = SignService(
-            ownUserId,
-            "ABCDEF",
+        val olmKeys = getOlmPublicKeys("", olmAccount, aliceDevice)
+        cut = SignServiceImpl(
+            UserInfo(ownUserId, "ABCDEF", olmKeys.signingKey, olmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override suspend fun getOlmAccount(): String = olmAccount
+                override val olmAccount = olmAccount
+                override val olmPickleKey = ""
             },
-            ""
         )
     }
 

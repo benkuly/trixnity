@@ -13,18 +13,19 @@ typealias EventSubscriber<T> = suspend (Event<T>) -> Unit
 
 private val log = KotlinLogging.logger { }
 
-interface IEventEmitter {
+interface EventEmitter {
+    suspend fun emitEvent(event: Event<*>)
     fun <T : EventContent> subscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
     fun <T : EventContent> unsubscribe(clazz: KClass<T>, subscriber: EventSubscriber<T>)
     fun subscribeAllEvents(subscriber: EventSubscriber<EventContent>)
     fun unsubscribeAllEvents(subscriber: EventSubscriber<EventContent>)
 }
 
-abstract class EventEmitter : IEventEmitter {
+abstract class EventEmitterImpl : EventEmitter {
     private val eventSubscribers =
         MutableStateFlow<Map<KClass<out EventContent>, Set<EventSubscriber<out EventContent>>>>(mapOf())
 
-    protected suspend fun emitEvent(event: Event<*>) = coroutineScope {
+    override suspend fun emitEvent(event: Event<*>) = coroutineScope {
         eventSubscribers.value
             .filterKeys {
                 it.isInstance(event.content)
@@ -32,7 +33,7 @@ abstract class EventEmitter : IEventEmitter {
             .forEach { (_, subscribers) ->
                 subscribers.forEach {
                     launch {
-                        log.trace { "called subscriber: $it" }
+                        log.trace { "called subscriber for event $event: $it" }
                         it.invoke(event)
                     }
                 }
@@ -74,10 +75,10 @@ abstract class EventEmitter : IEventEmitter {
 /**
  * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
  */
-inline fun <reified T : EventContent> IEventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
+inline fun <reified T : EventContent> EventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
     subscribe(T::class, subscriber)
 }
 
-inline fun <reified T : EventContent> IEventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
+inline fun <reified T : EventContent> EventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
     unsubscribe(T::class, subscriber)
 }

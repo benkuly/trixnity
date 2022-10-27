@@ -14,7 +14,7 @@ class MatrixAccessTokenAuth internal constructor(
     private val config: Config,
 ) : AuthenticationProvider(config) {
     class Config internal constructor(name: String? = null) : AuthenticationProvider.Config(name) {
-        internal var authenticationFunction: AccessTokenAuthenticationFunction = {
+        var authenticationFunction: AccessTokenAuthenticationFunction = {
             throw NotImplementedError("MatrixAccessTokenAuth validate function is not specified.")
         }
     }
@@ -37,13 +37,15 @@ class MatrixAccessTokenAuth internal constructor(
                 when (cause) {
                     NoCredentials ->
                         challengeCall.respond<ErrorResponse>(HttpStatusCode.Unauthorized, ErrorResponse.MissingToken())
+
                     InvalidCredentials -> challengeCall.respond<ErrorResponse>(
                         HttpStatusCode.Unauthorized,
                         ErrorResponse.UnknownToken()
                     )
+
                     is Error -> challengeCall.respond<ErrorResponse>(
-                        HttpStatusCode.Unauthorized,
-                        ErrorResponse.UnknownToken(cause.message)
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse.Unknown(cause.message)
                     )
                 }
                 challenge.complete()
@@ -66,6 +68,7 @@ private fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
             if (!authHeader.authScheme.equals("Bearer", ignoreCase = true)) null
             else authHeader.blob
         }
+
         else -> queryParameters["access_token"]
     }?.let { UserAccessTokenCredentials(it) }
 }

@@ -1,53 +1,75 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.user.IUserService
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import kotlin.reflect.KClass
 
-class UserServiceMock : IUserService {
+class UserServiceMock : UserService {
     override val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
         get() = throw NotImplementedError()
 
     val loadMembersCalled = MutableStateFlow<RoomId?>(null)
-    override fun loadMembers(roomId: RoomId) {
+    override suspend fun loadMembers(roomId: RoomId, wait: Boolean) {
         loadMembersCalled.value = roomId
     }
 
-    override suspend fun getAll(roomId: RoomId, scope: CoroutineScope): StateFlow<Set<RoomUser>?> {
+    override fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
         throw NotImplementedError()
     }
 
-    override suspend fun getAll(roomId: RoomId): Set<RoomUser>? {
+
+    override fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
         throw NotImplementedError()
     }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId, scope: CoroutineScope): StateFlow<RoomUser?> {
+    override fun canKickUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
         throw NotImplementedError()
     }
 
-    override suspend fun getById(userId: UserId, roomId: RoomId): RoomUser? {
+    override fun canBanUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
+    override fun canUnbanUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canInviteUser(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canInvite(roomId: RoomId): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun getPowerLevel(userId: UserId, roomId: RoomId): Flow<Int> {
+        throw NotImplementedError()
+    }
+
+    override fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,
-        scope: CoroutineScope
-    ): StateFlow<C?> {
+    ): Flow<C?> {
         throw NotImplementedError()
     }
 
-    override suspend fun <C : GlobalAccountDataEventContent> getAccountData(
-        eventContentClass: KClass<C>,
-        key: String
-    ): C? {
-        throw NotImplementedError()
-    }
 }

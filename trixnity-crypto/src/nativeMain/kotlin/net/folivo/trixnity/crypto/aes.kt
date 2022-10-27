@@ -2,20 +2,27 @@ package net.folivo.trixnity.crypto
 
 import com.soywiz.krypto.AES
 import com.soywiz.krypto.Padding
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.core.toByteFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 
-actual suspend fun encryptAes256Ctr(
-    content: ByteArray,
+actual fun ByteFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteArray = AES.encryptAesCtr(content, key, initialisationVector, Padding.NoPadding)
+): ByteFlow = flow {// TODO should be streaming!
+    emitAll(AES.encryptAesCtr(toByteArray(), key, initialisationVector, Padding.NoPadding).toByteFlow())
+}
 
-actual suspend fun decryptAes256Ctr(
-    encryptedContent: ByteArray,
+actual fun ByteFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteArray = try {
-    AES.decryptAesCtr(encryptedContent, key, initialisationVector, Padding.NoPadding)
-} catch (exception: Exception) {
-    throw DecryptionException.OtherException(exception)
+): ByteFlow = flow {// TODO should be streaming!
+    try {
+        emitAll(AES.decryptAesCtr(toByteArray(), key, initialisationVector, Padding.NoPadding).toByteFlow())
+    } catch (exception: Exception) {
+        throw DecryptionException.OtherException(exception)
+    }
 }

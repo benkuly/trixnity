@@ -8,15 +8,14 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.IMatrixClient
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
-import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.client.store.StoreFactory
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.exposed.ExposedStoreFactory
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -28,49 +27,25 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.Database
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.utility.DockerImageName
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.Ignore
 
 @Testcontainers
 class TimelineEventIT {
 
-    private lateinit var client1: IMatrixClient
-    private lateinit var client2: IMatrixClient
+    private lateinit var client1: MatrixClient
+    private lateinit var client2: MatrixClient
     private lateinit var scope1: CoroutineScope
     private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
-    private lateinit var store2: Store
 
     @Container
-    val synapseDocker = GenericContainer<Nothing>(DockerImageName.parse("matrixdotorg/synapse:$synapseVersion"))
-        .apply {
-            withEnv(
-                mapOf(
-                    "VIRTUAL_HOST" to "localhost",
-                    "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
-                    "UID" to "1000",
-                    "GID" to "1000"
-                )
-            )
-            withClasspathResourceMapping("data", "/data", BindMode.READ_WRITE)
-            withExposedPorts(8008)
-            waitingFor(Wait.forHealthcheck())
-        }
+    val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
@@ -84,25 +59,21 @@ class TimelineEventIT {
         ).build()
         database1 = newDatabase()
         database2 = newDatabase()
-        store2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-            .createStore(createEventContentSerializerMappings(), createMatrixEventJson())
 
-        val storeFactory1 = ExposedStoreFactory(database1, Dispatchers.IO, scope1)
-        val storeFactory2 = object : StoreFactory {
-            override suspend fun createStore(contentMappings: EventContentSerializerMappings, json: Json): Store {
-                return store2
-            }
-        }
+        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory1,
+            repositoriesModule = repositoriesModule1,
+            mediaStore = InMemoryMediaStore(),
             scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            storeFactory = storeFactory2,
+            repositoriesModule = repositoriesModule2,
+            mediaStore = InMemoryMediaStore(),
             scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
@@ -154,7 +125,7 @@ class TimelineEventIT {
 
                         currentTimelineEvent = currentTimelineEvent
                             .filterNotNull()
-                            .map { client2.room.getPreviousTimelineEvent(it, scope2) }
+                            .map { client2.room.getPreviousTimelineEvent(it) }
                             .filterNotNull()
                             .first()
                     }
@@ -179,13 +150,13 @@ class TimelineEventIT {
                 delay(50) // give it time to sync back
             }
             val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.value?.eventId.shouldNotBeNull()
+            }?.first()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
-                .mapNotNull { it.value?.removeUnsigned() }
+                .mapNotNull { it.first()?.removeUnsigned() }
 
             expectedTimeline shouldHaveSize 31
 
@@ -201,15 +172,15 @@ class TimelineEventIT {
                 timelineEvent.previousEventId shouldNotBe null
             }
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync = client2.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
-                .mapNotNull { it.value?.removeUnsigned() }
+                .mapNotNull { it.first()?.removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -230,21 +201,21 @@ class TimelineEventIT {
                 delay(50) // give it time to sync back
             }
             val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.value?.eventId.shouldNotBeNull()
+            }?.first()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(expectedTimeline.last().eventId, room, direction = FORWARDS)
                     .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                    .first { list -> list.any { it.value?.nextEventId == null } }
-                    .mapNotNull { it.value?.removeUnsigned() }
+                    .first { list -> list.any { it.first()?.nextEventId == null } }
+                    .mapNotNull { it.first()?.removeUnsigned() }
 
             // drop because the first event may have a gap due to the FORWARDS direction
             timelineFromGappySync.reversed().dropLast(1) shouldBe expectedTimeline.dropLast(1)
@@ -267,14 +238,14 @@ class TimelineEventIT {
                 delay(50) // give it time to sync back
             }
             val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.value?.eventId.shouldNotBeNull()
+            }?.first()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
-            client2.startSync().getOrThrow()
+            client2.startSync()
             client2.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
+                val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync =
@@ -286,76 +257,30 @@ class TimelineEventIT {
                 ).debounce(100)
                     .first { list ->
                         list.size > 31
-                                && list.mapNotNull { it.value }.any { it.previousEventId == null }
-                                && list.mapNotNull { it.value }.any { it.nextEventId == null }
+                                && list.mapNotNull { it.first() }.any { it.previousEventId == null }
+                                && list.mapNotNull { it.first() }.any { it.nextEventId == null }
                     }.also { list ->
-                        val last = list.last().value.shouldNotBeNull()
-                        while (list.last().value?.gap != null)
+                        val last = list.last().first().shouldNotBeNull()
+                        while (list.last().first()?.gap != null)
                             client2.room.fillTimelineGaps(last.eventId, last.roomId)
-                    }.mapNotNull { it.value?.removeUnsigned() }
+                    }.mapNotNull { it.first()?.removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
     }
 
-    private suspend fun IMatrixClient.getExpectedTimelineToBeginning(
+    private suspend fun MatrixClient.getExpectedTimelineToBeginning(
         startFrom: EventId,
         roomId: RoomId
     ) = room.getTimelineEvents(startFrom, roomId)
         .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-        .first { list -> list.mapNotNull { it.value }.any { it.previousEventId == null } }
+        .first { list -> list.mapNotNull { it.first() }.any { it.previousEventId == null } }
         .also { list ->
-            val last = list.last().value.shouldNotBeNull()
-            while (list.last().value?.gap != null)
+            val last = list.last().first().shouldNotBeNull()
+            while (list.last().first()?.gap != null)
                 client1.room.fillTimelineGaps(last.eventId, last.roomId)
         }
-        .mapNotNull { it.value?.removeUnsigned() }
-
-    @Test
-    @Ignore // CI is too fast
-    fun shouldHandleCancelOfMatrixClient(): Unit = runBlocking {
-        withTimeout(60_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
-
-            client2.stopSync(true)
-
-            (0..199).forEach {
-                client1.room.sendMessage(room) { text(it.toString()) }
-                delay(50) // give it time to sync back
-            }
-            val lastEvent = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "199"
-            }?.value?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(lastEvent, room)
-                .toFlowList(MutableStateFlow(200), MutableStateFlow(200))
-                .first()
-                .mapNotNull { it.value?.removeUnsigned() }
-
-            expectedTimeline shouldHaveSize 200
-
-            val middleEvent = expectedTimeline[150].eventId
-
-            client2.startSync().getOrThrow()
-            client2.room.getLastTimelineEvent(room).first {
-                val content = it?.value?.content?.getOrNull()
-                content is RoomMessageEventContent && content.body == "199"
-            }
-            val job = scope2.launch {
-                client2.room.getTimelineEvents(lastEvent, room, limitPerFetch = 200).collect()
-            }
-            store2.roomTimeline.get(middleEvent, room, scope2).filterNotNull().first()
-            scope2.cancel()
-            job.join()
-
-            val newStore2 = ExposedStoreFactory(database2, Dispatchers.IO, scope2)
-                .createStore(createEventContentSerializerMappings(), createMatrixEventJson())
-            newStore2.roomTimeline.get(middleEvent, room) shouldBe null
-        }
-    }
+        .mapNotNull { it.first()?.removeUnsigned() }
 
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {
