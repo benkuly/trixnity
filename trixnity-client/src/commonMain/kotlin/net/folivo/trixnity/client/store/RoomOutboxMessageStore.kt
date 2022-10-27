@@ -29,14 +29,14 @@ class RoomOutboxMessageStore(
             .stateIn(storeScope, Eagerly, listOf())
 
     override suspend fun init() {
-        roomOutboxMessageCache.init(rtm.transaction { roomOutboxMessageRepository.getAll() }
+        roomOutboxMessageCache.init(rtm.readTransaction { roomOutboxMessageRepository.getAll() }
             .associateBy { it.transactionId })
     }
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             roomOutboxMessageRepository.deleteAll()
         }
         roomOutboxMessageCache.reset()

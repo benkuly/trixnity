@@ -6,7 +6,6 @@ buildscript {
     }
     dependencies {
         classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
-        classpath("io.realm.kotlin:gradle-plugin:${Versions.realm}")
     }
 }
 
@@ -16,6 +15,7 @@ plugins {
 //    id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
+    id("io.realm.kotlin") version Versions.realm apply false
 }
 
 allprojects {

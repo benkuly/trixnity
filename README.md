@@ -51,11 +51,14 @@ This project contains the following modules, which can be used independently:
     - [x] exchangeable database
         - in memory (e. g. for tests)
         - [trixnity-client-repository-exposed](/trixnity-client/trixnity-client-repository-exposed) implements a
-          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM
-          based platforms.
+          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This supports JVM
+          based platforms only.
+        - [trixnity-client-repository-realm](/trixnity-client/trixnity-client-repository-realm) implements a
+          database for trixnity-client with [realm](https://github.com/realm/realm-kotlin). This support
+          JVM/Android/Native.
         - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight) implements a
           database for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively
-          maintained at the moment.
+          maintained at the moment, but should work.
         - We plan to add something like `trixnity-client-repository-indexeddb` as a database for web in the future.
     - [x] fast cache on top of the database
     - [x] exchangeable media store

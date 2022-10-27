@@ -23,7 +23,7 @@ include(
     "trixnity-client:integration-tests",
     "trixnity-client:trixnity-client-repository-sqldelight",
     "trixnity-client:trixnity-client-repository-exposed",
-    "trixnity-client:trixnity-client-store-realm",
+    "trixnity-client:trixnity-client-repository-realm",
     "trixnity-client:trixnity-client-media-okio",
 )
 include("trixnity-applicationservice")

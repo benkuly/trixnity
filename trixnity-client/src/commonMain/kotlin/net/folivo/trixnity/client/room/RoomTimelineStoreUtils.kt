@@ -9,9 +9,12 @@ import net.folivo.trixnity.core.model.events.Event
 
 private val log = KotlinLogging.logger {}
 
-internal suspend fun RoomTimelineStore.filterDuplicateEvents(events: List<Event.RoomEvent<*>>?) =
+internal suspend fun RoomTimelineStore.filterDuplicateEvents(
+    events: List<Event.RoomEvent<*>>?,
+    withTransaction: Boolean
+) =
     events?.distinctBy { it.id }
-        ?.filter { get(it.id, it.roomId, withTransaction = false) == null }
+        ?.filter { get(it.id, it.roomId, withTransaction = withTransaction) == null }
 
 internal suspend fun RoomTimelineStore.addEventsToTimeline(
     startEvent: TimelineEvent,

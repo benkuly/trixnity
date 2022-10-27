@@ -9,6 +9,7 @@ import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -40,6 +41,7 @@ class TimelineEventHandlerImpl(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val config: MatrixClientConfiguration,
     private val timelineMutex: TimelineMutex,
+    private val rtm: RepositoryTransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {
         const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""
@@ -67,18 +69,20 @@ class TimelineEventHandlerImpl(
             }
             room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
             room.value.timeline?.also {
-                timelineMutex.withTransactionalLock(room.key) {
-                    addEventsToTimelineAtEnd(
-                        roomId = roomId,
-                        newEvents = it.events,
-                        previousBatch = it.previousBatch,
-                        nextBatch = syncResponse.nextBatch,
-                        hasGapBefore = it.limited ?: false
-                    )
-                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                    it.events?.forEach { event ->
-                        syncOutboxMessage(event)
-                        setLastRelevantEvent(event)
+                timelineMutex.withLock(room.key) {
+                    rtm.writeTransaction {
+                        addEventsToTimelineAtEnd(
+                            roomId = roomId,
+                            newEvents = it.events,
+                            previousBatch = it.previousBatch,
+                            nextBatch = syncResponse.nextBatch,
+                            hasGapBefore = it.limited ?: false
+                        )
+                        it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                        it.events?.forEach { event ->
+                            syncOutboxMessage(event)
+                            setLastRelevantEvent(event)
+                        }
                     }
                 }
             }
@@ -91,16 +95,18 @@ class TimelineEventHandlerImpl(
                 )
             }
             room.value.timeline?.also {
-                timelineMutex.withTransactionalLock(room.key) {
-                    addEventsToTimelineAtEnd(
-                        roomId = room.key,
-                        newEvents = it.events,
-                        previousBatch = it.previousBatch,
-                        nextBatch = syncResponse.nextBatch,
-                        hasGapBefore = it.limited ?: false
-                    )
-                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                    it.events?.forEach { event -> setLastRelevantEvent(event) }
+                timelineMutex.withLock(room.key) {
+                    rtm.writeTransaction {
+                        addEventsToTimelineAtEnd(
+                            roomId = room.key,
+                            newEvents = it.events,
+                            previousBatch = it.previousBatch,
+                            nextBatch = syncResponse.nextBatch,
+                            hasGapBefore = it.limited ?: false
+                        )
+                        it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                        it.events?.forEach { event -> setLastRelevantEvent(event) }
+                    }
                 }
             }
         }
@@ -129,7 +135,7 @@ class TimelineEventHandlerImpl(
         nextBatch: String,
         hasGapBefore: Boolean
     ) {
-        val events = roomTimelineStore.filterDuplicateEvents(newEvents)
+        val events = roomTimelineStore.filterDuplicateEvents(newEvents, false)
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
             val room = roomStore.get(roomId).first()
@@ -169,7 +175,7 @@ class TimelineEventHandlerImpl(
         startEventId: EventId,
         roomId: RoomId,
         limit: Long
-    ): Result<Unit> = timelineMutex.withTransactionalLock(roomId) {
+    ): Result<Unit> = timelineMutex.withLock(roomId) {
         kotlin.runCatching {
             val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
 
@@ -205,7 +211,7 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId
-                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk, true)
                 previousHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == previousEvent } == true
@@ -231,7 +237,7 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId
-                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk, true)
                 nextHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == nextEvent } == true
@@ -243,30 +249,32 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                roomTimelineStore.addEventsToTimeline(
-                    startEvent = startEvent,
-                    roomId = roomId,
-                    previousToken = previousToken,
-                    previousHasGap = previousHasGap,
-                    previousEvent = previousEvent,
-                    previousEventChunk = previousEventChunk,
-                    nextToken = nextToken,
-                    nextHasGap = nextHasGap,
-                    nextEvent = nextEvent,
-                    nextEventChunk = nextEventChunk,
-                    processTimelineEventsBeforeSave = { list ->
-                        list.alsoAddRelationFromTimelineEvents()
-                        list.forEach {
-                            val event = it.event
-                            val content = event.content
-                            if (content is RedactionEventContent) {
-                                @Suppress("UNCHECKED_CAST")
-                                redactTimelineEvent(event as Event<RedactionEventContent>)
+                rtm.writeTransaction {
+                    roomTimelineStore.addEventsToTimeline(
+                        startEvent = startEvent,
+                        roomId = roomId,
+                        previousToken = previousToken,
+                        previousHasGap = previousHasGap,
+                        previousEvent = previousEvent,
+                        previousEventChunk = previousEventChunk,
+                        nextToken = nextToken,
+                        nextHasGap = nextHasGap,
+                        nextEvent = nextEvent,
+                        nextEventChunk = nextEventChunk,
+                        processTimelineEventsBeforeSave = { list ->
+                            list.alsoAddRelationFromTimelineEvents()
+                            list.forEach {
+                                val event = it.event
+                                val content = event.content
+                                if (content is RedactionEventContent) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    redactTimelineEvent(event as Event<RedactionEventContent>)
+                                }
                             }
-                        }
-                        list
-                    },
-                )
+                            list
+                        },
+                    )
+                }
         }
     }
 

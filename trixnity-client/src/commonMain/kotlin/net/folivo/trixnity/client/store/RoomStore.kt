@@ -18,13 +18,13 @@ class RoomStore(
     private val roomCache = RepositoryStateFlowCache(storeScope, roomRepository, rtm, infiniteCache = true)
 
     override suspend fun init() {
-        roomCache.init(rtm.transaction { roomRepository.getAll() }.associateBy { it.roomId })
+        roomCache.init(rtm.readTransaction { roomRepository.getAll() }.associateBy { it.roomId })
     }
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             roomRepository.deleteAll()
         }
         roomCache.reset()
