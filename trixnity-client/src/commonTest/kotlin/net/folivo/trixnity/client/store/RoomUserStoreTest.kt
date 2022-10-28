@@ -7,8 +7,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.InMemoryRoomUserRepository
+import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -27,7 +27,7 @@ class RoomUserStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomUserRepository = InMemoryRoomUserRepository()
-        cut = RoomUserStore(roomUserRepository, NoopRepositoryTransactionManager, storeScope)
+        cut = RoomUserStore(roomUserRepository, NoOpRepositoryTransactionManager, storeScope)
     }
     afterTest {
         storeScope.cancel()

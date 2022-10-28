@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
@@ -32,7 +31,7 @@ class OlmStoreTest : ShouldSpec({
             inboundMegolmSessionRepository,
             InMemoryInboundMegolmMessageIndexRepository(),
             InMemoryOutboundMegolmSessionRepository(),
-            NoopRepositoryTransactionManager,
+            NoOpRepositoryTransactionManager,
             storeScope
         )
     }
