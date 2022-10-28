@@ -1,21 +1,17 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import kotlin.time.ExperimentalTime
-
-private val log = KotlinLogging.logger { }
 
 internal class RealmInboundMegolmSession : RealmObject {
     var senderKey: String = ""
@@ -47,9 +43,9 @@ internal class RealmInboundMegolmSessionRepository(
         withRealmWrite {
             val existing = findByKey(key).find()
             val upsert = (existing ?: RealmInboundMegolmSession()).apply {
+                sessionId = key.sessionId
+                roomId = key.roomId.full
                 senderKey = value.senderKey.value
-                sessionId = value.sessionId
-                roomId = value.roomId.full
                 firstKnownIndex = value.firstKnownIndex
                 hasBeenBackedUp = value.hasBeenBackedUp
                 isTrusted = value.isTrusted
@@ -85,9 +81,6 @@ internal class RealmInboundMegolmSessionRepository(
             pickled = this.pickled
         )
 
-    private fun Realm.findByKey(key: InboundMegolmSessionRepositoryKey) =
-        query<RealmInboundMegolmSession>("sessionId == $0 && roomId == $1", key.sessionId, key.roomId.full).first()
-
-    private fun MutableRealm.findByKey(key: InboundMegolmSessionRepositoryKey) =
+    private fun TypedRealm.findByKey(key: InboundMegolmSessionRepositoryKey) =
         query<RealmInboundMegolmSession>("sessionId == $0 && roomId == $1", key.sessionId, key.roomId.full).first()
 }

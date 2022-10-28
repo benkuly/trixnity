@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -81,13 +82,10 @@ internal class RealmRoomStateRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: RoomStateRepositoryKey) =
+    private fun TypedRealm.findByKey(key: RoomStateRepositoryKey) =
         query<RealmRoomState>("roomId == $0 && type == $1", key.roomId.full, key.type).find()
 
-    private fun MutableRealm.findByKey(key: RoomStateRepositoryKey) =
-        query<RealmRoomState>("roomId == $0 && type == $1", key.roomId.full, key.type).find()
-
-    private fun Realm.findByKeys(
+    private fun TypedRealm.findByKeys(
         firstKey: RoomStateRepositoryKey,
         secondKey: String
     ) = query<RealmRoomState>(
@@ -96,15 +94,4 @@ internal class RealmRoomStateRepository(
         firstKey.type,
         secondKey
     ).first()
-
-    private fun MutableRealm.findByKeys(
-        firstKey: RoomStateRepositoryKey,
-        secondKey: String
-    ) = query<RealmRoomState>(
-        "roomId == $0 && type == $1 && stateKey == $2",
-        firstKey.roomId.full,
-        firstKey.type,
-        secondKey
-    ).first()
-
 }

@@ -33,7 +33,9 @@ kotlin {
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+                implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
     }

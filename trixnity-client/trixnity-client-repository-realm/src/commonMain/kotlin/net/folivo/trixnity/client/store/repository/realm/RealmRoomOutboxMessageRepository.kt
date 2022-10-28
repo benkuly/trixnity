@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -37,7 +36,7 @@ internal class RealmRoomOutboxMessageRepository(
 
         val existing = findByKey(key).find()
         val upsert = (existing ?: RealmRoomOutboxMessage().apply {
-            transactionId = value.transactionId
+            transactionId = key
         }).apply {
             @Suppress("UNCHECKED_CAST")
             this.value = json.encodeToString(
@@ -67,7 +66,5 @@ internal class RealmRoomOutboxMessageRepository(
         return json.decodeFromString(RoomOutboxMessage.serializer(serializer), this.value)
     }
 
-    private fun Realm.findByKey(key: String) = query<RealmRoomOutboxMessage>("transactionId == $0", key).first()
-    private fun MutableRealm.findByKey(key: String) = query<RealmRoomOutboxMessage>("transactionId == $0", key).first()
-
+    private fun TypedRealm.findByKey(key: String) = query<RealmRoomOutboxMessage>("transactionId == $0", key).first()
 }

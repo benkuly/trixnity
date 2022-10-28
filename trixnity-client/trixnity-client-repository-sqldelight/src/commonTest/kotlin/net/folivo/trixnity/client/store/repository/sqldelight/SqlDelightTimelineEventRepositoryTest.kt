@@ -6,8 +6,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
-import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.client.store.repository.sqldelight.testutils.createDriverWithSchema
+import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class SqlDelightTimelineEventRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightTimelineEventRepository
     lateinit var driver: SqlDriver
     beforeTest {
@@ -52,7 +52,7 @@ class SqlDelightTimelineEventRepositoryTest : ShouldSpec({
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
-                RoomId("room2", "server"),
+                RoomId("room1", "server"),
                 1234
             ),
             roomId = RoomId("room2", "server"),

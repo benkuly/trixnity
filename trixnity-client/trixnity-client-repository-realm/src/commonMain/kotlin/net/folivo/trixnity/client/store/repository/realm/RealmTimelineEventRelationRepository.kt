@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import net.folivo.trixnity.client.store.TimelineEventRelation
@@ -99,21 +99,14 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         }
     }
 
-    private fun Realm.findByKey(key: TimelineEventRelationKey) =
+    private fun TypedRealm.findByKey(key: TimelineEventRelationKey) =
         query<RealmTimelineEventRelation>(
             "roomId == $0 && relatedEventId == $1",
             key.roomId.full,
             key.relatedEventId.full
         )
 
-    private fun MutableRealm.findByKey(key: TimelineEventRelationKey) =
-        query<RealmTimelineEventRelation>(
-            "roomId == $0 && relatedEventId == $1",
-            key.roomId.full,
-            key.relatedEventId.full
-        )
-
-    private fun Realm.findByKeys(
+    private fun TypedRealm.findByKeys(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType
     ) = query<RealmTimelineEventRelation>(
@@ -123,17 +116,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         secondKey.name
     )
 
-    private fun MutableRealm.findByKeys(
-        firstKey: TimelineEventRelationKey,
-        secondKey: RelationType
-    ) = query<RealmTimelineEventRelation>(
-        "roomId == $0 && relatedEventId == $1 && relationType == $2",
-        firstKey.roomId.full,
-        firstKey.relatedEventId.full,
-        secondKey.name
-    )
-
-    private fun MutableRealm.findByKeys(
+    private fun TypedRealm.findByKeys(
         key: TimelineEventRelationKey,
         timelineEventRelation: TimelineEventRelation
     ) = query<RealmTimelineEventRelation>(

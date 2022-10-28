@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -35,9 +34,10 @@ internal class RealmRoomRepository(
 
     override suspend fun save(key: RoomId, value: Room) = withRealmWrite {
         val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmRoom().apply { roomId = value.roomId.full }).apply {
+        val upsert = (existing ?: RealmRoom().apply { roomId = key.full }).apply {
             this.value = json.encodeToString(value)
         }
+        println(upsert)
         if (existing == null) {
             copyToRealm(upsert)
         }
@@ -53,7 +53,5 @@ internal class RealmRoomRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: RoomId) = query<RealmRoom>("roomId == $0", key.full).first()
-    private fun MutableRealm.findByKey(key: RoomId) = query<RealmRoom>("roomId == $0", key.full).first()
-
+    private fun TypedRealm.findByKey(key: RoomId) = query<RealmRoom>("roomId == $0", key.full).first()
 }

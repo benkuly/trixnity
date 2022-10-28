@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.decodeFromString
@@ -48,18 +49,10 @@ internal class RealmKeyVerificationStateRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: VerifiedKeysRepositoryKey) =
+    private fun TypedRealm.findByKey(key: VerifiedKeysRepositoryKey) =
         query<RealmKeyVerificationState>(
             "keyId == $0 && keyAlgorithm = $1",
             key.keyId,
             key.keyAlgorithm.name
         ).first()
-
-    private fun MutableRealm.findByKey(key: VerifiedKeysRepositoryKey) =
-        query<RealmKeyVerificationState>(
-            "keyId == $0 && keyAlgorithm = $1",
-            key.keyId,
-            key.keyAlgorithm.name
-        ).first()
-
 }

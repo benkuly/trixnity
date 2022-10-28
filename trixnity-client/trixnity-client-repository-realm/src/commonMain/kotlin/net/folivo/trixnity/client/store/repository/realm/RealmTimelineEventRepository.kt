@@ -1,18 +1,14 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRepository
-
-private val log = KotlinLogging.logger { }
 
 internal class RealmTimelineEvent : RealmObject {
     var roomId: String = ""
@@ -32,8 +28,8 @@ internal class RealmTimelineEventRepository(
     override suspend fun save(key: TimelineEventKey, value: TimelineEvent) = withRealmWrite {
         val existing = findByKey(key).find()
         val upsert = (existing ?: RealmTimelineEvent()).apply {
-            roomId = value.roomId.full
-            eventId = value.eventId.full
+            roomId = key.roomId.full
+            eventId = key.eventId.full
             this.value = json.encodeToString(value)
         }
         if (existing == null) {
@@ -51,9 +47,6 @@ internal class RealmTimelineEventRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: TimelineEventKey) =
-        query<RealmTimelineEvent>("roomId == $0 && eventId == $1", key.roomId.full, key.eventId.full).first()
-
-    private fun MutableRealm.findByKey(key: TimelineEventKey) =
+    private fun TypedRealm.findByKey(key: TimelineEventKey) =
         query<RealmTimelineEvent>("roomId == $0 && eventId == $1", key.roomId.full, key.eventId.full).first()
 }

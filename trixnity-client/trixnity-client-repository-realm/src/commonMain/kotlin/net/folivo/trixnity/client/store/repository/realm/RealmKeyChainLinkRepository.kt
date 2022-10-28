@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import net.folivo.trixnity.client.store.KeyChainLink
@@ -21,7 +20,7 @@ internal class RealmKeyChainLink : RealmObject {
 internal class RealmKeyChainLinkRepository : KeyChainLinkRepository {
     override suspend fun getBySigningKey(signingUserId: UserId, signingKey: Key.Ed25519Key): Set<KeyChainLink> =
         withRealmRead {
-            findByKeys(signingUserId, signingKey).map {
+            findBySigningKeys(signingUserId, signingKey).map {
                 KeyChainLink(
                     signingUserId = UserId(it.signingUserId),
                     signingKey = Key.Ed25519Key(
@@ -53,7 +52,7 @@ internal class RealmKeyChainLinkRepository : KeyChainLinkRepository {
     }
 
     override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key) = withRealmWrite {
-        val existing = findByKeys(signedUserId, signedKey)
+        val existing = findBySignedKeys(signedUserId, signedKey)
         delete(existing)
     }
 
@@ -62,7 +61,7 @@ internal class RealmKeyChainLinkRepository : KeyChainLinkRepository {
         delete(existing)
     }
 
-    private fun MutableRealm.findByKey(keyChainLink: KeyChainLink) = query<RealmKeyChainLink>(
+    private fun TypedRealm.findByKey(keyChainLink: KeyChainLink) = query<RealmKeyChainLink>(
         "signingUserId == $0 && signingKeyId == $1 && signingKeyValue == $2 && signedUserId == $3 && signedKeyId == $4 && signedKeyValue == $5",
         keyChainLink.signedUserId.full,
         keyChainLink.signingKey.keyId,
@@ -72,7 +71,7 @@ internal class RealmKeyChainLinkRepository : KeyChainLinkRepository {
         keyChainLink.signedKey.value,
     ).first()
 
-    private fun Realm.findByKeys(
+    private fun TypedRealm.findBySigningKeys(
         signingUserId: UserId,
         signingKey: Key.Ed25519Key
     ) = query<RealmKeyChainLink>(
@@ -82,14 +81,13 @@ internal class RealmKeyChainLinkRepository : KeyChainLinkRepository {
         signingKey.value
     ).find()
 
-    private fun MutableRealm.findByKeys(
+    private fun TypedRealm.findBySignedKeys(
         signingUserId: UserId,
         signingKey: Key.Ed25519Key
     ) = query<RealmKeyChainLink>(
-        "signingUserId == $0 && signingKeyId == $1 && signingKeyValue == $2",
+        "signedUserId == $0 && signedKeyId == $1 && signedKeyValue == $2",
         signingUserId.full,
         signingKey.keyId,
         signingKey.value
     ).find()
-
 }

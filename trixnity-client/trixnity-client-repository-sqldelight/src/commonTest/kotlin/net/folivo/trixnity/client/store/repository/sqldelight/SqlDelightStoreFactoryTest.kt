@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
 class SqlDelightStoreFactoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var driver: SqlDriver
     val json = createMatrixEventJson()
     val mappings = DefaultEventContentSerializerMappings

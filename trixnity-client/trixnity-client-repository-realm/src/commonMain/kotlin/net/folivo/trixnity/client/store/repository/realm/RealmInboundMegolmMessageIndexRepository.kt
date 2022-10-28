@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
@@ -39,9 +38,9 @@ internal class RealmInboundMegolmMessageIndexRepository : InboundMegolmMessageIn
         withRealmWrite {
             val existing = findByKey(key).find()
             val upsert = (existing ?: RealmInboundMegolmMessageIndex()).apply {
-                sessionId = value.sessionId
-                roomId = value.roomId.full
-                messageIndex = value.messageIndex
+                sessionId = key.sessionId
+                roomId = key.roomId.full
+                messageIndex = key.messageIndex
                 eventId = value.eventId.full
                 originTimestamp = value.originTimestamp
             }
@@ -60,15 +59,7 @@ internal class RealmInboundMegolmMessageIndexRepository : InboundMegolmMessageIn
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: InboundMegolmMessageIndexRepositoryKey) =
-        query<RealmInboundMegolmMessageIndex>(
-            "sessionId == $0 && roomId == $1 && messageIndex == $2",
-            key.sessionId,
-            key.roomId.full,
-            key.messageIndex
-        ).first()
-
-    private fun MutableRealm.findByKey(key: InboundMegolmMessageIndexRepositoryKey) =
+    private fun TypedRealm.findByKey(key: InboundMegolmMessageIndexRepositoryKey) =
         query<RealmInboundMegolmMessageIndex>(
             "sessionId == $0 && roomId == $1 && messageIndex == $2",
             key.sessionId,

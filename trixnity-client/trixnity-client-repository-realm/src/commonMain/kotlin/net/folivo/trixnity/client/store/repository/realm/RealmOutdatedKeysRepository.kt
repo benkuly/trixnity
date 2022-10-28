@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -48,7 +49,5 @@ internal class RealmOutdatedKeysRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKey(key: Long) = query<RealmOutdatedKeys>("id == $0", key).first()
-    private fun MutableRealm.findByKey(key: Long) = query<RealmOutdatedKeys>("id == $0", key).first()
-
+    private fun TypedRealm.findByKey(key: Long) = query<RealmOutdatedKeys>("id == $0", key).first()
 }

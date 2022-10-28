@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.Realm
+import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -79,12 +80,7 @@ internal class RealmGlobalAccountDataRepository(
         delete(existing)
     }
 
-    private fun Realm.findByKeys(
-        firstKey: String,
-        secondKey: String
-    ) = query<RealmGlobalAccountData>("type == $0 && key == $1", firstKey, secondKey).first()
-
-    private fun MutableRealm.findByKeys(
+    private fun TypedRealm.findByKeys(
         firstKey: String,
         secondKey: String
     ) = query<RealmGlobalAccountData>("type == $0 && key == $1", firstKey, secondKey).first()
