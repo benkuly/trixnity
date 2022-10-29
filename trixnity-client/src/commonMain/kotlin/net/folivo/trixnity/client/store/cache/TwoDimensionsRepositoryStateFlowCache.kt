@@ -3,11 +3,14 @@ package net.folivo.trixnity.client.store.cache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+
+private val log = KotlinLogging.logger { }
 
 private data class LoadingCacheValue<T>(
     val value: T,
@@ -18,7 +21,7 @@ private class LoadingRepository<K1, K2, V>(
     private val baseRepository: TwoDimensionsStoreRepository<K1, K2, V>
 ) : MinimalStoreRepository<K1, LoadingCacheValue<Map<K2, V>>> {
     override suspend fun get(key: K1): LoadingCacheValue<Map<K2, V>>? =
-        baseRepository.get(key)?.let { LoadingCacheValue(it, true) }
+        baseRepository.get(key)?.let { LoadingCacheValue(value = it, fullyLoadedFromRepository = true) }
 
     override suspend fun save(key: K1, value: LoadingCacheValue<Map<K2, V>>) =
         baseRepository.save(key, value.value)
@@ -65,7 +68,10 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         withTransaction,
         isContainedInCache = { it?.fullyLoadedFromRepository == true },
         onPersist = { onPersist(it?.value) },
-        updater = { oldValue -> updater(oldValue?.value)?.let { LoadingCacheValue(it, true) } }
+        updater = { oldValue ->
+            updater(oldValue?.value)
+                ?.let { LoadingCacheValue(value = it, fullyLoadedFromRepository = true) }
+        }
     )
 
     suspend fun updateBySecondKey(
@@ -78,7 +84,9 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             val value = updater(oldValue?.value?.get(secondKey))
             val newValue = if (value == null) oldValue?.value?.minus(secondKey)
             else oldValue?.value?.plus(secondKey to value) ?: mapOf(secondKey to value)
-            newValue?.let { LoadingCacheValue(it, oldValue?.fullyLoadedFromRepository == true) }
+            newValue?.let {
+                LoadingCacheValue(value = it, fullyLoadedFromRepository = oldValue?.fullyLoadedFromRepository == true)
+            }
         },
         isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
         retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
@@ -90,14 +98,6 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             }
         })
 
-    private fun getBySecondKeyAsFlow(
-        firstKey: K1,
-        secondKey: K2,
-    ) = cache.readWithCache(
-        key = firstKey,
-        isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
-        retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
-    ).map { it?.value?.get(secondKey) }
 
     private fun isContainedInCacheBySecondKey(
         it: LoadingCacheValue<Map<K2, V>>?,
@@ -109,13 +109,13 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         secondKey: K2,
         cacheValue: LoadingCacheValue<Map<K2, V>>?
     ): LoadingCacheValue<Map<K2, V>>? {
+        log.trace { "no cache hit in $repository, retrieve cache value for $firstKey/$secondKey" }
         val newValue = rtm.transaction {
             repository.getBySecondKey(firstKey, secondKey)
         }
         return if (newValue != null) LoadingCacheValue(
-            cacheValue?.value?.plus(secondKey to newValue) ?: mapOf(
-                secondKey to newValue
-            ), cacheValue?.fullyLoadedFromRepository == true
+            value = cacheValue?.value?.plus(secondKey to newValue) ?: mapOf(secondKey to newValue),
+            fullyLoadedFromRepository = cacheValue?.fullyLoadedFromRepository == true
         )
         else cacheValue
     }
@@ -123,7 +123,10 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
     fun getBySecondKey(
         firstKey: K1,
         secondKey: K2,
-    ): Flow<V?> {
-        return getBySecondKeyAsFlow(firstKey, secondKey)
-    }
+    ): Flow<V?> =
+        cache.readWithCache(
+            key = firstKey,
+            isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
+            retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
+        ).map { it?.value?.get(secondKey) }
 }
