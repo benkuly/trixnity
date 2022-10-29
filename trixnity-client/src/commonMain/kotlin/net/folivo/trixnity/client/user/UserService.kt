@@ -37,6 +37,11 @@ interface UserService {
     fun canInvite(roomId: RoomId): Flow<Boolean>
 
     fun getPowerLevel(userId: UserId, roomId: RoomId): Flow<Int>
+    fun getPowerLevel(
+        userId: UserId,
+        powerLevelsEventContent: PowerLevelsEventContent?,
+        createEventContent: CreateEventContent?
+    ): Int
 
     fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
@@ -102,7 +107,7 @@ class UserServiceImpl(
             getPowerLevel(userId, powerLevelsEvent?.content, createEvent?.content)
         }
 
-    private fun getPowerLevel(
+    override fun getPowerLevel(
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
         createEventContent: CreateEventContent?
