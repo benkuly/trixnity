@@ -1,15 +1,20 @@
 package net.folivo.trixnity.client.store.cache
 
+import io.ktor.util.logging.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
+import mu.KotlinLogging
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+
+private val log = KotlinLogging.logger { }
 
 /* TODO Currently the cache has the limitation, that some calls to readWithCache and writeWithCache could keep the cache full of values.
 * This happens if V is a collection and readWithCache and writeWithCache are used to retrieve less values, than the collection actually
 * holds at the moment. If that causes issues of huge caches, we should make the removerJobs a bit smarter. */
 open class StateFlowCache<K, V>(
+    private val name: String,
     private val cacheScope: CoroutineScope,
     val infiniteCache: Boolean = false,
     val cacheDuration: Duration = 1.minutes,
@@ -44,27 +49,12 @@ open class StateFlowCache<K, V>(
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
     ): Flow<V?> = flow {
-        val result = internalCache.updateAndGet { oldCache ->
-            val cacheValue = oldCache[key]
-
-            if (cacheValue == null) {
-                val databaseValue = MutableStateFlow(retrieveAndUpdateCache(null))
-                val removeTime = MutableStateFlow(cacheDuration)
-                oldCache + (key to StateFlowCacheValue(
-                    databaseValue,
-                    removeTime,
-                    removeFromCacheJob(key, databaseValue.subscriptionCount, removeTime)
-                ))
-            } else {
-                cacheValue.removeTimer.emit(cacheDuration)
-                cacheValue.value.update {
-                    if (isContainedInCache(it).not()) retrieveAndUpdateCache(it)
-                    else it
-                }
-                oldCache
-            }
-        }[key]
-        requireNotNull(result) { "We are sure, that it contains a value!" }
+        val result = internalCache.update(
+            key = key,
+            updater = { it },
+            isContainedInCache = isContainedInCache,
+            retrieveAndUpdateCache = retrieveAndUpdateCache,
+            persist = {})
         result.removerJob.start()
         emitAll(result.value)
     }
@@ -76,38 +66,51 @@ open class StateFlowCache<K, V>(
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
         persist: suspend (newValue: V?) -> Unit
     ) {
-        val result = internalCache.updateAndGet { oldCache ->
-            val cacheValue = oldCache[key]
-            val newCacheValue: StateFlowCacheValue<V?>? =
-                if (cacheValue == null) {
-                    val valueFromDb = retrieveAndUpdateCache(null)
-                    val newValue = updater(valueFromDb)
-                        .also { persist(it) }
-                    val removeTime = MutableStateFlow(cacheDuration)
-                    newValue?.let {
-                        val newStateFlowValue: MutableStateFlow<V?> = MutableStateFlow(newValue)
-                        StateFlowCacheValue(
-                            newStateFlowValue,
-                            removeTime,
-                            removeFromCacheJob(key, newStateFlowValue.subscriptionCount, removeTime)
-                        )
-                    }
-                } else {
-                    val newValue = cacheValue.value.updateAndGet { oldCacheValue ->
-                        val oldValue =
-                            if (isContainedInCache(oldCacheValue).not())
-                                retrieveAndUpdateCache(oldCacheValue)
-                            else oldCacheValue
-                        updater(oldValue)
-                            .also { persist(it) }
-                    }
-                    newValue?.let { cacheValue }
-                }
-            if (newCacheValue == null) oldCache - key
-            else oldCache + (key to newCacheValue)
-        }[key]
-        result?.removerJob?.start()
+        val result = internalCache.update(
+            key = key,
+            updater = updater,
+            isContainedInCache = isContainedInCache,
+            retrieveAndUpdateCache = retrieveAndUpdateCache,
+            persist = persist
+        )
+        result.removerJob?.start()
     }
+
+    private suspend fun MutableStateFlow<Map<K, StateFlowCacheValue<V?>>>.update(
+        key: K,
+        updater: suspend (oldValue: V?) -> V?,
+        isContainedInCache: suspend (cacheValue: V?) -> Boolean,
+        retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
+        persist: suspend (newValue: V?) -> Unit
+    ): StateFlowCacheValue<V?> =
+        updateAndGet { oldCache ->
+            val cacheValue = oldCache[key]
+            if (cacheValue == null) {
+                log.trace { "$name: no cache hit for key $key" }
+                val retrievedValue = retrieveAndUpdateCache(null)
+                val newValue = updater(retrievedValue)
+                    .also { persist(it) }
+                val removeTime = MutableStateFlow(cacheDuration)
+                val newStateFlowValue: MutableStateFlow<V?> = MutableStateFlow(newValue)
+                oldCache + (key to StateFlowCacheValue(
+                    newStateFlowValue,
+                    removeTime,
+                    removeFromCacheJob(key, newStateFlowValue.subscriptionCount, removeTime)
+                ))
+            } else {
+                cacheValue.value.update { oldCacheValue ->
+                    val oldValue =
+                        if (isContainedInCache(oldCacheValue).not()) {
+                            log.trace { "$name: no deep cache hit int $oldCacheValue for key $key" }
+                            retrieveAndUpdateCache(oldCacheValue)
+                        } else oldCacheValue
+                    updater(oldValue)
+                        .also { persist(it) }
+                }
+                oldCache
+            }
+        }[key]
+            .let { requireNotNull(it) { "We are sure, that it contains a value!" } }
 
     private fun removeFromCacheJob(
         key: K,
@@ -121,8 +124,10 @@ open class StateFlowCache<K, V>(
                 }.collectLatest { (subscriptionCount, removeTimer) ->
                     delay(removeTimer)
                     internalCache.update {
-                        if (subscriptionCount == 0) it - key
-                        else it
+                        if (subscriptionCount == 0) {
+                            log.trace { "$name: remove value from cache with key $key" }
+                            it - key
+                        } else it
                     }
                 }
         }

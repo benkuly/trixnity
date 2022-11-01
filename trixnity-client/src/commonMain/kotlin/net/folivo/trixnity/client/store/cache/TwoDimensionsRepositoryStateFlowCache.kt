@@ -3,14 +3,11 @@ package net.folivo.trixnity.client.store.cache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-
-private val log = KotlinLogging.logger { }
 
 private data class LoadingCacheValue<T>(
     val value: T,
@@ -109,7 +106,6 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         secondKey: K2,
         cacheValue: LoadingCacheValue<Map<K2, V>>?
     ): LoadingCacheValue<Map<K2, V>>? {
-        log.trace { "no cache hit in $repository, retrieve cache value for $firstKey/$secondKey" }
         val newValue = rtm.readTransaction {
             repository.getBySecondKey(firstKey, secondKey)
         }
