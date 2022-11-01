@@ -32,7 +32,7 @@ allprojects {
 }
 
 subprojects {
-    val dokkaJavadocJar by tasks.creating(Jar::class) {
+    val dokkaJar by tasks.creating(Jar::class) {
         dependsOn(tasks.dokkaHtml)
         from(tasks.dokkaHtml)
         archiveClassifier.set("javadoc")
@@ -83,7 +83,7 @@ subprojects {
                             url.set("https://gitlab.com/trixnity/trixnity")
                         }
 
-                        artifact(dokkaJavadocJar)
+                        artifact(dokkaJar)
                     }
                 }
             }
