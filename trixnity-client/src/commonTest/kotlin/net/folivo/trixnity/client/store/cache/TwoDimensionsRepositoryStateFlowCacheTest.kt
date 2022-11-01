@@ -90,10 +90,11 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     }
     context("getBySecondKey") {
         should("load from database, when not exists in cache") {
-            repository.save("firstKey", mapOf("secondKey1" to "old"))
-            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old"
-            repository.save("firstKey", mapOf("secondKey1" to "new"))
-            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old"
+            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old1"
+            repository.save("firstKey", mapOf("secondKey1" to "new1", "secondKey2" to "new2"))
+            cut.getBySecondKey("firstKey", "secondKey1").first() shouldBe "old1"
+            cut.getBySecondKey("firstKey", "secondKey2").first() shouldBe "new2"
         }
         should("prefer cache") {
             cut.update("firstKey") {

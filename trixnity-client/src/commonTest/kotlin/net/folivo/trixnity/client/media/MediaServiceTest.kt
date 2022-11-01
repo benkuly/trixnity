@@ -151,7 +151,6 @@ class MediaServiceTest : ShouldSpec({
                 }
             }
             cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray().decodeToString() shouldBe "test"
-            println(mediaStore.media.value)
             mediaStore.getMedia("$mxcUri/32x32/crop")?.toByteArray() shouldBe "test".encodeToByteArray()
         }
     }

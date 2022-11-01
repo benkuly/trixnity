@@ -2,10 +2,13 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+
+private val log = KotlinLogging.logger { }
 
 open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
     cacheScope: CoroutineScope,
@@ -23,6 +26,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         key,
         isContainedInCache = { infiniteCache || isContainedInCache(it) },
         retrieveAndUpdateCache = {
+            log.trace { "no cache hit in $repository, retrieve cache value for $key" }
             if (infiniteCache) it
             else if (withTransaction) rtm.readTransaction { repository.get(key) }
             else repository.get(key)
@@ -46,6 +50,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         writeWithCache(key, updater,
             isContainedInCache = { infiniteCache || isContainedInCache(it) },
             retrieveAndUpdateCache = { cacheValue ->
+                log.trace { "no cache hit in $repository, retrieve cache value for $key" }
                 if (infiniteCache) cacheValue
                 else if (withTransaction) rtm.readTransaction { repository.get(key) } else repository.get(key)
             },
