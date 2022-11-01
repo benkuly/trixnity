@@ -29,7 +29,7 @@ class GlobalAccountDataStore(
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             globalAccountDataRepository.deleteAll()
         }
         globalAccountDataCache.reset()

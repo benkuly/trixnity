@@ -10,7 +10,7 @@ mockmp {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
     val jvmTarget = addDefaultJvmTargetWhenEnabled(useJUnitPlatform = false)
     val linuxX64Target =

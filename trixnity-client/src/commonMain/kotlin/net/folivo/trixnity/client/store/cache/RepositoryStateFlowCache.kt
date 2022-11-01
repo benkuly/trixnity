@@ -28,7 +28,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         retrieveAndUpdateCache = {
             log.trace { "no cache hit in $repository, retrieve cache value for $key" }
             if (infiniteCache) it
-            else if (withTransaction) rtm.transaction { repository.get(key) }
+            else if (withTransaction) rtm.readTransaction { repository.get(key) }
             else repository.get(key)
         },
     )
@@ -52,11 +52,11 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             retrieveAndUpdateCache = { cacheValue ->
                 log.trace { "no cache hit in $repository, retrieve cache value for $key" }
                 if (infiniteCache) cacheValue
-                else if (withTransaction) rtm.transaction { repository.get(key) } else repository.get(key)
+                else if (withTransaction) rtm.readTransaction { repository.get(key) } else repository.get(key)
             },
             persist = { newValue ->
                 if (persistIntoRepository) {
-                    if (withTransaction) rtm.transaction {
+                    if (withTransaction) rtm.writeTransaction {
                         if (newValue == null) repository.delete(key)
                         else repository.save(key, newValue)
                     } else {

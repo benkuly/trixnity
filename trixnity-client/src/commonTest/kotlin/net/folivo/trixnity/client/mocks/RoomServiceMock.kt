@@ -104,7 +104,7 @@ class RoomServiceMock : RoomService {
         eventId: EventId,
         roomId: RoomId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
     override fun getTimelineEventRelations(
@@ -112,7 +112,7 @@ class RoomServiceMock : RoomService {
         roomId: RoomId,
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?> {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
     override suspend fun sendMessage(

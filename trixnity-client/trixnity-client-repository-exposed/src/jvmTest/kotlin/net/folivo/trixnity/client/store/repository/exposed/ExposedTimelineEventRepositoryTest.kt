@@ -14,7 +14,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedTimelineEventRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: ExposedTimelineEventRepository
     beforeTest {
         createDatabase()
@@ -45,7 +45,7 @@ class ExposedTimelineEventRepositoryTest : ShouldSpec({
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
-                RoomId("room2", "server"),
+                RoomId("room1", "server"),
                 1234
             ),
             roomId = RoomId("room2", "server"),

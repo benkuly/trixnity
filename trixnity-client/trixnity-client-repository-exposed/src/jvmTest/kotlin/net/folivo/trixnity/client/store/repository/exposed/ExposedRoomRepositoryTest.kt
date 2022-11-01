@@ -11,7 +11,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ExposedRoomRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: ExposedRoomRepository
     beforeTest {
         createDatabase()
@@ -24,7 +24,7 @@ class ExposedRoomRepositoryTest : ShouldSpec({
         val key1 = RoomId("room1", "server")
         val key2 = RoomId("room2", "server")
         val room1 = Room(key1, lastEventId = null)
-        val room2 = Room(key1, lastEventId = null)
+        val room2 = Room(key2, lastEventId = null)
         val room2Copy = room2.copy(lastEventId = EventId("\$Event2"))
 
         newSuspendedTransaction {

@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 
 class SqlDelightInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightInboundMegolmMessageIndexRepository
     lateinit var driver: SqlDriver
     beforeTest {

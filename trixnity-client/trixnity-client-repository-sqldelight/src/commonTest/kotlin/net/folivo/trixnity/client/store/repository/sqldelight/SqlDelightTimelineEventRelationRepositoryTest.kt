@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
 
 class SqlDelightTimelineEventRelationRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightTimelineEventRelationRepository
     lateinit var driver: SqlDriver
     beforeTest {

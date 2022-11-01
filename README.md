@@ -51,16 +51,19 @@ This project contains the following modules, which can be used independently:
     - [x] exchangeable database
         - in memory (e. g. for tests)
         - [trixnity-client-repository-exposed](/trixnity-client/trixnity-client-repository-exposed) implements a
-          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This only supports JVM
-          based platforms.
+          database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed). This supports JVM
+          based platforms only.
+        - [trixnity-client-repository-realm](/trixnity-client/trixnity-client-repository-realm) implements a
+          database for trixnity-client with [realm](https://github.com/realm/realm-kotlin). This support
+          JVM/Android/Native.
         - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight) implements a
           database for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively
-          maintained at the moment.
+          maintained at the moment, but should work.
         - We plan to add something like `trixnity-client-repository-indexeddb` as a database for web in the future.
     - [x] fast cache on top of the database
     - [x] exchangeable media store
         - in memory (e. g. for tests)
-        - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio) implements a file system base media
+        - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio) implements a file system based media
           store with [okio](https://github.com/square/okio)
     - [x] media support (thumbnail generation, offline "upload", huge files, etc.)
     - [x] E2E (olm, megolm)
@@ -127,17 +130,20 @@ which will be used for the lifecycle of the client.
 Secrets are also stored in the store. Therefore, you should encrypt the store!
 
 ```kotlin
-val repositoriesModule = createRepositoriesModule() // e.g. createExposedRepositoriesModule(database, Dispatchers.IO)
+val repositoriesModule = createRepositoriesModule() // e.g. createExposedRepositoriesModule(...)
+val mediaStore = createMediaStore() // e.g. OkioMediaStore(...)
 val scope = CoroutineScope(Dispatchers.Default) // should be managed by a lifecycle (e.g. Android Service)
 
 val matrixClient = MatrixClient.fromStore(
     repositoriesModule = repositoriesModule,
+    mediaStore = mediaStore,
     scope = scope,
 ).getOrThrow() ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
     repositoriesModule = repositoriesModule,
+    mediaStore = mediaStore,
     scope = scope,
 ).getOrThrow()
 

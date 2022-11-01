@@ -146,7 +146,7 @@ class UserServiceTest : ShouldSpec({
         }
     }
 
-    context(UserServiceImpl::getPowerLevel.name) {
+    context("getPowerLevel") {
         context("the room contains no power_levels event") {
             context("I am the creator of the room") {
                 should("return 100") {

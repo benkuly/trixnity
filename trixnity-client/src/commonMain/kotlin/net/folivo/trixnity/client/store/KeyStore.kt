@@ -30,21 +30,21 @@ class KeyStore(
     private val secretKeyRequestCache = RepositoryStateFlowCache(storeScope, secretKeyRequestRepository, rtm, true)
 
     override suspend fun init() {
-        outdatedKeys.value = rtm.transaction { outdatedKeysRepository.get(1) ?: setOf() }
-        secrets.value = rtm.transaction { secretsRepository.get(1) ?: mapOf() }
+        outdatedKeys.value = rtm.readTransaction { outdatedKeysRepository.get(1) ?: setOf() }
+        secrets.value = rtm.readTransaction { secretsRepository.get(1) ?: mapOf() }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
-            outdatedKeys.collect { rtm.transaction { outdatedKeysRepository.save(1, it) } }
+            outdatedKeys.collect { rtm.writeTransaction { outdatedKeysRepository.save(1, it) } }
         }
         storeScope.launch(start = UNDISPATCHED) {
-            secrets.collect { rtm.transaction { secretsRepository.save(1, it) } }
+            secrets.collect { rtm.writeTransaction { secretsRepository.save(1, it) } }
         }
-        secretKeyRequestCache.init(rtm.transaction { secretKeyRequestRepository.getAll() }
+        secretKeyRequestCache.init(rtm.readTransaction { secretKeyRequestRepository.getAll() }
             .associateBy { it.content.requestId })
     }
 
     override suspend fun clearCache() {
-        rtm.transaction {
+        rtm.writeTransaction {
             outdatedKeysRepository.deleteAll()
             deviceKeysRepository.deleteAll()
             crossSigningKeysRepository.deleteAll()
@@ -58,7 +58,7 @@ class KeyStore(
     }
 
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             outdatedKeysRepository.deleteAll()
             deviceKeysRepository.deleteAll()
             crossSigningKeysRepository.deleteAll()
@@ -122,13 +122,13 @@ class KeyStore(
     }
 
     suspend fun saveKeyChainLink(keyChainLink: KeyChainLink) =
-        rtm.transaction { keyChainLinkRepository.save(keyChainLink) }
+        rtm.writeTransaction { keyChainLinkRepository.save(keyChainLink) }
 
     suspend fun getKeyChainLinksBySigningKey(userId: UserId, signingKey: Key.Ed25519Key) =
-        rtm.transaction { keyChainLinkRepository.getBySigningKey(userId, signingKey) }
+        rtm.readTransaction { keyChainLinkRepository.getBySigningKey(userId, signingKey) }
 
     suspend fun deleteKeyChainLinksBySignedKey(userId: UserId, signedKey: Key.Ed25519Key) =
-        rtm.transaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
+        rtm.writeTransaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val allSecretKeyRequests = secretKeyRequestCache.cache

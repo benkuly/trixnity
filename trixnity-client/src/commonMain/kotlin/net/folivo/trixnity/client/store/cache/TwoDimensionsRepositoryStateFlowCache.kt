@@ -92,7 +92,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
         persist = {
             val value = it?.value?.get(secondKey)
-            rtm.transaction {
+            rtm.writeTransaction {
                 if (value == null) repository.deleteBySecondKey(firstKey, secondKey)
                 else repository.saveBySecondKey(firstKey, secondKey, value)
             }
@@ -110,7 +110,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         cacheValue: LoadingCacheValue<Map<K2, V>>?
     ): LoadingCacheValue<Map<K2, V>>? {
         log.trace { "no cache hit in $repository, retrieve cache value for $firstKey/$secondKey" }
-        val newValue = rtm.transaction {
+        val newValue = rtm.readTransaction {
             repository.getBySecondKey(firstKey, secondKey)
         }
         return if (newValue != null) LoadingCacheValue(

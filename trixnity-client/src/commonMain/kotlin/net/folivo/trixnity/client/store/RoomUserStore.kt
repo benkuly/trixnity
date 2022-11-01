@@ -22,7 +22,7 @@ class RoomUserStore(
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.transaction { roomUserRepository.deleteAll() }
+        rtm.writeTransaction { roomUserRepository.deleteAll() }
         roomUserCache.reset()
     }
 
