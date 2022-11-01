@@ -13,7 +13,7 @@ import net.folivo.trixnity.crypto.sign.VerifyResult
 
 class SignServiceMock : SignService {
     override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
     override suspend fun signatures(
