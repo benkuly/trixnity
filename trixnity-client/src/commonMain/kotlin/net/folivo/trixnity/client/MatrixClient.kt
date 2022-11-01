@@ -204,10 +204,7 @@ suspend fun MatrixClient.Companion.loginWith(
     selfSignedDeviceKeys.signed.keys.forEach {
         keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value))
     }
-    api.keys.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
-    keyStore.outdatedKeys.update { it + userId }
-
-    MatrixClientImpl(
+    val matrixClient = MatrixClientImpl(
         userId = userId,
         deviceId = deviceId,
         identityKey = identityKey,
@@ -221,6 +218,11 @@ suspend fun MatrixClient.Companion.loginWith(
         eventHandlers = di.getAll(),
         scope = scope,
     )
+    api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
+        .onFailure { matrixClient.deleteAll() }
+        .getOrThrow()
+    keyStore.outdatedKeys.update { it + userId }
+    matrixClient
 }
 
 suspend fun MatrixClient.Companion.fromStore(
@@ -354,7 +356,7 @@ class MatrixClientImpl internal constructor(
             }
     }
 
-    private suspend fun deleteAll() {
+    internal suspend fun deleteAll() {
         stopSync(true)
         rootStore.deleteAll()
     }
