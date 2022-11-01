@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
 
 @Serializable
@@ -22,6 +23,7 @@ data class GetPublicRoomsResponse(
         @SerialName("name") val name: String? = null,
         @SerialName("num_joined_members") val joinedMembersCount: Long,
         @SerialName("room_id") val roomId: RoomId,
+        @SerialName("room_type") val roomType: CreateEventContent.RoomType? = null,
         @SerialName("topic") val topic: String? = null,
         @SerialName("world_readable") val worldReadable: Boolean,
     )
