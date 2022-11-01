@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
 
 class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var repository: TwoDimensionsStoreRepository<String, String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsStoreRepository<String, String, String>>

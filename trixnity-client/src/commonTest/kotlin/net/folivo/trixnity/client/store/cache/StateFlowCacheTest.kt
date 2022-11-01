@@ -4,13 +4,11 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.milliseconds
 
 class StateFlowCacheTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: StateFlowCache<String, String>
 
@@ -21,9 +19,33 @@ class StateFlowCacheTest : ShouldSpec({
         cacheScope.cancel()
     }
 
+    should("use same internal StateFlow when initial value is null") {
+        cut = StateFlowCache("", cacheScope)
+        val readFlow = cut.readWithCache(
+            key = "key",
+            isContainedInCache = { false },
+            retrieveAndUpdateCache = { null }
+        ).shareIn(cacheScope, SharingStarted.Eagerly, 3)
+        readFlow.first { it == null }
+        cut.writeWithCache(
+            key = "key",
+            isContainedInCache = { false },
+            retrieveAndUpdateCache = { null },
+            persist = {},
+            updater = { null } // this should not create a new internal StateFlow
+        )
+        cut.writeWithCache(
+            key = "key",
+            isContainedInCache = { false },
+            retrieveAndUpdateCache = { null },
+            persist = {},
+            updater = { "newValue" }
+        )
+        readFlow.first { it == "newValue" }
+    }
     context("readWithCache") {
         should("read value from repository and update cache") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             cut.readWithCache(
                 key = "key",
                 isContainedInCache = { false },
@@ -43,7 +65,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).first() shouldBe "another value"
         }
         should("not read value from repository") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             // we say, the value is in cache, but actually it is not, so the cache asks for it
             cut.readWithCache(
                 key = "key",
@@ -65,7 +87,7 @@ class StateFlowCacheTest : ShouldSpec({
             wasCalled shouldBe false
         }
         should("prefer cache") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             cut.readWithCache(
                 key = "key",
                 isContainedInCache = { false },
@@ -83,7 +105,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).first() shouldBe "a new value"
         }
         should("remove from cache when not used anymore") {
-            cut = StateFlowCache(cacheScope, cacheDuration = 50.milliseconds)
+            cut = StateFlowCache("", cacheScope, cacheDuration = 50.milliseconds)
             val cache = cut.cache.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
             val readScope2 = CoroutineScope(Dispatchers.Default)
@@ -125,7 +147,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).first() shouldBe "another value"
         }
         should("remove from cache, when cache time expired") {
-            cut = StateFlowCache(cacheScope, cacheDuration = 30.milliseconds)
+            cut = StateFlowCache("", cacheScope, cacheDuration = 30.milliseconds)
             cut.readWithCache(
                 key = "key",
                 isContainedInCache = { true },
@@ -163,7 +185,7 @@ class StateFlowCacheTest : ShouldSpec({
         }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = StateFlowCache(cacheScope, true, cacheDuration = 10.milliseconds)
+                cut = StateFlowCache("", cacheScope, true, cacheDuration = 10.milliseconds)
                 val readScope = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
                     key = "key",
@@ -193,7 +215,7 @@ class StateFlowCacheTest : ShouldSpec({
     }
     context("writeWithCache") {
         should("read value from repository and update cache") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             cut.writeWithCache(
                 key = "key",
                 updater = { oldValue ->
@@ -226,7 +248,7 @@ class StateFlowCacheTest : ShouldSpec({
             )
         }
         should("prefer cache") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             cut.writeWithCache(
                 key = "key",
                 updater = { "updated value" },
@@ -251,7 +273,7 @@ class StateFlowCacheTest : ShouldSpec({
             wasCalled shouldBe false
         }
         should("also save unchanged value") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             cut.writeWithCache(
                 key = "key",
                 updater = { "updated value" },
@@ -270,7 +292,7 @@ class StateFlowCacheTest : ShouldSpec({
             wasCalled shouldBe true
         }
         should("handle parallel manipulation") {
-            cut = StateFlowCache(cacheScope)
+            cut = StateFlowCache("", cacheScope)
             val database = MutableSharedFlow<String?>(replay = 3000)
             coroutineScope {
                 repeat(1000) { i ->
@@ -289,7 +311,7 @@ class StateFlowCacheTest : ShouldSpec({
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
-                cut = StateFlowCache(cacheScope, cacheDuration = 30.milliseconds)
+                cut = StateFlowCache("", cacheScope, cacheDuration = 30.milliseconds)
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
@@ -314,7 +336,7 @@ class StateFlowCacheTest : ShouldSpec({
         }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = StateFlowCache(cacheScope, infiniteCache = true, cacheDuration = 10.milliseconds)
+                cut = StateFlowCache("", cacheScope, infiniteCache = true, cacheDuration = 10.milliseconds)
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
