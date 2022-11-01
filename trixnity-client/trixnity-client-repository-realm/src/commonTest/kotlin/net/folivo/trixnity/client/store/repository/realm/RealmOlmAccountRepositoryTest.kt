@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
-import java.io.File
+
 
 class RealmOlmAccountRepositoryTest : ShouldSpec({
     timeout = 10_000

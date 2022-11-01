@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventC
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
-import java.io.File
+
 
 class RealmSecretsRepositoryTest : ShouldSpec({
     timeout = 10_000

@@ -8,7 +8,7 @@ import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
-import java.io.File
+
 
 class RealmKeyChainLinkRepositoryTest : ShouldSpec({
     timeout = 10_000

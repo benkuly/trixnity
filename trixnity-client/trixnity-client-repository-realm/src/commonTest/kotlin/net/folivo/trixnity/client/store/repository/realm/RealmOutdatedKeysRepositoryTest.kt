@@ -8,7 +8,7 @@ import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmOutdatedKeysRepositoryTest : ShouldSpec({
     timeout = 10_000

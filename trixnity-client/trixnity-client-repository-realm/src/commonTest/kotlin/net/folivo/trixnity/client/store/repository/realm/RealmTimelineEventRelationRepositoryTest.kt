@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
-import java.io.File
+
 
 class RealmTimelineEventRelationRepositoryTest : ShouldSpec({
     timeout = 10_000

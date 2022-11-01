@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
-import java.io.File
+
 
 class RealmInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
     timeout = 10_000

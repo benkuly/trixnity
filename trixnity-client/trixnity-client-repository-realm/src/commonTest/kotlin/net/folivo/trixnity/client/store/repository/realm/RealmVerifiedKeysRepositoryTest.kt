@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmVerifiedKeysRepositoryTest : ShouldSpec({
     timeout = 10_000

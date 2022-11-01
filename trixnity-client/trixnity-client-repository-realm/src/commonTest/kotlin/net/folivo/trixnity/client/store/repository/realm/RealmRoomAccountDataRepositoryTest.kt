@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmRoomAccountDataRepositoryTest : ShouldSpec({
     timeout = 10_000

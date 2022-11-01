@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmRoomRepositoryTest : ShouldSpec({
     timeout = 10_000

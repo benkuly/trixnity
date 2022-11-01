@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Imag
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 import kotlin.test.assertNotNull
 
 class RealmRoomOutboxMessageRepositoryTest : ShouldSpec({

@@ -7,7 +7,7 @@ import io.ktor.http.*
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.client.store.MediaCacheMapping
-import java.io.File
+
 
 class RealmMediaCacheMappingRepositoryTest : ShouldSpec({
     timeout = 10_000

@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmCrossSigningKeysRepositoryTest : ShouldSpec({
     timeout = 10_000

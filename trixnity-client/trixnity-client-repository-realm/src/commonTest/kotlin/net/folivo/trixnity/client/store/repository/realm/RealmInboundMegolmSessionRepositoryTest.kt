@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import java.io.File
+
 
 class RealmInboundMegolmSessionRepositoryTest : ShouldSpec({
     timeout = 10_000

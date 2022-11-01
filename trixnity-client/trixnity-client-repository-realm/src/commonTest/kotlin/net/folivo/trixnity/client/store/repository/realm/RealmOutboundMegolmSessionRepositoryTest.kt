@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
-import java.io.File
+
 
 class RealmOutboundMegolmSessionRepositoryTest : ShouldSpec({
     timeout = 10_000

@@ -10,7 +10,7 @@ import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
-import java.io.File
+
 
 class RealmOlmSessionRepositoryTest : ShouldSpec({
     timeout = 10_000

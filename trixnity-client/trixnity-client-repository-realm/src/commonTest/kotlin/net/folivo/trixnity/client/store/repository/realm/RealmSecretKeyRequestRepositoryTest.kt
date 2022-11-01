@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.StoredSecretKeyRequest
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import java.io.File
+
 
 class RealmSecretKeyRequestRepositoryTest : ShouldSpec({
     timeout = 10_000
