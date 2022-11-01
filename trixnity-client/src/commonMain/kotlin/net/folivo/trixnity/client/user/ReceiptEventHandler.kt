@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
+import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
@@ -31,11 +32,13 @@ class ReceiptEventHandler(
             log.debug { "set read receipts of room $roomId" }
             receiptEvent.content.events.forEach { (eventId, receipts) ->
                 receipts
-                    .filterIsInstance<ReceiptEventContent.Receipt.ReadReceipt>()
-                    .forEach { receipt ->
-                        receipt.read.keys.forEach { userId ->
+                    .forEach { (receiptType, receipts) ->
+                        receipts.forEach { (userId, receipt) ->
                             roomUserStore.update(userId, roomId) { oldRoomUser ->
-                                oldRoomUser?.copy(lastReadMessage = eventId)
+                                oldRoomUser?.copy(
+                                    receipts = oldRoomUser.receipts +
+                                            (receiptType to RoomUser.RoomUserReceipt(eventId, receipt))
+                                )
                             }
                         }
                     }

@@ -22,7 +22,8 @@ data class SetReadMarkers(
 ) : MatrixEndpoint<SetReadMarkers.Request, Unit> {
     @Serializable
     data class Request(
-        @SerialName("m.fully_read") val fullyRead: EventId,
+        @SerialName("m.fully_read") val fullyRead: EventId? = null,
         @SerialName("m.read") val read: EventId? = null,
+        @SerialName("m.read.private") val privateRead: EventId? = null,
     )
 }

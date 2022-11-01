@@ -12,7 +12,8 @@ import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -799,19 +800,15 @@ class EventSerializerTest {
             EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
-                        EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to setOf(
-                            ReadReceipt(
-                                read = mapOf(
-                                    UserId("user1", "localhost") to ReadReceipt.ReadEvent(1644259179796L),
-                                    UserId("user2", "localhost") to ReadReceipt.ReadEvent(1644258600722L),
-                                )
+                        EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to mapOf(
+                            ReceiptType.Read to mapOf(
+                                UserId("user1", "localhost") to Receipt(1644259179796L),
+                                UserId("user2", "localhost") to Receipt(1644258600722L),
                             )
                         ),
-                        EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to setOf(
-                            ReadReceipt(
-                                read = mapOf(
-                                    UserId("user3", "localhost") to ReadReceipt.ReadEvent(1644267366690L)
-                                )
+                        EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to mapOf(
+                            ReceiptType.Read to mapOf(
+                                UserId("user3", "localhost") to Receipt(1644267366690L)
                             )
                         )
                     ),
@@ -826,19 +823,15 @@ class EventSerializerTest {
         val receipt = EphemeralEvent(
             ReceiptEventContent(
                 events = mapOf(
-                    EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to setOf(
-                        ReadReceipt(
-                            read = mapOf(
-                                UserId("user1", "localhost") to ReadReceipt.ReadEvent(1644259179796L),
-                                UserId("user2", "localhost") to ReadReceipt.ReadEvent(1644258600722L),
-                            )
+                    EventId("\$wUeWup1q4tsPBG-zHFicJTHpY30cmxjgV-LW0ZAOB9s") to mapOf(
+                        ReceiptType.Read to mapOf(
+                            UserId("user1", "localhost") to Receipt(1644259179796L),
+                            UserId("user2", "localhost") to Receipt(1644258600722L),
                         )
                     ),
-                    EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to setOf(
-                        ReadReceipt(
-                            read = mapOf(
-                                UserId("user3", "localhost") to ReadReceipt.ReadEvent(1644267366690L)
-                            )
+                    EventId("\$zu9ULQ-V3AGcshRNfByIb3sVZ62cTUpeZcdIJ3fBNXE") to mapOf(
+                        ReceiptType.Read to mapOf(
+                            UserId("user3", "localhost") to Receipt(1644267366690L)
                         )
                     )
                 ),
