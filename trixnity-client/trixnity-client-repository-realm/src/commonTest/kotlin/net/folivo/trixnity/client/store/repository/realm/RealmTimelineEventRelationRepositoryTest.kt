@@ -14,12 +14,11 @@ import java.io.File
 
 class RealmTimelineEventRelationRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmTimelineEventRelationRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -29,9 +28,6 @@ class RealmTimelineEventRelationRepositoryTest : ShouldSpec({
         )
 
         cut = RealmTimelineEventRelationRepository()
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))

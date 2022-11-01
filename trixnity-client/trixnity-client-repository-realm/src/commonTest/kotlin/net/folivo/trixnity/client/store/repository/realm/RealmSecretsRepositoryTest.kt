@@ -16,12 +16,11 @@ import java.io.File
 
 class RealmSecretsRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmSecretsRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -31,9 +30,6 @@ class RealmSecretsRepositoryTest : ShouldSpec({
         )
 
         cut = RealmSecretsRepository(createMatrixEventJson())
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val secret1 = SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(

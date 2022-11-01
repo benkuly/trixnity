@@ -18,12 +18,11 @@ import kotlin.test.assertNotNull
 
 class RealmRoomOutboxMessageRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmRoomOutboxMessageRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -33,9 +32,6 @@ class RealmRoomOutboxMessageRepositoryTest : ShouldSpec({
         )
 
         cut = RealmRoomOutboxMessageRepository(createMatrixEventJson(), createEventContentSerializerMappings())
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val roomId = RoomId("room", "server")

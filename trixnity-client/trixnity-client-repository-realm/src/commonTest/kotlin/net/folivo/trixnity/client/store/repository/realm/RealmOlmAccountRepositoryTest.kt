@@ -9,12 +9,11 @@ import java.io.File
 
 class RealmOlmAccountRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmOlmAccountRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -24,9 +23,6 @@ class RealmOlmAccountRepositoryTest : ShouldSpec({
         )
 
         cut = RealmOlmAccountRepository()
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         writeTransaction(realm) {

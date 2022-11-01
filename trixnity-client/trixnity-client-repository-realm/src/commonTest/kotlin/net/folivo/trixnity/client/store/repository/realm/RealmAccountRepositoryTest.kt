@@ -7,16 +7,14 @@ import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.core.model.UserId
-import java.io.File
 
 class RealmAccountRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmAccountRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -26,9 +24,6 @@ class RealmAccountRepositoryTest : ShouldSpec({
         )
 
         cut = RealmAccountRepository()
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val account = Account(

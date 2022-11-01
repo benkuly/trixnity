@@ -11,12 +11,11 @@ import java.io.File
 
 class RealmMediaCacheMappingRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmMediaCacheMappingRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -26,9 +25,6 @@ class RealmMediaCacheMappingRepositoryTest : ShouldSpec({
         )
 
         cut = RealmMediaCacheMappingRepository()
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val key1 = "uri1"

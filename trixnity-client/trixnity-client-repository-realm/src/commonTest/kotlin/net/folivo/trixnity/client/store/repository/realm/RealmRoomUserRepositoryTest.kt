@@ -18,12 +18,11 @@ import java.io.File
 
 class RealmRoomUserRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmRoomUserRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -33,9 +32,6 @@ class RealmRoomUserRepositoryTest : ShouldSpec({
         )
 
         cut = RealmRoomUserRepository(createMatrixEventJson())
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val key1 = RoomId("room1", "server")

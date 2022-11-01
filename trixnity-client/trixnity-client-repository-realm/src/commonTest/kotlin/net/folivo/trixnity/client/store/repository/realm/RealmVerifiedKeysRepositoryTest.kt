@@ -14,12 +14,11 @@ import java.io.File
 
 class RealmVerifiedKeysRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmKeyVerificationStateRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -29,9 +28,6 @@ class RealmVerifiedKeysRepositoryTest : ShouldSpec({
         )
 
         cut = RealmKeyVerificationStateRepository(createMatrixEventJson())
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val verifiedKey1Key = VerifiedKeysRepositoryKey(

@@ -12,12 +12,11 @@ import java.io.File
 
 class RealmKeyChainLinkRepositoryTest : ShouldSpec({
     timeout = 10_000
-    val realmDbPath = "build/${uuid4()}"
     lateinit var realm: Realm
     lateinit var cut: RealmKeyChainLinkRepository
 
     beforeTest {
-        File(realmDbPath).deleteRecursively()
+        val realmDbPath = "build/test-db/${uuid4()}"
         realm = Realm.open(
             RealmConfiguration.Builder(
                 schema = setOf(
@@ -27,9 +26,6 @@ class RealmKeyChainLinkRepositoryTest : ShouldSpec({
         )
 
         cut = RealmKeyChainLinkRepository()
-    }
-    afterTest {
-        File(realmDbPath).deleteRecursively()
     }
     should("save, get and delete") {
         val link1 = KeyChainLink(
