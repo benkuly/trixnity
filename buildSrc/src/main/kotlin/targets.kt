@@ -118,6 +118,10 @@ fun KotlinMultiplatformExtension.addDefaultNativeTargetsWhenEnabled(): Set<Kotli
     setOfNotNull(
         addNativeTargetWhenEnabled(KonanTarget.LINUX_X64) { linuxX64() },
         addNativeTargetWhenEnabled(KonanTarget.MINGW_X64) { mingwX64() },
+    ) + addAppleNativeTargetsWhenEnabled()
+
+fun KotlinMultiplatformExtension.addAppleNativeTargetsWhenEnabled(): Set<KotlinNativeTarget> =
+    setOfNotNull(
         addNativeTargetWhenEnabled(KonanTarget.MACOS_X64) { macosX64() },
         addNativeTargetWhenEnabled(KonanTarget.MACOS_ARM64) { macosArm64() },
         addNativeTargetWhenEnabled(KonanTarget.IOS_ARM64) { iosArm64() },

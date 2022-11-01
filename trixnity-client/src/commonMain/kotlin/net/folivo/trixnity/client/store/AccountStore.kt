@@ -27,7 +27,7 @@ class AccountStore(
     val avatarUrl = MutableStateFlow<String?>(null)
 
     override suspend fun init() {
-        val account = rtm.transaction { repository.get(1) }
+        val account = rtm.readTransaction { repository.get(1) }
         olmPickleKey.value = account?.olmPickleKey
         baseUrl.value = account?.baseUrl?.let { Url(it) }
         userId.value = account?.userId
@@ -65,14 +65,14 @@ class AccountStore(
                     displayName = values[8] as String?,
                     avatarUrl = values[9] as String?,
                 )
-            }.collect { rtm.transaction { repository.save(1, it) } }
+            }.collect { rtm.writeTransaction { repository.save(1, it) } }
         }
     }
 
     override suspend fun clearCache() {}
 
     override suspend fun deleteAll() {
-        rtm.transaction { repository.deleteAll() }
+        rtm.writeTransaction { repository.deleteAll() }
         olmPickleKey.value = null
         baseUrl.value = null
         userId.value = null

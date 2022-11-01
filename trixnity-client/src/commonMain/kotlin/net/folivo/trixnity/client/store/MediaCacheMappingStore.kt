@@ -15,7 +15,7 @@ class MediaCacheMappingStore(
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             mediaCacheMappingRepository.deleteAll()
         }
         uploadMediaCache.reset()

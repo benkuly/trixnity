@@ -7,14 +7,14 @@ import net.folivo.trixnity.crypto.olm.OlmDecrypter
 
 class OlmDecrypterMock : OlmDecrypter {
     override fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber) {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
     override fun unsubscribe(eventSubscriber: DecryptedOlmEventSubscriber) {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
     override suspend fun handleOlmEvent(event: Event<EncryptedEventContent.OlmEncryptedEventContent>) {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 }

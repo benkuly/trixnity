@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.NoopRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -48,7 +47,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             keyChainLinkRepository,
             secretsRepository,
             secretKeyRequestRepository,
-            NoopRepositoryTransactionManager,
+            NoOpRepositoryTransactionManager,
             storeScope
         )
     }

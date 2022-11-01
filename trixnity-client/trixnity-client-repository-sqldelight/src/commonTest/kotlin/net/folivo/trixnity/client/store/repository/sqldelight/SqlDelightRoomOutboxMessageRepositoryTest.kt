@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import kotlin.test.assertNotNull
 
 class SqlDelightRoomOutboxMessageRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightRoomOutboxMessageRepository
     lateinit var driver: SqlDriver
     beforeTest {

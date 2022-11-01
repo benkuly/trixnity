@@ -10,6 +10,9 @@ class ExposedRepositoryTransactionManager(
     private val database: Database,
     private val transactionContext: CoroutineContext = Dispatchers.IO
 ) : RepositoryTransactionManager {
-    override suspend fun <T> transaction(block: suspend () -> T): T =
+    override suspend fun <T> writeTransaction(block: suspend () -> T): T =
+        newSuspendedTransaction(transactionContext, database) { block() }
+
+    override suspend fun <T> readTransaction(block: suspend () -> T): T =
         newSuspendedTransaction(transactionContext, database) { block() }
 }

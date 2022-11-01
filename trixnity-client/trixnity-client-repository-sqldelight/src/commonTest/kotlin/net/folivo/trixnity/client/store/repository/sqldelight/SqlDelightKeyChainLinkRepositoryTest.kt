@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 
 class SqlDelightKeyChainLinkRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightKeyChainLinkRepository
     lateinit var driver: SqlDriver
 

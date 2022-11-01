@@ -25,7 +25,7 @@ class RoomTimelineStore(
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             timelineEventRepository.deleteAll()
             timelineEventRelationRepository.deleteAll()
         }

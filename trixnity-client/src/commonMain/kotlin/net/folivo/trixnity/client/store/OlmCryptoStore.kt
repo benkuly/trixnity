@@ -30,11 +30,11 @@ class OlmCryptoStore(
     val notBackedUpInboundMegolmSessions = _notBackedUpInboundMegolmSessions.asStateFlow()
 
     override suspend fun init() {
-        account.value = rtm.transaction { olmAccountRepository.get(1) }
+        account.value = rtm.readTransaction { olmAccountRepository.get(1) }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
             account.collect {
-                rtm.transaction {
+                rtm.writeTransaction {
                     if (it != null) olmAccountRepository.save(1, it)
                     else olmAccountRepository.delete(1)
                 }
@@ -42,7 +42,7 @@ class OlmCryptoStore(
         }
         storeScope.launch(start = UNDISPATCHED) {
             _notBackedUpInboundMegolmSessions.value =
-                rtm.transaction { inboundMegolmSessionRepository.getByNotBackedUp() }
+                rtm.readTransaction { inboundMegolmSessionRepository.getByNotBackedUp() }
                     .associateBy { InboundMegolmSessionRepositoryKey(it.sessionId, it.roomId) }
         }
     }
@@ -50,7 +50,7 @@ class OlmCryptoStore(
     override suspend fun clearCache() {}
 
     override suspend fun deleteAll() {
-        rtm.transaction {
+        rtm.writeTransaction {
             olmAccountRepository.deleteAll()
             olmSessionRepository.deleteAll()
             inboundMegolmSessionRepository.deleteAll()

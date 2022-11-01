@@ -18,7 +18,12 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsStoreRepository<String, String, String>>
     val transactionWasCalled = MutableStateFlow(false)
     val rtm = object : RepositoryTransactionManager {
-        override suspend fun <T> transaction(block: suspend () -> T): T {
+        override suspend fun <T> readTransaction(block: suspend () -> T): T {
+            transactionWasCalled.value = true
+            return block()
+        }
+
+        override suspend fun <T> writeTransaction(block: suspend () -> T): T {
             transactionWasCalled.value = true
             return block()
         }

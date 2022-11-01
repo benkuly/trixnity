@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.sqldelight.testutils.createDr
 import net.folivo.trixnity.core.model.UserId
 
 class SqlDelightAccountRepositoryTest : ShouldSpec({
-    timeout = 60_000
+    timeout = 10_000
     lateinit var cut: SqlDelightAccountRepository
     lateinit var driver: SqlDriver
 

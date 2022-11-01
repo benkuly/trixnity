@@ -13,6 +13,7 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
@@ -58,7 +59,8 @@ class TimelineEventHandlerTest : ShouldSpec({
             api,
             roomStore, roomTimelineStore, roomOutboxMessageStore,
             MatrixClientConfiguration(),
-            TimelineMutex(NoopRepositoryTransactionManager)
+            TimelineMutex(),
+            NoOpRepositoryTransactionManager
         )
     }
 
