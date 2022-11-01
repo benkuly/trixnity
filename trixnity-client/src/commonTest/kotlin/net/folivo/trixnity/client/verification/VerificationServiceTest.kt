@@ -25,6 +25,7 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet.Reason
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
@@ -445,7 +446,7 @@ private val body: ShouldSpec.() -> Unit = {
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
         }
-        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when initial sync is still running") {
+        should("return ${SelfVerificationMethods.PreconditionsNotMet::class.simpleName}, when initial sync is still running") {
             currentSyncState.value = SyncState.INITIAL_SYNC
             keyStore.updateDeviceKeys(aliceUserId) {
                 mapOf(
@@ -459,16 +460,16 @@ private val body: ShouldSpec.() -> Unit = {
                 setOf()
             }
             val result = cut.getSelfVerificationMethods()
-            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
+            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet(setOf(Reason.SyncNotRunning))
         }
-        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when device keys not fetched yet") {
+        should("return ${SelfVerificationMethods.PreconditionsNotMet::class.simpleName}, when device keys not fetched yet") {
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf()
             }
             val result = cut.getSelfVerificationMethods()
-            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
+            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet(setOf(Reason.DeviceKeysNotFetchedYet))
         }
-        should("return ${SelfVerificationMethods.PreconditionsNotMet}, when cross signing keys not fetched yet") {
+        should("return ${SelfVerificationMethods.PreconditionsNotMet::class.simpleName}, when cross signing keys not fetched yet") {
             keyStore.updateDeviceKeys(aliceUserId) {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
@@ -478,7 +479,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             val result = cut.getSelfVerificationMethods()
-            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet
+            result.first() shouldBe SelfVerificationMethods.PreconditionsNotMet(setOf(Reason.CrossSigningKeysNotFetchedYet))
         }
         should("return ${SelfVerificationMethods.NoCrossSigningEnabled}, when cross signing keys are fetched, but empty") {
             keyStore.updateDeviceKeys(aliceUserId) {

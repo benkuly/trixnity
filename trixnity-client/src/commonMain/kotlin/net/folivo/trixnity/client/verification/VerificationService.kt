@@ -18,6 +18,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
+import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
@@ -65,7 +66,13 @@ interface VerificationService {
         /**
          * We don't have enough information yet to calculated available methods (e.g. waiting for the first sync).
          */
-        object PreconditionsNotMet : SelfVerificationMethods
+        data class PreconditionsNotMet(val reasons: Set<Reason>) : SelfVerificationMethods {
+            interface Reason {
+                object SyncNotRunning : Reason
+                object DeviceKeysNotFetchedYet : Reason
+                object CrossSigningKeysNotFetchedYet : Reason
+            }
+        }
 
         /**
          * Cross signing can be bootstrapped.
@@ -328,7 +335,14 @@ class VerificationServiceImpl(
                         "crossSigningKeys=$crossSigningKeys deviceKeys=$deviceKeys defaultKey=$defaultKey"
             }
             // preconditions: sync running, login was successful and we are not yet cross-signed
-            if (currentSyncState != SyncState.RUNNING || deviceKeys == null || crossSigningKeys == null) return@combine SelfVerificationMethods.PreconditionsNotMet
+            if (currentSyncState != SyncState.RUNNING || deviceKeys == null || crossSigningKeys == null)
+                return@combine PreconditionsNotMet(
+                    setOfNotNull(
+                        if (currentSyncState != SyncState.RUNNING) PreconditionsNotMet.Reason.SyncNotRunning else null,
+                        if (deviceKeys == null) PreconditionsNotMet.Reason.DeviceKeysNotFetchedYet else null,
+                        if (crossSigningKeys == null) PreconditionsNotMet.Reason.CrossSigningKeysNotFetchedYet else null
+                    )
+                )
             val ownTrustLevel = deviceKeys[ownDeviceId]?.trustLevel
             if (ownTrustLevel == KeySignatureTrustLevel.CrossSigned(true)) return@combine SelfVerificationMethods.AlreadyCrossSigned
 
