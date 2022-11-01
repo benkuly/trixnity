@@ -12,7 +12,7 @@ buildscript {
 plugins {
     `maven-publish`
     signing
-//    id("org.jetbrains.dokka") version Versions.dokka
+    id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
     id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
     id("io.realm.kotlin") version Versions.realm apply false
@@ -28,15 +28,15 @@ allprojects {
         mavenLocal()
     }
 
-//    apply(plugin = "org.jetbrains.dokka")
+    apply(plugin = "org.jetbrains.dokka")
 }
 
 subprojects {
-//    val dokkaJavadocJar by tasks.creating(Jar::class) {
-//        dependsOn(tasks.dokkaHtml)
-//        from(tasks.dokkaHtml)
-//        archiveClassifier.set("javadoc")
-//    }
+    val dokkaJavadocJar by tasks.creating(Jar::class) {
+        dependsOn(tasks.dokkaHtml)
+        from(tasks.dokkaHtml)
+        archiveClassifier.set("javadoc")
+    }
 
     if (project.name.startsWith("trixnity-")) {
         apply(plugin = "maven-publish")
@@ -83,7 +83,7 @@ subprojects {
                             url.set("https://gitlab.com/trixnity/trixnity")
                         }
 
-//                        artifact(dokkaJavadocJar)
+                        artifact(dokkaJavadocJar)
                     }
                 }
             }
