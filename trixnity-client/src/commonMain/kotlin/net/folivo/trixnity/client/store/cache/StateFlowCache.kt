@@ -73,7 +73,7 @@ open class StateFlowCache<K, V>(
             retrieveAndUpdateCache = retrieveAndUpdateCache,
             persist = persist
         )
-        result.removerJob?.start()
+        result.removerJob.start()
     }
 
     private suspend fun MutableStateFlow<Map<K, StateFlowCacheValue<V?>>>.update(
