@@ -16,7 +16,7 @@ fun Application.matrixApplicationServiceApiServer(
     routes: Route.() -> Unit,
 ) {
     install(Authentication) {
-        matrixQueryParameter("matrix-query-parameter-auth", "access_token", hsToken)
+        matrixQueryParameterOrBearer("matrix-query-parameter-auth", "access_token", hsToken)
     }
     matrixApiServer(json) {
         authenticate("matrix-query-parameter-auth") {

@@ -23,7 +23,7 @@ private fun Application.testAppMatrixQueryParameterAuth() {
         json()
     }
     install(Authentication) {
-        matrixQueryParameter(null, "access_token", "validToken")
+        matrixQueryParameterOrBearer(null, "access_token", "validToken")
     }
     routing {
         authenticate {
@@ -34,10 +34,10 @@ private fun Application.testAppMatrixQueryParameterAuth() {
     }
 }
 
-class MatrixQueryParameterAuthTest {
+class MatrixQueryParameterOrBearerAuthTest {
 
     @Test
-    fun `should forbid missing token`() = testApplication {
+    fun `should forbid missing query or auth token`() = testApplication {
         application { testAppMatrixQueryParameterAuth() }
         val response = client.get("/_matrix/something")
         assertEquals(HttpStatusCode.Unauthorized, response.status)
@@ -47,7 +47,7 @@ class MatrixQueryParameterAuthTest {
     }
 
     @Test
-    fun `should forbid wrong token`() = testApplication {
+    fun `should forbid wrong query token`() = testApplication {
         application { testAppMatrixQueryParameterAuth() }
         val response = client.get("/_matrix/something?access_token=invalidToken")
         assertEquals(HttpStatusCode.Forbidden, response.status)
@@ -57,9 +57,42 @@ class MatrixQueryParameterAuthTest {
     }
 
     @Test
-    fun `should permit right token`() = testApplication {
+    fun `should forbid wrong header token`() = testApplication {
+        application { testAppMatrixQueryParameterAuth() }
+        val response = client.get("/_matrix/something") {
+            bearerAuth("invalidToken")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        Json.decodeFromString(ErrorResponseSerializer, response.body())
+            .shouldBeInstanceOf<ErrorResponse.Forbidden>()
+    }
+
+    @Test
+    fun `should forbid non matching token`() = testApplication {
+        application { testAppMatrixQueryParameterAuth() }
+        val response = client.get("/_matrix/something?access_token=validToken") {
+            bearerAuth("invalidToken")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        Json.decodeFromString(ErrorResponseSerializer, response.body())
+            .shouldBeInstanceOf<ErrorResponse.Forbidden>()
+    }
+
+    @Test
+    fun `should permit right query token`() = testApplication {
         application { testAppMatrixQueryParameterAuth() }
         val response = client.get("/_matrix/something?access_token=validToken")
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun `should permit right header token`() = testApplication {
+        application { testAppMatrixQueryParameterAuth() }
+        val response = client.get("/_matrix/something") {
+            bearerAuth("validToken")
+        }
         assertEquals(HttpStatusCode.OK, response.status)
     }
 }
