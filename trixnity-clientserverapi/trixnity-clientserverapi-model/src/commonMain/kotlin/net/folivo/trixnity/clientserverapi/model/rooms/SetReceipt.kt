@@ -9,6 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3roomsroomidreceiptreceipttypeeventid">matrix spec</a>
@@ -21,10 +22,4 @@ data class SetReceipt(
     @SerialName("receiptType") val receiptType: ReceiptType,
     @SerialName("eventId") val eventId: EventId,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, Unit> {
-    @Serializable
-    enum class ReceiptType {
-        @SerialName("m.read")
-        READ
-    }
-}
+) : MatrixEndpoint<Unit, Unit>

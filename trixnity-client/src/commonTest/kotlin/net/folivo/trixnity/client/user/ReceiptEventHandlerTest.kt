@@ -7,8 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.RoomUser
@@ -19,7 +17,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt.ReadReceipt
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -47,7 +45,11 @@ class ReceiptEventHandlerTest : ShouldSpec({
         scope.cancel()
     }
 
-    fun roomUser(roomId: RoomId, userId: UserId, lastReadMessage: EventId? = null): RoomUser {
+    fun roomUser(
+        roomId: RoomId,
+        userId: UserId,
+        receipts: Map<ReceiptType, RoomUser.RoomUserReceipt> = mapOf()
+    ): RoomUser {
         return RoomUser(
             roomId,
             userId,
@@ -60,7 +62,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 0L,
                 stateKey = ""
             ),
-            lastReadMessage = lastReadMessage,
+            receipts = receipts,
         )
     }
 
@@ -71,11 +73,9 @@ class ReceiptEventHandlerTest : ShouldSpec({
             val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
-                        EventId("eventId") to setOf(
-                            ReadReceipt(
-                                read = mapOf(
-                                    UserId("unknownUser", "localhost") to ReadReceipt.ReadEvent(0L)
-                                )
+                        EventId("eventId") to mapOf(
+                            ReceiptType.Read to mapOf(
+                                UserId("unknownUser", "localhost") to Receipt(0L)
                             )
                         )
                     )
@@ -93,10 +93,9 @@ class ReceiptEventHandlerTest : ShouldSpec({
             val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
-                        EventId("eventId") to setOf(
-                            Receipt.Unknown(
-                                type = "awesome",
-                                raw = JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
+                        EventId("eventId") to mapOf(
+                            ReceiptType.Unknown("awesome") to mapOf(
+                                UserId("unknownUser", "localhost") to Receipt(0L)
                             )
                         )
                     )
@@ -115,11 +114,9 @@ class ReceiptEventHandlerTest : ShouldSpec({
             val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
-                        eventId to setOf(
-                            ReadReceipt(
-                                read = mapOf(
-                                    alice to ReadReceipt.ReadEvent(0L)
-                                )
+                        eventId to mapOf(
+                            ReceiptType.Read to mapOf(
+                                alice to Receipt(0L)
                             )
                         )
                     )
@@ -128,22 +125,28 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(event)
 
-            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
+            roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
+                    RoomUser.RoomUserReceipt(eventId, Receipt(0L))
         }
 
         should("replace the last read message of a user when a new last message is received") {
             val existingEventId = EventId("existingEvent")
-            val existingRoomUser = roomUser(room, alice, lastReadMessage = existingEventId)
+            val existingRoomUser = roomUser(
+                room, alice, receipts = mapOf(
+                    ReceiptType.Read to RoomUser.RoomUserReceipt(
+                        existingEventId,
+                        Receipt(0)
+                    )
+                )
+            )
             roomUserStore.update(alice, room) { existingRoomUser }
             val eventId = EventId("eventId")
             val event = Event.EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
-                        eventId to setOf(
-                            ReadReceipt(
-                                read = mapOf(
-                                    alice to ReadReceipt.ReadEvent(0L)
-                                )
+                        eventId to mapOf(
+                            ReceiptType.Read to mapOf(
+                                alice to Receipt(3)
                             )
                         )
                     )
@@ -151,38 +154,8 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 roomId = room,
             )
             cut.setReadReceipts(event)
-            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
-        }
-
-        should("set the last read message even when unknown receipt types are encountered") {
-            val eventId = EventId("eventId")
-            val existingRoomUser = roomUser(room, alice)
-            roomUserStore.update(alice, room) { existingRoomUser }
-            val event = Event.EphemeralEvent(
-                ReceiptEventContent(
-                    events = mapOf(
-                        eventId to setOf(
-                            Receipt.Unknown(
-                                type = "awesome",
-                                raw = JsonObject(mapOf("dino" to JsonPrimitive("unicorn")))
-                            ),
-                            ReadReceipt(
-                                read = mapOf(
-                                    alice to ReadReceipt.ReadEvent(0L)
-                                )
-                            ),
-                            Receipt.Unknown(
-                                type = "awesome",
-                                raw = JsonObject(mapOf("unicorn" to JsonPrimitive("dino")))
-                            ),
-                        )
-                    )
-                ),
-                roomId = room,
-            )
-            cut.setReadReceipts(event)
-
-            roomUserStore.get(alice, room).first()?.lastReadMessage shouldBe eventId
+            roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
+                    RoomUser.RoomUserReceipt(eventId, Receipt(3L))
         }
     }
 })

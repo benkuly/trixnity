@@ -9,6 +9,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -309,7 +310,7 @@ interface RoomsApiClient {
     suspend fun setReceipt(
         roomId: RoomId,
         eventId: EventId,
-        receiptType: SetReceipt.ReceiptType = SetReceipt.ReceiptType.READ,
+        receiptType: ReceiptType = ReceiptType.Read,
         asUserId: UserId? = null,
     ): Result<Unit>
 
@@ -751,7 +752,7 @@ class RoomsApiClientImpl(
     override suspend fun setReceipt(
         roomId: RoomId,
         eventId: EventId,
-        receiptType: SetReceipt.ReceiptType,
+        receiptType: ReceiptType,
         asUserId: UserId?,
     ): Result<Unit> =
         httpClient.request(SetReceipt(roomId.e(), receiptType, eventId.e(), asUserId))

@@ -40,7 +40,7 @@ data class GetHierarchy(
             @SerialName("name") val name: String? = null,
             @SerialName("num_joined_members") val joinedMembersCount: Long,
             @SerialName("room_id") val roomId: RoomId,
-            @SerialName("room_type") val roomType: CreateEventContent.RoomType,
+            @SerialName("room_type") val roomType: CreateEventContent.RoomType? = null,
             @SerialName("topic") val topic: String? = null,
             @SerialName("world_readable") val worldReadable: Boolean,
         )

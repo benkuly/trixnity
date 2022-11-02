@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.TagEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
@@ -1143,7 +1144,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         verifyWithSuspend {
             handlerMock.setReceipt(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
-                it.endpoint.receiptType shouldBe SetReceipt.ReceiptType.READ
+                it.endpoint.receiptType shouldBe ReceiptType.Read
                 it.endpoint.eventId shouldBe EventId("\$event")
             })
         }

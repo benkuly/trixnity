@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#post_matrixfederationv1publicrooms">matrix spec</a>
@@ -24,7 +25,8 @@ object GetPublicRoomsWithFilter : MatrixEndpoint<GetPublicRoomsWithFilter.Reques
     ) {
         @Serializable
         data class Filter(
-            @SerialName("generic_search_term") val genericSearchTerm: String? = null
+            @SerialName("generic_search_term") val genericSearchTerm: String? = null,
+            @SerialName("room_types") val roomTypes: Set<CreateEventContent.RoomType?>? = null,
         )
     }
 }

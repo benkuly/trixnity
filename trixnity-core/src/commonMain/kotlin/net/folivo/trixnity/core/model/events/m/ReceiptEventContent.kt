@@ -11,58 +11,29 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 
 /**
  * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#receipts">matrix spec</a>
  */
-@Serializable(with = ReadEventsSerializer::class)
+@Serializable(with = ReceiptEventContentSerializer::class)
 data class ReceiptEventContent(
-    val events: Map<EventId, Set<Receipt>>
+    val events: Map<EventId, Map<ReceiptType, Map<UserId, Receipt>>>
 ) : EphemeralEventContent {
-
-    sealed interface Receipt {
-        data class ReadReceipt(
-            val read: Map<UserId, ReadEvent>
-        ) : Receipt {
-            @Serializable
-            data class ReadEvent(@SerialName("ts") val timestamp: Long)
-        }
-
-        data class Unknown(
-            val raw: JsonElement,
-            val type: String
-        ) : Receipt
-    }
+    @Serializable
+    data class Receipt(@SerialName("ts") val timestamp: Long)
 }
 
-object ReadEventsSerializer : KSerializer<ReceiptEventContent> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ReadEventsSerializer")
+object ReceiptEventContentSerializer : KSerializer<ReceiptEventContent> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ReceiptEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): ReceiptEventContent {
         require(decoder is JsonDecoder)
-        val jsonObject = decoder.decodeJsonElement().jsonObject
-        return ReceiptEventContent(jsonObject.entries.associate { (eventId, jsonObject) ->
-            EventId(eventId) to jsonObject.jsonObject.entries.map { (type, receipt) ->
-                when (type) {
-                    "m.read" -> Receipt.ReadReceipt(decoder.json.decodeFromJsonElement(receipt))
-                    else -> Receipt.Unknown(raw = receipt, type = type)
-                }
-            }.toSet()
-        })
+        return ReceiptEventContent(decoder.json.decodeFromJsonElement(decoder.decodeJsonElement()))
     }
 
     override fun serialize(encoder: Encoder, value: ReceiptEventContent) {
         require(encoder is JsonEncoder)
-        val json = JsonObject(value.events.entries.associate { (eventId, receipts) ->
-            eventId.full to JsonObject(receipts.associate { receipt ->
-                when (receipt) {
-                    is Receipt.ReadReceipt -> "m.read" to encoder.json.encodeToJsonElement(receipt.read)
-                    is Receipt.Unknown -> receipt.type to receipt.raw
-                }
-            })
-        })
-        encoder.encodeJsonElement(json)
+        encoder.encodeJsonElement(encoder.json.encodeToJsonElement(value.events))
     }
 
 }
