@@ -24,6 +24,15 @@ sealed interface RelatesTo {
         override val type: RelationType = RelationType.Reference
     }
 
+    @Serializable
+    data class Replace(
+        @SerialName("event_id")
+        override val eventId: EventId,
+    ) : RelatesTo {
+        @SerialName("rel_type")
+        override val type: RelationType = RelationType.Replace
+    }
+
     data class Unknown(
         val raw: JsonObject,
         override val eventId: EventId,
@@ -37,10 +46,12 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
     override fun deserialize(decoder: Decoder): RelatesTo {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val relationType = RelationType.of(jsonObject["rel_type"]?.jsonPrimitive?.content ?: "UNKNOWN")
+        val relationType: RelationType =
+            decoder.json.decodeFromJsonElement(jsonObject["rel_type"]?.jsonPrimitive ?: JsonPrimitive("UNKNOWN"))
         return try {
             when (relationType) {
                 is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
+                is RelationType.Replace -> decoder.json.decodeFromJsonElement<RelatesTo.Replace>(jsonObject)
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
@@ -62,6 +73,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         require(encoder is JsonEncoder)
         val jsonObject = when (value) {
             is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value)
+            is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Unknown -> value.raw
         }
         encoder.encodeJsonElement(jsonObject)

@@ -16,14 +16,11 @@ sealed interface RelationType {
         override val name = "m.reference"
     }
 
-    data class Unknown(override val name: String) : RelationType
-
-    companion object {
-        fun of(name: String) = when (name) {
-            Reference.name -> Reference
-            else -> Unknown(name)
-        }
+    object Replace : RelationType {
+        override val name = "m.replace"
     }
+
+    data class Unknown(override val name: String) : RelationType
 }
 
 object RelationTypeSerializer : KSerializer<RelationType> {
@@ -31,7 +28,10 @@ object RelationTypeSerializer : KSerializer<RelationType> {
         PrimitiveSerialDescriptor("RelationTypeSerializer", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): RelationType {
-        return RelationType.of(decoder.decodeString())
+        return when (val name = decoder.decodeString()) {
+            RelationType.Reference.name -> RelationType.Reference
+            else -> RelationType.Unknown(name)
+        }
     }
 
     override fun serialize(encoder: Encoder, value: RelationType) {
