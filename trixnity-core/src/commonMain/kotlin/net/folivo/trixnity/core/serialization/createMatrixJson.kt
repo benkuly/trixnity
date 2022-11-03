@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.serialization
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.overwriteWith
 import kotlinx.serialization.modules.plus
 import net.folivo.trixnity.core.serialization.events.*
 
@@ -43,11 +44,13 @@ fun createMatrixEventAndDataUnitJson(
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
-    val modules = createEventSerializersModule(eventContentSerializerMappings) +
+    val modules = createEventSerializersModule(eventContentSerializerMappings)
+        .overwriteWith(
             createDataUnitSerializersModule(
                 eventContentSerializerMappings,
                 getRoomVersion
             )
+        )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 

@@ -21,7 +21,9 @@ fun createDataUnitSerializersModule(
         PersistentDataUnitSerializer(persistentMessageDataUnitSerializer, persistentStateDataUnitSerializer)
     return SerializersModule {
         contextual(ephemeralDataUnitSerializer)
+        contextual(messageEventContentSerializer)
         contextual(persistentMessageDataUnitSerializer)
+        contextual(stateEventContentSerializer)
         contextual(persistentStateDataUnitSerializer)
         contextual(persistentDataUnitSerializer)
     }

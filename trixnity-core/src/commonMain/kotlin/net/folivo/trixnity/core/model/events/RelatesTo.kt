@@ -29,8 +29,12 @@ sealed interface RelatesTo {
     data class Replace(
         @SerialName("event_id")
         override val eventId: EventId,
+        /**
+         * The content used to replace the referenced event.
+         * This can be null, because it is not present in encrypted events.
+         */
         @SerialName("m.new_content")
-        val newContent: @Contextual MessageEventContent,
+        val newContent: @Contextual MessageEventContent? = null,
     ) : RelatesTo {
         @SerialName("rel_type")
         override val type: RelationType = RelationType.Replace

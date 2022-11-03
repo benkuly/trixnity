@@ -160,6 +160,100 @@ class EventSerializerTest {
     }
 
     @Test
+    fun shouldSerializeMessageEventWithRelatesToAndCopyNewContent() {
+        val content = MessageEvent(
+            RoomMessageEventContent.TextMessageEventContent(
+                "hello",
+                relatesTo = RelatesTo.Replace(
+                    EventId("$1234"),
+                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                )
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedMessageEventData(),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "body":"hello",
+                "m.new_content":{
+                    "body":"hello-new",
+                    "msgtype":"m.text"
+                },
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldSerializeMessageEventWithRelatesToAndDontCopyNewContentWhenEncrypted() {
+        val content = MessageEvent(
+            EncryptedEventContent.MegolmEncryptedEventContent(
+                "ciphercipher",
+                sessionId = "sessionId",
+                relatesTo = RelatesTo.Replace(
+                    EventId("$1234"),
+                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                )
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedMessageEventData(),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "algorithm":"m.megolm.v1.aes-sha2",
+                "ciphertext":"ciphercipher",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "session_id":"sessionId"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.encrypted",
+            "unsigned":{}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
     fun shouldDeserializeMessageEvent() {
         val input = """
         {
@@ -220,6 +314,56 @@ class EventSerializerTest {
                         )
                     )
                 ),
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldDeserializeMessageEventWithRelatesToAndCopyNewContent() {
+        val input = """
+        {
+            "content":{
+                "body":"hello",
+                "m.new_content":{
+                    "body":"hello-new",
+                    "msgtype":"m.text"
+                },
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{}
+        }
+    """.trimIndent()
+
+        val result = json.decodeFromString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            input
+        )
+        assertEquals(
+            MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent(
+                    "hello",
+                    relatesTo = RelatesTo.Replace(
+                        EventId("$1234"),
+                        newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                    )
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(),
             ), result
         )
     }
