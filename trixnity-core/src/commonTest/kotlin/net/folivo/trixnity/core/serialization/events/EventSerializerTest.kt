@@ -108,16 +108,15 @@ class EventSerializerTest {
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
             UnsignedMessageEventData(
-                1234, aggregations = Aggregations(
-                    setOf(
-                        Aggregation.UnknownAggregation(
-                            "org.example.possible_annotations", buildJsonArray {
-                                add(buildJsonObject {
-                                    put("key", JsonPrimitive("👍"))
-                                    put("count", JsonPrimitive(3))
+                1234, aggregations = mapOf(
+                    RelationType.Unknown("org.example.possible_annotations") to
+                            Aggregation.Unknown(
+                                RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                    add(buildJsonObject {
+                                        put("key", JsonPrimitive("👍"))
+                                        put("count", JsonPrimitive(3))
+                                    })
                                 })
-                            })
-                    )
                 )
             ),
         )
@@ -302,16 +301,15 @@ class EventSerializerTest {
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
-                    1234, aggregations = Aggregations(
-                        setOf(
-                            Aggregation.UnknownAggregation(
-                                "org.example.possible_annotations", buildJsonArray {
-                                    add(buildJsonObject {
-                                        put("key", JsonPrimitive("👍"))
-                                        put("count", JsonPrimitive(3))
+                    1234, aggregations = mapOf(
+                        RelationType.Unknown("org.example.possible_annotations") to
+                                Aggregation.Unknown(
+                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("key", JsonPrimitive("👍"))
+                                            put("count", JsonPrimitive(3))
+                                        })
                                     })
-                                })
-                        )
                     )
                 ),
             ), result
