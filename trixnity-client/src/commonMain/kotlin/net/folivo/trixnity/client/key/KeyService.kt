@@ -238,9 +238,10 @@ class KeyServiceImpl(
                                 userSigningKey = userSigningKey
                             )
                         }
-                }.mapCatching {
-                    it.injectOnSuccessIntoUIA {
+                }.mapCatching { uiaFlow ->
+                    uiaFlow.injectOnSuccessIntoUIA {
                         keyStore.outdatedKeys.update { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }
+                        log.debug { "wait for outdated keys" }
                         keyStore.waitForUpdateOutdatedKey(userInfo.userId)
                         val masterKey =
                             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
@@ -248,6 +249,10 @@ class KeyServiceImpl(
                             keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId).first()?.value?.get<Ed25519Key>()
 
                         keyTrustService.trustAndSignKeys(setOfNotNull(masterKey, ownDeviceKey), userInfo.userId)
+                        log.debug { "wait for own device keys to be marked as cross signed and verified" }
+                        keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId)
+                            .mapNotNull { it?.trustLevel }
+                            .first { it is CrossSigned && it.verified }
                         _bootstrapRunning.value = false
                         log.debug { "finished bootstrapping" }
                     }

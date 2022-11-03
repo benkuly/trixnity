@@ -13,6 +13,7 @@ import io.ktor.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -209,6 +210,20 @@ private val body: ShouldSpec.() -> Unit = {
                 launch {
                     keyStore.outdatedKeys.first { it.contains(alice) }
                     keyStore.outdatedKeys.value = setOf()
+                    keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
+                    keyStore.updateDeviceKeys(alice) {
+                        mapOf(
+                            aliceDevice to StoredDeviceKeys(
+                                SignedDeviceKeys(
+                                    DeviceKeys(
+                                        alice, aliceDevice, setOf(),
+                                        keysOf(Ed25519Key(aliceDevice, "dev"))
+                                    ), mapOf()
+                                ),
+                                KeySignatureTrustLevel.CrossSigned(true)
+                            )
+                        )
+                    }
                 }
                 val result = cut.bootstrapCrossSigning()
 
@@ -237,6 +252,20 @@ private val body: ShouldSpec.() -> Unit = {
                 launch {
                     keyStore.outdatedKeys.first { it.contains(alice) }
                     keyStore.outdatedKeys.value = setOf()
+                    keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
+                    keyStore.updateDeviceKeys(alice) {
+                        mapOf(
+                            aliceDevice to StoredDeviceKeys(
+                                SignedDeviceKeys(
+                                    DeviceKeys(
+                                        alice, aliceDevice, setOf(),
+                                        keysOf(Ed25519Key(aliceDevice, "dev"))
+                                    ), mapOf()
+                                ),
+                                KeySignatureTrustLevel.CrossSigned(true)
+                            )
+                        )
+                    }
                 }
                 val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.") {
                     val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
