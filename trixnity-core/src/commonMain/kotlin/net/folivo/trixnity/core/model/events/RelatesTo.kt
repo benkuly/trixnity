@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core.model.events
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -28,6 +29,8 @@ sealed interface RelatesTo {
     data class Replace(
         @SerialName("event_id")
         override val eventId: EventId,
+        @SerialName("m.new_content")
+        val newContent: @Contextual MessageEventContent,
     ) : RelatesTo {
         @SerialName("rel_type")
         override val type: RelationType = RelationType.Replace

@@ -54,6 +54,7 @@ class EventSerializerTest {
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
+                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), content
         )
         assertEquals(expectedResult, result)
@@ -79,6 +80,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
+                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), input
         )
         assertEquals(
@@ -148,7 +150,10 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)
@@ -186,7 +191,10 @@ class EventSerializerTest {
     """.trimIndent()
 
         val result = json.decodeFromString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             input
         )
         assertEquals(
@@ -239,6 +247,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -282,6 +291,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -334,6 +344,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -415,6 +426,7 @@ class EventSerializerTest {
                 ListSerializer(
                     StateEventSerializer(
                         DefaultEventContentSerializerMappings.state,
+                        StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
                     )
                 ),
                 content
@@ -449,7 +461,10 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)
@@ -487,6 +502,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -557,7 +573,10 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)

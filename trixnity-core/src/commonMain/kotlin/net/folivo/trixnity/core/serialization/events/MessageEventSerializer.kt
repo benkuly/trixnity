@@ -20,8 +20,10 @@ import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
+// TODO hopefully a new spec removes the redaction hack
 class MessageEventSerializer(
     private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
+    private val messageEventContentSerializer: MessageEventContentSerializer,
 ) : KSerializer<MessageEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventSerializer")
 
@@ -30,8 +32,9 @@ class MessageEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
-        val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        val contentSerializer = messageEventContentSerializers.contentDeserializer(type, isRedacted)
+        val redacts = jsonObj["redacts"]?.jsonPrimitive?.content
+        val contentSerializer =
+            MessageEventContentSerializer.withRedaction(messageEventContentSerializers, type, isRedacted)
         return decoder.json.tryDeserializeOrElse(
             MessageEvent.serializer(
                 if (redacts == null) contentSerializer
@@ -46,14 +49,14 @@ class MessageEventSerializer(
     override fun serialize(encoder: Encoder, value: MessageEvent<*>) {
         require(encoder is JsonEncoder)
         val content = value.content
-        val (type, serializer) = messageEventContentSerializers.contentSerializer(content)
+        val type = messageEventContentSerializers.contentType(content)
 
         val addFields = mutableListOf("type" to type)
         if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
         val contentSerializer =
             if (content is RedactionEventContent)
-                HideFieldsSerializer(serializer, "redacts")
-            else serializer
+                HideFieldsSerializer(messageEventContentSerializer, "redacts")
+            else messageEventContentSerializer
 
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST")

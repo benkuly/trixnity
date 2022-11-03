@@ -23,6 +23,7 @@ private val log = KotlinLogging.logger {}
 
 class PersistentStateDataUnitSerializer(
     private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
+    private val stateEventContentSerializer: StateEventContentSerializer,
     private val getRoomVersion: (RoomId) -> String,
 ) : KSerializer<PersistentDataUnit.PersistentStateDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentStateDataUnitSerializer")
@@ -32,7 +33,8 @@ class PersistentStateDataUnitSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
-        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isFullyRedacted)
+        val contentSerializer =
+            StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
         val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
@@ -42,20 +44,21 @@ class PersistentStateDataUnitSerializer(
                     PersistentStateDataUnitV1.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
+
             "3", "4", "5", "6", "7", "8", "9" -> {
                 decoder.json.tryDeserializeOrElse(PersistentStateDataUnitV3.serializer(contentSerializer), jsonObj) {
                     log.warn(it) { "could not deserialize pdu of type $type" }
                     PersistentStateDataUnitV3.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
+
             else -> throw SerializationException("room version $roomVersion not supported")
         }
     }
 
     override fun serialize(encoder: Encoder, value: PersistentDataUnit.PersistentStateDataUnit<*>) {
         require(encoder is JsonEncoder)
-        val content = value.content
-        val (type, contentSerializer) = stateEventContentSerializers.contentSerializer(content)
+        val type = stateEventContentSerializers.contentType(value.content)
 
         val addFields = mutableListOf("type" to type)
 
@@ -64,14 +67,15 @@ class PersistentStateDataUnitSerializer(
                 is PersistentStateDataUnitV1 -> encoder.json.encodeToJsonElement(
                     @Suppress("UNCHECKED_CAST")
                     (AddFieldsSerializer(
-                        PersistentStateDataUnitV1.serializer(contentSerializer) as KSerializer<PersistentStateDataUnitV1<*>>,
+                        PersistentStateDataUnitV1.serializer(stateEventContentSerializer) as KSerializer<PersistentStateDataUnitV1<*>>,
                         *addFields.toTypedArray()
                     )), value
                 )
+
                 is PersistentStateDataUnitV3 -> encoder.json.encodeToJsonElement(
                     @Suppress("UNCHECKED_CAST")
                     (AddFieldsSerializer(
-                        PersistentStateDataUnitV3.serializer(contentSerializer) as KSerializer<PersistentStateDataUnitV3<*>>,
+                        PersistentStateDataUnitV3.serializer(stateEventContentSerializer) as KSerializer<PersistentStateDataUnitV3<*>>,
                         *addFields.toTypedArray()
                     )), value
                 )
