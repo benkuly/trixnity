@@ -1704,5 +1704,22 @@ class TimelineEventHandlerTest : ShouldSpec({
             roomTimelineStore.get(otherTimelineEvent.eventId, otherTimelineEvent.roomId)
                 .first() shouldBe otherTimelineEvent
         }
+        should("not add replace aggregation when other sender") {
+            roomTimelineStore.addAll(listOf(otherTimelineEvent))
+            cut.aggregateReplaceRelation(
+                MessageEvent(
+                    TextMessageEventContent(
+                        "hi",
+                        relatesTo = RelatesTo.Replace(otherTimelineEvent.eventId, TextMessageEventContent("hi!!!"))
+                    ),
+                    EventId("$1event"),
+                    UserId("@other:server"),
+                    otherTimelineEvent.roomId,
+                    12,
+                )
+            )
+            roomTimelineStore.get(otherTimelineEvent.eventId, otherTimelineEvent.roomId)
+                .first() shouldBe otherTimelineEvent
+        }
     }
 })

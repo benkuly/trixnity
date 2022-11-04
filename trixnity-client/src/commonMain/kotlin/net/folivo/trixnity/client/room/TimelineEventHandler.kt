@@ -399,13 +399,14 @@ class TimelineEventHandlerImpl(
         }
     }
 
+    // TODO should check same event type, but this would mean, that we must decrypt it
     internal suspend fun aggregateReplaceRelation(event: Event<MessageEventContent>) {
         val relatesTo = event.content.relatesTo
         if (event is Event.MessageEvent && relatesTo != null && relatesTo is RelatesTo.Replace) {
             log.debug { "set replace relation for ${relatesTo.eventId} in ${event.roomId}" }
             roomTimelineStore.update(relatesTo.eventId, event.roomId) { oldTimelineEvent ->
                 val oldEvent = oldTimelineEvent?.event
-                if (oldEvent is Event.MessageEvent) {
+                if (oldEvent is Event.MessageEvent && oldEvent.sender == event.sender) {
                     val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
                     if ((oldAggregations.replace?.originTimestamp ?: 0) < event.originTimestamp) {
                         val newAggregations = oldAggregations +
