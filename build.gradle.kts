@@ -91,6 +91,7 @@ subprojects {
         signing {
             isRequired = isCI
             useInMemoryPgpKeys(
+                System.getenv("OSSRH_PGP_KEY_ID"),
                 System.getenv("OSSRH_PGP_KEY"),
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
