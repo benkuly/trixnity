@@ -13,17 +13,26 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 
 
-typealias Aggregations = @Serializable(with = AggregationsSerializer::class) Map<RelationType, Aggregation>
+typealias Aggregations = @Serializable(with = AggregationsSerializer::class) Map<RelationType, Aggregation<*>>
 
-sealed interface Aggregation {
-    val relationType: RelationType
+val Aggregations.replace: Aggregation.Replace?
+    get() {
+        val aggregation = this[RelationType.Replace]
+        return if (aggregation is Aggregation.Replace) aggregation
+        else null
+    }
+
+operator fun Aggregations.plus(other: Aggregation<*>): Aggregations = plus(other.relationType to other)
+
+sealed interface Aggregation<T : RelationType> {
+    val relationType: T
 
     @Serializable
     data class Replace(
         @SerialName("event_id") val eventId: EventId,
         @SerialName("sender") val sender: UserId,
         @SerialName("origin_server_ts") val originTimestamp: Long,
-    ) : Aggregation {
+    ) : Aggregation<RelationType.Replace> {
         @Transient
         override val relationType: RelationType.Replace = RelationType.Replace
     }
@@ -31,7 +40,7 @@ sealed interface Aggregation {
     data class Unknown(
         override val relationType: RelationType.Unknown,
         val raw: JsonElement,
-    ) : Aggregation
+    ) : Aggregation<RelationType.Unknown>
 }
 
 object AggregationsSerializer : KSerializer<Aggregations> {

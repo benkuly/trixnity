@@ -691,33 +691,6 @@ class TimelineEventHandlerTest : ShouldSpec({
             roomStore.get(room).first()?.lastRelevantEventId shouldBe EventId("event2")
         }
     }
-    context(TimelineEventHandlerImpl::addRelation.name) {
-        should("add relation") {
-            cut.addRelation(
-                MessageEvent(
-                    TextMessageEventContent(
-                        "hi",
-                        relatesTo = RelatesTo.Reference(EventId("$1other"))
-                    ),
-                    EventId("$1event"),
-                    UserId("sender", "server"),
-                    RoomId("room", "server"),
-                    1234,
-                )
-            )
-            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")).first() shouldBe
-                    mapOf(
-                        RelationType.Reference to setOf(
-                            TimelineEventRelation(
-                                RoomId("room", "server"),
-                                EventId("$1event"),
-                                RelationType.Reference,
-                                EventId("$1other"),
-                            )
-                        )
-                    )
-        }
-    }
     context(TimelineEventHandlerImpl::unsafeFillTimelineGaps.name) {
         val event1 = plainEvent(1)
         val event2 = plainEvent(2)
@@ -1629,6 +1602,107 @@ class TimelineEventHandlerTest : ShouldSpec({
                     +event3
                 }
             }
+        }
+    }
+    context(TimelineEventHandlerImpl::addRelation.name) {
+        should("add relation") {
+            cut.addRelation(
+                MessageEvent(
+                    TextMessageEventContent(
+                        "hi",
+                        relatesTo = RelatesTo.Reference(EventId("$1other"))
+                    ),
+                    EventId("$1event"),
+                    UserId("sender", "server"),
+                    RoomId("room", "server"),
+                    1234,
+                )
+            )
+            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")).first() shouldBe
+                    mapOf(
+                        RelationType.Reference to setOf(
+                            TimelineEventRelation(
+                                RoomId("room", "server"),
+                                EventId("$1event"),
+                                RelationType.Reference,
+                                EventId("$1other"),
+                            )
+                        )
+                    )
+        }
+    }
+    context(TimelineEventHandlerImpl::aggregateReplaceRelation.name) {
+        val otherEvent = textEvent(1).copy(
+            unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                aggregations = mapOf(
+                    RelationType.Replace to Aggregation.Replace(
+                        EventId("$2event"),
+                        UserId("sender", "server"),
+                        24
+                    )
+                )
+            )
+        )
+        val otherTimelineEvent = TimelineEvent(
+            event = otherEvent,
+            content = null,
+            roomId = room,
+            eventId = otherEvent.id,
+            previousEventId = null,
+            nextEventId = null,
+            gap = null
+        )
+        should("add replace aggregation when new timestamp") {
+            roomTimelineStore.addAll(listOf(otherTimelineEvent))
+            cut.aggregateReplaceRelation(
+                MessageEvent(
+                    TextMessageEventContent(
+                        "hi",
+                        relatesTo = RelatesTo.Replace(otherTimelineEvent.eventId, TextMessageEventContent("hi!!!"))
+                    ),
+                    EventId("$1event"),
+                    otherTimelineEvent.event.sender,
+                    otherTimelineEvent.roomId,
+                    1234,
+                )
+            )
+            roomTimelineStore.get(otherTimelineEvent.eventId, otherTimelineEvent.roomId).first() shouldBe
+                    TimelineEvent(
+                        event = otherEvent.copy(
+                            unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
+                                aggregations = mapOf(
+                                    RelationType.Replace to Aggregation.Replace(
+                                        EventId("$1event"),
+                                        UserId("sender", "server"),
+                                        1234
+                                    )
+                                )
+                            )
+                        ),
+                        content = null,
+                        roomId = room,
+                        eventId = otherEvent.id,
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null
+                    )
+        }
+        should("not add replace aggregation when old timestamp") {
+            roomTimelineStore.addAll(listOf(otherTimelineEvent))
+            cut.aggregateReplaceRelation(
+                MessageEvent(
+                    TextMessageEventContent(
+                        "hi",
+                        relatesTo = RelatesTo.Replace(otherTimelineEvent.eventId, TextMessageEventContent("hi!!!"))
+                    ),
+                    EventId("$1event"),
+                    otherTimelineEvent.event.sender,
+                    otherTimelineEvent.roomId,
+                    12,
+                )
+            )
+            roomTimelineStore.get(otherTimelineEvent.eventId, otherTimelineEvent.roomId)
+                .first() shouldBe otherTimelineEvent
         }
     }
 })

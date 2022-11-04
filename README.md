@@ -75,6 +75,8 @@ This project contains the following modules, which can be used independently:
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] redactions
+    - [x] replace relation
+    - [ ] thread relation
     - [x] notifications
     - [x] server discovery
 

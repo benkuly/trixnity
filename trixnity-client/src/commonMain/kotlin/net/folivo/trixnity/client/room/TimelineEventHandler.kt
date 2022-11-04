@@ -50,10 +50,12 @@ class TimelineEventHandlerImpl(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe(::addRelation)
+        api.sync.subscribe(::aggregateReplaceRelation)
         api.sync.subscribeSyncResponse(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
             api.sync.unsubscribe(::addRelation)
+            api.sync.unsubscribe(::aggregateReplaceRelation)
             api.sync.unsubscribeSyncResponse(::handleSyncResponse)
         }
     }
@@ -373,8 +375,11 @@ class TimelineEventHandlerImpl(
     }
 
     private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->
-        events.asFlow().map { it.event }.filterIsInstance<Event<MessageEventContent>>()
-            .collect(::addRelation)
+        events.asFlow().map { it.event }.filterIsInstance<Event.MessageEvent<MessageEventContent>>()
+            .collect { event ->
+                addRelation(event)
+                aggregateReplaceRelation(event)
+            }
     }
 
     internal suspend fun addRelation(event: Event<MessageEventContent>) {
@@ -390,6 +395,33 @@ class TimelineEventHandlerImpl(
                         relatedEventId = relatesTo.eventId
                     )
                 )
+            }
+        }
+    }
+
+    internal suspend fun aggregateReplaceRelation(event: Event<MessageEventContent>) {
+        val relatesTo = event.content.relatesTo
+        if (event is Event.MessageEvent && relatesTo != null && relatesTo is RelatesTo.Replace) {
+            log.debug { "set replace relation for ${relatesTo.eventId} in ${event.roomId}" }
+            roomTimelineStore.update(relatesTo.eventId, event.roomId) { oldTimelineEvent ->
+                val oldEvent = oldTimelineEvent?.event
+                if (oldEvent is Event.MessageEvent) {
+                    val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
+                    if ((oldAggregations.replace?.originTimestamp ?: 0) < event.originTimestamp) {
+                        val newAggregations = oldAggregations +
+                                Aggregation.Replace(
+                                    event.id,
+                                    event.sender,
+                                    event.originTimestamp
+                                )
+                        oldTimelineEvent.copy(
+                            event = oldEvent.copy(
+                                unsigned = oldEvent.unsigned?.copy(aggregations = newAggregations)
+                                    ?: UnsignedRoomEventData.UnsignedMessageEventData(aggregations = newAggregations)
+                            )
+                        )
+                    } else oldTimelineEvent
+                } else oldTimelineEvent
             }
         }
     }
