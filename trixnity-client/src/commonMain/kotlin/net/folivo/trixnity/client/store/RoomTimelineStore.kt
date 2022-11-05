@@ -39,22 +39,6 @@ class RoomTimelineStore(
     suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
         timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction).first()
 
-    fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> =
-        timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId))
-
-    fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-        relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?> =
-        timelineEventRelationCache.getBySecondKey(
-            TimelineEventRelationKey(eventId, roomId),
-            relationType,
-        )
-
     suspend fun update(
         eventId: EventId,
         roomId: RoomId,
@@ -76,12 +60,37 @@ class RoomTimelineStore(
         }
     }
 
+    fun getRelations(
+        eventId: EventId,
+        roomId: RoomId,
+    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> =
+        timelineEventRelationCache.get(TimelineEventRelationKey(eventId, roomId))
+
+    fun getRelations(
+        eventId: EventId,
+        roomId: RoomId,
+        relationType: RelationType,
+    ): Flow<Set<TimelineEventRelation>?> =
+        timelineEventRelationCache.getBySecondKey(
+            TimelineEventRelationKey(eventId, roomId),
+            relationType,
+        )
+
     suspend fun addRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.updateBySecondKey(
             TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
             relation.relationType
         ) {
             it.orEmpty() + relation
+        }
+    }
+
+    suspend fun deleteRelation(relation: TimelineEventRelation) {
+        timelineEventRelationCache.updateBySecondKey(
+            TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
+            relation.relationType
+        ) {
+            it?.minus(relation)?.ifEmpty { null }
         }
     }
 }

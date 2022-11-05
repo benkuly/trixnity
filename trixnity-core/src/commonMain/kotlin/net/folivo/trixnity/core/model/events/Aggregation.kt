@@ -22,7 +22,11 @@ val Aggregations.replace: Aggregation.Replace?
         else null
     }
 
-operator fun Aggregations.plus(other: Aggregation<*>): Aggregations = plus(other.relationType to other)
+operator fun Aggregations.plus(other: Aggregation<*>?): Aggregations =
+    if (other == null) this else plus(other.relationType to other)
+
+operator fun Aggregations.minus(other: Aggregation<*>?): Aggregations =
+    if (other == null) this else minus(other.relationType)
 
 sealed interface Aggregation<T : RelationType> {
     val relationType: T
