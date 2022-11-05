@@ -290,7 +290,7 @@ class RoomServiceTest : ShouldSpec({
         should("just save message in store for later use") {
             val content = TextMessageEventContent("hi")
             cut.sendMessage(room) {
-                this.content = content
+                contentBuilder = { content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboundMessages = roomOutboxMessageStore.getAll().value

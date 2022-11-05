@@ -11,10 +11,11 @@ import net.folivo.trixnity.core.model.events.RelatesTo
  */
 @Serializable
 data class RedactionEventContent(
-    @SerialName("reason")
-    val reason: String? = null,
     @SerialName("redacts")
     val redacts: EventId,
+    @SerialName("reason")
+    val reason: String? = null,
+) : MessageEventContent {
     @SerialName("m.relates_to")
-    override val relatesTo: RelatesTo? = null,
-) : MessageEventContent
+    override val relatesTo: RelatesTo? = null
+}

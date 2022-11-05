@@ -7,6 +7,8 @@ import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Video.MP4
 import io.ktor.utils.io.core.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.toByteFlow
@@ -19,7 +21,11 @@ class MessageBuilderTest : ShouldSpec({
         should("call builder and return content") {
             val eventContent = TextMessageEventContent("")
             MessageBuilder(true, mediaService).build {
-                content = eventContent
+                relatesTo = RelatesTo.Replace(EventId("other"), null)
+                contentBuilder = {
+                    it shouldBe relatesTo
+                    eventContent
+                }
             } shouldBe eventContent
         }
     }
@@ -29,6 +35,17 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(true, mediaService).build {
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent("body", "format", "formatted_body")
+        }
+        should("create fallback text on replace") {
+            MessageBuilder(true, mediaService).build {
+                replace(EventId("bla"))
+                text("body", "format", "formatted_body")
+            } shouldBe TextMessageEventContent(
+                "*body",
+                "format",
+                "*formatted_body",
+                RelatesTo.Replace(EventId("bla"), TextMessageEventContent("body", "format", "formatted_body"))
+            )
         }
     }
     context(MessageBuilder::notice.name) {
