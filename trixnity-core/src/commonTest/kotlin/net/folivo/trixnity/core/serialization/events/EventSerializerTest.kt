@@ -579,7 +579,7 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeRedactsEvent() {
         val content = MessageEvent(
-            RedactionEventContent("spam", EventId("$123")),
+            RedactionEventContent(EventId("$123"), "spam"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -656,7 +656,7 @@ class EventSerializerTest {
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, redactedBecause = MessageEvent(
-                        RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                        RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                         EventId("$143273582443PhrSn"),
                         UserId("example", "example.org"),
                         RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -678,7 +678,7 @@ class EventSerializerTest {
             1432735824653,
             UnsignedMessageEventData(
                 1234, redactedBecause = MessageEvent(
-                    RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                    RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                     EventId("$143273582443PhrSn"),
                     UserId("example", "example.org"),
                     RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -914,8 +914,7 @@ class EventSerializerTest {
                                 )
                             )
                         ),
-                        EventId("UNKNOWN"),
-                        RelationType.Unknown("UNKNOWN")
+                        null, null,
                     )
                 ),
                 id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),
