@@ -12,8 +12,8 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 
-
-typealias Aggregations = @Serializable(with = AggregationsSerializer::class) Map<RelationType, Aggregation>
+@Serializable(with = AggregationsSerializer::class)
+class Aggregations(delegate: Map<RelationType, Aggregation>) : Map<RelationType, Aggregation> by delegate
 
 val Aggregations.replace: Aggregation.Replace?
     get() {
@@ -23,10 +23,10 @@ val Aggregations.replace: Aggregation.Replace?
     }
 
 operator fun Aggregations.plus(other: Aggregation?): Aggregations =
-    if (other == null) this else plus(other.relationType to other)
+    if (other == null) this else Aggregations(plus(other.relationType to other))
 
 operator fun Aggregations.minus(other: Aggregation?): Aggregations =
-    if (other == null) this else minus(other.relationType)
+    if (other == null) this else Aggregations(minus(other.relationType))
 
 sealed interface Aggregation {
     val relationType: RelationType
@@ -53,15 +53,18 @@ object AggregationsSerializer : KSerializer<Aggregations> {
     override fun deserialize(decoder: Decoder): Aggregations {
         require(decoder is JsonDecoder)
         val aggregationsJson = decoder.decodeJsonElement().jsonObject
-        return aggregationsJson
+        return Aggregations(aggregationsJson
             .mapKeys { (key, _) -> RelationType.of(key) }
             .mapValues { (relationType, aggregationJson) ->
                 when (relationType) {
-                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<Aggregation.Replace>(aggregationJson)
+                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<Aggregation.Replace>(
+                        aggregationJson
+                    )
+
                     is RelationType.Unknown -> Aggregation.Unknown(relationType, aggregationJson)
                     else -> Aggregation.Unknown(RelationType.Unknown(relationType.name), aggregationJson)
                 }
-            }
+            })
     }
 
     override fun serialize(encoder: Encoder, value: Aggregations) {
