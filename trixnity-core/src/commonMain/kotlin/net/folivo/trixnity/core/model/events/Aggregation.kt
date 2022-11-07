@@ -12,8 +12,11 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 
-@Serializable(with = AggregationsSerializer::class)
-class Aggregations(delegate: Map<RelationType, Aggregation>) : Map<RelationType, Aggregation> by delegate
+@Serializable(with = AggregationsSerializer::class) // this is no typealias because it fails on native targets
+class Aggregations(private val delegate: Map<RelationType, Aggregation>) : Map<RelationType, Aggregation> by delegate {
+    override fun hashCode(): Int = delegate.hashCode()
+    override fun equals(other: Any?): Boolean = delegate == other
+}
 
 val Map<RelationType, Aggregation>.replace: Aggregation.Replace?
     get() {

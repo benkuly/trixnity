@@ -285,11 +285,13 @@ class RoomServiceTest : ShouldSpec({
                         room,
                         1,
                         UnsignedRoomEventData.UnsignedMessageEventData(
-                            aggregations = mapOf(
-                                RelationType.Replace to Aggregation.Replace(
-                                    replaceTimelineEvent.eventId,
-                                    replaceTimelineEvent.event.sender,
-                                    replaceTimelineEvent.event.originTimestamp
+                            aggregations = Aggregations(
+                                mapOf(
+                                    RelationType.Replace to Aggregation.Replace(
+                                        replaceTimelineEvent.eventId,
+                                        replaceTimelineEvent.event.sender,
+                                        replaceTimelineEvent.event.originTimestamp
+                                    )
                                 )
                             )
                         )

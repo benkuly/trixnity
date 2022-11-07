@@ -1634,11 +1634,13 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("add replace relation") {
             val relatedEvent = textEvent(1).copy(
                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                    aggregations = mapOf(
-                        RelationType.Replace to Aggregation.Replace(
-                            EventId("$2event"),
-                            UserId("sender", "server"),
-                            24
+                    aggregations = Aggregations(
+                        mapOf(
+                            RelationType.Replace to Aggregation.Replace(
+                                EventId("$2event"),
+                                UserId("sender", "server"),
+                                24
+                            )
                         )
                     )
                 )
@@ -1673,11 +1675,13 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = mapOf(
-                                        RelationType.Replace to Aggregation.Replace(
-                                            EventId("$1event"),
-                                            UserId("sender", "server"),
-                                            1234
+                                    aggregations = Aggregations(
+                                        mapOf(
+                                            RelationType.Replace to Aggregation.Replace(
+                                                EventId("$1event"),
+                                                UserId("sender", "server"),
+                                                1234
+                                            )
                                         )
                                     )
                                 )
@@ -1759,11 +1763,13 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("redact replace relation") {
             val relatedEvent = textEvent(1).copy(
                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                    aggregations = mapOf(
-                        RelationType.Replace to Aggregation.Replace(
-                            EventId("$4event"),
-                            UserId("sender", "server"),
-                            24
+                    aggregations = Aggregations(
+                        mapOf(
+                            RelationType.Replace to Aggregation.Replace(
+                                EventId("$4event"),
+                                UserId("sender", "server"),
+                                24
+                            )
                         )
                     )
                 )
@@ -1859,11 +1865,13 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = mapOf(
-                                        RelationType.Replace to Aggregation.Replace(
-                                            EventId("$3event"),
-                                            UserId("sender", "server"),
-                                            3
+                                    aggregations = Aggregations(
+                                        mapOf(
+                                            RelationType.Replace to Aggregation.Replace(
+                                                EventId("$3event"),
+                                                UserId("sender", "server"),
+                                                3
+                                            )
                                         )
                                     )
                                 )
@@ -1960,11 +1968,13 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = mapOf(
-                                        RelationType.Replace to Aggregation.Replace(
-                                            EventId("$3event"),
-                                            UserId("sender", "server"),
-                                            3
+                                    aggregations = Aggregations(
+                                        mapOf(
+                                            RelationType.Replace to Aggregation.Replace(
+                                                EventId("$3event"),
+                                                UserId("sender", "server"),
+                                                3
+                                            )
                                         )
                                     )
                                 )
@@ -1991,7 +2001,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 cut.redactRelation(redactedEvent)
                 roomTimelineStore.get(relatedEvent.id, relatedEvent.roomId).first() shouldBe TimelineEvent(
                     event = relatedEvent.copy(
-                        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(aggregations = mapOf())
+                        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(aggregations = Aggregations(mapOf()))
                     ),
                     content = null,
                     previousEventId = null,
