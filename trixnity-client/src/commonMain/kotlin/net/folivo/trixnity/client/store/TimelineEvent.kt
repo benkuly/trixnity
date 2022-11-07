@@ -16,6 +16,9 @@ data class TimelineEvent(
      *     - not yet decrypted -> null
      *     - successfully decrypted -> Result.Success
      *     - failure in decryption -> Result.Failure
+     *
+     *  The content may be replaced by another event. You must ignore the [MessageEventContent.relatesTo] of content. Use
+     *  [MessageEventContent.relatesTo] of the original content in [TimelineEvent.event] instead.
      */
     @Transient
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
