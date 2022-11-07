@@ -15,18 +15,18 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable(with = AggregationsSerializer::class)
 class Aggregations(delegate: Map<RelationType, Aggregation>) : Map<RelationType, Aggregation> by delegate
 
-val Aggregations.replace: Aggregation.Replace?
+val Map<RelationType, Aggregation>.replace: Aggregation.Replace?
     get() {
         val aggregation = this[RelationType.Replace]
         return if (aggregation is Aggregation.Replace) aggregation
         else null
     }
 
-operator fun Aggregations.plus(other: Aggregation?): Aggregations =
-    if (other == null) this else Aggregations(plus(other.relationType to other))
+operator fun Map<RelationType, Aggregation>.plus(other: Aggregation?): Aggregations =
+    if (other == null) Aggregations(this) else Aggregations(plus(other.relationType to other))
 
-operator fun Aggregations.minus(other: Aggregation?): Aggregations =
-    if (other == null) this else Aggregations(minus(other.relationType))
+operator fun Map<RelationType, Aggregation>.minus(other: Aggregation?): Aggregations =
+    if (other == null) Aggregations(this) else Aggregations(minus(other.relationType))
 
 sealed interface Aggregation {
     val relationType: RelationType
