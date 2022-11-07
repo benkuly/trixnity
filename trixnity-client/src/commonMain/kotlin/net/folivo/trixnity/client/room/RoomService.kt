@@ -241,37 +241,65 @@ class RoomServiceImpl(
         fetchTimeout: Duration,
         limitPerFetch: Long,
     ): Flow<TimelineEvent?> = channelFlow {
-        roomTimelineStore.get(eventId, roomId).also { timelineEventFlow ->
-            launch {
-                val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
-                    val lastEventId = roomStore.get(roomId).first()?.lastEventId
-                    if (lastEventId != null) {
-                        log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
-                        getTimelineEvents(
-                            startFrom = lastEventId,
-                            roomId = roomId,
-                            direction = BACKWARDS,
-                            decryptionTimeout = ZERO,
-                            fetchTimeout = fetchTimeout,
-                            limitPerFetch = limitPerFetch
-                        ).map { it.first() }.first { it?.eventId == eventId }
-                            .also { log.trace { "found TimelineEvent $eventId" } }
-                    } else null
-                }
-                if (timelineEvent?.canBeDecrypted() == true) {
-                    val decryptedEventContent = withTimeoutOrNull(decryptionTimeout) {
-                        roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+        roomTimelineStore.get(eventId, roomId)
+            .transform { timelineEvent ->
+                val event = timelineEvent?.event
+                if (event is MessageEvent) {
+                    val replacedBy = event.unsigned?.aggregations?.replace
+                    if (replacedBy != null) {
+                        emitAll(getTimelineEvent(replacedBy.eventId, roomId)
+                            .map { replacedByTimelineEvent ->
+                                val newContent =
+                                    replacedByTimelineEvent?.content
+                                        ?.map { content ->
+                                            if (content is MessageEventContent) {
+                                                val relatesTo = content.relatesTo
+                                                if (relatesTo is RelatesTo.Replace) relatesTo.newContent
+                                                else null
+                                            } else null
+                                        }
+                                        ?.mapCatching {
+                                            if (it == null) {
+                                                log.warn { "could not find replacing event content for $eventId in $roomId" }
+                                                throw IllegalStateException("replacing event did not contain replace")
+                                            } else it
+                                        } ?: timelineEvent.content
+                                timelineEvent.copy(content = newContent)
+                            })
+                    } else emit(timelineEvent)
+                } else emit(timelineEvent)
+            }
+            .also { timelineEventFlow ->
+                launch {
+                    val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
+                        val lastEventId = roomStore.get(roomId).first()?.lastEventId
+                        if (lastEventId != null) {
+                            log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
+                            getTimelineEvents(
+                                startFrom = lastEventId,
+                                roomId = roomId,
+                                direction = BACKWARDS,
+                                decryptionTimeout = ZERO,
+                                fetchTimeout = fetchTimeout,
+                                limitPerFetch = limitPerFetch
+                            ).map { it.first() }.first { it?.eventId == eventId }
+                                .also { log.trace { "found TimelineEvent $eventId" } }
+                        } else null
                     }
-                    if (decryptedEventContent != null) {
-                        roomTimelineStore.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
-                            // we check here again, because an event could be redacted at the same time
-                            if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
-                            else oldEvent
+                    if (timelineEvent?.canBeDecrypted() == true) {
+                        val decryptedEventContent = withTimeoutOrNull(decryptionTimeout) {
+                            roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+                        }
+                        if (decryptedEventContent != null) {
+                            roomTimelineStore.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
+                                // we check here again, because an event could be redacted at the same time
+                                if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
+                                else oldEvent
+                            }
                         }
                     }
                 }
-            }
-        }.collect { send(it) }
+            }.collect { send(it) }
     }
 
     override fun getPreviousTimelineEvent(

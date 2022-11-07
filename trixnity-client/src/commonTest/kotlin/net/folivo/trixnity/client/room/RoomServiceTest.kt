@@ -20,10 +20,9 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
@@ -253,6 +252,56 @@ class RoomServiceTest : ShouldSpec({
                     event shouldBe encryptedTimelineEvent.event
                     content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed("")
                 }
+            }
+        }
+        context("content has been replaced") {
+            should("replace content with content of other timeline event") {
+                val replaceTimelineEvent = TimelineEvent(
+                    event = MessageEvent(
+                        encryptedEventContent, // in reality there is a relatesTo
+                        EventId("\$event2"),
+                        UserId("sender", "server"),
+                        room,
+                        1
+                    ),
+                    content = Result.success(
+                        TextMessageEventContent(
+                            "*edited hi",
+                            relatesTo = RelatesTo.Replace(
+                                EventId("\$event1"),
+                                TextMessageEventContent("edited hi")
+                            )
+                        )
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null
+                )
+                val timelineEvent = TimelineEvent(
+                    event = MessageEvent(
+                        encryptedEventContent,
+                        EventId("\$event1"),
+                        UserId("sender", "server"),
+                        room,
+                        1,
+                        UnsignedRoomEventData.UnsignedMessageEventData(
+                            aggregations = mapOf(
+                                RelationType.Replace to Aggregation.Replace(
+                                    replaceTimelineEvent.eventId,
+                                    replaceTimelineEvent.event.sender,
+                                    replaceTimelineEvent.event.originTimestamp
+                                )
+                            )
+                        )
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null
+                )
+                roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
+                cut.getTimelineEvent(eventId, room).first() shouldBe timelineEvent.copy(
+                    content = Result.success(TextMessageEventContent("edited hi"))
+                )
             }
         }
     }

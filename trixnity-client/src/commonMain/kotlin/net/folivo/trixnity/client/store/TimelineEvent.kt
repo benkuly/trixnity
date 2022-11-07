@@ -4,8 +4,8 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
-import net.folivo.trixnity.core.model.events.RoomEventContent
 
 @Serializable
 data class TimelineEvent(
@@ -27,12 +27,6 @@ data class TimelineEvent(
     val nextEventId: EventId?,
     val gap: Gap?,
 ) {
-    @Transient
-    val isEncrypted: Boolean = event.isEncrypted
-
-    @Transient
-    val isFirst: Boolean = previousEventId == null && gap == null
-
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable
     @JsonClassDiscriminator("position")
