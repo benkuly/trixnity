@@ -79,8 +79,9 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         key = firstKey,
         updater = { oldValue ->
             val value = updater(oldValue?.value?.get(secondKey))
-            val newValue = if (value == null) oldValue?.value?.minus(secondKey)
-            else oldValue?.value?.plus(secondKey to value) ?: mapOf(secondKey to value)
+            val newValue =
+                if (value == null) oldValue?.value?.minus(secondKey)
+                else oldValue?.value.orEmpty() + (secondKey to value)
             newValue?.let {
                 LoadingCacheValue(value = it, fullyLoadedFromRepository = oldValue?.fullyLoadedFromRepository == true)
             }
@@ -110,7 +111,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
             repository.getBySecondKey(firstKey, secondKey)
         }
         return if (newValue != null) LoadingCacheValue(
-            value = cacheValue?.value?.plus(secondKey to newValue) ?: mapOf(secondKey to newValue),
+            value = cacheValue?.value.orEmpty() + (secondKey to newValue),
             fullyLoadedFromRepository = cacheValue?.fullyLoadedFromRepository == true
         )
         else cacheValue

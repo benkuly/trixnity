@@ -141,7 +141,7 @@ class TimelineEventHandlerImpl(
             val room = roomStore.get(roomId).first()
             requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
             suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
-                timelineEvents.alsoAddRelationFromTimelineEvents().map {
+                timelineEvents.map {
                     if (it.event.isEncrypted) {
                         it.event.unsigned?.transactionId?.let { transactionId ->
                             roomOutboxMessageStore.get(transactionId)?.let { roomOutboxMessage ->
@@ -315,6 +315,7 @@ class TimelineEventHandlerImpl(
                 if (oldTimelineEvent != null) {
                     when (val oldEvent = oldTimelineEvent.event) {
                         is Event.MessageEvent -> {
+                            redactRelation(oldEvent)
                             val eventType =
                                 api.eventContentSerializerMappings.message
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
@@ -373,23 +374,109 @@ class TimelineEventHandlerImpl(
     }
 
     private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->
-        events.asFlow().map { it.event }.filterIsInstance<Event<MessageEventContent>>()
+        events.asFlow().map { it.event }.filterIsInstance<Event.MessageEvent<MessageEventContent>>()
             .collect(::addRelation)
     }
 
     internal suspend fun addRelation(event: Event<MessageEventContent>) {
         if (event is Event.MessageEvent) {
             val relatesTo = event.content.relatesTo
-            if (relatesTo != null) {
+            val relationType = relatesTo?.relationType
+            val relatedEventId = relatesTo?.eventId
+            if (relatesTo != null && relationType != null && relatedEventId != null) {
                 log.debug { "add relation to ${relatesTo.eventId}" }
                 roomTimelineStore.addRelation(
                     TimelineEventRelation(
                         roomId = event.roomId,
                         eventId = event.id,
-                        relationType = relatesTo.type,
-                        relatedEventId = relatesTo.eventId
+                        relationType = relationType,
+                        relatedEventId = relatedEventId
                     )
                 )
+                when (relatesTo) {
+                    is RelatesTo.Replace -> {
+                        // TODO should check same event type, but this would mean, that we must decrypt it
+                        log.debug { "set replace relation for $relatedEventId in ${event.roomId}" }
+                        roomTimelineStore.update(relatedEventId, event.roomId) { oldTimelineEvent ->
+                            val oldEvent = oldTimelineEvent?.event
+                            if (oldEvent is Event.MessageEvent && oldEvent.sender == event.sender) {
+                                val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
+                                if ((oldAggregations.replace?.originTimestamp ?: 0) < event.originTimestamp) {
+                                    val newAggregations = oldAggregations +
+                                            Aggregation.Replace(
+                                                event.id,
+                                                event.sender,
+                                                event.originTimestamp
+                                            )
+                                    oldTimelineEvent.copy(
+                                        event = oldEvent.copy(
+                                            unsigned = oldEvent.unsigned?.copy(aggregations = newAggregations)
+                                                ?: UnsignedRoomEventData.UnsignedMessageEventData(aggregations = newAggregations)
+                                        )
+                                    )
+                                } else oldTimelineEvent
+                            } else oldTimelineEvent
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    internal suspend fun redactRelation(redactedEvent: Event.MessageEvent<*>) {
+        val relatesTo = redactedEvent.content.relatesTo
+        val relationType = relatesTo?.relationType
+        val relatedEventId = relatesTo?.eventId
+        if (relatesTo != null && relationType != null && relatedEventId != null) {
+            log.debug { "delete relation from ${redactedEvent.id}" }
+            roomTimelineStore.deleteRelation(
+                TimelineEventRelation(
+                    roomId = redactedEvent.roomId,
+                    eventId = redactedEvent.id,
+                    relationType = relationType,
+                    relatedEventId = relatedEventId
+                )
+            )
+            when (relatesTo) {
+                is RelatesTo.Replace -> {
+                    roomTimelineStore.update(relatedEventId, redactedEvent.roomId) { relatedEvent ->
+                        val oldEvent = relatedEvent?.event
+                        if (oldEvent is Event.MessageEvent) {
+                            val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
+                            val oldReplaceAggregation = oldAggregations.replace
+                            if (oldReplaceAggregation != null && oldReplaceAggregation.eventId == redactedEvent.id) {
+                                log.debug { "a replace aggregation for $relatedEventId must be recalculated due to a redaction" }
+                                val newReplaceAggregation = roomTimelineStore.getRelations(
+                                    relatedEventId,
+                                    redactedEvent.roomId,
+                                    RelationType.Replace
+                                ).first()
+                                    ?.mapNotNull { roomTimelineStore.get(it.eventId, it.roomId).first() }
+                                    ?.filter { it.event.sender == relatedEvent.event.sender }
+                                    ?.maxByOrNull { it.event.originTimestamp }
+                                    ?.let {
+                                        Aggregation.Replace(
+                                            it.eventId,
+                                            it.event.sender,
+                                            it.event.originTimestamp
+                                        )
+                                    }
+                                log.trace { "new replace aggregation: $newReplaceAggregation" }
+                                val newAggregations = (oldAggregations - oldReplaceAggregation) + newReplaceAggregation
+                                relatedEvent.copy(
+                                    event = oldEvent.copy(
+                                        unsigned = oldEvent.unsigned?.copy(aggregations = newAggregations)
+                                            ?: UnsignedRoomEventData.UnsignedMessageEventData(aggregations = newAggregations)
+                                    )
+                                )
+                            } else relatedEvent
+                        } else relatedEvent
+                    }
+                }
+
+                else -> {}
             }
         }
     }

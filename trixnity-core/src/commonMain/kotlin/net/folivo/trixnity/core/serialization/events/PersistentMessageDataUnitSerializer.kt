@@ -25,6 +25,7 @@ private val log = KotlinLogging.logger {}
 
 class PersistentMessageDataUnitSerializer(
     private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
+    private val messageEventContentSerializer: MessageEventContentSerializer,
     private val getRoomVersion: (RoomId) -> String,
 ) : KSerializer<PersistentMessageDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentMessageDataUnitSerializer")
@@ -35,7 +36,9 @@ class PersistentMessageDataUnitSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        val contentSerializer = messageEventContentSerializers.contentDeserializer(type, isRedacted)
+        val contentSerializer =
+            if (isRedacted) RedactedMessageEventContentSerializer(type)
+            else MessageEventContentSerializer(messageEventContentSerializers, type)
         val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
@@ -50,6 +53,7 @@ class PersistentMessageDataUnitSerializer(
                     PersistentMessageDataUnitV1.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
+
             "3", "4", "5", "6", "7", "8", "9" -> {
                 decoder.json.tryDeserializeOrElse(
                     PersistentMessageDataUnitV3.serializer(
@@ -61,6 +65,7 @@ class PersistentMessageDataUnitSerializer(
                     PersistentMessageDataUnitV3.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
+
             else -> throw SerializationException("room version $roomVersion not supported")
         }
     }
@@ -68,14 +73,14 @@ class PersistentMessageDataUnitSerializer(
     override fun serialize(encoder: Encoder, value: PersistentMessageDataUnit<*>) {
         require(encoder is JsonEncoder)
         val content = value.content
-        val (type, serializer) = messageEventContentSerializers.contentSerializer(content)
+        val type = messageEventContentSerializers.contentType(content)
 
         val addFields = mutableListOf("type" to type)
         if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
         val contentSerializer =
             if (content is RedactionEventContent)
-                HideFieldsSerializer(serializer, "redacts")
-            else serializer
+                HideFieldsSerializer(messageEventContentSerializer, "redacts")
+            else messageEventContentSerializer
 
         val jsonElement =
             when (value) {
@@ -86,6 +91,7 @@ class PersistentMessageDataUnitSerializer(
                         *addFields.toTypedArray()
                     )), value
                 )
+
                 is PersistentMessageDataUnitV3 -> encoder.json.encodeToJsonElement(
                     @Suppress("UNCHECKED_CAST")
                     (AddFieldsSerializer(

@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentSerializer
+import net.folivo.trixnity.core.serialization.events.contentType
 import net.folivo.trixnity.core.serialization.events.fromClass
 
 interface RoomsApiClient {
@@ -577,7 +578,7 @@ class RoomsApiClientImpl(
         stateKey: String,
         asUserId: UserId?
     ): Result<EventId> {
-        val eventType = contentMappings.state.contentSerializer(eventContent).first
+        val eventType = contentMappings.state.contentType(eventContent)
         return httpClient.request(SendStateEvent(roomId.e(), eventType, stateKey.e(), asUserId), eventContent)
             .mapCatching { it.eventId }
     }
@@ -588,7 +589,7 @@ class RoomsApiClientImpl(
         txnId: String,
         asUserId: UserId?
     ): Result<EventId> {
-        val eventType = contentMappings.message.contentSerializer(eventContent).first
+        val eventType = contentMappings.message.contentType(eventContent)
         return httpClient.request(SendMessageEvent(roomId.e(), eventType, txnId, asUserId), eventContent)
             .mapCatching { it.eventId }
     }

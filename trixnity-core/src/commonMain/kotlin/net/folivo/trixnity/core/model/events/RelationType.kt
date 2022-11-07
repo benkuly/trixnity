@@ -16,11 +16,16 @@ sealed interface RelationType {
         override val name = "m.reference"
     }
 
+    object Replace : RelationType {
+        override val name = "m.replace"
+    }
+
     data class Unknown(override val name: String) : RelationType
 
     companion object {
         fun of(name: String) = when (name) {
             Reference.name -> Reference
+            Replace.name -> Replace
             else -> Unknown(name)
         }
     }

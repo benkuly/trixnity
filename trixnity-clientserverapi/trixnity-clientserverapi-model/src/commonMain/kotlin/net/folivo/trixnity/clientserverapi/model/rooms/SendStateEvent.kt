@@ -31,6 +31,6 @@ data class SendStateEvent(
         mappings: EventContentSerializerMappings,
         json: Json
     ): KSerializer<StateEventContent> {
-        return StateEventContentSerializer(type, false, mappings.state)
+        return StateEventContentSerializer(mappings.state, type)
     }
 }

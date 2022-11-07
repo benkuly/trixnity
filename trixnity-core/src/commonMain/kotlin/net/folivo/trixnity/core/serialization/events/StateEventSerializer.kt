@@ -20,6 +20,7 @@ private val log = KotlinLogging.logger {}
 
 class StateEventSerializer(
     private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
+    private val stateEventContentSerializer: StateEventContentSerializer,
 ) : KSerializer<StateEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StateEventSerializer")
 
@@ -28,7 +29,8 @@ class StateEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
-        val contentSerializer = stateEventContentSerializers.contentDeserializer(type, isFullyRedacted)
+        val contentSerializer =
+            StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
         return decoder.json.tryDeserializeOrElse(StateEvent.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event of type $type" }
             StateEvent.serializer(UnknownStateEventContentSerializer(type))
@@ -37,11 +39,11 @@ class StateEventSerializer(
 
     override fun serialize(encoder: Encoder, value: StateEvent<*>) {
         require(encoder is JsonEncoder)
-        val (type, serializer) = stateEventContentSerializers.contentSerializer(value.content)
+        val type = stateEventContentSerializers.contentType(value.content)
         val jsonElement = encoder.json.encodeToJsonElement(
             @Suppress("UNCHECKED_CAST")
             AddFieldsSerializer(
-                StateEvent.serializer(serializer) as KSerializer<StateEvent<*>>,
+                StateEvent.serializer(stateEventContentSerializer) as KSerializer<StateEvent<*>>,
                 "type" to type
             ), value
         )

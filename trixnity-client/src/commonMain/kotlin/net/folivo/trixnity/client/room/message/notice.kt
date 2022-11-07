@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.core.TrixnityDsl
+import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
 
 @TrixnityDsl
@@ -9,5 +10,27 @@ fun MessageBuilder.notice(
     format: String? = null,
     formattedBody: String? = null
 ) {
-    content = NoticeMessageEventContent(body, format, formattedBody)
+    contentBuilder = { relatesTo ->
+        when (relatesTo) {
+            is RelatesTo.Replace -> NoticeMessageEventContent(
+                body = "*$body",
+                format = format,
+                formattedBody = "*$formattedBody",
+                relatesTo = relatesTo.copy(
+                    newContent = NoticeMessageEventContent(
+                        body,
+                        format,
+                        formattedBody
+                    )
+                )
+            )
+
+            else -> NoticeMessageEventContent(
+                body = body,
+                format = format,
+                formattedBody = formattedBody,
+                relatesTo = relatesTo
+            )
+        }
+    }
 }

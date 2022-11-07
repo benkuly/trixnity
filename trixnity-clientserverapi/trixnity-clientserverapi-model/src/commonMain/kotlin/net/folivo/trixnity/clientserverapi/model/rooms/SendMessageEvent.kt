@@ -31,6 +31,6 @@ data class SendMessageEvent(
         mappings: EventContentSerializerMappings,
         json: Json
     ): KSerializer<MessageEventContent> {
-        return MessageEventContentSerializer(type, false, mappings.message)
+        return MessageEventContentSerializer(mappings.message, type)
     }
 }

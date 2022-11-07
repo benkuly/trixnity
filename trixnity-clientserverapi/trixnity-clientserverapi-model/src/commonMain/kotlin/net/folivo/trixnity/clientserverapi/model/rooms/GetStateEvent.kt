@@ -29,5 +29,5 @@ data class GetStateEvent(
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
         json: Json
-    ): KSerializer<StateEventContent> = StateEventContentSerializer(type, false, mappings.state)
+    ): KSerializer<StateEventContent> = StateEventContentSerializer(mappings.state, type)
 }

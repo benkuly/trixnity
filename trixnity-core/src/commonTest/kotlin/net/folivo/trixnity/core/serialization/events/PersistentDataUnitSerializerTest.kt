@@ -331,7 +331,7 @@ class PersistentDataUnitSerializerTest {
 
     private val redactionPdu = PersistentMessageDataUnitV3(
         authEvents = listOf(),
-        content = RedactionEventContent("spam", EventId("$1event")),
+        content = RedactionEventContent(EventId("$1event"), "spam"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
         originTimestamp = 1404838188000,

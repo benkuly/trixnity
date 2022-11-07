@@ -54,6 +54,7 @@ class EventSerializerTest {
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
+                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), content
         )
         assertEquals(expectedResult, result)
@@ -79,6 +80,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
+                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), input
         )
         assertEquals(
@@ -107,14 +109,15 @@ class EventSerializerTest {
             1432735824653,
             UnsignedMessageEventData(
                 1234, aggregations = Aggregations(
-                    setOf(
-                        Aggregation.UnknownAggregation(
-                            "org.example.possible_annotations", buildJsonArray {
-                                add(buildJsonObject {
-                                    put("key", JsonPrimitive("👍"))
-                                    put("count", JsonPrimitive(3))
-                                })
-                            })
+                    mapOf(
+                        RelationType.Unknown("org.example.possible_annotations") to
+                                Aggregation.Unknown(
+                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("key", JsonPrimitive("👍"))
+                                            put("count", JsonPrimitive(3))
+                                        })
+                                    })
                     )
                 )
             ),
@@ -148,7 +151,104 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldSerializeMessageEventWithRelatesToAndCopyNewContent() {
+        val content = MessageEvent(
+            RoomMessageEventContent.TextMessageEventContent(
+                "hello",
+                relatesTo = RelatesTo.Replace(
+                    EventId("$1234"),
+                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                )
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedMessageEventData(),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "body":"hello",
+                "m.new_content":{
+                    "body":"hello-new",
+                    "msgtype":"m.text"
+                },
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldSerializeMessageEventWithRelatesToAndDontCopyNewContentWhenEncrypted() {
+        val content = MessageEvent(
+            EncryptedEventContent.MegolmEncryptedEventContent(
+                "ciphercipher",
+                sessionId = "sessionId",
+                relatesTo = RelatesTo.Replace(
+                    EventId("$1234"),
+                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                )
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedMessageEventData(),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "algorithm":"m.megolm.v1.aes-sha2",
+                "ciphertext":"ciphercipher",
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "session_id":"sessionId"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.encrypted",
+            "unsigned":{}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)
@@ -186,7 +286,10 @@ class EventSerializerTest {
     """.trimIndent()
 
         val result = json.decodeFromString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             input
         )
         assertEquals(
@@ -201,17 +304,68 @@ class EventSerializerTest {
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, aggregations = Aggregations(
-                        setOf(
-                            Aggregation.UnknownAggregation(
-                                "org.example.possible_annotations", buildJsonArray {
-                                    add(buildJsonObject {
-                                        put("key", JsonPrimitive("👍"))
-                                        put("count", JsonPrimitive(3))
-                                    })
-                                })
+                        mapOf(
+                            RelationType.Unknown("org.example.possible_annotations") to
+                                    Aggregation.Unknown(
+                                        RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                            add(buildJsonObject {
+                                                put("key", JsonPrimitive("👍"))
+                                                put("count", JsonPrimitive(3))
+                                            })
+                                        })
                         )
                     )
                 ),
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldDeserializeMessageEventWithRelatesToAndCopyNewContent() {
+        val input = """
+        {
+            "content":{
+                "body":"hello",
+                "m.new_content":{
+                    "body":"hello-new",
+                    "msgtype":"m.text"
+                },
+                "m.relates_to":{
+                    "event_id":"$1234",
+                    "rel_type":"m.replace"
+                },
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{}
+        }
+    """.trimIndent()
+
+        val result = json.decodeFromString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
+            input
+        )
+        assertEquals(
+            MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent(
+                    "hello",
+                    relatesTo = RelatesTo.Replace(
+                        EventId("$1234"),
+                        newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                    )
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(),
             ), result
         )
     }
@@ -239,6 +393,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -282,6 +437,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -334,6 +490,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -415,6 +572,7 @@ class EventSerializerTest {
                 ListSerializer(
                     StateEventSerializer(
                         DefaultEventContentSerializerMappings.state,
+                        StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
                     )
                 ),
                 content
@@ -425,7 +583,7 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeRedactsEvent() {
         val content = MessageEvent(
-            RedactionEventContent("spam", EventId("$123")),
+            RedactionEventContent(EventId("$123"), "spam"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -449,7 +607,10 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)
@@ -487,6 +648,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -498,7 +660,7 @@ class EventSerializerTest {
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, redactedBecause = MessageEvent(
-                        RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                        RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                         EventId("$143273582443PhrSn"),
                         UserId("example", "example.org"),
                         RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -520,7 +682,7 @@ class EventSerializerTest {
             1432735824653,
             UnsignedMessageEventData(
                 1234, redactedBecause = MessageEvent(
-                    RedactionEventContent("spam", EventId("$143273582443PhrSn")),
+                    RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                     EventId("$143273582443PhrSn"),
                     UserId("example", "example.org"),
                     RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -557,7 +719,10 @@ class EventSerializerTest {
         }
     """.trimToFlatJson()
         val result = json.encodeToString(
-            MessageEventSerializer(DefaultEventContentSerializerMappings.message),
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
+            ),
             content
         )
         assertEquals(expectedResult, result)
@@ -753,8 +918,7 @@ class EventSerializerTest {
                                 )
                             )
                         ),
-                        EventId("UNKNOWN"),
-                        RelationType.Unknown("UNKNOWN")
+                        null, null,
                     )
                 ),
                 id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),
