@@ -12,9 +12,10 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 
 @Serializable(with = RelatesToSerializer::class)
-sealed interface RelatesTo { // TODO could be generic like Aggregation
+sealed interface RelatesTo {
     val relationType: RelationType?
     val eventId: EventId?
+    val replyTo: ReplyTo?
 
     @Serializable
     data class Reference(
@@ -23,6 +24,9 @@ sealed interface RelatesTo { // TODO could be generic like Aggregation
     ) : RelatesTo {
         @SerialName("rel_type")
         override val relationType: RelationType = RelationType.Reference
+
+        @SerialName("m.in_reply_to")
+        override val replyTo: ReplyTo? = null
     }
 
     @Serializable
@@ -31,20 +35,41 @@ sealed interface RelatesTo { // TODO could be generic like Aggregation
         override val eventId: EventId,
         /**
          * The content used to replace the referenced event.
-         * This can be null, because it is not present in encrypted events.
+         * This can be null, because it is must not be present in encrypted events.
          */
         @SerialName("m.new_content")
         val newContent: @Contextual MessageEventContent?,
     ) : RelatesTo {
         @SerialName("rel_type")
         override val relationType: RelationType = RelationType.Replace
+
+        @SerialName("m.in_reply_to")
+        override val replyTo: ReplyTo? = null
+    }
+
+    @Serializable
+    data class Reply(
+        @SerialName("m.in_reply_to")
+        override val replyTo: ReplyTo
+    ) : RelatesTo {
+        @SerialName("event_id")
+        override val eventId: EventId? = null
+
+        @SerialName("rel_type")
+        override val relationType: RelationType? = null
     }
 
     data class Unknown(
         val raw: JsonObject,
-        override val eventId: EventId?,
-        override val relationType: RelationType?,
+        override val eventId: EventId? = null,
+        override val relationType: RelationType.Unknown? = null,
+        override val replyTo: ReplyTo? = null,
     ) : RelatesTo
+
+    @Serializable
+    data class ReplyTo(
+        @SerialName("event_id") val eventId: EventId
+    )
 }
 
 object RelatesToSerializer : KSerializer<RelatesTo> {
@@ -55,15 +80,17 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         val jsonObject = decoder.decodeJsonElement().jsonObject
         val relationType: RelationType? =
             jsonObject["rel_type"]?.jsonPrimitive?.let { decoder.json.decodeFromJsonElement(it) }
+                ?: jsonObject[RelationType.Reply.name]?.let { RelationType.Reply }
         return try {
             when (relationType) {
                 is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
                 is RelationType.Replace -> decoder.json.decodeFromJsonElement<RelatesTo.Replace>(jsonObject)
+                is RelationType.Reply -> decoder.json.decodeFromJsonElement<RelatesTo.Reply>(jsonObject)
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
                         jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                        relationType
+                        relationType?.name?.let { RelationType.Unknown(it) }
                     )
                 }
             }
@@ -71,7 +98,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             RelatesTo.Unknown(
                 jsonObject,
                 jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                relationType
+                relationType?.name?.let { RelationType.Unknown(it) }
             )
         }
     }
@@ -81,6 +108,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         val jsonObject = when (value) {
             is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
+            is RelatesTo.Reply -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Unknown -> value.raw
         }
         encoder.encodeJsonElement(jsonObject)

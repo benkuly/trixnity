@@ -30,6 +30,32 @@ class MessageBuilderTest : ShouldSpec({
         }
     }
 
+    context(MessageBuilder::replace.name) {
+        val eventContent = TextMessageEventContent("")
+        should("create create replace relation") {
+            MessageBuilder(true, mediaService).build {
+                replace(EventId("bla"))
+                contentBuilder = {
+                    it shouldBe RelatesTo.Replace(EventId("bla"), null)
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+    }
+
+    context(MessageBuilder::reply.name) {
+        val eventContent = TextMessageEventContent("")
+        should("create create reply relation") {
+            MessageBuilder(true, mediaService).build {
+                reply(EventId("bla"))
+                contentBuilder = {
+                    it shouldBe RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla")))
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+    }
+
     context(MessageBuilder::text.name) {
         should("create text") {
             MessageBuilder(true, mediaService).build {

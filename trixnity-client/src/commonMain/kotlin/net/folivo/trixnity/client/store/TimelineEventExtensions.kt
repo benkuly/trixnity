@@ -20,10 +20,13 @@ val TimelineEvent.isReplaced: Boolean
         else false
 
 val TimelineEvent.isReplacing: Boolean
+    get() = relatesTo is RelatesTo.Replace
+
+val TimelineEvent.relatesTo: RelatesTo?
     get() =
         if (event is Event.MessageEvent) {
             val content = event.content
             if (content is MessageEventContent) {
-                content.relatesTo is RelatesTo.Replace
-            } else false
-        } else false
+                content.relatesTo
+            } else null
+        } else null
