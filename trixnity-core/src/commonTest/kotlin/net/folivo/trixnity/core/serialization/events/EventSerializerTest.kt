@@ -2,7 +2,6 @@ package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -403,7 +402,7 @@ class EventSerializerTest {
                     body = "hello", relatesTo = RelatesTo.Unknown(buildJsonObject {
                         put("event_id", JsonPrimitive(24))
                         put("rel_type", JsonPrimitive("something"))
-                    }, EventId("24"), RelationType.Unknown("something"))
+                    }, EventId("24"), RelationType.Unknown("something"), null)
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
