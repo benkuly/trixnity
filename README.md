@@ -78,7 +78,7 @@ This project contains the following modules, which can be used independently:
     - [x] relations:
         - [x] reply (without fallback)
         - [x] replace
-        - [x] thread (basic support, no separate timelines yet)
+        - [x] thread (basic support, no separate timelines or client aggregations yet)
     - [x] notifications
     - [x] server discovery
 
