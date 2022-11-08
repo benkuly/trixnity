@@ -1,7 +1,12 @@
 package net.folivo.trixnity.core.model.events
 
+import io.ktor.http.ContentType.Application.Json
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -20,12 +25,20 @@ sealed interface RelationType {
         override val name = "m.replace"
     }
 
+    /**
+     * This is an abstraction, it does not exist on this level in the matrix spec. Therefore, don't use it in Matrix Endpoints.
+     */
+    object Reply : RelationType {
+        override val name: String = "m.in_reply_to"
+    }
+
     data class Unknown(override val name: String) : RelationType
 
     companion object {
         fun of(name: String) = when (name) {
             Reference.name -> Reference
             Replace.name -> Replace
+            Reply.name -> Reply
             else -> Unknown(name)
         }
     }

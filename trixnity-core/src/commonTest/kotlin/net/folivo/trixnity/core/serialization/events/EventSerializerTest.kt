@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.serialization.events
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -379,7 +380,7 @@ class EventSerializerTest {
                 "body":"hello",
                 "m.relates_to":{
                     "event_id":24,
-                    "rel_type":"m.reference"
+                    "rel_type":"something"
                 }
             },
             "event_id":"$143273582443PhrSn",
@@ -401,8 +402,8 @@ class EventSerializerTest {
                 RoomMessageEventContent.TextMessageEventContent(
                     body = "hello", relatesTo = RelatesTo.Unknown(buildJsonObject {
                         put("event_id", JsonPrimitive(24))
-                        put("rel_type", JsonPrimitive("m.reference"))
-                    }, EventId("24"), RelationType.Reference)
+                        put("rel_type", JsonPrimitive("something"))
+                    }, EventId("24"), RelationType.Unknown("something"))
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
@@ -871,6 +872,54 @@ class EventSerializerTest {
 
     @OptIn(ExperimentalSerializationApi::class)
     @Test
+    fun shouldSerializeEncryptedEventWithRelatesTo() {
+        val input = MessageEvent(
+            EncryptedEventContent.MegolmEncryptedEventContent(
+                ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+                senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
+                deviceId = "GNAHNGTKNL",
+                sessionId = "8798dSJJ878789dfjJKDSF",
+                relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY")))
+            ),
+            id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),
+            roomId = RoomId("!aNgXnqwYApWloKSPKD:imbitbu.de"),
+            sender = UserId("@user:localhost"),
+            originTimestamp = 1643815115835,
+            unsigned = UnsignedMessageEventData(age = 241)
+        )
+        val serializer = json.serializersModule.getContextual(Event::class)
+        requireNotNull(serializer)
+        val result = json.encodeToString(serializer, input)
+        assertEquals(
+            """
+        {
+            "content": {
+             "algorithm": "m.megolm.v1.aes-sha2",
+             "ciphertext": "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+             "device_id": "GNAHNGTKNL",
+             "m.relates_to": {
+               "m.in_reply_to": {
+                 "event_id": "${'$'}7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY"
+               }
+             },
+             "sender_key": "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg",
+             "session_id": "8798dSJJ878789dfjJKDSF"
+           },
+           "event_id": "${'$'}dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A",
+           "origin_server_ts": 1643815115835,
+           "room_id": "!aNgXnqwYApWloKSPKD:imbitbu.de",
+           "sender": "@user:localhost",
+           "type": "m.room.encrypted",
+           "unsigned": {
+             "age": 241
+           }
+        }
+        """.trimToFlatJson(), result
+        )
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @Test
     fun shouldDeserializeEncryptedEventWithRelatesTo() {
         val input = """
         {
@@ -906,20 +955,7 @@ class EventSerializerTest {
                     senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                     deviceId = "GNAHNGTKNL",
                     sessionId = "8798dSJJ878789dfjJKDSF",
-                    relatesTo = RelatesTo.Unknown(
-                        raw = JsonObject(
-                            mapOf(
-                                "m.in_reply_to" to JsonObject(
-                                    mapOf(
-                                        "event_id" to JsonPrimitive(
-                                            "$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY"
-                                        )
-                                    )
-                                )
-                            )
-                        ),
-                        null, null,
-                    )
+                    relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY")))
                 ),
                 id = EventId("\$dGD9Qv39oKujC6MIbJUWSVrecLzdh0I1i00o2j6r24A"),
                 roomId = RoomId("!aNgXnqwYApWloKSPKD:imbitbu.de"),

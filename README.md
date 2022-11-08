@@ -60,7 +60,7 @@ This project contains the following modules, which can be used independently:
           database for trixnity-client with [sqldelight](https://github.com/cashapp/sqldelight/). This is not actively
           maintained at the moment, but should work.
         - We plan to add something like `trixnity-client-repository-indexeddb` as a database for web in the future.
-    - [x] fast cache on top of the database
+    - [x] extremely fast reactive cache on top of the database
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio) implements a file system based media
@@ -75,8 +75,10 @@ This project contains the following modules, which can be used independently:
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] redactions
-    - [x] replace relation
-    - [ ] thread relation
+    - [x] relations:
+        - [x] replies (without fallback)
+        - [x] replace
+        - [ ] threads
     - [x] notifications
     - [x] server discovery
 
