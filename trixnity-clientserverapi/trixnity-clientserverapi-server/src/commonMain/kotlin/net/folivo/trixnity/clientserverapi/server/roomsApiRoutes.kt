@@ -19,6 +19,7 @@ internal fun Route.roomsApiRoutes(
     matrixEndpoint(json, contentMappings, handler::getRelations)
     matrixEndpoint(json, contentMappings, handler::getRelationsByRelationType)
     matrixEndpoint(json, contentMappings, handler::getRelationsByRelationTypeAndEventType)
+    matrixEndpoint(json, contentMappings, handler::getThreads)
     matrixEndpoint(json, contentMappings, handler::sendStateEvent)
     matrixEndpoint(json, contentMappings, handler::sendMessageEvent)
     matrixEndpoint(json, contentMappings, handler::redactEvent)

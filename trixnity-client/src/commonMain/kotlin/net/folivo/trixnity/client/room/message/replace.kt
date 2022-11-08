@@ -1,12 +1,12 @@
 package net.folivo.trixnity.client.room.message
 
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.TrixnityDsl
-import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.RelatesTo
 
 @TrixnityDsl
 fun MessageBuilder.replace(
-    eventId: EventId,
+    event: TimelineEvent,
 ) {
-    relatesTo = RelatesTo.Replace(eventId, null)
+    relatesTo = RelatesTo.Replace(event.eventId, null)
 }

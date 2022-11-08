@@ -419,6 +419,10 @@ class TimelineEventHandlerImpl(
                         }
                     }
 
+                    is RelatesTo.Thread -> {
+                        log.debug { "thread aggregations are not implemented yet" }
+                    }
+
                     else -> {}
                 }
             }
@@ -474,6 +478,10 @@ class TimelineEventHandlerImpl(
                             } else relatedEvent
                         } else relatedEvent
                     }
+                }
+
+                is RelatesTo.Thread -> {
+                    log.debug { "thread aggregations are not implemented yet" }
                 }
 
                 else -> {}

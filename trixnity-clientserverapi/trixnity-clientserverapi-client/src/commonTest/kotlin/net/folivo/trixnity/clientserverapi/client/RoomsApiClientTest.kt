@@ -489,6 +489,60 @@ class RoomsApiClientTest {
     }
 
     @Test
+    fun shouldGetThreads() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/%21room%3Aserver/threads?from=from&include=all&limit=10",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "chunk": [
+                                {
+                                  "content": {
+                                    "body": "hi",
+                                    "msgtype": "m.text"
+                                  },
+                                  "event_id": "$2event",
+                                  "origin_server_ts": 1234,
+                                  "room_id": "!room:server",
+                                  "sender": "@user:server",
+                                  "type": "m.room.message"
+                                }
+                              ],
+                              "next_batch": "end"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.getThreads(
+            roomId = RoomId("room", "server"),
+            from = "from",
+            include = GetThreads.Include.ALL,
+            limit = 10
+        ).getOrThrow() shouldBe GetThreads.Response(
+            end = "end",
+            chunk = listOf(
+                MessageEvent(
+                    TextMessageEventContent("hi"),
+                    EventId("$2event"),
+                    UserId("user", "server"),
+                    RoomId("room", "server"),
+                    1234L
+                )
+            )
+        )
+    }
+
+    @Test
     fun shouldSendStateEvent() = runTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
