@@ -87,9 +87,6 @@ subprojects {
                     }
                 }
             }
-            tasks.withType<PublishToMavenRepository>{
-                dependsOn(dokkaJar)
-            }
         }
         signing {
             isRequired = isCI
