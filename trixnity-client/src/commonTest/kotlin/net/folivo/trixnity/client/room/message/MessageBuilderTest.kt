@@ -7,7 +7,11 @@ import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Video.MP4
 import io.ktor.utils.io.core.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
@@ -16,6 +20,20 @@ import net.folivo.trixnity.core.toByteFlow
 class MessageBuilderTest : ShouldSpec({
     timeout = 60_000
     val mediaService = MediaServiceMock()
+
+    fun timelineEvent(eventId: EventId, relatesTo: RelatesTo? = null) =
+        TimelineEvent(
+            event = Event.MessageEvent(
+                content = TextMessageEventContent("hi", relatesTo = relatesTo),
+                id = eventId,
+                sender = UserId("sender", "server"),
+                roomId = RoomId("room", "server"),
+                originTimestamp = 24,
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = null
+        )
 
     context(MessageBuilder::build.name) {
         should("call builder and return content") {
@@ -34,7 +52,7 @@ class MessageBuilderTest : ShouldSpec({
         val eventContent = TextMessageEventContent("")
         should("create create replace relation") {
             MessageBuilder(true, mediaService).build {
-                replace(EventId("bla"))
+                replace(timelineEvent(EventId("bla")))
                 contentBuilder = {
                     it shouldBe RelatesTo.Replace(EventId("bla"), null)
                     eventContent
@@ -47,9 +65,58 @@ class MessageBuilderTest : ShouldSpec({
         val eventContent = TextMessageEventContent("")
         should("create create reply relation") {
             MessageBuilder(true, mediaService).build {
-                reply(EventId("bla"))
+                reply(timelineEvent(EventId("bla")))
                 contentBuilder = {
                     it shouldBe RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla")))
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+        should("create thread aware reply") {
+            MessageBuilder(true, mediaService).build {
+                reply(timelineEvent(EventId("bla"), RelatesTo.Thread(EventId("root"))))
+                contentBuilder = {
+                    it shouldBe RelatesTo.Thread(EventId("root"), RelatesTo.ReplyTo(EventId("bla")), true)
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+    }
+
+    context(MessageBuilder::thread.name) {
+        val eventContent = TextMessageEventContent("")
+        should("create thread relation") {
+            MessageBuilder(true, mediaService).build {
+                thread(timelineEvent(EventId("bla"), RelatesTo.Thread(EventId("root"))))
+                contentBuilder = {
+                    it shouldBe RelatesTo.Thread(EventId("root"), RelatesTo.ReplyTo(EventId("bla")), true)
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+        should("create thread relation from root") {
+            MessageBuilder(true, mediaService).build {
+                thread(timelineEvent(EventId("bla")))
+                contentBuilder = {
+                    it shouldBe RelatesTo.Thread(EventId("bla"), RelatesTo.ReplyTo(EventId("bla")), true)
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+        should("create thread relation as reply") {
+            MessageBuilder(true, mediaService).build {
+                thread(timelineEvent(EventId("bla"), RelatesTo.Thread(EventId("root"))), true)
+                contentBuilder = {
+                    it shouldBe RelatesTo.Thread(EventId("root"), RelatesTo.ReplyTo(EventId("bla")), false)
+                    eventContent
+                }
+            } shouldBe eventContent
+        }
+        should("create thread relation from root as reply") {
+            MessageBuilder(true, mediaService).build {
+                thread(timelineEvent(EventId("bla")), true)
+                contentBuilder = {
+                    it shouldBe RelatesTo.Thread(EventId("bla"), RelatesTo.ReplyTo(EventId("bla")), false)
                     eventContent
                 }
             } shouldBe eventContent
@@ -64,7 +131,7 @@ class MessageBuilderTest : ShouldSpec({
         }
         should("create fallback text on replace") {
             MessageBuilder(true, mediaService).build {
-                replace(EventId("bla"))
+                replace(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
                 "*body",

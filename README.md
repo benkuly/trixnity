@@ -76,9 +76,9 @@ This project contains the following modules, which can be used independently:
     - [x] asynchronous message sending without caring about E2E stuff or online status
     - [x] redactions
     - [x] relations:
-        - [x] replies (without fallback)
+        - [x] reply (without fallback)
         - [x] replace
-        - [ ] threads
+        - [x] thread (basic support, no separate timelines yet)
     - [x] notifications
     - [x] server discovery
 

@@ -5,16 +5,20 @@ import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 
+/**
+ * [event] must be the last known event of a thread.
+ */
 @TrixnityDsl
-fun MessageBuilder.reply(
+fun MessageBuilder.thread(
     event: TimelineEvent,
+    reply: Boolean = false,
 ) {
     val replyTo = RelatesTo.ReplyTo(event.eventId)
     val eventRelatesTo = event.relatesTo
     relatesTo =
         if (eventRelatesTo is RelatesTo.Thread) {
-            RelatesTo.Thread(eventRelatesTo.eventId, replyTo, true)
+            RelatesTo.Thread(eventRelatesTo.eventId, replyTo, reply.not())
         } else {
-            RelatesTo.Reply(replyTo)
+            RelatesTo.Thread(event.eventId, replyTo, reply.not())
         }
 }
