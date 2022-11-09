@@ -49,7 +49,7 @@ class PersistentMessageDataUnitSerializer(
                         else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
                     ), jsonObj
                 ) {
-                    log.warn(it) { "could not deserialize pdu of type $type" }
+                    log.warn(it) { "could not deserialize event: $jsonObj" }
                     PersistentMessageDataUnitV1.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
@@ -61,7 +61,7 @@ class PersistentMessageDataUnitSerializer(
                         else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
                     ), jsonObj
                 ) {
-                    log.warn(it) { "could not deserialize pdu of type $type" }
+                    log.warn(it) { "could not deserialize event: $jsonObj" }
                     PersistentMessageDataUnitV3.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }

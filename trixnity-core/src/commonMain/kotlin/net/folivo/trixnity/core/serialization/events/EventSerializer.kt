@@ -41,7 +41,7 @@ class EventSerializer(
             else -> UnknownEventSerializer
         }
         return decoder.json.tryDeserializeOrElse(serializer, jsonObj) {
-            log.warn(it) { "could not deserialize event" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             UnknownEventSerializer
         }
     }

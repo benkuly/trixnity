@@ -50,7 +50,7 @@ sealed interface Aggregation {
 
     @Serializable
     data class Thread(
-        @SerialName("latest_event") val latestEvent: @Contextual Event.MessageEvent<*>,
+        @SerialName("latest_event") val latestEvent: @Contextual Event<*>,
         @SerialName("count") val count: Long,
         @SerialName("current_user_participated") val currentUserParticipated: Boolean,
     ) : Aggregation {

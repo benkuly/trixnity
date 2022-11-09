@@ -40,14 +40,14 @@ class PersistentStateDataUnitSerializer(
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
             "1", "2" -> {
                 decoder.json.tryDeserializeOrElse(PersistentStateDataUnitV1.serializer(contentSerializer), jsonObj) {
-                    log.warn(it) { "could not deserialize pdu of type $type" }
+                    log.warn(it) { "could not deserialize event: $jsonObj" }
                     PersistentStateDataUnitV1.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
 
             "3", "4", "5", "6", "7", "8", "9" -> {
                 decoder.json.tryDeserializeOrElse(PersistentStateDataUnitV3.serializer(contentSerializer), jsonObj) {
-                    log.warn(it) { "could not deserialize pdu of type $type" }
+                    log.warn(it) { "could not deserialize event: $jsonObj" }
                     PersistentStateDataUnitV3.serializer(UnknownMessageEventContentSerializer(type))
                 }
             }
