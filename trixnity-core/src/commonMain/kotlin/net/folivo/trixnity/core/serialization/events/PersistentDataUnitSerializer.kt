@@ -27,7 +27,7 @@ class PersistentDataUnitSerializer(
         val hasStateKey = "state_key" in jsonObj
         val serializer = if (hasStateKey) persistentStateDataUnitSerializer else persistentMessageDataUnitSerializer
         return decoder.json.tryDeserializeOrElse(serializer, jsonObj) {
-            log.warn(it) { "could not deserialize pdu" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             UnknownPersistentDataUnitSerializer
         }
     }

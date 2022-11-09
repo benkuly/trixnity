@@ -32,7 +32,7 @@ class StrippedStateEventSerializer(
         val contentSerializer =
             StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
         return decoder.json.tryDeserializeOrElse(StrippedStateEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             StrippedStateEvent.serializer(UnknownStateEventContentSerializer(type))
         }
     }

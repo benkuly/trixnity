@@ -37,7 +37,7 @@ class GlobalAccountDataEventSerializer(
                 "key" to key
             ), jsonObj
         ) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             GlobalAccountDataEvent.serializer(UnknownGlobalAccountDataEventContentSerializer(type))
         }
     }

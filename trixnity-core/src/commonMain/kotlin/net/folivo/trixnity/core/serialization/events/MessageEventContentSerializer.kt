@@ -6,8 +6,11 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
+
+private val log = KotlinLogging.logger { }
 
 // TODO hopefully a new spec removes the m.new_content (m.replace) hack
 class MessageEventContentSerializer(
@@ -34,9 +37,10 @@ class MessageEventContentSerializer(
 
         @Suppress("UNCHECKED_CAST")
         val serializer = mappings.contentDeserializer(type) as KSerializer<MessageEventContent>
-        return decoder.json.decodeFromJsonElement(
-            NewContentToRelatesToSerializer(type, serializer), jsonObject
-        )
+        return decoder.json.tryDeserializeOrElse(NewContentToRelatesToSerializer(type, serializer), jsonObject) {
+            log.warn(it) { "could not deserialize content of type $type" }
+            UnknownMessageEventContentSerializer(type)
+        }
     }
 
     override fun serialize(encoder: Encoder, value: MessageEventContent) {

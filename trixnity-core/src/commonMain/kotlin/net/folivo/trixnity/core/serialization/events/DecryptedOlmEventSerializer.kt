@@ -29,7 +29,7 @@ class DecryptedOlmEventSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val contentSerializer = eventContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(DecryptedOlmEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             DecryptedOlmEvent.serializer(UnknownEventContentSerializer(type))
         }
     }

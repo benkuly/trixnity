@@ -1,7 +1,9 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.kotest.assertions.retry
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
@@ -19,12 +21,9 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
-import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -169,7 +168,36 @@ class SyncApiClientTest {
                                       "sender": "@example:example.org",
                                       "origin_server_ts": 1432735824653,
                                       "unsigned": {
-                                        "age": 1234
+                                        "age": 1234,
+                                        "m.relations": {
+                                          "m.thread": {
+                                            "latest_event": {
+                                              "event_id": "${'$'}1threadMessage",
+                                              "origin_server_ts": 1632491098485,
+                                              "sender": "@alice:example.org",
+                                              "type": "m.room.message",
+                                              "content": {
+                                                "msgtype": "m.text",
+                                                "body": "Woo! Threads!"
+                                              }
+                                            },
+                                            "count": 7,
+                                            "current_user_participated": true
+                                          }
+                                        },
+                                        "redacted_because": {
+                                          "content": {
+                                            "reason": "spam"
+                                          },
+                                          "event_id": "${'$'}1redactedBecause",
+                                          "origin_server_ts": 1632491098485,
+                                          "redacts": "${'$'}143273582443PhrSn:example.org",
+                                          "sender": "@moderator:example.org",
+                                          "type": "m.room.redaction",
+                                          "unsigned": {
+                                            "age": 1257
+                                          }
+                                        }
                                       }
                                     }
                                   ],
@@ -246,6 +274,13 @@ class SyncApiClientTest {
         assertEquals(1, result.presence?.events?.size)
         assertEquals(2, result.accountData?.events?.size)
         assertEquals(1, result.room?.join?.size)
+        result.room?.join?.get(RoomId("!726s6s6q:example.com"))?.timeline?.events?.lastOrNull()
+            .shouldNotBeNull()
+            .shouldBeInstanceOf<Event.MessageEvent<*>>()
+            .unsigned.also {
+                it?.redactedBecause.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
+                it?.aggregations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
+            }
         assertEquals(1, result.room?.invite?.size)
         assertEquals(0, result.room?.leave?.size)
     }
