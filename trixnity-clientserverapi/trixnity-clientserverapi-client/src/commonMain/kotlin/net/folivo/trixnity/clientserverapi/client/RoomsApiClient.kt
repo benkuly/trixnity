@@ -121,6 +121,17 @@ interface RoomsApiClient {
     ): Result<GetRelationsResponse>
 
     /**
+     * @see [GetThreads]
+     */
+    suspend fun getThreads(
+        roomId: RoomId,
+        from: String? = null,
+        include: GetThreads.Include? = null,
+        limit: Long? = null,
+        asUserId: UserId? = null
+    ): Result<GetThreads.Response>
+
+    /**
      * @see [SendStateEvent]
      */
     suspend fun sendStateEvent(
@@ -571,6 +582,15 @@ class RoomsApiClientImpl(
                 asUserId
             )
         )
+
+    override suspend fun getThreads(
+        roomId: RoomId,
+        from: String?,
+        include: GetThreads.Include?,
+        limit: Long?,
+        asUserId: UserId?
+    ): Result<GetThreads.Response> =
+        httpClient.request(GetThreads(roomId.e(), from, include, limit, asUserId))
 
     override suspend fun sendStateEvent(
         roomId: RoomId,

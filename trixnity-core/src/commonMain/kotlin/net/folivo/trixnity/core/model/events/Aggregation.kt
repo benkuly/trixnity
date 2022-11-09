@@ -1,9 +1,6 @@
 package net.folivo.trixnity.core.model.events
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -22,6 +19,13 @@ val Map<RelationType, Aggregation>.replace: Aggregation.Replace?
     get() {
         val aggregation = this[RelationType.Replace]
         return if (aggregation is Aggregation.Replace) aggregation
+        else null
+    }
+
+val Map<RelationType, Aggregation>.thread: Aggregation.Thread?
+    get() {
+        val aggregation = this[RelationType.Thread]
+        return if (aggregation is Aggregation.Thread) aggregation
         else null
     }
 
@@ -44,6 +48,16 @@ sealed interface Aggregation {
         override val relationType: RelationType.Replace = RelationType.Replace
     }
 
+    @Serializable
+    data class Thread(
+        @SerialName("latest_event") val latestEvent: @Contextual Event.MessageEvent<*>,
+        @SerialName("count") val count: Long,
+        @SerialName("current_user_participated") val currentUserParticipated: Boolean,
+    ) : Aggregation {
+        @Transient
+        override val relationType: RelationType.Thread = RelationType.Thread
+    }
+
     data class Unknown(
         override val relationType: RelationType.Unknown,
         val raw: JsonElement,
@@ -58,14 +72,12 @@ object AggregationsSerializer : KSerializer<Aggregations> {
         val aggregationsJson = decoder.decodeJsonElement().jsonObject
         return Aggregations(aggregationsJson
             .mapKeys { (key, _) -> RelationType.of(key) }
-            .mapValues { (relationType, aggregationJson) ->
+            .mapValues { (relationType, json) ->
                 when (relationType) {
-                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<Aggregation.Replace>(
-                        aggregationJson
-                    )
-
-                    is RelationType.Unknown -> Aggregation.Unknown(relationType, aggregationJson)
-                    else -> Aggregation.Unknown(RelationType.Unknown(relationType.name), aggregationJson)
+                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<Aggregation.Replace>(json)
+                    is RelationType.Thread -> decoder.json.decodeFromJsonElement<Aggregation.Thread>(json)
+                    is RelationType.Unknown -> Aggregation.Unknown(relationType, json)
+                    else -> Aggregation.Unknown(RelationType.Unknown(relationType.name), json)
                 }
             })
     }
@@ -78,6 +90,7 @@ object AggregationsSerializer : KSerializer<Aggregations> {
                 .mapValues { (_, value) ->
                     when (value) {
                         is Aggregation.Replace -> encoder.json.encodeToJsonElement(value)
+                        is Aggregation.Thread -> encoder.json.encodeToJsonElement(value)
                         is Aggregation.Unknown -> value.raw
                     }
                 }

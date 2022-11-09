@@ -38,7 +38,7 @@ sealed interface RelatesTo {
          * This can be null, because it is must not be present in encrypted events.
          */
         @SerialName("m.new_content")
-        val newContent: @Contextual MessageEventContent?,
+        val newContent: @Contextual MessageEventContent? = null,
     ) : RelatesTo {
         @SerialName("rel_type")
         override val relationType: RelationType = RelationType.Replace
@@ -59,11 +59,24 @@ sealed interface RelatesTo {
         override val relationType: RelationType? = null
     }
 
+    @Serializable
+    data class Thread(
+        @SerialName("event_id")
+        override val eventId: EventId,
+        @SerialName("m.in_reply_to")
+        override val replyTo: ReplyTo? = null,
+        @SerialName("is_falling_back")
+        val isFallingBack: Boolean? = null,
+    ) : RelatesTo {
+        @SerialName("rel_type")
+        override val relationType: RelationType = RelationType.Thread
+    }
+
     data class Unknown(
         val raw: JsonObject,
-        override val eventId: EventId? = null,
-        override val relationType: RelationType.Unknown? = null,
-        override val replyTo: ReplyTo? = null,
+        override val eventId: EventId?,
+        override val relationType: RelationType.Unknown?,
+        override val replyTo: ReplyTo?,
     ) : RelatesTo
 
     @Serializable
@@ -78,19 +91,23 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
     override fun deserialize(decoder: Decoder): RelatesTo {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
+        val replyTo: RelatesTo.ReplyTo? =
+            jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
         val relationType: RelationType? =
             jsonObject["rel_type"]?.jsonPrimitive?.let { decoder.json.decodeFromJsonElement(it) }
-                ?: jsonObject[RelationType.Reply.name]?.let { RelationType.Reply }
+                ?: replyTo?.let { RelationType.Reply }
         return try {
             when (relationType) {
                 is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
                 is RelationType.Replace -> decoder.json.decodeFromJsonElement<RelatesTo.Replace>(jsonObject)
                 is RelationType.Reply -> decoder.json.decodeFromJsonElement<RelatesTo.Reply>(jsonObject)
+                is RelationType.Thread -> decoder.json.decodeFromJsonElement<RelatesTo.Thread>(jsonObject)
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
                         jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                        relationType?.name?.let { RelationType.Unknown(it) }
+                        relationType?.name?.let { RelationType.Unknown(it) },
+                        replyTo,
                     )
                 }
             }
@@ -98,7 +115,8 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             RelatesTo.Unknown(
                 jsonObject,
                 jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                relationType?.name?.let { RelationType.Unknown(it) }
+                relationType?.name?.let { RelationType.Unknown(it) },
+                replyTo,
             )
         }
     }
@@ -109,6 +127,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             is RelatesTo.Reference -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Reply -> encoder.json.encodeToJsonElement(value)
+            is RelatesTo.Thread -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Unknown -> value.raw
         }
         encoder.encodeJsonElement(jsonObject)
