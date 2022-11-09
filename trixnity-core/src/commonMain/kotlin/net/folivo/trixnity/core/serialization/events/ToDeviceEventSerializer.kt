@@ -29,7 +29,7 @@ class ToDeviceEventSerializer(
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val contentSerializer = toDeviceEventContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(ToDeviceEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             ToDeviceEvent.serializer(UnknownToDeviceEventContentSerializer(type))
         }
     }

@@ -32,7 +32,7 @@ class InitialStateEventSerializer(
         val contentSerializer =
             StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
         return decoder.json.tryDeserializeOrElse(InitialStateEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             InitialStateEvent.serializer(UnknownStateEventContentSerializer(type))
         }
     }

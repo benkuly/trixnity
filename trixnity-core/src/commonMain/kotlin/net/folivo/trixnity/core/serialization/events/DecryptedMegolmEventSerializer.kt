@@ -30,7 +30,7 @@ class DecryptedMegolmEventSerializer(
 
         val contentSerializer = roomEventContentSerializers.contentDeserializer(type)
         return decoder.json.tryDeserializeOrElse(DecryptedMegolmEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event of type $type" }
+            log.warn(it) { "could not deserialize event: $jsonObj" }
             DecryptedMegolmEvent.serializer(UnknownRoomEventContentSerializer(type))
         }
     }

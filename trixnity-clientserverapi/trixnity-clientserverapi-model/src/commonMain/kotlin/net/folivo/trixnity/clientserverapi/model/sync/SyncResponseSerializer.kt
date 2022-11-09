@@ -2,6 +2,7 @@ package net.folivo.trixnity.clientserverapi.model.sync
 
 import kotlinx.serialization.json.*
 
+// TODO maybe this could be solved completely with contextual serializers
 object SyncResponseSerializer : JsonTransformingSerializer<Sync.Response>(Sync.Response.serializer()) {
     override fun transformDeserialize(element: JsonElement): JsonElement {
         require(element is JsonObject)
@@ -65,12 +66,51 @@ object SyncResponseSerializer : JsonTransformingSerializer<Sync.Response>(Sync.R
     }
 
     private fun addRoomIdToEvents(source: JsonArray, roomId: String): JsonArray {
-        return JsonArray(source.map { timelineEvent ->
-            require(timelineEvent is JsonObject)
-            JsonObject(buildMap {
-                putAll(timelineEvent)
-                put("room_id", JsonPrimitive(roomId))
-            })
+        return JsonArray(source.map { addRoomIdToEvent(it.jsonObject, roomId) })
+    }
+
+    private fun addRoomIdToEvent(event: JsonObject, roomId: String): JsonObject {
+        return JsonObject(buildMap {
+            putAll(event)
+            put("room_id", JsonPrimitive(roomId))
+            val unsigned = event["unsigned"]?.jsonObject
+            if (unsigned != null) {
+                val aggregations = unsigned["m.relations"]?.jsonObject
+                val newAggregations =
+                    if (aggregations != null) {
+                        val thread = aggregations["m.thread"]?.jsonObject
+                        if (thread != null) {
+                            val latestEvent = thread["latest_event"]?.jsonObject
+                            if (latestEvent != null) {
+                                JsonObject(buildMap {
+                                    putAll(aggregations)
+                                    put("m.thread", JsonObject(buildMap {
+                                        putAll(thread)
+                                        put("latest_event", addRoomIdToEvent(latestEvent, roomId))
+                                    }))
+                                })
+                            } else null
+                        } else null
+                    } else null
+                val redactedBecause = unsigned["redacted_because"]?.jsonObject
+                val newRedactedBecause =
+                    if (redactedBecause != null) {
+                        addRoomIdToEvent(redactedBecause, roomId)
+                    } else null
+                put("unsigned", JsonObject(buildMap {
+                    putAll(unsigned)
+                    if (newAggregations != null) {
+                        put("m.relations", newAggregations)
+                    }
+                    if (newRedactedBecause != null) {
+                        put("redacted_because", newRedactedBecause)
+                    }
+                }))
+            }
         })
+            .also {//FIXME
+                println(event)
+                println(it)
+            }
     }
 }
