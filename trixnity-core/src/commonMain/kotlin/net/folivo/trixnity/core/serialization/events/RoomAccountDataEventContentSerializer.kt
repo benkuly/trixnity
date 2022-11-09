@@ -4,9 +4,13 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
+import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
+
+private val log = KotlinLogging.logger { }
 
 class RoomAccountDataEventContentSerializer(
     private val type: String,
@@ -15,7 +19,13 @@ class RoomAccountDataEventContentSerializer(
     override val descriptor = buildClassSerialDescriptor("RoomAccountDataEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): RoomAccountDataEventContent {
-        return decoder.decodeSerializableValue(mappings.contentDeserializer(type))
+        require(decoder is JsonDecoder)
+        return decoder.json.tryDeserializeOrElse(
+            mappings.contentDeserializer(type), decoder.decodeJsonElement()
+        ) {
+            log.warn(it) { "could not deserialize content of type $type" }
+            UnknownRoomAccountDataEventContentSerializer(type)
+        }
     }
 
     override fun serialize(encoder: Encoder, value: RoomAccountDataEventContent) {
