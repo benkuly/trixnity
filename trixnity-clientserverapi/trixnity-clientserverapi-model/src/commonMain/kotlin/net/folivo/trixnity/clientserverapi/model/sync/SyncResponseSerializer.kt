@@ -108,9 +108,5 @@ object SyncResponseSerializer : JsonTransformingSerializer<Sync.Response>(Sync.R
                 }))
             }
         })
-            .also {//FIXME
-                println(event)
-                println(it)
-            }
     }
 }
