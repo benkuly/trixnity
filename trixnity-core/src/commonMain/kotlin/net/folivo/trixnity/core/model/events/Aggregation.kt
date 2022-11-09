@@ -50,7 +50,6 @@ sealed interface Aggregation {
 
     @Serializable
     data class Thread(
-        // TODO latest_event does not have a room_id in synapse -> custom deserializer needed
         @SerialName("latest_event") val latestEvent: @Contextual Event<*>,
         @SerialName("count") val count: Long,
         @SerialName("current_user_participated") val currentUserParticipated: Boolean,
