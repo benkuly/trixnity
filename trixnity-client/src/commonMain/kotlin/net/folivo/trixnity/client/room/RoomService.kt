@@ -234,6 +234,7 @@ class RoomServiceImpl(
      * @param coroutineScope The [CoroutineScope] is used to fetch and/or decrypt the [TimelineEvent] and to determine,
      * how long the [TimelineEvent] should be hold in cache.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
@@ -242,7 +243,7 @@ class RoomServiceImpl(
         limitPerFetch: Long,
     ): Flow<TimelineEvent?> = channelFlow {
         roomTimelineStore.get(eventId, roomId)
-            .transform { timelineEvent ->
+            .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (event is MessageEvent) {
                     val replacedBy = event.unsigned?.aggregations?.replace
