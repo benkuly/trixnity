@@ -17,7 +17,7 @@ fun createEventSerializersModule(
     val toDeviceEventSerializer = ToDeviceEventSerializer(mappings.toDevice)
     val decryptedOlmEventSerializer =
         DecryptedOlmEventSerializer(mappings.message + mappings.state + mappings.ephemeral + mappings.toDevice)
-    val decryptedMegolmEventSerializer = DecryptedMegolmEventSerializer(mappings.message)
+    val decryptedMegolmEventSerializer = DecryptedMegolmEventSerializer(mappings.message, messageEventContentSerializer)
     val globalAccountDataEventSerializer = GlobalAccountDataEventSerializer(mappings.globalAccountData)
     val roomAccountDataEventSerializer = RoomAccountDataEventSerializer(mappings.roomAccountData)
     val eventSerializer = EventSerializer(
