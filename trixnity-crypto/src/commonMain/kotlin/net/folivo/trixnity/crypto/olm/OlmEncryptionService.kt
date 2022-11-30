@@ -7,10 +7,7 @@ import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
 import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import mu.KotlinLogging
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
@@ -48,7 +45,7 @@ interface OlmEncryptionService {
     suspend fun decryptOlm(encryptedContent: OlmEncryptedEventContent, senderId: UserId): DecryptedOlmEvent<*>
 
     suspend fun encryptMegolm(
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): MegolmEncryptedEventContent
@@ -164,7 +161,7 @@ class OlmEncryptionServiceImpl(
                 )
             ),
             senderKey = ownCurve25519Key,
-            relatesTo = if (content is MessageEventContent) content.relatesTo else null
+            relatesTo = relatesToForEncryptedEvent(content)
         ).also { log.trace { "encrypted event: $it" } }
     }
 
@@ -266,7 +263,10 @@ class OlmEncryptionServiceImpl(
             val serializer = json.serializersModule.getContextual(DecryptedOlmEvent::class)
             requireNotNull(serializer)
             val decryptedEvent =
-                json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult, encryptedContent.relatesTo))
+                json.decodeFromJsonElement(
+                    serializer,
+                    addRelatesToToDecryptedEvent(decryptionResult, encryptedContent.relatesTo)
+                )
 
 
             if (decryptedEvent.sender != senderId) throw DecryptionException.ValidationFailed("sender did not match")
@@ -285,7 +285,7 @@ class OlmEncryptionServiceImpl(
     }
 
     override suspend fun encryptMegolm(
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): MegolmEncryptedEventContent {
@@ -344,7 +344,7 @@ class OlmEncryptionServiceImpl(
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun encryptWithMegolmSession(
         session: OlmOutboundGroupSession,
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         newUserDevices: Map<UserId, Set<String>>
     ): MegolmEncryptedEventContent {
@@ -387,7 +387,7 @@ class OlmEncryptionServiceImpl(
             senderKey = ownCurve25519Key,
             deviceId = ownDeviceId,
             sessionId = session.sessionId,
-            relatesTo = if (content is MessageEventContent) content.relatesTo else null
+            relatesTo = relatesToForEncryptedEvent(content)
         ).also { log.trace { "encrypted event: $it" } }
     }
 
@@ -411,7 +411,10 @@ class OlmEncryptionServiceImpl(
         val serializer = json.serializersModule.getContextual(DecryptedMegolmEvent::class)
         requireNotNull(serializer)
         val decryptedEvent =
-            json.decodeFromJsonElement(serializer, addRelatesTo(decryptionResult.message, encryptedContent.relatesTo))
+            json.decodeFromJsonElement(
+                serializer,
+                addRelatesToToDecryptedEvent(decryptionResult.message, encryptedContent.relatesTo)
+            )
         val index = decryptionResult.index
         store.updateInboundMegolmMessageIndex(sessionId, roomId, index) { storedIndex ->
             if (encryptedEvent.roomId != decryptedEvent.roomId) throw DecryptionException.ValidationFailed("roomId did not match")
@@ -426,7 +429,7 @@ class OlmEncryptionServiceImpl(
         return decryptedEvent.also { log.trace { "decrypted event: $it" } }
     }
 
-    private fun addRelatesTo(
+    private fun addRelatesToToDecryptedEvent(
         decryptionJson: String,
         relatesTo: RelatesTo?
     ) = JsonObject(buildMap {
@@ -442,6 +445,13 @@ class OlmEncryptionServiceImpl(
             }
         }
     })
+
+    private fun relatesToForEncryptedEvent(content: EventContent) =
+        if (content is MessageEventContent) {
+            val relatesTo = content.relatesTo
+            if (relatesTo is RelatesTo.Replace) relatesTo.copy(newContent = null)
+            else relatesTo
+        } else null
 
     private fun hasCreatedTooManyOlmSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
         val now = Clock.System.now()

@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.RoomId
 
 @Serializable
-data class DecryptedMegolmEvent<C : RoomEventContent>(
+data class DecryptedMegolmEvent<C : MessageEventContent>(
     @SerialName("content") val content: C,
     @SerialName("room_id") val roomId: RoomId
 )

@@ -91,8 +91,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var sendDecryptedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>
     lateinit var receiveDecryptedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>
 
-    val relatesTo = RelatesTo.Reference(EventId("$1fancyEvent"))
-    val decryptedMegolmEventContent = RoomMessageEventContent.TextMessageEventContent("Hi", relatesTo = relatesTo)
+    val relatesTo = RelatesTo.Replace(EventId("$1fancyEvent"), RoomMessageEventContent.TextMessageEventContent("Hi"))
+    val decryptedMegolmEventContent = RoomMessageEventContent.TextMessageEventContent("*Hi", relatesTo = relatesTo)
     val room = RoomId("room", "server")
     val decryptedMegolmEvent = DecryptedMegolmEvent(decryptedMegolmEventContent, room)
 
@@ -566,7 +566,7 @@ private val body: ShouldSpec.() -> Unit = {
                     this.senderKey shouldBe aliceCurveKey
                     this.deviceId shouldBe aliceDeviceId
                     this.sessionId shouldBe outboundSession.sessionId
-                    this.relatesTo shouldBe relatesTo
+                    this.relatesTo shouldBe relatesTo.copy(newContent = null)
                 }
 
                 val ciphertext =
