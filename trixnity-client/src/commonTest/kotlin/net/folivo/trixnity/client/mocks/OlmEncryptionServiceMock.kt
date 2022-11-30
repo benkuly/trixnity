@@ -31,7 +31,7 @@ class OlmEncryptionServiceMock : OlmEncryptionService {
 
     lateinit var returnEncryptMegolm: () -> EncryptedEventContent.MegolmEncryptedEventContent
     override suspend fun encryptMegolm(
-        content: RoomEventContent,
+        content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
     ): EncryptedEventContent.MegolmEncryptedEventContent {
