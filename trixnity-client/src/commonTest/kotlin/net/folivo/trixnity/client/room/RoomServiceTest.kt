@@ -230,6 +230,18 @@ class RoomServiceTest : ShouldSpec({
                     content?.getOrNull() shouldBe expectedDecryptedEvent
                 }
             }
+            should("decrypt event only once") {
+                val expectedDecryptedEvent = TextMessageEventContent("decrypted")
+                roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
+                roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
+                (0..99).map {
+                    async {
+                        cut.getTimelineEvent(eventId, room)
+                            .first { it?.content?.getOrNull() != null }
+                    }
+                }.awaitAll()
+                roomEventDecryptionServiceMock.decryptCounter shouldBe 1
+            }
             should("timeout when decryption takes too long") {
                 roomEventDecryptionServiceMock.returnDecrypt = {
                     delay(10.seconds)

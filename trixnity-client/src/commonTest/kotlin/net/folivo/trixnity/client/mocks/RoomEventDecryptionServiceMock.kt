@@ -6,7 +6,9 @@ import net.folivo.trixnity.core.model.events.RoomEventContent
 
 class RoomEventDecryptionServiceMock : RoomEventDecryptionService {
     var returnDecrypt: suspend () -> Result<RoomEventContent>? = { null }
+    var decryptCounter = 0
     override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? {
+        decryptCounter++
         return returnDecrypt()
     }
 }
