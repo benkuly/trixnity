@@ -73,9 +73,22 @@ interface AuthenticationApiClient {
     /**
      * @see [Login]
      */
+    @Deprecated("use login with separated password and token")
     suspend fun login(
         identifier: IdentifierType? = null,
         passwordOrToken: String,
+        type: LoginType = LoginType.Password,
+        deviceId: String? = null,
+        initialDeviceDisplayName: String? = null
+    ): Result<Login.Response>
+
+    /**
+     * @see [Login]
+     */
+    suspend fun login(
+        identifier: IdentifierType? = null,
+        password: String? = null,
+        token: String? = null,
         type: LoginType = LoginType.Password,
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null
@@ -228,6 +241,7 @@ class AuthenticationApiClientImpl(
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         httpClient.request(GetLoginTypes).mapCatching { it.flows }
 
+    @Deprecated("use login with separated password and token")
     override suspend fun login(
         identifier: IdentifierType?,
         passwordOrToken: String,
@@ -241,6 +255,25 @@ class AuthenticationApiClientImpl(
                 identifier = identifier,
                 password = if (type is LoginType.Password) passwordOrToken else null,
                 token = if (type is LoginType.Token) passwordOrToken else null,
+                deviceId = deviceId,
+                initialDeviceDisplayName = initialDeviceDisplayName
+            )
+        )
+
+    override suspend fun login(
+        identifier: IdentifierType?,
+        password: String?,
+        token: String?,
+        type: LoginType,
+        deviceId: String?,
+        initialDeviceDisplayName: String?
+    ): Result<Login.Response> =
+        httpClient.request(
+            Login, Login.Request(
+                type = type.name,
+                identifier = identifier,
+                password = password,
+                token = token,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName
             )

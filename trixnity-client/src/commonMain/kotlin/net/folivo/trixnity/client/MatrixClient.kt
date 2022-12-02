@@ -101,6 +101,7 @@ interface MatrixClient {
     suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit>
 }
 
+@Deprecated("use login with separated password and token")
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
     identifier: IdentifierType,
@@ -113,7 +114,7 @@ suspend fun MatrixClient.Companion.login(
     scope: CoroutineScope,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
-    MatrixClient.Companion.loginWith(
+    loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStore = mediaStore,
@@ -122,6 +123,47 @@ suspend fun MatrixClient.Companion.login(
             api.authentication.login(
                 identifier = identifier,
                 passwordOrToken = passwordOrToken,
+                type = loginType,
+                deviceId = deviceId,
+                initialDeviceDisplayName = initialDeviceDisplayName
+            ).flatMap { login ->
+                api.users.getProfile(login.userId).map { profile ->
+                    LoginInfo(
+                        userId = login.userId,
+                        accessToken = login.accessToken,
+                        deviceId = login.deviceId,
+                        displayName = profile.displayName,
+                        avatarUrl = profile.avatarUrl
+                    )
+                }
+            }
+        },
+        configuration = configuration
+    )
+
+suspend fun MatrixClient.Companion.login(
+    baseUrl: Url,
+    identifier: IdentifierType,
+    password: String? = null,
+    token: String? = null,
+    loginType: LoginType = LoginType.Password,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    scope: CoroutineScope,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> =
+    loginWith(
+        baseUrl = baseUrl,
+        repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
+        scope = scope,
+        getLoginInfo = { api ->
+            api.authentication.login(
+                identifier = identifier,
+                password = password,
+                token = token,
                 type = loginType,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName

@@ -57,7 +57,10 @@ object LoginTypeSerializer : KSerializer<LoginType> {
             is LoginType.Password -> JsonObject(mapOf("type" to JsonPrimitive("m.login.password")))
             is LoginType.Token -> JsonObject(mapOf("type" to JsonPrimitive("m.login.token")))
             is LoginType.AppService -> JsonObject(mapOf("type" to JsonPrimitive("m.login.appservice")))
-            is LoginType.Unknown -> value.raw
+            is LoginType.Unknown -> JsonObject(buildMap {
+                put("type", JsonPrimitive(value.name))
+                putAll(value.raw)
+            })
         }
         encoder.encodeJsonElement(jsonObject)
     }
