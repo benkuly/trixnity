@@ -412,7 +412,7 @@ class AuthenticationApiClientTest {
         val result = matrixRestClient.authentication.login(
             type = LoginType.Password,
             identifier = IdentifierType.User("cheeky_monkey"),
-            passwordOrToken = "ilovebananas",
+            password = "ilovebananas",
             initialDeviceDisplayName = "Jungle Phone"
         ).getOrThrow()
         assertEquals(
