@@ -73,7 +73,8 @@ interface MatrixClient {
 
     data class SoftLoginInfo(
         val identifier: IdentifierType,
-        val passwordOrToken: String,
+        val password: String? = null,
+        val token: String? = null,
         val loginType: LoginType = LoginType.Password,
     )
 
@@ -307,8 +308,8 @@ suspend fun MatrixClient.Companion.fromStore(
             eventContentSerializerMappings = di.get(),
         )
         val accessToken = accountStore.accessToken.value ?: onSoftLogin?.let {
-            val (identifier, passwordOrToken, loginType) = onSoftLogin()
-            api.authentication.login(identifier, passwordOrToken, loginType, deviceId)
+            val (identifier, password, token, loginType) = onSoftLogin()
+            api.authentication.login(identifier, password, token, loginType, deviceId)
                 .getOrThrow().accessToken
                 .also { accountStore.accessToken.value = it }
         }
