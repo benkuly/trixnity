@@ -15,7 +15,7 @@ fun MessageBuilder.notice(
             is RelatesTo.Replace -> NoticeMessageEventContent(
                 body = "*$body",
                 format = format,
-                formattedBody = "*$formattedBody",
+                formattedBody = formattedBody?.let { "*$it" },
                 relatesTo = relatesTo.copy(
                     newContent = NoticeMessageEventContent(
                         body,

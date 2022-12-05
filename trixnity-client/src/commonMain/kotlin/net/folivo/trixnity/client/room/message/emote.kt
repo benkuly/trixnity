@@ -15,7 +15,7 @@ fun MessageBuilder.emote(
             is RelatesTo.Replace -> EmoteMessageEventContent(
                 body = "*$body",
                 format = format,
-                formattedBody = "*$formattedBody",
+                formattedBody = formattedBody?.let { "*$it" },
                 relatesTo = relatesTo.copy(
                     newContent = EmoteMessageEventContent(
                         body,
