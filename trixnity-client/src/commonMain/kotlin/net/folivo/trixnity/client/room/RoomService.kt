@@ -5,6 +5,8 @@ import com.soywiz.korio.async.async
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.media.MediaService
@@ -230,6 +232,8 @@ class RoomServiceImpl(
                 && this.event.isEncrypted
                 && this.content == null
 
+    private val getTimelineEventMutex = MutableStateFlow<Map<Pair<EventId, RoomId>, Mutex>>(mapOf())
+
     /**
      * @param coroutineScope The [CoroutineScope] is used to fetch and/or decrypt the [TimelineEvent] and to determine,
      * how long the [TimelineEvent] should be hold in cache.
@@ -272,32 +276,44 @@ class RoomServiceImpl(
             }
             .also { timelineEventFlow ->
                 launch {
-                    val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
-                        val lastEventId = roomStore.get(roomId).first()?.lastEventId
-                        if (lastEventId != null) {
-                            log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
-                            getTimelineEvents(
-                                startFrom = lastEventId,
-                                roomId = roomId,
-                                direction = BACKWARDS,
-                                decryptionTimeout = ZERO,
-                                fetchTimeout = fetchTimeout,
-                                limitPerFetch = limitPerFetch
-                            ).map { it.first() }.first { it?.eventId == eventId }
-                                .also { log.trace { "found TimelineEvent $eventId" } }
-                        } else null
-                    }
-                    if (timelineEvent?.canBeDecrypted() == true) {
-                        val decryptedEventContent = withTimeoutOrNull(decryptionTimeout) {
-                            roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+                    val key = eventId to roomId
+                    val mutex = getTimelineEventMutex.updateAndGet {
+                        if (it.containsKey(key)) it else it + (key to Mutex())
+                    }[key]
+                    requireNotNull(mutex)
+                    mutex.withLock {
+                        val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
+                            val lastEventId = roomStore.get(roomId).first()?.lastEventId
+                            if (lastEventId != null) {
+                                log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
+                                getTimelineEvents(
+                                    startFrom = lastEventId,
+                                    roomId = roomId,
+                                    direction = BACKWARDS,
+                                    decryptionTimeout = ZERO,
+                                    fetchTimeout = fetchTimeout,
+                                    limitPerFetch = limitPerFetch
+                                ).map { it.first() }.first { it?.eventId == eventId }
+                                    .also { log.trace { "found TimelineEvent $eventId" } }
+                            } else null
                         }
-                        if (decryptedEventContent != null) {
-                            roomTimelineStore.update(eventId, roomId, persistIntoRepository = false) { oldEvent ->
-                                // we check here again, because an event could be redacted at the same time
-                                if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
-                                else oldEvent
+                        if (timelineEvent?.canBeDecrypted() == true) {
+                            val decryptedEventContent = withTimeoutOrNull(decryptionTimeout) {
+                                roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+                            }
+                            if (decryptedEventContent != null) {
+                                roomTimelineStore.update(
+                                    eventId,
+                                    roomId,
+                                    persistIntoRepository = false
+                                ) { oldEvent ->
+                                    // we check here again, because an event could be redacted at the same time
+                                    if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
+                                    else oldEvent
+                                }
                             }
                         }
+                        getTimelineEventMutex.update { it - key }
                     }
                 }
             }.collect { send(it) }
