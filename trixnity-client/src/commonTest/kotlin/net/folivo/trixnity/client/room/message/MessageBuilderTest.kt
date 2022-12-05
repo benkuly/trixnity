@@ -48,7 +48,7 @@ class MessageBuilderTest : ShouldSpec({
         }
     }
 
-    context(MessageBuilder::replace.name) {
+    context("replace") {
         val eventContent = TextMessageEventContent("")
         should("create create replace relation") {
             MessageBuilder(true, mediaService).build {
@@ -61,7 +61,7 @@ class MessageBuilderTest : ShouldSpec({
         }
     }
 
-    context(MessageBuilder::reply.name) {
+    context("reply") {
         val eventContent = TextMessageEventContent("")
         should("create create reply relation") {
             MessageBuilder(true, mediaService).build {
@@ -83,7 +83,7 @@ class MessageBuilderTest : ShouldSpec({
         }
     }
 
-    context(MessageBuilder::thread.name) {
+    context("thread") {
         val eventContent = TextMessageEventContent("")
         should("create thread relation") {
             MessageBuilder(true, mediaService).build {

@@ -15,7 +15,7 @@ fun MessageBuilder.text(
             is RelatesTo.Replace -> TextMessageEventContent(
                 body = "*$body",
                 format = format,
-                formattedBody = "*$formattedBody",
+                formattedBody = formattedBody?.let { "*$it" },
                 relatesTo = relatesTo.copy(newContent = TextMessageEventContent(body, format, formattedBody))
             )
 
