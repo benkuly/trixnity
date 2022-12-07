@@ -9,7 +9,7 @@ class MessageBuilder(val isEncryptedRoom: Boolean, val mediaService: MediaServic
     var contentBuilder: (RelatesTo?) -> MessageEventContent? = { null }
     var relatesTo: RelatesTo? = null
 
-    internal suspend fun build(builder: suspend MessageBuilder.() -> Unit): MessageEventContent? {
+    suspend fun build(builder: suspend MessageBuilder.() -> Unit): MessageEventContent? {
         builder()
         return contentBuilder(relatesTo)
     }
