@@ -937,6 +937,7 @@ class UserServiceTest : ShouldSpec({
                 cut.canInviteUser(alice, roomId).first() shouldBe false
             }
         }
+
         context("User I want to invite is not banned") {
             beforeTest {
                 val memberEvent = StateEvent(
@@ -984,6 +985,122 @@ class UserServiceTest : ShouldSpec({
                 roomStateStore.update(powerLevelsEvent)
                 cut.canInviteUser(alice, roomId).first() shouldBe false
             }
+        }
+    }
+
+    context("canSetPowerLevelToMax") {
+        context("events-map is not null") {
+            should("not allow to change the power level when (events power_levels value > own power level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 50
+                        ),
+                        events = mapOf("m.room.power_levels" to 56),
+                        stateDefault = 60
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe null
+            }
+
+            should("return own power level as max power level value when (events power_levels value == own power level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 50
+                        ),
+                        events = mapOf("m.room.power_levels" to 55),
+                        stateDefault = 60
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe 55
+            }
+        }
+
+        context("events-map is null") {
+            should("not allow to change the power level when (stateDefault value > own power level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 50
+                        ),
+                        stateDefault = 56
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe null
+            }
+
+            should("return own power level as max power level value when (stateDefault value == own power level") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 50
+                        ),
+                        stateDefault = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe 55
+            }
+        }
+
+        context("oldUserPowerLevel > ownPowerLevel") {
+            should("not allow to change the power level when (otherUserId != me)") {
+                val powerLevelsEvent = getPowerLevelsEvent(
+                    PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 55,
+                            alice to 56
+                        ),
+                        events = mapOf("m.room.power_levels" to 55),
+                        stateDefault = 55
+                    )
+                )
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe null
+            }
+        }
+
+        context("oldUserPowerLevel == ownPowerLevel") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 55
+                    ),
+                    events = mapOf("m.room.power_levels" to 54),
+                    stateDefault = 54
+                )
+            )
+            should("not allow to change the power level when (otherUserId != me)") {
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe null
+            }
+            should("return own power level as max power level value when (otherUserId == me)") {
+                roomStateStore.update(powerLevelsEvent)
+                cut.canSetPowerLevelToMax(me, roomId).first() shouldBe 55
+            }
+        }
+        should("return own power level as max power level value when all criteria are met") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 54
+                    ),
+                    events = mapOf("m.room.power_levels" to 52),
+                    stateDefault = 52
+                )
+            )
+            roomStateStore.update(powerLevelsEvent)
+            cut.canSetPowerLevelToMax(alice, roomId).first() shouldBe 55
         }
     }
 })

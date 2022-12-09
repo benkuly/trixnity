@@ -75,6 +75,13 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
+    override fun canSetPowerLevelToMax(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Int?> {
+        throw NotImplementedError()
+    }
+
     override fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String,

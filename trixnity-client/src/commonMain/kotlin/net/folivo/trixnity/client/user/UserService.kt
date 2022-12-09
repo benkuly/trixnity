@@ -35,6 +35,7 @@ interface UserService {
     fun canUnbanUser(userId: UserId, roomId: RoomId): Flow<Boolean>
     fun canInviteUser(userId: UserId, roomId: RoomId): Flow<Boolean>
     fun canInvite(roomId: RoomId): Flow<Boolean>
+    fun canSetPowerLevelToMax(userId: UserId, roomId: RoomId): Flow<Int?>
 
     fun getPowerLevel(userId: UserId, roomId: RoomId): Flow<Int>
     fun getPowerLevel(
@@ -212,5 +213,23 @@ class UserServiceImpl(
     ): Flow<C?> {
         return globalAccountDataStore.get(eventContentClass, key)
             .map { it?.content }
+    }
+
+    override fun canSetPowerLevelToMax(
+        userId: UserId,
+        roomId: RoomId
+    ): Flow<Int?> {
+        return combine(
+            getPowerLevel(userId = ownUserId, roomId),
+            getPowerLevel(userId = userId, roomId),
+            roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId),
+        )
+        { ownPowerLevel, oldOtherUserPowerLevel, powerLevelsEvent ->
+            if (powerLevelsEvent != null && ((powerLevelsEvent.content.events["m.room.power_levels"]
+                    ?: powerLevelsEvent.content.stateDefault) > ownPowerLevel)
+            ) return@combine null
+            if (oldOtherUserPowerLevel >= ownPowerLevel && userId != ownUserId) return@combine null
+            return@combine ownPowerLevel
+        }
     }
 }
