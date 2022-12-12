@@ -36,17 +36,24 @@ suspend fun <T> withRealmWrite(block: MutableRealm.() -> T) = coroutineScope {
 class RealmRepositoryTransactionManager(
     private val realm: Realm,
 ) : RepositoryTransactionManager {
-    override suspend fun <T> writeTransaction(block: suspend () -> T): T =
-        realm.write {
+    override suspend fun <T> writeTransaction(block: suspend () -> T): T = coroutineScope {
+        val existingRealmWriteTransaction = coroutineContext[RealmWriteTransaction]
+        val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]
+        if (existingRealmWriteTransaction != null && existingRealmReadTransaction != null) block()// just re-use existing transaction (nested)
+        else realm.write {
             // TODO runBlocking is bad. See also for a future solution: https://github.com/realm/realm-kotlin/issues/705
             // we can do both within write transactions: read and write
             runBlocking(RealmWriteTransaction(this) + RealmReadTransaction(this)) {
                 block()
             }
         }
+    }
 
-    override suspend fun <T> readTransaction(block: suspend () -> T): T =
-        withContext(RealmReadTransaction(realm)) {
+    override suspend fun <T> readTransaction(block: suspend () -> T): T = coroutineScope {
+        val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]
+        if (existingRealmReadTransaction != null) block()// just re-use existing transaction (nested)
+        else withContext(RealmReadTransaction(realm)) {
             block()
         }
+    }
 }
