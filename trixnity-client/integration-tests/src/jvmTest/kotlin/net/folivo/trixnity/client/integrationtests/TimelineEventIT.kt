@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.room.getTimelineEventsAround
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -252,8 +253,8 @@ class TimelineEventIT {
                 client2.room.getTimelineEventsAround(
                     expectedTimeline[18].eventId,
                     room,
-                    MutableStateFlow(100),
-                    MutableStateFlow(100)
+                    maxSizeBefore = MutableStateFlow(100),
+                    maxSizeAfter = MutableStateFlow(100)
                 ).debounce(100)
                     .first { list ->
                         list.size > 31

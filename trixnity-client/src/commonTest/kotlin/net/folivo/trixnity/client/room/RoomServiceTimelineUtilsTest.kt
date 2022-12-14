@@ -143,6 +143,13 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     timelineEvent3
                 )
             }
+            should("get timeline events with maxSize") {
+                cut.getTimelineEvents(event1.id, room, FORWARDS, maxSize = 2)
+                    .toList().map { it.first() } shouldBe listOf(
+                    timelineEvent1,
+                    timelineEvent2,
+                )
+            }
         }
         context("not all events in store") {
             val event0 = encryptedEvent(0)
@@ -183,6 +190,33 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     timelineEvent1.copy(gap = null, nextEventId = event0.id)
                 )
             }
+            should("fetch missing events by filling gaps when minSize not reached") {
+                val result = async {
+                    cut.getTimelineEvents(event3.id, room, minSize = 3, maxSize = 4).toList().map { it.first() }
+                }
+                timelineEventHandlerMock.unsafeFillTimelineGaps.first { it }
+                roomTimelineStore.addAll(
+                    listOf(
+                        timelineEvent3,
+                        timelineEvent2.copy(gap = null, previousEventId = event0.id),
+                        timelineEvent0,
+                        timelineEvent1.copy(gap = null, nextEventId = event0.id)
+                    )
+                )
+                result.await() shouldBe listOf(
+                    timelineEvent3,
+                    timelineEvent2.copy(gap = null, previousEventId = event0.id),
+                    timelineEvent0,
+                    timelineEvent1.copy(gap = null, nextEventId = event0.id)
+                )
+            }
+            should("not fetch when minSize reached") {
+                cut.getTimelineEvents(event3.id, room, minSize = 2).toList().map { it.first() } shouldBe listOf(
+                    timelineEvent3,
+                    timelineEvent2.copy(gap = TimelineEvent.Gap.GapBefore("before-2")),
+                )
+                timelineEventHandlerMock.unsafeFillTimelineGaps.value shouldBe false
+            }
         }
         context("complete timeline in store") {
             beforeTest {
@@ -203,7 +237,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
         }
-        context("toList") {
+        context("toFlowList") {
             beforeTest {
                 roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))
             }
@@ -259,12 +293,17 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
 
-            should("get the event '2', it's predecessor and successor") {
-                val beforeMaxSize = MutableStateFlow(1)
-                val afterMaxSize = MutableStateFlow(1)
+            should("get the event '2', it's predecessor and successor as flow") {
+                val maxSizeBefore = MutableStateFlow(1)
+                val maxSizeAfter = MutableStateFlow(1)
                 val result = MutableStateFlow<List<TimelineEvent>?>(null)
                 val job = scope.launch {
-                    cut.getTimelineEventsAround(event2.id, room, beforeMaxSize, afterMaxSize)
+                    cut.getTimelineEventsAround(
+                        event2.id,
+                        room,
+                        maxSizeBefore = maxSizeBefore,
+                        maxSizeAfter = maxSizeAfter
+                    )
                         .collect { result.value = it.mapNotNull { it.first() } }
                 }
 
@@ -274,14 +313,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     newTimelineEvent1,
                 )
 
-                beforeMaxSize.value = 2
+                maxSizeBefore.value = 2
                 result.first { it?.size == 3 } shouldBe listOf(
                     newTimelineEvent3,
                     timelineEvent2,
                     newTimelineEvent1,
                 )
 
-                afterMaxSize.value = 2
+                maxSizeAfter.value = 2
                 result.first { it?.size == 4 } shouldBe listOf(
                     timelineEvent4,
                     newTimelineEvent3,
@@ -289,6 +328,30 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     newTimelineEvent1,
                 )
                 job.cancel()
+            }
+
+            should("get the event '2', it's predecessor and successor") {
+                cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 2, maxSizeAfter = 2)
+                    .mapNotNull { it.first() } shouldBe listOf(
+                    newTimelineEvent3,
+                    timelineEvent2,
+                    newTimelineEvent1,
+                )
+
+                cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 3, maxSizeAfter = 2)
+                    .mapNotNull { it.first() } shouldBe listOf(
+                    newTimelineEvent3,
+                    timelineEvent2,
+                    newTimelineEvent1,
+                )
+
+                cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 3, maxSizeAfter = 3)
+                    .mapNotNull { it.first() } shouldBe listOf(
+                    timelineEvent4,
+                    newTimelineEvent3,
+                    timelineEvent2,
+                    newTimelineEvent1,
+                )
             }
         }
     }

@@ -69,6 +69,8 @@ class RoomServiceMock : RoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        minSize: Int?,
+        maxSize: Int?
     ): Flow<Flow<TimelineEvent?>> = returnGetTimelineEvents
 
     override fun getLastTimelineEvents(
@@ -76,6 +78,8 @@ class RoomServiceMock : RoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        minSize: Int?,
+        maxSize: Int?
     ): Flow<Flow<Flow<TimelineEvent?>>?> {
         throw NotImplementedError()
     }
@@ -86,18 +90,6 @@ class RoomServiceMock : RoomService {
         syncResponseBufferSize: Int
     ): Flow<TimelineEvent> {
         return returnGetTimelineEventsFromNowOn
-    }
-
-    override fun getTimelineEventsAround(
-        startFrom: EventId,
-        roomId: RoomId,
-        maxSizeBefore: StateFlow<Int>,
-        maxSizeAfter: StateFlow<Int>,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long
-    ): Flow<List<Flow<TimelineEvent?>>> {
-        throw NotImplementedError()
     }
 
     override fun getTimelineEventRelations(

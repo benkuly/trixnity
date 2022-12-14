@@ -2,9 +2,13 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -12,6 +16,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
@@ -48,7 +53,7 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration =
         .mapLatest { it.filterNotNull().toSet() }
 
 /**
- * Converts a flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ * Converts a flow of timeline events into a flow of list of timeline events limited by [maxSize].
  *
  * ```
  * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
@@ -60,18 +65,17 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration =
 fun Flow<Flow<TimelineEvent?>>.toFlowList(
     maxSize: StateFlow<Int>,
     minSize: MutableStateFlow<Int> = MutableStateFlow(0)
-): Flow<List<Flow<TimelineEvent?>>> {
-    return maxSize.flatMapLatest { listSize ->
+): Flow<List<Flow<TimelineEvent?>>> =
+    maxSize.flatMapLatest { listSize ->
         take(listSize)
             .scan<Flow<TimelineEvent?>, List<Flow<TimelineEvent?>>>(listOf()) { old, new -> old + new }
             .filter { it.size >= if (maxSize.value < minSize.value) maxSize.value else minSize.value }
             .onEach { minSize.value = it.size }
             .distinctUntilChanged()
     }
-}
 
 /**
- * Converts a flow of flow of timeline events into a flow of list of timeline events limited by `maxSize`.
+ * Converts a flow of flow of timeline events into a flow of list of timeline events limited by [maxSize].
  *
  * ```
  * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)
@@ -87,3 +91,88 @@ fun Flow<Flow<Flow<TimelineEvent?>>?>.toFlowList(
     flatMapLatest {
         it?.toFlowList(maxSize, minSize) ?: flowOf(listOf())
     }
+
+/**
+ * Returns all timeline events around a starting event.
+ *
+ * The size of the returned list can be expanded in 2 directions: before and after the start element.
+ *
+ * @param startFrom the start event id
+ * @param maxSizeBefore how many events to possibly get before the start event
+ * @param maxSizeAfter how many events to possibly get after the start event
+ *
+ */
+fun RoomService.getTimelineEventsAround(
+    startFrom: EventId,
+    roomId: RoomId,
+    decryptionTimeout: Duration = Duration.INFINITE,
+    fetchTimeout: Duration = 1.minutes,
+    limitPerFetch: Long = 20,
+    maxSizeBefore: StateFlow<Int>,
+    maxSizeAfter: StateFlow<Int>,
+): Flow<List<Flow<TimelineEvent?>>> = channelFlow {
+    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
+    startEvent.filterNotNull().first()
+    combine(
+        getTimelineEvents(
+            startFrom, roomId,
+            GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
+        )
+            .drop(1)
+            .toFlowList(maxSizeBefore),
+        getTimelineEvents(
+            startFrom, roomId,
+            GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
+        )
+            .drop(1)
+            .toFlowList(maxSizeAfter)
+            .map { it.reversed() },
+    ) { beforeElements, afterElements ->
+        afterElements + startEvent + beforeElements
+    }.collectLatest { send(it) }
+}.buffer(0)
+
+/**
+ * Returns all timeline events around a starting event.
+ *
+ * @see [RoomService.getTimelineEvents]
+ *
+ */
+suspend fun RoomService.getTimelineEventsAround(
+    startFrom: EventId,
+    roomId: RoomId,
+    decryptionTimeout: Duration = Duration.INFINITE,
+    fetchTimeout: Duration = 1.minutes,
+    limitPerFetch: Long = 20,
+    minSizeBefore: Int? = 2,
+    minSizeAfter: Int? = minSizeBefore,
+    maxSizeBefore: Int = 10,
+    maxSizeAfter: Int = maxSizeBefore,
+): List<Flow<TimelineEvent?>> = coroutineScope {
+    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
+    val eventsBefore = async {
+        getTimelineEvents(
+            startFrom = startFrom,
+            roomId = roomId,
+            direction = GetEvents.Direction.BACKWARDS,
+            decryptionTimeout = decryptionTimeout,
+            fetchTimeout = fetchTimeout,
+            limitPerFetch = limitPerFetch,
+            minSize = minSizeBefore,
+            maxSize = maxSizeBefore
+        ).drop(1).toList()
+    }
+    val eventsAfter = async {
+        getTimelineEvents(
+            startFrom = startFrom,
+            roomId = roomId,
+            direction = GetEvents.Direction.FORWARDS,
+            decryptionTimeout = decryptionTimeout,
+            fetchTimeout = fetchTimeout,
+            limitPerFetch = limitPerFetch,
+            minSize = minSizeAfter,
+            maxSize = maxSizeAfter
+        ).drop(1).toList().reversed()
+    }
+    eventsAfter.await() + startEvent + eventsBefore.await()
+}

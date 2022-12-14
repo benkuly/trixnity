@@ -74,13 +74,18 @@ interface RoomService {
     ): Flow<Flow<TimelineEvent?>?>
 
     /**
-     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event
-     * at the end of the timeline.
+     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event.
      *
-     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually.
+     * To convert it to a flow of list, [toFlowList] can be used.
      *
-     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
+     * Consuming this flow directly needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     *
+     * Consider using [minSize] and [maxSize] when consuming this flow directly (e.g. with `toList()`). This can work
+     * like paging through the timeline.
+     *
+     * @param minSize Flow completes, when a gap is found and this size is reached (including the start event).
+     * @param maxSize Flow completes, when this value is reached (including the start event).
      */
     fun getTimelineEvents(
         startFrom: EventId,
@@ -89,27 +94,24 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
+        minSize: Int? = null,
+        maxSize: Int? = null,
     ): Flow<Flow<TimelineEvent?>>
 
     /**
      * Returns the last timeline events as flow.
      *
-     * To convert it to a list, [toFlowList] can be used or e.g. the events can be consumed manually:
-     * ```kotlin
-     * launch {
-     *   matrixClient.room.getLastTimelineEvents(roomId).collectLatest { timelineEventsFlow ->
-     *     timelineEventsFlow?.take(10)?.toList()?.reversed()?.forEach { println(it) }
-     *   }
-     * }
-     * ```
-     * The manual approach needs proper understanding of how flows work. For example: if the client is offline
-     * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
+     * To convert it to a flow of list, [toFlowList] can be used.
+     *
+     * @see [getTimelineEvents]
      */
     fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
+        minSize: Int? = null,
+        maxSize: Int? = null,
     ): Flow<Flow<Flow<TimelineEvent?>>?>
 
     /**
@@ -127,26 +129,6 @@ interface RoomService {
         decryptionTimeout: Duration = 30.seconds,
         syncResponseBufferSize: Int = 10,
     ): Flow<TimelineEvent>
-
-    /**
-     * Returns all timeline events around a starting event. This also triggers decryption for each timeline event.
-     *
-     * The size of the returned list can be expanded in 2 directions: before and after the start element.
-     *
-     * @param startFrom the start event id
-     * @param maxSizeBefore how many events to possibly get before the start event
-     * @param maxSizeAfter how many events to possibly get after the start event
-     *
-     */
-    fun getTimelineEventsAround(
-        startFrom: EventId,
-        roomId: RoomId,
-        maxSizeBefore: StateFlow<Int>,
-        maxSizeAfter: StateFlow<Int>,
-        decryptionTimeout: Duration = INFINITE,
-        fetchTimeout: Duration = 1.minutes,
-        limitPerFetch: Long = 20,
-    ): Flow<List<Flow<TimelineEvent?>>>
 
     fun getTimelineEventRelations(
         eventId: EventId,
@@ -362,6 +344,8 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        minSize: Int?,
+        maxSize: Int?,
     ): Flow<Flow<TimelineEvent?>> =
         channelFlow {
             fun TimelineEvent.Gap?.hasGap() =
@@ -372,7 +356,8 @@ class RoomServiceImpl(
             var currentTimelineEventFlow: Flow<TimelineEvent?> =
                 getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
             send(currentTimelineEventFlow)
-            do {
+            var size = 1
+            while (isActive) {
                 currentTimelineEventFlow = currentTimelineEventFlow
                     .filterNotNull()
                     .onEach { currentTimelineEvent ->
@@ -391,11 +376,24 @@ class RoomServiceImpl(
                     }
                     .first()
                 send(currentTimelineEventFlow)
-            } while (isActive && (direction != BACKWARDS || currentTimelineEventFlow.first()
-                    .let { it == null || it.isFirst.not() })
-            )
-            log.info { "reached start of timeline $roomId" }
-            close()
+                size++
+                if (direction == BACKWARDS
+                    && currentTimelineEventFlow.first().let { it?.isFirst == true }
+                ) {
+                    log.debug { "reached start of timeline $roomId" }
+                    break
+                }
+                if (minSize != null && size >= minSize
+                    && currentTimelineEventFlow.first().let { it?.gap?.hasGap() == true }
+                ) {
+                    log.debug { "found a gap and complete flow, because minSize reached" }
+                    break
+                }
+                if (maxSize != null && size >= maxSize) {
+                    log.debug { "complete flow because maxSize reached" }
+                    break
+                }
+            }
         }.buffer(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -404,12 +402,23 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        minSize: Int?,
+        maxSize: Int?,
     ): Flow<Flow<Flow<TimelineEvent?>>?> =
         roomStore.get(roomId)
             .mapLatest { it?.lastEventId }
             .distinctUntilChanged()
             .mapLatest {
-                if (it != null) getTimelineEvents(it, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
+                if (it != null) getTimelineEvents(
+                    startFrom = it,
+                    roomId = roomId,
+                    direction = BACKWARDS,
+                    decryptionTimeout = decryptionTimeout,
+                    fetchTimeout = fetchTimeout,
+                    limitPerFetch = limitPerFetch,
+                    minSize = minSize,
+                    maxSize = maxSize
+                )
                 else null
             }
 
@@ -441,30 +450,6 @@ class RoomServiceImpl(
                     }
             }
         }
-
-    override fun getTimelineEventsAround(
-        startFrom: EventId,
-        roomId: RoomId,
-        maxSizeBefore: StateFlow<Int>,
-        maxSizeAfter: StateFlow<Int>,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-    ): Flow<List<Flow<TimelineEvent?>>> = channelFlow {
-        val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
-        startEvent.filterNotNull().first()
-        combine(
-            getTimelineEvents(startFrom, roomId, BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
-                .drop(1)
-                .toFlowList(maxSizeBefore),
-            getTimelineEvents(startFrom, roomId, FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch)
-                .drop(1)
-                .toFlowList(maxSizeAfter)
-                .map { it.reversed() },
-        ) { beforeElements, afterElements ->
-            afterElements + startEvent + beforeElements
-        }.collectLatest { send(it) }
-    }.buffer(0)
 
     override fun getTimelineEventRelations(
         eventId: EventId,
