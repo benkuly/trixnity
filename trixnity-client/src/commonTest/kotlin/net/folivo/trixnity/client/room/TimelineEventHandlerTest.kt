@@ -94,13 +94,6 @@ class TimelineEventHandlerTest : ShouldSpec({
         )
     }
 
-    context(TimelineEventHandlerImpl::setUnreadMessageCount.name) {
-        should("set unread message count for room") {
-            roomStore.update(room) { simpleRoom.copy(roomId = room) }
-            cut.setUnreadMessageCount(room, 24)
-            roomStore.get(room).first()?.unreadMessageCount shouldBe 24
-        }
-    }
     context(TimelineEventHandlerImpl::syncOutboxMessage.name) {
         should("ignore messages from foreign users") {
             val roomOutboxMessage =
@@ -630,66 +623,52 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
         }
     }
-    context(TimelineEventHandlerImpl::setLastEventId.name) {
-        should("set last event from room event") {
-            cut.setLastEventId(textEvent(24))
-            roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
+    context(TimelineEventHandlerImpl::handleSyncResponse.name) {
+        beforeTest {
+            roomStore.update(room) { simpleRoom.copy(roomId = room) }
         }
-        should("set last event from state event") {
-            cut.setLastEventId(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("\$event1"),
-                    alice,
-                    room,
-                    25,
-                    stateKey = alice.full
-                )
-            )
-            roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event1")
-        }
-    }
-
-    context(TimelineEventHandlerImpl::setLastRelevantEvent.name) {
-        should("set last message event") {
-            cut.handleSyncResponse(
-                Sync.Response(
-                    room = Sync.Response.Rooms(
-                        join = mapOf(
-                            room to Sync.Response.Rooms.JoinedRoom(
-                                timeline = Sync.Response.Rooms.Timeline(
-                                    events = listOf(
-                                        Event.StateEvent(
-                                            CreateEventContent(UserId("user1", "localhost")),
-                                            EventId("event1"),
-                                            UserId("user1", "localhost"),
-                                            room,
-                                            0,
-                                            stateKey = ""
-                                        ),
-                                        MessageEvent(
-                                            TextMessageEventContent("Hello!"),
-                                            EventId("event2"),
-                                            UserId("user1", "localhost"),
-                                            room,
-                                            5,
-                                        ),
-                                        Event.StateEvent(
-                                            AvatarEventContent("mxc://localhost/123456"),
-                                            EventId("event3"),
-                                            UserId("user1", "localhost"),
-                                            room,
-                                            10,
-                                            stateKey = ""
-                                        ),
-                                    ), previousBatch = "abcdef"
+        context("lastEventId") {
+            should("set lastEventId from room event") {
+                cut.handleSyncResponse(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            join = mapOf(
+                                room to Sync.Response.Rooms.JoinedRoom(
+                                    timeline = Sync.Response.Rooms.Timeline(listOf(textEvent(24)))
                                 )
-                            )
+                            ),
                         )
-                    ), nextBatch = "123456"
+                    )
                 )
-            )
-            roomStore.get(room).first()?.lastRelevantEventId shouldBe EventId("event2")
+                roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
+            }
+            should("set lastEventId from state event") {
+                cut.handleSyncResponse(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            join = mapOf(
+                                room to Sync.Response.Rooms.JoinedRoom(
+                                    timeline = Sync.Response.Rooms.Timeline(
+                                        listOf(
+                                            Event.StateEvent(
+                                                MemberEventContent(membership = Membership.JOIN),
+                                                EventId("\$event24"),
+                                                alice,
+                                                room,
+                                                25,
+                                                stateKey = alice.full
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                        )
+                    )
+                )
+                roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
+            }
         }
     }
     context(TimelineEventHandlerImpl::unsafeFillTimelineGaps.name) {

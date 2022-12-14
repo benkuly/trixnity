@@ -10,6 +10,10 @@ import org.koin.dsl.module
 
 fun createRoomModule() = module {
     singleOf(::TimelineMutex)
+    singleOf(::RoomListHandler) {
+        bind<EventHandler>()
+        named<RoomListHandler>()
+    }
     singleOf(::DirectRoomEventHandler) {
         bind<EventHandler>()
         named<DirectRoomEventHandler>()

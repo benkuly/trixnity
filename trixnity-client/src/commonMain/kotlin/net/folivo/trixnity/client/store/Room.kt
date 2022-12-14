@@ -12,7 +12,7 @@ data class Room(
     val name: RoomDisplayName? = null,
     val avatarUrl: String? = null,
     val isDirect: Boolean = false,
-    val lastEventId: EventId? = null,
+    val lastEventId: EventId? = null, // this must only be changed by TimelineEventHandler!
     val lastRelevantEventId: EventId? = null,
     val unreadMessageCount: Long = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,

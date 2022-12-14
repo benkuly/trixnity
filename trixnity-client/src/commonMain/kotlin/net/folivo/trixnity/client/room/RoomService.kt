@@ -433,10 +433,12 @@ class RoomServiceImpl(
                     }
                 }.asFlow()
                     .map { timelineEventFlow ->
+                        // we must wait until TimelineEvent is saved into store
+                        val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
                         withTimeoutOrNull(decryptionTimeout) {
-                            timelineEventFlow.await().first { it?.content != null }
-                        } ?: timelineEventFlow.await().first()
-                    }.filterNotNull()
+                            timelineEventFlow.await().filterNotNull().first { it.content != null }
+                        } ?: notNullTimelineEvent
+                    }
             }
         }
 
