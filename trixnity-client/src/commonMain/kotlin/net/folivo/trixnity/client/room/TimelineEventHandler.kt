@@ -50,26 +50,19 @@ class TimelineEventHandlerImpl(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe(::addRelation)
-        api.sync.subscribeSyncResponse(::handleSyncResponse)
+        api.sync.subscribeAfterSyncResponse (::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
             api.sync.unsubscribe(::addRelation)
-            api.sync.unsubscribeSyncResponse(::handleSyncResponse)
+            api.sync.unsubscribeAfterSyncResponse(::handleSyncResponse)
         }
     }
 
     internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
-            roomStore.update(roomId) {
-                it?.copy(membership = Membership.JOIN) ?: Room(
-                    roomId = roomId,
-                    membership = Membership.JOIN
-                )
-            }
-            room.value.unreadNotifications?.notificationCount?.also { setUnreadMessageCount(roomId, it) }
             room.value.timeline?.also {
-                timelineMutex.withLock(room.key) {
+                timelineMutex.withLock(roomId) {
                     rtm.writeTransaction {
                         addEventsToTimelineAtEnd(
                             roomId = roomId,
@@ -81,19 +74,12 @@ class TimelineEventHandlerImpl(
                         it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
                         it.events?.forEach { event ->
                             syncOutboxMessage(event)
-                            setLastRelevantEvent(event)
                         }
                     }
                 }
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
-            roomStore.update(room.key) {
-                it?.copy(membership = Membership.LEAVE) ?: Room(
-                    room.key,
-                    membership = Membership.LEAVE
-                )
-            }
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
                     rtm.writeTransaction {
@@ -105,7 +91,6 @@ class TimelineEventHandlerImpl(
                             hasGapBefore = it.limited ?: false
                         )
                         it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                        it.events?.forEach { event -> setLastRelevantEvent(event) }
                     }
                 }
             }
@@ -284,26 +269,6 @@ class TimelineEventHandlerImpl(
                 oldRoom?.copy(lastEventId = event.id)
                     ?: Room(roomId = event.roomId, lastEventId = event.id)
             }
-        }
-    }
-
-    internal suspend fun setLastRelevantEvent(event: Event.RoomEvent<*>) {
-        if (config.lastRelevantEventFilter(event))
-            roomStore.update(event.roomId, withTransaction = false) { oldRoom ->
-                oldRoom?.copy(lastRelevantEventId = event.id)
-                    ?: Room(roomId = event.roomId, lastRelevantEventId = event.id)
-            }
-    }
-
-
-    internal suspend fun setUnreadMessageCount(roomId: RoomId, count: Long) {
-        roomStore.update(roomId) { oldRoom ->
-            oldRoom?.copy(
-                unreadMessageCount = count
-            ) ?: Room(
-                roomId = roomId,
-                unreadMessageCount = count
-            )
         }
     }
 
