@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
-import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -39,7 +38,6 @@ class TimelineEventHandlerImpl(
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
-    private val config: MatrixClientConfiguration,
     private val timelineMutex: TimelineMutex,
     private val rtm: RepositoryTransactionManager,
 ) : EventHandler, TimelineEventHandler {
@@ -50,7 +48,7 @@ class TimelineEventHandlerImpl(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe(::addRelation)
-        api.sync.subscribeAfterSyncResponse (::handleSyncResponse)
+        api.sync.subscribeAfterSyncResponse(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
             api.sync.unsubscribe(::addRelation)

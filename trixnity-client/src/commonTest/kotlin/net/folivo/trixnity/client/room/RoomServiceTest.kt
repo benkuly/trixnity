@@ -28,10 +28,8 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptionException
-import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -46,11 +44,9 @@ class RoomServiceTest : ShouldSpec({
     lateinit var roomTimelineStore: RoomTimelineStore
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
-    lateinit var apiConfig: PortableMockEngineConfig
     lateinit var mediaServiceMock: MediaServiceMock
     lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     val thisUser = UserId("thisUser")
     val userInfo = UserInfo(
@@ -72,8 +68,7 @@ class RoomServiceTest : ShouldSpec({
 
         mediaServiceMock = MediaServiceMock()
         roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
-        apiConfig = newApiConfig
+        val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
             api,
             roomStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
@@ -88,10 +83,6 @@ class RoomServiceTest : ShouldSpec({
 
     afterTest {
         scope.cancel()
-    }
-
-    suspend fun storeTimeline(vararg events: Event.RoomEvent<*>) = events.map {
-        roomTimelineStore.get(it.id, it.roomId)
     }
 
     fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {

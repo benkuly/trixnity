@@ -492,6 +492,9 @@ class SyncApiClientTest {
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
+        matrixRestClient.sync.subscribeDeviceLists {
+            matrixRestClient.sync.currentSyncState.first { it == INITIAL_SYNC }
+        }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncJob = launch {
@@ -561,6 +564,9 @@ class SyncApiClientTest {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
+        matrixRestClient.sync.subscribeDeviceLists {
+            matrixRestClient.sync.currentSyncState.first { it == STARTED }
+        }
         val currentBatchToken = MutableStateFlow<String?>("ananas")
         val sync = launch {
             matrixRestClient.sync.start(
