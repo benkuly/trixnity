@@ -71,7 +71,7 @@ interface RoomService {
     fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
-    ): Flow<Flow<TimelineEvent?>?>
+    ): Flow<Flow<TimelineEvent>?>
 
     /**
      * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event.
@@ -94,9 +94,9 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-        minSize: Int? = null,
-        maxSize: Int? = null,
-    ): Flow<Flow<TimelineEvent?>>
+        minSize: Long? = null,
+        maxSize: Long? = null,
+    ): Flow<Flow<TimelineEvent>>
 
     /**
      * Returns the last timeline events as flow.
@@ -110,9 +110,9 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-        minSize: Int? = null,
-        maxSize: Int? = null,
-    ): Flow<Flow<Flow<TimelineEvent?>>?>
+        minSize: Long? = null,
+        maxSize: Long? = null,
+    ): Flow<Flow<Flow<TimelineEvent>>?>
 
     /**
      * Returns all timeline events from the moment this method is called. This also triggers decryption for each timeline event.
@@ -267,7 +267,7 @@ class RoomServiceImpl(
                         val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId
                             if (lastEventId != null) {
-                                log.info { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
+                                log.debug { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
                                 getTimelineEvents(
                                     startFrom = lastEventId,
                                     roomId = roomId,
@@ -275,7 +275,7 @@ class RoomServiceImpl(
                                     decryptionTimeout = ZERO,
                                     fetchTimeout = fetchTimeout,
                                     limitPerFetch = limitPerFetch
-                                ).map { it.first() }.first { it?.eventId == eventId }
+                                ).map { it.first() }.firstOrNull { it.eventId == eventId }
                                     .also { log.trace { "found TimelineEvent $eventId" } }
                             } else null
                         }
@@ -319,7 +319,13 @@ class RoomServiceImpl(
         limitPerFetch: Long,
     ): Flow<TimelineEvent?>? {
         return event.nextEventId?.let {
-            getTimelineEvent(it, event.roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
+            getTimelineEvent(
+                eventId = it,
+                roomId = event.roomId,
+                decryptionTimeout = decryptionTimeout,
+                fetchTimeout = fetchTimeout,
+                limitPerFetch = limitPerFetch
+            )
         }
     }
 
@@ -327,10 +333,16 @@ class RoomServiceImpl(
     override fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
-    ): Flow<Flow<TimelineEvent?>?> {
+    ): Flow<Flow<TimelineEvent>?> {
         return roomStore.get(roomId).transformLatest { room ->
             coroutineScope {
-                if (room?.lastEventId != null) emit(getTimelineEvent(room.lastEventId, roomId, decryptionTimeout))
+                if (room?.lastEventId != null) emit(
+                    getTimelineEvent(
+                        room.lastEventId,
+                        roomId,
+                        decryptionTimeout
+                    ).filterNotNull()
+                )
                 else emit(null)
                 delay(INFINITE) // ensure, that the TimelineEvent does not get removed from cache
             }
@@ -344,55 +356,78 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-        minSize: Int?,
-        maxSize: Int?,
-    ): Flow<Flow<TimelineEvent?>> =
+        minSize: Long?,
+        maxSize: Long?,
+    ): Flow<Flow<TimelineEvent>> =
         channelFlow {
-            fun TimelineEvent.Gap?.hasGap() =
-                this != null && (this.hasGapBoth
-                        || direction == FORWARDS && this.hasGapAfter
-                        || direction == BACKWARDS && this.hasGapBefore)
+            val loopDetectionEventIds = mutableListOf(startFrom)
+            fun TimelineEvent.needsFetchGap(): Boolean {
+                return gap != null && (gap.hasGapBoth && isLast.not() && isFirst.not()
+                        || direction == FORWARDS && gap.hasGapAfter && isLast.not()
+                        || direction == BACKWARDS && gap.hasGapBefore && isFirst.not())
+            }
 
             var currentTimelineEventFlow: Flow<TimelineEvent?> =
                 getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
-            send(currentTimelineEventFlow)
+            send(currentTimelineEventFlow.filterNotNull())
             var size = 1
             while (isActive) {
-                currentTimelineEventFlow = currentTimelineEventFlow
-                    .filterNotNull()
-                    .onEach { currentTimelineEvent ->
-                        val gap = currentTimelineEvent.gap
-                        if (gap.hasGap()) {
-                            log.debug { "found $gap at ${currentTimelineEvent.eventId}" }
-                            fillTimelineGaps(currentTimelineEvent.eventId, currentTimelineEvent.roomId, limitPerFetch)
-                        }
-                    }
-                    .filter { it.gap.hasGap().not() }
-                    .mapNotNull { currentTimelineEvent ->
-                        when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(currentTimelineEvent, decryptionTimeout, ZERO)
-                            FORWARDS -> getNextTimelineEvent(currentTimelineEvent, decryptionTimeout, ZERO)
-                        }
-                    }
-                    .first()
-                send(currentTimelineEventFlow)
-                size++
-                if (direction == BACKWARDS
-                    && currentTimelineEventFlow.first().let { it?.isFirst == true }
-                ) {
-                    log.debug { "reached start of timeline $roomId" }
+                // check for break conditions
+                val timelineEventSnapshot = currentTimelineEventFlow.filterNotNull().first()
+                log.trace { "getTimelineEvents: size=$size minSize=$minSize maxSize=$maxSize direction=${direction.name} currentTimelineEvent=$timelineEventSnapshot" }
+                if (direction == BACKWARDS && timelineEventSnapshot.isFirst) {
+                    log.debug { "getTimelineEvents: reached start of timeline $roomId" }
                     break
                 }
-                if (minSize != null && size >= minSize
-                    && currentTimelineEventFlow.first().let { it?.gap?.hasGap() == true }
-                ) {
-                    log.debug { "found a gap and complete flow, because minSize reached" }
+                if (minSize != null && size >= minSize && (timelineEventSnapshot.needsFetchGap() || timelineEventSnapshot.isLast)) {
+                    log.debug { "getTimelineEvents: found a gap and complete flow, because minSize reached" }
                     break
                 }
                 if (maxSize != null && size >= maxSize) {
-                    log.debug { "complete flow because maxSize reached" }
+                    log.debug { "getTimelineEvents: complete flow because maxSize reached" }
                     break
                 }
+
+                currentTimelineEventFlow = currentTimelineEventFlow
+                    .filterNotNull()
+                    .onEach { currentTimelineEvent ->
+                        if (currentTimelineEvent.needsFetchGap()) {
+                            log.debug { "found ${currentTimelineEvent.gap} at ${currentTimelineEvent.eventId}" }
+                            fillTimelineGaps(currentTimelineEvent.eventId, currentTimelineEvent.roomId, limitPerFetch)
+                        }
+                    }
+                    .filter { it.needsFetchGap().not() }
+                    .mapNotNull { currentTimelineEvent ->
+                        when (direction) {
+                            BACKWARDS -> getPreviousTimelineEvent(
+                                event = currentTimelineEvent,
+                                decryptionTimeout = decryptionTimeout,
+                                fetchTimeout = ZERO
+                            )
+
+                            FORWARDS -> getNextTimelineEvent(
+                                event = currentTimelineEvent,
+                                decryptionTimeout = decryptionTimeout,
+                                fetchTimeout = ZERO
+                            )
+                        }
+                    }
+                    .first()
+                    .filterNotNull()
+
+                // check for loop
+                val newTimelineEventSnapshot = currentTimelineEventFlow.first()
+                if (loopDetectionEventIds.contains(newTimelineEventSnapshot.eventId)) {
+                    val message =
+                        "Detected a loop in timeline generation. " +
+                                "Event with id ${newTimelineEventSnapshot.eventId} has already be emitted in this flow. " +
+                                "This is a severe misbehavior and must be fixed in Trixnity!!!"
+                    log.error { message } // log even when a consumer don't catch the exception
+                    throw IllegalStateException(message)
+                } else loopDetectionEventIds.add(newTimelineEventSnapshot.eventId)
+
+                send(currentTimelineEventFlow)
+                size++
             }
         }.buffer(0)
 
@@ -402,9 +437,9 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-        minSize: Int?,
-        maxSize: Int?,
-    ): Flow<Flow<Flow<TimelineEvent?>>?> =
+        minSize: Long?,
+        maxSize: Long?,
+    ): Flow<Flow<Flow<TimelineEvent>>?> =
         roomStore.get(roomId)
             .mapLatest { it?.lastEventId }
             .distinctUntilChanged()

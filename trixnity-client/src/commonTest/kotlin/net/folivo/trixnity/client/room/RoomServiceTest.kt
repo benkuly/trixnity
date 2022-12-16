@@ -6,8 +6,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
@@ -335,9 +335,8 @@ class RoomServiceTest : ShouldSpec({
             delay(50)
             roomStore.update(room) { initialRoom.copy(lastEventId = event2.id) }
             result.await()[0] shouldBe null
-            result.await()[1] shouldNotBe null
-            result.await()[1]?.first() shouldBe null
-            result.await()[2]?.first() shouldBe event2Timeline
+            withTimeoutOrNull(100.milliseconds) { result.await()[1].shouldNotBeNull().first() } shouldBe null
+            result.await()[2].shouldNotBeNull().first() shouldBe event2Timeline
         }
     }
     context(RoomServiceImpl::sendMessage.name) {

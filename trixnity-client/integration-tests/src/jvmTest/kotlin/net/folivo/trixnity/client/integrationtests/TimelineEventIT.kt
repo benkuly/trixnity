@@ -113,7 +113,7 @@ class TimelineEventIT {
                 .filterNotNull()
                 .takeWhile { decryptedMessages.size < 3 }
                 .collectLatest { lastTimelineEvent ->
-                    var currentTimelineEvent = lastTimelineEvent
+                    var currentTimelineEvent: Flow<TimelineEvent?> = lastTimelineEvent
                     while (currentCoroutineContext().isActive && decryptedMessages.size < 3) {
                         val currentTimelineEventValue = currentTimelineEvent
                             .filterNotNull()

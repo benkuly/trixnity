@@ -62,13 +62,13 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration =
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toList")
-fun Flow<Flow<TimelineEvent?>>.toFlowList(
+fun Flow<Flow<TimelineEvent>>.toFlowList(
     maxSize: StateFlow<Int>,
     minSize: MutableStateFlow<Int> = MutableStateFlow(0)
-): Flow<List<Flow<TimelineEvent?>>> =
+): Flow<List<Flow<TimelineEvent>>> =
     maxSize.flatMapLatest { listSize ->
         take(listSize)
-            .scan<Flow<TimelineEvent?>, List<Flow<TimelineEvent?>>>(listOf()) { old, new -> old + new }
+            .scan<Flow<TimelineEvent>, List<Flow<TimelineEvent>>>(listOf()) { old, new -> old + new }
             .filter { it.size >= if (maxSize.value < minSize.value) maxSize.value else minSize.value }
             .onEach { minSize.value = it.size }
             .distinctUntilChanged()
@@ -84,10 +84,10 @@ fun Flow<Flow<TimelineEvent?>>.toFlowList(
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @JvmName("toListFromLatest")
-fun Flow<Flow<Flow<TimelineEvent?>>?>.toFlowList(
+fun Flow<Flow<Flow<TimelineEvent>>?>.toFlowList(
     maxSize: StateFlow<Int>,
     minSize: MutableStateFlow<Int> = MutableStateFlow(0)
-): Flow<List<Flow<TimelineEvent?>>> =
+): Flow<List<Flow<TimelineEvent>>> =
     flatMapLatest {
         it?.toFlowList(maxSize, minSize) ?: flowOf(listOf())
     }
@@ -110,27 +110,29 @@ fun RoomService.getTimelineEventsAround(
     limitPerFetch: Long = 20,
     maxSizeBefore: StateFlow<Int>,
     maxSizeAfter: StateFlow<Int>,
-): Flow<List<Flow<TimelineEvent?>>> = channelFlow {
-    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
-    startEvent.filterNotNull().first()
-    combine(
-        getTimelineEvents(
-            startFrom, roomId,
-            GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
-        )
-            .drop(1)
-            .toFlowList(maxSizeBefore),
-        getTimelineEvents(
-            startFrom, roomId,
-            GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
-        )
-            .drop(1)
-            .toFlowList(maxSizeAfter)
-            .map { it.reversed() },
-    ) { beforeElements, afterElements ->
-        afterElements + startEvent + beforeElements
-    }.collectLatest { send(it) }
-}.buffer(0)
+): Flow<List<Flow<TimelineEvent>>> =
+    channelFlow {
+        val startEvent =
+            getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+        startEvent.first()
+        combine(
+            getTimelineEvents(
+                startFrom, roomId,
+                GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
+            )
+                .drop(1)
+                .toFlowList(maxSizeBefore),
+            getTimelineEvents(
+                startFrom, roomId,
+                GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
+            )
+                .drop(1)
+                .toFlowList(maxSizeAfter)
+                .map { it.reversed() },
+        ) { beforeElements, afterElements ->
+            afterElements + startEvent + beforeElements
+        }.collectLatest { send(it) }
+    }.buffer(0)
 
 /**
  * Returns all timeline events around a starting event.
@@ -144,12 +146,12 @@ suspend fun RoomService.getTimelineEventsAround(
     decryptionTimeout: Duration = Duration.INFINITE,
     fetchTimeout: Duration = 1.minutes,
     limitPerFetch: Long = 20,
-    minSizeBefore: Int? = 2,
-    minSizeAfter: Int? = minSizeBefore,
-    maxSizeBefore: Int = 10,
-    maxSizeAfter: Int = maxSizeBefore,
-): List<Flow<TimelineEvent?>> = coroutineScope {
-    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
+    minSizeBefore: Long? = 2,
+    minSizeAfter: Long? = minSizeBefore,
+    maxSizeBefore: Long = 10,
+    maxSizeAfter: Long = maxSizeBefore,
+): List<Flow<TimelineEvent>> = coroutineScope {
+    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
     val eventsBefore = async {
         getTimelineEvents(
             startFrom = startFrom,
@@ -176,3 +178,19 @@ suspend fun RoomService.getTimelineEventsAround(
     }
     eventsAfter.await() + startEvent + eventsBefore.await()
 }
+
+fun RoomService.getTimeline(
+    roomId: RoomId,
+    decryptionTimeout: Duration = Duration.INFINITE,
+    fetchTimeout: Duration = 1.minutes,
+    limitPerFetch: Long = 20,
+    loadingSize: Long = 20,
+): Timeline =
+    TimelineImpl(
+        roomId = roomId,
+        decryptionTimeout = decryptionTimeout,
+        fetchTimeout = fetchTimeout,
+        limitPerFetch = limitPerFetch,
+        loadingSize = loadingSize,
+        roomService = this
+    )
