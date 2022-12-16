@@ -13,7 +13,6 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
@@ -33,7 +32,6 @@ interface TimelineEventHandler {
 }
 
 class TimelineEventHandlerImpl(
-    private val userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
@@ -70,9 +68,6 @@ class TimelineEventHandlerImpl(
                             hasGapBefore = it.limited ?: false
                         )
                         it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                        it.events?.forEach { event ->
-                            syncOutboxMessage(event)
-                        }
                     }
                 }
             }
@@ -325,15 +320,6 @@ class TimelineEventHandlerImpl(
                 } else null
             }
         }
-    }
-
-    internal suspend fun syncOutboxMessage(event: Event<*>) {
-        if (event is Event.MessageEvent)
-            if (event.sender == userInfo.userId) {
-                event.unsigned?.transactionId?.also {
-                    roomOutboxMessageStore.update(it) { null }
-                }
-            }
     }
 
     private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->
