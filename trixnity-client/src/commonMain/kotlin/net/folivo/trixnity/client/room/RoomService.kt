@@ -130,6 +130,14 @@ interface RoomService {
         syncResponseBufferSize: Int = 10,
     ): Flow<TimelineEvent>
 
+    fun getTimeline(
+        roomId: RoomId,
+        decryptionTimeout: Duration = INFINITE,
+        fetchTimeout: Duration = 1.minutes,
+        limitPerFetch: Long = 20,
+        loadingSize: Long = 20
+    ): Timeline
+
     fun getTimelineEventRelations(
         eventId: EventId,
         roomId: RoomId,
@@ -485,6 +493,22 @@ class RoomServiceImpl(
                     }
             }
         }
+
+    override fun getTimeline(
+        roomId: RoomId,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
+        loadingSize: Long,
+    ): Timeline =
+        TimelineImpl(
+            roomId = roomId,
+            decryptionTimeout = decryptionTimeout,
+            fetchTimeout = fetchTimeout,
+            limitPerFetch = limitPerFetch,
+            loadingSize = loadingSize,
+            roomService = this
+        )
 
     override fun getTimelineEventRelations(
         eventId: EventId,

@@ -178,19 +178,3 @@ suspend fun RoomService.getTimelineEventsAround(
     }
     eventsAfter.await() + startEvent + eventsBefore.await()
 }
-
-fun RoomService.getTimeline(
-    roomId: RoomId,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
-    loadingSize: Long = 20,
-): Timeline =
-    TimelineImpl(
-        roomId = roomId,
-        decryptionTimeout = decryptionTimeout,
-        fetchTimeout = fetchTimeout,
-        limitPerFetch = limitPerFetch,
-        loadingSize = loadingSize,
-        roomService = this
-    )

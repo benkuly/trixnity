@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.room.Timeline
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -90,6 +91,16 @@ class RoomServiceMock : RoomService {
         syncResponseBufferSize: Int
     ): Flow<TimelineEvent> {
         return returnGetTimelineEventsFromNowOn
+    }
+
+    override fun getTimeline(
+        roomId: RoomId,
+        decryptionTimeout: Duration,
+        fetchTimeout: Duration,
+        limitPerFetch: Long,
+        loadingSize: Long
+    ): Timeline {
+        throw NotImplementedError()
     }
 
     override fun getTimelineEventRelations(
