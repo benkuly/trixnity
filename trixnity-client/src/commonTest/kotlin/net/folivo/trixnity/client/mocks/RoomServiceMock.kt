@@ -24,7 +24,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    lateinit var returnGetTimelineEvent: StateFlow<TimelineEvent?>
+    lateinit var returnGetTimelineEvent: Flow<TimelineEvent?>
     override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
@@ -60,7 +60,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    var returnGetTimelineEvents: Flow<StateFlow<TimelineEvent>> = flowOf()
+    var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
 
     override fun getTimelineEvents(
         startFrom: EventId,
