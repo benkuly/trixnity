@@ -74,16 +74,18 @@ interface RoomService {
     ): Flow<Flow<TimelineEvent>?>
 
     /**
-     * Returns a flow of timeline events wrapped in a flow, which emits, when there is a new timeline event.
-     *
-     * To convert it to a flow of list, [toFlowList] can be used.
+     * Returns a flow of timeline events wrapped in a flow. It emits, when there is a new timeline event. This flow
+     * only completes, when the start of the timeline is reached or [minSize] and/or [maxSize] are set.
      *
      * Consuming this flow directly needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
      *
      * Consider using [minSize] and [maxSize] when consuming this flow directly (e.g. with `toList()`). This can work
-     * like paging through the timeline.
+     * like paging through the timeline. It also completes the flow, which is not the case, when both parameters are null.
      *
+     * To convert it to a flow of list, [toFlowList] can be used.
+     *
+     * @param limitPerFetch The count of events requested from the server, when there is a gap.
      * @param minSize Flow completes, when a gap is found and this size is reached (including the start event).
      * @param maxSize Flow completes, when this value is reached (including the start event).
      */
@@ -130,6 +132,13 @@ interface RoomService {
         syncResponseBufferSize: Int = 10,
     ): Flow<TimelineEvent>
 
+    /**
+     * Returns a [Timeline] for a room.
+     *
+     * @param loadingSize When using [Timeline.init], [Timeline.loadBefore] or [Timeline.loadAfter] this is the max size
+     * of events, that are added to the timeline. This refers to events found locally. Use [limitPerFetch], when you want
+     * to control the size of events requests from the server.
+     */
     fun getTimeline(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,

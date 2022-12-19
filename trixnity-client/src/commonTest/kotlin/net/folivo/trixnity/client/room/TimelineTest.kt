@@ -45,7 +45,7 @@ class TimelineTest : ShouldSpec({
             val expectedResult = listOf("1", "2", "3", "2", "1")
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe expectedResult
             cut.events.first().map { it.first().eventId.full } shouldBe expectedResult
-            cut.hasBeenInit.first() shouldBe true
+            cut.isInitialized.first() shouldBe true
             cut.lastLoadedEventIdBefore.first()?.full shouldBe "1"
             cut.lastLoadedEventIdAfter.first()?.full shouldBe "1"
         }
@@ -56,7 +56,7 @@ class TimelineTest : ShouldSpec({
             val expectedResult = listOf("3")
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe expectedResult
             cut.events.first().map { it.first().eventId.full } shouldBe expectedResult
-            cut.hasBeenInit.first() shouldBe true
+            cut.isInitialized.first() shouldBe true
             cut.lastLoadedEventIdBefore.first()?.full shouldBe "3"
             cut.lastLoadedEventIdAfter.first()?.full shouldBe "3"
         }

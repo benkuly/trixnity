@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.room
 
-import com.soywiz.korio.async.async
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.job
@@ -32,7 +32,7 @@ interface Timeline {
     /**
      * True when timeline initialization has been finished.
      */
-    val hasBeenInit: Flow<Boolean>
+    val isInitialized: Flow<Boolean>
 
     /**
      * True while events are loaded before.
@@ -67,10 +67,10 @@ interface Timeline {
     /**
      * Initialize the timeline with the start event.
      *
-     * You should consider to wrap it into a timeout, because it tries to find the event, if it is not stored locally.
+     * Consider wrapping this method call in a timeout, since it might fetch the start event from the server if it is not found locally.
      *
      * @param startFrom The event id to try start timeline generation from. Default: last room event id
-     * @return The start event. Must not be the event requested with [startFrom].
+     * @return The initial list of events loaded into the timeline.
      */
     suspend fun init(startFrom: EventId): List<Flow<TimelineEvent>>
 
@@ -78,6 +78,8 @@ interface Timeline {
      * Load new events before the oldest event. This may suspend until at least one event can be loaded.
      *
      * This will also suspend until [init] is finished.
+     *
+     * @return The list of new events loaded into the timeline.
      */
     suspend fun loadBefore(): List<Flow<TimelineEvent>>
 
@@ -85,6 +87,8 @@ interface Timeline {
      * Load new events after the newest event. This may suspend until at least one event can be loaded.
      *
      * This will also suspend until [init] is finished.
+     *
+     * @return The list of new events loaded into the timeline.
      */
     suspend fun loadAfter(): List<Flow<TimelineEvent>>
 }
@@ -101,7 +105,7 @@ class TimelineImpl(
         val events: List<Flow<TimelineEvent>> = listOf(),
         val lastLoadedEventIdBefore: EventId? = null,
         val lastLoadedEventIdAfter: EventId? = null,
-        val hasBeenInit: Boolean = false,
+        val isInitialized: Boolean = false,
     )
 
     private val state = MutableStateFlow(State())
@@ -113,7 +117,7 @@ class TimelineImpl(
     override val isLoadingBefore: StateFlow<Boolean> = _isLoadingBefore.asStateFlow()
     private val _isLoadingAfter = MutableStateFlow(false)
     override val isLoadingAfter: StateFlow<Boolean> = _isLoadingAfter.asStateFlow()
-    override val hasBeenInit: Flow<Boolean> = state.map { it.hasBeenInit }
+    override val isInitialized: Flow<Boolean> = state.map { it.isInitialized }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val canLoadBefore: Flow<Boolean> =
@@ -172,7 +176,7 @@ class TimelineImpl(
                         events = newEvents,
                         lastLoadedEventIdBefore = newEvents.last().first().eventId,
                         lastLoadedEventIdAfter = newEvents.first().first().eventId,
-                        hasBeenInit = true
+                        isInitialized = true
                     )
                 }
                 log.debug { "finished init timeline" }
@@ -182,7 +186,7 @@ class TimelineImpl(
     }
 
     override suspend fun loadBefore(): List<Flow<TimelineEvent>> = coroutineScope {
-        hasBeenInit.first { it }
+        isInitialized.first { it }
         loadBeforeMutex.withLock {
             val startFrom = state.value.lastLoadedEventIdBefore
                 ?: throw IllegalStateException("Timeline not initialized")
@@ -213,7 +217,7 @@ class TimelineImpl(
     }
 
     override suspend fun loadAfter(): List<Flow<TimelineEvent>> = coroutineScope {
-        hasBeenInit.first { it }
+        isInitialized.first { it }
         loadAfterMutex.withLock {
             val startFrom = state.value.lastLoadedEventIdAfter
                 ?: throw IllegalStateException("Timeline not initialized")
