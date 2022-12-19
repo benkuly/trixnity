@@ -25,7 +25,7 @@ private val log = KotlinLogging.logger { }
  */
 interface Timeline {
     /**
-     * [TimelineEvent]s with lower index are newer.
+     * [TimelineEvent]s sorted with higher indexes being more recent.
      */
     val events: Flow<List<Flow<TimelineEvent>>>
 
@@ -153,7 +153,7 @@ class TimelineImpl(
                         limitPerFetch = limitPerFetch,
                         minSize = 1,
                         maxSize = loadingSize / 2,
-                    ).drop(1).toList().map { it.filterNotNull() }
+                    ).drop(1).toList().reversed().map { it.filterNotNull() }
                         .also { log.debug { "finished load before $startFrom" } }
                 }
                 val eventsAfter = async {
@@ -167,15 +167,15 @@ class TimelineImpl(
                         limitPerFetch = limitPerFetch,
                         minSize = 1,
                         maxSize = loadingSize / 2,
-                    ).drop(1).toList().reversed().map { it.filterNotNull() }
+                    ).drop(1).toList().map { it.filterNotNull() }
                         .also { log.debug { "finished load after $startFrom" } }
                 }
-                val newEvents = eventsAfter.await() + startFromEvent + eventsBefore.await()
+                val newEvents = eventsBefore.await() + startFromEvent + eventsAfter.await()
                 state.update {
                     it.copy(
                         events = newEvents,
-                        lastLoadedEventIdBefore = newEvents.last().first().eventId,
-                        lastLoadedEventIdAfter = newEvents.first().first().eventId,
+                        lastLoadedEventIdBefore = newEvents.firstOrNull()?.first()?.eventId ?: startFrom,
+                        lastLoadedEventIdAfter = newEvents.lastOrNull()?.first()?.eventId ?: startFrom,
                         isInitialized = true
                     )
                 }
@@ -202,13 +202,13 @@ class TimelineImpl(
                 limitPerFetch = limitPerFetch,
                 minSize = 2,
                 maxSize = loadingSize,
-            ).drop(1).toList().map { it.filterNotNull() }
+            ).drop(1).toList().reversed().map { it.filterNotNull() }
 
             if (newEvents.isNotEmpty())
                 state.update {
                     it.copy(
-                        events = it.events + newEvents,
-                        lastLoadedEventIdBefore = newEvents.last().first().eventId
+                        events = newEvents + it.events,
+                        lastLoadedEventIdBefore = newEvents.first().first().eventId
                     )
                 }
             log.debug { "finished load before $startFrom" }
@@ -233,13 +233,13 @@ class TimelineImpl(
                 limitPerFetch = limitPerFetch,
                 minSize = 2,
                 maxSize = loadingSize,
-            ).drop(1).toList().reversed().map { it.filterNotNull() }
+            ).drop(1).toList().map { it.filterNotNull() }
 
             if (newEvents.isNotEmpty())
                 state.update {
                     it.copy(
-                        events = newEvents + it.events,
-                        lastLoadedEventIdAfter = newEvents.first().first().eventId
+                        events = it.events + newEvents,
+                        lastLoadedEventIdAfter = newEvents.last().first().eventId
                     )
                 }
             log.debug { "finished load after $startFrom" }

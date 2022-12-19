@@ -68,8 +68,8 @@ class TimelineTest : ShouldSpec({
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
-            cut.loadBefore().map { it.first().eventId.full } shouldBe listOf("2", "1")
-            cut.events.first().map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
+            cut.loadBefore().map { it.first().eventId.full } shouldBe listOf("1", "2")
+            cut.events.first().map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
             cut.lastLoadedEventIdBefore.first()?.full shouldBe "1"
             cut.lastLoadedEventIdAfter.first()?.full shouldBe "3"
             cut.isLoadingBefore.first() shouldBe false
@@ -82,8 +82,8 @@ class TimelineTest : ShouldSpec({
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
-            cut.loadAfter().map { it.first().eventId.full } shouldBe listOf("1", "2")
-            cut.events.first().map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
+            cut.loadAfter().map { it.first().eventId.full } shouldBe listOf("2", "1")
+            cut.events.first().map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
             cut.lastLoadedEventIdBefore.first()?.full shouldBe "3"
             cut.lastLoadedEventIdAfter.first()?.full shouldBe "1"
             cut.isLoadingAfter.first() shouldBe false
