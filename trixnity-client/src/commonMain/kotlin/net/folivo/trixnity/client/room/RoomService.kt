@@ -75,7 +75,7 @@ interface RoomService {
 
     /**
      * Returns a flow of timeline events wrapped in a flow. It emits, when there is a new timeline event. This flow
-     * only completes, when the start of the timeline is reached or [minSize] and/or [maxSize] are set.
+     * only completes, when the start of the timeline is reached or [minSize] and/or [maxSize] are set and reached.
      *
      * Consuming this flow directly needs proper understanding of how flows work. For example: if the client is offline
      * and there are 5 timeline events in store, but `take(10)` is used, then `toList()` will suspend.
