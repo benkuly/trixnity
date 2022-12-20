@@ -114,8 +114,8 @@ abstract class TimelineBase : Timeline {
     final override val isLoadingBefore: StateFlow<Boolean> = _isLoadingBefore.asStateFlow()
     private val _isLoadingAfter = MutableStateFlow(false)
     final override val isLoadingAfter: StateFlow<Boolean> = _isLoadingAfter.asStateFlow()
-    final override val isInitialized: StateFlow<Boolean> = _isLoadingBefore.asStateFlow()
     private val _isInitialized = MutableStateFlow(false)
+    final override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val canLoadBefore: Flow<Boolean> =
@@ -128,9 +128,9 @@ abstract class TimelineBase : Timeline {
     private val loadBeforeMutex = Mutex()
     private val loadAfterMutex = Mutex()
 
-    abstract suspend fun internalInit(startFrom: EventId): List<Flow<TimelineEvent>>
-    abstract suspend fun internalLoadBefore(startFrom: EventId): List<Flow<TimelineEvent>>
-    abstract suspend fun internalLoadAfter(startFrom: EventId): List<Flow<TimelineEvent>>
+    protected abstract suspend fun internalInit(startFrom: EventId): List<Flow<TimelineEvent>>
+    protected abstract suspend fun internalLoadBefore(startFrom: EventId): List<Flow<TimelineEvent>>
+    protected abstract suspend fun internalLoadAfter(startFrom: EventId): List<Flow<TimelineEvent>>
 
     override suspend fun init(startFrom: EventId): List<Flow<TimelineEvent>> = coroutineScope {
         loadBeforeMutex.withLock {
