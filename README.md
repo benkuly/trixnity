@@ -249,15 +249,17 @@ fetch its neighbours by calling `matrixClient.room.fetchMissingEvents(...)`.
 You can always get the last known `TimelineEvent` of a room
 with `matrixClient.room.getLastTimelineEvents(...)`.
 
-The following example will always print the last 20 events of a room:
+The following example will always print the last 20 events of a room. Note, that
+this doesn't have to be the best way to compose a timeline. It is just a nice
+example.
 
 ```kotlin
 matrixClient.room.getLastTimelineEvents(roomId)
     .toFlowList(MutableStateFlow(20)) // we always get max. 20 TimelineEvents
     .collectLatest { timelineEvents ->
         timelineEvents.forEach { timelineEvent ->
-            val event = timelineEvent.value?.event
-            val content = timelineEvent.value?.content?.getOrNull()
+            val event = timelineEvent.first()?.event
+            val content = timelineEvent.first()?.content?.getOrNull()
             val sender = event?.sender?.let {
                 matrixClient.user.getById(it, roomId).first()?.name
             }
