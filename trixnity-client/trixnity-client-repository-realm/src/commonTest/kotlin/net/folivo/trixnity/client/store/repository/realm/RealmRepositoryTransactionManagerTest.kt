@@ -7,8 +7,6 @@ import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
-import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.decodeFromString
 
 class TestEntity : RealmObject {
     @PrimaryKey
@@ -16,7 +14,7 @@ class TestEntity : RealmObject {
     var value: String = ""
 }
 
-private suspend fun testWrite(id:Long) = withRealmWrite {
+private suspend fun testWrite(id: Long) = withRealmWrite {
     copyToRealm(TestEntity().apply {
         this.id = id
         value = "test"
@@ -28,7 +26,7 @@ private suspend fun testRead() = withRealmRead {
 }
 
 class RealmRepositoryTransactionManagerTest : ShouldSpec({
-    timeout = 1_000
+    timeout = 5_000
 
     lateinit var tm: RealmRepositoryTransactionManager
     lateinit var realm: Realm
