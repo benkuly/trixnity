@@ -157,7 +157,7 @@ class TimelineEventIT {
             val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
-                .mapNotNull { it.first()?.removeUnsigned() }
+                .mapNotNull { it.first().removeUnsigned() }
 
             expectedTimeline shouldHaveSize 31
 
@@ -181,7 +181,7 @@ class TimelineEventIT {
             val timelineFromGappySync = client2.room.getTimelineEvents(startFrom, room)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
-                .mapNotNull { it.first()?.removeUnsigned() }
+                .mapNotNull { it.first().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -215,8 +215,8 @@ class TimelineEventIT {
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(expectedTimeline.last().eventId, room, direction = FORWARDS)
                     .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                    .first { list -> list.any { it.first()?.nextEventId == null } }
-                    .mapNotNull { it.first()?.removeUnsigned() }
+                    .first { list -> list.any { it.first().nextEventId == null } }
+                    .mapNotNull { it.first().removeUnsigned() }
 
             // drop because the first event may have a gap due to the FORWARDS direction
             timelineFromGappySync.reversed().dropLast(1) shouldBe expectedTimeline.dropLast(1)
@@ -256,15 +256,16 @@ class TimelineEventIT {
                     maxSizeBefore = MutableStateFlow(100),
                     maxSizeAfter = MutableStateFlow(100)
                 ).debounce(100)
+                    .map { it.reversed() }
                     .first { list ->
                         list.size > 31
-                                && list.mapNotNull { it.first() }.any { it.previousEventId == null }
-                                && list.mapNotNull { it.first() }.any { it.nextEventId == null }
+                                && list.map { it.first() }.any { it.previousEventId == null }
+                                && list.map { it.first() }.any { it.nextEventId == null }
                     }.also { list ->
                         val last = list.last().first().shouldNotBeNull()
-                        while (list.last().first()?.gap != null)
+                        while (list.last().first().gap != null)
                             client2.room.fillTimelineGaps(last.eventId, last.roomId)
-                    }.mapNotNull { it.first()?.removeUnsigned() }
+                    }.mapNotNull { it.first().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -275,13 +276,13 @@ class TimelineEventIT {
         roomId: RoomId
     ) = room.getTimelineEvents(startFrom, roomId)
         .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-        .first { list -> list.mapNotNull { it.first() }.any { it.previousEventId == null } }
+        .first { list -> list.map { it.first() }.any { it.previousEventId == null } }
         .also { list ->
             val last = list.last().first().shouldNotBeNull()
-            while (list.last().first()?.gap != null)
+            while (list.last().first().gap != null)
                 client1.room.fillTimelineGaps(last.eventId, last.roomId)
         }
-        .mapNotNull { it.first()?.removeUnsigned() }
+        .mapNotNull { it.first().removeUnsigned() }
 
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {

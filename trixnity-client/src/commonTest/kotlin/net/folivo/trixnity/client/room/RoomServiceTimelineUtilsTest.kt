@@ -304,53 +304,53 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                         maxSizeBefore = maxSizeBefore,
                         maxSizeAfter = maxSizeAfter
                     )
-                        .collect { result.value = it.mapNotNull { it.first() } }
+                        .collect { result.value = it.map { it.first() } }
                 }
 
                 result.first { it?.size == 3 } shouldBe listOf(
-                    newTimelineEvent3,
-                    timelineEvent2,
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
                 )
 
                 maxSizeBefore.value = 2
                 result.first { it?.size == 3 } shouldBe listOf(
-                    newTimelineEvent3,
-                    timelineEvent2,
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
                 )
 
                 maxSizeAfter.value = 2
                 result.first { it?.size == 4 } shouldBe listOf(
-                    timelineEvent4,
-                    newTimelineEvent3,
-                    timelineEvent2,
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
+                    timelineEvent4,
                 )
                 job.cancel()
             }
 
             should("get the event '2', it's predecessor and successor") {
                 cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 2, maxSizeAfter = 2)
-                    .mapNotNull { it.first() } shouldBe listOf(
-                    newTimelineEvent3,
-                    timelineEvent2,
+                    .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
                 )
 
                 cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 3, maxSizeAfter = 2)
-                    .mapNotNull { it.first() } shouldBe listOf(
-                    newTimelineEvent3,
-                    timelineEvent2,
+                    .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
                 )
 
                 cut.getTimelineEventsAround(event2.id, room, maxSizeBefore = 3, maxSizeAfter = 3)
-                    .mapNotNull { it.first() } shouldBe listOf(
-                    timelineEvent4,
-                    newTimelineEvent3,
-                    timelineEvent2,
+                    .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
+                    timelineEvent2,
+                    newTimelineEvent3,
+                    timelineEvent4,
                 )
             }
         }
