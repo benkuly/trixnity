@@ -93,7 +93,7 @@ fun Flow<Flow<Flow<TimelineEvent>>?>.toFlowList(
     }
 
 /**
- * Returns all timeline events around a starting event.
+ * Returns all timeline events around a starting event sorted with higher indexes being more recent.
  *
  * The size of the returned list can be expanded in 2 directions: before and after the start element.
  *
@@ -121,16 +121,16 @@ fun RoomService.getTimelineEventsAround(
                 GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
             )
                 .drop(1)
-                .toFlowList(maxSizeBefore),
+                .toFlowList(maxSizeBefore)
+                .map { it.reversed() },
             getTimelineEvents(
                 startFrom, roomId,
                 GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
             )
                 .drop(1)
-                .toFlowList(maxSizeAfter)
-                .map { it.reversed() },
+                .toFlowList(maxSizeAfter),
         ) { beforeElements, afterElements ->
-            afterElements + startEvent + beforeElements
+            beforeElements + startEvent + afterElements
         }.collectLatest { send(it) }
     }.buffer(0)
 
@@ -162,7 +162,7 @@ suspend fun RoomService.getTimelineEventsAround(
             limitPerFetch = limitPerFetch,
             minSize = minSizeBefore,
             maxSize = maxSizeBefore
-        ).drop(1).toList()
+        ).drop(1).toList().reversed()
     }
     val eventsAfter = async {
         getTimelineEvents(
@@ -174,7 +174,7 @@ suspend fun RoomService.getTimelineEventsAround(
             limitPerFetch = limitPerFetch,
             minSize = minSizeAfter,
             maxSize = maxSizeAfter
-        ).drop(1).toList().reversed()
+        ).drop(1).toList()
     }
-    eventsAfter.await() + startEvent + eventsBefore.await()
+    eventsBefore.await() + startEvent + eventsAfter.await()
 }

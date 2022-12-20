@@ -153,7 +153,7 @@ class TimelineImpl(
                         limitPerFetch = limitPerFetch,
                         minSize = 1,
                         maxSize = loadingSize / 2,
-                    ).drop(1).toList().reversed().map { it.filterNotNull() }
+                    ).drop(1).toList().reversed()
                         .also { log.debug { "finished load before $startFrom" } }
                 }
                 val eventsAfter = async {
@@ -167,7 +167,7 @@ class TimelineImpl(
                         limitPerFetch = limitPerFetch,
                         minSize = 1,
                         maxSize = loadingSize / 2,
-                    ).drop(1).toList().map { it.filterNotNull() }
+                    ).drop(1).toList()
                         .also { log.debug { "finished load after $startFrom" } }
                 }
                 val newEvents = eventsBefore.await() + startFromEvent + eventsAfter.await()
