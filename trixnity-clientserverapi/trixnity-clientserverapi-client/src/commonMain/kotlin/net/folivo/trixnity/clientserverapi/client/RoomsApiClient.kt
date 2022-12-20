@@ -331,8 +331,9 @@ interface RoomsApiClient {
      */
     suspend fun setReadMarkers(
         roomId: RoomId,
-        fullyRead: EventId,
+        fullyRead: EventId? = null,
         read: EventId? = null,
+        privateRead: EventId? = null,
         asUserId: UserId? = null,
     ): Result<Unit>
 
@@ -780,11 +781,12 @@ class RoomsApiClientImpl(
 
     override suspend fun setReadMarkers(
         roomId: RoomId,
-        fullyRead: EventId,
+        fullyRead: EventId?,
         read: EventId?,
+        privateRead: EventId?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetReadMarkers(roomId.e(), asUserId), SetReadMarkers.Request(fullyRead, read))
+        httpClient.request(SetReadMarkers(roomId.e(), asUserId), SetReadMarkers.Request(fullyRead, read, privateRead))
 
     override suspend fun setTyping(
         roomId: RoomId,

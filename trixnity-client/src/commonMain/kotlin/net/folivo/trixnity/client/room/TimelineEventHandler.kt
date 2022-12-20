@@ -7,14 +7,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
-import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
@@ -34,12 +32,10 @@ interface TimelineEventHandler {
 }
 
 class TimelineEventHandlerImpl(
-    private val userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
-    private val config: MatrixClientConfiguration,
     private val timelineMutex: TimelineMutex,
     private val rtm: RepositoryTransactionManager,
 ) : EventHandler, TimelineEventHandler {
@@ -50,7 +46,7 @@ class TimelineEventHandlerImpl(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe(::addRelation)
-        api.sync.subscribeAfterSyncResponse (::handleSyncResponse)
+        api.sync.subscribeAfterSyncResponse(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
             api.sync.unsubscribe(::addRelation)
@@ -72,9 +68,6 @@ class TimelineEventHandlerImpl(
                             hasGapBefore = it.limited ?: false
                         )
                         it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                        it.events?.forEach { event ->
-                            syncOutboxMessage(event)
-                        }
                     }
                 }
             }
@@ -327,15 +320,6 @@ class TimelineEventHandlerImpl(
                 } else null
             }
         }
-    }
-
-    internal suspend fun syncOutboxMessage(event: Event<*>) {
-        if (event is Event.MessageEvent)
-            if (event.sender == userInfo.userId) {
-                event.unsigned?.transactionId?.also {
-                    roomOutboxMessageStore.update(it) { null }
-                }
-            }
     }
 
     private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->

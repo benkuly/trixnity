@@ -9,7 +9,7 @@ val TimelineEvent.isEncrypted: Boolean
     get() = event.isEncrypted
 
 val TimelineEvent.isFirst: Boolean
-    get() = previousEventId == null && gap == null
+    get() = previousEventId == null && gap !is TimelineEvent.Gap.GapBefore && gap !is TimelineEvent.Gap.GapBoth
 
 val TimelineEvent.isLast: Boolean
     get() = nextEventId == null

@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.room.RoomService
+import net.folivo.trixnity.client.room.Timeline
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -24,7 +25,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    lateinit var returnGetTimelineEvent: StateFlow<TimelineEvent?>
+    lateinit var returnGetTimelineEvent: Flow<TimelineEvent?>
     override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
@@ -56,11 +57,11 @@ class RoomServiceMock : RoomService {
     override fun getLastTimelineEvent(
         roomId: RoomId,
         decryptionTimeout: Duration
-    ): StateFlow<StateFlow<TimelineEvent?>?> {
+    ): StateFlow<StateFlow<TimelineEvent>?> {
         throw NotImplementedError()
     }
 
-    var returnGetTimelineEvents: Flow<StateFlow<TimelineEvent?>> = flowOf()
+    var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
 
     override fun getTimelineEvents(
         startFrom: EventId,
@@ -69,14 +70,18 @@ class RoomServiceMock : RoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<Flow<TimelineEvent?>> = returnGetTimelineEvents
+        minSize: Long?,
+        maxSize: Long?
+    ): Flow<Flow<TimelineEvent>> = returnGetTimelineEvents
 
     override fun getLastTimelineEvents(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<Flow<Flow<TimelineEvent?>>?> {
+        minSize: Long?,
+        maxSize: Long?
+    ): Flow<Flow<Flow<TimelineEvent>>?> {
         throw NotImplementedError()
     }
 
@@ -88,15 +93,13 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override fun getTimelineEventsAround(
-        startFrom: EventId,
+    override fun getTimeline(
         roomId: RoomId,
-        maxSizeBefore: StateFlow<Int>,
-        maxSizeAfter: StateFlow<Int>,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        limitPerFetch: Long
-    ): Flow<List<Flow<TimelineEvent?>>> {
+        limitPerFetch: Long,
+        loadingSize: Long
+    ): Timeline {
         throw NotImplementedError()
     }
 

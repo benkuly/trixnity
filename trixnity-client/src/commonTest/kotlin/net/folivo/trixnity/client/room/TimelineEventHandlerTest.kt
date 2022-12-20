@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.room
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.retry
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldBeEmpty
@@ -10,21 +9,22 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import kotlin.time.Duration.Companion.milliseconds
 
 class TimelineEventHandlerTest : ShouldSpec({
     timeout = 10_000
@@ -56,10 +55,8 @@ class TimelineEventHandlerTest : ShouldSpec({
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = TimelineEventHandlerImpl(
-            UserInfo(alice, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             roomStore, roomTimelineStore, roomOutboxMessageStore,
-            MatrixClientConfiguration(),
             TimelineMutex(),
             NoOpRepositoryTransactionManager
         )
@@ -92,53 +89,6 @@ class TimelineEventHandlerTest : ShouldSpec({
             room,
             i
         )
-    }
-
-    context(TimelineEventHandlerImpl::syncOutboxMessage.name) {
-        should("ignore messages from foreign users") {
-            val roomOutboxMessage =
-                RoomOutboxMessage(
-                    "transaction",
-                    room,
-                    RoomMessageEventContent.TextMessageEventContent("hi"),
-                    Clock.System.now()
-                )
-            roomOutboxMessageStore.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
-            val event: Event<MessageEventContent> = Event.MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("hi"),
-                EventId("\$event"),
-                UserId("other", "server"),
-                room,
-                1234,
-                UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transaction")
-            )
-            cut.syncOutboxMessage(event)
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
-                roomOutboxMessageStore.getAll().value shouldContainExactly listOf(roomOutboxMessage)
-            }
-        }
-        should("remove outbox message from us") {
-            val roomOutboxMessage =
-                RoomOutboxMessage(
-                    "transaction",
-                    room,
-                    RoomMessageEventContent.TextMessageEventContent("hi"),
-                    Clock.System.now()
-                )
-            roomOutboxMessageStore.update(roomOutboxMessage.transactionId) { roomOutboxMessage }
-            val event: Event<MessageEventContent> = Event.MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("hi"),
-                EventId("\$event"),
-                alice,
-                room,
-                1234,
-                UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transaction")
-            )
-            cut.syncOutboxMessage(event)
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
-                roomOutboxMessageStore.getAll().value.size shouldBe 0
-            }
-        }
     }
     context(TimelineEventHandlerImpl::redactTimelineEvent.name) {
         context("with existent event") {
