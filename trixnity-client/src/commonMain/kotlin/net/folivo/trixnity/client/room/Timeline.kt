@@ -171,8 +171,8 @@ abstract class TimelineBase : Timeline {
 
     override suspend fun loadAfter(): List<Flow<TimelineEvent>> = coroutineScope {
         isInitialized.first { it }
-        loadBeforeMutex.withLock {
-            val startFrom = state.value.lastLoadedEventIdBefore
+        loadAfterMutex.withLock {
+            val startFrom = state.value.lastLoadedEventIdAfter
                 ?: throw IllegalStateException("Timeline not initialized")
             coroutineContext.job.invokeOnCompletion { _isLoadingAfter.value = false }
             _isLoadingAfter.value = true
