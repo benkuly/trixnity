@@ -34,9 +34,9 @@ interface Timeline {
      *
      * Consider wrapping this method call in a timeout, since it might fetch the start event from the server if it is not found locally.
      *
-     * Theoretically it works to initialize the timeline from a new starting event,
-     * but you should ensure, that there is no running call to [loadBefore] or [loadAfter]. Otherwise [init] will suspend
-     * until [loadBefore] or [loadAfter] are finished.
+     * The timeline can be initialized multiple times from different starting events.
+     * If doing so, it must be ensured, that there is no running call to [loadBefore] or [loadAfter].
+     * Otherwise [init] will suspend until [loadBefore] or [loadAfter] are finished.
      *
      * @param startFrom The event id to try start timeline generation from. Default: last room event id
      * @return The initial list of events loaded into the timeline.
