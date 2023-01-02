@@ -25,49 +25,18 @@ private val log = KotlinLogging.logger { }
  */
 interface Timeline {
     /**
-     * [TimelineEvent]s sorted with higher indexes being more recent.
+     * The current state of the timeline.
      */
-    val events: Flow<List<Flow<TimelineEvent>>>
-
-    /**
-     * True when timeline initialization has been finished.
-     */
-    val isInitialized: Flow<Boolean>
-
-    /**
-     * True while events are loaded before.
-     */
-    val isLoadingBefore: Flow<Boolean>
-
-    /**
-     * True while events are loaded after.
-     */
-    val isLoadingAfter: Flow<Boolean>
-
-    /**
-     * Is true until start of timeline is reached.
-     */
-    val canLoadBefore: Flow<Boolean>
-
-    /**
-     * Is true until last known [TimelineEvent] is reached.
-     */
-    val canLoadAfter: Flow<Boolean>
-
-    /**
-     * Lower bound of loaded events in this timeline.
-     */
-    val lastLoadedEventIdBefore: Flow<EventId?>
-
-    /**
-     * Upper bound of loaded events in this timeline.
-     */
-    val lastLoadedEventIdAfter: Flow<EventId?>
+    val state: Flow<TimelineState>
 
     /**
      * Initialize the timeline with the start event.
      *
      * Consider wrapping this method call in a timeout, since it might fetch the start event from the server if it is not found locally.
+     *
+     * Theoretically it works to initialize the timeline from a new starting event,
+     * but you should ensure, that there is no running call to [loadBefore] or [loadAfter]. Otherwise [init] will suspend
+     * until [loadBefore] or [loadAfter] are finished.
      *
      * @param startFrom The event id to try start timeline generation from. Default: last room event id
      * @return The initial list of events loaded into the timeline.
@@ -93,37 +62,83 @@ interface Timeline {
     suspend fun loadAfter(): List<Flow<TimelineEvent>>
 }
 
+data class TimelineState(
+    /**
+     * [TimelineEvent]s sorted with higher indexes being more recent.
+     */
+    val events: List<Flow<TimelineEvent>> = listOf(),
+
+    /**
+     * Lower bound of loaded events in this timeline.
+     */
+    val lastLoadedEventIdBefore: EventId? = null,
+
+    /**
+     * Upper bound of loaded events in this timeline.
+     */
+    val lastLoadedEventIdAfter: EventId? = null,
+
+    /**
+     * True when timeline initialization has been finished.
+     */
+    val isInitialized: Boolean = false,
+
+    /**
+     * True while events are loaded before.
+     */
+    val isLoadingBefore: Boolean = false,
+
+    /**
+     * True while events are loaded after.
+     */
+    val isLoadingAfter: Boolean = false,
+
+    /**
+     * Is true until start of timeline is reached.
+     */
+    val canLoadBefore: Boolean = false,
+
+    /**
+     * Is true until last known [TimelineEvent] is reached.
+     */
+    val canLoadAfter: Boolean = false,
+)
+
 /**
  * An implementation for some restrictions required by [Timeline].
  *
  * Implementing this may be useful for tests (e.g. a TimelineMock).
  */
 abstract class TimelineBase : Timeline {
-    private data class State(
+    private data class InternalState(
         val events: List<Flow<TimelineEvent>> = listOf(),
         val lastLoadedEventIdBefore: EventId? = null,
         val lastLoadedEventIdAfter: EventId? = null,
+        val isInitialized: Boolean = false,
+        val isLoadingBefore: Boolean = false,
+        val isLoadingAfter: Boolean = false,
     )
 
-    private val state = MutableStateFlow(State())
-
-    final override val events: Flow<List<Flow<TimelineEvent>>> = state.map { it.events }
-    final override val lastLoadedEventIdBefore: Flow<EventId?> = state.map { it.lastLoadedEventIdBefore }
-    final override val lastLoadedEventIdAfter: Flow<EventId?> = state.map { it.lastLoadedEventIdAfter }
-    private val _isLoadingBefore = MutableStateFlow(false)
-    final override val isLoadingBefore: StateFlow<Boolean> = _isLoadingBefore.asStateFlow()
-    private val _isLoadingAfter = MutableStateFlow(false)
-    final override val isLoadingAfter: StateFlow<Boolean> = _isLoadingAfter.asStateFlow()
-    private val _isInitialized = MutableStateFlow(false)
-    final override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    private val internalState = MutableStateFlow(InternalState())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val canLoadBefore: Flow<Boolean> =
-        events.flatMapLatest { it.lastOrNull() ?: flowOf(null) }.map { it?.isFirst != true }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val canLoadAfter: Flow<Boolean> =
-        events.flatMapLatest { it.firstOrNull() ?: flowOf(null) }.map { it?.isLast != true }
+    override val state: Flow<TimelineState> = internalState.flatMapLatest { internalState ->
+        combine(
+            (internalState.events.firstOrNull() ?: flowOf(null)).map { it?.isFirst != true },
+            (internalState.events.lastOrNull() ?: flowOf(null)).map { it?.isLast != true }
+        ) { canLoadBefore, canLoadAfter ->
+            TimelineState(
+                events = internalState.events,
+                lastLoadedEventIdBefore = internalState.lastLoadedEventIdBefore,
+                lastLoadedEventIdAfter = internalState.lastLoadedEventIdAfter,
+                isInitialized = internalState.isInitialized,
+                isLoadingBefore = internalState.isLoadingBefore,
+                isLoadingAfter = internalState.isLoadingAfter,
+                canLoadBefore = canLoadBefore,
+                canLoadAfter = canLoadAfter,
+            )
+        }
+    }
 
     private val loadBeforeMutex = Mutex()
     private val loadAfterMutex = Mutex()
@@ -135,34 +150,37 @@ abstract class TimelineBase : Timeline {
     override suspend fun init(startFrom: EventId): List<Flow<TimelineEvent>> = coroutineScope {
         loadBeforeMutex.withLock {
             loadAfterMutex.withLock {
-                _isInitialized.value = false
+                internalState.update { it.copy(isInitialized = false) }
                 val newEvents = internalInit(startFrom)
-                state.update {
+                internalState.update {
                     it.copy(
                         events = newEvents,
                         lastLoadedEventIdBefore = newEvents.firstOrNull()?.first()?.eventId ?: startFrom,
                         lastLoadedEventIdAfter = newEvents.lastOrNull()?.first()?.eventId ?: startFrom,
+                        isInitialized = true,
                     )
                 }
-                _isInitialized.value = true
                 newEvents
             }
         }
     }
 
     override suspend fun loadBefore(): List<Flow<TimelineEvent>> = coroutineScope {
-        isInitialized.first { it }
+        internalState.first { it.isInitialized }
         loadBeforeMutex.withLock {
-            val startFrom = state.value.lastLoadedEventIdBefore
+            val startFrom = internalState.value.lastLoadedEventIdBefore
                 ?: throw IllegalStateException("Timeline not initialized")
-            coroutineContext.job.invokeOnCompletion { _isLoadingBefore.value = false }
-            _isLoadingBefore.value = true
+            coroutineContext.job.invokeOnCompletion { error ->
+                if (error != null) internalState.update { it.copy(isLoadingBefore = false) }
+            }
+            internalState.update { it.copy(isLoadingBefore = true) }
             val newEvents = internalLoadBefore(startFrom)
             if (newEvents.isNotEmpty())
-                state.update {
+                internalState.update {
                     it.copy(
                         events = newEvents + it.events,
-                        lastLoadedEventIdBefore = newEvents.first().first().eventId
+                        lastLoadedEventIdBefore = newEvents.first().first().eventId,
+                        isLoadingBefore = false
                     )
                 }
             newEvents
@@ -170,18 +188,21 @@ abstract class TimelineBase : Timeline {
     }
 
     override suspend fun loadAfter(): List<Flow<TimelineEvent>> = coroutineScope {
-        isInitialized.first { it }
+        internalState.first { it.isInitialized }
         loadAfterMutex.withLock {
-            val startFrom = state.value.lastLoadedEventIdAfter
+            val startFrom = internalState.value.lastLoadedEventIdAfter
                 ?: throw IllegalStateException("Timeline not initialized")
-            coroutineContext.job.invokeOnCompletion { _isLoadingAfter.value = false }
-            _isLoadingAfter.value = true
+            coroutineContext.job.invokeOnCompletion { error ->
+                if (error != null) internalState.update { it.copy(isLoadingAfter = false) }
+            }
+            internalState.update { it.copy(isLoadingAfter = true) }
             val newEvents = internalLoadAfter(startFrom)
             if (newEvents.isNotEmpty())
-                state.update {
+                internalState.update {
                     it.copy(
                         events = it.events + newEvents,
-                        lastLoadedEventIdAfter = newEvents.last().first().eventId
+                        lastLoadedEventIdAfter = newEvents.last().first().eventId,
+                        isLoadingAfter = false,
                     )
                 }
             newEvents

@@ -44,10 +44,11 @@ class TimelineTest : ShouldSpec({
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
             val expectedResult = listOf("1", "2", "3", "2", "1")
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe expectedResult
-            cut.events.first().map { it.first().eventId.full } shouldBe expectedResult
-            cut.isInitialized.first() shouldBe true
-            cut.lastLoadedEventIdBefore.first()?.full shouldBe "1"
-            cut.lastLoadedEventIdAfter.first()?.full shouldBe "1"
+            val state = cut.state.first()
+            state.events.map { it.first().eventId.full } shouldBe expectedResult
+            state.isInitialized shouldBe true
+            state.lastLoadedEventIdBefore?.full shouldBe "1"
+            state.lastLoadedEventIdAfter?.full shouldBe "1"
         }
         should("not suspend infinite, when no element before or after start") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
@@ -55,10 +56,11 @@ class TimelineTest : ShouldSpec({
                 flowOf(flowOf(timelineEvent("3")))
             val expectedResult = listOf("3")
             cut.init(EventId("start")).map { it.first().eventId.full } shouldBe expectedResult
-            cut.events.first().map { it.first().eventId.full } shouldBe expectedResult
-            cut.isInitialized.first() shouldBe true
-            cut.lastLoadedEventIdBefore.first()?.full shouldBe "3"
-            cut.lastLoadedEventIdAfter.first()?.full shouldBe "3"
+            val state = cut.state.first()
+            state.events.map { it.first().eventId.full } shouldBe expectedResult
+            state.isInitialized shouldBe true
+            state.lastLoadedEventIdBefore?.full shouldBe "3"
+            state.lastLoadedEventIdAfter?.full shouldBe "3"
         }
     }
     context(Timeline::loadBefore.name) {
@@ -69,10 +71,11 @@ class TimelineTest : ShouldSpec({
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
             cut.loadBefore().map { it.first().eventId.full } shouldBe listOf("1", "2")
-            cut.events.first().map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
-            cut.lastLoadedEventIdBefore.first()?.full shouldBe "1"
-            cut.lastLoadedEventIdAfter.first()?.full shouldBe "3"
-            cut.isLoadingBefore.first() shouldBe false
+            val state = cut.state.first()
+            state.events.map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
+            state.lastLoadedEventIdBefore?.full shouldBe "1"
+            state.lastLoadedEventIdAfter?.full shouldBe "3"
+            state.isLoadingBefore shouldBe false
         }
     }
     context(Timeline::loadAfter.name) {
@@ -83,10 +86,11 @@ class TimelineTest : ShouldSpec({
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
             cut.loadAfter().map { it.first().eventId.full } shouldBe listOf("2", "1")
-            cut.events.first().map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
-            cut.lastLoadedEventIdBefore.first()?.full shouldBe "3"
-            cut.lastLoadedEventIdAfter.first()?.full shouldBe "1"
-            cut.isLoadingAfter.first() shouldBe false
+            val state = cut.state.first()
+            state.events.map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
+            state.lastLoadedEventIdBefore?.full shouldBe "3"
+            state.lastLoadedEventIdAfter?.full shouldBe "1"
+            state.isLoadingAfter shouldBe false
         }
     }
 })
