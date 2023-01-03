@@ -18,6 +18,24 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * @see RoomService.getTimeline
+ */
+fun RoomService.getTimeline(
+    roomId: RoomId,
+    decryptionTimeout: Duration,
+    fetchTimeout: Duration,
+    limitPerFetch: Long,
+    loadingSize: Long,
+): SimpleTimeline =
+    getTimeline(
+        roomId = roomId,
+        decryptionTimeout = decryptionTimeout,
+        fetchTimeout = fetchTimeout,
+        limitPerFetch = limitPerFetch,
+        loadingSize = loadingSize,
+    ) { it }
+
 inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
     key: String = "",

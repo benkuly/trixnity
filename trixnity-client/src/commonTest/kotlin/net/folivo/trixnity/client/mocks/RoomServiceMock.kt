@@ -93,13 +93,14 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override fun getTimeline(
+    override fun <T> getTimeline(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-        loadingSize: Long
-    ): Timeline {
+        loadingSize: Long,
+        transformer: suspend (Flow<TimelineEvent>) -> T
+    ): Timeline<T> {
         throw NotImplementedError()
     }
 
