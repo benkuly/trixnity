@@ -139,13 +139,14 @@ interface RoomService {
      * of events, that are added to the timeline. This refers to events found locally. Use [limitPerFetch], when you want
      * to control the size of events requests from the server.
      */
-    fun getTimeline(
+    fun <T> getTimeline(
         roomId: RoomId,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-        loadingSize: Long = 20
-    ): Timeline
+        loadingSize: Long = 20,
+        transformer: suspend (Flow<TimelineEvent>) -> T,
+    ): Timeline<T>
 
     fun getTimelineEventRelations(
         eventId: EventId,
@@ -503,20 +504,22 @@ class RoomServiceImpl(
             }
         }
 
-    override fun getTimeline(
+    override fun <T> getTimeline(
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
         loadingSize: Long,
-    ): Timeline =
+        transformer: suspend (Flow<TimelineEvent>) -> T,
+    ): Timeline<T> =
         TimelineImpl(
             roomId = roomId,
             decryptionTimeout = decryptionTimeout,
             fetchTimeout = fetchTimeout,
             limitPerFetch = limitPerFetch,
             loadingSize = loadingSize,
-            roomService = this
+            roomService = this,
+            transformer = transformer,
         )
 
     override fun getTimelineEventRelations(
