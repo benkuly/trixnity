@@ -11,9 +11,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedKeyChainLinkRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedKeyChainLinkRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
 
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedKeyChainLink)
         }
@@ -39,7 +41,7 @@ class ExposedKeyChainLinkRepositoryTest : ShouldSpec({
             signedKey = Key.Ed25519Key("CEDRIC_DEVICE", "keyValueC")
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(link1)
             cut.save(link2)
             cut.save(link3)

@@ -10,8 +10,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedMediaCacheMappingRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedMediaCacheMappingRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedMediaCacheMapping)
         }
@@ -24,7 +27,7 @@ class ExposedMediaCacheMappingRepositoryTest : ShouldSpec({
         val mediaCacheMapping2 = MediaCacheMapping(key2, null, 3, ContentType.Image.PNG.toString())
         val uploadMedia2Copy = mediaCacheMapping2.copy(mxcUri = "mxcUri2")
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, mediaCacheMapping1)
             cut.save(key2, mediaCacheMapping2)
             cut.get(key1) shouldBe mediaCacheMapping1

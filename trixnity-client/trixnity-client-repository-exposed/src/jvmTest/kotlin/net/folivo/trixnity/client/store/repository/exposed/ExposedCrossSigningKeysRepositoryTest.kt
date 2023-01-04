@@ -13,9 +13,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedCrossSigningKeysRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
 
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedCrossSigningKeys)
         }
@@ -66,7 +68,7 @@ class ExposedCrossSigningKeysRepositoryTest : ShouldSpec({
                 ), KeySignatureTrustLevel.Valid(true)
             ),
         )
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(alice, aliceCrossSigningKeys)
             cut.save(bob, bobCrossSigningKeys)
             cut.get(alice) shouldBe aliceCrossSigningKeys

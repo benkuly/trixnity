@@ -19,9 +19,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedDeviceKeysRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedDeviceKeysRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
 
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedDeviceKeys)
         }
@@ -76,7 +78,7 @@ class ExposedDeviceKeysRepositoryTest : ShouldSpec({
                 ), KeySignatureTrustLevel.Valid(true)
             )
         )
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(alice, aliceDeviceKeys)
             cut.save(bob, bobDeviceKeys)
             cut.get(alice) shouldBe aliceDeviceKeys

@@ -17,8 +17,11 @@ import kotlin.test.assertNotNull
 class ExposedRoomOutboxMessageRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedRoomOutboxMessageRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoomOutboxMessage)
         }
@@ -32,7 +35,7 @@ class ExposedRoomOutboxMessageRepositoryTest : ShouldSpec({
         val message2 = RoomOutboxMessage(key2, roomId, ImageMessageEventContent("hi"), null)
         val message2Copy = message2.copy(sentAt = fromEpochMilliseconds(24))
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, message1)
             cut.save(key2, message2)
             val get1 = cut.get(key1)
@@ -56,7 +59,7 @@ class ExposedRoomOutboxMessageRepositoryTest : ShouldSpec({
         val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
         val message2 = RoomOutboxMessage(key1, roomId, ImageMessageEventContent("hi"), null)
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, message1)
             cut.save(key2, message2)
             cut.getAll() shouldHaveSize 2

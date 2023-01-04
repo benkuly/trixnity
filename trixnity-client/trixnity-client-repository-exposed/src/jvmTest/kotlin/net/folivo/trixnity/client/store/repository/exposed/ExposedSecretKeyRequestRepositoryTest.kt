@@ -15,8 +15,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedSecretKeyRequestRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: SecretKeyRequestRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedSecretKeyRequest)
         }
@@ -37,7 +40,7 @@ class ExposedSecretKeyRequestRepositoryTest : ShouldSpec({
         )
         val secretKeyRequest2Copy = secretKeyRequest2.copy(createdAt = Instant.fromEpochMilliseconds(24))
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, secretKeyRequest1)
             cut.save(key2, secretKeyRequest2)
             cut.get(key1) shouldBe secretKeyRequest1
@@ -62,7 +65,7 @@ class ExposedSecretKeyRequestRepositoryTest : ShouldSpec({
             Instant.fromEpochMilliseconds(23)
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, secretKeyRequest1)
             cut.save(key2, secretKeyRequest2)
             cut.getAll() shouldContainAll listOf(secretKeyRequest1, secretKeyRequest2)

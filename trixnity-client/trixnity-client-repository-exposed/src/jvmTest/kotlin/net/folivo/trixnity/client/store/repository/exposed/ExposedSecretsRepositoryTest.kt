@@ -15,8 +15,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedSecretsRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedSecretsRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedSecrets)
         }
@@ -32,7 +35,7 @@ class ExposedSecretsRepositoryTest : ShouldSpec({
             "priv2"
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(1, mapOf(secret1))
             cut.get(1) shouldBe mapOf(secret1)
             cut.save(1, mapOf(secret1, secret2))

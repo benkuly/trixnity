@@ -18,8 +18,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedRoomStateRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedRoomStateRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoomState)
         }
@@ -59,7 +62,7 @@ class ExposedRoomStateRepositoryTest : ShouldSpec({
             )
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, state1)
             cut.save(key2, state2)
             cut.get(key1) shouldBe state1
@@ -81,7 +84,7 @@ class ExposedRoomStateRepositoryTest : ShouldSpec({
             stateKey = "@cedric:server"
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.saveBySecondKey(key, "@cedric:server", event)
             cut.getBySecondKey(key, "@cedric:server") shouldBe event
         }
