@@ -10,9 +10,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedAccountRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedAccountRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
 
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedAccount)
         }
@@ -31,7 +33,7 @@ class ExposedAccountRepositoryTest : ShouldSpec({
             "displayName",
             "mxc://localhost/123456",
         )
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(1, account)
             cut.get(1) shouldBe account
             val accountCopy = account.copy(syncBatchToken = "otherSyncToken")

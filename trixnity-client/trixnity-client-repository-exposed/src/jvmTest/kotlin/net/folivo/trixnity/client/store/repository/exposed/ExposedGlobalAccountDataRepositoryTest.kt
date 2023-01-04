@@ -19,8 +19,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedGlobalAccountDataRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedGlobalAccountDataRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedGlobalAccountData)
         }
@@ -63,7 +66,7 @@ class ExposedGlobalAccountDataRepositoryTest : ShouldSpec({
             )
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, accountDataEvent1)
             cut.save(key2, accountDataEvent2)
             cut.get(key1) shouldBe accountDataEvent1
@@ -79,7 +82,7 @@ class ExposedGlobalAccountDataRepositoryTest : ShouldSpec({
         val accountDataEvent = GlobalAccountDataEvent(
             SecretKeyEventContent.AesHmacSha2Key("name"), "key"
         )
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.saveBySecondKey(key, "key", accountDataEvent)
             cut.getBySecondKey(key, "key") shouldBe accountDataEvent
         }

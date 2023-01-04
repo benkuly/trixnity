@@ -13,8 +13,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedOlmSessionRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedOlmSessionRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOlmSession)
         }
@@ -27,7 +30,7 @@ class ExposedOlmSessionRepositoryTest : ShouldSpec({
         val session2 = StoredOlmSession(key2, "session2", fromEpochMilliseconds(1234), pickled = "2")
         val session3 = StoredOlmSession(key2, "session3", fromEpochMilliseconds(1234), pickled = "2")
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, setOf(session1))
             cut.save(key2, setOf(session2))
             cut.get(key1) shouldContainExactly setOf(session1)

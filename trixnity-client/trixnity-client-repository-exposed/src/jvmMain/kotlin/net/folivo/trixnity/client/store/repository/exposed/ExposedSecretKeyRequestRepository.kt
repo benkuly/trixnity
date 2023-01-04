@@ -15,29 +15,29 @@ internal object ExposedSecretKeyRequest : Table("secret_key_request") {
 }
 
 class ExposedSecretKeyRequestRepository(private val json: Json) : SecretKeyRequestRepository {
-    override suspend fun getAll(): List<StoredSecretKeyRequest> {
-        return ExposedSecretKeyRequest.selectAll()
+    override suspend fun getAll(): List<StoredSecretKeyRequest> = withExposedRead {
+        ExposedSecretKeyRequest.selectAll()
             .map { json.decodeFromString(it[ExposedSecretKeyRequest.value]) }
     }
 
-    override suspend fun get(key: String): StoredSecretKeyRequest? {
-        return ExposedSecretKeyRequest.select { ExposedSecretKeyRequest.id eq key }.firstOrNull()?.let {
+    override suspend fun get(key: String): StoredSecretKeyRequest? = withExposedRead {
+        ExposedSecretKeyRequest.select { ExposedSecretKeyRequest.id eq key }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedSecretKeyRequest.value])
         }
     }
 
-    override suspend fun save(key: String, value: StoredSecretKeyRequest) {
+    override suspend fun save(key: String, value: StoredSecretKeyRequest): Unit = withExposedWrite {
         ExposedSecretKeyRequest.replace {
             it[id] = key
             it[ExposedSecretKeyRequest.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String): Unit = withExposedWrite {
         ExposedSecretKeyRequest.deleteWhere { id eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedSecretKeyRequest.deleteAll()
     }
 }

@@ -26,16 +26,16 @@ internal class ExposedRoomOutboxMessageRepository(
         return json.decodeFromString(RoomOutboxMessage.serializer(serializer), input[ExposedRoomOutboxMessage.value])
     }
 
-    override suspend fun getAll(): List<RoomOutboxMessage<*>> {
-        return ExposedRoomOutboxMessage.selectAll().map(::mapToRoomOutboxMessage)
+    override suspend fun getAll(): List<RoomOutboxMessage<*>> = withExposedRead {
+        ExposedRoomOutboxMessage.selectAll().map(::mapToRoomOutboxMessage)
     }
 
-    override suspend fun get(key: String): RoomOutboxMessage<*>? {
-        return ExposedRoomOutboxMessage.select { ExposedRoomOutboxMessage.transactionId eq key }.firstOrNull()
+    override suspend fun get(key: String): RoomOutboxMessage<*>? = withExposedRead {
+        ExposedRoomOutboxMessage.select { ExposedRoomOutboxMessage.transactionId eq key }.firstOrNull()
             ?.let(::mapToRoomOutboxMessage)
     }
 
-    override suspend fun save(key: String, value: RoomOutboxMessage<*>) {
+    override suspend fun save(key: String, value: RoomOutboxMessage<*>): Unit = withExposedWrite {
         val mapping = mappings.message.find { it.kClass.isInstance(value.content) }
         requireNotNull(mapping)
         ExposedRoomOutboxMessage.replace {
@@ -49,11 +49,11 @@ internal class ExposedRoomOutboxMessageRepository(
         }
     }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String): Unit = withExposedWrite {
         ExposedRoomOutboxMessage.deleteWhere { transactionId eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedRoomOutboxMessage.deleteAll()
     }
 }

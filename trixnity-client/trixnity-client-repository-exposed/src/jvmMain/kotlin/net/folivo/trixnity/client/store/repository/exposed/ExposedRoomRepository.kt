@@ -16,28 +16,28 @@ internal object ExposedRoom : Table("room") {
 }
 
 internal class ExposedRoomRepository(private val json: Json) : RoomRepository {
-    override suspend fun getAll(): List<Room> {
-        return ExposedRoom.selectAll().map { json.decodeFromString(it[ExposedRoom.value]) }
+    override suspend fun getAll(): List<Room> = withExposedRead {
+        ExposedRoom.selectAll().map { json.decodeFromString(it[ExposedRoom.value]) }
     }
 
-    override suspend fun get(key: RoomId): Room? {
-        return ExposedRoom.select { ExposedRoom.roomId eq key.full }.firstOrNull()?.let {
+    override suspend fun get(key: RoomId): Room? = withExposedRead {
+        ExposedRoom.select { ExposedRoom.roomId eq key.full }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedRoom.value])
         }
     }
 
-    override suspend fun save(key: RoomId, value: Room) {
+    override suspend fun save(key: RoomId, value: Room): Unit = withExposedWrite {
         ExposedRoom.replace {
             it[roomId] = key.full
             it[ExposedRoom.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun delete(key: RoomId): Unit = withExposedWrite {
         ExposedRoom.deleteWhere { roomId eq key.full }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedRoom.deleteAll()
     }
 }

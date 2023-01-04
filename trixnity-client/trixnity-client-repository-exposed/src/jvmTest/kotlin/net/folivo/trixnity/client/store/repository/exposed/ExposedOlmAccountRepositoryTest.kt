@@ -8,15 +8,18 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedOlmAccountRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedOlmAccountRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOlmAccount)
         }
         cut = ExposedOlmAccountRepository()
     }
     should("save, get and delete") {
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(1, "olm")
             cut.get(1) shouldBe "olm"
             cut.save(1, "newOlm")

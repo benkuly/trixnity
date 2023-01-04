@@ -22,33 +22,35 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
     private val serializer = json.serializersModule.getContextual(Event::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun getBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? {
-        return ExposedRoomState.select {
-            ExposedRoomState.roomId.eq(firstKey.roomId.full) and
-                    ExposedRoomState.type.eq(firstKey.type) and
-                    ExposedRoomState.stateKey.eq(secondKey)
-        }.firstOrNull()?.let {
-            json.decodeFromString(serializer, it[ExposedRoomState.event])
+    override suspend fun getBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? =
+        withExposedRead {
+            ExposedRoomState.select {
+                ExposedRoomState.roomId.eq(firstKey.roomId.full) and
+                        ExposedRoomState.type.eq(firstKey.type) and
+                        ExposedRoomState.stateKey.eq(secondKey)
+            }.firstOrNull()?.let {
+                json.decodeFromString(serializer, it[ExposedRoomState.event])
+            }
         }
-    }
 
-    override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>) {
-        ExposedRoomState.replace {
-            it[roomId] = firstKey.roomId.full
-            it[type] = firstKey.type
-            it[stateKey] = secondKey
-            it[event] = json.encodeToString(serializer, value)
+    override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>): Unit =
+        withExposedWrite {
+            ExposedRoomState.replace {
+                it[roomId] = firstKey.roomId.full
+                it[type] = firstKey.type
+                it[stateKey] = secondKey
+                it[event] = json.encodeToString(serializer, value)
+            }
         }
-    }
 
-    override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> {
-        return ExposedRoomState.select { ExposedRoomState.roomId.eq(key.roomId.full) and ExposedRoomState.type.eq(key.type) }
+    override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> = withExposedRead {
+        ExposedRoomState.select { ExposedRoomState.roomId.eq(key.roomId.full) and ExposedRoomState.type.eq(key.type) }
             .associate {
                 it[ExposedRoomState.stateKey] to json.decodeFromString(serializer, it[ExposedRoomState.event])
             }
     }
 
-    override suspend fun save(key: RoomStateRepositoryKey, value: Map<String, Event<*>>) {
+    override suspend fun save(key: RoomStateRepositoryKey, value: Map<String, Event<*>>): Unit = withExposedWrite {
         ExposedRoomState.batchReplace(value.entries) { (stateKey, event) ->
             this[ExposedRoomState.roomId] = key.roomId.full
             this[ExposedRoomState.type] = key.type
@@ -57,19 +59,20 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
         }
     }
 
-    override suspend fun delete(key: RoomStateRepositoryKey) {
+    override suspend fun delete(key: RoomStateRepositoryKey): Unit = withExposedWrite {
         ExposedRoomState.deleteWhere { roomId.eq(key.roomId.full) and type.eq(key.type) }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String) {
-        ExposedRoomState.deleteWhere {
-            roomId.eq(firstKey.roomId.full) and
-                    type.eq(firstKey.type) and
-                    stateKey.eq(secondKey)
+    override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Unit =
+        withExposedWrite {
+            ExposedRoomState.deleteWhere {
+                roomId.eq(firstKey.roomId.full) and
+                        type.eq(firstKey.type) and
+                        stateKey.eq(secondKey)
+            }
         }
-    }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedRoomState.deleteAll()
     }
 }

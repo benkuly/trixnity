@@ -17,24 +17,25 @@ internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message
 }
 
 internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository {
-    override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? {
-        return ExposedInboundMegolmMessageIndex.select {
-            ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
-                    ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
-                    ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
-        }.firstOrNull()?.let {
-            StoredInboundMegolmMessageIndex(
-                key.sessionId, key.roomId, key.messageIndex,
-                EventId(it[ExposedInboundMegolmMessageIndex.eventId]),
-                it[ExposedInboundMegolmMessageIndex.origin_timestamp]
-            )
+    override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? =
+        withExposedRead {
+            ExposedInboundMegolmMessageIndex.select {
+                ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
+                        ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
+                        ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)
+            }.firstOrNull()?.let {
+                StoredInboundMegolmMessageIndex(
+                    key.sessionId, key.roomId, key.messageIndex,
+                    EventId(it[ExposedInboundMegolmMessageIndex.eventId]),
+                    it[ExposedInboundMegolmMessageIndex.origin_timestamp]
+                )
+            }
         }
-    }
 
     override suspend fun save(
         key: InboundMegolmMessageIndexRepositoryKey,
         value: StoredInboundMegolmMessageIndex
-    ) {
+    ): Unit = withExposedWrite {
         ExposedInboundMegolmMessageIndex.replace {
             it[sessionId] = value.sessionId
             it[roomId] = value.roomId.full
@@ -44,7 +45,7 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
         }
     }
 
-    override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey) {
+    override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey): Unit = withExposedWrite {
         ExposedInboundMegolmMessageIndex.deleteWhere {
             sessionId.eq(key.sessionId) and
                     roomId.eq(key.roomId.full) and
@@ -52,7 +53,7 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
         }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedInboundMegolmMessageIndex.deleteAll()
     }
 }

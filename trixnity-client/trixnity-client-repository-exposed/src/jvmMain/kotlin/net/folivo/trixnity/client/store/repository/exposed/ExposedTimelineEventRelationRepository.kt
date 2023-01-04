@@ -18,25 +18,29 @@ internal object ExposedTimelineEventRelation : Table("room_timeline_event_relati
 }
 
 internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRepository {
-    override suspend fun get(key: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>>? {
-        return ExposedTimelineEventRelation.select {
-            ExposedTimelineEventRelation.relatedEventId.eq(key.relatedEventId.full) and
-                    ExposedTimelineEventRelation.roomId.eq(key.roomId.full)
-        }.groupBy { it[ExposedTimelineEventRelation.relationType] }
-            .map { entry ->
-                val relationType = RelationType.of(entry.key)
-                relationType to entry.value.map {
-                    TimelineEventRelation(
-                        roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
-                        eventId = EventId(it[ExposedTimelineEventRelation.eventId]),
-                        relationType = relationType,
-                        relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
-                    )
-                }.toSet()
-            }.toMap().ifEmpty { null }
-    }
+    override suspend fun get(key: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>>? =
+        withExposedRead {
+            ExposedTimelineEventRelation.select {
+                ExposedTimelineEventRelation.relatedEventId.eq(key.relatedEventId.full) and
+                        ExposedTimelineEventRelation.roomId.eq(key.roomId.full)
+            }.groupBy { it[ExposedTimelineEventRelation.relationType] }
+                .map { entry ->
+                    val relationType = RelationType.of(entry.key)
+                    relationType to entry.value.map {
+                        TimelineEventRelation(
+                            roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
+                            eventId = EventId(it[ExposedTimelineEventRelation.eventId]),
+                            relationType = relationType,
+                            relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
+                        )
+                    }.toSet()
+                }.toMap().ifEmpty { null }
+        }
 
-    override suspend fun save(key: TimelineEventRelationKey, value: Map<RelationType, Set<TimelineEventRelation>>) {
+    override suspend fun save(
+        key: TimelineEventRelationKey,
+        value: Map<RelationType, Set<TimelineEventRelation>>
+    ): Unit = withExposedWrite {
         ExposedTimelineEventRelation.batchReplace(value.entries.flatMap { it.value }) {
             this[ExposedTimelineEventRelation.eventId] = it.eventId.full
             this[ExposedTimelineEventRelation.roomId] = it.roomId.full
@@ -45,7 +49,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         }
     }
 
-    override suspend fun delete(key: TimelineEventRelationKey) {
+    override suspend fun delete(key: TimelineEventRelationKey): Unit = withExposedWrite {
         ExposedTimelineEventRelation.deleteWhere {
             relatedEventId.eq(key.relatedEventId.full) and
                     roomId.eq(key.roomId.full)
@@ -55,8 +59,8 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
     override suspend fun getBySecondKey(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType
-    ): Set<TimelineEventRelation>? {
-        return ExposedTimelineEventRelation.select {
+    ): Set<TimelineEventRelation>? = withExposedRead {
+        ExposedTimelineEventRelation.select {
             ExposedTimelineEventRelation.relatedEventId.eq(firstKey.relatedEventId.full) and
                     ExposedTimelineEventRelation.roomId.eq(firstKey.roomId.full) and
                     ExposedTimelineEventRelation.relationType.eq(secondKey.name)
@@ -74,7 +78,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType,
         value: Set<TimelineEventRelation>
-    ) {
+    ): Unit = withExposedWrite {
         ExposedTimelineEventRelation.batchReplace(value) {
             this[ExposedTimelineEventRelation.eventId] = it.eventId.full
             this[ExposedTimelineEventRelation.roomId] = it.roomId.full
@@ -83,15 +87,16 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: TimelineEventRelationKey, secondKey: RelationType) {
-        ExposedTimelineEventRelation.deleteWhere {
-            relatedEventId.eq(firstKey.relatedEventId.full) and
-                    roomId.eq(firstKey.roomId.full) and
-                    relationType.eq(secondKey.name)
+    override suspend fun deleteBySecondKey(firstKey: TimelineEventRelationKey, secondKey: RelationType): Unit =
+        withExposedWrite {
+            ExposedTimelineEventRelation.deleteWhere {
+                relatedEventId.eq(firstKey.relatedEventId.full) and
+                        roomId.eq(firstKey.roomId.full) and
+                        relationType.eq(secondKey.name)
+            }
         }
-    }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedTimelineEventRelation.deleteAll()
     }
 }

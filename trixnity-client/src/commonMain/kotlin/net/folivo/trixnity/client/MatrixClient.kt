@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -259,6 +260,7 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
+        repositoryTransactionManager = di.get(),
         scope = scope,
     )
     api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
@@ -336,6 +338,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
+                repositoryTransactionManager = di.get(),
                 scope = scope,
             )
         } else null
@@ -358,9 +361,6 @@ class MatrixClientImpl internal constructor(
     override val deviceId: String,
     override val identityKey: Key.Curve25519Key,
     override val signingKey: Key.Ed25519Key,
-    /**
-     * Use this for further access to matrix client-server-API.
-     */
     override val api: MatrixClientServerApiClient,
     override val di: Koin,
     private val rootStore: RootStore,
@@ -368,6 +368,7 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
+    private val repositoryTransactionManager: RepositoryTransactionManager,
     private val scope: CoroutineScope,
 ) : MatrixClient {
     override val displayName: StateFlow<String?> = accountStore.displayName
@@ -427,6 +428,7 @@ class MatrixClientImpl internal constructor(
             filter = requireNotNull(accountStore.filterId.value),
             setPresence = Presence.ONLINE,
             currentBatchToken = accountStore.syncBatchToken,
+            withTransaction = repositoryTransactionManager::writeTransaction,
             scope = scope,
         )
     }
@@ -440,6 +442,7 @@ class MatrixClientImpl internal constructor(
             setPresence = Presence.OFFLINE,
             currentBatchToken = accountStore.syncBatchToken,
             timeout = timeout,
+            withTransaction = repositoryTransactionManager::writeTransaction,
             runOnce = runOnce
         )
     }

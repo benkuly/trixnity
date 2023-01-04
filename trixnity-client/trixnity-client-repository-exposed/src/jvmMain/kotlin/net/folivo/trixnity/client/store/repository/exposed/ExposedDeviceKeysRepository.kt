@@ -16,26 +16,26 @@ internal object ExposedDeviceKeys : Table("device_keys") {
 }
 
 internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysRepository {
-    override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? {
-        return ExposedDeviceKeys.select { ExposedDeviceKeys.userId eq key.full }.firstOrNull()?.let {
+    override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? = withExposedRead {
+        ExposedDeviceKeys.select { ExposedDeviceKeys.userId eq key.full }.firstOrNull()?.let {
             it[ExposedDeviceKeys.value].let { deviceKeys ->
                 json.decodeFromString<Map<String, StoredDeviceKeys>>(deviceKeys)
             }
         }
     }
 
-    override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>) {
+    override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>): Unit = withExposedWrite {
         ExposedDeviceKeys.replace {
             it[userId] = key.full
             it[ExposedDeviceKeys.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: UserId) {
+    override suspend fun delete(key: UserId): Unit = withExposedWrite {
         ExposedDeviceKeys.deleteWhere { userId eq key.full }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedDeviceKeys.deleteAll()
     }
 }

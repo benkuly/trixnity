@@ -48,21 +48,18 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
 
     fun get(
         key: K1,
-        withTransaction: Boolean = true,
     ): Flow<Map<K2, V>?> =
-        cache.get(key, withTransaction, isContainedInCache = { it?.fullyLoadedFromRepository == true })
+        cache.get(key, isContainedInCache = { it?.fullyLoadedFromRepository == true })
             .map { it?.value }
 
     suspend fun update(
         key: K1,
         persistIntoRepository: Boolean = true,
-        withTransaction: Boolean = true,
         onPersist: suspend (newValue: Map<K2, V>?) -> Unit = {},
         updater: suspend (oldValue: Map<K2, V>?) -> Map<K2, V>?
     ) = cache.update(
         key,
         persistIntoRepository,
-        withTransaction,
         isContainedInCache = { it?.fullyLoadedFromRepository == true },
         onPersist = { onPersist(it?.value) },
         updater = { oldValue ->

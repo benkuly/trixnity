@@ -17,8 +17,8 @@ internal object ExposedKeyVerificationState : Table("key_verification_state") {
 }
 
 internal class ExposedKeyVerificationStateRepository(private val json: Json) : KeyVerificationStateRepository {
-    override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? {
-        return ExposedKeyVerificationState.select {
+    override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? = withExposedRead {
+        ExposedKeyVerificationState.select {
             ExposedKeyVerificationState.keyId.eq(key.keyId) and
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
         }.firstOrNull()?.let {
@@ -26,7 +26,7 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
         }
     }
 
-    override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState) {
+    override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState): Unit = withExposedWrite {
         ExposedKeyVerificationState.replace {
             it[keyId] = key.keyId
             it[keyAlgorithm] = key.keyAlgorithm.name
@@ -34,14 +34,14 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
         }
     }
 
-    override suspend fun delete(key: VerifiedKeysRepositoryKey) {
+    override suspend fun delete(key: VerifiedKeysRepositoryKey): Unit = withExposedWrite {
         ExposedKeyVerificationState.deleteWhere {
             keyId.eq(key.keyId) and
                     keyAlgorithm.eq(key.keyAlgorithm.name)
         }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedKeyVerificationState.deleteAll()
     }
 }

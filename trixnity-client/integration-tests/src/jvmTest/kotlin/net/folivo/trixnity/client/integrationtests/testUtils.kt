@@ -83,7 +83,7 @@ data class StartedClient(
 suspend fun registerAndStartClient(name: String, username: String = name, baseUrl: Url): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
     val database = newDatabase()
-    val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
+    val repositoriesModule = createExposedRepositoriesModule(database)
 
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
@@ -100,7 +100,7 @@ suspend fun registerAndStartClient(name: String, username: String = name, baseUr
 suspend fun startClient(name: String, username: String = name, baseUrl: Url): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
     val database = newDatabase()
-    val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
+    val repositoriesModule = createExposedRepositoriesModule(database)
 
     val client = MatrixClient.login(
         baseUrl = baseUrl,

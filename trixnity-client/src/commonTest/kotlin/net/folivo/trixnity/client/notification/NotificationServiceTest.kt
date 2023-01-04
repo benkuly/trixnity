@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.push
+package net.folivo.trixnity.client.notification
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.timing.continually
@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.notification.NotificationService.Notification
-import net.folivo.trixnity.client.notification.NotificationServiceImpl
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.UserInfo

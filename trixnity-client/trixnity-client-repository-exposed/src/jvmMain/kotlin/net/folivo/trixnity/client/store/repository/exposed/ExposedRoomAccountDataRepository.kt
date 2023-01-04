@@ -21,16 +21,20 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> {
-        return ExposedRoomAccountData.select {
-            ExposedRoomAccountData.roomId.eq(key.roomId.full) and
-                    ExposedRoomAccountData.type.eq(key.type)
-        }.associate {
-            it[ExposedRoomAccountData.key] to json.decodeFromString(serializer, it[ExposedRoomAccountData.event])
+    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
+        withExposedRead {
+            ExposedRoomAccountData.select {
+                ExposedRoomAccountData.roomId.eq(key.roomId.full) and
+                        ExposedRoomAccountData.type.eq(key.type)
+            }.associate {
+                it[ExposedRoomAccountData.key] to json.decodeFromString(serializer, it[ExposedRoomAccountData.event])
+            }
         }
-    }
 
-    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Map<String, Event.RoomAccountDataEvent<*>>) {
+    override suspend fun save(
+        key: RoomAccountDataRepositoryKey,
+        value: Map<String, Event.RoomAccountDataEvent<*>>
+    ): Unit = withExposedWrite {
         ExposedRoomAccountData.batchReplace(value.entries) { (secondKey, event) ->
             this[ExposedRoomAccountData.roomId] = key.roomId.full
             this[ExposedRoomAccountData.type] = key.type
@@ -39,7 +43,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         }
     }
 
-    override suspend fun delete(key: RoomAccountDataRepositoryKey) {
+    override suspend fun delete(key: RoomAccountDataRepositoryKey): Unit = withExposedWrite {
         ExposedRoomAccountData.deleteWhere {
             roomId.eq(key.roomId.full) and
                     type.eq(key.type)
@@ -49,8 +53,8 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     override suspend fun getBySecondKey(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
-    ): Event.RoomAccountDataEvent<*>? {
-        return ExposedRoomAccountData.select {
+    ): Event.RoomAccountDataEvent<*>? = withExposedRead {
+        ExposedRoomAccountData.select {
             ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
                     ExposedRoomAccountData.type.eq(firstKey.type) and
                     ExposedRoomAccountData.key.eq(secondKey)
@@ -63,7 +67,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String,
         value: Event.RoomAccountDataEvent<*>
-    ) {
+    ): Unit = withExposedWrite {
         ExposedRoomAccountData.replace {
             it[roomId] = firstKey.roomId.full
             it[type] = firstKey.type

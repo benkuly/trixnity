@@ -11,8 +11,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedOutdatedKeysRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedOutdatedKeysRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOutdatedKeys)
         }
@@ -22,7 +25,7 @@ class ExposedOutdatedKeysRepositoryTest : ShouldSpec({
         val alice = UserId("alice", "server")
         val bob = UserId("bob", "server")
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(1, setOf(alice))
             cut.get(1) shouldContainExactly setOf(alice)
             cut.save(1, setOf(alice, bob))

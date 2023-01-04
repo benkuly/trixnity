@@ -67,6 +67,8 @@ enum class SyncState {
 
 interface SyncApiClient : EventEmitter {
     /**
+     * This is the plain sync request. If you want to subscribe to events and ore, use [start] or [startOnce].
+     *
      * @see [Sync]
      */
     suspend fun sync(
@@ -94,24 +96,18 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
+        withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         wait: Boolean = false,
         scope: CoroutineScope,
     )
-
-    suspend fun startOnce(
-        filter: String? = null,
-        setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
-        timeout: Long = 0,
-        asUserId: UserId? = null,
-    ): Result<Unit>
 
     suspend fun <T> startOnce(
         filter: String? = null,
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 0,
+        withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
@@ -119,6 +115,24 @@ interface SyncApiClient : EventEmitter {
     suspend fun stop(wait: Boolean = false)
     suspend fun cancel(wait: Boolean = false)
 }
+
+suspend fun SyncApiClient.startOnce(
+    filter: String? = null,
+    setPresence: Presence? = null,
+    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    timeout: Long = 0,
+    withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
+    asUserId: UserId? = null,
+): Result<Unit> =
+    startOnce(
+        filter = filter,
+        setPresence = setPresence,
+        currentBatchToken = currentBatchToken,
+        timeout = timeout,
+        withTransaction = withTransaction,
+        asUserId = asUserId,
+        runOnce = {}
+    )
 
 class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
@@ -184,6 +198,7 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         wait: Boolean,
         scope: CoroutineScope,
@@ -204,6 +219,7 @@ class SyncApiClientImpl(
                                     filter = filter,
                                     setPresence = setPresence,
                                     timeout = if (_currentSyncState.value == STARTED) 0 else timeout,
+                                    withTransaction = withTransaction,
                                     asUserId = asUserId
                                 )
                             } catch (error: Throwable) {
@@ -236,26 +252,12 @@ class SyncApiClientImpl(
         if (wait) syncJob?.join()
     }
 
-    override suspend fun startOnce(
-        filter: String?,
-        setPresence: Presence?,
-        currentBatchToken: MutableStateFlow<String?>,
-        timeout: Long,
-        asUserId: UserId?,
-    ): Result<Unit> = startOnce(
-        filter = filter,
-        setPresence = setPresence,
-        currentBatchToken = currentBatchToken,
-        timeout = timeout,
-        asUserId = asUserId,
-        runOnce = {}
-    )
-
     override suspend fun <T> startOnce(
         filter: String?,
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T> = kotlin.runCatching {
@@ -264,7 +266,8 @@ class SyncApiClientImpl(
             val isInitialSync = currentBatchToken.value == null
             log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
-            val syncResponse = syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+            val syncResponse =
+                syncAndResponse(currentBatchToken, filter, setPresence, timeout, withTransaction, asUserId)
             runOnce(syncResponse)
         }
     }.onSuccess {
@@ -280,7 +283,8 @@ class SyncApiClientImpl(
         filter: String?,
         setPresence: Presence?,
         timeout: Long,
-        asUserId: UserId?
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
+        asUserId: UserId?,
     ): Sync.Response {
         val batchToken = currentBatchToken.value
         val response = sync(
@@ -292,7 +296,9 @@ class SyncApiClientImpl(
             asUserId = asUserId
         ).getOrThrow()
         log.debug { "received sync response with token ${currentBatchToken.value}" }
-        processSyncResponse(response)
+        withTransaction {
+            processSyncResponse(response)
+        }
         log.debug { "processed sync response with token ${currentBatchToken.value}" }
         currentBatchToken.value = response.nextBatch
         return response

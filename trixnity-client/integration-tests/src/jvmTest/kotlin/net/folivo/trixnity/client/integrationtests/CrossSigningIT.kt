@@ -66,9 +66,9 @@ class CrossSigningIT {
         database1 = newDatabase()
         database2 = newDatabase()
         database3 = newDatabase()
-        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
-        val repositoriesModule3 = createExposedRepositoriesModule(database3, Dispatchers.IO)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2)
+        val repositoriesModule3 = createExposedRepositoriesModule(database3)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,

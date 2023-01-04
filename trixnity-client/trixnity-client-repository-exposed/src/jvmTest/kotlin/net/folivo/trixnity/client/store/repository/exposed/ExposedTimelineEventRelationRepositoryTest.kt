@@ -13,8 +13,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedTimelineEventRelationRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedTimelineEventRelationRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedTimelineEventRelation)
         }
@@ -48,7 +51,7 @@ class ExposedTimelineEventRelationRepositoryTest : ShouldSpec({
             EventId("\$relatedEvent2")
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(
                 key1,
                 mapOf(

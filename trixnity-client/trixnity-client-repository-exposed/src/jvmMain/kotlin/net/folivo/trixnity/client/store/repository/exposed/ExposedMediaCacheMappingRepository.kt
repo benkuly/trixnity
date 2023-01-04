@@ -14,8 +14,8 @@ internal object ExposedMediaCacheMapping : Table("media_cache_mapping") {
 }
 
 internal class ExposedMediaCacheMappingRepository : MediaCacheMappingRepository {
-    override suspend fun get(key: String): MediaCacheMapping? {
-        return ExposedMediaCacheMapping.select { ExposedMediaCacheMapping.cacheUri eq key }.firstOrNull()?.let {
+    override suspend fun get(key: String): MediaCacheMapping? = withExposedRead {
+        ExposedMediaCacheMapping.select { ExposedMediaCacheMapping.cacheUri eq key }.firstOrNull()?.let {
             MediaCacheMapping(
                 key,
                 it[ExposedMediaCacheMapping.mxcUri],
@@ -25,7 +25,7 @@ internal class ExposedMediaCacheMappingRepository : MediaCacheMappingRepository 
         }
     }
 
-    override suspend fun save(key: String, value: MediaCacheMapping) {
+    override suspend fun save(key: String, value: MediaCacheMapping): Unit = withExposedWrite {
         ExposedMediaCacheMapping.replace {
             it[cacheUri] = key
             it[mxcUri] = value.mxcUri
@@ -34,11 +34,11 @@ internal class ExposedMediaCacheMappingRepository : MediaCacheMappingRepository 
         }
     }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String): Unit = withExposedWrite {
         ExposedMediaCacheMapping.deleteWhere { cacheUri eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedMediaCacheMapping.deleteAll()
     }
 }

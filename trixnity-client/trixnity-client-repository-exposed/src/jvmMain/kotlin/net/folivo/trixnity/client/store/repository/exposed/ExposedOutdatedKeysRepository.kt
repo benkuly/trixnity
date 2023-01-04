@@ -17,24 +17,24 @@ internal object ExposedOutdatedKeys : LongIdTable("outdated_keys") {
 }
 
 internal class ExposedOutdatedKeysRepository(private val json: Json) : OutdatedKeysRepository {
-    override suspend fun get(key: Long): Set<UserId>? {
-        return ExposedOutdatedKeys.select { ExposedOutdatedKeys.id eq key }.firstOrNull()?.let {
+    override suspend fun get(key: Long): Set<UserId>? = withExposedRead {
+        ExposedOutdatedKeys.select { ExposedOutdatedKeys.id eq key }.firstOrNull()?.let {
             it[ExposedOutdatedKeys.value].let { outdated -> json.decodeFromString<Set<UserId>>(outdated) }
         }
     }
 
-    override suspend fun save(key: Long, value: Set<UserId>) {
+    override suspend fun save(key: Long, value: Set<UserId>): Unit = withExposedWrite {
         ExposedOutdatedKeys.replace {
             it[id] = key
             it[ExposedOutdatedKeys.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long): Unit = withExposedWrite {
         ExposedOutdatedKeys.deleteWhere { ExposedOutdatedKeys.id eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedOutdatedKeys.deleteAll()
     }
 }
