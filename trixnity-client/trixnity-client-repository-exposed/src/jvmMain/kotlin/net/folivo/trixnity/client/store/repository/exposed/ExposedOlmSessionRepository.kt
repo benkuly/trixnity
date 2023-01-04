@@ -16,23 +16,23 @@ internal object ExposedOlmSession : Table("olm_session") {
 }
 
 internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionRepository {
-    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? {
-        return ExposedOlmSession.select { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
+    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? = withExposedRead {
+        ExposedOlmSession.select { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
             ?.let { json.decodeFromString(it[ExposedOlmSession.value]) }
     }
 
-    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>) {
+    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>): Unit = withExposedWrite {
         ExposedOlmSession.replace {
             it[senderKey] = key.value
             it[ExposedOlmSession.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: Key.Curve25519Key) {
+    override suspend fun delete(key: Key.Curve25519Key): Unit = withExposedWrite {
         ExposedOlmSession.deleteWhere { senderKey eq key.value }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedOlmSession.deleteAll()
     }
 }

@@ -19,34 +19,40 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
     private val serializer = json.serializersModule.getContextual(Event.GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: String): Map<String, Event.GlobalAccountDataEvent<*>> {
-        return ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(key) }.associate {
+    override suspend fun get(key: String): Map<String, Event.GlobalAccountDataEvent<*>> = withExposedRead {
+        ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(key) }.associate {
             it[ExposedGlobalAccountData.key] to json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
         }
     }
 
-    override suspend fun save(key: String, value: Map<String, Event.GlobalAccountDataEvent<*>>) {
-        ExposedGlobalAccountData.batchReplace(value.entries) { (secondKey, event) ->
-            this[ExposedGlobalAccountData.type] = key
-            this[ExposedGlobalAccountData.key] = secondKey
-            this[ExposedGlobalAccountData.event] = json.encodeToString(serializer, event)
+    override suspend fun save(key: String, value: Map<String, Event.GlobalAccountDataEvent<*>>): Unit =
+        withExposedWrite {
+            ExposedGlobalAccountData.batchReplace(value.entries) { (secondKey, event) ->
+                this[ExposedGlobalAccountData.type] = key
+                this[ExposedGlobalAccountData.key] = secondKey
+                this[ExposedGlobalAccountData.event] = json.encodeToString(serializer, event)
+            }
         }
-    }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String): Unit = withExposedWrite {
         ExposedGlobalAccountData.deleteWhere { type eq key }
     }
 
-    override suspend fun getBySecondKey(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? {
-        return ExposedGlobalAccountData.select {
-            ExposedGlobalAccountData.type.eq(firstKey) and
-                    ExposedGlobalAccountData.key.eq(secondKey)
-        }.firstOrNull()?.let {
-            json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
+    override suspend fun getBySecondKey(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? =
+        withExposedRead {
+            ExposedGlobalAccountData.select {
+                ExposedGlobalAccountData.type.eq(firstKey) and
+                        ExposedGlobalAccountData.key.eq(secondKey)
+            }.firstOrNull()?.let {
+                json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
+            }
         }
-    }
 
-    override suspend fun saveBySecondKey(firstKey: String, secondKey: String, value: Event.GlobalAccountDataEvent<*>) {
+    override suspend fun saveBySecondKey(
+        firstKey: String,
+        secondKey: String,
+        value: Event.GlobalAccountDataEvent<*>
+    ): Unit = withExposedWrite {
         ExposedGlobalAccountData.replace {
             it[type] = firstKey
             it[key] = secondKey
@@ -54,14 +60,14 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
         }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String) {
+    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String): Unit = withExposedWrite {
         ExposedGlobalAccountData.deleteWhere {
             type.eq(firstKey) and
                     key.eq(secondKey)
         }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedGlobalAccountData.deleteAll()
     }
 }

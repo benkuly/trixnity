@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo

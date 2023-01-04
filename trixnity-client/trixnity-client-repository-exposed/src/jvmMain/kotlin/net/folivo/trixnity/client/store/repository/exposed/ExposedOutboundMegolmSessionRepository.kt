@@ -16,25 +16,25 @@ internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") 
 }
 
 internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : OutboundMegolmSessionRepository {
-    override suspend fun get(key: RoomId): StoredOutboundMegolmSession? {
-        return ExposedOutboundMegolmSession.select { ExposedOutboundMegolmSession.roomId eq key.full }.firstOrNull()
+    override suspend fun get(key: RoomId): StoredOutboundMegolmSession? = withExposedRead {
+        ExposedOutboundMegolmSession.select { ExposedOutboundMegolmSession.roomId eq key.full }.firstOrNull()
             ?.let {
                 json.decodeFromString(it[ExposedOutboundMegolmSession.value])
             }
     }
 
-    override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession) {
+    override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession): Unit = withExposedWrite {
         ExposedOutboundMegolmSession.replace {
             it[roomId] = key.full
             it[ExposedOutboundMegolmSession.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun delete(key: RoomId): Unit = withExposedWrite {
         ExposedOutboundMegolmSession.deleteWhere { roomId eq key.full }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedOutboundMegolmSession.deleteAll()
     }
 }

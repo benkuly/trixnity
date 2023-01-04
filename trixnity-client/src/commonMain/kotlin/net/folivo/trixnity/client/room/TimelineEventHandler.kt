@@ -59,32 +59,28 @@ class TimelineEventHandlerImpl(
             val roomId = room.key
             room.value.timeline?.also {
                 timelineMutex.withLock(roomId) {
-                    rtm.writeTransaction {
-                        addEventsToTimelineAtEnd(
-                            roomId = roomId,
-                            newEvents = it.events,
-                            previousBatch = it.previousBatch,
-                            nextBatch = syncResponse.nextBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                    }
+                    addEventsToTimelineAtEnd(
+                        roomId = roomId,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
                 }
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
-                    rtm.writeTransaction {
-                        addEventsToTimelineAtEnd(
-                            roomId = room.key,
-                            newEvents = it.events,
-                            previousBatch = it.previousBatch,
-                            nextBatch = syncResponse.nextBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                    }
+                    addEventsToTimelineAtEnd(
+                        roomId = room.key,
+                        newEvents = it.events,
+                        previousBatch = it.previousBatch,
+                        nextBatch = syncResponse.nextBatch,
+                        hasGapBefore = it.limited ?: false
+                    )
+                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
                 }
             }
         }
@@ -113,7 +109,7 @@ class TimelineEventHandlerImpl(
         nextBatch: String,
         hasGapBefore: Boolean
     ) {
-        val events = roomTimelineStore.filterDuplicateEvents(newEvents, false)
+        val events = roomTimelineStore.filterDuplicateEvents(newEvents)
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
             val room = roomStore.get(roomId).first()
@@ -157,8 +153,7 @@ class TimelineEventHandlerImpl(
         kotlin.runCatching {
             val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
 
-            val startEvent =
-                roomTimelineStore.get(startEventId, roomId, withTransaction = false) ?: return@runCatching
+            val startEvent = roomTimelineStore.get(startEventId, roomId).first() ?: return@runCatching
             val previousToken: String?
             val previousHasGap: Boolean
             val previousEvent: EventId?
@@ -189,7 +184,7 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId
-                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk, true)
+                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
                 previousHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == previousEvent } == true
@@ -215,7 +210,7 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId
-                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk, true)
+                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
                 nextHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == nextEvent } == true
@@ -227,7 +222,7 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                rtm.writeTransaction {
+                rtm.writeTransaction { // if something fails, no event is saved at all
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,
@@ -258,7 +253,7 @@ class TimelineEventHandlerImpl(
 
     internal suspend fun setLastEventId(event: Event<*>) {
         if (event is Event.RoomEvent) {
-            roomStore.update(event.roomId, withTransaction = false) { oldRoom ->
+            roomStore.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(lastEventId = event.id)
                     ?: Room(roomId = event.roomId, lastEventId = event.id)
             }

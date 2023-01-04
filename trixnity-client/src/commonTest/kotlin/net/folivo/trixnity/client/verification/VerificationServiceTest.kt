@@ -28,6 +28,7 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet.Reason
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
@@ -62,6 +63,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.seconds
+
 
 class VerificationServiceTest : ShouldSpec(body)
 

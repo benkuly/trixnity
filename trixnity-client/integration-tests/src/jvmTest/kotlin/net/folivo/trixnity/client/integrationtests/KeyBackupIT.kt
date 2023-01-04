@@ -97,7 +97,7 @@ class KeyBackupIT {
             withClue("login with another client and look if keybackup works") {
                 val scope = CoroutineScope(Dispatchers.Default) + CoroutineName("client3")
                 val database = newDatabase()
-                val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
+                val repositoriesModule = createExposedRepositoriesModule(database)
 
                 val client3 = MatrixClient.login(
                     baseUrl = URLBuilder(

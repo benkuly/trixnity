@@ -16,26 +16,26 @@ internal object ExposedCrossSigningKeys : Table("cross_signing_keys") {
 }
 
 internal class ExposedCrossSigningKeysRepository(private val json: Json) : CrossSigningKeysRepository {
-    override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? {
-        return ExposedCrossSigningKeys.select { ExposedCrossSigningKeys.userId eq key.full }.firstOrNull()?.let {
+    override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? = withExposedRead {
+        ExposedCrossSigningKeys.select { ExposedCrossSigningKeys.userId eq key.full }.firstOrNull()?.let {
             it[ExposedCrossSigningKeys.value].let { deviceKeys ->
                 json.decodeFromString<Set<StoredCrossSigningKeys>>(deviceKeys)
             }
         }
     }
 
-    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) {
+    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>): Unit = withExposedWrite {
         ExposedCrossSigningKeys.replace {
             it[userId] = key.full
             it[ExposedCrossSigningKeys.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: UserId) {
+    override suspend fun delete(key: UserId): Unit = withExposedWrite {
         ExposedCrossSigningKeys.deleteWhere { userId eq key.full }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedCrossSigningKeys.deleteAll()
     }
 }

@@ -18,32 +18,33 @@ internal object ExposedRoomUser : Table("room_user") {
 }
 
 internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepository {
-    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? {
-        return ExposedRoomUser.select { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
+    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? = withExposedRead {
+        ExposedRoomUser.select { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
             .firstOrNull()?.let {
                 json.decodeFromString(it[ExposedRoomUser.value])
             }
     }
 
-    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser) {
-        ExposedRoomUser.replace {
-            it[roomId] = firstKey.full
-            it[userId] = secondKey.full
-            it[ExposedRoomUser.value] = json.encodeToString(value)
+    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser): Unit =
+        withExposedWrite {
+            ExposedRoomUser.replace {
+                it[roomId] = firstKey.full
+                it[userId] = secondKey.full
+                it[ExposedRoomUser.value] = json.encodeToString(value)
+            }
         }
-    }
 
-    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId) {
+    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId): Unit = withExposedWrite {
         ExposedRoomUser.deleteWhere { roomId.eq(firstKey.full) and userId.eq(secondKey.full) }
     }
 
-    override suspend fun get(key: RoomId): Map<UserId, RoomUser> {
-        return ExposedRoomUser.select { ExposedRoomUser.roomId eq key.full }
+    override suspend fun get(key: RoomId): Map<UserId, RoomUser> = withExposedRead {
+        ExposedRoomUser.select { ExposedRoomUser.roomId eq key.full }
             .map { json.decodeFromString<RoomUser>(it[ExposedRoomUser.value]) }
             .associateBy { it.userId }
     }
 
-    override suspend fun save(key: RoomId, value: Map<UserId, RoomUser>) {
+    override suspend fun save(key: RoomId, value: Map<UserId, RoomUser>): Unit = withExposedWrite {
         ExposedRoomUser.batchReplace(value.values) { replaceValue ->
             this[ExposedRoomUser.userId] = replaceValue.userId.full
             this[ExposedRoomUser.roomId] = key.full
@@ -51,11 +52,11 @@ internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepos
         }
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun delete(key: RoomId): Unit = withExposedWrite {
         ExposedRoomUser.deleteWhere { roomId eq key.full }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedRoomUser.deleteAll()
     }
 }

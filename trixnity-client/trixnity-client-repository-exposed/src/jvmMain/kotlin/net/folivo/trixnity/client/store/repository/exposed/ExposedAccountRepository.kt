@@ -24,8 +24,8 @@ internal object ExposedAccount : LongIdTable("account") {
 }
 
 internal class ExposedAccountRepository : AccountRepository {
-    override suspend fun get(key: Long): Account? {
-        return ExposedAccount.select { ExposedAccount.id eq key }.firstOrNull()?.let {
+    override suspend fun get(key: Long): Account? = withExposedRead {
+        ExposedAccount.select { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
                 olmPickleKey = it[ExposedAccount.olmPickleKey],
                 baseUrl = it[ExposedAccount.baseUrl],
@@ -41,7 +41,7 @@ internal class ExposedAccountRepository : AccountRepository {
         }
     }
 
-    override suspend fun save(key: Long, value: Account) {
+    override suspend fun save(key: Long, value: Account): Unit = withExposedWrite {
         ExposedAccount.replace {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
@@ -57,11 +57,11 @@ internal class ExposedAccountRepository : AccountRepository {
         }
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long): Unit = withExposedWrite {
         ExposedAccount.deleteWhere { ExposedAccount.id eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedAccount.deleteAll()
     }
 }

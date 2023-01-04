@@ -13,23 +13,23 @@ internal object ExposedOlmAccount : LongIdTable("olm_account") {
 }
 
 internal class ExposedOlmAccountRepository : OlmAccountRepository {
-    override suspend fun get(key: Long): String? {
-        return ExposedOlmAccount.select { ExposedOlmAccount.id eq key }.firstOrNull()
+    override suspend fun get(key: Long): String? = withExposedRead {
+        ExposedOlmAccount.select { ExposedOlmAccount.id eq key }.firstOrNull()
             ?.let { it[ExposedOlmAccount.pickled] }
     }
 
-    override suspend fun save(key: Long, value: String) {
+    override suspend fun save(key: Long, value: String): Unit = withExposedWrite {
         ExposedOlmAccount.replace {
             it[ExposedOlmAccount.id] = key
             it[pickled] = value
         }
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long): Unit = withExposedWrite {
         ExposedOlmAccount.deleteWhere { ExposedOlmAccount.id eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedOlmAccount.deleteAll()
     }
 }

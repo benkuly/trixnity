@@ -18,24 +18,24 @@ internal object ExposedSecrets : LongIdTable("secrets") {
 }
 
 internal class ExposedSecretsRepository(private val json: Json) : SecretsRepository {
-    override suspend fun get(key: Long): Map<SecretType, StoredSecret>? {
-        return ExposedSecrets.select { ExposedSecrets.id eq key }.firstOrNull()?.let {
+    override suspend fun get(key: Long): Map<SecretType, StoredSecret>? = withExposedRead {
+        ExposedSecrets.select { ExposedSecrets.id eq key }.firstOrNull()?.let {
             it[ExposedSecrets.value].let { outdated -> json.decodeFromString(outdated) }
         }
     }
 
-    override suspend fun save(key: Long, value: Map<SecretType, StoredSecret>) {
+    override suspend fun save(key: Long, value: Map<SecretType, StoredSecret>): Unit = withExposedWrite {
         ExposedSecrets.replace {
             it[id] = key
             it[ExposedSecrets.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long): Unit = withExposedWrite {
         ExposedSecrets.deleteWhere { ExposedSecrets.id eq key }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedSecrets.deleteAll()
     }
 }

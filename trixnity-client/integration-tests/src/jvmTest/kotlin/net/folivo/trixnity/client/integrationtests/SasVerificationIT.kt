@@ -50,8 +50,8 @@ class SasVerificationIT {
         ).build()
         database1 = newDatabase()
         database2 = newDatabase()
-        val repositoriesModule1 = createExposedRepositoriesModule(database1, Dispatchers.IO)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2, Dispatchers.IO)
+        val repositoriesModule1 = createExposedRepositoriesModule(database1)
+        val repositoriesModule2 = createExposedRepositoriesModule(database2)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
