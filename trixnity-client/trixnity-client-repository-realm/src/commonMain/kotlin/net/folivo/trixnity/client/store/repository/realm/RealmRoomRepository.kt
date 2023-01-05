@@ -37,7 +37,6 @@ internal class RealmRoomRepository(
         val upsert = (existing ?: RealmRoom().apply { roomId = key.full }).apply {
             this.value = json.encodeToString(value)
         }
-        println(upsert)
         if (existing == null) {
             copyToRealm(upsert)
         }
