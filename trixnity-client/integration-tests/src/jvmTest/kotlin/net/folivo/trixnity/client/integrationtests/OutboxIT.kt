@@ -43,7 +43,7 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = newDatabase()
-        val repositoriesModule = createExposedRepositoriesModule(database, Dispatchers.IO)
+        val repositoriesModule = createExposedRepositoriesModule(database)
 
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,

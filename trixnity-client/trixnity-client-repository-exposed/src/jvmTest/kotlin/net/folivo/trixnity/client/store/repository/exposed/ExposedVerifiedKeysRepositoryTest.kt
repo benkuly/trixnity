@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.store.repository.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
+import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -13,9 +13,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedVerifiedKeysRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedKeyVerificationStateRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
 
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedKeyVerificationState)
         }
@@ -31,7 +33,7 @@ class ExposedVerifiedKeysRepositoryTest : ShouldSpec({
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(verifiedKey1Key, Verified("keyValue1"))
             cut.save(verifiedKey2Key, Blocked("keyValue2"))
             cut.get(verifiedKey1Key) shouldBe Verified("keyValue1")

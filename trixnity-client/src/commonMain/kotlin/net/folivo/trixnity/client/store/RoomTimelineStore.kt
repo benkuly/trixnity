@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
@@ -36,26 +35,21 @@ class RoomTimelineStore(
     fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
         timelineEventCache.get(TimelineEventKey(eventId, roomId))
 
-    suspend fun get(eventId: EventId, roomId: RoomId, withTransaction: Boolean = true): TimelineEvent? =
-        timelineEventCache.get(TimelineEventKey(eventId, roomId), withTransaction = withTransaction).first()
-
     suspend fun update(
         eventId: EventId,
         roomId: RoomId,
-        withTransaction: Boolean = true,
         persistIntoRepository: Boolean = true,
         updater: suspend (oldTimelineEvent: TimelineEvent?) -> TimelineEvent?
     ) = timelineEventCache.update(
         TimelineEventKey(eventId, roomId),
         persistIntoRepository,
-        withTransaction = withTransaction,
         updater = updater
     )
 
-    suspend fun addAll(events: List<TimelineEvent>, withTransaction: Boolean = true) {
+    suspend fun addAll(events: List<TimelineEvent>) {
         events.forEach { event ->
             timelineEventCache.update(
-                TimelineEventKey(event.eventId, event.roomId), withTransaction = withTransaction
+                TimelineEventKey(event.eventId, event.roomId)
             ) { event }
         }
     }

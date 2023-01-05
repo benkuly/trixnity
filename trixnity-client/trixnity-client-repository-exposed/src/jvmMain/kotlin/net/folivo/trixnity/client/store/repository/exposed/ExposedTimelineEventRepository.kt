@@ -17,15 +17,15 @@ internal object ExposedTimelineEvent : Table("room_timeline_event") {
 }
 
 internal class ExposedTimelineEventRepository(private val json: Json) : TimelineEventRepository {
-    override suspend fun get(key: TimelineEventKey): TimelineEvent? {
-        return ExposedTimelineEvent.select {
+    override suspend fun get(key: TimelineEventKey): TimelineEvent? = withExposedRead {
+        ExposedTimelineEvent.select {
             ExposedTimelineEvent.eventId.eq(key.eventId.full) and ExposedTimelineEvent.roomId.eq(key.roomId.full)
         }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedTimelineEvent.value])
         }
     }
 
-    override suspend fun save(key: TimelineEventKey, value: TimelineEvent) {
+    override suspend fun save(key: TimelineEventKey, value: TimelineEvent): Unit = withExposedWrite {
         ExposedTimelineEvent.replace {
             it[eventId] = key.eventId.full
             it[roomId] = key.roomId.full
@@ -33,13 +33,13 @@ internal class ExposedTimelineEventRepository(private val json: Json) : Timeline
         }
     }
 
-    override suspend fun delete(key: TimelineEventKey) {
+    override suspend fun delete(key: TimelineEventKey): Unit = withExposedWrite {
         ExposedTimelineEvent.deleteWhere {
             eventId.eq(key.eventId.full) and roomId.eq(key.roomId.full)
         }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedTimelineEvent.deleteAll()
     }
 }

@@ -44,11 +44,6 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             cut.get("key").first() shouldBe "value"
             transactionWasCalled.value shouldBe true
         }
-        should("not use transaction when flag ist set") {
-            repository.save("key", "value")
-            cut.get("key", withTransaction = false).first() shouldBe "value"
-            transactionWasCalled.value shouldBe false
-        }
         should("prefer cache") {
             repository.save("key", "value")
             cut.get("key").first() shouldBe "value"
@@ -114,12 +109,6 @@ class RepositoryStateFlowCacheTest : ShouldSpec({
             repository.save("key", "old")
             cut.update("key", persistIntoRepository = false) { "value" }
             repository.get("key") shouldBe "old"
-        }
-        should("not use transaction when flag is set") {
-            repository.save("key", "old")
-            cut.update("key", withTransaction = false) { "value" }
-            repository.get("key") shouldBe "value"
-            transactionWasCalled.value shouldBe false
         }
     }
 })

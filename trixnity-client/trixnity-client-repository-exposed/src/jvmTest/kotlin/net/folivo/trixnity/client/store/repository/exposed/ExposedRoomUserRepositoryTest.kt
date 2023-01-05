@@ -17,8 +17,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedRoomUserRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedRoomUserRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoomUser)
         }
@@ -58,7 +61,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
             )
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, mapOf(user1.userId to user1))
             cut.save(key2, mapOf(user2.userId to user2))
             cut.get(key1) shouldBe mapOf(user1.userId to user1)
@@ -82,7 +85,7 @@ class ExposedRoomUserRepositoryTest : ShouldSpec({
             )
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.saveBySecondKey(key, user.userId, user)
             cut.getBySecondKey(key, user.userId) shouldBe user
         }

@@ -12,8 +12,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedInboundMegolmMessageIndexRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedInboundMegolmMessageIndex)
         }
@@ -37,7 +40,7 @@ class ExposedInboundMegolmMessageIndexRepositoryTest : ShouldSpec({
         )
         val messageIndex2Copy = messageIndex2.copy(originTimestamp = 1235)
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(messageIndexKey1, messageIndex1)
             cut.save(messageIndexKey2, messageIndex2)
             cut.get(messageIndexKey1) shouldBe messageIndex1

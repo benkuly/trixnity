@@ -19,8 +19,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedRoomAccountDataRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedRoomAccountDataRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedRoomAccountData)
         }
@@ -44,7 +47,7 @@ class ExposedRoomAccountDataRepositoryTest : ShouldSpec({
         )
         val accountDataEvent3 = mapOf("" to accountDataEvent2[""].shouldNotBeNull().copy(roomId = roomId1))
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, accountDataEvent1)
             cut.save(key2, accountDataEvent2)
             cut.get(key1) shouldBe accountDataEvent1
@@ -59,7 +62,7 @@ class ExposedRoomAccountDataRepositoryTest : ShouldSpec({
         val roomId = RoomId("someRoom", "server")
         val key = RoomAccountDataRepositoryKey(roomId, "m.fully_read")
         val accountDataEvent = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId, "")
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.saveBySecondKey(key, "", accountDataEvent)
             cut.getBySecondKey(key, "") shouldBe accountDataEvent
         }

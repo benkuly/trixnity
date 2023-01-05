@@ -10,16 +10,14 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
-import kotlin.coroutines.CoroutineContext
 
 private val log = KotlinLogging.logger {}
 
 suspend fun createExposedRepositoriesModule(
     database: Database,
-    transactionContext: CoroutineContext = Dispatchers.IO
 ): Module {
     log.debug { "create missing tables and columns" }
-    newSuspendedTransaction(transactionContext, database) {
+    newSuspendedTransaction(Dispatchers.IO, database) {
         val allTables = arrayOf(
             ExposedAccount,
             ExposedCrossSigningKeys,
@@ -48,7 +46,7 @@ suspend fun createExposedRepositoriesModule(
     }
     log.debug { "finished create missing tables and columns" }
     return module {
-        single<RepositoryTransactionManager> { ExposedRepositoryTransactionManager(database, transactionContext) }
+        single<RepositoryTransactionManager> { ExposedRepositoryTransactionManager(database) }
         singleOf(::ExposedAccountRepository) { bind<AccountRepository>() }
         singleOf(::ExposedOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
         singleOf(::ExposedDeviceKeysRepository) { bind<DeviceKeysRepository>() }

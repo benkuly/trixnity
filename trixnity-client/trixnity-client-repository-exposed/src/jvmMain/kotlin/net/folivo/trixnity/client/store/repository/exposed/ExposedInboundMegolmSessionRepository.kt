@@ -25,15 +25,15 @@ internal object ExposedInboundMegolmSession : Table("inbound_megolm_session") {
 }
 
 internal class ExposedInboundMegolmSessionRepository(private val json: Json) : InboundMegolmSessionRepository {
-    override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? {
-        return ExposedInboundMegolmSession.select {
+    override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? = withExposedRead {
+        ExposedInboundMegolmSession.select {
             ExposedInboundMegolmSession.sessionId.eq(key.sessionId) and
                     ExposedInboundMegolmSession.roomId.eq(key.roomId.full)
         }.firstOrNull()?.mapToStoredInboundMegolmSession()
     }
 
-    override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> {
-        return ExposedInboundMegolmSession.select { ExposedInboundMegolmSession.hasBeenBackedUp.eq(false) }
+    override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> = withExposedRead {
+        ExposedInboundMegolmSession.select { ExposedInboundMegolmSession.hasBeenBackedUp.eq(false) }
             .map { it.mapToStoredInboundMegolmSession() }
             .toSet()
     }
@@ -50,28 +50,29 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
         pickled = this[ExposedInboundMegolmSession.pickled]
     )
 
-    override suspend fun save(key: InboundMegolmSessionRepositoryKey, value: StoredInboundMegolmSession) {
-        ExposedInboundMegolmSession.replace {
-            it[senderKey] = value.senderKey.value
-            it[sessionId] = value.sessionId
-            it[roomId] = value.roomId.full
-            it[firstKnownIndex] = value.firstKnownIndex
-            it[hasBeenBackedUp] = value.hasBeenBackedUp
-            it[isTrusted] = value.isTrusted
-            it[senderSigningKey] = value.senderSigningKey.value
-            it[forwardingCurve25519KeyChain] = json.encodeToString(value.forwardingCurve25519KeyChain)
-            it[pickled] = value.pickled
+    override suspend fun save(key: InboundMegolmSessionRepositoryKey, value: StoredInboundMegolmSession): Unit =
+        withExposedWrite {
+            ExposedInboundMegolmSession.replace {
+                it[senderKey] = value.senderKey.value
+                it[sessionId] = value.sessionId
+                it[roomId] = value.roomId.full
+                it[firstKnownIndex] = value.firstKnownIndex
+                it[hasBeenBackedUp] = value.hasBeenBackedUp
+                it[isTrusted] = value.isTrusted
+                it[senderSigningKey] = value.senderSigningKey.value
+                it[forwardingCurve25519KeyChain] = json.encodeToString(value.forwardingCurve25519KeyChain)
+                it[pickled] = value.pickled
+            }
         }
-    }
 
-    override suspend fun delete(key: InboundMegolmSessionRepositoryKey) {
+    override suspend fun delete(key: InboundMegolmSessionRepositoryKey): Unit = withExposedWrite {
         ExposedInboundMegolmSession.deleteWhere {
             sessionId.eq(key.sessionId) and
                     roomId.eq(key.roomId.full)
         }
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedInboundMegolmSession.deleteAll()
     }
 }

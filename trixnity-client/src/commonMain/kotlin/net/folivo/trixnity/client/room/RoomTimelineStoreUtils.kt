@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.room
 
+import kotlinx.coroutines.flow.first
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.RoomTimelineStore
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -11,10 +12,9 @@ private val log = KotlinLogging.logger {}
 
 internal suspend fun RoomTimelineStore.filterDuplicateEvents(
     events: List<Event.RoomEvent<*>>?,
-    withTransaction: Boolean
 ) =
     events?.distinctBy { it.id }
-        ?.filter { get(it.id, it.roomId, withTransaction = withTransaction) == null }
+        ?.filter { get(it.id, it.roomId).first() == null }
 
 internal suspend fun RoomTimelineStore.addEventsToTimeline(
     startEvent: TimelineEvent,
@@ -37,7 +37,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
     }
 
     if (previousEvent != null)
-        update(previousEvent, roomId, withTransaction = false) { oldPreviousEvent ->
+        update(previousEvent, roomId) { oldPreviousEvent ->
             val oldGap = oldPreviousEvent?.gap
             oldPreviousEvent?.copy(
                 nextEventId = previousEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
@@ -45,14 +45,14 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
             )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
         }
     if (nextEvent != null)
-        update(nextEvent, roomId, withTransaction = false) { oldNextEvent ->
+        update(nextEvent, roomId) { oldNextEvent ->
             val oldGap = oldNextEvent?.gap
             oldNextEvent?.copy(
                 previousEventId = nextEventChunk?.lastOrNull()?.id ?: startEvent.eventId,
                 gap = if (nextHasGap) oldGap else oldGap?.removeGapBefore()
             )?.let { processTimelineEventsBeforeSave(listOf(it)).first() }
         }
-    update(startEvent.eventId, roomId, withTransaction = false) { oldStartEvent ->
+    update(startEvent.eventId, roomId) { oldStartEvent ->
         val hasGapBefore = previousEventChunk.isNullOrEmpty() && previousHasGap
         val hasGapAfter = nextEventChunk.isNullOrEmpty() && nextHasGap
         (oldStartEvent ?: startEvent).copy(
@@ -108,7 +108,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 }
             }
         }
-        addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
+        addAll(processTimelineEventsBeforeSave(timelineEvents))
     }
 
     if (!nextEventChunk.isNullOrEmpty()) {
@@ -150,6 +150,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 }
             }
         }
-        addAll(processTimelineEventsBeforeSave(timelineEvents), withTransaction = false)
+        addAll(processTimelineEventsBeforeSave(timelineEvents))
     }
 }

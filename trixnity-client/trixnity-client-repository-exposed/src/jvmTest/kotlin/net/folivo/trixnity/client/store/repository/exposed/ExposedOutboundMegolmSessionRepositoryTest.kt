@@ -12,8 +12,11 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 class ExposedOutboundMegolmSessionRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: ExposedOutboundMegolmSessionRepository
+    lateinit var rtm: ExposedRepositoryTransactionManager
+
     beforeTest {
-        createDatabase()
+        val db = createDatabase()
+        rtm = ExposedRepositoryTransactionManager(db)
         newSuspendedTransaction {
             SchemaUtils.create(ExposedOutboundMegolmSession)
         }
@@ -31,7 +34,7 @@ class ExposedOutboundMegolmSessionRepositoryTest : ShouldSpec({
             )
         )
 
-        newSuspendedTransaction {
+        rtm.writeTransaction {
             cut.save(key1, session1)
             cut.save(key2, session2)
             cut.get(key1) shouldBe session1

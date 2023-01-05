@@ -2,24 +2,30 @@ package net.folivo.trixnity.client.store.repository.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
 import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.decodeFromString
-import net.folivo.trixnity.core.model.UserId
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.jetbrains.exposed.dao.id.LongIdTable
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 private object TestEntity : LongIdTable("test_entity") {
     val value = text("value")
 }
 
-private fun testWrite() = TestEntity.insert {
-    it[value] = "test"
+private suspend fun testWrite() = withExposedWrite {
+    TestEntity.insert {
+        it[value] = "test"
+    }
 }
 
-private fun testRead() = TestEntity.selectAll().toList()
+private suspend fun testRead() = withExposedRead {
+    TestEntity.selectAll().toList()
+}
+
 class ExposedRepositoryTransactionManagerTest : ShouldSpec({
-    timeout = 1_000
+    timeout = 5_000
 
     lateinit var tm: ExposedRepositoryTransactionManager
     beforeTest {
@@ -48,6 +54,21 @@ class ExposedRepositoryTransactionManagerTest : ShouldSpec({
                 testRead()
                 tm.readTransaction {
                     testRead()
+                }
+            }
+        }
+    }
+
+    should("handle massive parallel read and write") {
+        tm.writeTransaction {
+            coroutineScope {
+                repeat(200) {
+                    launch {
+                        testWrite()
+                    }
+                    launch {
+                        testRead()
+                    }
                 }
             }
         }
