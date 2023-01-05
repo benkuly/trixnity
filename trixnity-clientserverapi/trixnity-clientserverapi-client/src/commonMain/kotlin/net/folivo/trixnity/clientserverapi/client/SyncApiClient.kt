@@ -38,9 +38,7 @@ enum class SyncState {
     STARTED,
 
     /**
-     * The sync is running. This is set right after [SyncResponseSubscriber]s has been called.
-     * This means that all events have been processed, which are relevant for decrypting and showing
-     * basic information to the user (e.g. user profile, room list or device verification).
+     * A normal sync has been finished. It is normally set when the sync is run in a loop.
      */
     RUNNING,
 
@@ -301,6 +299,7 @@ class SyncApiClientImpl(
         }
         log.debug { "processed sync response with token ${currentBatchToken.value}" }
         currentBatchToken.value = response.nextBatch
+        updateSyncState(RUNNING)
         return response
     }
 
@@ -320,8 +319,6 @@ class SyncApiClientImpl(
         coroutineScope {
             syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
         }
-
-        updateSyncState(RUNNING)
 
         coroutineScope {
             launch { response.presence?.events?.forEach { emitEvent(it) } }
