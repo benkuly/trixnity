@@ -24,7 +24,7 @@ kotlin {
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
 
-                implementation("io.realm.kotlin:library-base:${Versions.realm}")
+                api("io.realm.kotlin:library-base:${Versions.realm}")
             }
         }
         val commonTest by getting {

@@ -7,6 +7,10 @@ import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class TestEntity : RealmObject {
     @PrimaryKey
@@ -49,6 +53,34 @@ class RealmRepositoryTransactionManagerTest : ShouldSpec({
                 tm.writeTransaction {
                     testWrite(1)
                     testRead()
+                }
+            }
+        }
+        should("allow simultaneous transactions") {
+            val calls = 10
+            val callCount = MutableStateFlow(0)
+            repeat(calls) { i ->
+                launch {
+                    callCount.value++
+                    tm.writeTransaction {
+                        callCount.first { it == calls }
+                        testWrite(i.toLong())
+                    }
+                }
+            }
+        }
+        should("allow simultaneous writes") {
+            val calls = 10
+            val callCount = MutableStateFlow(0)
+            tm.writeTransaction {
+                coroutineScope {
+                    repeat(calls) { i ->
+                        launch {
+                            callCount.value++
+                            callCount.first { it == calls }
+                            testWrite(i.toLong())
+                        }
+                    }
                 }
             }
         }

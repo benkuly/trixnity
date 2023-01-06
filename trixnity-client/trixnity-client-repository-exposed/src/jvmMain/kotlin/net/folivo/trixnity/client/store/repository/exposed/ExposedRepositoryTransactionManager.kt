@@ -27,14 +27,14 @@ class ExposedWriteTransaction(
 }
 
 suspend fun <T> withExposedRead(block: () -> T) = coroutineScope {
-    val exposedReadTransaction = requireNotNull(coroutineContext[ExposedReadTransaction])
+    val exposedReadTransaction = checkNotNull(coroutineContext[ExposedReadTransaction])
     withContext(exposedReadTransaction.transactionCoroutineContext) {
         exposedReadTransaction.transaction.suspendedTransaction { block() }
     }
 }
 
 suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
-    val exposedWriteTransaction = requireNotNull(coroutineContext[ExposedWriteTransaction])
+    val exposedWriteTransaction = checkNotNull(coroutineContext[ExposedWriteTransaction])
     withContext(exposedWriteTransaction.transactionCoroutineContext) {
         exposedWriteTransaction.transaction.suspendedTransaction { block() }
     }
@@ -43,6 +43,7 @@ suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
 class ExposedRepositoryTransactionManager(
     private val database: Database,
 ) : RepositoryTransactionManager {
+    override val supportsParallelWrite: Boolean = true
 
     // a single transaction is only allowed to read and write in one thread (no parallelism)
     @OptIn(ExperimentalCoroutinesApi::class)
