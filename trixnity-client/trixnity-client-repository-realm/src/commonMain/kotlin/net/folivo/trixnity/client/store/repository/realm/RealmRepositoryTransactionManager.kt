@@ -26,11 +26,11 @@ class RealmWriteTransaction(
 }
 
 suspend fun <T> withRealmRead(block: TypedRealm.() -> T) = coroutineScope {
-    block(requireNotNull(coroutineContext[RealmReadTransaction]?.realm))
+    block(checkNotNull(coroutineContext[RealmReadTransaction]?.realm))
 }
 
 suspend fun <T> withRealmWrite(block: MutableRealm.() -> T) = coroutineScope {
-    block(requireNotNull(coroutineContext[RealmWriteTransaction]?.realm))
+    block(checkNotNull(coroutineContext[RealmWriteTransaction]?.realm))
 }
 
 class RealmRepositoryTransactionManager(
@@ -58,8 +58,6 @@ class RealmRepositoryTransactionManager(
     override suspend fun <T> readTransaction(block: suspend () -> T): T = coroutineScope {
         val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]
         if (existingRealmReadTransaction != null) block()// just re-use existing transaction (nested)
-        else withContext(RealmReadTransaction(realm)) {
-            block()
-        }
+        else withContext(RealmReadTransaction(realm)) { block() }
     }
 }

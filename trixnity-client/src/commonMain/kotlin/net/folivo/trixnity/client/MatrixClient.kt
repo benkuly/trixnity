@@ -428,7 +428,6 @@ class MatrixClientImpl internal constructor(
             filter = requireNotNull(accountStore.filterId.value),
             setPresence = Presence.ONLINE,
             currentBatchToken = accountStore.syncBatchToken,
-            withTransaction = repositoryTransactionManager::writeTransaction,
             scope = scope,
         )
     }
@@ -442,7 +441,6 @@ class MatrixClientImpl internal constructor(
             setPresence = Presence.OFFLINE,
             currentBatchToken = accountStore.syncBatchToken,
             timeout = timeout,
-            withTransaction = repositoryTransactionManager::writeTransaction,
             runOnce = runOnce
         )
     }

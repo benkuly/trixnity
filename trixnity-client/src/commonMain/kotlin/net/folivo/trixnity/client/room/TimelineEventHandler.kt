@@ -59,28 +59,32 @@ class TimelineEventHandlerImpl(
             val roomId = room.key
             room.value.timeline?.also {
                 timelineMutex.withLock(roomId) {
-                    addEventsToTimelineAtEnd(
-                        roomId = roomId,
-                        newEvents = it.events,
-                        previousBatch = it.previousBatch,
-                        nextBatch = syncResponse.nextBatch,
-                        hasGapBefore = it.limited ?: false
-                    )
-                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                    rtm.writeTransaction { // if something fails, no event is saved at all
+                        addEventsToTimelineAtEnd(
+                            roomId = roomId,
+                            newEvents = it.events,
+                            previousBatch = it.previousBatch,
+                            nextBatch = syncResponse.nextBatch,
+                            hasGapBefore = it.limited ?: false
+                        )
+                        it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
+                    }
                 }
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
-                    addEventsToTimelineAtEnd(
-                        roomId = room.key,
-                        newEvents = it.events,
-                        previousBatch = it.previousBatch,
-                        nextBatch = syncResponse.nextBatch,
-                        hasGapBefore = it.limited ?: false
-                    )
-                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                    rtm.writeTransaction { // if something fails, no event is saved at all
+                        addEventsToTimelineAtEnd(
+                            roomId = room.key,
+                            newEvents = it.events,
+                            previousBatch = it.previousBatch,
+                            nextBatch = syncResponse.nextBatch,
+                            hasGapBefore = it.limited ?: false
+                        )
+                        it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
+                    }
                 }
             }
         }
