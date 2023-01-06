@@ -397,7 +397,9 @@ class RoomServiceImpl(
                     log.debug { "getTimelineEvents: reached start of timeline $roomId" }
                     break
                 }
-                if (minSize != null && size >= minSize && (timelineEventSnapshot.needsFetchGap() || timelineEventSnapshot.isLast)) {
+                if (minSize != null && size >= minSize
+                    && (timelineEventSnapshot.needsFetchGap() || (direction == FORWARDS && timelineEventSnapshot.isLast))
+                ) {
                     log.debug { "getTimelineEvents: found a gap and complete flow, because minSize reached" }
                     break
                 }

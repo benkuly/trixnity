@@ -18,6 +18,7 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsStoreRepository<String, String, String>>
     val transactionWasCalled = MutableStateFlow(false)
     val rtm = object : RepositoryTransactionManager {
+        override val supportsParallelWrite: Boolean = true
         override suspend fun <T> readTransaction(block: suspend () -> T): T {
             transactionWasCalled.value = true
             return block()
