@@ -27,14 +27,14 @@ class ExposedWriteTransaction(
 }
 
 suspend fun <T> withExposedRead(block: () -> T) = coroutineScope {
-    val exposedReadTransaction = requireNotNull(coroutineContext[ExposedReadTransaction])
+    val exposedReadTransaction = checkNotNull(coroutineContext[ExposedReadTransaction])
     withContext(exposedReadTransaction.transactionCoroutineContext) {
         exposedReadTransaction.transaction.suspendedTransaction { block() }
     }
 }
 
 suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
-    val exposedWriteTransaction = requireNotNull(coroutineContext[ExposedWriteTransaction])
+    val exposedWriteTransaction = checkNotNull(coroutineContext[ExposedWriteTransaction])
     withContext(exposedWriteTransaction.transactionCoroutineContext) {
         exposedWriteTransaction.transaction.suspendedTransaction { block() }
     }
