@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
+import kotlin.time.Duration.Companion.seconds
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
 typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
@@ -220,6 +221,7 @@ class SyncApiClientImpl(
                                     withTransaction = withTransaction,
                                     asUserId = asUserId
                                 )
+                                delay(2.seconds) // the server may respond immediately very often // TODO make configurable
                             } catch (error: Throwable) {
                                 when (error) {
                                     is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {

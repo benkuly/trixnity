@@ -112,7 +112,7 @@ class KeyTrustServiceImpl(
                 if (foundDeviceKeys != null) {
                     val newTrustLevel = calculateDeviceKeysTrustLevel(foundDeviceKeys.value)
                     foundKey.value = true
-                    log.debug { "updated device keys ${foundDeviceKeys.value.signed.deviceId} of user $userId with trust level $newTrustLevel" }
+                    log.trace { "updated device keys ${foundDeviceKeys.value.signed.deviceId} of user $userId with trust level $newTrustLevel" }
                     oldDeviceKeys + (keyId to foundDeviceKeys.copy(trustLevel = newTrustLevel))
                 } else oldDeviceKeys
             }
@@ -124,7 +124,7 @@ class KeyTrustServiceImpl(
                     if (foundCrossSigningKeys != null) {
                         val newTrustLevel = calculateCrossSigningKeysTrustLevel(foundCrossSigningKeys.value)
                         foundKey.value = true
-                        log.debug { "updated cross signing key ${foundCrossSigningKeys.value.signed.usage.firstOrNull()?.name} of user $userId with trust level $newTrustLevel" }
+                        log.trace { "updated cross signing key ${foundCrossSigningKeys.value.signed.usage.firstOrNull()?.name} of user $userId with trust level $newTrustLevel" }
                         (oldKeys - foundCrossSigningKeys) + foundCrossSigningKeys.copy(trustLevel = newTrustLevel)
 
                     } else oldKeys
