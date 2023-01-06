@@ -8,6 +8,7 @@ class SqlDelightRepositoriesTransactionManager(
     private val db: Database,
     private val blockingTransactionCoroutineContext: CoroutineContext,
 ) : RepositoryTransactionManager {
+    override val supportsParallelWrite: Boolean = true
     override suspend fun <T> readTransaction(block: suspend () -> T): T =
         callRunBlocking(blockingTransactionCoroutineContext) {
             db.transactionWithResult {

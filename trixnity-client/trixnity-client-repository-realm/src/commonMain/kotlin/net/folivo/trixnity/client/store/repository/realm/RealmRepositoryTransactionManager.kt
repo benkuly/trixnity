@@ -36,6 +36,7 @@ suspend fun <T> withRealmWrite(block: MutableRealm.() -> T) = coroutineScope {
 class RealmRepositoryTransactionManager(
     private val realm: Realm,
 ) : RepositoryTransactionManager {
+    override val supportsParallelWrite: Boolean = false
     override suspend fun <T> writeTransaction(block: suspend () -> T): T = coroutineScope {
         val existingRealmWriteTransaction = coroutineContext[RealmWriteTransaction]
         val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]

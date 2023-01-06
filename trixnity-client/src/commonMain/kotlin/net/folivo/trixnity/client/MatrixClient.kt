@@ -260,7 +260,7 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
-        repositoryTransactionManager = di.get(),
+        rtm = di.get(),
         scope = scope,
     )
     api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
@@ -338,7 +338,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
-                repositoryTransactionManager = di.get(),
+                rtm = di.get(),
                 scope = scope,
             )
         } else null
@@ -368,7 +368,7 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
-    private val repositoryTransactionManager: RepositoryTransactionManager,
+    private val rtm: RepositoryTransactionManager,
     private val scope: CoroutineScope,
 ) : MatrixClient {
     override val displayName: StateFlow<String?> = accountStore.displayName
@@ -422,12 +422,17 @@ class MatrixClientImpl internal constructor(
         startSync()
     }
 
+    private val syncTransaction: suspend (suspend () -> Unit) -> Unit =
+        if (rtm.supportsParallelWrite) rtm::writeTransaction
+        else { it -> it() }
+
     override suspend fun startSync() {
         startMatrixClient()
         api.sync.start(
             filter = requireNotNull(accountStore.filterId.value),
             setPresence = Presence.ONLINE,
             currentBatchToken = accountStore.syncBatchToken,
+            withTransaction = syncTransaction,
             scope = scope,
         )
     }
@@ -441,6 +446,7 @@ class MatrixClientImpl internal constructor(
             setPresence = Presence.OFFLINE,
             currentBatchToken = accountStore.syncBatchToken,
             timeout = timeout,
+            withTransaction = syncTransaction,
             runOnce = runOnce
         )
     }

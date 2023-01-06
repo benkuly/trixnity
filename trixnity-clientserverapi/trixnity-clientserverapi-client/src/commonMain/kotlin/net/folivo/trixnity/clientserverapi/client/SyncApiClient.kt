@@ -95,6 +95,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
+        withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         wait: Boolean = false,
         scope: CoroutineScope,
@@ -105,6 +106,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 0,
+        withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
@@ -118,6 +120,7 @@ suspend fun SyncApiClient.startOnce(
     setPresence: Presence? = null,
     currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
     timeout: Long = 0,
+    withTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
     asUserId: UserId? = null,
 ): Result<Unit> =
     startOnce(
@@ -125,6 +128,7 @@ suspend fun SyncApiClient.startOnce(
         setPresence = setPresence,
         currentBatchToken = currentBatchToken,
         timeout = timeout,
+        withTransaction = withTransaction,
         asUserId = asUserId,
         runOnce = {}
     )
@@ -193,6 +197,7 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         wait: Boolean,
         scope: CoroutineScope,
@@ -213,6 +218,7 @@ class SyncApiClientImpl(
                                     filter = filter,
                                     setPresence = setPresence,
                                     timeout = if (_currentSyncState.value == STARTED) 0 else timeout,
+                                    withTransaction = withTransaction,
                                     asUserId = asUserId
                                 )
                                 delay(2.seconds) // the server may respond immediately very often // TODO make configurable
@@ -251,6 +257,7 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T> = kotlin.runCatching {
@@ -260,7 +267,7 @@ class SyncApiClientImpl(
             log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
             val syncResponse =
-                syncAndResponse(currentBatchToken, filter, setPresence, timeout, asUserId)
+                syncAndResponse(currentBatchToken, filter, setPresence, timeout, withTransaction, asUserId)
             runOnce(syncResponse)
         }
     }.onSuccess {
@@ -276,6 +283,7 @@ class SyncApiClientImpl(
         filter: String?,
         setPresence: Presence?,
         timeout: Long,
+        withTransaction: suspend (suspend () -> Unit) -> Unit,
         asUserId: UserId?,
     ): Sync.Response {
         val batchToken = currentBatchToken.value
@@ -288,10 +296,9 @@ class SyncApiClientImpl(
             asUserId = asUserId
         ).getOrThrow()
         log.debug { "received sync response with token ${currentBatchToken.value}" }
-        // TODO in an ideal world, we could wrap this within one transaction, but Realm cannot handle parallel writes,
-        //      which leads to a dead lock (waitForUpdateOutdatedKey writes in a parallel write).
-        //      We could also make it configurable (disabled for Realm).
-        processSyncResponse(response)
+        withTransaction {
+            processSyncResponse(response)
+        }
         log.debug { "processed sync response with token ${currentBatchToken.value}" }
         currentBatchToken.value = response.nextBatch
         updateSyncState(RUNNING)
