@@ -81,8 +81,8 @@ class OutboxIT {
                 .first { outbox -> outbox.none { it.sentAt != null } }
             delay(20_000)
             client.room.sendMessage(room) { text("finish") }
+            delay(1_000)
             client.room.getOutbox().first { it.isEmpty() }
-
             delay(1_000)
             scope.cancel()
             delay(1_000) // let everything stop
