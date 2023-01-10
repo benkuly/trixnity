@@ -37,10 +37,12 @@ object KeysSerializer : KSerializer<Keys> {
                     KeyAlgorithm.SignedCurve25519 -> {
                         val value = it.value.jsonObject["key"]?.jsonPrimitive?.content
                         val signatures = it.value.jsonObject["signatures"]
+                        val fallback = it.value.jsonObject["fallback"]?.jsonPrimitive?.booleanOrNull
                         requireNotNull(value)
                         requireNotNull(signatures)
-                        Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures))
+                        Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures), fallback)
                     }
+
                     is KeyAlgorithm.Unknown -> Key.UnknownKey(
                         keyId,
                         decoder.json.encodeToString(it.value),
@@ -59,15 +61,18 @@ object KeysSerializer : KSerializer<Keys> {
                 when (key) {
                     is Key.Ed25519Key ->
                         "${key.algorithm}" + (key.keyId?.let { ":$it" } ?: "") to JsonPrimitive(key.value)
+
                     is Key.Curve25519Key ->
                         "${key.algorithm}" + (key.keyId?.let { ":$it" } ?: "") to JsonPrimitive(key.value)
+
                     is Key.SignedCurve25519Key ->
-                        "${key.algorithm}" + (key.signed.keyId?.let { ":$it" } ?: "") to JsonObject(
-                            mapOf(
-                                "key" to JsonPrimitive(key.signed.value),
-                                "signatures" to encoder.json.encodeToJsonElement(key.signatures)
-                            )
-                        )
+                        "${key.algorithm}" + (key.signed.keyId?.let { ":$it" } ?: "") to
+                                buildJsonObject {
+                                    put("key", JsonPrimitive(key.signed.value))
+                                    key.fallback?.let { put("fallback", JsonPrimitive(it)) }
+                                    put("signatures", encoder.json.encodeToJsonElement(key.signatures))
+                                }
+
                     is Key.UnknownKey -> "${key.algorithm}:${key.keyId}" to key.raw
                 }
             })

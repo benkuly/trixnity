@@ -1744,6 +1744,7 @@ class FederationApiClientTest {
                                   "JLAFKJWSCS":{
                                     "signed_curve25519:AAAAHg":{
                                       "key":"zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                                      "fallback":true,
                                       "signatures":{
                                         "@alice:example.com":{
                                           "ed25519:JLAFKJWSCS":"FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
@@ -1779,7 +1780,7 @@ class FederationApiClientTest {
                                         "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
                                     )
                                 )
-                            )
+                            ), true
                         )
                     )
                 )

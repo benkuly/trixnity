@@ -25,7 +25,9 @@ data class SetKeys(
         @SerialName("device_keys")
         val deviceKeys: SignedDeviceKeys?,
         @SerialName("one_time_keys")
-        val oneTimeKeys: Keys?
+        val oneTimeKeys: Keys?,
+        @SerialName("fallback_keys")
+        val fallbackKeys: Keys?,
     )
 
     @Serializable

@@ -15,6 +15,7 @@ interface KeysApiClient {
     suspend fun setKeys(
         deviceKeys: SignedDeviceKeys? = null,
         oneTimeKeys: Keys? = null,
+        fallbackKeys: Keys? = null,
         asUserId: UserId? = null
     ): Result<Map<KeyAlgorithm, Int>>
 
@@ -189,9 +190,10 @@ class KeysApiClientImpl(
     override suspend fun setKeys(
         deviceKeys: SignedDeviceKeys?,
         oneTimeKeys: Keys?,
+        fallbackKeys: Keys?,
         asUserId: UserId?
     ): Result<Map<KeyAlgorithm, Int>> =
-        httpClient.request(SetKeys(asUserId), SetKeys.Request(deviceKeys, oneTimeKeys))
+        httpClient.request(SetKeys(asUserId), SetKeys.Request(deviceKeys, oneTimeKeys, fallbackKeys))
             .mapCatching { it.oneTimeKeyCounts }
 
     override suspend fun getKeys(

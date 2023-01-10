@@ -41,7 +41,10 @@ class SignServiceMock : SignService {
         return Signed(unsignedObject, sign.removeFirstOrNull())
     }
 
-    override suspend fun signCurve25519Key(key: Key.Curve25519Key, signatureJsonKey: String): Key.SignedCurve25519Key {
+    override suspend fun signCurve25519Key(
+        key: Key.Curve25519Key,
+        signatureJsonKey: String,
+    ): Key.SignedCurve25519Key {
         throw NotImplementedError()
     }
 

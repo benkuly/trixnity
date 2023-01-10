@@ -31,6 +31,7 @@ sealed interface Key {
     data class Curve25519Key(
         override val keyId: String? = null,
         override val value: String,
+        val fallback: Boolean? = null,
         override val algorithm: KeyAlgorithm.Curve25519 = KeyAlgorithm.Curve25519,
     ) : Key
 
@@ -38,8 +39,9 @@ sealed interface Key {
         override val keyId: String? = null,
         override val value: String,
         signatures: Signatures<UserId>,
+        val fallback: Boolean? = null,
         override val algorithm: KeyAlgorithm.SignedCurve25519 = KeyAlgorithm.SignedCurve25519,
-    ) : Key, Signed<Curve25519Key, UserId>(Curve25519Key(keyId, value), signatures)
+    ) : Key, Signed<Curve25519Key, UserId>(Curve25519Key(keyId, value, fallback), signatures)
 
     data class UnknownKey(
         override val keyId: String? = null,

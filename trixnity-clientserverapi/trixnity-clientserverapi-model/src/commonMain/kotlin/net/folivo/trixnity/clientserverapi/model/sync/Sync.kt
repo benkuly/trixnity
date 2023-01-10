@@ -44,7 +44,8 @@ data class Sync(
         @SerialName("account_data") val accountData: GlobalAccountData? = null,
         @SerialName("to_device") val toDevice: ToDevice? = null,
         @SerialName("device_lists") val deviceLists: DeviceLists? = null,
-        @SerialName("device_one_time_keys_count") val deviceOneTimeKeysCount: DeviceOneTimeKeysCount? = null
+        @SerialName("device_one_time_keys_count") val deviceOneTimeKeysCount: DeviceOneTimeKeysCount? = null,
+        @SerialName("device_unused_fallback_key_types") val deviceUnusedFallbackKeyTypes: List<KeyAlgorithm> = listOf(),
     ) {
         @Serializable
         data class Rooms(
