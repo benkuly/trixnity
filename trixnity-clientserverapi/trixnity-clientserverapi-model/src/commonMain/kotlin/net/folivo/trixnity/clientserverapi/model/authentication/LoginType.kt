@@ -31,6 +31,27 @@ sealed interface LoginType {
         override val name = "m.login.application_service"
     }
 
+    @Serializable
+    data class SSO(
+        @SerialName("identity_providers")
+        val identityProviders: Set<IdentityProvider> = setOf(),
+    ) : LoginType {
+        @SerialName("type")
+        override val name = "m.login.sso"
+
+        @Serializable
+        data class IdentityProvider(
+            @SerialName("brand")
+            val brand: String? = null,
+            @SerialName("icon")
+            val icon: String? = null,
+            @SerialName("id")
+            val id: String,
+            @SerialName("name")
+            val name: String,
+        )
+    }
+
     data class Unknown(
         override val name: String,
         val raw: JsonObject
@@ -47,22 +68,26 @@ object LoginTypeSerializer : KSerializer<LoginType> {
             LoginType.Password.name -> decoder.json.decodeFromJsonElement<LoginType.Password>(jsonObj)
             LoginType.Token.name -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
             LoginType.AppService.name -> decoder.json.decodeFromJsonElement<LoginType.AppService>(jsonObj)
+            "m.login.sso" -> decoder.json.decodeFromJsonElement<LoginType.SSO>(jsonObj)
             else -> LoginType.Unknown(type, jsonObj)
         }
     }
 
     override fun serialize(encoder: Encoder, value: LoginType) {
         require(encoder is JsonEncoder)
-        val jsonObject = when (value) {
-            is LoginType.Password -> JsonObject(mapOf("type" to JsonPrimitive("m.login.password")))
-            is LoginType.Token -> JsonObject(mapOf("type" to JsonPrimitive("m.login.token")))
-            is LoginType.AppService -> JsonObject(mapOf("type" to JsonPrimitive("m.login.appservice")))
+        val jsonObject: JsonObject = when (value) {
+            is LoginType.Password -> encoder.json.encodeToJsonElement(value).jsonObject
+            is LoginType.Token -> encoder.json.encodeToJsonElement(value).jsonObject
+            is LoginType.AppService -> encoder.json.encodeToJsonElement(value).jsonObject
+            is LoginType.SSO -> encoder.json.encodeToJsonElement(value).jsonObject
             is LoginType.Unknown -> JsonObject(buildMap {
-                put("type", JsonPrimitive(value.name))
                 putAll(value.raw)
             })
         }
-        encoder.encodeJsonElement(jsonObject)
+        encoder.encodeJsonElement(JsonObject(buildMap {
+            putAll(jsonObject)
+            put("type", JsonPrimitive(value.name))
+        }))
     }
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("LoginType")
