@@ -9,9 +9,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
@@ -340,20 +337,11 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             .returns(
                 GetLoginTypes.Response(
                     setOf(
-                        LoginType.Unknown(
-                            "m.login.sso", JsonObject(
-                                mapOf(
-                                    "type" to JsonPrimitive("m.login.sso"),
-                                    "identity_providers" to JsonArray(
-                                        listOf(
-                                            JsonObject(
-                                                mapOf(
-                                                    "id" to JsonPrimitive("oidc-keycloak"),
-                                                    "name" to JsonPrimitive("FridaysForFuture")
-                                                )
-                                            )
-                                        )
-                                    )
+                        LoginType.SSO(
+                            setOf(
+                                LoginType.SSO.IdentityProvider(
+                                    id = "oidc-keycloak",
+                                    name = "FridaysForFuture",
                                 )
                             )
                         ),
@@ -370,13 +358,13 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 {
                   "flows":[
                     {
-                      "type":"m.login.sso",
                       "identity_providers":[
                         {
                           "id":"oidc-keycloak",
                           "name":"FridaysForFuture"
                         }
-                      ]
+                      ],
+                      "type":"m.login.sso"
                     },
                     {
                       "type":"m.login.token"

@@ -9,9 +9,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
 import net.folivo.trixnity.core.model.UserId
@@ -346,20 +343,11 @@ class AuthenticationApiClientTest {
         val result = matrixRestClient.authentication.getLoginTypes().getOrThrow()
         assertEquals(
             setOf(
-                LoginType.Unknown(
-                    "m.login.sso", JsonObject(
-                        mapOf(
-                            "type" to JsonPrimitive("m.login.sso"),
-                            "identity_providers" to JsonArray(
-                                listOf(
-                                    JsonObject(
-                                        mapOf(
-                                            "id" to JsonPrimitive("oidc-keycloak"),
-                                            "name" to JsonPrimitive("FridaysForFuture")
-                                        )
-                                    )
-                                )
-                            )
+                LoginType.SSO(
+                    setOf(
+                        LoginType.SSO.IdentityProvider(
+                            id = "oidc-keycloak",
+                            name = "FridaysForFuture",
                         )
                     )
                 ),
