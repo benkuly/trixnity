@@ -46,6 +46,10 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<RoomStateEventHandler>()
     }
+    singleOf(::TypingEventHandler) {
+        bind<EventHandler>()
+        named<TypingEventHandler>()
+    }
     singleOf(::TimelineEventHandlerImpl) {
         bind<TimelineEventHandler>()
         bind<EventHandler>()
@@ -65,6 +69,7 @@ fun createRoomModule() = module {
             getAll(),
             get(),
             get(named<TimelineEventHandlerImpl>()),
+            get(named<TypingEventHandler>()),
             get(),
             get(),
             get(),

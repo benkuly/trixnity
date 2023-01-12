@@ -24,6 +24,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import kotlin.reflect.KClass
@@ -36,6 +37,7 @@ import kotlin.time.Duration.Companion.seconds
 private val log = KotlinLogging.logger {}
 
 interface RoomService {
+    val usersTyping: StateFlow<Map<RoomId, TypingEventContent>>
     suspend fun fillTimelineGaps(
         startEventId: EventId,
         roomId: RoomId,
@@ -206,10 +208,12 @@ class RoomServiceImpl(
     private val roomEventDecryptionServices: List<RoomEventDecryptionService>,
     private val mediaService: MediaService,
     private val timelineEventHandler: TimelineEventHandler,
+    typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
     private val userInfo: UserInfo,
     private val scope: CoroutineScope,
 ) : RoomService {
+    override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = typingEventHandler.usersTyping
 
     override suspend fun fillTimelineGaps(
         startEventId: EventId,
