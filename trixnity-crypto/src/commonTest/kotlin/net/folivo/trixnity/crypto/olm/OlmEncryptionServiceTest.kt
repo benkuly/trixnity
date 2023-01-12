@@ -166,7 +166,7 @@ private val body: ShouldSpec.() -> Unit = {
             Key.SignedCurve25519Key(
                 bobDeviceId,
                 bobAccount.getOneTimeKey(),
-                mapOf()
+                mapOf(),
             )
         mocker.everySuspending { mockRequestHandler.claimKeys(isAny()) } returns Result.success(
             ClaimKeys.Response(

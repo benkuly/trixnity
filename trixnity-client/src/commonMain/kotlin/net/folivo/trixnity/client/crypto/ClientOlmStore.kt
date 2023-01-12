@@ -88,6 +88,7 @@ class ClientOlmStore(
 
     override val olmAccount = olmCryptoStore.account
     override val olmPickleKey = requireNotNull(accountStore.olmPickleKey.value)
+    override val forgetFallbackKeyAfter = olmCryptoStore.forgetFallbackKeyAfter
 
     override suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>> {
         userService.loadMembers(roomId)

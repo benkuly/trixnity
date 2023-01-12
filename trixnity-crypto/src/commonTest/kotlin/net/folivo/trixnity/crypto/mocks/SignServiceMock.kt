@@ -41,8 +41,11 @@ class SignServiceMock : SignService {
     }
 
     var signCurve25519Key: Key.SignedCurve25519Key? = null
-    override suspend fun signCurve25519Key(key: Key.Curve25519Key, signatureJsonKey: String): Key.SignedCurve25519Key {
-        return Key.SignedCurve25519Key(key.keyId, key.value, mapOf())
+    override suspend fun signCurve25519Key(
+        key: Key.Curve25519Key,
+        signatureJsonKey: String,
+    ): Key.SignedCurve25519Key {
+        return Key.SignedCurve25519Key(key.keyId, key.value, mapOf(), key.fallback)
     }
 
     var returnVerify: VerifyResult? = null

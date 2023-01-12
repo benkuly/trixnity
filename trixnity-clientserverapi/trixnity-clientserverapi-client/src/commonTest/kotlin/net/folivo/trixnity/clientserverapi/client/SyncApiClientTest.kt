@@ -45,7 +45,7 @@ class SyncApiClientTest {
         nextBatch = "nextBatch1",
         accountData = Response.GlobalAccountData(emptyList()),
         deviceLists = Response.DeviceLists(emptySet(), emptySet()),
-        deviceOneTimeKeysCount = emptyMap(),
+        oneTimeKeysCount = emptyMap(),
         presence = Response.Presence(emptyList()),
         room = Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
         toDevice = Response.ToDevice(emptyList())
@@ -54,7 +54,7 @@ class SyncApiClientTest {
         nextBatch = "nextBatch2",
         accountData = Response.GlobalAccountData(emptyList()),
         deviceLists = Response.DeviceLists(emptySet(), emptySet()),
-        deviceOneTimeKeysCount = emptyMap(),
+        oneTimeKeysCount = emptyMap(),
         presence = Response.Presence(emptyList()),
         room = Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
         toDevice = Response.ToDevice(emptyList())
@@ -845,7 +845,7 @@ class SyncApiClientTest {
                 )
             ),
             deviceLists = Response.DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
+            oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(
                 listOf(
                     Event.EphemeralEvent(
@@ -1014,7 +1014,7 @@ class SyncApiClientTest {
             nextBatch = "nextBatch1",
             accountData = Response.GlobalAccountData(emptyList()),
             deviceLists = Response.DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
+            oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
                 join = mapOf(
@@ -1075,7 +1075,7 @@ class SyncApiClientTest {
             nextBatch = "nextBatch1",
             accountData = Response.GlobalAccountData(emptyList()),
             deviceLists = Response.DeviceLists(emptySet(), emptySet()),
-            deviceOneTimeKeysCount = emptyMap(),
+            oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
                 join = mapOf(

@@ -91,6 +91,17 @@ class KeysRoutesTest : TestsWithMocks() {
                         }
                       }
                     }
+                  },
+                  "fallback_keys":{
+                    "signed_curve25519:AAAAHg":{
+                      "key":"zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                      "fallback":true,
+                      "signatures":{
+                        "@alice:example.com":{
+                          "ed25519:JLAFKJWSCS":"FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                        }
+                      }
+                    }
                   }
                 }
             """.trimIndent()
@@ -133,7 +144,8 @@ class KeysRoutesTest : TestsWithMocks() {
                     oneTimeKeys = keysOf(
                         Key.Curve25519Key("AAAAAQ", "/qyvZvwjiTxGdGU0RCguDCLeR+nmsb3FfNG3/Ve4vU8"),
                         Key.SignedCurve25519Key(
-                            "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", mapOf(
+                            "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            mapOf(
                                 UserId("alice", "example.com") to keysOf(
                                     Key.Ed25519Key(
                                         "JLAFKJWSCS",
@@ -143,7 +155,8 @@ class KeysRoutesTest : TestsWithMocks() {
                             )
                         ),
                         Key.SignedCurve25519Key(
-                            "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw", mapOf(
+                            "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw",
+                            mapOf(
                                 UserId("alice", "example.com") to keysOf(
                                     Key.Ed25519Key(
                                         "JLAFKJWSCS",
@@ -152,7 +165,21 @@ class KeysRoutesTest : TestsWithMocks() {
                                 )
                             )
                         )
-                    )
+                    ),
+                    fallbackKeys = keysOf(
+                        Key.SignedCurve25519Key(
+                            "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            mapOf(
+                                UserId("alice", "example.com") to keysOf(
+                                    Key.Ed25519Key(
+                                        "JLAFKJWSCS",
+                                        "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                    )
+                                )
+                            ),
+                            true,
+                        )
+                    ),
                 )
             })
         }

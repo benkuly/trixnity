@@ -59,7 +59,7 @@ class KeyBackupIT {
     }
 
     @Test
-    fun testCrossSigning(): Unit = runBlocking {
+    fun testKeyBackup(): Unit = runBlocking {
         withTimeout(30_000) {
             startedClient1.client.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()

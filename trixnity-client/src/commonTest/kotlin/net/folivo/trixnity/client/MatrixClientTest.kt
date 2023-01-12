@@ -48,7 +48,7 @@ class MatrixClientTest : ShouldSpec({
         nextBatch = "nextBatch",
         accountData = Sync.Response.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
         deviceLists = Sync.Response.DeviceLists(emptySet(), emptySet()),
-        deviceOneTimeKeysCount = emptyMap(),
+        oneTimeKeysCount = emptyMap(),
         presence = Sync.Response.Presence(emptyList()),
         room = Sync.Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
         toDevice = Sync.Response.ToDevice(emptyList())

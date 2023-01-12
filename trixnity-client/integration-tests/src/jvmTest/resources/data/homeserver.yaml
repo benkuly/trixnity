@@ -27,3 +27,13 @@ macaroon_secret_key: "Mt5JGQEpCPS~atJD,-2kX5QqG*NHW^lSCz+0w,o9Y:QGu7F2MY"
 rc_message:
   per_second: 1000
   burst_count: 10000
+rc_registration:
+  per_second: 1000
+  burst_count: 10000
+rc_login:
+  address:
+    per_second: 1000
+    burst_count: 10000
+  account:
+    per_second: 1000
+    burst_count: 10000

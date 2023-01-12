@@ -116,7 +116,8 @@ class SignServiceImpl(
         return Key.SignedCurve25519Key(
             keyId = key.keyId,
             value = key.value,
-            signatures = signatures(JsonObject(mapOf(signatureJsonKey to JsonPrimitive(key.value))))
+            signatures = signatures(JsonObject(mapOf(signatureJsonKey to JsonPrimitive(key.value)))),
+            fallback = key.fallback,
         )
     }
 

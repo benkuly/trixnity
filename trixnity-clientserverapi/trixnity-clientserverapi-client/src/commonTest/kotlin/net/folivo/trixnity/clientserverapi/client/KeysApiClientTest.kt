@@ -77,6 +77,17 @@ class KeysApiClientTest {
                                     }
                                   }
                                 }
+                              },
+                              "fallback_keys":{
+                                "signed_curve25519:AAAAHg":{
+                                  "key":"zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                                  "fallback":true,
+                                  "signatures":{
+                                    "@alice:example.com":{
+                                      "ed25519:JLAFKJWSCS":"FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                    }
+                                  }
+                                }
                               }
                             }
                     """.trimToFlatJson()
@@ -136,6 +147,18 @@ class KeysApiClientTest {
                             )
                         )
                     )
+                )
+            ),
+            fallbackKeys = keysOf(
+                SignedCurve25519Key(
+                    "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", mapOf(
+                        UserId("alice", "example.com") to keysOf(
+                            Ed25519Key(
+                                "JLAFKJWSCS",
+                                "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                            )
+                        )
+                    ), true
                 )
             )
         ).getOrThrow()

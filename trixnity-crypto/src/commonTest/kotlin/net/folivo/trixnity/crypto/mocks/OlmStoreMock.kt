@@ -1,6 +1,7 @@
 package net.folivo.trixnity.crypto.mocks
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.DeviceKeys
@@ -68,6 +69,7 @@ class OlmStoreMock : OlmStore {
 
     override var olmAccount: MutableStateFlow<String?> = MutableStateFlow(null)
     override val olmPickleKey: String = ""
+    override val forgetFallbackKeyAfter: MutableStateFlow<Instant?> = MutableStateFlow(null)
 
     val members = mutableMapOf<RoomId, Map<UserId, Set<String>>>()
     override suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>>? {

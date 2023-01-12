@@ -88,6 +88,9 @@ fun createSqlDelightRepositoriesModule(
         single<OlmAccountRepository> {
             SqlDelightOlmAccountRepository(db.olmQueries, databaseCoroutineContext)
         }
+        single<OlmForgetFallbackKeyAfterRepository> {
+            SqlDelightOlmForgetFallbackKeyAfterRepository(db.olmQueries, databaseCoroutineContext)
+        }
         single<OlmSessionRepository> {
             SqlDelightOlmSessionRepository(db.olmQueries, json, databaseCoroutineContext)
         }

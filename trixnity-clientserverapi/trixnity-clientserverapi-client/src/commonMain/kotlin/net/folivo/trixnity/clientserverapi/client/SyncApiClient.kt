@@ -11,8 +11,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
-import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
+import net.folivo.trixnity.clientserverapi.model.sync.OneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.UnusedFallbackKeyTypes
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
@@ -21,7 +22,12 @@ import kotlin.time.Duration.Companion.seconds
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
 typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
-typealias DeviceOneTimeKeysCountSubscriber = suspend (DeviceOneTimeKeysCount?) -> Unit
+typealias OlmKeysChangeSubscriber = suspend (OlmKeysChange) -> Unit
+
+data class OlmKeysChange(
+    val oneTimeKeysCount: OneTimeKeysCount?,
+    val fallbackKeyTypes: UnusedFallbackKeyTypes?,
+)
 
 typealias AfterSyncResponseSubscriber = suspend (Sync.Response) -> Unit
 
@@ -81,8 +87,8 @@ interface SyncApiClient : EventEmitter {
 
     fun subscribeDeviceLists(subscriber: DeviceListsSubscriber)
     fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber)
-    fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber)
-    fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber)
+    fun subscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
+    fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
     fun subscribeSyncResponse(subscriber: SyncResponseSubscriber)
     fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber)
     fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber)
@@ -167,13 +173,13 @@ class SyncApiClientImpl(
     override fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber) =
         deviceListsSubscribers.update { it - subscriber }
 
-    private val deviceOneTimeKeysCountSubscribers: MutableStateFlow<Set<DeviceOneTimeKeysCountSubscriber>> =
+    private val deviceOneTimeKeysCountSubscribers: MutableStateFlow<Set<OlmKeysChangeSubscriber>> =
         MutableStateFlow(setOf())
 
-    override fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+    override fun subscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber) =
         deviceOneTimeKeysCountSubscribers.update { it + subscriber }
 
-    override fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) =
+    override fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber) =
         deviceOneTimeKeysCountSubscribers.update { it - subscriber }
 
     private val syncResponseSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> = MutableStateFlow(setOf())
@@ -307,7 +313,11 @@ class SyncApiClientImpl(
 
     private suspend fun processSyncResponse(response: Sync.Response) {
         coroutineScope {
-            deviceOneTimeKeysCountSubscribers.value.forEach { launch { it.invoke(response.deviceOneTimeKeysCount) } }
+            deviceOneTimeKeysCountSubscribers.value.forEach {
+                launch {
+                    it.invoke(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+                }
+            }
         }
         coroutineScope {
             deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
