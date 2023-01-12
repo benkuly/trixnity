@@ -10,5 +10,5 @@ import net.folivo.trixnity.core.model.events.EphemeralEventContent
  */
 @Serializable
 data class TypingEventContent(
-    @SerialName("user_ids") val users: List<UserId>,
+    @SerialName("user_ids") val users: Set<UserId>,
 ) : EphemeralEventContent

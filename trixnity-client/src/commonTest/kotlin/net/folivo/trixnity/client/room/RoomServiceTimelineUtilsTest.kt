@@ -71,6 +71,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
             timelineEventHandlerMock,
+            TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
             userInfo,
             scope

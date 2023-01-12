@@ -167,7 +167,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                     listOf(
                                         EphemeralEvent(
                                             content = TypingEventContent(
-                                                listOf(UserId("@alice:matrix.org"), UserId("@bob:matrix.org"))
+                                                setOf(UserId("@alice:matrix.org"), UserId("@bob:matrix.org"))
                                             ),
                                             roomId = RoomId("!726s6s6q:example.com")
                                         )

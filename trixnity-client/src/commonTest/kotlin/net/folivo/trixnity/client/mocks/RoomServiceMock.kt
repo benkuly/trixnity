@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.room.RoomService
@@ -17,10 +18,12 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RelationType
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 class RoomServiceMock : RoomService {
+    override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = MutableStateFlow(mapOf())
     override suspend fun fillTimelineGaps(startEventId: EventId, roomId: RoomId, limit: Long) {
         throw NotImplementedError()
     }

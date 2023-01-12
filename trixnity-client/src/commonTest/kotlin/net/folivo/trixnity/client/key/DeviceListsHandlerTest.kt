@@ -22,8 +22,6 @@ private val body: ShouldSpec.() -> Unit = {
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
-    val aliceDevice = "ALICEDEVICE"
-    val bobDevice = "BOBDEVICE"
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
     val json = createMatrixEventJson()

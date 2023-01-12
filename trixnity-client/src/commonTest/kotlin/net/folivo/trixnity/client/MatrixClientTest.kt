@@ -77,7 +77,7 @@ class MatrixClientTest : ShouldSpec({
             MatrixClient.login(
                 baseUrl = Url("http://matrix.home"),
                 identifier = IdentifierType.User(userId.full),
-                passwordOrToken = "p4ssw0rd!",
+                password = "p4ssw0rd!",
                 repositoriesModule = repositoriesModule,
                 mediaStore = InMemoryMediaStore(),
                 configuration = {
