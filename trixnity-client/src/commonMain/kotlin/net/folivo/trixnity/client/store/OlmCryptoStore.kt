@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
@@ -15,6 +16,7 @@ import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
 class OlmCryptoStore(
     private val olmAccountRepository: OlmAccountRepository,
+    private val olmForgetFallbackKeyAfterRepository: OlmForgetFallbackKeyAfterRepository,
     private val olmSessionRepository: OlmSessionRepository,
     private val inboundMegolmSessionRepository: InboundMegolmSessionRepository,
     private val inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
@@ -23,6 +25,7 @@ class OlmCryptoStore(
     private val storeScope: CoroutineScope
 ) : Store {
     val account = MutableStateFlow<String?>(null)
+    val forgetFallbackKeyAfter = MutableStateFlow<Instant?>(null)
 
     private val _notBackedUpInboundMegolmSessions =
         MutableStateFlow<Map<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>>(mapOf())
@@ -31,12 +34,21 @@ class OlmCryptoStore(
 
     override suspend fun init() {
         account.value = rtm.readTransaction { olmAccountRepository.get(1) }
+        forgetFallbackKeyAfter.value = rtm.readTransaction { olmForgetFallbackKeyAfterRepository.get(1) }
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         storeScope.launch(start = UNDISPATCHED) {
             account.collect {
                 rtm.writeTransaction {
                     if (it != null) olmAccountRepository.save(1, it)
                     else olmAccountRepository.delete(1)
+                }
+            }
+        }
+        storeScope.launch(start = UNDISPATCHED) {
+            forgetFallbackKeyAfter.collect {
+                rtm.writeTransaction {
+                    if (it != null) olmForgetFallbackKeyAfterRepository.save(1, it)
+                    else olmForgetFallbackKeyAfterRepository.delete(1)
                 }
             }
         }
@@ -52,6 +64,7 @@ class OlmCryptoStore(
     override suspend fun deleteAll() {
         rtm.writeTransaction {
             olmAccountRepository.deleteAll()
+            olmForgetFallbackKeyAfterRepository.deleteAll()
             olmSessionRepository.deleteAll()
             inboundMegolmSessionRepository.deleteAll()
             inboundMegolmMessageIndexRepository.deleteAll()
@@ -66,10 +79,6 @@ class OlmCryptoStore(
     }
 
     private val olmSessionsCache = RepositoryStateFlowCache(storeScope, olmSessionRepository, rtm)
-
-    suspend fun getOlmSessions(
-        senderKey: Curve25519Key
-    ): Set<StoredOlmSession>? = olmSessionsCache.get(senderKey).first()
 
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,

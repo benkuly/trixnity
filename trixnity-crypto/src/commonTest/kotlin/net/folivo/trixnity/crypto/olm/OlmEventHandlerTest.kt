@@ -1,12 +1,19 @@
 package net.folivo.trixnity.crypto.olm
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.beEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
+import net.folivo.trixnity.clientserverapi.client.OlmKeysChangeSubscriber
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -21,8 +28,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmOutboundGroupSession
+import net.folivo.trixnity.olm.*
 import org.kodein.mock.Mocker
 import org.kodein.mock.UsesMocks
 
@@ -41,36 +47,25 @@ class OlmEventHandlerTest : ShouldSpec({
     lateinit var mockStore: OlmStoreMock
     val mockRequestHandler = MockOlmEventHandlerRequestHandler(mocker)
 
-    lateinit var eventEmitter: EventEmitterImpl
-    lateinit var oneTimeKeysCountEmitter: OneTimeKeysCountEmitter
-    lateinit var oneTimeKeysCountEmitterSubscriber: DeviceOneTimeKeysCountSubscriber
-
-    lateinit var olmAccount: OlmAccount
-
     beforeEach {
-        olmAccount = OlmAccount.create()
         mockStore = OlmStoreMock()
 
-        mockStore.olmAccount.value = olmAccount.pickle("")
+        mockStore.olmAccount.value = freeAfter(OlmAccount.create()) { it.pickle("") }
 
-        eventEmitter = object : EventEmitterImpl() {
-            suspend fun testEmitEvent(event: Event<*>) {
-                this.emitEvent(event)
-            }
-        }
-        oneTimeKeysCountEmitter = object : OneTimeKeysCountEmitter {
-            override fun subscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) {
-                oneTimeKeysCountEmitterSubscriber = subscriber
+        val eventEmitter: EventEmitterImpl = object : EventEmitterImpl() {}
+        val olmKeysChangeEmitter: OlmKeysChangeEmitter = object : OlmKeysChangeEmitter {
+            override fun subscribeOneTimeKeysCount(subscriber: OlmKeysChangeSubscriber) {
+                throw NotImplementedError()
             }
 
-            override fun unsubscribeDeviceOneTimeKeysCount(subscriber: DeviceOneTimeKeysCountSubscriber) {
+            override fun unsubscribeOneTimeKeysCount(subscriber: OlmKeysChangeSubscriber) {
                 throw NotImplementedError()
             }
         }
 
         cut = OlmEventHandler(
             eventEmitter,
-            oneTimeKeysCountEmitter,
+            olmKeysChangeEmitter,
             OlmDecrypterMock(),
             SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", mapOf()) },
             mockRequestHandler,
@@ -79,31 +74,123 @@ class OlmEventHandlerTest : ShouldSpec({
     }
 
     afterEach {
-        olmAccount.free()
         mocker.reset()
     }
 
     // ##########################
-    // handleDeviceOneTimeKeysCount
+    // forgetOldFallbackKey
     // ##########################
-    should("create and upload new keys when server has 49 one time keys") {
-        val captureOneTimeKeys = mutableListOf<Keys>()
-        mocker.everySuspending { mockRequestHandler.setOneTimeKeys(isAny(capture = captureOneTimeKeys)) } returns
-                Result.success(Unit)
-        cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 49))
-        cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 0))
+    should("forget old fallback key after timestamp") {
+        data class OlmInfos(
+            val olmAccount: String,
+            val fallbackKey: String
+        )
 
-        captureOneTimeKeys.size shouldBe 2
-        captureOneTimeKeys[0].keys.size shouldBe 26
-        captureOneTimeKeys[1].keys.size shouldBe 75
+        val olmInfos =
+            freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
+                val bobIdentityKey = bobAccount.identityKeys.curve25519
+                bobAccount.generateFallbackKey()
+                val bobFallbackKey = bobAccount.unpublishedFallbackKey.curve25519.values.first()
+                bobAccount.markKeysAsPublished()
+                bobAccount.generateFallbackKey() // we need 2 fallback keys to forget one
+                bobAccount.markKeysAsPublished()
+
+                val message =
+                    freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobFallbackKey)) { aliceSession ->
+                        aliceSession.encrypt("Hello bob , this is alice!")
+                    }
+
+                val decryptedMessage =
+                    freeAfter(OlmSession.createInbound(bobAccount, message.cipherText)) { bobSession ->
+                        bobSession.decrypt(message)
+                    }
+
+                decryptedMessage shouldBe "Hello bob , this is alice!"
+                OlmInfos(
+                    olmAccount = bobAccount.pickle(""),
+                    fallbackKey = bobFallbackKey,
+                )
+            }
+        mockStore.olmAccount.value = olmInfos.olmAccount
+
+        val job = launch {
+            cut.forgetOldFallbackKey()
+        }
+
+        mockStore.forgetFallbackKeyAfter.value = Clock.System.now()
+
+        mockStore.forgetFallbackKeyAfter.first { it == null }
+        mockStore.olmAccount.first { it != olmInfos.olmAccount }
+
+        freeAfter(
+            OlmAccount.unpickle("", checkNotNull(mockStore.olmAccount.value)),
+            OlmAccount.create()
+        ) { bobAccount, aliceAccount ->
+            val bobIdentityKey = bobAccount.identityKeys.curve25519
+
+            val message =
+                freeAfter(
+                    OlmSession.createOutbound(aliceAccount, bobIdentityKey, olmInfos.fallbackKey)
+                ) { aliceSession ->
+                    aliceSession.encrypt("Hello bob , this is alice!")
+                }
+
+            shouldThrow<OlmLibraryException> {
+                freeAfter(OlmSession.createInbound(bobAccount, message.cipherText)) { bobSession ->
+                    bobSession.decrypt(message)
+                }
+            }.message shouldBe "BAD_MESSAGE_KEY_ID"
+        }
+        job.cancel()
+    }
+
+    // ##########################
+    // handleOlmKeysChange
+    // ##########################
+    should("create and upload new one time keys when server has 49 one time keys") {
+        val captureOneTimeKeys = mutableListOf<Keys>()
+        mocker.everySuspending {
+            mockRequestHandler.setOneTimeKeys(isAny(capture = captureOneTimeKeys), isAny())
+        } returns Result.success(Unit)
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), null))
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 0), null))
+
+        captureOneTimeKeys shouldHaveSize 2
+        captureOneTimeKeys[0].keys shouldHaveSize 26
+        captureOneTimeKeys[1].keys shouldHaveSize 75
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
-    should("do nothing when server has 50 one time keys") {
+    should("not upload keys when server has 50 one time keys") {
         val captureOneTimeKeys = mutableListOf<Keys>()
-        mocker.everySuspending { mockRequestHandler.setOneTimeKeys(isAny(capture = captureOneTimeKeys)) }
-        cut.handleDeviceOneTimeKeysCount(mapOf(KeyAlgorithm.SignedCurve25519 to 50))
+        mocker.everySuspending {
+            mockRequestHandler.setOneTimeKeys(isAny(capture = captureOneTimeKeys), isAny())
+        } returns Result.success(Unit)
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 50), null))
         captureOneTimeKeys should beEmpty()
+    }
+
+    should("create and upload fallback key, when missing") {
+        val captureFallbackKeys = mutableListOf<Keys>()
+        mocker.everySuspending {
+            mockRequestHandler.setOneTimeKeys(isAny(), isAny(capture = captureFallbackKeys))
+        } returns Result.success(Unit)
+        cut.handleOlmKeysChange(OlmKeysChange(null, setOf()))
+        cut.handleOlmKeysChange(OlmKeysChange(null, setOf()))
+
+        captureFallbackKeys shouldHaveSize 2
+        captureFallbackKeys[0].keys shouldHaveSize 1
+        captureFallbackKeys[1].keys shouldHaveSize 1
+
+        captureFallbackKeys[0].keys shouldNotContainAnyOf captureFallbackKeys[1].keys
+    }
+    should("not upload fallback key when server has one") {
+        val captureFallbackKeys = mutableListOf<Keys>()
+        mocker.everySuspending {
+            mockRequestHandler.setOneTimeKeys(isAny(), isAny(capture = captureFallbackKeys))
+        } returns Result.success(Unit)
+        cut.handleOlmKeysChange(OlmKeysChange(null, setOf(KeyAlgorithm.SignedCurve25519)))
+        captureFallbackKeys should beEmpty()
     }
 
     // ##########################

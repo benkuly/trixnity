@@ -27,6 +27,7 @@ fun createRealmRepositoriesModule(
             RealmKeyChainLink::class,
             RealmKeyVerificationState::class,
             RealmOlmAccount::class,
+            RealmOlmForgetFallbackKeyAfter::class,
             RealmOlmSession::class,
             RealmOutboundMegolmSession::class,
             RealmOutdatedKeys::class,
@@ -58,6 +59,7 @@ fun createRealmRepositoriesModule(
         singleOf(::RealmSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::RealmSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
         singleOf(::RealmOlmAccountRepository) { bind<OlmAccountRepository>() }
+        singleOf(::RealmOlmForgetFallbackKeyAfterRepository) { bind<OlmForgetFallbackKeyAfterRepository>() }
         singleOf(::RealmOlmSessionRepository) { bind<OlmSessionRepository>() }
         singleOf(::RealmInboundMegolmSessionRepository) { bind<InboundMegolmSessionRepository>() }
         singleOf(::RealmInboundMegolmMessageIndexRepository) { bind<InboundMegolmMessageIndexRepository>() }

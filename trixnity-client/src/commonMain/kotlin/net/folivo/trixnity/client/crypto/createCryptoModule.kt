@@ -12,7 +12,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createCryptoModule() = module {
-    singleOf(::ClientOneTimeKeysCountEmitter) { bind<OneTimeKeysCountEmitter>() }
+    singleOf(::ClientOlmKeysChangeEmitter) { bind<OlmKeysChangeEmitter>() }
     singleOf(::ClientSignServiceStore) { bind<SignServiceStore>() }
     singleOf(::SignServiceImpl) { bind<SignService>() }
     singleOf(::ClientOlmEventHandlerRequestHandler) { bind<OlmEventHandlerRequestHandler>() }

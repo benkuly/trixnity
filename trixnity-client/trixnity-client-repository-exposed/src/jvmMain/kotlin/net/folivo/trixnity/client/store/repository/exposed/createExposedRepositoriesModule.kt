@@ -30,6 +30,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedSecrets,
             ExposedSecretKeyRequest,
             ExposedOlmAccount,
+            ExposedOlmForgetFallbackKeyAfter,
             ExposedOlmSession,
             ExposedOutboundMegolmSession,
             ExposedOutdatedKeys,
@@ -56,6 +57,7 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::ExposedSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
         singleOf(::ExposedOlmAccountRepository) { bind<OlmAccountRepository>() }
+        singleOf(::ExposedOlmForgetFallbackKeyAfterRepository) { bind<OlmForgetFallbackKeyAfterRepository>() }
         singleOf(::ExposedOlmSessionRepository) { bind<OlmSessionRepository>() }
         singleOf(::ExposedInboundMegolmSessionRepository) { bind<InboundMegolmSessionRepository>() }
         singleOf(::ExposedInboundMegolmMessageIndexRepository) { bind<InboundMegolmMessageIndexRepository>() }

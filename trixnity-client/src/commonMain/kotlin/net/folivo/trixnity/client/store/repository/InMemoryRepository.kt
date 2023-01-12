@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -60,6 +61,9 @@ class InMemorySecretsRepository : SecretsRepository,
     InMemoryMinimalStoreRepository<Long, Map<SecretType, StoredSecret>>()
 
 class InMemoryOlmAccountRepository : OlmAccountRepository, InMemoryMinimalStoreRepository<Long, String>()
+class InMemoryOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRepository,
+    InMemoryMinimalStoreRepository<Long, Instant>()
+
 class InMemoryOlmSessionRepository : OlmSessionRepository,
     InMemoryMinimalStoreRepository<Key.Curve25519Key, Set<StoredOlmSession>>()
 

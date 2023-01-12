@@ -4,6 +4,7 @@ import net.folivo.trixnity.core.model.keys.Keys
 
 interface OlmEventHandlerRequestHandler {
     suspend fun setOneTimeKeys(
-        oneTimeKeys: Keys? = null,
+        oneTimeKeys: Keys?,
+        fallbackKeys: Keys?,
     ): Result<Unit>
 }

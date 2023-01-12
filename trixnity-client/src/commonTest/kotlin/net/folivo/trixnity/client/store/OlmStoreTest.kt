@@ -27,6 +27,7 @@ class OlmStoreTest : ShouldSpec({
         inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
         cut = OlmCryptoStore(
             olmAccountRepository,
+            InMemoryOlmForgetFallbackKeyAfterRepository(),
             InMemoryOlmSessionRepository(),
             inboundMegolmSessionRepository,
             InMemoryInboundMegolmMessageIndexRepository(),

@@ -375,8 +375,7 @@ class SyncRoutesTest : TestsWithMocks() {
                         "type":"m.direct"
                       }
                     ]
-                  },
-                  "device_unused_fallback_key_types":[]
+                  }
                 }
                 """.trimToFlatJson()
         }

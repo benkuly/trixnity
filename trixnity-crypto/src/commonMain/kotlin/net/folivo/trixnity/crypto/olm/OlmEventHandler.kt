@@ -1,10 +1,13 @@
 package net.folivo.trixnity.crypto.olm
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import mu.KotlinLogging
-import net.folivo.trixnity.clientserverapi.model.sync.DeviceOneTimeKeysCount
+import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
@@ -24,12 +27,13 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.olm.freeAfter
+import kotlin.time.Duration.Companion.hours
 
 private val log = KotlinLogging.logger {}
 
 class OlmEventHandler(
     private val eventEmitter: EventEmitter,
-    private val oneTimeKeysCountEmitter: OneTimeKeysCountEmitter,
+    private val olmKeysChangeEmitter: OlmKeysChangeEmitter,
     private val decrypter: OlmDecrypter,
     private val signService: SignService,
     private val requestHandler: OlmEventHandlerRequestHandler,
@@ -37,35 +41,80 @@ class OlmEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        oneTimeKeysCountEmitter.subscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
+        olmKeysChangeEmitter.subscribeOneTimeKeysCount(::handleOlmKeysChange)
         eventEmitter.subscribe(::handleMemberEvents)
         eventEmitter.subscribe(decrypter::handleOlmEvent)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent)
+        scope.launch {
+            forgetOldFallbackKey()
+        }
         scope.coroutineContext.job.invokeOnCompletion {
-            oneTimeKeysCountEmitter.unsubscribeDeviceOneTimeKeysCount(::handleDeviceOneTimeKeysCount)
+            olmKeysChangeEmitter.unsubscribeOneTimeKeysCount(::handleOlmKeysChange)
             eventEmitter.unsubscribe(::handleMemberEvents)
             eventEmitter.unsubscribe(decrypter::handleOlmEvent)
             decrypter.unsubscribe(::handleOlmEncryptedRoomKeyEventContent)
         }
     }
 
-    internal suspend fun handleDeviceOneTimeKeysCount(count: DeviceOneTimeKeysCount?) {
-        if (count == null) return
+    internal suspend fun forgetOldFallbackKey() {
+        store.forgetFallbackKeyAfter.collect { forgetFallbackKeyAfter ->
+            if (forgetFallbackKeyAfter != null) {
+                val wait = forgetFallbackKeyAfter - Clock.System.now()
+                log.debug { "wait for $wait and then forget old fallback key" }
+                delay(wait)
+                store.olmAccount.update { pickledOlmAccount ->
+                    freeAfter(
+                        OlmAccount.unpickle(
+                            store.olmPickleKey,
+                            requireNotNull(pickledOlmAccount) { "olm account should never be null" },
+                        ),
+                    ) { olmAccount ->
+                        olmAccount.forgetOldFallbackKey()
+                        olmAccount.pickle(store.olmPickleKey)
+                    }
+                }
+                store.forgetFallbackKeyAfter.value = null
+            }
+        }
+    }
+
+    internal suspend fun handleOlmKeysChange(change: OlmKeysChange) {
+        val oneTimeKeysCount = change.oneTimeKeysCount
+        val fallbackKeyTypes = change.fallbackKeyTypes
         store.olmAccount.update { pickledOlmAccount ->
             freeAfter(
                 OlmAccount.unpickle(
                     store.olmPickleKey, requireNotNull(pickledOlmAccount) { "olm account should never be null" })
             ) { olmAccount ->
-                val generateOneTimeKeysCount =
-                    (olmAccount.maxNumberOfOneTimeKeys / 2 - (count[KeyAlgorithm.SignedCurve25519] ?: 0))
-                        .coerceAtLeast(0)
-                if (generateOneTimeKeysCount > 0) {
-                    olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
-                    val signedOneTimeKeys = Keys(olmAccount.oneTimeKeys.curve25519.map {
-                        signService.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
-                    }.toSet())
-                    log.debug { "generate and upload $generateOneTimeKeysCount one time keys." }
-                    requestHandler.setOneTimeKeys(oneTimeKeys = signedOneTimeKeys).getOrThrow()
+                val newOneTimeKeys =
+                    if (oneTimeKeysCount != null) {
+                        val generateOneTimeKeysCount =
+                            (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519]
+                                ?: 0))
+                                .coerceAtLeast(0)
+                        if (generateOneTimeKeysCount > 0) {
+                            olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
+                            Keys(olmAccount.oneTimeKeys.curve25519.map {
+                                signService.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
+                            }.toSet())
+                        } else null
+                    } else null
+
+                val newFallbackKeys =
+                    if (fallbackKeyTypes?.contains(KeyAlgorithm.SignedCurve25519)?.not() == true) {
+                        olmAccount.generateFallbackKey()
+                        Keys(olmAccount.unpublishedFallbackKey.curve25519.map {
+                            signService.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
+                        }.toSet())
+                            .also { store.forgetFallbackKeyAfter.update { it ?: (Clock.System.now() + 1.hours) } }
+                    } else null
+
+                if (newOneTimeKeys != null || newFallbackKeys != null) {
+                    log.debug { "generate and upload ${newOneTimeKeys?.size} one time keys and ${newFallbackKeys?.size} fallback keys." }
+                    requestHandler.setOneTimeKeys(
+                        oneTimeKeys = newOneTimeKeys,
+                        fallbackKeys = newFallbackKeys
+                    ).getOrThrow()
                     olmAccount.markKeysAsPublished()
                     olmAccount.pickle(store.olmPickleKey)
                 } else pickledOlmAccount

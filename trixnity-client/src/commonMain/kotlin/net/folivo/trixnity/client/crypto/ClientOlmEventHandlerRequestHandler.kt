@@ -6,6 +6,6 @@ import net.folivo.trixnity.crypto.olm.OlmEventHandlerRequestHandler
 
 class ClientOlmEventHandlerRequestHandler(private val api: MatrixClientServerApiClient) :
     OlmEventHandlerRequestHandler {
-    override suspend fun setOneTimeKeys(oneTimeKeys: Keys?): Result<Unit> =
-        api.keys.setKeys(oneTimeKeys = oneTimeKeys).map { }
+    override suspend fun setOneTimeKeys(oneTimeKeys: Keys?, fallbackKeys: Keys?): Result<Unit> =
+        api.keys.setKeys(oneTimeKeys = oneTimeKeys, fallbackKeys = fallbackKeys).map { }
 }
