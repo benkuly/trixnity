@@ -26,9 +26,12 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent.HistoryVisibility
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
@@ -99,7 +102,11 @@ private val body: ShouldSpec.() -> Unit = {
         val cedricKey1 = Signed<DeviceKeys, UserId>(
             DeviceKeys(cedric, cedricDevice, setOf(), keysOf(Key.Ed25519Key("id", "value"))), mapOf()
         )
+        val aliceDevice1 = "ALICE_DEVICE_1"
         val aliceDevice2 = "ALICE_DEVICE_2"
+        val aliceKey1 = Signed<DeviceKeys, UserId>(
+            DeviceKeys(alice, aliceDevice1, setOf(), keysOf(Key.Ed25519Key("id", "value"))), mapOf()
+        )
         val aliceKey2 = Signed<DeviceKeys, UserId>(
             DeviceKeys(alice, aliceDevice2, setOf(), keysOf(Key.Ed25519Key("id", "value"))), mapOf()
         )
@@ -432,7 +439,7 @@ private val body: ShouldSpec.() -> Unit = {
                 assertNotNull(storedAliceKeysAfterDelete)
                 storedAliceKeysAfterDelete shouldContainExactly mapOf()
             }
-            should("look for encrypted room, where the user participates and notify megolm sessions about new device keys") {
+            should("look for encrypted room, where the user participates and notify megolm sessions about new devices") {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, GetKeys()) {
                         GetKeys.Response(
@@ -449,32 +456,41 @@ private val body: ShouldSpec.() -> Unit = {
                 val room2 = RoomId("room2", "server")
                 val room3 = RoomId("room3", "server")
                 roomStore.update(room1) {
-                    simpleRoom.copy(
-                        roomId = room1,
-                        encryptionAlgorithm = EncryptionAlgorithm.Megolm
-                    )
+                    simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm)
                 }
                 roomStore.update(room2) {
-                    simpleRoom.copy(
-                        roomId = room2,
-                        encryptionAlgorithm = EncryptionAlgorithm.Megolm
-                    )
+                    simpleRoom.copy(roomId = room2, encryptionAlgorithm = Megolm)
                 }
                 roomStore.update(room3) {
-                    simpleRoom.copy(
-                        roomId = room3,
-                        encryptionAlgorithm = EncryptionAlgorithm.Megolm
-                    )
+                    simpleRoom.copy(roomId = room3, encryptionAlgorithm = Megolm)
                 }
                 listOf(
+                    // room1
                     Event.StateEvent(
-                        MemberEventContent(membership = Membership.JOIN),
+                        HistoryVisibilityEventContent(HistoryVisibility.INVITED),
+                        EventId("\$event1"),
+                        alice,
+                        room1,
+                        1234,
+                        stateKey = ""
+                    ),
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.INVITE),
                         EventId("\$event1"),
                         alice,
                         room1,
                         1234,
                         stateKey = alice.full
                     ),
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event4"),
+                        cedric,
+                        room1,
+                        1234,
+                        stateKey = cedric.full
+                    ),
+                    // room2
                     Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event2"),
@@ -483,6 +499,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
+                    // room3
                     Event.StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event3"),
@@ -491,21 +508,16 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
-                    Event.StateEvent(
-                        MemberEventContent(membership = Membership.JOIN),
-                        EventId("\$event4"),
-                        cedric,
-                        room1,
-                        1234,
-                        stateKey = cedric.full
-                    ),
                 ).forEach { roomStateStore.update(it) }
 
                 olmCryptoStore.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
                 olmCryptoStore.updateOutboundMegolmSession(room3) {
                     StoredOutboundMegolmSession(
                         room3,
-                        newDevices = mapOf(cedric to setOf(cedricDevice)),
+                        newDevices = mapOf(
+                            cedric to setOf(cedricDevice),
+                            alice to setOf(aliceDevice1),
+                        ),
                         pickled = ""
                     )
                 }
@@ -514,13 +526,40 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.outdatedKeys.first { it.isEmpty() }
                 olmCryptoStore.getOutboundMegolmSession(room1)?.newDevices shouldBe mapOf(
                     alice to setOf(aliceDevice2),
-                    cedric to setOf(cedricDevice)
                 )
-                olmCryptoStore.getOutboundMegolmSession(room2) should beNull()
+                olmCryptoStore.getOutboundMegolmSession(room2) should beNull() // there is no session
                 olmCryptoStore.getOutboundMegolmSession(room3)?.newDevices shouldBe mapOf(
-                    alice to setOf(aliceDevice2),
-                    cedric to setOf(cedricDevice)
+                    alice to setOf(aliceDevice1, aliceDevice2),
+                    cedric to setOf(cedricDevice), // was already present
                 )
+            }
+            should("look for encrypted room, where the user participates and reset megolm sessions when removed devices") {
+                keyStore.updateDeviceKeys(alice) {
+                    mapOf(
+                        aliceDevice1 to StoredDeviceKeys(aliceKey1, KeySignatureTrustLevel.Valid(false)),
+                        aliceDevice2 to StoredDeviceKeys(aliceKey2, KeySignatureTrustLevel.Valid(false)),
+                    )
+                }
+                apiConfig.endpoints {
+                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                        GetKeys.Response(
+                            mapOf(),
+                            mapOf(
+                                alice to mapOf(aliceDevice2 to aliceKey2)
+                            ),
+                            mapOf(), mapOf(), mapOf()
+                        )
+                    }
+                }
+                val room1 = RoomId("room1", "server")
+                roomStore.update(room1) {
+                    simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm)
+                }
+                olmCryptoStore.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
+
+                keyStore.outdatedKeys.value = setOf(alice)
+                keyStore.outdatedKeys.first { it.isEmpty() }
+                olmCryptoStore.getOutboundMegolmSession(room1) shouldBe null
             }
             context("master key is present") {
                 context("at least one device key is not cross signed") {

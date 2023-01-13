@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
@@ -71,9 +73,13 @@ class OlmStoreMock : OlmStore {
     override val olmPickleKey: String = ""
     override val forgetFallbackKeyAfter: MutableStateFlow<Instant?> = MutableStateFlow(null)
 
-    val members = mutableMapOf<RoomId, Map<UserId, Set<String>>>()
-    override suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>>? {
-        return members[roomId]
+    val devices = mutableMapOf<RoomId, Map<UserId, Set<String>>>()
+    override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>? {
+        return devices[roomId]
+    }
+
+    override suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility? {
+        return null
     }
 
     val roomEncryptionAlgorithm = mutableMapOf<RoomId, EncryptionAlgorithm?>()

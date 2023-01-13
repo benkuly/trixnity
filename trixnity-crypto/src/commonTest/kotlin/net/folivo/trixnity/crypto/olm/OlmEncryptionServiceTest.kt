@@ -117,7 +117,7 @@ private val body: ShouldSpec.() -> Unit = {
             keys = Keys(keysOf(bobCurveKey, bobEdKey))
         )
         olmStoreMock.olmAccount.value = aliceAccount.pickle("")
-        olmStoreMock.members[room] = mapOf(alice to setOf(aliceDeviceId), bob to setOf(bobDeviceId))
+        olmStoreMock.devices[room] = mapOf(alice to setOf(aliceDeviceId), bob to setOf(bobDeviceId))
 
         mockSignService.returnVerify = VerifyResult.Valid
 

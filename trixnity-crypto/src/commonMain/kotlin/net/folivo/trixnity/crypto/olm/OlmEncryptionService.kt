@@ -301,7 +301,9 @@ class OlmEncryptionServiceImpl(
                 || rotationPeriodMsgs != null && (storedSession.encryptedMessageCount >= rotationPeriodMsgs)
             ) {
                 log.debug { "encrypt megolm event with new session" }
-                val newUserDevices = store.getMembers(roomId) ?: mapOf()
+                val newUserDevices =
+                    store.getDevices(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
+                        .orEmpty()
                 freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                     freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                         store.updateInboundMegolmSession(inboundSession.sessionId, roomId) {
