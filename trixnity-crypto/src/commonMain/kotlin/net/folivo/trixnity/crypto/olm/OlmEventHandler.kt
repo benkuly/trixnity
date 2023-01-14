@@ -104,7 +104,9 @@ class OlmEventHandler(
                     if (fallbackKeyTypes?.contains(KeyAlgorithm.SignedCurve25519)?.not() == true) {
                         olmAccount.generateFallbackKey()
                         Keys(olmAccount.unpublishedFallbackKey.curve25519.map {
-                            signService.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
+                            signService.signCurve25519Key(
+                                Curve25519Key(keyId = it.key, value = it.value, fallback = true)
+                            )
                         }.toSet())
                             .also { store.forgetFallbackKeyAfter.update { it ?: (Clock.System.now() + 1.hours) } }
                     } else null

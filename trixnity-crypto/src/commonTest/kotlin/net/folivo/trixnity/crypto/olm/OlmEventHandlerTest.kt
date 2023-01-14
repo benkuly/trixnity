@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -180,7 +181,9 @@ class OlmEventHandlerTest : ShouldSpec({
 
         captureFallbackKeys shouldHaveSize 2
         captureFallbackKeys[0].keys shouldHaveSize 1
+        captureFallbackKeys[0].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>().fallback shouldBe true
         captureFallbackKeys[1].keys shouldHaveSize 1
+        captureFallbackKeys[1].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>().fallback shouldBe true
 
         captureFallbackKeys[0].keys shouldNotContainAnyOf captureFallbackKeys[1].keys
     }
