@@ -37,7 +37,7 @@ import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger {}
 
-class OutgoingKeyRequestEventHandler(
+class OutgoingSecretKeyRequestEventHandler(
     userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val olmDecrypter: OlmDecrypter,
@@ -130,7 +130,7 @@ class OutgoingKeyRequestEventHandler(
                 log.warn { "could not derive sender device id from keys ${event.decrypted.senderKeys}" }
                 return
             }
-            if (!(senderTrustLevel is KeySignatureTrustLevel.CrossSigned && senderTrustLevel.verified || senderTrustLevel is KeySignatureTrustLevel.Valid && senderTrustLevel.verified)) {
+            if (senderTrustLevel?.isVerified != true) {
                 log.warn { "received a key from $senderDeviceId, but we don't trust that device ($senderTrustLevel)" }
                 return
             }

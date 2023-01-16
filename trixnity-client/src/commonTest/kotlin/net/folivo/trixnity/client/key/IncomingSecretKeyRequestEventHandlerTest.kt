@@ -34,7 +34,7 @@ import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
-class IncomingKeyRequestEventHandlerTest : ShouldSpec(body)
+class IncomingSecretKeyRequestEventHandlerTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
@@ -50,7 +50,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var olmEncryptionServiceMock: OlmEncryptionServiceMock
     lateinit var apiConfig: PortableMockEngineConfig
 
-    lateinit var cut: IncomingKeyRequestEventHandler
+    lateinit var cut: IncomingSecretKeyRequestEventHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -58,7 +58,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmEncryptionServiceMock = OlmEncryptionServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = IncomingKeyRequestEventHandler(
+        cut = IncomingSecretKeyRequestEventHandler(
             UserInfo(alice, aliceDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             OlmDecrypterMock(),
@@ -79,7 +79,7 @@ private val body: ShouldSpec.() -> Unit = {
         ), bob
     )
 
-    context(IncomingKeyRequestEventHandler::handleEncryptedIncomingKeyRequests.name) {
+    context(IncomingSecretKeyRequestEventHandler::handleEncryptedIncomingKeyRequests.name) {
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
@@ -179,7 +179,7 @@ private val body: ShouldSpec.() -> Unit = {
             sendToDeviceEvents shouldBe null
         }
     }
-    context(IncomingKeyRequestEventHandler::processIncomingKeyRequests.name) {
+    context(IncomingSecretKeyRequestEventHandler::processIncomingKeyRequests.name) {
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null

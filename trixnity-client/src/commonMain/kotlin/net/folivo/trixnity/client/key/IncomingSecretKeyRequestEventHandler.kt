@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -25,7 +25,7 @@ import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 private val log = KotlinLogging.logger {}
 
-class IncomingKeyRequestEventHandler(
+class IncomingSecretKeyRequestEventHandler(
     userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val olmDecrypter: OlmDecrypter,
@@ -71,7 +71,7 @@ class IncomingKeyRequestEventHandler(
             log.debug { "process incoming key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId
             val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId).first()?.trustLevel
-            if (senderTrustLevel is KeySignatureTrustLevel.CrossSigned && senderTrustLevel.verified || senderTrustLevel is KeySignatureTrustLevel.Valid && senderTrustLevel.verified) {
+            if (senderTrustLevel?.isVerified == true) {
                 val requestedSecret = request.name
                     ?.let { SecretType.ofId(it) }
                     ?.let { keyStore.secrets.value[it] }

@@ -74,3 +74,7 @@ sealed interface KeySignatureTrustLevel {
     @SerialName("invalid")
     data class Invalid(val reason: String) : KeySignatureTrustLevel
 }
+
+val KeySignatureTrustLevel.isVerified: Boolean
+    get() = this is KeySignatureTrustLevel.CrossSigned && this.verified
+            || this is KeySignatureTrustLevel.Valid && this.verified

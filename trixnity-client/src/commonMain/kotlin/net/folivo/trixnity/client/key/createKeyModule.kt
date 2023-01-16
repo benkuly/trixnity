@@ -24,12 +24,12 @@ fun createKeyModule() = module {
         bind<EventHandler>()
         named<OutdatedKeysHandler>()
     }
-    singleOf(::IncomingKeyRequestEventHandler) {
+    singleOf(::IncomingSecretKeyRequestEventHandler) {
         bind<EventHandler>()
-        named<IncomingKeyRequestEventHandler>()
+        named<IncomingSecretKeyRequestEventHandler>()
     }
-    single<EventHandler>(named<OutgoingKeyRequestEventHandler>()) {
-        OutgoingKeyRequestEventHandler(get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get(), get())
+    single<EventHandler>(named<OutgoingSecretKeyRequestEventHandler>()) {
+        OutgoingSecretKeyRequestEventHandler(get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get(), get())
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }
     singleOf(::KeyTrustServiceImpl) { bind<KeyTrustService>() }

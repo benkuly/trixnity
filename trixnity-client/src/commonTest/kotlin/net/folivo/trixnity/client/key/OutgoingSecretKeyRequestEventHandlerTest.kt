@@ -55,7 +55,7 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 
-class OutgoingKeyRequestEventHandlerTest : ShouldSpec(body)
+class OutgoingSecretKeyRequestEventHandlerTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
@@ -73,7 +73,7 @@ private val body: ShouldSpec.() -> Unit = {
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
 
-    lateinit var cut: OutgoingKeyRequestEventHandler
+    lateinit var cut: OutgoingSecretKeyRequestEventHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -81,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = OutgoingKeyRequestEventHandler(
+        cut = OutgoingSecretKeyRequestEventHandler(
             UserInfo(alice, aliceDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             api,
             OlmDecrypterMock(),
@@ -102,7 +102,7 @@ private val body: ShouldSpec.() -> Unit = {
             senderKey = Key.Curve25519Key(null, "")
         ), bob
     )
-    context(OutgoingKeyRequestEventHandler::handleOutgoingKeyRequestAnswer.name) {
+    context(OutgoingSecretKeyRequestEventHandler::handleOutgoingKeyRequestAnswer.name) {
         val (crossSigningPublicKey, crossSigningPrivateKey) = freeAfter(OlmPkSigning.create(null)) { it.publicKey to it.privateKey }
         val (keyBackupPublicKey, keyBackupPrivateKey) = freeAfter(OlmPkDecryption.create(null)) { it.publicKey to it.privateKey }
         val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
@@ -385,7 +385,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
     }
-    context(OutgoingKeyRequestEventHandler::cancelOldOutgoingKeyRequests.name) {
+    context(OutgoingSecretKeyRequestEventHandler::cancelOldOutgoingKeyRequests.name) {
         should("only remove old requests and send cancel") {
             var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
@@ -428,7 +428,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
     }
-    context(OutgoingKeyRequestEventHandler::requestSecretKeys.name) {
+    context(OutgoingSecretKeyRequestEventHandler::requestSecretKeys.name) {
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
@@ -504,7 +504,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.requestSecretKeysRequestIds.value shouldHaveSize 1
         }
     }
-    context(OutgoingKeyRequestEventHandler::requestSecretKeysWhenCrossSigned.name) {
+    context(OutgoingSecretKeyRequestEventHandler::requestSecretKeysWhenCrossSigned.name) {
         should("request secret keys, when cross signed and verified") {
             currentSyncState.value = SyncState.RUNNING
 
@@ -534,7 +534,7 @@ private val body: ShouldSpec.() -> Unit = {
             job.cancel()
         }
     }
-    context(OutgoingKeyRequestEventHandler::handleChangedSecrets.name) {
+    context(OutgoingSecretKeyRequestEventHandler::handleChangedSecrets.name) {
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         beforeTest {
             sendToDeviceEvents = null
