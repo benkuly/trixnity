@@ -159,7 +159,7 @@ class OutdatedKeysHandler(
             removedDevices.isNotEmpty() -> {
                 joinedEncryptedRooms.value
                     .also {
-                        if (it.isNotEmpty()) log.trace { "reset megolm sessions in rooms $it because of remove devices from $userId: $removedDevices" }
+                        if (it.isNotEmpty()) log.debug { "reset megolm sessions in rooms $it because of removed devices $removedDevices from $userId" }
                     }.forEach { roomId ->
                         olmCryptoStore.updateOutboundMegolmSession(roomId) { null }
                     }
@@ -174,7 +174,7 @@ class OutdatedKeysHandler(
                         roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full).first()
                             ?.content?.membership.let { allowedMemberships.contains(it) }
                     }.also {
-                        if (it.isNotEmpty()) log.trace { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDevices" }
+                        if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new devices $addedDevices from $userId" }
                     }.forEach { roomId ->
                         olmCryptoStore.updateOutboundMegolmSession(roomId) { oms ->
                             oms?.copy(
