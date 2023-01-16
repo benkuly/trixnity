@@ -9,6 +9,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -90,14 +91,17 @@ class ClientOlmStore(
     override val olmPickleKey = requireNotNull(accountStore.olmPickleKey.value)
     override val forgetFallbackKeyAfter = olmCryptoStore.forgetFallbackKeyAfter
 
-    override suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>> {
+    override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>> {
         userService.loadMembers(roomId)
-        val members = roomStateStore.members(roomId, Membership.JOIN, Membership.INVITE)
+        val members = roomStateStore.members(roomId, memberships)
         keyStore.waitForUpdateOutdatedKey(members)
         return members.mapNotNull { userId ->
             keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }
         }.toMap()
     }
+
+    override suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility? =
+        roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()?.content?.historyVisibility
 
     override suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm? =
         roomStore.get(roomId).first()?.encryptionAlgorithm

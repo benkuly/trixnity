@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
@@ -43,6 +44,7 @@ class OlmEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmKeysChangeEmitter.subscribeOneTimeKeysCount(::handleOlmKeysChange)
         eventEmitter.subscribe(::handleMemberEvents)
+        eventEmitter.subscribe(::handleHistoryVisibility)
         eventEmitter.subscribe(decrypter::handleOlmEvent)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent)
         scope.launch {
@@ -51,6 +53,7 @@ class OlmEventHandler(
         scope.coroutineContext.job.invokeOnCompletion {
             olmKeysChangeEmitter.unsubscribeOneTimeKeysCount(::handleOlmKeysChange)
             eventEmitter.unsubscribe(::handleMemberEvents)
+            eventEmitter.unsubscribe(::handleHistoryVisibility)
             eventEmitter.unsubscribe(decrypter::handleOlmEvent)
             decrypter.unsubscribe(::handleOlmEncryptedRoomKeyEventContent)
         }
@@ -171,6 +174,13 @@ class OlmEventHandler(
                 else -> {
                 }
             }
+        }
+    }
+
+    internal suspend fun handleHistoryVisibility(event: Event<HistoryVisibilityEventContent>) {
+        if (event is StateEvent) {
+            log.debug { "reset megolm session, because visibility has changed in ${event.roomId}" }
+            store.updateOutboundMegolmSession(event.roomId) { null }
         }
     }
 }

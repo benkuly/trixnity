@@ -15,7 +15,7 @@ data class StoredInboundMegolmSession(
     /**
      * This means, that we can trust the communication channel from which we received the session from.
      * For example the key backup cannot be trusted due to async encryption.
-     * This does NOT mean, that we trust this megolm session. It needs to be checked, if we trust the sender keys.
+     * This does NOT mean, that we trust this megolm session. It needs to be checked whether we trust the sender key.
      */
     val isTrusted: Boolean,
     val forwardingCurve25519KeyChain: List<Key.Curve25519Key>,

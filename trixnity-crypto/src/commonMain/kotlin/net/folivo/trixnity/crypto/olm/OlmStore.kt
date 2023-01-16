@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -48,7 +50,9 @@ interface OlmStore {
 
     val forgetFallbackKeyAfter: MutableStateFlow<Instant?>
 
-    suspend fun getMembers(roomId: RoomId): Map<UserId, Set<String>>?
+    suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>?
+
+    suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility?
 
     suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm?
 }

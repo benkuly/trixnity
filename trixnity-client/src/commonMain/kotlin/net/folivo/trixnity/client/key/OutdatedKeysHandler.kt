@@ -15,9 +15,10 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.crypto.sign.verify
@@ -138,7 +139,7 @@ class OutdatedKeysHandler(
         devices: Map<String, SignedDeviceKeys>,
         joinedEncryptedRooms: Lazy<List<RoomId>>
     ) {
-        val oldDevices = keyStore.getDeviceKeys(userId).first()
+        val oldDevices = keyStore.getDeviceKeys(userId).first().orEmpty()
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
             val signatureVerification =
                 signService.verify(deviceKeys, mapOf(userId to setOfNotNull(deviceKeys.getSelfSigningKey())))
@@ -152,24 +153,39 @@ class OutdatedKeysHandler(
             log.trace { "updated outdated device keys ${deviceKeys.signed.deviceId} of user $userId with trust level $trustLevel" }
             StoredDeviceKeys(deviceKeys, trustLevel)
         }
-        val addedDeviceKeys = if (oldDevices != null) newDevices.keys - oldDevices.keys else newDevices.keys
-        if (addedDeviceKeys.isNotEmpty()) {
-            joinedEncryptedRooms.value
-                .filter { roomId ->
-                    roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full).first()
-                        ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
-                }.also {
-                    if (it.isNotEmpty()) log.trace { "notify megolm sessions in rooms $it about new device keys from $userId: $addedDeviceKeys" }
-                }.forEach { roomId ->
-                    olmCryptoStore.updateOutboundMegolmSession(roomId) { oms ->
-                        oms?.copy(
-                            newDevices = oms.newDevices + Pair(
-                                userId,
-                                oms.newDevices[userId]?.plus(addedDeviceKeys) ?: addedDeviceKeys
-                            )
-                        )
+        val addedDevices = newDevices.keys - oldDevices.keys
+        val removedDevices = oldDevices.keys - newDevices.keys
+        when {
+            removedDevices.isNotEmpty() -> {
+                joinedEncryptedRooms.value
+                    .also {
+                        if (it.isNotEmpty()) log.debug { "reset megolm sessions in rooms $it because of removed devices $removedDevices from $userId" }
+                    }.forEach { roomId ->
+                        olmCryptoStore.updateOutboundMegolmSession(roomId) { null }
                     }
-                }
+            }
+
+            addedDevices.isNotEmpty() -> {
+                joinedEncryptedRooms.value
+                    .filter { roomId ->
+                        val allowedMemberships =
+                            roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()
+                                ?.content?.historyVisibility.membershipsAllowedToReceiveKey
+                        roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full).first()
+                            ?.content?.membership.let { allowedMemberships.contains(it) }
+                    }.also {
+                        if (it.isNotEmpty()) log.debug { "notify megolm sessions in rooms $it about new devices $addedDevices from $userId" }
+                    }.forEach { roomId ->
+                        olmCryptoStore.updateOutboundMegolmSession(roomId) { oms ->
+                            oms?.copy(
+                                newDevices = oms.newDevices + Pair(
+                                    userId,
+                                    oms.newDevices[userId]?.plus(addedDevices) ?: addedDevices
+                                )
+                            )
+                        }
+                    }
+            }
         }
         keyStore.updateCrossSigningKeys(userId) { oldKeys ->
             val usersMasterKey = oldKeys?.find { it.value.signed.usage.contains(CrossSigningKeysUsage.MasterKey) }

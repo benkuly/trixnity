@@ -34,14 +34,11 @@ inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.ge
 
 suspend inline fun RoomStateStore.members(
     roomId: RoomId,
-    membership: Membership,
-    vararg moreMemberships: Membership
-): Set<UserId> {
-    val allMemberships = moreMemberships.toList() + membership
-    return get<MemberEventContent>(roomId).first()
-        ?.filter { allMemberships.contains(it.value?.content?.membership) }
+    memberships: Set<Membership>,
+): Set<UserId> =
+    get<MemberEventContent>(roomId).first()
+        ?.filter { memberships.contains(it.value?.content?.membership) }
         ?.map { UserId(it.key) }?.toSet() ?: setOf()
-}
 
 suspend inline fun RoomStateStore.membersCount(
     roomId: RoomId,

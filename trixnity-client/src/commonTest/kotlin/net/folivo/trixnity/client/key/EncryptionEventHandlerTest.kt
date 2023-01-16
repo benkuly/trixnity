@@ -64,7 +64,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     context(KeyEncryptionEventHandler::handleEncryptionEvents.name) {
-        should("mark all joined and invited users as outdated") {
+        should("mark users as outdated dependent on history visibility") {
             listOf(
                 Event.StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
@@ -93,7 +93,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = ""
                 ),
             )
-            keyStore.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+            keyStore.outdatedKeys.value shouldContainExactly setOf(alice)
         }
         should("not mark joined or invited users as outdated, when keys already tracked") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
