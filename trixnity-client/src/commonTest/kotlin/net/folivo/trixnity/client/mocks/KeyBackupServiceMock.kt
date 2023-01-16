@@ -12,7 +12,7 @@ class KeyBackupServiceMock : KeyBackupService {
         get() = throw NotImplementedError()
 
     val loadMegolmSessionCalled = MutableStateFlow<List<Pair<RoomId, String>>>(listOf())
-    override fun loadMegolmSession(roomId: RoomId, sessionId: String) {
+    override suspend fun loadMegolmSession(roomId: RoomId, sessionId: String) {
         loadMegolmSessionCalled.update { it + Pair(roomId, sessionId) }
     }
 

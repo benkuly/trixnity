@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.room
 
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.store.OlmCryptoStore
@@ -19,17 +21,20 @@ class MegolmRoomEventDecryptionService(
     private val keyBackupService: KeyBackupService,
     private val olmEncryptionService: OlmEncryptionService,
 ) : RoomEventDecryptionService {
-    override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? {
+    override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? = coroutineScope {
         val content = event.content
         val roomId = event.roomId
         val eventId = event.id
-        return if (content is EncryptedEventContent.MegolmEncryptedEventContent) {
+        if (content is EncryptedEventContent.MegolmEncryptedEventContent) {
             val session = olmCryptoStore.getInboundMegolmSession(content.sessionId, roomId).first()
             val firstKnownIndex = session?.firstKnownIndex
             if (session == null) {
-                keyBackupService.loadMegolmSession(roomId, content.sessionId)
+                val loadMegolmSessionJob = launch {
+                    keyBackupService.loadMegolmSession(roomId, content.sessionId)
+                }
                 log.debug { "start to wait for inbound megolm session to decrypt $eventId in $roomId" }
                 olmCryptoStore.waitForInboundMegolmSession(roomId, content.sessionId)
+                loadMegolmSessionJob.cancel()
             }
             log.trace { "try to decrypt event $eventId in $roomId" }
             @Suppress("UNCHECKED_CAST")
@@ -42,13 +47,16 @@ class MegolmRoomEventDecryptionService(
                     || exception is DecryptionException.SessionException && exception.cause?.message
                         ?.contains("UNKNOWN_MESSAGE_INDEX") == true
                 ) {
-                    keyBackupService.loadMegolmSession(roomId, content.sessionId)
-                    log.debug { "unknwon message index, so we start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                    log.debug { "unknwon message index, so we request key backup and start to wait for inbound megolm session to decrypt $eventId in $roomId again" }
+                    val loadMegolmSessionJob = launch {
+                        keyBackupService.loadMegolmSession(roomId, content.sessionId)
+                    }
                     olmCryptoStore.waitForInboundMegolmSession(
                         roomId,
                         content.sessionId,
                         firstKnownIndexLessThen = firstKnownIndex
                     )
+                    loadMegolmSessionJob.cancel()
                     encryptedEvent.decryptCatching()
                 } else decryptEventAttempt
             log.trace { "decrypted TimelineEvent $eventId in $roomId" }
