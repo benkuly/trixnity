@@ -4,7 +4,6 @@ import com.benasher44.uuid.uuid4
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
@@ -62,8 +61,6 @@ class OutgoingSecretKeyRequestEventHandler(
         }
     }
 
-    internal val requestSecretKeysRequestIds = MutableStateFlow(emptySet<String>())
-
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.values()
             .subtract(keyStore.secrets.value.keys)
@@ -89,7 +86,6 @@ class OutgoingSecretKeyRequestEventHandler(
                 requestingDeviceId = ownDeviceId,
                 requestId = requestId
             )
-            requestSecretKeysRequestIds.update { it + requestId }
             log.debug { "send secret key request (${missingSecret.id}) to $receiverDeviceIds" }
             api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                 .onSuccess {
@@ -116,9 +112,10 @@ class OutgoingSecretKeyRequestEventHandler(
     internal suspend fun handleOutgoingKeyRequestAnswer(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
-            log.debug { "handle outgoing key request answer ${content.requestId}" }
-            if (requestSecretKeysRequestIds.value.contains(content.requestId).not()) {
-                log.warn { "received a key request, but we don't requested one with the id ${content.requestId}" }
+            val requestId = content.requestId
+            log.debug { "handle outgoing secret key request answer $requestId" }
+            if (keyStore.allSecretKeyRequests.value.none { it.content.requestId == requestId }) {
+                log.warn { "received a secret key request, but we don't requested one with the id $requestId" }
                 return
             }
             val (senderDeviceId, senderTrustLevel) = keyStore.getDeviceKeys(ownUserId).first()?.firstNotNullOfOrNull {
@@ -135,7 +132,7 @@ class OutgoingSecretKeyRequestEventHandler(
                 return
             }
             val request = keyStore.allSecretKeyRequests.value
-                .firstOrNull { it.content.requestId == content.requestId }
+                .firstOrNull { it.content.requestId == requestId }
             if (request?.receiverDeviceIds?.contains(senderDeviceId) != true) {
                 log.warn { "received a key from $senderDeviceId, that we did not requested (or request is too old and we already deleted it)" }
                 return
@@ -178,35 +175,18 @@ class OutgoingSecretKeyRequestEventHandler(
             keyStore.secrets.update {
                 it + (secretType to StoredSecret(encryptedSecret, content.secret))
             }
-            requestSecretKeysRequestIds.update { it - content.requestId }
-            val cancelRequestTo = request.receiverDeviceIds - senderDeviceId
-            log.debug { "stored secret $secretType and cancel outgoing key request to $cancelRequestTo" }
-            if (cancelRequestTo.isNotEmpty()) {
-                api.users.sendToDevice(
-                    mapOf(
-                        ownUserId to cancelRequestTo.associateWith { request.content.copy(action = KeyRequestAction.REQUEST_CANCELLATION) }
-                    )
-                ).getOrThrow()
-            }
+
+            request.cancelRequest(senderDeviceId)
         }
     }
+
 
     internal suspend fun cancelOldOutgoingKeyRequests(syncResponse: Sync.Response) {
         keyStore.allSecretKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
-                log.debug { "cancel outgoing key request ${it.content.requestId}" }
-                cancelStoredSecretKeyRequest(it)
+                it.cancelRequest()
             }
         }
-    }
-
-    private suspend fun cancelStoredSecretKeyRequest(request: StoredSecretKeyRequest) {
-        val cancelRequest = request.content.copy(action = KeyRequestAction.REQUEST_CANCELLATION)
-        log.info { "cancel old outgoing key request $request" }
-        api.users.sendToDevice(mapOf(ownUserId to request.receiverDeviceIds.associateWith { cancelRequest }))
-            .onSuccess {
-                keyStore.deleteSecretKeyRequest(cancelRequest.requestId)
-            }.getOrThrow()
     }
 
     internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
@@ -218,9 +198,21 @@ class OutgoingSecretKeyRequestEventHandler(
             val storedSecret = keyStore.secrets.value[secretType]
             if (storedSecret?.event != event) {
                 keyStore.allSecretKeyRequests.value.filter { it.content.name == secretType.id }
-                    .forEach { cancelStoredSecretKeyRequest(it) }
+                    .forEach { it.cancelRequest() }
                 keyStore.secrets.update { it - secretType }
             }
         }
+    }
+
+    private suspend fun StoredSecretKeyRequest.cancelRequest(answeredFrom: String? = null) {
+        val cancelRequestTo = receiverDeviceIds - setOfNotNull(answeredFrom)
+        log.debug { "cancel outgoing secret key request to $cancelRequestTo" }
+        if (cancelRequestTo.isNotEmpty()) {
+            val cancelRequest = content.copy(action = KeyRequestAction.REQUEST_CANCELLATION)
+            api.users.sendToDevice( // TODO should be encrypted (because this is meta data)
+                mapOf(ownUserId to cancelRequestTo.associateWith { cancelRequest })
+            ).getOrThrow()
+        }
+        keyStore.deleteSecretKeyRequest(content.requestId)
     }
 }

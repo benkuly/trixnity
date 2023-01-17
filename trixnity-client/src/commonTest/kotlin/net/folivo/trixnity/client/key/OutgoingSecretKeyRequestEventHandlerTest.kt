@@ -162,13 +162,8 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
         }
-        beforeTest {
-            cut.requestSecretKeysRequestIds.value = setOf("requestId")
-        }
         should("ignore, when request was never made") {
-            cut.requestSecretKeysRequestIds.value = emptySet()
             setDeviceKeys(true)
-            setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(crossSigningPublicKey)
             val secretEvent = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             globalAccountDataStore.update(secretEvent)
@@ -501,7 +496,6 @@ private val body: ShouldSpec.() -> Unit = {
                 this.requestId shouldNot beEmpty()
             }
             keyStore.allSecretKeyRequests.first { it.size == 2 } shouldHaveSize 2
-            cut.requestSecretKeysRequestIds.value shouldHaveSize 1
         }
     }
     context(OutgoingSecretKeyRequestEventHandler::requestSecretKeysWhenCrossSigned.name) {
