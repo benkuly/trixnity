@@ -284,7 +284,7 @@ class RoomServiceImpl(
                     val mutex = getTimelineEventMutex.updateAndGet {
                         if (it.containsKey(key)) it else it + (key to Mutex())
                     }[key]
-                    requireNotNull(mutex)
+                    checkNotNull(mutex)
                     mutex.withLock {
                         val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(fetchTimeout) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId

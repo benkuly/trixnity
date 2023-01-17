@@ -157,66 +157,69 @@ class KeyBackupServiceImpl(
     ): Unit = coroutineScope {
         val runningKey = Pair(roomId, sessionId)
         if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
-            coroutineContext.job.invokeOnCompletion {
-                currentlyLoadingMegolmSessions.update { it - Pair(roomId, sessionId) }
-            }
-            retryWhen(
-                combine(version, currentSyncState) { currentVersion, currentSyncState ->
-                    currentVersion != null && currentSyncState == SyncState.RUNNING
-                },
-                scheduleBase = 1.seconds,
-                scheduleLimit = 6.hours,
-                onError = { log.warn(it) { "failed load megolm session from key backup" } },
-                onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
-            ) {
-                val version = version.value?.version
-                if (version != null) {
-                    log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
-                    val encryptedSessionData =
-                        api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
-                    require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
-                    val privateKey = keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
-                    val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
-                        it.decrypt(
-                            with(encryptedSessionData) {
-                                OlmPkMessage(
-                                    cipherText = ciphertext,
-                                    mac = mac,
-                                    ephemeralKey = ephemeral
-                                )
-                            }
-                        )
-                    }
-                    val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
-                    val (firstKnownIndex, pickledSession) =
-                        freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                            it.firstKnownIndex to it.pickle(requireNotNull(accountStore.olmPickleKey.value))
+            scope.launch {
+                coroutineContext.job.invokeOnCompletion {
+                    currentlyLoadingMegolmSessions.update { it - runningKey }
+                }
+                retryWhen(
+                    combine(version, currentSyncState) { currentVersion, currentSyncState ->
+                        currentVersion != null && currentSyncState == SyncState.RUNNING
+                    },
+                    scheduleBase = 1.seconds,
+                    scheduleLimit = 6.hours,
+                    onError = { log.warn(it) { "failed load megolm session from key backup" } },
+                    onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
+                ) {
+                    if (olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() != null) return@retryWhen
+
+                    val version = version.value?.version
+                    if (version != null) {
+                        log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
+                        val encryptedSessionData =
+                            api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
+                        require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
+                        val privateKey = keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
+                        val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
+                            it.decrypt(
+                                with(encryptedSessionData) {
+                                    OlmPkMessage(
+                                        cipherText = ciphertext,
+                                        mac = mac,
+                                        ephemeralKey = ephemeral
+                                    )
+                                }
+                            )
                         }
-                    val senderSigningKey = Key.Ed25519Key(
-                        null,
-                        data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
-                            ?: throw IllegalArgumentException("sender claimed key should not be empty")
-                    )
-                    olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) {
-                        if (it != null && it.firstKnownIndex <= firstKnownIndex) it
-                        else StoredInboundMegolmSession(
-                            senderKey = data.senderKey,
-                            sessionId = sessionId,
-                            roomId = roomId,
-                            firstKnownIndex = firstKnownIndex,
-                            isTrusted = false, // because it comes from backup
-                            hasBeenBackedUp = true, // because it comes from backup
-                            senderSigningKey = senderSigningKey,
-                            forwardingCurve25519KeyChain = data.forwardingKeyChain,
-                            pickled = pickledSession
+                        val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
+                        val (firstKnownIndex, pickledSession) =
+                            freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
+                                it.firstKnownIndex to it.pickle(requireNotNull(accountStore.olmPickleKey.value))
+                            }
+                        val senderSigningKey = Key.Ed25519Key(
+                            null,
+                            data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
+                                ?: throw IllegalArgumentException("sender claimed key should not be empty")
                         )
+                        olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) {
+                            if (it != null && it.firstKnownIndex <= firstKnownIndex) it
+                            else StoredInboundMegolmSession(
+                                senderKey = data.senderKey,
+                                sessionId = sessionId,
+                                roomId = roomId,
+                                firstKnownIndex = firstKnownIndex,
+                                isTrusted = false, // because it comes from backup
+                                hasBeenBackedUp = true, // because it comes from backup
+                                senderSigningKey = senderSigningKey,
+                                forwardingCurve25519KeyChain = data.forwardingKeyChain,
+                                pickled = pickledSession
+                            )
+                        }
                     }
                 }
+                log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
             }
-            log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
-        } else {
-            currentlyLoadingMegolmSessions.first { it.contains(runningKey).not() }
         }
+        currentlyLoadingMegolmSessions.first { it.contains(runningKey).not() }
     }
 
     override suspend fun keyBackupCanBeTrusted(
