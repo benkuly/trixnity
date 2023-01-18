@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
+import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.crypto.SecretType
@@ -27,6 +28,7 @@ class DeviceKeysStoreTest : ShouldSpec({
     lateinit var keyChainLinkRepository: KeyChainLinkRepository
     lateinit var secretsRepository: SecretsRepository
     lateinit var secretKeyRequestRepository: SecretKeyRequestRepository
+    lateinit var roomKeyRequestRepository: RoomKeyRequestRepository
     lateinit var storeScope: CoroutineScope
     lateinit var cut: KeyStore
 
@@ -39,6 +41,7 @@ class DeviceKeysStoreTest : ShouldSpec({
         keyChainLinkRepository = InMemoryKeyChainLinkRepository()
         secretsRepository = InMemorySecretsRepository()
         secretKeyRequestRepository = InMemorySecretKeyRequestRepository()
+        roomKeyRequestRepository = InMemoryRoomKeyRequestRepository()
         cut = KeyStore(
             outdatedKeysRepository,
             deviceKeysRepository,
@@ -47,6 +50,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             keyChainLinkRepository,
             secretsRepository,
             secretKeyRequestRepository,
+            roomKeyRequestRepository,
             NoOpRepositoryTransactionManager,
             storeScope
         )
@@ -74,13 +78,13 @@ class DeviceKeysStoreTest : ShouldSpec({
                 setOf("DEV1", "DEV2"),
                 Instant.fromEpochMilliseconds(1234)
             )
-            secretKeyRequestRepository.save(
-                "1", StoredSecretKeyRequest(
-                    SecretKeyRequestEventContent("1", KeyRequestAction.REQUEST, "A", "r1"),
-                    setOf("DEV1", "DEV2"),
-                    Instant.fromEpochMilliseconds(1234)
-                )
+            val storedRoomKeyRequest = StoredRoomKeyRequest(
+                RoomKeyRequestEventContent(KeyRequestAction.REQUEST, "A", "r1"),
+                setOf("DEV1", "DEV2"),
+                Instant.fromEpochMilliseconds(1234)
             )
+            secretKeyRequestRepository.save("1", storedSecretKeyRequest)
+            roomKeyRequestRepository.save("1", storedRoomKeyRequest)
 
             cut.init()
 
@@ -92,6 +96,9 @@ class DeviceKeysStoreTest : ShouldSpec({
             )
             cut.allSecretKeyRequests.first { it.isNotEmpty() }
             cut.allSecretKeyRequests.value shouldBe listOf(storedSecretKeyRequest)
+
+            cut.allRoomKeyRequests.first { it.isNotEmpty() }
+            cut.allRoomKeyRequests.value shouldBe listOf(storedRoomKeyRequest)
         }
         should("start job, which saves changes to database") {
             cut.init()

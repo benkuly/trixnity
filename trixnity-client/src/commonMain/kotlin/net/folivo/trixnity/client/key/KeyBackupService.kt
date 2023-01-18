@@ -170,8 +170,6 @@ class KeyBackupServiceImpl(
                     onError = { log.warn(it) { "failed load megolm session from key backup" } },
                     onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
                 ) {
-                    if (olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() != null) return@retryWhen
-
                     val version = version.value?.version
                     if (version != null) {
                         log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }

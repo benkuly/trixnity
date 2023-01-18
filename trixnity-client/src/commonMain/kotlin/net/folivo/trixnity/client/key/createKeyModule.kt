@@ -24,12 +24,29 @@ fun createKeyModule() = module {
         bind<EventHandler>()
         named<OutdatedKeysHandler>()
     }
+    singleOf(::IncomingRoomKeyRequestEventHandler) {
+        bind<EventHandler>()
+        named<IncomingRoomKeyRequestEventHandler>()
+    }
+    singleOf(::OutgoingRoomKeyRequestEventHandlerImpl) {
+        bind<OutgoingRoomKeyRequestEventHandler>()
+        bind<EventHandler>()
+        named<OutgoingRoomKeyRequestEventHandler>()
+    }
     singleOf(::IncomingSecretKeyRequestEventHandler) {
         bind<EventHandler>()
         named<IncomingSecretKeyRequestEventHandler>()
     }
     single<EventHandler>(named<OutgoingSecretKeyRequestEventHandler>()) {
-        OutgoingSecretKeyRequestEventHandler(get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get(), get())
+        OutgoingSecretKeyRequestEventHandler(
+            get(),
+            get(),
+            get(),
+            get(named<KeyBackupServiceImpl>()),
+            get(),
+            get(),
+            get()
+        )
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }
     singleOf(::KeyTrustServiceImpl) { bind<KeyTrustService>() }

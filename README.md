@@ -102,6 +102,7 @@ This project contains the following modules, which can be used independently:
     - [x] verification
     - [x] cross signing
     - [x] room key backup
+    - [x] room key requests (only between own verified devices)
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation

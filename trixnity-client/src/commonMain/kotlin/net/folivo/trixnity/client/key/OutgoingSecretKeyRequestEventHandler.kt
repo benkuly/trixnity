@@ -87,6 +87,7 @@ class OutgoingSecretKeyRequestEventHandler(
                 requestId = requestId
             )
             log.debug { "send secret key request (${missingSecret.id}) to $receiverDeviceIds" }
+            // TODO should be encrypted (because this is meta data)
             api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                 .onSuccess {
                     keyStore.addSecretKeyRequest(
