@@ -322,7 +322,7 @@ with `matrixClient.verification`).
 To bootstrap cross signing there is `KeyService` (can be accessed
 with `matrixClient.key`).
 
-#### Customizing
+### Customizing
 
 The client can be customized via dependency injection:
 
