@@ -322,6 +322,32 @@ with `matrixClient.verification`).
 To bootstrap cross signing there is `KeyService` (can be accessed
 with `matrixClient.key`).
 
+#### Customizing
+
+The client can be customized via dependency injection:
+
+```kotlin
+matrixClient.login(...){
+    modules = createDefaultModules() + customModule
+}
+```
+
+For example a module for custom events would look like this:
+
+```kotlin
+val customMappings = object : BaseEventContentSerializerMappings {
+    override val message: Set<SerializerMapping<out MessageEventContent>> =
+        setOf(
+            of("net.folivo.dino", DinoEventContentSerializer),
+        )
+}
+val customModule = module {
+    single<EventContentSerializerMappings> {
+        DefaultEventContentSerializerMappings + customMappings
+    }
+}
+```
+
 ## Trixnity-ClientServerAPI-Client
 
 ### Usage
