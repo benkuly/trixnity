@@ -33,6 +33,7 @@ fun createRealmRepositoriesModule(
             RealmOutdatedKeys::class,
             RealmRoom::class,
             RealmRoomAccountData::class,
+            RealmRoomKeyRequest::class,
             RealmRoomOutboxMessage::class,
             RealmRoomState::class,
             RealmRoomUser::class,
@@ -58,6 +59,7 @@ fun createRealmRepositoriesModule(
         singleOf(::RealmKeyChainLinkRepository) { bind<KeyChainLinkRepository>() }
         singleOf(::RealmSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::RealmSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
+        singleOf(::RealmRoomKeyRequestRepository) { bind<RoomKeyRequestRepository>() }
         singleOf(::RealmOlmAccountRepository) { bind<OlmAccountRepository>() }
         singleOf(::RealmOlmForgetFallbackKeyAfterRepository) { bind<OlmForgetFallbackKeyAfterRepository>() }
         singleOf(::RealmOlmSessionRepository) { bind<OlmSessionRepository>() }

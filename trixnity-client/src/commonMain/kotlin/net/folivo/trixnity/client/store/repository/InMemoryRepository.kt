@@ -97,6 +97,11 @@ class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,
     override suspend fun getAll(): List<StoredSecretKeyRequest> = content.value.values.toList()
 }
 
+class InMemoryRoomKeyRequestRepository : RoomKeyRequestRepository,
+    InMemoryMinimalStoreRepository<String, StoredRoomKeyRequest>() {
+    override suspend fun getAll(): List<StoredRoomKeyRequest> = content.value.values.toList()
+}
+
 class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
     InMemoryMinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> =

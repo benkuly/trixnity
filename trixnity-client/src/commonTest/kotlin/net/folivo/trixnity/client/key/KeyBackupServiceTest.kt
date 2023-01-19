@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -279,10 +280,13 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = RUNNING
         }
         should("do nothing when version is null") {
-            cut.loadMegolmSession(roomId, sessionId)
+            val job = launch {
+                cut.loadMegolmSession(roomId, sessionId)
+            }
             continually(500.milliseconds) {
                 olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe null
             }
+            job.cancel()
         }
         context("megolm session on server") {
             lateinit var encryptedRoomKeyBackupV1SessionData: EncryptedRoomKeyBackupV1SessionData
@@ -380,7 +384,9 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("fetch one megolm session only once at a time") {
                     repeat(20) {
-                        cut.loadMegolmSession(roomId, sessionId)
+                        launch {
+                            cut.loadMegolmSession(roomId, sessionId)
+                        }
                     }
                     allLoadMegolmSessionsCalled.value = true
                     olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first { it != null }

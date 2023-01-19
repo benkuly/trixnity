@@ -1,7 +1,10 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -13,6 +16,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
@@ -66,13 +70,22 @@ suspend inline fun RoomTimelineStore.getPrevious(event: TimelineEvent): Timeline
 suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId).first() != null
 
-suspend inline fun OlmCryptoStore.waitForInboundMegolmSession(
+suspend fun OlmCryptoStore.waitForInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,
-    firstKnownIndexLessThen: Long? = null
-) {
+    firstKnownIndexLessThen: Long? = null,
+    onNotExisting: (suspend CoroutineScope.() -> Unit)? = null
+): Unit = coroutineScope {
+    fun StoredInboundMegolmSession?.matches() =
+        this != null && (firstKnownIndexLessThen == null || this.firstKnownIndex < firstKnownIndexLessThen)
+
+    val onNotExistingJob =
+        if (getInboundMegolmSession(sessionId, roomId).first().matches().not() && onNotExisting != null)
+            launch { onNotExisting() }
+        else null
     getInboundMegolmSession(sessionId, roomId)
-        .first { it != null && (firstKnownIndexLessThen == null || it.firstKnownIndex < firstKnownIndexLessThen) }
+        .first { it.matches() }
+    onNotExistingJob?.cancel()
 }
 
 val RoomUser.originalName

@@ -85,6 +85,9 @@ fun createSqlDelightRepositoriesModule(
         single<SecretKeyRequestRepository> {
             SqlDelightSecretKeyRequestRepository(db.keysQueries, json, databaseCoroutineContext)
         }
+        single<RoomKeyRequestRepository> {
+            SqlDelightRoomKeyRequestRepository(db.keysQueries, json, databaseCoroutineContext)
+        }
         single<OlmAccountRepository> {
             SqlDelightOlmAccountRepository(db.olmQueries, databaseCoroutineContext)
         }

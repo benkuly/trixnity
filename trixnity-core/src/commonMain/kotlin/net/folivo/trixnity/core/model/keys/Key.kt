@@ -76,5 +76,5 @@ object Curve25519KeySerializer : KSerializer<Key.Curve25519Key> {
         encoder.encodeString(value.value)
     }
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Ed25519KeySerializer")
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Curve25519KeySerializer")
 }

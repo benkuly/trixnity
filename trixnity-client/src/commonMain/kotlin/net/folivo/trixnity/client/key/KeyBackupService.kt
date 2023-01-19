@@ -1,11 +1,8 @@
 package net.folivo.trixnity.client.key
 
 import arrow.core.flatMap
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
@@ -49,7 +46,7 @@ interface KeyBackupService {
      */
     val version: StateFlow<GetRoomKeysBackupVersionResponse.V1?>
 
-    fun loadMegolmSession(
+    suspend fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
     )
@@ -154,13 +151,16 @@ class KeyBackupServiceImpl(
 
     private val currentlyLoadingMegolmSessions = MutableStateFlow<Set<Pair<RoomId, String>>>(setOf())
 
-    override fun loadMegolmSession(
+    override suspend fun loadMegolmSession(
         roomId: RoomId,
         sessionId: String,
-    ) {
+    ): Unit = coroutineScope {
         val runningKey = Pair(roomId, sessionId)
         if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
             scope.launch {
+                coroutineContext.job.invokeOnCompletion {
+                    currentlyLoadingMegolmSessions.update { it - runningKey }
+                }
                 retryWhen(
                     combine(version, currentSyncState) { currentVersion, currentSyncState ->
                         currentVersion != null && currentSyncState == SyncState.RUNNING
@@ -215,9 +215,9 @@ class KeyBackupServiceImpl(
                     }
                 }
                 log.debug { "found key backup for roomId=$roomId, sessionId=$sessionId" }
-                currentlyLoadingMegolmSessions.update { it - Pair(roomId, sessionId) }
             }
         }
+        currentlyLoadingMegolmSessions.first { it.contains(runningKey).not() }
     }
 
     override suspend fun keyBackupCanBeTrusted(
