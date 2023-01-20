@@ -1,39 +1,45 @@
-package net.folivo.trixnity.client.store.repository.exposed
+package net.folivo.trixnity.client.store.repository.realm
 
+import com.benasher44.uuid.uuid4
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.realm.kotlin.Realm
+import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
-import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
-class ExposedVerifiedKeysRepositoryTest : ShouldSpec({
+
+class RealmKeyVerificationStateRepositoryTest : ShouldSpec({
     timeout = 10_000
-    lateinit var cut: ExposedKeyVerificationStateRepository
-    lateinit var rtm: ExposedRepositoryTransactionManager
+    lateinit var realm: Realm
+    lateinit var cut: RealmKeyVerificationStateRepository
 
     beforeTest {
-        val db = createDatabase()
-        rtm = ExposedRepositoryTransactionManager(db)
-        newSuspendedTransaction {
-            SchemaUtils.create(ExposedKeyVerificationState)
-        }
-        cut = ExposedKeyVerificationStateRepository(createMatrixEventJson())
+        val realmDbPath = "build/test-db/${uuid4()}"
+        realm = Realm.open(
+            RealmConfiguration.Builder(
+                schema = setOf(
+                    RealmKeyVerificationState::class,
+                )
+            ).apply { directory(realmDbPath) }.build()
+        )
+
+        cut = RealmKeyVerificationStateRepository(createMatrixEventJson())
     }
     should("save, get and delete") {
-        val verifiedKey1Key = VerifiedKeysRepositoryKey(
+        val verifiedKey1Key = KeyVerificationStateKey(
             keyId = "key1",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
-        val verifiedKey2Key = VerifiedKeysRepositoryKey(
+        val verifiedKey2Key = KeyVerificationStateKey(
             keyId = "key2",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
 
-        rtm.writeTransaction {
+        writeTransaction(realm) {
             cut.save(verifiedKey1Key, Verified("keyValue1"))
             cut.save(verifiedKey2Key, Blocked("keyValue2"))
             cut.get(verifiedKey1Key) shouldBe Verified("keyValue1")

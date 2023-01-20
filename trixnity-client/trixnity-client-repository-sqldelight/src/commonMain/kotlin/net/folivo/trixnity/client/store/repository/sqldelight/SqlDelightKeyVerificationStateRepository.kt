@@ -5,7 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
-import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
 import net.folivo.trixnity.client.store.KeyVerificationState
 import net.folivo.trixnity.client.store.sqldelight.KeysQueries
 import net.folivo.trixnity.client.store.sqldelight.Sql_key_verification_state
@@ -16,14 +16,14 @@ class SqlDelightKeyVerificationStateRepository(
     private val json: Json,
     private val context: CoroutineContext
 ) : KeyVerificationStateRepository {
-    override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? = withContext(context) {
+    override suspend fun get(key: KeyVerificationStateKey): KeyVerificationState? = withContext(context) {
         db.getKeyVerificationState(
             key_id = key.keyId,
             key_algorithm = key.keyAlgorithm.name
         ).executeAsOneOrNull()?.let { json.decodeFromString(it) }
     }
 
-    override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState) = withContext(context) {
+    override suspend fun save(key: KeyVerificationStateKey, value: KeyVerificationState) = withContext(context) {
         db.saveKeyVerificationState(
             Sql_key_verification_state(
                 key_id = key.keyId,
@@ -33,7 +33,7 @@ class SqlDelightKeyVerificationStateRepository(
         )
     }
 
-    override suspend fun delete(key: VerifiedKeysRepositoryKey) = withContext(context) {
+    override suspend fun delete(key: KeyVerificationStateKey) = withContext(context) {
         db.deleteKeyVerificationState(
             key_id = key.keyId,
             key_algorithm = key.keyAlgorithm.name

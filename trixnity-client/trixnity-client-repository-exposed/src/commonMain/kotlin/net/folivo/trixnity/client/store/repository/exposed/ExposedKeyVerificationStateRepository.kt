@@ -5,7 +5,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.KeyVerificationState
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
-import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -17,7 +17,7 @@ internal object ExposedKeyVerificationState : Table("key_verification_state") {
 }
 
 internal class ExposedKeyVerificationStateRepository(private val json: Json) : KeyVerificationStateRepository {
-    override suspend fun get(key: VerifiedKeysRepositoryKey): KeyVerificationState? = withExposedRead {
+    override suspend fun get(key: KeyVerificationStateKey): KeyVerificationState? = withExposedRead {
         ExposedKeyVerificationState.select {
             ExposedKeyVerificationState.keyId.eq(key.keyId) and
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
@@ -26,7 +26,7 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
         }
     }
 
-    override suspend fun save(key: VerifiedKeysRepositoryKey, value: KeyVerificationState): Unit = withExposedWrite {
+    override suspend fun save(key: KeyVerificationStateKey, value: KeyVerificationState): Unit = withExposedWrite {
         ExposedKeyVerificationState.replace {
             it[keyId] = key.keyId
             it[keyAlgorithm] = key.keyAlgorithm.name
@@ -34,7 +34,7 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
         }
     }
 
-    override suspend fun delete(key: VerifiedKeysRepositoryKey): Unit = withExposedWrite {
+    override suspend fun delete(key: KeyVerificationStateKey): Unit = withExposedWrite {
         ExposedKeyVerificationState.deleteWhere {
             keyId.eq(key.keyId) and
                     keyAlgorithm.eq(key.keyAlgorithm.name)

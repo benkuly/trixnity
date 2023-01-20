@@ -55,7 +55,7 @@ class InMemoryCrossSigningKeysRepository : CrossSigningKeysRepository,
     InMemoryMinimalStoreRepository<UserId, Set<StoredCrossSigningKeys>>()
 
 class InMemoryKeyVerificationStateRepository : KeyVerificationStateRepository,
-    InMemoryMinimalStoreRepository<VerifiedKeysRepositoryKey, KeyVerificationState>()
+    InMemoryMinimalStoreRepository<KeyVerificationStateKey, KeyVerificationState>()
 
 class InMemorySecretsRepository : SecretsRepository,
     InMemoryMinimalStoreRepository<Long, Map<SecretType, StoredSecret>>()

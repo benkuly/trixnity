@@ -95,7 +95,7 @@ class KeyStore(
         val keyId = key.keyId
         return keyId?.let {
             keyVerificationStateCache.get(
-                VerifiedKeysRepositoryKey(
+                KeyVerificationStateKey(
                     keyId = it,
                     keyAlgorithm = key.algorithm,
                 )
@@ -113,7 +113,7 @@ class KeyStore(
         val keyId = key.keyId
         requireNotNull(keyId)
         keyVerificationStateCache.update(
-            VerifiedKeysRepositoryKey(keyId = keyId, keyAlgorithm = key.algorithm)
+            KeyVerificationStateKey(keyId = keyId, keyAlgorithm = key.algorithm)
         ) { state }
     }
 

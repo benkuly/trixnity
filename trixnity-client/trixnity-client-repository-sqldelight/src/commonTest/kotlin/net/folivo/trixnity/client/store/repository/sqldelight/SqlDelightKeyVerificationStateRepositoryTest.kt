@@ -4,15 +4,15 @@ import com.squareup.sqldelight.db.SqlDriver
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
-import net.folivo.trixnity.client.store.repository.VerifiedKeysRepositoryKey
-import net.folivo.trixnity.client.store.sqldelight.db.Database
-import net.folivo.trixnity.client.store.repository.sqldelight.testutils.createDriverWithSchema
 import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
+import net.folivo.trixnity.client.store.repository.sqldelight.testutils.createDriverWithSchema
+import net.folivo.trixnity.client.store.sqldelight.db.Database
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
-class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
+class SqlDelightKeyVerificationStateRepositoryTest : ShouldSpec({
     timeout = 10_000
     lateinit var cut: SqlDelightKeyVerificationStateRepository
     lateinit var driver: SqlDriver
@@ -29,11 +29,11 @@ class SqlDelightVerifiedKeysRepositoryTest : ShouldSpec({
         driver.close()
     }
     should("save, get and delete") {
-        val verifiedKey1Key = VerifiedKeysRepositoryKey(
+        val verifiedKey1Key = KeyVerificationStateKey(
             keyId = "key1",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
-        val verifiedKey2Key = VerifiedKeysRepositoryKey(
+        val verifiedKey2Key = KeyVerificationStateKey(
             keyId = "key2",
             keyAlgorithm = KeyAlgorithm.Ed25519
         )
