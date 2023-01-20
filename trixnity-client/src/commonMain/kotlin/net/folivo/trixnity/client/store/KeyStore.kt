@@ -19,6 +19,7 @@ class KeyStore(
     private val keyChainLinkRepository: KeyChainLinkRepository,
     private val secretsRepository: SecretsRepository,
     private val secretKeyRequestRepository: SecretKeyRequestRepository,
+    private val roomKeyRequestRepository: RoomKeyRequestRepository,
     private val rtm: RepositoryTransactionManager,
     private val storeScope: CoroutineScope
 ) : Store {
@@ -28,6 +29,7 @@ class KeyStore(
     private val crossSigningKeysCache = RepositoryStateFlowCache(storeScope, crossSigningKeysRepository, rtm)
     private val keyVerificationStateCache = RepositoryStateFlowCache(storeScope, keyVerificationStateRepository, rtm)
     private val secretKeyRequestCache = RepositoryStateFlowCache(storeScope, secretKeyRequestRepository, rtm, true)
+    private val roomKeyRequestCache = RepositoryStateFlowCache(storeScope, roomKeyRequestRepository, rtm, true)
 
     override suspend fun init() {
         outdatedKeys.value = rtm.readTransaction { outdatedKeysRepository.get(1) ?: setOf() }
@@ -41,6 +43,8 @@ class KeyStore(
         }
         secretKeyRequestCache.init(rtm.readTransaction { secretKeyRequestRepository.getAll() }
             .associateBy { it.content.requestId })
+        roomKeyRequestCache.init(rtm.readTransaction { roomKeyRequestRepository.getAll() }
+            .associateBy { it.content.requestId })
     }
 
     override suspend fun clearCache() {
@@ -50,29 +54,21 @@ class KeyStore(
             crossSigningKeysRepository.deleteAll()
             keyChainLinkRepository.deleteAll()
             secretKeyRequestRepository.deleteAll()
+            roomKeyRequestRepository.deleteAll()
         }
         outdatedKeys.value = setOf()
         deviceKeysCache.reset()
         crossSigningKeysCache.reset()
         secretKeyRequestCache.reset()
+        roomKeyRequestCache.reset()
     }
 
     override suspend fun deleteAll() {
+        clearCache()
         rtm.writeTransaction {
-            outdatedKeysRepository.deleteAll()
-            deviceKeysRepository.deleteAll()
-            crossSigningKeysRepository.deleteAll()
             keyVerificationStateRepository.deleteAll()
-            keyChainLinkRepository.deleteAll()
-            secretsRepository.deleteAll()
-            secretKeyRequestRepository.deleteAll()
         }
-        outdatedKeys.value = setOf()
-        secrets.value = mapOf()
-        deviceKeysCache.reset()
-        crossSigningKeysCache.reset()
         keyVerificationStateCache.reset()
-        secretKeyRequestCache.reset()
     }
 
     fun getDeviceKeys(
@@ -145,5 +141,22 @@ class KeyStore(
 
     suspend fun deleteSecretKeyRequest(requestId: String) {
         secretKeyRequestCache.update(requestId) { null }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val allRoomKeyRequests = roomKeyRequestCache.cache
+        .flatMapLatest {
+            if (it.isEmpty()) flowOf(arrayOf())
+            else combine(it.values) { transform -> transform }
+        }
+        .mapLatest { it.filterNotNull().toSet() }
+        .stateIn(storeScope, SharingStarted.Eagerly, setOf())
+
+    suspend fun addRoomKeyRequest(request: StoredRoomKeyRequest) {
+        roomKeyRequestCache.update(request.content.requestId) { request }
+    }
+
+    suspend fun deleteRoomKeyRequest(requestId: String) {
+        roomKeyRequestCache.update(requestId) { null }
     }
 }

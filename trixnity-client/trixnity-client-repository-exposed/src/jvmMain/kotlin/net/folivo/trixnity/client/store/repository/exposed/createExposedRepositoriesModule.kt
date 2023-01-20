@@ -29,6 +29,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedKeyVerificationState,
             ExposedSecrets,
             ExposedSecretKeyRequest,
+            ExposedRoomKeyRequest,
             ExposedOlmAccount,
             ExposedOlmForgetFallbackKeyAfter,
             ExposedOlmSession,
@@ -56,6 +57,7 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedKeyChainLinkRepository) { bind<KeyChainLinkRepository>() }
         singleOf(::ExposedSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::ExposedSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
+        singleOf(::ExposedRoomKeyRequestRepository) { bind<RoomKeyRequestRepository>() }
         singleOf(::ExposedOlmAccountRepository) { bind<OlmAccountRepository>() }
         singleOf(::ExposedOlmForgetFallbackKeyAfterRepository) { bind<OlmForgetFallbackKeyAfterRepository>() }
         singleOf(::ExposedOlmSessionRepository) { bind<OlmSessionRepository>() }

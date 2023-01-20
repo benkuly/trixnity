@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -25,7 +25,7 @@ import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 private val log = KotlinLogging.logger {}
 
-class IncomingKeyRequestEventHandler(
+class IncomingSecretKeyRequestEventHandler(
     userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val olmDecrypter: OlmDecrypter,
@@ -56,7 +56,7 @@ class IncomingKeyRequestEventHandler(
 
     internal fun handleIncomingKeyRequests(event: Event<SecretKeyRequestEventContent>) {
         if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
-            log.debug { "handle incoming key requests" }
+            log.debug { "handle incoming secret key requests" }
             val content = event.content
             when (content.action) {
                 KeyRequestAction.REQUEST -> incomingSecretKeyRequests.update { it + content }
@@ -68,29 +68,29 @@ class IncomingKeyRequestEventHandler(
 
     internal suspend fun processIncomingKeyRequests(syncResponse: Sync.Response) {
         incomingSecretKeyRequests.value.forEach { request ->
-            log.debug { "process incoming key request: ${request.requestId}" }
+            log.debug { "process incoming secret key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId
             val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId).first()?.trustLevel
-            if (senderTrustLevel is KeySignatureTrustLevel.CrossSigned && senderTrustLevel.verified || senderTrustLevel is KeySignatureTrustLevel.Valid && senderTrustLevel.verified) {
+            if (senderTrustLevel?.isVerified == true) {
                 val requestedSecret = request.name
                     ?.let { SecretType.ofId(it) }
                     ?.let { keyStore.secrets.value[it] }
                 if (requestedSecret != null) {
-                    log.info { "send incoming key request answer (${request.name}) to device $requestingDeviceId" }
+                    log.info { "send incoming secret key request answer (${request.name}) to device $requestingDeviceId" }
                     val encryptedAnswer = try {
                         olmEncryptionService.encryptOlm(
                             SecretKeySendEventContent(request.requestId, requestedSecret.decryptedPrivateKey),
                             ownUserId, requestingDeviceId
                         )
                     } catch (exception: Exception) {
-                        log.warn(exception) { "could not encrypt answer for key request (${request.name}) to device $requestingDeviceId" }
+                        log.warn(exception) { "could not encrypt answer for secret key request (${request.name}) to device $requestingDeviceId" }
                         null
                     }
                     if (encryptedAnswer != null)
                         api.users.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
                         ).getOrThrow()
-                } else log.info { "got a key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }
+                } else log.info { "got a secret key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }
             }
             incomingSecretKeyRequests.update { it - request }
         }

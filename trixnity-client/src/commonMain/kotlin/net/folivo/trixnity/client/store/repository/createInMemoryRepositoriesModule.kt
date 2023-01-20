@@ -14,6 +14,7 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<KeyChainLinkRepository>(::InMemoryKeyChainLinkRepository)
     singleOf<SecretsRepository>(::InMemorySecretsRepository)
     singleOf<SecretKeyRequestRepository>(::InMemorySecretKeyRequestRepository)
+    singleOf<RoomKeyRequestRepository>(::InMemoryRoomKeyRequestRepository)
     singleOf<OlmAccountRepository>(::InMemoryOlmAccountRepository)
     singleOf<OlmForgetFallbackKeyAfterRepository>(::InMemoryOlmForgetFallbackKeyAfterRepository)
     singleOf<OlmSessionRepository>(::InMemoryOlmSessionRepository)

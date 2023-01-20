@@ -7,8 +7,10 @@ import kotlinx.coroutines.*
 import net.folivo.trixnity.client.getInMemoryOlmStore
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
+import net.folivo.trixnity.client.mocks.OutgoingRoomKeyRequestEventHandlerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.OlmCryptoStore
+import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
@@ -16,6 +18,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.olm.OlmLibraryException
@@ -28,6 +31,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
     lateinit var olmCryptoStore: OlmCryptoStore
     lateinit var keyBackupServiceMock: KeyBackupServiceMock
     lateinit var olmEncyptionServiceMock: OlmEncryptionServiceMock
+    lateinit var outgoingRoomKeyRequestEventHandlerMock: OutgoingRoomKeyRequestEventHandlerMock
     lateinit var scope: CoroutineScope
 
     lateinit var cut: MegolmRoomEventDecryptionService
@@ -36,9 +40,14 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
         scope = CoroutineScope(Dispatchers.Default)
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyBackupServiceMock = KeyBackupServiceMock()
+        keyBackupServiceMock.version.value = GetRoomKeysBackupVersionResponse.V1(
+            RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, "")),
+            1, "", ""
+        )
         olmEncyptionServiceMock = OlmEncryptionServiceMock()
+        outgoingRoomKeyRequestEventHandlerMock = OutgoingRoomKeyRequestEventHandlerMock()
         cut = MegolmRoomEventDecryptionService(
-            olmCryptoStore, keyBackupServiceMock, olmEncyptionServiceMock
+            olmCryptoStore, keyBackupServiceMock, outgoingRoomKeyRequestEventHandlerMock, olmEncyptionServiceMock
         )
     }
 
@@ -62,7 +71,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
         )
         val expectedDecryptedEvent =
             DecryptedMegolmEvent(RoomMessageEventContent.TextMessageEventContent("decrypted"), room)
-        should("return null when unsuppored") {
+        should("return null when unsupported") {
             cut.decrypt(
                 Event.MessageEvent(
                     RoomMessageEventContent.TextMessageEventContent("unsupported"),
@@ -93,6 +102,17 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
             delay(20)
             result.await().shouldNotBeNull().getOrThrow() shouldBe expectedDecryptedEvent.content
             keyBackupServiceMock.loadMegolmSessionCalled.value.first() shouldBe Pair(room, session)
+        }
+        should("wait for olm session and ask other device for it, when key backup disabled") {
+            keyBackupServiceMock.version.value = null
+            olmEncyptionServiceMock.returnDecryptMegolm.add { expectedDecryptedEvent }
+
+            val result = async { cut.decrypt(encryptedEvent) }
+            delay(20)
+            olmCryptoStore.updateInboundMegolmSession(session, room) { storedSession }
+            delay(20)
+            result.await().shouldNotBeNull().getOrThrow() shouldBe expectedDecryptedEvent.content
+            outgoingRoomKeyRequestEventHandlerMock.requestRoomKeysCalled.value.first() shouldBe Pair(room, session)
         }
         should("wait for olm session and ask key backup for it when existing session does not known the index") {
             olmEncyptionServiceMock.returnDecryptMegolm.add { throw OlmLibraryException("OLM_UNKNOWN_MESSAGE_INDEX") }

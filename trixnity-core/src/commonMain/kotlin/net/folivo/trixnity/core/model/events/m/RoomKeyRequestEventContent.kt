@@ -25,11 +25,9 @@ data class RoomKeyRequestEventContent(
     data class RequestedKeyInfo(
         @SerialName("room_id")
         val roomId: RoomId,
-        @SerialName("sender_key")
-        val senderKey: String,
         @SerialName("session_id")
         val sessionId: String,
         @SerialName("algorithm")
-        val algorithm: EncryptionAlgorithm
+        val algorithm: EncryptionAlgorithm,
     )
 }

@@ -62,6 +62,7 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     InMemoryKeyChainLinkRepository(),
     InMemorySecretsRepository(),
     InMemorySecretKeyRequestRepository(),
+    InMemoryRoomKeyRequestRepository(),
     NoOpRepositoryTransactionManager,
     scope
 ).apply { init() }

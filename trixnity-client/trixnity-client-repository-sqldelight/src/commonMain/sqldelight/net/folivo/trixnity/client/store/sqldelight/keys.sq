@@ -147,3 +147,26 @@ WHERE id = ?;
 
 deleteAllSecretKeyRequests:
 DELETE FROM sql_secret_key_request;
+
+CREATE TABLE sql_room_key_request (
+  id TEXT PRIMARY KEY NOT NULL,
+  room_key_request TEXT NOT NULL
+);
+
+getAllRoomKeyRequests:
+SELECT * FROM sql_room_key_request;
+
+getRoomKeyRequest:
+SELECT * FROM sql_room_key_request
+WHERE id = ?;
+
+saveRoomKeyRequest:
+INSERT OR REPLACE INTO sql_room_key_request
+VALUES (?, ?);
+
+deleteRoomKeyRequest:
+DELETE FROM sql_room_key_request
+WHERE id = ?;
+
+deleteAllRoomKeyRequests:
+DELETE FROM sql_room_key_request;

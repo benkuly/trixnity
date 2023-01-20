@@ -102,6 +102,7 @@ This project contains the following modules, which can be used independently:
     - [x] verification
     - [x] cross signing
     - [x] room key backup
+    - [x] room key requests (only between own verified devices)
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
@@ -123,6 +124,8 @@ This project contains the following modules, which can be used independently:
 
 If you want to see Trixnity in action, take a look into
 the [trixnity-examples](https://gitlab.com/trixnity/trixnity-examples).
+You may also take a look into
+the [integration tests](./trixnity-client/integration-tests).
 
 ### Add Trixnity to you project
 
