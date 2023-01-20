@@ -80,6 +80,8 @@ class RoomDisplayNameEventHandler(
     ) {
         val oldRoomSummary = roomStore.get(roomId).first()?.name?.summary
 
+        if (oldRoomSummary == roomSummary) return
+
         val mergedRoomSummary = RoomSummary(
             heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
             joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,

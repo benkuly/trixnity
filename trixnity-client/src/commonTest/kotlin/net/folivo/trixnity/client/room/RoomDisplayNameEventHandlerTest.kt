@@ -445,4 +445,15 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     context("non-existent NameEvent") {
         testWithoutNameFromNameEvent()
     }
+    should("do nothing, when room summary did not change at all") {
+        val roomSummary = RoomSummary(
+            heroes = listOf(user1, user2),
+            joinedMemberCount = 1,
+            invitedMemberCount = 2,
+        )
+        val roomBefore = simpleRoom.copy(name = RoomDisplayName(explicitName = "bla", summary = roomSummary))
+        roomStore.update(roomId) { roomBefore }
+        cut.setRoomDisplayName(roomId, roomSummary)
+        roomStore.get(roomId).first() shouldBe roomBefore
+    }
 })
