@@ -132,6 +132,8 @@ This project contains the following modules, which can be used independently:
 
 If you want to see Trixnity in action, take a look into
 the [trixnity-examples](https://gitlab.com/trixnity/trixnity-examples).
+You may also take a look into
+the [integration tests](./trixnity-client/integration-tests).
 
 ### Add Trixnity to you project
 
