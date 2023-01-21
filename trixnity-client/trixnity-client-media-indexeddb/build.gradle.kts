@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
 }
 
 kotlin {
@@ -18,8 +17,6 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
@@ -32,10 +29,8 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
             }
         }
     }

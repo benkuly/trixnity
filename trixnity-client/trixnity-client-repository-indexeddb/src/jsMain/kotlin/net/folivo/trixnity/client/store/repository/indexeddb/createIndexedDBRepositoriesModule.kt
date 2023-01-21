@@ -11,7 +11,7 @@ import org.koin.dsl.module
 private val log = KotlinLogging.logger {}
 
 suspend fun createIndexedDBRepositoriesModule(
-    databaseName: String,
+    databaseName: String = "trixnity",
 ): Module {
     log.debug { "create missing tables and columns" }
     val database = openDatabase(databaseName, 1) { database, oldVersion, _ ->

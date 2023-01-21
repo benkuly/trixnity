@@ -21,6 +21,7 @@ include(
 include(
     "trixnity-client",
     "trixnity-client:integration-tests",
+    "trixnity-client:trixnity-client-media-indexeddb",
     "trixnity-client:trixnity-client-media-okio",
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",

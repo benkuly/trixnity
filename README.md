@@ -98,7 +98,12 @@ This project contains the following modules, which can be used independently:
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
           implements a file system based media
-          store with [okio](https://github.com/square/okio)
+          store with [okio](https://github.com/square/okio). This supports
+          JVM/Android/Native/NodeJs.
+        - [trixnity-client-media-indexeddb](/trixnity-client/trixnity-client-media-indexeddb)
+          implements a file system based media
+          store with [indexeddb](https://github.com/JuulLabs/indexeddb). This
+          supports JS (browser).
     - [x] media support (thumbnail generation, offline "upload", huge files,
       etc.)
     - [x] E2E (olm, megolm)
