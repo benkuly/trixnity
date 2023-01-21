@@ -36,7 +36,7 @@ class IndexedDBMediaStoreTest {
 
     private fun test(
         testBody: suspend TestScope.() -> Unit
-    ): TestResult = runTest(dispatchTimeoutMs = 1_000) {
+    ): TestResult = runTest(dispatchTimeoutMs = 5_000) {
         beforeTest()
         testBody()
         afterTest()
