@@ -7,6 +7,7 @@ kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
     }
+    ciDummyTarget()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, nodeJsEnabled = false)
 
     sourceSets {
