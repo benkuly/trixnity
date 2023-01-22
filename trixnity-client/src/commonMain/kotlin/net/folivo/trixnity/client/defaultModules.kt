@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.createRoomModule
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.createStoreModule
+import net.folivo.trixnity.client.store.transaction.createTransactionModule
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.user.createUserModule
 import net.folivo.trixnity.client.verification.VerificationService
@@ -36,6 +37,7 @@ fun createDefaultModules() = listOf(
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
+    createTransactionModule(),
     createStoreModule(),
     createRoomModule(),
     createUserModule(),

@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.key.waitForUpdateOutdatedKey
@@ -33,7 +32,7 @@ class ClientOlmStore(
 
     override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
         getLocalCurve25519Key(userId, deviceId) ?: run {
-            keyStore.outdatedKeys.update { it + userId }
+            keyStore.updateOutdatedKeys { it + userId }
             keyStore.waitForUpdateOutdatedKey(userId)
             getLocalCurve25519Key(userId, deviceId)
         }
@@ -43,7 +42,7 @@ class ClientOlmStore(
 
     override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
         getLocalEd25519Key(userId, deviceId) ?: run {
-            keyStore.outdatedKeys.update { it + userId }
+            keyStore.updateOutdatedKeys { it + userId }
             keyStore.waitForUpdateOutdatedKey(userId)
             getLocalEd25519Key(userId, deviceId)
         }
@@ -54,7 +53,7 @@ class ClientOlmStore(
 
     override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? =
         getLocalDeviceKeys(userId, senderKey) ?: run {
-            keyStore.outdatedKeys.update { it + userId }
+            keyStore.updateOutdatedKeys { it + userId }
             keyStore.waitForUpdateOutdatedKey(userId)
             getLocalDeviceKeys(userId, senderKey)
         }

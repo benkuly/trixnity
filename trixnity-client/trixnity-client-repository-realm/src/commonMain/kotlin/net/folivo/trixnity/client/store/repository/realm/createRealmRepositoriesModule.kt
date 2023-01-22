@@ -4,6 +4,7 @@ import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -50,7 +51,8 @@ fun createRealmRepositoriesModule(
     log.debug { "created realm" }
 
     return module {
-        single<RepositoryTransactionManager> { RealmRepositoryTransactionManager(realm) }
+        single { realm }
+        singleOf(::RealmRepositoryTransactionManager) { bind<RepositoryTransactionManager>() }
         singleOf(::RealmAccountRepository) { bind<AccountRepository>() }
         singleOf(::RealmOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
         singleOf(::RealmDeviceKeysRepository) { bind<DeviceKeysRepository>() }

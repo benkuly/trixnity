@@ -30,6 +30,19 @@ rc_message:
 rc_registration:
   per_second: 1000
   burst_count: 10000
+rc_joins_per_room:
+  per_second: 1000
+  burst_count: 10000
+rc_invites:
+  per_room:
+    per_second: 1000
+    burst_count: 10000
+  per_user:
+    per_second: 1000
+    burst_count: 10000
+  per_issuer:
+    per_second: 1000
+    burst_count: 10000
 rc_login:
   address:
     per_second: 1000

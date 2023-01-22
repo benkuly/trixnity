@@ -436,7 +436,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 possiblyEncryptEventMock.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
                 cut.createUserVerificationRequest(bobUserId).getOrThrow()
@@ -579,8 +579,8 @@ private val body: ShouldSpec.() -> Unit = {
                 name = "default key",
                 passphrase = null,
             )
-            globalAccountDataStore.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
-            globalAccountDataStore.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            globalAccountDataStore.save(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
+            globalAccountDataStore.save(GlobalAccountDataEvent(defaultKey, "KEY"))
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf(
                     StoredCrossSigningKeys(
@@ -607,8 +607,8 @@ private val body: ShouldSpec.() -> Unit = {
                 name = "default key",
                 passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 10_000),
             )
-            globalAccountDataStore.update(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
-            globalAccountDataStore.update(GlobalAccountDataEvent(defaultKey, "KEY"))
+            globalAccountDataStore.save(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
+            globalAccountDataStore.save(GlobalAccountDataEvent(defaultKey, "KEY"))
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf(
                     StoredCrossSigningKeys(

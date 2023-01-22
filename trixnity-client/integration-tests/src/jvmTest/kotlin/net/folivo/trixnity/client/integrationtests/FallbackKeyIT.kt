@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -38,8 +39,9 @@ class FallbackKeyIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        startedClient1 = registerAndStartClient("client1", "user1", baseUrl)
-        startedClient2 = startClient("client2", "user1", baseUrl)
+        startedClient1 =
+            registerAndStartClient("client1", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
+        startedClient2 = startClient("client2", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
     }
 
     @AfterTest
@@ -64,7 +66,7 @@ class FallbackKeyIT {
             withClue("send encrypted message") {
                 startedClient2.client.room.sendMessage(roomId) { text("dino") }
                 delay(500.milliseconds)
-                startedClient2.client.room.getOutbox().first { it.isEmpty() }
+                startedClient2.client.room.getOutbox().first { outbox -> outbox.all { it.sentAt != null } }
                 startedClient2.client.cancelSync(true)
             }
 

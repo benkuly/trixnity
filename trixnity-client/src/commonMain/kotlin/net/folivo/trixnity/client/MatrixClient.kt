@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -260,13 +260,14 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
-        rtm = di.get(),
+        tm = di.get(),
+        config = config,
         scope = scope,
     )
     api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
         .onFailure { matrixClient.deleteAll() }
         .getOrThrow()
-    keyStore.outdatedKeys.update { it + userId }
+    keyStore.updateOutdatedKeys { it + userId }
     matrixClient
 }
 
@@ -338,7 +339,8 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
-                rtm = di.get(),
+                tm = di.get(),
+                config = config,
                 scope = scope,
             )
         } else null
@@ -368,7 +370,8 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
+    config: MatrixClientConfiguration,
     private val scope: CoroutineScope,
 ) : MatrixClient {
     override val displayName: StateFlow<String?> = accountStore.displayName
@@ -422,9 +425,9 @@ class MatrixClientImpl internal constructor(
         startSync()
     }
 
-    private val syncTransaction: suspend (suspend () -> Unit) -> Unit =
-        if (rtm.supportsParallelWrite) rtm::writeTransaction
-        else { it -> it() }
+    private val syncTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit =
+        if (config.enableAsyncTransactions) tm::withWriteTransaction
+        else { _, b -> b() }
 
     override suspend fun startSync() {
         startMatrixClient()

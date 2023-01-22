@@ -115,7 +115,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     memberEvent(4, user2, "User2-Display", INVITE),
                     memberEvent(5, user3, "User3-Display", BAN),
                     memberEvent(6, user4, "User4-Display", LEAVE)
-                ).forEach { roomStateStore.update(it) }
+                ).forEach { roomStateStore.save(it) }
                 val roomSummary = RoomSummary(
                     heroes = listOf(user1, user2),
                     joinedMemberCount = 1,
@@ -135,14 +135,14 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                         memberEvent(3, user1, "User1-Display", JOIN),
                         memberEvent(4, user2, "User2-Display", INVITE),
                         memberEvent(7, user5, "User5-Display", BAN)
-                    ).forEach { roomStateStore.update(it) }
+                    ).forEach { roomStateStore.save(it) }
                 }
                 context("heroes greater equals joined plus invited minus 1") {
                     beforeTest {
                         listOf(
                             memberEvent(5, user3, "User3-Display", LEAVE),
                             memberEvent(6, user4, "User4-Display", LEAVE),
-                        ).forEach { roomStateStore.update(it) }
+                        ).forEach { roomStateStore.save(it) }
                     }
                     context("heroes is 1") {
                         should("set room name") {
@@ -176,7 +176,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                         listOf(
                             memberEvent(5, user3, "User3-Display", JOIN),
                             memberEvent(6, user4, "User4-Display", INVITE),
-                        ).forEach { roomStateStore.update(it) }
+                        ).forEach { roomStateStore.save(it) }
                     }
                     context("heroes is 0") {
                         should("set room name") {
@@ -228,7 +228,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                         memberEvent(3, user1, "User1-Display", JOIN),
                         memberEvent(4, user2, "User2-Display", BAN),
                         memberEvent(5, user3, "User3-Display", LEAVE),
-                    ).forEach { roomStateStore.update(it) }
+                    ).forEach { roomStateStore.save(it) }
                 }
                 context("heroes is 0") {
                     should("set room name") {
@@ -280,7 +280,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                         listOf(
                             memberEvent(6, user4, "User4-Display", LEAVE),
                             memberEvent(7, user5, "User5-Display", LEAVE),
-                        ).forEach { roomStateStore.update(it) }
+                        ).forEach { roomStateStore.save(it) }
                     }
                     context("heroes is 1") {
                         should("set room name") {
@@ -319,7 +319,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     listOf(
                         memberEvent(3, user1, "User1-Display", LEAVE),
                         memberEvent(4, user2, "User2-Display", BAN),
-                    ).forEach { roomStateStore.update(it) }
+                    ).forEach { roomStateStore.save(it) }
                 }
                 context("heroes is 0") {
                     should("set room name to empty") {
@@ -352,7 +352,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     }
                     context("heroes is 2") {
                         should("set room name") {
-                            roomStateStore.update(
+                            roomStateStore.save(
                                 memberEvent(5, user3, "User3-Display", LEAVE),
                             )
                             val roomSummary = RoomSummary(
@@ -374,7 +374,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                             memberEvent(5, user3, "User3-Display", LEAVE),
                             memberEvent(6, user4, "User4-Display", LEAVE),
                             memberEvent(7, user5, "User5-Display", LEAVE),
-                        ).forEach { roomStateStore.update(it) }
+                        ).forEach { roomStateStore.save(it) }
                     }
                     context("heroes is 1") {
                         should("set room name") {
@@ -413,7 +413,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     context("existent NameEvent") {
         context("with a non-empty name field") {
             beforeTest {
-                roomStateStore.update(nameEvent(1, user1, "The room name"))
+                roomStateStore.save(nameEvent(1, user1, "The room name"))
             }
             should("set room name") {
                 listOf(
@@ -422,7 +422,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     memberEvent(4, user2, "User2-Display", INVITE),
                     memberEvent(5, user3, "User3-Display", BAN),
                     memberEvent(6, user4, "User4-Display", LEAVE)
-                ).forEach { roomStateStore.update(it) }
+                ).forEach { roomStateStore.save(it) }
                 val roomSummary = RoomSummary(
                     heroes = listOf(user1, user2),
                     joinedMemberCount = 1,
@@ -437,7 +437,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
         }
         context("empty NameEvent") {
             beforeTest {
-                roomStateStore.update(nameEvent(1, user1, ""))
+                roomStateStore.save(nameEvent(1, user1, ""))
             }
             testWithoutNameFromNameEvent()
         }

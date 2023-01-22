@@ -2,6 +2,7 @@ package net.folivo.trixnity.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
@@ -25,21 +26,23 @@ fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClien
 
 suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     InMemoryAccountRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccountDataStore(
     InMemoryRoomAccountDataRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     DefaultEventContentSerializerMappings,
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAccountDataStore(
     InMemoryGlobalAccountDataRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     DefaultEventContentSerializerMappings,
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
@@ -50,7 +53,8 @@ suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     InMemoryInboundMegolmSessionRepository(),
     InMemoryInboundMegolmMessageIndexRepository(),
     InMemoryOutboundMegolmSessionRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
@@ -63,44 +67,49 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     InMemorySecretsRepository(),
     InMemorySecretKeyRequestRepository(),
     InMemoryRoomKeyRequestRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     InMemoryRoomRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
     InMemoryTimelineEventRepository(),
     InMemoryTimelineEventRelationRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
     InMemoryRoomStateRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     DefaultEventContentSerializerMappings,
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     InMemoryRoomUserRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMappingStore(
     InMemoryMediaCacheMappingRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
+    MatrixClientConfiguration(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
     InMemoryRoomOutboxMessageRepository(),
-    NoOpRepositoryTransactionManager,
+    TransactionManagerMock(),
     scope
 ).apply { init() }

@@ -2,23 +2,23 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.MinimalRepository
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
+open class MinimalRepositoryStateFlowCache<K, V, R : MinimalRepository<K, V>>(
     cacheScope: CoroutineScope,
     private val repository: R,
-    private val rtm: RepositoryTransactionManager,
-    infiniteCache: Boolean = false,
-    cacheDuration: Duration = 1.minutes,
+    private val tm: TransactionManager,
+    expireDuration: Duration = 1.minutes,
 ) : StateFlowCache<K, V>(
     repository::class.simpleName + repository.hashCode(),
     cacheScope,
-    infiniteCache,
-    cacheDuration
+    expireDuration
 ) {
+
+    private val infiniteCache = expireDuration.isInfinite()
 
     private fun internalGet(
         key: K,
@@ -28,7 +28,7 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         isContainedInCache = { infiniteCache || isContainedInCache(it) },
         retrieveAndUpdateCache = {
             if (infiniteCache) it
-            else rtm.readTransaction { repository.get(key) }
+            else tm.readOperation { repository.get(key) }
         },
     )
 
@@ -36,6 +36,24 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
         key: K,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean = { it != null },
     ): Flow<V?> = internalGet(key, isContainedInCache)
+
+    suspend fun save(
+        key: K,
+        value: V?,
+        isContainedInCache: suspend (cacheValue: V?) -> Boolean = { it != null },
+        onPersist: suspend (newValue: V?) -> Unit = {}
+    ) {
+        writeWithCache(key, { value },
+            isContainedInCache = { infiniteCache || isContainedInCache(it) },
+            retrieveAndUpdateCache = { it }, // there may be a value saved in db, but we don't need it
+            persist = { newValue ->
+                onPersist(newValue)
+                tm.writeOperationAsync(repository.serializeKey(key)) {
+                    if (newValue == null) repository.delete(key)
+                    else repository.save(key, newValue)
+                }
+            })
+    }
 
     suspend fun update(
         key: K,
@@ -48,16 +66,16 @@ open class RepositoryStateFlowCache<K, V, R : MinimalStoreRepository<K, V>>(
             isContainedInCache = { infiniteCache || isContainedInCache(it) },
             retrieveAndUpdateCache = { cacheValue ->
                 if (infiniteCache) cacheValue
-                else rtm.readTransaction { repository.get(key) }
+                else tm.readOperation { repository.get(key) }
             },
             persist = { newValue ->
                 if (persistIntoRepository) {
-                    rtm.writeTransaction {
+                    onPersist(newValue)
+                    tm.writeOperationAsync(repository.serializeKey(key)) {
                         if (newValue == null) repository.delete(key)
                         else repository.save(key, newValue)
                     }
-                    onPersist(newValue)
-                }
+                } else null
             })
     }
 }

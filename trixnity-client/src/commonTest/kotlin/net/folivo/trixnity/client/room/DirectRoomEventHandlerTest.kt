@@ -76,7 +76,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
             )
             context("there are direct rooms with that user") {
                 beforeTest {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         Event.GlobalAccountDataEvent(DirectEventContent(mapOf(alice to setOf(otherRoom))))
                     )
                 }
@@ -95,7 +95,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
             }
             context("there are no direct rooms with that user") {
                 beforeTest {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         Event.GlobalAccountDataEvent(
                             DirectEventContent(
                                 mapOf(UserId("nobody", "server") to setOf(otherRoom))
@@ -255,7 +255,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
         }
         context("own membership is leave or ban") {
             beforeTest {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     Event.GlobalAccountDataEvent(
                         DirectEventContent(
                             mapOf(
@@ -317,7 +317,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
         }
         context("others membership is leave or ban") {
             beforeTest {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     Event.GlobalAccountDataEvent(
                         DirectEventContent(
                             mapOf(
@@ -405,7 +405,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
     context(DirectRoomEventHandler::setAvatarUrlForDirectRooms.name) {
         should("set the avatar URL to a member's avatar URL") {
             roomStore.update(room) { Room(room, avatarUrl = null) }
-            roomStateStore.update(
+            roomStateStore.save(
                 Event.StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
@@ -431,7 +431,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
 
         should("when the avatar URL is explicitly set use it instead of member's avatar URL") {
             roomStore.update(room) { Room(room, avatarUrl = "mxc://localhost/123456") }
-            roomStateStore.update(
+            roomStateStore.save(
                 Event.StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
@@ -441,7 +441,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     stateKey = alice.full,
                 )
             )
-            roomStateStore.update(
+            roomStateStore.save(
                 Event.StateEvent(
                     AvatarEventContent("mxc://localhost/123456"),
                     EventId("1"),

@@ -3,43 +3,24 @@ package net.folivo.trixnity.client.store.cache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.folivo.trixnity.client.store.repository.MinimalStoreRepository
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
+import net.folivo.trixnity.client.store.repository.MinimalRepository
+import net.folivo.trixnity.client.store.repository.TwoDimensionsRepository
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-private data class LoadingCacheValue<T>(
-    val value: T,
-    val fullyLoadedFromRepository: Boolean
-)
-
-private class LoadingRepository<K1, K2, V>(
-    private val baseRepository: TwoDimensionsStoreRepository<K1, K2, V>
-) : MinimalStoreRepository<K1, LoadingCacheValue<Map<K2, V>>> {
-    override suspend fun get(key: K1): LoadingCacheValue<Map<K2, V>>? =
-        baseRepository.get(key)?.let { LoadingCacheValue(value = it, fullyLoadedFromRepository = true) }
-
-    override suspend fun save(key: K1, value: LoadingCacheValue<Map<K2, V>>) =
-        baseRepository.save(key, value.value)
-
-    override suspend fun delete(key: K1) = baseRepository.delete(key)
-    override suspend fun deleteAll() = baseRepository.deleteAll()
-}
-
-class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRepository<K1, K2, V>>(
+class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsRepository<K1, K2, V>>(
     cacheScope: CoroutineScope,
     private val repository: R,
-    private val rtm: RepositoryTransactionManager,
-    cacheDuration: Duration = 1.minutes,
+    private val tm: TransactionManager,
+    expireDuration: Duration = 1.minutes,
 ) {
 
-    private val cache = RepositoryStateFlowCache(
+    private val cache = MinimalRepositoryStateFlowCache(
         cacheScope = cacheScope,
         repository = LoadingRepository(repository),
-        rtm = rtm,
-        infiniteCache = false,
-        cacheDuration = cacheDuration
+        tm = tm,
+        expireDuration = expireDuration
     )
 
     fun reset() {
@@ -51,6 +32,16 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
     ): Flow<Map<K2, V>?> =
         cache.get(key, isContainedInCache = { it?.fullyLoadedFromRepository == true })
             .map { it?.value }
+
+    fun getBySecondKey(
+        firstKey: K1,
+        secondKey: K2,
+    ): Flow<V?> =
+        cache.readWithCache(
+            key = firstKey,
+            isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
+            retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
+        ).map { it?.value?.get(secondKey) }
 
     suspend fun update(
         key: K1,
@@ -67,6 +58,30 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
                 ?.let { LoadingCacheValue(value = it, fullyLoadedFromRepository = true) }
         }
     )
+
+    suspend fun saveBySecondKey(
+        firstKey: K1,
+        secondKey: K2,
+        value: V?
+    ) = cache.writeWithCache(
+        key = firstKey,
+        updater = { oldValue ->
+            val newValue =
+                if (value == null) oldValue?.value?.minus(secondKey)
+                else oldValue?.value.orEmpty() + (secondKey to value)
+            newValue?.let {
+                LoadingCacheValue(value = it, fullyLoadedFromRepository = oldValue?.fullyLoadedFromRepository == true)
+            }
+        },
+        isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
+        retrieveAndUpdateCache = { it }, // there may be a value saved in db, but we don't need it
+        persist = {
+            val newValue = it?.value?.get(secondKey)
+            tm.writeOperationAsync(repository.serializeKey(firstKey, secondKey)) {
+                if (newValue == null) repository.deleteBySecondKey(firstKey, secondKey)
+                else repository.saveBySecondKey(firstKey, secondKey, newValue)
+            }
+        })
 
     suspend fun updateBySecondKey(
         firstKey: K1,
@@ -87,7 +102,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
         persist = {
             val value = it?.value?.get(secondKey)
-            rtm.writeTransaction {
+            tm.writeOperationAsync(repository.serializeKey(firstKey, secondKey)) {
                 if (value == null) repository.deleteBySecondKey(firstKey, secondKey)
                 else repository.saveBySecondKey(firstKey, secondKey, value)
             }
@@ -104,7 +119,7 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         secondKey: K2,
         cacheValue: LoadingCacheValue<Map<K2, V>>?
     ): LoadingCacheValue<Map<K2, V>>? {
-        val newValue = rtm.readTransaction {
+        val newValue = tm.readOperation {
             repository.getBySecondKey(firstKey, secondKey)
         }
         return if (newValue != null) LoadingCacheValue(
@@ -113,14 +128,23 @@ class TwoDimensionsRepositoryStateFlowCache<K1, K2, V, R : TwoDimensionsStoreRep
         )
         else cacheValue
     }
+}
 
-    fun getBySecondKey(
-        firstKey: K1,
-        secondKey: K2,
-    ): Flow<V?> =
-        cache.readWithCache(
-            key = firstKey,
-            isContainedInCache = { isContainedInCacheBySecondKey(it, secondKey) },
-            retrieveAndUpdateCache = { retrieveAndUpdateCacheBySecondKey(firstKey, secondKey, it) },
-        ).map { it?.value?.get(secondKey) }
+private data class LoadingCacheValue<T>(
+    val value: T,
+    val fullyLoadedFromRepository: Boolean
+)
+
+private class LoadingRepository<K1, K2, V>(
+    private val baseRepository: TwoDimensionsRepository<K1, K2, V>
+) : MinimalRepository<K1, LoadingCacheValue<Map<K2, V>>> {
+    override fun serializeKey(key: K1): String = baseRepository.serializeKey(key)
+    override suspend fun get(key: K1): LoadingCacheValue<Map<K2, V>>? =
+        baseRepository.get(key)?.let { LoadingCacheValue(value = it, fullyLoadedFromRepository = true) }
+
+    override suspend fun save(key: K1, value: LoadingCacheValue<Map<K2, V>>) =
+        baseRepository.save(key, value.value)
+
+    override suspend fun delete(key: K1) = baseRepository.delete(key)
+    override suspend fun deleteAll() = baseRepository.deleteAll()
 }

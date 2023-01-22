@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -37,7 +37,7 @@ class TimelineEventHandlerImpl(
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val timelineMutex: TimelineMutex,
-    private val rtm: RepositoryTransactionManager,
+    private val atm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {
         const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""
@@ -59,7 +59,7 @@ class TimelineEventHandlerImpl(
             val roomId = room.key
             room.value.timeline?.also {
                 timelineMutex.withLock(roomId) {
-                    rtm.writeTransaction { // if something fails, no event is saved at all
+                    atm.withWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = roomId,
                             newEvents = it.events,
@@ -75,7 +75,7 @@ class TimelineEventHandlerImpl(
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
-                    rtm.writeTransaction { // if something fails, no event is saved at all
+                    atm.withWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = room.key,
                             newEvents = it.events,
@@ -226,7 +226,7 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                rtm.writeTransaction { // if something fails, no event is saved at all
+                atm.withWriteTransaction { // if something fails, no event is saved at all
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,

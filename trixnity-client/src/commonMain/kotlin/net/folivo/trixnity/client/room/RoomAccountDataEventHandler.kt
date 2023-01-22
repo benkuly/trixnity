@@ -24,7 +24,7 @@ class RoomAccountDataEventHandler(
 
     internal suspend fun setRoomAccountData(accountDataEvent: Event<RoomAccountDataEventContent>) {
         if (accountDataEvent is Event.RoomAccountDataEvent) {
-            roomAccountDataStore.update(accountDataEvent)
+            roomAccountDataStore.save(accountDataEvent)
         }
     }
 }

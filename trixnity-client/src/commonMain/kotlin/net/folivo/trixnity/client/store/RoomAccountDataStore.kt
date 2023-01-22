@@ -6,10 +6,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.transformLatest
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -19,31 +20,38 @@ import kotlin.reflect.KClass
 
 class RoomAccountDataStore(
     private val roomAccountDataRepository: RoomAccountDataRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val contentMappings: EventContentSerializerMappings,
+    config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
-    private val roomAccountDataCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomAccountDataRepository, rtm)
+    private val roomAccountDataCache =
+        TwoDimensionsRepositoryStateFlowCache(
+            storeScope,
+            roomAccountDataRepository,
+            tm,
+            config.cacheExpireDurations.roomAccountData
+        )
 
     override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.writeTransaction {
+        tm.writeOperation {
             roomAccountDataRepository.deleteAll()
         }
         roomAccountDataCache.reset()
     }
 
-    suspend fun update(event: RoomAccountDataEvent<RoomAccountDataEventContent>) {
+    suspend fun save(event: RoomAccountDataEvent<RoomAccountDataEventContent>) {
         val eventType = when (val content = event.content) {
             is UnknownRoomAccountDataEventContent -> content.eventType
             else -> contentMappings.roomAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        roomAccountDataCache.updateBySecondKey(
-            RoomAccountDataRepositoryKey(event.roomId, eventType), event.key
-        ) { event }
+        roomAccountDataCache.saveBySecondKey(
+            RoomAccountDataRepositoryKey(event.roomId, eventType), event.key, event
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

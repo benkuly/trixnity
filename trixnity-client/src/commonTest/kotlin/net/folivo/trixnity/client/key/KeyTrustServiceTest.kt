@@ -100,7 +100,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("fail when master key does not match") {
-            globalAccountDataStore.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            globalAccountDataStore.save(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
             val publicKey = Random.nextBytes(32).encodeUnpaddedBase64()
             keyStore.updateCrossSigningKeys(alice) {
                 setOf(
@@ -127,7 +127,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
 
-            globalAccountDataStore.update(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            globalAccountDataStore.save(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
             val aliceMasterKey = CrossSigningKeys(
                 alice, setOf(MasterKey), keysOf(
                     Ed25519Key(masterSigningPublicKey, masterSigningPublicKey)

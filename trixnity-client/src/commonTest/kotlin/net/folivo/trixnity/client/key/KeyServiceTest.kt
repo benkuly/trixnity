@@ -209,7 +209,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("bootstrap") {
                 launch {
                     keyStore.outdatedKeys.first { it.contains(alice) }
-                    keyStore.outdatedKeys.value = setOf()
+                    keyStore.updateOutdatedKeys { setOf() }
                     keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
                     keyStore.updateDeviceKeys(alice) {
                         mapOf(
@@ -251,7 +251,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("bootstrap from passphrase") {
                 launch {
                     keyStore.outdatedKeys.first { it.contains(alice) }
-                    keyStore.outdatedKeys.value = setOf()
+                    keyStore.updateOutdatedKeys { setOf() }
                     keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
                     keyStore.updateDeviceKeys(alice) {
                         mapOf(

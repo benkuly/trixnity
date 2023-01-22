@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.milliseconds
 
 class StateFlowCacheTest : ShouldSpec({
@@ -31,14 +32,14 @@ class StateFlowCacheTest : ShouldSpec({
             key = "key",
             isContainedInCache = { false },
             retrieveAndUpdateCache = { null },
-            persist = {},
+            persist = { null },
             updater = { null } // this should not create a new internal StateFlow
         )
         cut.writeWithCache(
             key = "key",
             isContainedInCache = { false },
             retrieveAndUpdateCache = { null },
-            persist = {},
+            persist = { null },
             updater = { "newValue" }
         )
         readFlow.first { it == "newValue" }
@@ -64,7 +65,7 @@ class StateFlowCacheTest : ShouldSpec({
                 }
             ).first() shouldBe "another value"
         }
-        should("not read value from repository") {
+        should("read value from repository when not found") {
             cut = StateFlowCache("", cacheScope)
             // we say, the value is in cache, but actually it is not, so the cache asks for it
             cut.readWithCache(
@@ -105,7 +106,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).first() shouldBe "a new value"
         }
         should("remove from cache when not used anymore") {
-            cut = StateFlowCache("", cacheScope, cacheDuration = 50.milliseconds)
+            cut = StateFlowCache("", cacheScope, expireDuration = 50.milliseconds)
             val cache = cut.cache.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
             val readScope2 = CoroutineScope(Dispatchers.Default)
@@ -147,7 +148,7 @@ class StateFlowCacheTest : ShouldSpec({
             ).first() shouldBe "another value"
         }
         should("remove from cache, when cache time expired") {
-            cut = StateFlowCache("", cacheScope, cacheDuration = 30.milliseconds)
+            cut = StateFlowCache("", cacheScope, expireDuration = 30.milliseconds)
             cut.readWithCache(
                 key = "key",
                 isContainedInCache = { true },
@@ -183,9 +184,39 @@ class StateFlowCacheTest : ShouldSpec({
             ).stateIn(readScope).value shouldBe "another value"
             readScope.cancel()
         }
+        should("only remove from cache, when persisted") {
+            cut = StateFlowCache("", cacheScope, expireDuration = 0.milliseconds)
+            val persisted = MutableStateFlow(false)
+            cut.writeWithCache(
+                key = "key",
+                updater = { "value" },
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = { "" },
+                persist = { persisted }
+            )
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = { "a new value" }
+            ).first() shouldBe "value"
+            delay(10)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = { "a new value" }
+            ).first() shouldBe "value"
+
+            persisted.value = true
+            delay(10)
+            cut.readWithCache(
+                key = "key",
+                isContainedInCache = { true },
+                retrieveAndUpdateCache = { "a new value" }
+            ).first() shouldBe "a new value"
+        }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = StateFlowCache("", cacheScope, true, cacheDuration = 10.milliseconds)
+                cut = StateFlowCache("", cacheScope, expireDuration = INFINITE)
                 val readScope = CoroutineScope(Dispatchers.Default)
                 cut.readWithCache(
                     key = "key",
@@ -229,6 +260,7 @@ class StateFlowCacheTest : ShouldSpec({
                 },
                 persist = { newValue ->
                     newValue shouldBe "updated value"
+                    null
                 }
             )
             cut.writeWithCache(
@@ -244,6 +276,7 @@ class StateFlowCacheTest : ShouldSpec({
                 },
                 persist = { newValue ->
                     newValue shouldBe "updated value 2"
+                    null
                 }
             )
         }
@@ -254,7 +287,7 @@ class StateFlowCacheTest : ShouldSpec({
                 updater = { "updated value" },
                 isContainedInCache = { false },
                 retrieveAndUpdateCache = { null },
-                persist = { }
+                persist = { null }
             )
             var wasCalled = false
             cut.writeWithCache(
@@ -268,7 +301,7 @@ class StateFlowCacheTest : ShouldSpec({
                     wasCalled = true
                     "from db 2"
                 },
-                persist = { }
+                persist = { null }
             )
             wasCalled shouldBe false
         }
@@ -279,7 +312,7 @@ class StateFlowCacheTest : ShouldSpec({
                 updater = { "updated value" },
                 isContainedInCache = { false },
                 retrieveAndUpdateCache = { null },
-                persist = {}
+                persist = { null }
             )
             var wasCalled = false
             cut.writeWithCache(
@@ -287,7 +320,10 @@ class StateFlowCacheTest : ShouldSpec({
                 updater = { "updated value" },
                 isContainedInCache = { true },
                 retrieveAndUpdateCache = { null },
-                persist = { wasCalled = true }
+                persist = {
+                    wasCalled = true
+                    null
+                }
             )
             wasCalled shouldBe true
         }
@@ -302,7 +338,10 @@ class StateFlowCacheTest : ShouldSpec({
                             updater = { "$i" },
                             isContainedInCache = { false },
                             retrieveAndUpdateCache = { database.replayCache.lastOrNull() },
-                            persist = { newValue -> database.emit(newValue) }
+                            persist = { newValue ->
+                                database.emit(newValue)
+                                null
+                            }
                         )
                     }
                 }
@@ -311,13 +350,13 @@ class StateFlowCacheTest : ShouldSpec({
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
-                cut = StateFlowCache("", cacheScope, cacheDuration = 30.milliseconds)
+                cut = StateFlowCache("", cacheScope, expireDuration = 30.milliseconds)
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
                     isContainedInCache = { false },
                     retrieveAndUpdateCache = { null },
-                    persist = { }
+                    persist = { null }
                 )
                 delay(50)
                 var wasCalled = false
@@ -329,20 +368,61 @@ class StateFlowCacheTest : ShouldSpec({
                         wasCalled = true
                         null
                     },
-                    persist = { }
+                    persist = { null }
                 )
                 wasCalled shouldBe true
+            }
+            should("only remove from cache, when persisted") {
+                cut = StateFlowCache("", cacheScope, expireDuration = 0.milliseconds)
+                val persisted1 = MutableStateFlow(false)
+                val persisted2 = MutableStateFlow(false)
+                cut.writeWithCache(
+                    key = "key",
+                    updater = { "o" },
+                    isContainedInCache = { true },
+                    retrieveAndUpdateCache = { "" },
+                    persist = { persisted1 }
+                )
+                cut.writeWithCache(
+                    key = "key",
+                    updater = { "value" },
+                    isContainedInCache = { true },
+                    retrieveAndUpdateCache = { "" },
+                    persist = { persisted2 }
+                )
+                delay(10)
+                cut.readWithCache(
+                    key = "key",
+                    isContainedInCache = { true },
+                    retrieveAndUpdateCache = { "a new value" }
+                ).first() shouldBe "value"
+
+                persisted1.value = true
+                delay(10)
+                cut.readWithCache(
+                    key = "key",
+                    isContainedInCache = { true },
+                    retrieveAndUpdateCache = { "a new value" }
+                ).first() shouldBe "value"
+
+                persisted2.value = true
+                delay(10)
+                cut.readWithCache(
+                    key = "key",
+                    isContainedInCache = { true },
+                    retrieveAndUpdateCache = { "a new value" }
+                ).first() shouldBe "a new value"
             }
         }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = StateFlowCache("", cacheScope, infiniteCache = true, cacheDuration = 10.milliseconds)
+                cut = StateFlowCache("", cacheScope, expireDuration = INFINITE)
                 cut.writeWithCache(
                     key = "key",
                     updater = { "updated value" },
                     isContainedInCache = { false },
                     retrieveAndUpdateCache = { null },
-                    persist = { }
+                    persist = { null }
                 )
                 delay(30)
                 var wasCalled = false
@@ -357,7 +437,7 @@ class StateFlowCacheTest : ShouldSpec({
                         wasCalled = true
                         null
                     },
-                    persist = { }
+                    persist = { null }
                 )
                 wasCalled shouldBe false
             }

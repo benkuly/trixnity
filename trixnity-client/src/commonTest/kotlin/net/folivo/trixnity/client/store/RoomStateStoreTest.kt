@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
-import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
@@ -34,8 +35,9 @@ class RoomStateStoreTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = RoomStateStore(
             roomStateRepository,
-            NoOpRepositoryTransactionManager,
+            TransactionManagerMock(),
             DefaultEventContentSerializerMappings,
+            MatrixClientConfiguration(),
             storeScope
         )
     }
@@ -61,10 +63,10 @@ class RoomStateStoreTest : ShouldSpec({
         stateKey = "@alice:server"
     )
 
-    context(RoomStateStore::update.name) {
+    context(RoomStateStore::save.name) {
         should("insert event into stateKey map of events") {
-            cut.update(event1)
-            cut.update(event2)
+            cut.save(event1)
+            cut.save(event2)
 
             roomStateRepository.getBySecondKey(
                 RoomStateRepositoryKey(roomId, "m.room.member"),
@@ -77,8 +79,8 @@ class RoomStateStoreTest : ShouldSpec({
         }
         context("skipWhenAlreadyPresent is true") {
             should("only change, when already present") {
-                cut.update(event1, true)
-                cut.update(event1.copy(originTimestamp = 0), true)
+                cut.save(event1, true)
+                cut.save(event1.copy(originTimestamp = 0), true)
                 roomStateRepository.getBySecondKey(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@user:server"
@@ -137,7 +139,7 @@ class RoomStateStoreTest : ShouldSpec({
                 val scope = CoroutineScope(Dispatchers.Default)
                 val result = cut.get<MemberEventContent>(roomId).shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it?.size == 1 }
-                cut.update(
+                cut.save(
                     Event.StateEvent(
                         UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
@@ -177,7 +179,7 @@ class RoomStateStoreTest : ShouldSpec({
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
             should("ignore unknown state event") {
-                cut.update(
+                cut.save(
                     Event.StateEvent(
                         UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
@@ -192,13 +194,13 @@ class RoomStateStoreTest : ShouldSpec({
         }
         context("with scope") {
             should("ignore unknown state event") {
-                cut.update(event1)
+                cut.save(event1)
 
                 val scope = CoroutineScope(Dispatchers.Default)
                 val result = cut.getByStateKey<MemberEventContent>(roomId, "@user:server")
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it != null }
-                cut.update(
+                cut.save(
                     Event.StateEvent(
                         UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),

@@ -77,8 +77,7 @@ class OutboxIT {
                 client.room.sendMessage(room) { text("message $it") }
             }
 
-            client.room.getOutbox()
-                .first { outbox -> outbox.none { it.sentAt != null } }
+            client.room.getOutbox().first { outbox -> outbox.none { it.sentAt != null } }
             delay(20_000)
             client.room.sendMessage(room) { text("finish") }
             delay(1_000)

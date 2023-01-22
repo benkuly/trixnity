@@ -38,9 +38,9 @@ class RoomAvatarUrlEventHandler(
 
     internal suspend fun setAvatarUrlForMemberUpdates(memberEvent: Event<MemberEventContent>) {
         memberEvent.getRoomId()?.let { roomId ->
-            log.debug { "set room avatar of room $roomId due to member update" }
             val room = roomStore.get(roomId).first()
             if (room?.isDirect == true && userInfo.userId.full != memberEvent.getStateKey()) {
+                log.debug { "set room avatar of room $roomId due to member update" }
                 roomStore.update(roomId) { oldRoom ->
                     oldRoom?.copy(avatarUrl = memberEvent.content.avatarUrl?.ifEmpty { null })
                 }

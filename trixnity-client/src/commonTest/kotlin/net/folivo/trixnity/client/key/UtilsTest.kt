@@ -26,21 +26,21 @@ class UtilsTest : ShouldSpec({
 
     context("waitForUpdateOutdatedKey") {
         should("wait until outdated does not contain anything") {
-            keyStore.outdatedKeys.value = setOf(UserId("alice", "server"))
+            keyStore.updateOutdatedKeys { setOf(UserId("alice", "server")) }
             val job = launch(Dispatchers.Default) {
                 keyStore.waitForUpdateOutdatedKey()
             }
             until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 job.isActive
             }
-            keyStore.outdatedKeys.value = setOf()
+            keyStore.updateOutdatedKeys { setOf() }
             until(1_000.milliseconds, 50.milliseconds.fixed()) {
                 !job.isActive
             }
             job.cancelAndJoin()
         }
         should("wait until outdated does not contain ids") {
-            keyStore.outdatedKeys.value = setOf(UserId("alice", "server"))
+            keyStore.updateOutdatedKeys { setOf(UserId("alice", "server")) }
             val job = launch(Dispatchers.Default) {
                 keyStore.waitForUpdateOutdatedKey(
                     setOf(
@@ -52,7 +52,7 @@ class UtilsTest : ShouldSpec({
             until(50.milliseconds, 25.milliseconds.fixed()) {
                 job.isActive
             }
-            keyStore.outdatedKeys.value = setOf(UserId("bob", "server"))
+            keyStore.updateOutdatedKeys { setOf(UserId("bob", "server")) }
             until(50.milliseconds, 25.milliseconds.fixed()) {
                 !job.isActive
             }

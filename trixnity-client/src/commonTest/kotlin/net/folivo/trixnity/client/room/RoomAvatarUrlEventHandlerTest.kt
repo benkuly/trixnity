@@ -167,12 +167,12 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
         should("set the avatar URL to a member of a direct room when the new avatar URL is empty") {
             roomStore.update(room) { Room(room, isDirect = true, avatarUrl = "mxc://localhost/abcdef") }
-            globalAccountDataStore.update(
+            globalAccountDataStore.save(
                 Event.GlobalAccountDataEvent(
                     DirectEventContent(mappings = mapOf(bob to setOf(room, RoomId("room2", "localhost"))))
                 )
             )
-            roomStateStore.update(
+            roomStateStore.save(
                 Event.StateEvent(
                     MemberEventContent(
                         avatarUrl = "mxc://localhost/123456",

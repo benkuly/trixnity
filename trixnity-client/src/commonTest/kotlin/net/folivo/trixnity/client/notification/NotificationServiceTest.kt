@@ -222,7 +222,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(NotificationServiceImpl::getNotifications.name) {
         should("wait for sync to be started or running") {
             currentSyncState.value = SyncState.INITIAL_SYNC
-            globalAccountDataStore.update(
+            globalAccountDataStore.save(
                 GlobalAccountDataEvent(
                     pushRules(
                         listOf(
@@ -270,12 +270,12 @@ private val body: ShouldSpec.() -> Unit = {
                     Sync.Response("next")
                 }
             }
-            globalAccountDataStore.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+            globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
 
             checkNoNotification()
         }
         should("notify on invite") {
-            globalAccountDataStore.update(
+            globalAccountDataStore.save(
                 GlobalAccountDataEvent(
                     pushRules(
                         listOf(
@@ -322,7 +322,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             beforeTest {
                 setUser1DisplayName(roomId)
-                globalAccountDataStore.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+                globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
                 apiConfig.endpoints {
                     matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
                         Sync.Response("next")
@@ -380,7 +380,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("check push rules and notify") {
                 setUser1DisplayName(roomId)
-                globalAccountDataStore.update(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
+                globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
 
                 assertSoftly(cut.getNotifications(0.seconds).first()) {
                     event.getEventId() shouldBe timelineEvent.eventId
@@ -404,7 +404,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("room member count") {
                 beforeTest {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(pushRules(listOf(pushRuleMemberCountGreaterEqual2())))
                     )
                 }
@@ -423,12 +423,12 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("permission level") {
                 beforeTest {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(pushRules(listOf(pushRulePowerLevelRoom())))
                     )
                 }
                 should("notify when met") {
-                    roomStateStore.update(
+                    roomStateStore.save(
                         Event.StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(50),
@@ -444,7 +444,7 @@ private val body: ShouldSpec.() -> Unit = {
                     cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
                 }
                 should("not notify when not met") {
-                    roomStateStore.update(
+                    roomStateStore.save(
                         Event.StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(100),
@@ -461,7 +461,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("not notify when push rule disabled") {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     GlobalAccountDataEvent(
                         pushRules(listOf(pushRuleEventMatchTriggeredNotEnabled()))
                     )
@@ -470,7 +470,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("multiple conditions") {
                 should("should notify when all conditions match") {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             pushRules(listOf(pushRuleWithMultipleConditions()))
                         )
@@ -479,7 +479,7 @@ private val body: ShouldSpec.() -> Unit = {
                     cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
                 }
                 should("not notify when one condition matches") {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             pushRules(listOf(pushRuleWithMultipleConditions()))
                         )
@@ -488,7 +488,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("always notify when no conditions") {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     GlobalAccountDataEvent(
                         pushRules(listOf(pushRuleNoCondition()))
                     )
@@ -496,7 +496,7 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
             }
             should("override") {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     GlobalAccountDataEvent(
                         PushRulesEventContent(
                             global = mapOf(
@@ -523,7 +523,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             context("room push rules") {
                 should("ignore other room's rules") {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             PushRulesEventContent(
                                 global = mapOf(
@@ -547,7 +547,7 @@ private val body: ShouldSpec.() -> Unit = {
                     checkNoNotification()
                 }
                 should("consider this room's rule") {
-                    globalAccountDataStore.update(
+                    globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             PushRulesEventContent(
                                 global = mapOf(
@@ -587,7 +587,7 @@ private val body: ShouldSpec.() -> Unit = {
                 room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
             }
             should("not notify when action says it") {
-                globalAccountDataStore.update(
+                globalAccountDataStore.save(
                     GlobalAccountDataEvent(pushRules(listOf(pushRuleEventMatchTriggeredDontNotify())))
                 )
                 checkNoNotification()
