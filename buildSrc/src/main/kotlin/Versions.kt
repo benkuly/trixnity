@@ -21,6 +21,7 @@ object Versions {
     const val arrow = "1.1.3" // https://github.com/arrow-kt/arrow/releases
     const val sqlDelight = "1.5.4" // https://github.com/cashapp/sqldelight/releases
     const val exposed = "0.41.1" // https://github.com/JetBrains/Exposed/releases
+    const val juulLabsIndexeddb = "0.5.0" // https://github.com/JuulLabs/indexeddb/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
     const val realm = "1.5.1" // https://github.com/realm/realm-kotlin/tags
     const val kotlinLogging = "2.1.23" // https://github.com/MicroUtils/kotlin-logging/releases

@@ -80,22 +80,30 @@ This project contains the following modules, which can be used independently:
         - [trixnity-client-repository-realm](/trixnity-client/trixnity-client-repository-realm)
           implements a
           database for trixnity-client
-          with [realm](https://github.com/realm/realm-kotlin). This support
+          with [realm](https://github.com/realm/realm-kotlin). This supports
           JVM/Android/Native.
+        - [trixnity-client-repository-indexeddb](/trixnity-client/trixnity-client-repository-indexeddb)
+          implements a
+          database for trixnity-client
+          with [indexeddb](https://github.com/JuulLabs/indexeddb). This supports
+          JS (browser).
         - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight)
           implements a
           database for trixnity-client
           with [sqldelight](https://github.com/cashapp/sqldelight/). This is not
           actively
-          maintained at the moment, but should work.
-        - We plan to add something like `trixnity-client-repository-indexeddb`
-          as a database for web in the future.
+          maintained at the moment!
     - [x] extremely fast reactive cache on top of the database
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
           implements a file system based media
-          store with [okio](https://github.com/square/okio)
+          store with [okio](https://github.com/square/okio). This supports
+          JVM/Android/Native/NodeJs.
+        - [trixnity-client-media-indexeddb](/trixnity-client/trixnity-client-media-indexeddb)
+          implements a file system based media
+          store with [indexeddb](https://github.com/JuulLabs/indexeddb). This
+          supports JS (browser).
     - [x] media support (thumbnail generation, offline "upload", huge files,
       etc.)
     - [x] E2E (olm, megolm)

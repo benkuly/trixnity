@@ -80,6 +80,18 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
         }
     }
 
+fun KotlinMultiplatformExtension.ciDummyTarget() {
+    if (isCI)
+        jvm {
+            compilations.all {
+                kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+            }
+            testRuns["test"].executionTask.configure {
+                enabled = false
+            }
+        }
+}
+
 fun KotlinMultiplatformExtension.addDefaultJsTargetWhenEnabled(
     rootDir: File,
     testEnabled: Boolean = true,

@@ -21,10 +21,12 @@ include(
 include(
     "trixnity-client",
     "trixnity-client:integration-tests",
-    "trixnity-client:trixnity-client-repository-sqldelight",
-    "trixnity-client:trixnity-client-repository-exposed",
-    "trixnity-client:trixnity-client-repository-realm",
+    "trixnity-client:trixnity-client-media-indexeddb",
     "trixnity-client:trixnity-client-media-okio",
+    "trixnity-client:trixnity-client-repository-exposed",
+    "trixnity-client:trixnity-client-repository-indexeddb",
+    "trixnity-client:trixnity-client-repository-realm",
+    "trixnity-client:trixnity-client-repository-sqldelight",
 )
 include("trixnity-applicationservice")
 include("test-utils")
