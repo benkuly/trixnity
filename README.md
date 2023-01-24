@@ -219,7 +219,7 @@ extension on `UserId`s or `String`s.
 
 ### Read data
 
-Most data in Trixnity is wrapped into Kotlins `StateFlow`. This means, that you
+Most data in Trixnity is wrapped into Kotlins `Flow`. This means, that you
 get the current value, but also every
 future values. This is useful when e.g. the display name or the avatar of a user
 changes, because you only need to
