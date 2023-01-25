@@ -37,7 +37,7 @@ class TimelineEventHandlerImpl(
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val timelineMutex: TimelineMutex,
-    private val atm: TransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {
         const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""
@@ -59,7 +59,7 @@ class TimelineEventHandlerImpl(
             val roomId = room.key
             room.value.timeline?.also {
                 timelineMutex.withLock(roomId) {
-                    atm.withWriteTransaction { // if something fails, no event is saved at all
+                    tm.withWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = roomId,
                             newEvents = it.events,
@@ -75,7 +75,7 @@ class TimelineEventHandlerImpl(
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
-                    atm.withWriteTransaction { // if something fails, no event is saved at all
+                    tm.withWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = room.key,
                             newEvents = it.events,
@@ -226,7 +226,7 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                atm.withWriteTransaction { // if something fails, no event is saved at all
+                tm.withWriteTransaction { // if something fails, no event is saved at all
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,

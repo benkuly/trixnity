@@ -136,6 +136,8 @@ open class StateFlowCache<K, V>(
                     Triple(subscriptionCount, removeTimer, persisted)
                 }.collectLatest { (subscriptionCount, removeTimer, persisted) ->
                     delay(removeTimer)
+                    // waiting for the cache value to be written into the repository
+                    // otherwise cache and repository could get out of sync
                     persisted.forEach { persistedFlow ->
                         persistedFlow.first { it }
                     }
