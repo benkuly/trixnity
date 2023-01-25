@@ -87,12 +87,6 @@ This project contains the following modules, which can be used independently:
           database for trixnity-client
           with [indexeddb](https://github.com/JuulLabs/indexeddb). This supports
           JS (browser).
-        - [trixnity-client-repository-sqldelight](/trixnity-client/trixnity-client-repository-sqldelight)
-          implements a
-          database for trixnity-client
-          with [sqldelight](https://github.com/cashapp/sqldelight/). This is not
-          actively
-          maintained at the moment!
     - [x] extremely fast reactive cache on top of the database
     - [x] exchangeable media store
         - in memory (e. g. for tests)
@@ -101,8 +95,8 @@ This project contains the following modules, which can be used independently:
           store with [okio](https://github.com/square/okio). This supports
           JVM/Android/Native/NodeJs.
         - [trixnity-client-media-indexeddb](/trixnity-client/trixnity-client-media-indexeddb)
-          implements a file system based media
-          store with [indexeddb](https://github.com/JuulLabs/indexeddb). This
+          implements a store
+          with [indexeddb](https://github.com/JuulLabs/indexeddb). This
           supports JS (browser).
     - [x] media support (thumbnail generation, offline "upload", huge files,
       etc.)
