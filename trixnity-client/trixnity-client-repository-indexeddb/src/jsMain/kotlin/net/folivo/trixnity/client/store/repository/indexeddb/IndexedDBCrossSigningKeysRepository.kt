@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 internal class IndexedDBCrossSigningKeysRepository(
     json: Json,
 ) : CrossSigningKeysRepository,
-    IndexedDBMinimalStoreRepository<UserId, Set<StoredCrossSigningKeys>>(
+    IndexedDBFullRepository<UserId, Set<StoredCrossSigningKeys>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.full) },
         valueSerializer = serializer(),

@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 internal class IndexedDBOlmAccountRepository(
     json: Json,
 ) : OlmAccountRepository,
-    IndexedDBMinimalStoreRepository<Long, String>(
+    IndexedDBFullRepository<Long, String>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),

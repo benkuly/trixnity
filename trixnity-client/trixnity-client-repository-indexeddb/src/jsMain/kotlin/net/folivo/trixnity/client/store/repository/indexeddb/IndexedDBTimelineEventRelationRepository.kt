@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.RelationType
 internal class IndexedDBTimelineEventRelationRepository(
     json: Json
 ) : TimelineEventRelationRepository,
-    IndexedDBTwoDimensionsStoreRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>(
+    IndexedDBTwoDimensionsRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>(
         objectStoreName = objectStoreName,
         firstKeySerializer = { arrayOf(it.roomId.full, it.relatedEventId.full) },
         secondKeySerializer = { arrayOf(it.name) },

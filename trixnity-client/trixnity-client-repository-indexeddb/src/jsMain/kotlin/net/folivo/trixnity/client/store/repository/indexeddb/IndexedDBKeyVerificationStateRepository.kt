@@ -5,13 +5,13 @@ import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.client.store.KeyVerificationState
-import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 
 internal class IndexedDBKeyVerificationStateRepository(
     json: Json
 ) : KeyVerificationStateRepository,
-    IndexedDBMinimalStoreRepository<KeyVerificationStateKey, KeyVerificationState>(
+    IndexedDBFullRepository<KeyVerificationStateKey, KeyVerificationState>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.keyId, it.keyAlgorithm.name) },
         valueSerializer = serializer(),

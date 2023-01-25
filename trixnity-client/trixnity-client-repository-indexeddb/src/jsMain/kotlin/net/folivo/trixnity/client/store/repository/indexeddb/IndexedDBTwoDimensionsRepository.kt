@@ -8,7 +8,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToDynamic
-import net.folivo.trixnity.client.store.repository.TwoDimensionsStoreRepository
+import net.folivo.trixnity.client.store.repository.TwoDimensionsRepository
 
 fun VersionChangeTransaction.migrateIndexedDBTwoDimensionsStoreRepository(
     database: Database,
@@ -25,14 +25,14 @@ fun VersionChangeTransaction.migrateIndexedDBTwoDimensionsStoreRepository(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-internal abstract class IndexedDBTwoDimensionsStoreRepository<K1, K2, V>(
+internal abstract class IndexedDBTwoDimensionsRepository<K1, K2, V>(
     objectStoreName: String,
     val firstKeySerializer: (K1) -> Array<String>,
     val secondKeySerializer: (K2) -> Array<String>,
     val secondKeyDeserializer: (Array<String>) -> K2,
     valueSerializer: KSerializer<V>,
     val json: Json
-) : TwoDimensionsStoreRepository<K1, K2, V>, IndexedDBRepository(objectStoreName) {
+) : TwoDimensionsRepository<K1, K2, V>, IndexedDBRepository(objectStoreName) {
 
     @Serializable
     internal data class IndexedDBTwoDimensionsStoreRepositoryEntry<V>(

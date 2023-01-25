@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 internal class IndexedDBDeviceKeysRepository(
     json: Json
 ) : DeviceKeysRepository,
-    IndexedDBMinimalStoreRepository<UserId, Map<String, StoredDeviceKeys>>(
+    IndexedDBFullRepository<UserId, Map<String, StoredDeviceKeys>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.full) },
         valueSerializer = serializer(),

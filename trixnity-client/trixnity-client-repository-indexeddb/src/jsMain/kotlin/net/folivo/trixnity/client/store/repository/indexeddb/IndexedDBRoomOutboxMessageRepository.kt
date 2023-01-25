@@ -55,12 +55,14 @@ internal class IndexedDBRoomOutboxMessageRepository(
     }
 
     private val internalRepository =
-        IndexedDBMinimalStoreRepository<String, IndexedDBRoomOutboxMessage<*>>(
+        object : IndexedDBFullRepository<String, IndexedDBRoomOutboxMessage<*>>(
             objectStoreName = objectStoreName,
             keySerializer = { arrayOf(it) },
             valueSerializer = serializer,
             json = json
-        )
+        ) {
+            override fun serializeKey(key: String): String = this@IndexedDBRoomOutboxMessageRepository.serializeKey(key)
+        }
 
     companion object {
         const val objectStoreName = "room_outbox_message"
