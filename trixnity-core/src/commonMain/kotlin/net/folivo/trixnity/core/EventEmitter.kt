@@ -1,7 +1,10 @@
 package net.folivo.trixnity.core
 
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -81,4 +84,18 @@ inline fun <reified T : EventContent> EventEmitter.subscribe(noinline subscriber
 
 inline fun <reified T : EventContent> EventEmitter.unsubscribe(noinline subscriber: EventSubscriber<T>) {
     unsubscribe(T::class, subscriber)
+}
+
+/**
+ * Subscribe events with a flow.
+ *
+ * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
+ * you should use [subscribe] and [unsubscribe].
+ */
+inline fun <reified T : EventContent> EventEmitter.subscribeAsFlow(): Flow<Event<T>> = callbackFlow {
+    val callback: EventSubscriber<T> = { event ->
+        send(event)
+    }
+    subscribe(callback)
+    awaitClose { unsubscribe(callback) }
 }

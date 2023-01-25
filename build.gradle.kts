@@ -98,4 +98,9 @@ subprojects {
             sign(publishing.publications)
         }
     }
+    tasks.withType<AbstractPublishToMaven>().configureEach {
+        onlyIf {
+            publication.artifactId.contains("dummy").not()
+        }
+    }
 }

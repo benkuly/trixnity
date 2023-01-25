@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
@@ -165,7 +164,6 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
             }
         }
         keyStore.allRoomKeyRequests
-            .onEach { println(it) }
             .first { requests -> requests.none { it.content.body?.roomId == roomId && it.content.body?.sessionId == sessionId } }
     }
 }
