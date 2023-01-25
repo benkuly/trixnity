@@ -80,11 +80,17 @@ class UserServiceImpl(
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
                             notMembership = LEAVE
-                        ).getOrThrow().toList()
-                        tm.withWriteTransaction {
-                            memberEvents.forEach { api.sync.emitEvent(it) }
-                            roomStore.update(roomId) { it?.copy(membersLoaded = true) }
+                        ).getOrThrow()
+                        memberEvents.chunked(500).forEach { chunk ->
+                            tm.withWriteTransaction(
+                                onRollback = { roomStore.update(roomId) { it?.copy(membersLoaded = false) } }
+                            ) {
+                                chunk.forEach { api.sync.emitEvent(it) }
+
+                            }
                         }
+                        roomStore.update(roomId) { it?.copy(membersLoaded = true) }
+
                     }
                 }
                 currentlyLoadingMembers.update { it - roomId }
