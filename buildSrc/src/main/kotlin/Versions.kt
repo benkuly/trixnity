@@ -13,14 +13,14 @@ object Versions {
     const val koin = "3.3.2" // https://github.com/InsertKoinIO/koin/tags
     const val korlibs = "3.4.0" // https://github.com/korlibs/korge/releases
     const val mocKmp = "1.11.0" // https://github.com/Kodein-Framework/MocKMP/releases
-    const val okio = "3.3.0" // https://square.github.io/okio/changelog/
+    const val okio = "3.2.0" // https://square.github.io/okio/changelog/
     const val uuid = "0.6.0" // https://github.com/benasher44/uuid/releases
     const val kotest = "5.5.4" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.6" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
-    const val arrow = "1.1.5" // https://github.com/arrow-kt/arrow/releases
+    const val arrow = "1.1.3" // https://github.com/arrow-kt/arrow/releases
     const val exposed = "0.41.1" // https://github.com/JetBrains/Exposed/releases
-    const val juulLabsIndexeddb = "0.6.0" // https://github.com/JuulLabs/indexeddb/releases
+    const val juulLabsIndexeddb = "0.5.0" // https://github.com/JuulLabs/indexeddb/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
     const val realm = "1.6.0" // https://github.com/realm/realm-kotlin/tags
     const val kotlinLogging = "3.0.4" // https://github.com/MicroUtils/kotlin-logging/releases
