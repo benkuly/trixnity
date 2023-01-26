@@ -95,8 +95,8 @@ This project contains the following modules, which can be used independently:
           maintained at the moment!
     - [x] extremely fast reactive cache on top of the database using async
       transactions
-  - [x] extremely fast reactive cache on top of the database using async
-    transactions
+    - [x] extremely fast reactive cache on top of the database using async
+      transactions
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
@@ -114,6 +114,7 @@ This project contains the following modules, which can be used independently:
     - [x] E2E (olm, megolm)
     - [x] verification
     - [x] cross signing
+    - [x] fallback keys
     - [x] room key backup
     - [x] room key requests (only between own verified devices and when key
       backup is disabled)
